@@ -1,61 +1,63 @@
-using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class RemoveHyperlinkExample
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Name of the shape that contains the hyperlink to be removed
-            string targetShapeName = "MyShape";
-
-            // Name of the hyperlink to remove
-            string targetHyperlinkName = "MyHyperlink";
-
-            // Iterate through all pages (adjust if you know the specific page)
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Search for the shape with the specified name
-                foreach (Shape shape in page.Shapes)
+
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // The universal name of the shape whose hyperlink should be removed
+                string targetShapeName = "MyShape";
+
+                // Load the diagram from the file
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes to find the target shape
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.Name == targetShapeName)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Find the hyperlink with the matching name
-                        Hyperlink hyperlinkToRemove = null;
-                        foreach (Hyperlink hl in shape.Hyperlinks)
+                        if (shape.NameU == targetShapeName)
                         {
-                            if (hl.Name == targetHyperlinkName)
+                            // Ensure the Hyperlinks collection exists
+                            if (shape.Hyperlinks != null)
                             {
-                                hyperlinkToRemove = hl;
-                                break;
+                                // Collect hyperlinks to remove to avoid modifying the collection while iterating
+                                List<Hyperlink> linksToRemove = new List<Hyperlink>();
+                                foreach (Hyperlink link in shape.Hyperlinks)
+                                {
+                                    linksToRemove.Add(link);
+                                }
+
+                                // Remove each collected hyperlink
+                                foreach (Hyperlink link in linksToRemove)
+                                {
+                                    shape.Hyperlinks.Remove(link);
+                                }
                             }
-                        }
 
-                        // Remove the hyperlink if it was found
-                        if (hyperlinkToRemove != null)
-                        {
-                            shape.Hyperlinks.Remove(hyperlinkToRemove);
+                            // Shape found and processed; exit loops if only one instance is expected
+                            goto SaveDiagram;
                         }
-
-                        // Shape found, no need to continue searching
-                        break;
                     }
                 }
+
+                SaveDiagram:
+                // Save the updated diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the updated diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

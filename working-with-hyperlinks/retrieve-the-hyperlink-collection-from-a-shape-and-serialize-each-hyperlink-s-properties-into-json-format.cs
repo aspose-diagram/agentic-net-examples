@@ -1,57 +1,77 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-class Program
+namespace HyperlinkExport
 {
-    static void Main()
+    // DTO for JSON serialization of hyperlink properties
+    public class HyperlinkInfo
     {
-        try
+        public string? Name { get; set; }
+        public string? Address { get; set; }
+        public string? SubAddress { get; set; }
+        public string? Description { get; set; }
+    }
+
+    public class Program
+    {
+        public static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Example: get the first shape on the first page
-            // Adjust the indices as needed to target a specific shape
-            Shape shape = diagram.Pages[0].Shapes[0];
-
-            // Prepare a list to hold hyperlink data
-            var hyperlinkData = new List<object>();
-
-            // Iterate through each hyperlink in the shape's collection
-            foreach (Hyperlink hl in shape.Hyperlinks)
+            try
             {
-                var item = new
+
+                // Path to the Visio file
+                string diagramPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first shape that contains hyperlinks
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    Address = hl.Address,
-                    Description = hl.Description,
-                    SubAddress = hl.SubAddress,
-                    NewWindow = hl.NewWindow,
-                    Invisible = hl.Invisible,
-                    Default = hl.Default,
-                    Frame = hl.Frame,
-                    SortKey = hl.SortKey?.Value, // Str2Value may be null
-                    Name = hl.Name,
-                    NameU = hl.NameU,
-                    ID = hl.ID,
-                    Del = hl.Del
-                };
-                hyperlinkData.Add(item);
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No shape with hyperlinks found in the diagram.");
+                    return;
+                }
+
+                // Collect hyperlink data
+                List<HyperlinkInfo> hyperlinkData = new List<HyperlinkInfo>();
+                foreach (Hyperlink link in targetShape.Hyperlinks)
+                {
+                    HyperlinkInfo info = new HyperlinkInfo
+                    {
+                        Name = link.Name,
+                        Address = link.Address?.Value,
+                        SubAddress = link.SubAddress?.Value,
+                        Description = link.Description?.Value
+                    };
+                    hyperlinkData.Add(info);
+                }
+
+                // Serialize to JSON
+                string json = JsonSerializer.Serialize(hyperlinkData, new JsonSerializerOptions { WriteIndented = true });
+
+                // Output JSON to console (or write to a file if desired)
+                Console.WriteLine(json);
+
             }
-
-            // Serialize the list to formatted JSON
-            string json = JsonSerializer.Serialize(hyperlinkData, new JsonSerializerOptions { WriteIndented = true });
-
-            // Write JSON to a file
-            File.WriteAllText("hyperlinks.json", json);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

@@ -3,57 +3,77 @@ using System.Threading;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramConversion
+namespace DiagramConversionThrottle
 {
-    // Custom callback to throttle page saving and limit CPU usage.
-    public class ThrottlingPageSavingCallback : IPageSavingCallback
+    // Custom callback to throttle PDF page rendering speed.
+    // Introduces a minimum delay per page to reduce CPU usage on low‑end devices.
+    public class ThrottlingCallback : IPageSavingCallback
     {
-        // Milliseconds to pause after each page is saved.
-        private readonly int _delayMilliseconds;
+        // Minimum time (in milliseconds) each page should take to render.
+        private const int MinPageRenderTimeMs = 200;
 
-        public ThrottlingPageSavingCallback(int delayMilliseconds = 200)
-        {
-            _delayMilliseconds = delayMilliseconds;
-        }
+        // Timestamp when the current page started rendering.
+        private DateTime _pageStartTime;
 
         // Called before a page starts saving.
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // Ensure the page will be output (default is true).
-            args.IsToOutput = true;
-            // Optionally, you could add logic here to skip pages on very low‑end devices.
+            // Record the start time for this page.
+            _pageStartTime = DateTime.UtcNow;
+            // Optional: log page start.
+            Console.WriteLine($"Starting save of page {args.PageIndex + 1} of {args.PageCount}.");
         }
 
         // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Introduce a pause to throttle CPU usage.
-            Thread.Sleep(_delayMilliseconds);
+            // Calculate elapsed time.
+            var elapsedMs = (int)(DateTime.UtcNow - _pageStartTime).TotalMilliseconds;
 
-            // Indicate whether more pages remain to be processed.
-            // The default is true; we keep it unchanged.
-            args.HasMorePages = true;
+            // If rendering was faster than the minimum, pause to throttle CPU usage.
+            if (elapsedMs < MinPageRenderTimeMs)
+            {
+                int delay = MinPageRenderTimeMs - elapsedMs;
+                Console.WriteLine($"Throttling: delaying {delay} ms for page {args.PageIndex + 1}.");
+                Thread.Sleep(delay);
+            }
+
+            // Optionally stop further processing (not used here).
+            // args.HasMorePages = false;
         }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main()
         {
             try
             {
 
-                // Load the source diagram.
-                Diagram diagram = new Diagram("input.vsdx");
+                // Path to the source Visio diagram.
+                string inputPath = "input.vsdx";
 
-                // Configure PDF save options with the throttling callback.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                // Path for the output PDF.
+                string outputPath = "output.pdf";
+
+                // Load the diagram.
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    PageSavingCallback = new ThrottlingPageSavingCallback(delayMilliseconds: 250)
-                };
+                    // Configure PDF save options.
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Set a fallback font to avoid missing‑font warnings.
+                        DefaultFont = "Arial"
+                    };
 
-                // Save the diagram to PDF using the configured options.
-                diagram.Save("output.pdf", pdfOptions);
+                    // Assign the throttling callback.
+                    pdfOptions.PageSavingCallback = new ThrottlingCallback();
+
+                    // Save the diagram as PDF with the throttling behavior.
+                    diagram.Save(outputPath, pdfOptions);
+                }
+
+                Console.WriteLine("Conversion completed.");
 
             }
             catch (System.IO.FileNotFoundException ex)

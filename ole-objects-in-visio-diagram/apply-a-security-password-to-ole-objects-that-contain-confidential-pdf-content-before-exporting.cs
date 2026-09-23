@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,53 +11,49 @@ class Program
         {
 
             // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            string visioPath = "input.vsdx";
+            // Path for the output Visio file
+            string outputPath = "output.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
 
-            // Passwords to apply to embedded PDF files
-            const string userPassword = "user123";
-            const string ownerPassword = "owner123";
+            // Passwords to apply to confidential PDF OLE objects
+            const string userPassword = "UserPass123";
+            const string ownerPassword = "OwnerPass123";
 
             // Iterate through all pages and shapes
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            foreach (Page page in diagram.Pages)
             {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Verify the shape is an OLE foreign object
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
+                    // Identify foreign (OLE) shapes
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                     {
-                        // Check if the OLE object is a PDF (by file name extension)
-                        string sourceName = shape.ForeignData.ObjectSourceFullName;
-                        if (!string.IsNullOrEmpty(sourceName) &&
-                            sourceName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                        // Simple format detection: check file extension in ObjectSourceFullName
+                        string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+                        if (sourceName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                         {
-                            byte[] oleData = shape.ForeignData.ObjectData;
-                            if (oleData != null && oleData.Length > 0)
+                            // Load the embedded PDF from the OLE object
+                            byte[] pdfBytes = shape.ForeignData.ObjectData;
+                            using (MemoryStream pdfInput = new MemoryStream(pdfBytes))
                             {
-                                // Load the PDF from the OLE byte array
-                                using (MemoryStream inputPdf = new MemoryStream(oleData))
+                                // Load PDF using Aspose.Pdf (fully qualified to avoid namespace conflicts)
+                                Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(pdfInput);
+
+                                // Apply password protection
+                                pdfDoc.Encrypt(
+                                    userPassword,
+                                    ownerPassword,
+                                    Aspose.Pdf.Facades.DocumentPrivilege.AllowAll,
+                                    Aspose.Pdf.CryptoAlgorithm.RC4x128,
+                                    false);
+
+                                // Save the encrypted PDF back to a byte array
+                                using (MemoryStream pdfOutput = new MemoryStream())
                                 {
-                                    // Fully qualified Aspose.Pdf types (no using Aspose.Pdf)
-                                    var pdfDoc = new Aspose.Pdf.Document(inputPdf);
-
-                                    // Apply password protection to the PDF
-                                    pdfDoc.Encrypt(
-                                        userPassword,
-                                        ownerPassword,
-                                        Aspose.Pdf.Facades.DocumentPrivilege.AllowAll,
-                                        Aspose.Pdf.CryptoAlgorithm.RC4x128,
-                                        false);
-
-                                    // Save the protected PDF back to a byte array
-                                    using (MemoryStream outputPdf = new MemoryStream())
-                                    {
-                                        pdfDoc.Save(outputPdf);
-                                        shape.ForeignData.ObjectData = outputPdf.ToArray();
-                                    }
+                                    pdfDoc.Save(pdfOutput);
+                                    shape.ForeignData.ObjectData = pdfOutput.ToArray();
                                 }
                             }
                         }
@@ -64,8 +61,7 @@ class Program
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified Visio diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

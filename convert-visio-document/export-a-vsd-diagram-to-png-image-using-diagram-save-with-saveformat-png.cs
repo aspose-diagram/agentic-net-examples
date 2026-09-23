@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -9,14 +9,11 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a VSD file
+            // Load the VSD diagram from file
             Diagram diagram = new Diagram("input.vsd");
 
-            // Save the diagram as a PNG image
+            // Export the diagram to PNG format
             diagram.Save("output.png", SaveFileFormat.Png);
-
-            // Release resources
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

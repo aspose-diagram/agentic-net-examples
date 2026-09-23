@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,58 +10,60 @@ class Program
         try
         {
 
-            // Create an empty diagram
+            // Create a new empty diagram (contains a default page)
             Diagram diagram = new Diagram();
 
-            // Add a blank page to the diagram
-            diagram.Pages.Add(new Page());
+            // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape (master name "Rectangle") with initial size
-            // PinX and PinY are the center of the shape; width and height are in inches
-            double pinX = 5.0;
-            double pinY = 5.0;
-            double width = 4.0;
-            double height = 3.0;
-            long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle");
+            // Add a rectangle shape; the fourth parameter (isCalculate) must be a bool
+            long rectId = page.AddShape(2.0, 2.0, 4.0, 2.0, "Rectangle", false);
 
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape instance for further manipulation
+            Shape rectShape = page.Shapes.GetShape(rectId);
 
-            // Ensure the shape has at least one geometry section
-            // (most masters already contain a geometry; we use the first one)
-            Geom geom = (Geom)shape.Geoms[0];
+            // Clear any existing geometry definitions
+            rectShape.Geoms.Clear();
 
-            // Clear existing vertices (optional – depends on the master)
-            // Adding new vertices will define the shape's outline dynamically
-            // using formulas that reference the shape's Width and Height cells.
+            // Create a new geometry section
+            Geom geom = new Geom();
 
-            // Vertex 1: MoveTo (0,0) – lower‑left corner of the shape's bounding box
-            MoveTo v1 = new MoveTo();
-            v1.X.Ufe.F = "0";
-            v1.Y.Ufe.F = "0";
-            geom.CoordinateCol.Add(v1);
+            // ---- MoveTo (starting point at the lower‑left corner) ----
+            MoveTo move = new MoveTo();
+            // Use ShapeSheet formulas so the geometry reacts to shape size changes
+            move.X.Ufe.F = "0";               // X = 0 (relative to shape)
+            move.Y.Ufe.F = "0";               // Y = 0
+            geom.CoordinateCol.Add(move);
 
-            // Vertex 2: LineTo (Width,0) – lower‑right corner
-            LineTo v2 = new LineTo();
-            v2.X.Ufe.F = "Width";
-            v2.Y.Ufe.F = "0";
-            geom.CoordinateCol.Add(v2);
+            // ---- LineTo (top edge) ----
+            LineTo top = new LineTo();
+            top.X.Ufe.F = "Width";            // X = shape's Width
+            top.Y.Ufe.F = "0";                // Y = 0
+            geom.CoordinateCol.Add(top);
 
-            // Vertex 3: LineTo (Width/2, Height) – top middle point (creates a triangle)
-            LineTo v3 = new LineTo();
-            v3.X.Ufe.F = "Width/2";
-            v3.Y.Ufe.F = "Height";
-            geom.CoordinateCol.Add(v3);
+            // ---- LineTo (right edge) ----
+            LineTo right = new LineTo();
+            right.X.Ufe.F = "Width";          // X = shape's Width
+            right.Y.Ufe.F = "Height";         // Y = shape's Height
+            geom.CoordinateCol.Add(right);
 
-            // Vertex 4: LineTo (0,0) – close the path back to the start point
-            LineTo v4 = new LineTo();
-            v4.X.Ufe.F = "0";
-            v4.Y.Ufe.F = "0";
-            geom.CoordinateCol.Add(v4);
+            // ---- LineTo (bottom edge) ----
+            LineTo bottom = new LineTo();
+            bottom.X.Ufe.F = "0";             // X = 0
+            bottom.Y.Ufe.F = "Height";        // Y = shape's Height
+            geom.CoordinateCol.Add(bottom);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("DynamicTriangle.vsdx", SaveFileFormat.Vsdx);
+            // ---- Close the shape by returning to the start point ----
+            LineTo close = new LineTo();
+            close.X.Ufe.F = "0";
+            close.Y.Ufe.F = "0";
+            geom.CoordinateCol.Add(close);
+
+            // Add the constructed geometry to the shape
+            rectShape.Geoms.Add(geom);
+
+            // Save the diagram; use a valid SaveFileFormat enum member
+            diagram.Save("DynamicGeometry.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

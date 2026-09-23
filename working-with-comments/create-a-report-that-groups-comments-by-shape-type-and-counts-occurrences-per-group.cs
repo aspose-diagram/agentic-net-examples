@@ -1,101 +1,64 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            // Path to the Visio diagram file
-            const string diagramPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(diagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
 
-            // Dictionary to hold comment counts grouped by shape type (master name or shape type)
-            var commentCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                // Path to the Visio file; can be passed as a command‑line argument
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through all annotations (comments) on the page
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Dictionary to hold comment counts per shape type
+                Dictionary<TypeValue, int> commentCounts = new Dictionary<TypeValue, int>();
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    string groupKey;
-
-                    // If the comment is attached to a shape, retrieve the shape
-                    if (annotation.ShapeID != 0)
+                    // Iterate through all annotations (comments) on the page
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        Shape shape = page.Shapes.GetShape(annotation.ShapeID);
-                        if (shape != null)
+                        // Retrieve the shape associated with the comment
+                        int shapeId = annotation.ShapeID;
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        if (shape == null)
                         {
-                            // Prefer the master name if available; otherwise use the shape's Type enum
-                            if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
-                            {
-                                groupKey = shape.Master.Name;
-                            }
-                            else
-                            {
-                                groupKey = shape.Type.ToString();
-                            }
+                            // Skip if the shape cannot be found (should not happen)
+                            continue;
+                        }
+
+                        // Determine the shape type
+                        TypeValue shapeType = shape.Type;
+
+                        // Increment the count for this shape type
+                        if (commentCounts.ContainsKey(shapeType))
+                        {
+                            commentCounts[shapeType]++;
                         }
                         else
                         {
-                            groupKey = "OrphanShapeComment";
+                            commentCounts[shapeType] = 1;
                         }
                     }
-                    else
-                    {
-                        // Comment not attached to any shape (page-level comment)
-                        groupKey = "PageComment";
-                    }
-
-                    // Increment the count for the determined group
-                    if (commentCounts.ContainsKey(groupKey))
-                    {
-                        commentCounts[groupKey]++;
-                    }
-                    else
-                    {
-                        commentCounts[groupKey] = 1;
-                    }
                 }
-            }
 
-            // Prepare report lines
-            var reportLines = new List<string>
-            {
-                "Comment Count Report (Grouped by Shape Type)",
-                "-------------------------------------------"
-            };
+                // Output the report
+                Console.WriteLine("Comment Count by Shape Type:");
+                foreach (KeyValuePair<TypeValue, int> entry in commentCounts)
+                {
+                    Console.WriteLine($"{entry.Key}: {entry.Value}");
+                }
 
-            foreach (var kvp in commentCounts)
-            {
-                string line = $"{kvp.Key}: {kvp.Value}";
-                Console.WriteLine(line);
-                reportLines.Add(line);
             }
-
-            // Save the report to a text file
-            const string reportPath = "CommentReport.txt";
-            try
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                File.WriteAllLines(reportPath, reportLines);
-                Console.WriteLine($"Report saved to '{reportPath}'.");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save report: {ex.Message}");
-            }
-        }
+    }
     }

@@ -1,27 +1,39 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class ExportVisioPage
 {
     static void Main()
     {
         try
         {
 
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string sourceFile = @"input.vsdx";
 
-            // Configure image save options for PNG with a custom DPI (e.g., 300)
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300f;          // Set horizontal and vertical DPI
-            saveOptions.PageIndex = 2;              // Zero‑based index of the page to export (e.g., third page)
-            saveOptions.PageCount = 1;              // Export only this single page
-            saveOptions.EnlargePage = true;         // Enlarge page if needed (default is true)
+            // Load the Visio diagram (uses the provided load rule)
+            Diagram diagram = new Diagram(sourceFile);
 
-            // Export the selected page as a high‑resolution PNG image
-            diagram.Save("selected_page.png", saveOptions);
+            // Index of the page to export (0‑based). Change as needed.
+            int pageIndex = 0;
+
+            // Configure PNG export options with custom DPI
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            {
+                // Set the desired resolution (dots per inch)
+                Resolution = 300,
+
+                // Specify which page to render
+                PageIndex = pageIndex
+            };
+
+            // Export the selected page as a high‑resolution PNG (uses the provided save rule)
+            string outputFile = @"output_page_" + pageIndex + ".png";
+            diagram.Save(outputFile, pngOptions);
+
+            Console.WriteLine($"Page {pageIndex} exported to {outputFile} at {pngOptions.Resolution} DPI.");
 
         }
         catch (System.IO.FileNotFoundException ex)

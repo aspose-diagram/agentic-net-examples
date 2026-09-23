@@ -1,7 +1,8 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,25 +11,24 @@ class Program
         try
         {
 
-            // Load the diagram using the provided load rule
-            Diagram diagram = LoadDiagram("input.vsdx");   // <-- provided rule
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Configure autospace options (distance in inches)
-            AutoSpaceOptions options = new AutoSpaceOptions
-            {
-                DistanceInHorizontal = 0.5, // horizontal spacing
-                DistanceInVertical   = 0.5  // vertical spacing
-            };
+            // Configure auto‑spacing options
+            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+            autoSpaceOptions.DistanceInHorizontal = 2;
+            autoSpaceOptions.DistanceInVertical = 2;
 
-            // Iterate through all pages and apply batch auto‑spacing
+            // Apply auto‑spacing to each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Auto‑space all shapes on the current page
-                page.AutoSpaceShapes(page.Shapes, options);
+                page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
             }
 
-            // Save the diagram using the provided save rule
-            SaveDiagram(diagram, "output.vsdx");   // <-- provided rule
+            // Save the updated diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -36,12 +36,4 @@ class Program
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
-
-    // -----------------------------------------------------------------
-    // The following helper methods represent the lifecycle rules that
-    // must be used for loading and saving. Their implementations are
-    // supplied by the surrounding framework and should not be altered.
-    // -----------------------------------------------------------------
-    static Diagram LoadDiagram(string path) => new Diagram(path);
-    static void SaveDiagram(Diagram diagram, string path) => diagram.Save(path, SaveFileFormat.Vsdx);
 }

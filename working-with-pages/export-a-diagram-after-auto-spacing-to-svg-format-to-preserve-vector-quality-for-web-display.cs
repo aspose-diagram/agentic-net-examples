@@ -14,37 +14,32 @@ class Program
             // Path to the source Visio file
             string inputPath = "input.vsdx";
 
+            // Path for the exported SVG file
+            string outputPath = "output.svg";
+
             // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Apply auto‑spacing to each page
+            foreach (Page page in diagram.Pages)
             {
-                // Configure auto‑spacing options
-                AutoSpaceOptions spaceOptions = new AutoSpaceOptions
-                {
-                    DistanceInHorizontal = 2, // horizontal spacing in inches
-                    DistanceInVertical = 2    // vertical spacing in inches
-                };
+                // Configure spacing distances (in inches)
+                AutoSpaceOptions spacingOptions = new AutoSpaceOptions();
+                spacingOptions.DistanceInHorizontal = 0.5; // horizontal gap
+                spacingOptions.DistanceInVertical = 0.5;   // vertical gap
 
-                // Apply auto‑spacing to each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    page.AutoSpaceShapes(page.Shapes, spaceOptions);
-                }
-
-                // Configure SVG export options
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    ExportHiddenPage = false,
-                    ExportGuideShapes = false,
-                    SVGFitToViewPort = true,
-                    ExportElementAsRectTag = true
-                };
-
-                // Export the diagram to SVG format
-                string outputPath = "output.svg";
-                diagram.Save(outputPath, svgOptions);
+                // Auto‑space all shapes on the page
+                page.AutoSpaceShapes(page.Shapes, spacingOptions);
             }
 
-            Console.WriteLine("Diagram has been auto‑spaced and exported to SVG successfully.");
+            // Set SVG export options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            svgOptions.ExportHiddenPage = false;          // do not export hidden pages
+            svgOptions.ExportGuideShapes = false;         // optional: omit guide shapes
+            svgOptions.SVGFitToViewPort = true;           // preserve viewbox
+
+            // Save the diagram as SVG
+            diagram.Save(outputPath, svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

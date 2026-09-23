@@ -1,32 +1,42 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-public static class DiagramProcessor
+public class DiagramProcessor
 {
-    // Loads a Visio diagram from a byte array, modifies the active page, and returns the updated diagram as a byte array.
-    public static byte[] ProcessDiagram(byte[] diagramBytes)
+    /// <summary>
+    /// Loads a Visio diagram from a byte array, modifies the first page, and returns the updated diagram as a byte array.
+    /// </summary>
+    /// <param name="inputBytes">The input diagram in byte array form.</param>
+    /// <returns>The modified diagram as a byte array.</returns>
+    public static byte[] ProcessDiagram(byte[] inputBytes)
     {
-        // Load the diagram from the input byte array using a MemoryStream.
-        using (var inputStream = new MemoryStream(diagramBytes))
-        using (var diagram = new Diagram(inputStream))
+        // Load the diagram from the input byte array using a MemoryStream (load rule)
+        using (var inputStream = new MemoryStream(inputBytes))
         {
-            // Example modification: rename the active page.
-            // The Page class provides a Name property that can be set.
-            var activePage = diagram.ActivePage;
-            if (activePage != null)
+            // The Diagram constructor accepts a stream containing the Visio file.
+            var diagram = new Diagram(inputStream);
+
+            // ----- Apply changes to a page (example: rename the first page) -----
+            if (diagram.Pages.Count > 0)
             {
-                activePage.Name = "ModifiedPage";
+                // Access the first page (index 0)
+                var page = diagram.Pages[0];
+
+                // Change the page name
+                page.Name = "ModifiedPage";
+
+                // Optionally, you can modify other page properties here.
+                // e.g., page.Width = 10.0; page.Height = 8.5;
             }
 
-            // Save the modified diagram to an output MemoryStream.
+            // Save the modified diagram to a new MemoryStream (save rule)
             using (var outputStream = new MemoryStream())
             {
-                // Save in VDX format (Visio XML). Adjust the format as needed.
+                // Save in the same format as the original (VDX). Adjust SaveFileFormat if needed.
                 diagram.Save(outputStream, SaveFileFormat.Vdx);
 
-                // Return the resulting byte array.
+                // Return the resulting byte array
                 return outputStream.ToArray();
             }
         }

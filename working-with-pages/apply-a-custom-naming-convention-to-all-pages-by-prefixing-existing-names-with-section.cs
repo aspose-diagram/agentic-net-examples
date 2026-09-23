@@ -1,7 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
@@ -10,18 +9,17 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram (uses the provided load rule)
+            // Load the existing Visio diagram (load rule)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages in the diagram
+            // Apply custom naming convention to each page
             foreach (Page page in diagram.Pages)
             {
-                // Prefix the universal name (NameU) and the display name (Name) with "Section_"
-                page.NameU = "Section_" + page.NameU;
+                // Prefix the current page name with "Section_"
                 page.Name = "Section_" + page.Name;
             }
 
-            // Save the modified diagram (uses the provided save rule)
+            // Save the updated diagram (save rule)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

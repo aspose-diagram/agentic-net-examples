@@ -1,39 +1,34 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Desired output XPS file path
-            string outputPath = "output.xps";
+                // Path to the source Visio diagram file
+                string inputPath = "input.vsdx";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Configure XPS save options to exclude hidden pages
-            XPSSaveOptions options = new XPSSaveOptions();
-            options.ExportHiddenPage = false;
+                // Configure XPS save options to exclude hidden pages
+                XPSSaveOptions xpsOptions = new XPSSaveOptions();
+                xpsOptions.ExportHiddenPage = false;
 
-            // Save the diagram as XPS
-            diagram.Save(outputPath, options);
+                // Save the diagram as XPS
+                string outputPath = "output.xps";
+                diagram.Save(outputPath, xpsOptions);
 
-            // Clean up resources
-            diagram.Dispose();
+                Console.WriteLine($"Diagram exported to XPS successfully: {outputPath}");
 
-            Console.WriteLine("Diagram successfully saved to XPS without hidden pages.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

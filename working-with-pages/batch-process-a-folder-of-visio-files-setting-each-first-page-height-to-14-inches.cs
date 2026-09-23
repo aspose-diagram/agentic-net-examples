@@ -1,56 +1,57 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Define the folder containing Visio files.
-            // Adjust the path as needed or pass it via command line arguments.
-            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+            // Specify the folder containing Visio files.
+            // You can change this path as needed.
+            string folderPath = @"C:\VisioFiles";
 
             if (!Directory.Exists(folderPath))
             {
-                Console.WriteLine($"Folder does not exist: {folderPath}");
+                Console.WriteLine($"Folder not found: {folderPath}");
                 return;
             }
 
-            // Process each Visio file in the folder (common Visio extensions).
-            string[] visioExtensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vssx", "*.vss", "*.vstx", "*.vst" };
-            foreach (string extension in visioExtensions)
+            // Process all Visio files in the folder (common extensions).
+            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in visioFiles)
             {
-                string[] files = Directory.GetFiles(folderPath, extension, SearchOption.TopDirectoryOnly);
-                foreach (string filePath in files)
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                // Skip non-Visio files.
+                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsdm" && ext != ".vssx")
                 {
-                    try
+                    continue;
+                }
+
+                try
+                {
+                    // Load the Visio diagram.
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Ensure the diagram has at least one page.
+                    if (diagram.Pages.Count > 0)
                     {
-                        // Load the diagram.
-                        Diagram diagram = new Diagram(filePath);
-
-                        // Ensure there is at least one page.
-                        if (diagram.Pages.Count > 0)
-                        {
-                            // Access the first page (index 0).
-                            Page firstPage = diagram.Pages[0];
-
-                            // Set the page height to 14 inches.
-                            firstPage.PageSheet.PageProps.PageHeight.Value = 14.0;
-
-                            // Save the diagram back to the original file.
-                            diagram.Save(filePath, SaveFileFormat.Vsdx);
-                            Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"No pages found in: {Path.GetFileName(filePath)}");
-                        }
+                        // Access the first page (index 0) and set its height to 14 inches.
+                        Page firstPage = diagram.Pages[0];
+                        firstPage.PageSheet.PageProps.PageHeight.Value = 14.0;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+                        Console.WriteLine($"No pages found in file: {filePath}");
+                        continue;
                     }
+
+                    // Save the diagram back to the same file, overwriting it.
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Processed file: {filePath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
 

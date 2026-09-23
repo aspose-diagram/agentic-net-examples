@@ -1,37 +1,66 @@
-using System.IO;
 using System;
 using System.Threading.Tasks;
 using Aspose.Diagram;
-
-public static class DiagramAutoSpaceHelper
-{
-    /// <summary>
-    /// Performs auto‑spacing of the specified shapes on the given page asynchronously,
-    /// so the UI thread remains responsive.
-    /// </summary>
-    /// <param name="page">The page containing the shapes to be auto‑spaced.</param>
-    /// <param name="shapes">The collection of shapes to be spaced.</param>
-    /// <param name="horizontalInches">Horizontal distance between shapes in inches.</param>
-    /// <param name="verticalInches">Vertical distance between shapes in inches.</param>
-    /// <returns>A task that completes when the auto‑spacing operation finishes.</returns>
-    public static async Task AutoSpaceAsync(Page page, ShapeCollection shapes, double horizontalInches, double verticalInches)
-    {
-        // Prepare the options object with the desired spacing values.
-        var options = new AutoSpaceOptions
-        {
-            DistanceInHorizontal = horizontalInches,
-            DistanceInVertical = verticalInches
-        };
-
-        // Run the synchronous AutoSpaceShapes method on a background thread.
-        await Task.Run(() => page.AutoSpaceShapes(shapes, options));
-    }
-}
+using Aspose.Diagram.AutoLayout;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        DiagramAutoSpaceHelper.AutoSpaceAsync(null, null, 0, 0);
+        // Asynchronous entry point
+        static async Task Main(string[] args)
+        {
+            try
+            {
+
+                // Example file paths; replace with actual paths as needed
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                try
+                {
+                    await AutoSpaceAsync(inputPath, outputPath);
+                    Console.WriteLine("Auto‑spacing completed successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                    throw;
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+
+        // Performs auto‑spacing on the first page of a Visio diagram without blocking the UI thread
+        private static async Task AutoSpaceAsync(string inputFile, string outputFile)
+        {
+            // Load the diagram (I/O operation)
+            Diagram diagram = new Diagram(inputFile);
+
+            // Ensure there is at least one page to process
+            if (diagram.Pages.Count == 0)
+                throw new InvalidOperationException("The diagram contains no pages.");
+
+            // Get the first page (or modify to select a specific page)
+            Page page = diagram.Pages[0];
+
+            // Configure auto‑spacing options
+            AutoSpaceOptions options = new AutoSpaceOptions
+            {
+                DistanceInHorizontal = 2.0, // horizontal gap in inches
+                DistanceInVertical = 2.0    // vertical gap in inches
+            };
+
+            // Run the potentially time‑consuming auto‑spacing on a background thread
+            await Task.Run(() =>
+            {
+                // Auto‑space all shapes on the page using the defined options
+                page.AutoSpaceShapes(page.Shapes, options);
+            });
+
+            // Save the modified diagram
+            diagram.Save(outputFile, SaveFileFormat.Vsdx);
+        }
+    }

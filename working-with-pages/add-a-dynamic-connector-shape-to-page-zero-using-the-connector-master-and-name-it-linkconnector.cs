@@ -1,43 +1,38 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram.
-                Diagram diagram = new Diagram();
+            // Create a new blank diagram
+            Diagram diagram = new Diagram();
 
-                // Ensure there is at least one page (page index 0).
-                if (diagram.Pages.Count == 0)
-                {
-                    diagram.Pages.Add(new Page());
-                }
+            // Get the first page (page index 0)
+            Page page = diagram.Pages[0];
 
-                // Access the first page (page zero).
-                Page page = diagram.Pages[0];
+            // Add a dynamic connector shape using the master name "Dynamic connector"
+            // PinX and PinY are set to arbitrary coordinates (2.0, 2.0)
+            long connectorId = page.AddShape(2.0, 2.0, "Dynamic connector", false);
 
-                // Add a dynamic connector shape using the built‑in master name.
-                // PinX and PinY are arbitrary coordinates (in inches).
-                long connectorId = page.AddShape(2.0, 2.0, "Dynamic connector");
+            // Retrieve the connector shape by its ID
+            Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Retrieve the shape object by its ID.
-                Shape connector = page.Shapes.GetShape(connectorId);
+            // Assign a name to the connector shape
+            connector.NameU = "LinkConnector";
 
-                // Assign a meaningful name to the connector.
-                connector.Name = "LinkConnector";
-                connector.NameU = "LinkConnector";
+            // Save the diagram to verify the addition (optional)
+            diagram.Save("LinkConnectorDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                // (Optional) Dispose the diagram when done to free resources.
-                diagram.Dispose();
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

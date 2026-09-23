@@ -4,43 +4,42 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the Visio file (you can modify or obtain from user input)
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path for the modified Visio file
             string outputPath = "output.vsdx";
 
-            // Load the diagram
+            // Load the diagram (ensure proper disposal)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Desired custom page size in inches (example: A4 size)
-                double customWidth = 8.27;
-                double customHeight = 11.69;
+                // Define custom page dimensions (in inches)
+                double customWidth = 11.0;   // example width
+                double customHeight = 8.5;   // example height
 
-                // Iterate through all pages
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Check the auto‑expand (DrawingResizeType) setting
-                    var resizeType = page.PageSheet.PageProps.DrawingResizeType.Value;
+                    // Check if auto‑expand (automatic page resizing) is enabled
+                    bool isAutoExpand = page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically;
 
-                    if (resizeType == DrawingResizeTypeValue.Automatically)
+                    if (isAutoExpand)
                     {
-                        Console.WriteLine($"Page \"{page.Name}\" has auto‑expand enabled. Skipping size adjustment.");
-                        continue; // Skip size change for this page
+                        // Disable auto‑expand before applying manual size changes
+                        page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
                     }
 
-                    // Auto‑expand is disabled; apply custom size
+                    // Apply custom page size adjustments
                     page.PageSheet.PageProps.PageWidth.Value = customWidth;
                     page.PageSheet.PageProps.PageHeight.Value = customHeight;
-                    Console.WriteLine($"Page \"{page.Name}\" size set to {customWidth} x {customHeight} inches.");
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram back to Visio format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
             }
 
         }

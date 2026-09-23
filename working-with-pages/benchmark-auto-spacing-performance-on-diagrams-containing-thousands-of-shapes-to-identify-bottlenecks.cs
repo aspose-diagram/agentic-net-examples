@@ -1,88 +1,55 @@
-using System;
 using System.IO;
+using System;
 using System.Diagnostics;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the source Visio diagram (required argument or default file name)
-        string diagramPath = args.Length > 0 ? args[0] : "diagram.vsdx";
-        // Verify that the diagram file exists before proceeding
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
+        // Number of shapes to create for the benchmark
+        const int shapeCount = 5000;
 
-        // Load the diagram inside a try/catch to capture any Aspose.Diagram errors
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(diagramPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-        // Ensure the diagram contains at least one page to work with
-        if (diagram.Pages.Count == 0)
+        // Add a new page to the diagram
+        Page page = new Page();
+        diagram.Pages.Add(page);
+
+        // Measure time taken to add shapes
+        Stopwatch swAdd = Stopwatch.StartNew();
+        for (int i = 0; i < shapeCount; i++)
         {
-            Console.Error.WriteLine("The diagram does not contain any pages.");
-            return;
+            // Simple grid layout for shape placement
+            double pinX = (i % 100) * 0.5 + 1.0; // 0.5 inch spacing, offset by 1 inch
+            double pinY = (i / 100) * 0.5 + 1.0;
+            double width = 0.4;
+            double height = 0.3;
+
+            // Draw a rectangle shape; returns the shape ID (long)
+            page.DrawRectangle(pinX, pinY, width, height);
         }
+        swAdd.Stop();
+        Console.WriteLine($"Added {shapeCount} shapes in {swAdd.ElapsedMilliseconds} ms.");
 
-        // Use the first page for the auto‑spacing benchmark
-        Page page = diagram.Pages[0];
-
-        // Configure auto‑spacing options (horizontal and vertical gaps in inches)
-        AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions
+        // Prepare auto‑spacing options
+        AutoSpaceOptions autoSpaceOpts = new AutoSpaceOptions
         {
-            DistanceInHorizontal = 0.5, // 0.5 inches between shapes horizontally
-            DistanceInVertical = 0.5    // 0.5 inches between shapes vertically
+            DistanceInHorizontal = 0.2, // inches
+            DistanceInVertical = 0.2    // inches
         };
 
-        // Warm‑up run to mitigate JIT overhead before measuring
-        try
-        {
-            page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Warm‑up auto‑spacing failed: {ex.Message}");
-            return;
-        }
+        // Measure time taken for auto‑spacing
+        Stopwatch swAutoSpace = Stopwatch.StartNew();
+        page.AutoSpaceShapes(page.Shapes, autoSpaceOpts);
+        swAutoSpace.Stop();
+        Console.WriteLine($"Auto‑spacing completed in {swAutoSpace.ElapsedMilliseconds} ms.");
 
-        // Measure the time taken for the auto‑spacing operation
-        Stopwatch sw = Stopwatch.StartNew();
-        try
-        {
-            page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Auto‑spacing failed: {ex.Message}");
-            return;
-        }
-        sw.Stop();
-
-        // Output the elapsed time in milliseconds
-        Console.WriteLine($"Auto‑spacing completed in {sw.ElapsedMilliseconds} ms.");
-
-        // Optional: save the auto‑spaced diagram to verify the result
-        string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "auto_spaced.vsdx");
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Auto‑spaced diagram saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-        }
+        // Save the diagram for visual verification (optional)
+        diagram.Save("AutoSpaceBenchmark.vsdx", SaveFileFormat.Vsdx);
+        Console.WriteLine("Diagram saved as AutoSpaceBenchmark.vsdx");
     }
 }

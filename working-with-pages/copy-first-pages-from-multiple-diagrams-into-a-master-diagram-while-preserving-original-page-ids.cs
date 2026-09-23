@@ -1,6 +1,5 @@
 using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,54 +10,59 @@ class Program
         try
         {
 
-            // Paths of source Visio files whose first pages will be copied
-            var sourceFiles = new List<string>
+            // Paths to source Visio files whose first pages will be copied.
+            string[] sourceFiles = new string[]
             {
                 "Diagram1.vsdx",
                 "Diagram2.vsdx",
                 "Diagram3.vsdx"
             };
 
-            // Create an empty master diagram
-            using (var master = new Diagram())
+            // Create an empty master diagram.
+            Diagram masterDiagram = new Diagram();
+
+            // The newly created diagram contains a default empty page.
+            // Remove it so we can add only the copied pages.
+            if (masterDiagram.Pages.Count > 0)
             {
-                foreach (var filePath in sourceFiles)
+                masterDiagram.Pages.Remove(masterDiagram.Pages[0]);
+            }
+
+            foreach (string filePath in sourceFiles)
+            {
+                // Load the source diagram.
+                Diagram sourceDiagram = new Diagram(filePath);
+
+                // Ensure the source diagram has at least one page.
+                if (sourceDiagram.Pages.Count == 0)
                 {
-                    // Load each source diagram
-                    using (var src = new Diagram(filePath))
-                    {
-                        // Skip if the source diagram has no pages
-                        if (src.Pages.Count == 0) continue;
-
-                        // Get the first page from the source diagram
-                        var srcPage = src.Pages[0];
-
-                        // Create a new page for the master diagram
-                        var newPage = new Page();
-
-                        // Preserve original identifiers and basic properties
-                        newPage.ID = srcPage.ID;
-                        newPage.Name = srcPage.Name;
-                        newPage.NameU = srcPage.NameU;
-                        newPage.Background = srcPage.Background;
-                        newPage.AssociatedPage = srcPage.AssociatedPage;
-                        newPage.BackPage = srcPage.BackPage;
-                        newPage.ReviewerID = srcPage.ReviewerID;
-                        newPage.ViewCenterX = srcPage.ViewCenterX;
-                        newPage.ViewCenterY = srcPage.ViewCenterY;
-                        newPage.ViewScale = srcPage.ViewScale;
-
-                        // Copy the complete pagesheet (shapes, styles, etc.)
-                        newPage.PageSheet.Copy(srcPage.PageSheet);
-
-                        // Add the prepared page to the master diagram
-                        master.Pages.Add(newPage);
-                    }
+                    Console.WriteLine($"Source file '{filePath}' contains no pages. Skipping.");
+                    continue;
                 }
 
-                // Save the resulting master diagram
-                master.Save("MasterDiagram.vsdx", SaveFileFormat.Vsdx);
+                // Get the first page from the source diagram.
+                Page sourcePage = sourceDiagram.Pages[0];
+
+                // Create a new page in the master diagram.
+                Page newPage = new Page();
+
+                // Copy the content of the source page into the new page.
+                newPage.Copy(sourcePage);
+
+                // Preserve the original page ID and name.
+                newPage.ID = sourcePage.ID;
+                newPage.Name = sourcePage.Name;
+
+                // Add the new page to the master diagram.
+                masterDiagram.Pages.Add(newPage);
+
+                Console.WriteLine($"Copied page '{sourcePage.Name}' (ID={sourcePage.ID}) from '{filePath}'.");
             }
+
+            // Save the master diagram containing the copied pages.
+            string outputPath = "MasterDiagram.vsdx";
+            masterDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Master diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

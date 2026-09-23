@@ -1,70 +1,73 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            // Create a new empty diagram
-            using (Diagram diagram = new Diagram())
+            // Expect two arguments: input Visio file path and output Visio file path
+            if (args.Length < 2)
             {
-                // -----------------------------------------------------------------
-                // 1. Add a Table of Contents (TOC) page
-                // -----------------------------------------------------------------
-                // Determine the next available page ID
-                int maxPageId = 0;
-                foreach (Page existingPage in diagram.Pages)
-                {
-                    if (existingPage.ID > maxPageId)
-                        maxPageId = existingPage.ID;
-                }
-
-                // Create the TOC page and assign a unique ID and name
-                Page tocPage = new Page();
-                tocPage.ID = maxPageId + 1;
-                tocPage.Name = "Table of Contents";
-                tocPage.NameU = "Table of Contents";
-
-                // Add the TOC page to the diagram
-                diagram.Pages.Add(tocPage);
-
-                // -----------------------------------------------------------------
-                // 2. Populate the TOC page with entries linking to each page
-                // -----------------------------------------------------------------
-                double startX = 1.0;      // Horizontal position (in inches)
-                double startY = 1.0;      // Initial vertical position (in inches)
-                double entryWidth = 5.0;  // Width of the text shape (in inches)
-                double entryHeight = 0.4; // Height of the text shape (in inches)
-                double verticalSpacing = 0.6; // Space between entries (in inches)
-
-                foreach (Page targetPage in diagram.Pages)
-                {
-                    // Skip the TOC page itself
-                    if (targetPage == tocPage)
-                        continue;
-
-                    // Add a text shape on the TOC page displaying the target page name
-                    Shape entryShape = tocPage.AddText(startX, startY, entryWidth, entryHeight, targetPage.Name);
-
-                    // Create a hyperlink that points to the target page (internal link)
-                    Hyperlink link = new Hyperlink();
-                    // SubAddress uses the universal name of the target page
-                    link.SubAddress.Value = targetPage.NameU;
-                    link.Description.Value = $"Navigate to page \"{targetPage.Name}\"";
-
-                    // Attach the hyperlink to the text shape
-                    entryShape.Hyperlinks.Add(link);
-
-                    // Move down for the next entry
-                    startY += verticalSpacing;
-                }
-
-                // -----------------------------------------------------------------
-                // 3. Save the diagram (including the TOC page) as VSDX
-                // -----------------------------------------------------------------
-                diagram.Save("DiagramWithTOC.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Usage: DiagramTocGenerator <inputFilePath> <outputFilePath>");
+                return;
             }
 
-            Console.WriteLine("Diagram created with a Table of Contents page.");
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Determine a new unique page ID
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
+            {
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
+            }
+
+            // Create a new page for the Table of Contents
+            Page tocPage = new Page(maxPageId + 1);
+            tocPage.Name = "Table of Contents";
+            diagram.Pages.Add(tocPage);
+
+            // Page dimensions (in inches)
+            double pageWidth = tocPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = tocPage.PageSheet.PageProps.PageHeight.Value;
+
+            // Layout parameters
+            double margin = 0.5;               // 0.5 inch margin
+            double shapeHeight = 0.3;          // Height of each TOC entry
+            double verticalSpacing = 0.1;      // Space between entries
+            double currentY = pageHeight - margin - shapeHeight; // Start from top
+
+            // Iterate over all pages except the TOC page itself
+            foreach (Page targetPage in diagram.Pages)
+            {
+                if (targetPage.ID == tocPage.ID)
+                    continue; // Skip the TOC page
+
+                // Create a rectangle shape that will hold the page title
+                double pinX = margin + (pageWidth - 2 * margin) / 2; // Center horizontally
+                long shapeId = tocPage.DrawRectangle(pinX, currentY, pageWidth - 2 * margin, shapeHeight);
+                Shape tocShape = tocPage.Shapes.GetShape(shapeId);
+
+                // Set the visible text to the page name
+                tocShape.Text.Value.Clear();
+                tocShape.Text.Value.Add(new Txt(targetPage.Name));
+
+                // Add a hyperlink that points to the target page
+                Hyperlink link = new Hyperlink();
+                link.SubAddress.Value = targetPage.Name; // Internal page reference
+                link.Description.Value = $"Go to page \"{targetPage.Name}\"";
+                tocShape.Hyperlinks.Add(link);
+
+                // Move down for the next entry
+                currentY -= (shapeHeight + verticalSpacing);
+            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
     }

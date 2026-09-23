@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,26 +9,38 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram (replace with actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new blank page
-            Page newPage = new Page();
+            // Determine the next available page ID
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
+            {
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
+            }
 
-            // Add the page to the diagram's page collection
+            // Create a new blank page and assign a unique ID
+            Page newPage = new Page(maxPageId + 1);
+            // Optionally set a name for the new page
+            newPage.Name = "InsertedPage";
+
+            // Add the new page to the diagram (adds at the end)
             diagram.Pages.Add(newPage);
 
-            // Move the newly added page to index 2 (0‑based index)
-            // If there are fewer than 3 pages, MoveTo will place it at the end.
+            // Move the newly added page to index 2 (zero‑based index)
+            // This will place it as the third page in the collection
             newPage.MoveTo(2);
 
-            // Save the diagram (using the provided save rule)
-            diagram.Save("Result.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram (replace with desired output path)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (System.ArgumentOutOfRangeException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[ArgumentOutOfRangeException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

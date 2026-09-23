@@ -1,70 +1,61 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
-public class Program
+class AutoSpaceOptionsCache
 {
-    // Cached AutoSpaceOptions instance reused for all diagrams
-    private static readonly AutoSpaceOptions autoSpaceOptions = CreateAutoSpaceOptions();
+    // Single shared instance of AutoSpaceOptions for reuse
+    private static readonly AutoSpaceOptions _sharedOptions = CreateOptions();
 
-    private static AutoSpaceOptions CreateAutoSpaceOptions()
+    private static AutoSpaceOptions CreateOptions()
     {
         var options = new AutoSpaceOptions();
-        // Set desired spacing between shapes (in inches)
-        options.DistanceInHorizontal = 0.5;
-        options.DistanceInVertical = 0.5;
+        // Configure desired spacing distances (in inches)
+        options.DistanceInHorizontal = 2;
+        options.DistanceInVertical = 2;
         return options;
     }
 
-    public static void Main()
+    // Public accessor to retrieve the cached options
+    public static AutoSpaceOptions Get()
+    {
+        return _sharedOptions;
+    }
+}
+
+class Program
+{
+    static void Main()
     {
         try
         {
 
-            string inputFolder = "InputDiagrams";
-            string outputFolder = "OutputDiagrams";
+            // Paths to source Visio files
+            string diagramPath1 = "diagram1.vsdx";
+            string diagramPath2 = "diagram2.vsdx";
 
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
+            // Load diagrams
+            Diagram diagram1 = new Diagram(diagramPath1);
+            Diagram diagram2 = new Diagram(diagramPath2);
+
+            // Apply AutoSpaceShapes using the cached AutoSpaceOptions instance
+            foreach (Page page in diagram1.Pages)
             {
-                Directory.CreateDirectory(outputFolder);
+                page.AutoSpaceShapes(page.Shapes, AutoSpaceOptionsCache.Get());
             }
 
-            // Process all VSDX files in the input folder
-            string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
-            foreach (string filePath in files)
+            foreach (Page page in diagram2.Pages)
             {
-                try
-                {
-                    // Load the diagram from file
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply AutoSpace to each page using the cached options
-                    foreach (Page page in diagram.Pages)
-                    {
-                        page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
-                    }
-
-                    // Save the updated diagram
-                    string fileName = Path.GetFileNameWithoutExtension(filePath);
-                    string outputPath = Path.Combine(outputFolder, fileName + "_spaced.vsdx");
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    // Log any errors and continue with the next file
-                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
-                }
+                page.AutoSpaceShapes(page.Shapes, AutoSpaceOptionsCache.Get());
             }
 
-            Console.WriteLine("All diagrams have been processed.");
+            // Save the modified diagrams
+            diagram1.Save("output1.vsdx", SaveFileFormat.Vsdx);
+            diagram2.Save("output2.vsdx", SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

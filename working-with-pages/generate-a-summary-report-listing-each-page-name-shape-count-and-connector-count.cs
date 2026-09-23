@@ -1,40 +1,43 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load the Visio diagram from a file (lifecycle: load)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Retrieve page name
-                string pageName = page.Name;
 
-                // Count shapes on the page
-                int shapeCount = page.Shapes.Count;
+                // Load the Visio diagram (replace with actual file path)
+                using (Diagram diagram = new Diagram("input.vsdx"))
+                {
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        int totalShapes = page.Shapes.Count;
+                        int connectorCount = 0;
 
-                // Count connectors (connections) on the page
-                int connectorCount = page.Connects.Count;
+                        // Count connector shapes (1‑D shapes)
+                        foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                        {
+                            if (shape.OneD)
+                            {
+                                connectorCount++;
+                            }
+                        }
 
-                // Output the summary for the current page
-                Console.WriteLine($"Page: {pageName}, Shapes: {shapeCount}, Connectors: {connectorCount}");
+                        // Non‑connector shapes
+                        int shapeCount = totalShapes - connectorCount;
+
+                        // Output the summary for the current page
+                        Console.WriteLine($"Page: {page.Name}, Shapes: {shapeCount}, Connectors: {connectorCount}");
+                    }
+                }
+
             }
-
-            // No saving required for the summary report
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

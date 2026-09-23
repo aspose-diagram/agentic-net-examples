@@ -2,45 +2,58 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
-namespace AutoSpaceDemo
+namespace DiagramAutoSpaceExample
 {
-    // Model class matching the JSON structure
-    public class AutoSpaceConfig
+    // Class representing the JSON structure for AutoSpaceOptions settings
+    public class AutoSpaceSettings
     {
         public double DistanceInHorizontal { get; set; }
         public double DistanceInVertical { get; set; }
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main()
         {
             try
             {
 
-                // Load AutoSpaceOptions settings from JSON file
-                string jsonPath = "autospaceconfig.json";
-                string jsonContent = File.ReadAllText(jsonPath);
-                AutoSpaceConfig config = JsonSerializer.Deserialize<AutoSpaceConfig>(jsonContent);
+                // Paths for input diagram, JSON settings, and output diagram
+                string diagramPath = "input.vsdx";
+                string jsonPath = "autospace.json";
+                string outputPath = "output.vsdx";
 
-                // Create AutoSpaceOptions and apply settings from JSON
+                // Load AutoSpaceOptions settings from JSON file
+                if (!File.Exists(jsonPath))
+                    throw new FileNotFoundException($"JSON settings file not found: {jsonPath}");
+
+                string jsonContent = File.ReadAllText(jsonPath);
+                AutoSpaceSettings settings = JsonSerializer.Deserialize<AutoSpaceSettings>(jsonContent)
+                    ?? throw new InvalidOperationException("Failed to deserialize AutoSpace settings.");
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Get the first page (or any specific page you need)
+                Page page = diagram.Pages[0];
+
+                // Create and configure AutoSpaceOptions using the loaded settings
                 AutoSpaceOptions options = new AutoSpaceOptions
                 {
-                    DistanceInHorizontal = config.DistanceInHorizontal,
-                    DistanceInVertical = config.DistanceInVertical
+                    DistanceInHorizontal = settings.DistanceInHorizontal,
+                    DistanceInVertical = settings.DistanceInVertical
                 };
 
-                // Load the diagram (using default LoadOptions)
-                LoadOptions loadOptions = new LoadOptions();
-                Diagram diagram = new Diagram("input.vsdx", loadOptions);
-
-                // Apply auto spacing to all shapes on the first page
-                Page page = diagram.Pages[0];
+                // Apply auto-spacing to all shapes on the page
                 page.AutoSpaceShapes(page.Shapes, options);
 
                 // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Auto-spacing applied and diagram saved successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

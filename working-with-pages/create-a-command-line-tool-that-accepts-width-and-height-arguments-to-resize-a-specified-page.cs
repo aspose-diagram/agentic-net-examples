@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -7,67 +7,67 @@ class Program
     static void Main(string[] args)
     {
         // Expected arguments:
-        // args[0] - input Visio file path
-        // args[1] - output Visio file path
-        // args[2] - new page width (in inches)
-        // args[3] - new page height (in inches)
-        // args[4] - (optional) page index (0‑based). Default is 0.
+        // 0 - input Visio file path
+        // 1 - page index (0‑based)
+        // 2 - new width in inches (double)
+        // 3 - new height in inches (double)
+        // 4 - output Visio file path (optional)
 
         if (args.Length < 4)
         {
-            Console.WriteLine("Usage: <inputPath> <outputPath> <width> <height> [pageIndex]");
+            Console.WriteLine("Usage: <inputFile> <pageIndex> <widthInInches> <heightInInches> [outputFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        if (!File.Exists(inputPath))
+        {
+            Console.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        if (!int.TryParse(args[1], out int pageIndex) || pageIndex < 0)
+        {
+            Console.WriteLine("Error: Invalid page index.");
+            return;
+        }
 
         if (!double.TryParse(args[2], out double newWidth) || newWidth <= 0)
         {
-            Console.WriteLine("Invalid width value.");
+            Console.WriteLine("Error: Invalid width value.");
             return;
         }
 
         if (!double.TryParse(args[3], out double newHeight) || newHeight <= 0)
         {
-            Console.WriteLine("Invalid height value.");
+            Console.WriteLine("Error: Invalid height value.");
             return;
         }
 
-        int pageIndex = 0;
-        if (args.Length >= 5 && !int.TryParse(args[4], out pageIndex))
-        {
-            Console.WriteLine("Invalid page index value. Using default index 0.");
-            pageIndex = 0;
-        }
+        string outputPath = args.Length >= 5 ? args[4] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_resized" + Path.GetExtension(inputPath));
 
-        try
+        // Load the diagram
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            if (pageIndex >= diagram.Pages.Count)
             {
-                // Validate page index
-                if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
-                {
-                    Console.WriteLine($"Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
-                    return;
-                }
-
-                // Access the specified page
-                Page page = diagram.Pages[pageIndex];
-
-                // Set new dimensions (values are in inches)
-                page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                page.PageSheet.PageProps.PageHeight.Value = newHeight;
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Page {pageIndex} resized to {newWidth} x {newHeight} inches and saved to '{outputPath}'.");
+                Console.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                return;
             }
+
+            // Access the specified page
+            Page page = diagram.Pages[pageIndex];
+
+            // Resize the page
+            page.PageSheet.PageProps.PageWidth.Value = newWidth;
+            page.PageSheet.PageProps.PageHeight.Value = newHeight;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+
+        Console.WriteLine($"Page {pageIndex} resized to {newWidth} x {newHeight} inches and saved to {outputPath}");
     }
 }

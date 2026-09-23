@@ -1,51 +1,41 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+class DiagramValidator
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Load the diagram (replace with your actual file path)
-                var diagram = new Diagram("input.vsdx");
+            // Load the diagram file (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Validate that each page has a unique universal name (NameU)
-                ValidateUniquePageNames(diagram);
+            // HashSet to store encountered page names
+            HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                // If validation passes, you can continue processing or save the diagram
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Checks that all pages in the diagram have distinct NameU values.
-        /// Throws an InvalidOperationException if a duplicate is found.
-        /// </summary>
-        /// <param name="diagram">The Aspose.Diagram Diagram instance to validate.</param>
-        static void ValidateUniquePageNames(Diagram diagram)
-        {
-            // Use a HashSet to track encountered page names efficiently
-            var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // Iterate through the PageCollection
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                string pageName = page.NameU ?? string.Empty;
+                string name = page.Name;
 
-                // If the name already exists, raise an exception
-                if (!seenNames.Add(pageName))
+                // Check for duplicate page name
+                if (!pageNames.Add(name))
                 {
-                    throw new InvalidOperationException(
-                        $"Duplicate page name detected: \"{pageName}\". Each page must have a unique NameU.");
+                    // Duplicate found – raise an exception with details
+                    throw new InvalidOperationException($"Duplicate page name detected: \"{name}\".");
                 }
             }
+
+            // If execution reaches here, all page names are unique
+            Console.WriteLine("All page names are unique.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

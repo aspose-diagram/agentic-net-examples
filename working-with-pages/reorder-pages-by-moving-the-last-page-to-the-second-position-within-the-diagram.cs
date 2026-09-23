@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,22 +9,27 @@ class Program
         try
         {
 
-            // Load the existing diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the modified Visio file
+            string outputPath = "output.vsdx";
 
-            // Check that there are at least two pages to reorder
-            if (diagram.Pages.Count > 1)
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there are at least two pages to reorder
+            int pageCount = diagram.Pages.Count;
+            if (pageCount > 1)
             {
-                // Get the last page in the collection
-                int lastIndex = diagram.Pages.Count - 1;
-                Page lastPage = diagram.Pages[lastIndex];
+                // Retrieve the last page (zero‑based index)
+                Page lastPage = diagram.Pages[pageCount - 1];
 
                 // Move the last page to the second position (index 1)
                 lastPage.MoveTo(1);
             }
 
-            // Save the diagram with the new page order
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

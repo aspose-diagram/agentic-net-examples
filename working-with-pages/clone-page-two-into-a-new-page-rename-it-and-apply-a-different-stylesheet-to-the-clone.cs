@@ -1,79 +1,87 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define the input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Verify the diagram has at least two pages to clone
+            if (diagram.Pages.Count < 2)
+                throw new Exception("The diagram does not contain a second page to clone.");
+
+            // Retrieve the second page (index 1) as the source for cloning
+            Page sourcePage = diagram.Pages[1];
+
+            // Determine the highest existing page ID to assign a unique ID to the new page
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
+                if (p.ID > maxPageId) maxPageId = p.ID;
+
+            // Create a new blank page with a new unique ID and a name
+            Page clonedPage = new Page(maxPageId + 1);
+            clonedPage.Name = "ClonedPage";
+            diagram.Pages.Add(clonedPage);
+
+            // Copy all contents from the source page into the newly created page
+            clonedPage.Copy(sourcePage);
+
+            // -------------------------------------------------
+            // Create a new stylesheet to apply to the cloned page
+            // -------------------------------------------------
+            StyleSheet newStyle = new StyleSheet
             {
+                ID = diagram.StyleSheets.Count + 1,
+                Name = "CustomStyle"
+            };
 
-                // Load the source Visio diagram
-                using (Diagram diagram = new Diagram("input.vsdx"))
-                {
-                    // Ensure there is at least a second page to clone
-                    if (diagram.Pages.Count < 2)
-                    {
-                        throw new Exception("The diagram does not contain a second page to clone.");
-                    }
+            // Character formatting: red text for the first character run
+            Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
+            charFormat.IX = 0;                     // index of the character run
+            charFormat.Color.Value = "#FF0000";    // red color
+            newStyle.Chars.Add(charFormat);
 
-                    // Get the source page (page index is zero‑based, so index 1 is page two)
-                    Page sourcePage = diagram.Pages[1];
+            // Line formatting: green solid line
+            newStyle.Line.LineColor.Value = "#00FF00";               // green line color
+            newStyle.Line.LinePattern.Value = LinePatternValue.Solid; // solid line pattern
+            newStyle.Line.LineWeight.Value = 0.02;                    // thickness in inches
 
-                    // Determine the maximum existing page ID to assign a unique ID to the new page
-                    int maxPageId = 0;
-                    foreach (Page p in diagram.Pages)
-                    {
-                        if (p.ID > maxPageId)
-                            maxPageId = p.ID;
-                    }
+            // Fill formatting: blue solid fill
+            newStyle.Fill.FillForegnd.Value = "#0000FF"; // blue fill color
+            // FillPattern expects an integer; 1 corresponds to solid fill
+            newStyle.Fill.FillPattern.Value = 1;
 
-                    // Create a new blank page
-                    Page clonedPage = new Page();
-                    clonedPage.ID = maxPageId + 1;
-                    clonedPage.Name = "ClonedPage";
+            // Add the new stylesheet to the diagram's collection
+            diagram.StyleSheets.Add(newStyle);
 
-                    // Add the new page to the diagram
-                    diagram.Pages.Add(clonedPage);
+            // Apply the stylesheet to the cloned page (TextStyleID, LineStyleID, FillStyleID)
+            clonedPage.ApplyStyle(newStyle.ID, newStyle.ID, newStyle.ID);
 
-                    // Copy the contents of the source page into the new page
-                    clonedPage.Copy(sourcePage);
+            // Define the output file path
+            string outputPath = "output.vsdx";
 
-                    // -------------------------------------------------
-                    // Create a new stylesheet to apply to the cloned page
-                    // -------------------------------------------------
-                    StyleSheet newStyle = new StyleSheet();
-                    newStyle.ID = diagram.StyleSheets.Count + 1;
-                    newStyle.Name = "NewStyle";
-
-                    // Example style settings (customize as needed)
-                    // Set line color to red
-                    newStyle.Line.LineColor.Value = "#FF0000";
-                    // Set line weight
-                    newStyle.Line.LineWeight.Value = 0.02;
-                    // Set fill foreground color to light blue
-                    newStyle.Fill.FillForegnd.Value = "#ADD8E6";
-                    // Set a simple character style (e.g., bold)
-                    Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                    ch.IX = 0;
-                    ch.Style.Value = StyleValue.Bold;
-                    newStyle.Chars.Add(ch);
-
-                    // Add the stylesheet to the diagram's collection
-                    diagram.StyleSheets.Add(newStyle);
-
-                    // Apply the new stylesheet to the cloned page (line, fill, and text styles)
-                    clonedPage.ApplyStyle(newStyle.ID, newStyle.ID, newStyle.ID);
-
-                    // Save the modified diagram
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram using the VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

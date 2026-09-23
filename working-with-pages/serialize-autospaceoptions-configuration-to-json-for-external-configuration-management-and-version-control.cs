@@ -2,26 +2,46 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
     static void Main()
     {
-        // Create and configure AutoSpaceOptions
-        var autoSpaceOptions = new AutoSpaceOptions
+        try
         {
-            DistanceInHorizontal = 0.5, // inches
-            DistanceInVertical = 0.75   // inches
-        };
 
-        // Serialize the configuration to JSON with indentation for readability
-        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        string json = JsonSerializer.Serialize(autoSpaceOptions, jsonOptions);
+            // Path to the Visio diagram to load
+            string diagramPath = "input.vsdx";
 
-        // Save the JSON to a file for external configuration management
-        const string configFilePath = "autospaceoptions.json";
-        File.WriteAllText(configFilePath, json);
+            // Path where the AutoSpaceOptions JSON will be saved
+            string jsonOutputPath = "autospaceOptions.json";
 
-        Console.WriteLine($"AutoSpaceOptions serialized to {configFilePath}");
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Get the first page (adjust index as needed)
+            Page page = diagram.Pages[0];
+
+            // Create and configure AutoSpaceOptions
+            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+            autoSpaceOptions.DistanceInHorizontal = 2.0; // horizontal spacing
+            autoSpaceOptions.DistanceInVertical = 2.0;   // vertical spacing
+
+            // Serialize the configuration to JSON
+            string json = JsonSerializer.Serialize(
+                autoSpaceOptions,
+                new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to file
+            File.WriteAllText(jsonOutputPath, json);
+
+            Console.WriteLine($"AutoSpaceOptions have been serialized to '{jsonOutputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

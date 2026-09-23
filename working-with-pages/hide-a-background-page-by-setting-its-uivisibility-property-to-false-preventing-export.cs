@@ -9,41 +9,42 @@ class Program
     {
         // Path to the source Visio file
         string inputPath = "input.vsdx";
-        // Guard: ensure the source file exists before proceeding
+
+        // Guard to ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Path for the modified Visio file
-        string outputPath = "output.vsdx";
-
         try
         {
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages in the diagram
+            // Hide all background pages by setting UIVisibility to Hidden
             foreach (Page page in diagram.Pages)
             {
                 // Identify background pages (Background == BOOL.True)
                 if (page.Background == BOOL.True)
                 {
-                    // Hide the page from the UI and from export by setting UIVisibility to Hidden
+                    // UIVisibilityValue.Hidden marks the page as hidden and prevents export
                     page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
                 }
             }
 
-            // Save the updated diagram; UIVisibility will keep hidden pages from being shown or exported
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Configure PDF save options to exclude hidden pages from export
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                ExportHiddenPage = false
+            };
 
-            // Release diagram resources
-            diagram.Dispose();
+            // Save the modified diagram to PDF
+            diagram.Save("output.pdf", pdfOptions);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -1,63 +1,52 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Manipulation; // for ConnectionPointPlace if needed later
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect input and optional output file paths
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
         try
         {
-            // Load the Visio diagram from the specified file
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Work with the first page (adjust if multiple pages are required)
+            // Assume we work with the first page
             Page page = diagram.Pages[0];
 
-            // Configure auto‑spacing options: horizontal and vertical gaps (in inches)
-            AutoSpaceOptions spaceOptions = new AutoSpaceOptions
-            {
-                DistanceInHorizontal = 0.5, // 0.5 inch horizontal spacing
-                DistanceInVertical = 0.5    // 0.5 inch vertical spacing
-            };
+            // Configure auto‑spacing options
+            AutoSpaceOptions autoSpaceOpts = new AutoSpaceOptions();
+            autoSpaceOpts.DistanceInHorizontal = 1.0; // inches
+            autoSpaceOpts.DistanceInVertical = 1.0;   // inches
 
             // Apply auto‑spacing to all shapes on the page
-            page.AutoSpaceShapes(page.Shapes, spaceOptions);
+            page.AutoSpaceShapes(page.Shapes, autoSpaceOpts);
 
-            // After spacing, recalculate routing for each connector (1‑D shape)
+            // Re‑calculate routing for all connector shapes
             foreach (Shape shape in page.Shapes)
             {
-                // Identify connector shapes by the OneD flag
+                // 1‑D shapes are connectors
                 if (shape.OneD)
                 {
-                    // Set routing style to right‑angle to avoid overlaps
-                    shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-                    // Optional: ensure connectors are allowed to reroute if needed
-                    shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
+                    // Set routing style to right‑angle (or StraightLines/CurvedLines as needed)
+                    shape.SetConnectorsType(ConnectorsTypeValue.RightAngle);
                 }
             }
 
-            // Save the updated diagram to the output file in VSDX format
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

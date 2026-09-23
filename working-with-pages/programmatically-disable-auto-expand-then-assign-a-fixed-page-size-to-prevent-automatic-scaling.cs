@@ -1,49 +1,45 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path (will contain the modified page settings)
-        string outputPath = "output_fixed.vsdx";
-
         try
         {
-            // Load the diagram inside a using block to ensure resources are released
-            using (Diagram diagram = new Diagram(inputPath))
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the modified Visio file
+            string outputPath = "output_fixed_page.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Fixed page dimensions (A4 size in inches)
+            double fixedWidth = 8.27;   // inches
+            double fixedHeight = 11.69; // inches
+
+            // Iterate through all pages and apply settings
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate over each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Disable automatic page expansion (auto‑expand)
-                    page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
+                // Disable auto‑expand (automatic drawing resize)
+                page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
 
-                    // Assign a fixed page size (A4: 8.27" x 11.69")
-                    page.PageSheet.PageProps.PageWidth.Value = 8.27;
-                    page.PageSheet.PageProps.PageHeight.Value = 11.69;
-                }
-
-                // Save the modified diagram to the specified output file
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Set fixed page width and height
+                page.PageSheet.PageProps.PageWidth.Value = fixedWidth;
+                page.PageSheet.PageProps.PageHeight.Value = fixedHeight;
             }
 
-            Console.WriteLine($"Diagram saved to {outputPath}");
+            // Save the modified diagram back to Visio format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,7 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
@@ -10,28 +10,35 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Insert dynamic header and footer.
-            // Visio field codes are used inside the strings:
-            // &[Page]   – current page number
-            // &[Pages]  – total number of pages
-            // &[DocTitle] – document title (from DocumentProps.Title)
-            diagram.HeaderFooter.HeaderCenter = "Page &[Page] of &[Pages]";
-            diagram.HeaderFooter.FooterCenter = "Title: &[DocTitle]";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Optional: set font color (e.g., dark gray) and margins if needed
-            // diagram.HeaderFooter.HeaderFooterColor = 0x404040; // RGB hex
-            // diagram.HeaderFooter.HeaderMargin = 0.2; // inches
-            // diagram.HeaderFooter.FooterMargin = 0.2; // inches
+            // Retrieve the diagram title (built‑in document property)
+            string title = diagram.DocumentProps.Title;
 
-            // Save the diagram as PDF, splitting each Visio page into a separate PDF page
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                SplitMultiPages = true
-            };
-            diagram.Save("output.pdf", pdfOptions);
+            // Set header and footer text.
+            // Header center will display the diagram title.
+            diagram.HeaderFooter.HeaderCenter = title;
+
+            // Footer right will display the page number using Visio field code '&p'.
+            diagram.HeaderFooter.FooterRight = "Page: &p";
+
+            // Optional: customize the appearance of header/footer text.
+            // Set font face, weight (700 = bold), and size (negative value maps to points).
+            var headerFooterFont = diagram.HeaderFooter.HeaderFooterFont;
+            headerFooterFont.FaceName = "Arial";
+            headerFooterFont.Weight = 700;      // Bold
+            headerFooterFont.Height = -16;      // Approx. 12 pt (16 × ‑1.333 ≈ 12 pt)
+
+            // Set the text color to black.
+            diagram.HeaderFooter.HeaderFooterColor = Color.Black;
+
+            // Save the updated diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

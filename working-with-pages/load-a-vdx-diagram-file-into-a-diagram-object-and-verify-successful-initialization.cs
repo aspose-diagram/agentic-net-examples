@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -9,24 +9,18 @@ class Program
         try
         {
 
-            // Path to the VDX diagram file
-            string filePath = "sample.vdx";
+            // Load the VDX diagram file into a Diagram object
+            Diagram diagram = new Diagram("sample.vdx");
 
-            // Load the diagram using the constructor that accepts a file name
-            Diagram diagram = new Diagram(filePath);
-
-            // Verify that the diagram was initialized correctly
-            if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
+            // Verify successful initialization
+            if (diagram != null && diagram.Pages.Count > 0)
             {
                 Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
             }
             else
             {
-                Console.WriteLine("Failed to load diagram.");
+                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
             }
-
-            // Clean up resources
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

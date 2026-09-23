@@ -1,72 +1,45 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Validate arguments count.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <pageIndexZeroBased> <outputPdfPath>");
-            return;
-        }
-
-        // Input Visio file path.
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Parse page index (zero‑based).
-        if (!int.TryParse(args[1], out int pageIndex) || pageIndex < 0)
-        {
-            Console.Error.WriteLine("Invalid page index. It must be a non‑negative integer.");
-            return;
-        }
-
-        // Output PDF file path.
-        string outputPath = args[2];
-
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
 
-            // Verify the requested page exists.
-            if (pageIndex >= diagram.Pages.Count)
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
+
+            // Path for the output PDF file (will contain only the selected page)
+            string outputPath = "selected_page.pdf";
+
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(sourcePath))
             {
-                Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
-                return;
+                // Zero‑based index of the page you want to export (e.g., first page)
+                int pageIndex = 0;
+
+                // Configure PDF save options to export only the specified page
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageIndex = pageIndex;   // start page
+                pdfOptions.PageCount = 1;           // number of pages to export
+                pdfOptions.ExportHiddenPage = false; // do not include hidden pages
+                pdfOptions.DefaultFont = "Arial";   // fallback font for missing glyphs
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicitly set format
+
+                // Save the selected page as a PDF; vector graphics and text remain vectorized
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Configure PDF save options to export only the selected page.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // Explicitly set the format tracker (required to avoid ambiguity).
-                SaveFormat = SaveFileFormat.Pdf,
-                // Export a single page starting at the requested index.
-                PageIndex = pageIndex,
-                PageCount = 1,
-                // Optional: set a default font to ensure text rendering if the original font is missing.
-                DefaultFont = "Arial",
-                // Optional: do not include hidden pages in the output.
-                ExportHiddenPage = false
-            };
+            Console.WriteLine("Selected page saved as PDF successfully.");
 
-            // Save the selected page as a PDF file.
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Page {pageIndex} successfully saved to PDF: {outputPath}");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error during PDF export: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

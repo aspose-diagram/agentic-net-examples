@@ -1,6 +1,8 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
@@ -10,20 +12,22 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust index if needed)
+            // Get the first page of the diagram
             Page page = diagram.Pages[0];
 
             // Create AutoSpaceOptions and set horizontal distance to zero
             AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 0.0; // Align shapes vertically without horizontal gaps
+            options.DistanceInHorizontal = 0;
 
-            // Apply auto-spacing to all shapes on the page using the configured options
+            // Apply auto-spacing to align shapes vertically without horizontal gaps
             page.AutoSpaceShapes(page.Shapes, options);
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

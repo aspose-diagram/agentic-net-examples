@@ -3,35 +3,35 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Path to the configuration file that contains page width and height (in inches)
-            // Expected format:
-            // line 1: width (e.g., 8.27)
-            // line 2: height (e.g., 11.69)
-            string configPath = "pagesize.config";
 
-            if (!File.Exists(configPath))
-            {
-                Console.WriteLine($"Configuration file not found: {configPath}");
-                return;
-            }
+            // Path to the Visio file to modify
+            string diagramPath = "input.vsdx";
 
+            // Path to the configuration file (first line = width in inches, second line = height in inches)
+            string configPath = "pageSize.config";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Read page size from configuration
             double pageWidth;
             double pageHeight;
-
             try
             {
                 string[] lines = File.ReadAllLines(configPath);
                 if (lines.Length < 2)
-                {
-                    Console.WriteLine("Configuration file must contain at least two lines: width and height.");
-                    return;
-                }
+                    throw new Exception("Configuration file must contain at least two lines: width and height.");
 
-                pageWidth = double.Parse(lines[0]);
-                pageHeight = double.Parse(lines[1]);
+                if (!double.TryParse(lines[0], out pageWidth))
+                    throw new Exception("Invalid width value in configuration.");
+
+                if (!double.TryParse(lines[1], out pageHeight))
+                    throw new Exception("Invalid height value in configuration.");
             }
             catch (Exception ex)
             {
@@ -39,50 +39,23 @@ class Program
                 return;
             }
 
-            // Path to the input Visio diagram
-            string inputDiagramPath = "input.vsdx";
-
-            if (!File.Exists(inputDiagramPath))
-            {
-                Console.WriteLine($"Input diagram file not found: {inputDiagramPath}");
-                return;
-            }
-
-            // Load the diagram
-            Diagram diagram = null;
-            try
-            {
-                diagram = new Diagram(inputDiagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
             // Apply the page size to every page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Page dimensions are stored in inches
                 page.PageSheet.PageProps.PageWidth.Value = pageWidth;
                 page.PageSheet.PageProps.PageHeight.Value = pageHeight;
             }
 
             // Save the modified diagram
-            string outputDiagramPath = "output.vsdx";
-            try
-            {
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved with updated page size to: {outputDiagramPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
-            finally
-            {
-                // Ensure resources are released
-                diagram?.Dispose();
-            }
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved with new page size ({pageWidth}\" x {pageHeight}\") to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

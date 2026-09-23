@@ -1,52 +1,43 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                using (Diagram diagram = new Diagram())
-                {
-                    // Get the default page (index 0)
-                    Page page = diagram.Pages[0];
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                    // Add the first rectangle shape
-                    long rect1Id = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
-                    // Add the second rectangle shape
-                    long rect2Id = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+            // Add two rectangle shapes
+            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle", false);
+            long rect2Id = page.AddShape(5.0, 2.0, "Rectangle", false);
 
-                    // Create a connector shape (Dynamic connector)
-                    Shape connector = new Shape();
-                    long connectorId = diagram.AddShape(connector, "Dynamic connector", 0);
+            // Add a dynamic connector shape
+            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
 
-                    // Connect the two rectangles using the connector
-                    page.ConnectShapesViaConnector(
-                        rect1Id,
-                        ConnectionPointPlace.Bottom,
-                        rect2Id,
-                        ConnectionPointPlace.Top,
-                        connectorId);
+            // Connect the first rectangle to the second rectangle using the connector
+            page.ConnectShapesViaConnector(
+                rect1Id,
+                ConnectionPointPlace.Right,
+                rect2Id,
+                ConnectionPointPlace.Left,
+                connectorId);
 
-                    // Optional: set connector routing style to right‑angle
-                    Shape connectorShape = page.Shapes.GetShape(connectorId);
-                    connectorShape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+            // Save the diagram to a VSDX file
+            diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
 
-                    // Save the diagram
-                    diagram.Save("ConnectedShapes.vsdx", SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Diagram created and shapes connected successfully.");
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

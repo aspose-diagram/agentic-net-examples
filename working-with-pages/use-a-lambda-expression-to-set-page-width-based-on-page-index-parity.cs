@@ -2,36 +2,33 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
+            // Load an existing Visio diagram (replace with your actual file path)
             string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Lambda expression: set page width based on whether the page index is even or odd
+            Action<int, Page> setPageWidth = (index, page) =>
             {
-                // Lambda that sets the page width based on the page index parity
-                Action<int> setPageWidth = index =>
-                {
-                    // Retrieve the page by index
-                    Page page = diagram.Pages[index];
-                    // Even index -> 8.5 inches, Odd index -> 11 inches
-                    page.PageSheet.PageProps.PageWidth.Value = (index % 2 == 0) ? 8.5 : 11.0;
-                };
+                // Even-indexed pages get 8.5 inches width, odd-indexed pages get 11 inches width
+                page.PageSheet.PageProps.PageWidth.Value = (index % 2 == 0) ? 8.5 : 11.0;
+            };
 
-                // Apply the lambda to each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    setPageWidth(i);
-                }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Apply the lambda to each page in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                setPageWidth(i, diagram.Pages[i]);
             }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

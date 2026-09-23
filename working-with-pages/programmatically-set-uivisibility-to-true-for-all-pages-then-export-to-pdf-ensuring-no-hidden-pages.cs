@@ -10,41 +10,29 @@ class Program
         try
         {
 
-            // Input Visio file path
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            // Output PDF file path
+            // Path for the exported PDF
             string outputPath = "output.pdf";
 
-            try
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure all pages are visible in the UI
+            foreach (Page page in diagram.Pages)
             {
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Ensure all pages are visible in the UI
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Set UI visibility to Visible for each page
-                        page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Visible;
-                    }
-
-                    // Configure PDF save options to exclude hidden pages
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        ExportHiddenPage = false,
-                        DefaultFont = "Arial"
-                    };
-
-                    // Save the diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
-                }
-
-                Console.WriteLine("Diagram exported to PDF successfully.");
+                // Set UI visibility to visible for each page
+                page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Visible;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+
+            // Configure PDF save options to exclude hidden pages
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.ExportHiddenPage = false;          // Do not export hidden pages
+            pdfOptions.DefaultFont = "Arial";             // Fallback font
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;   // Explicitly set format
+
+            // Save the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

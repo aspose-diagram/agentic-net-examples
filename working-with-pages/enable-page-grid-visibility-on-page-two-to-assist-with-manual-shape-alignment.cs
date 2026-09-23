@@ -1,63 +1,53 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the source file exists before proceeding
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the second page (zero‑based index, so index 1 is page two)
-            Page pageTwo = diagram.Pages[1];
-
-            // Locate a window that is linked to page two
-            Window targetWindow = null;
-            foreach (Window win in diagram.Windows)
+            try
             {
-                // Window.Page returns a Page object; compare its ID with pageTwo.ID
-                if (win.Page != null && win.Page.ID == pageTwo.ID)
+
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the existing Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Verify that the diagram has at least two pages (page index is zero‑based)
+                if (diagram.Pages.Count < 2)
+                    throw new Exception("The diagram does not contain a second page.");
+
+                // Retrieve the second page (page two)
+                Page pageTwo = diagram.Pages[1];
+
+                // Ensure there is at least one window; if not, create a default drawing window
+                if (diagram.Windows.Count == 0)
                 {
-                    targetWindow = win;
-                    break;
+                    Window newWindow = new Window
+                    {
+                        WindowType = WindowTypeValue.Drawing,
+                        WindowState = WindowStateValue.Maximized,
+                        WindowWidth = 1100,
+                        WindowHeight = 700
+                    };
+                    diagram.Windows.Add(newWindow);
                 }
-            }
 
-            if (targetWindow != null)
-            {
-                // Enable grid visibility on the existing window
-                targetWindow.ShowGrid = BOOL.True;
-            }
-            else
-            {
-                // No window linked to page two – create a new one and enable the grid
-                Window newWindow = new Window
-                {
-                    Page = pageTwo,          // Associate the window with page two
-                    ShowGrid = BOOL.True     // Turn on grid visibility
-                };
-                diagram.Windows.Add(newWindow);
-            }
+                // Enable the grid visibility for the diagram UI.
+                // This setting is applied via the first window; it affects all pages,
+                // including the second page where manual alignment will be performed.
+                Window window = diagram.Windows[0];
+                window.ShowGrid = BOOL.True;
 
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

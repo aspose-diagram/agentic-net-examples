@@ -1,56 +1,61 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
-class Program
+namespace DiagramUtilities
 {
-    // Checks all pages in the diagram and returns true if any page is hidden.
-    static bool AnyPageHidden(Diagram diagram)
+    public class PageVisibilityChecker
     {
-        // Iterate through each page in the diagram.
-        foreach (Page page in diagram.Pages)
+        /// <summary>
+        /// Returns true if any page in the provided diagram is hidden (UIVisibility set to Hidden).
+        /// </summary>
+        /// <param name="diagram">The Aspose.Diagram.Diagram instance to inspect.</param>
+        /// <returns>True when at least one page is hidden; otherwise false.</returns>
+        public static bool AnyPageHidden(Diagram diagram)
         {
-            // UIVisibility cell uses UIVisibilityValue enum: Hidden indicates the page is hidden.
-            if (page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden)
-                return true; // Hidden page found.
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // UIVisibility.Value indicates the visibility state of the page.
+                // UIVisibilityValue.Visible means the page is shown.
+                // Any other value (e.g., UIVisibilityValue.Hidden) means the page is hidden.
+                if (page.PageSheet.PageProps.UIVisibility.Value != UIVisibilityValue.Visible)
+                {
+                    return true;
+                }
+            }
+
+            // No hidden pages were found.
+            return false;
         }
-        return false; // No hidden pages.
     }
 
-    static void Main(string[] args)
+    class Program
     {
-        // Expect the first argument to be the path to the Visio file.
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
-            return;
-        }
+            try
+            {
 
-        string filePath = args[0];
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found: {filePath}");
-            return;
-        }
+                // Example usage: load a diagram file and check for hidden pages.
+                // Replace "sample.vsdx" with the path to your Visio file.
+                string diagramPath = "sample.vsdx";
 
-        try
-        {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(filePath);
+                // Load the diagram.
+                Diagram diagram = new Diagram(diagramPath);
 
-            // Determine if any page is hidden.
-            bool hasHidden = AnyPageHidden(diagram);
+                // Check if any page is hidden.
+                bool hasHiddenPage = PageVisibilityChecker.AnyPageHidden(diagram);
 
-            // Output the result to the console.
-            Console.WriteLine(hasHidden
-                ? "The diagram contains at least one hidden page."
-                : "All pages in the diagram are visible.");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                // Output the result.
+                Console.WriteLine(hasHiddenPage
+                    ? "The diagram contains at least one hidden page."
+                    : "All pages in the diagram are visible.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

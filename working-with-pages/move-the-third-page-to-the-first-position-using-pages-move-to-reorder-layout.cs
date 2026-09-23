@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,18 +10,29 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Verify that the diagram has at least three pages
-            if (diagram.Pages.Count >= 3)
+            // Load the diagram from a file
+            string inputPath = "input.vsdx";
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Move the third page (zero‑based index 2) to the first position (index 0)
-                diagram.Pages[2].MoveTo(0);
+                // Verify the diagram has at least three pages
+                if (diagram.Pages.Count < 3)
+                {
+                    Console.WriteLine("The diagram must contain at least three pages.");
+                    return;
+                }
+
+                // Retrieve the third page (zero‑based index 2)
+                Page thirdPage = diagram.Pages[2];
+
+                // Move the third page to the first position (index 0)
+                thirdPage.MoveTo(0);
+
+                // Save the updated diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the diagram with the pages reordered
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Third page moved to first position and diagram saved.");
 
         }
         catch (System.IO.FileNotFoundException ex)

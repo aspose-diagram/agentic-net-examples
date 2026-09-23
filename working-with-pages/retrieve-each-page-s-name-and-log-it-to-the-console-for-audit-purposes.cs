@@ -9,18 +9,18 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from file
+            Diagram diagram = new Diagram("input.vsdx"); // replace with actual file path
 
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Log the page name to the console for audit purposes
-                Console.WriteLine($"Page Name: {page.Name}");
-            }
+                // Retrieve the page name
+                string pageName = page.Name;
 
-            // Release resources
-            diagram.Dispose();
+                // Log the page name to the console for audit purposes
+                Console.WriteLine($"Page Name: {pageName}");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

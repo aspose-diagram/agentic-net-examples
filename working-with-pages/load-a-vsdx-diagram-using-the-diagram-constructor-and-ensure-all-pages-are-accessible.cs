@@ -9,18 +9,21 @@ class Program
         try
         {
 
-            // Load the VSDX diagram using the constructor that accepts a file name
+            // Load the VSDX diagram using the Diagram constructor
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages to ensure they are accessible
+            // Ensure all pages are accessible by iterating through the Pages collection
             foreach (Page page in diagram.Pages)
             {
-                // Example access: output page ID and name
-                Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+                // Access page properties to confirm they are loaded
+                string pageName = page.Name;
+                int pageId = page.ID;
+
+                // Example operation: output page information
+                Console.WriteLine($"Page ID: {pageId}, Name: {pageName}");
             }
 
-            // Clean up resources
-            diagram.Dispose();
+            // Further processing can be done here
 
         }
         catch (System.IO.FileNotFoundException ex)

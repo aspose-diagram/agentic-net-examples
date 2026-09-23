@@ -1,22 +1,38 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram (or load an existing one if needed)
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Ensure there is at least one page; Aspose.Diagram creates a default page on construction
-        Page pageZero = diagram.Pages[0];
+            // Create a new diagram instance
+            Diagram diagram = new Diagram();
 
-        // Insert a rectangle shape at coordinates (PinX = 2, PinY = 3)
-        // Width and Height are set to 1 inch each (adjust as required)
-        long rectangleId = pageZero.DrawRectangle(2.0, 3.0, 1.0, 1.0);
+            // Get the first (zero‑based) page of the diagram
+            Page page = diagram.Pages[0];
 
-        // rectangleId now holds the unique ID of the newly added rectangle shape
-        // Further processing can be done using this ID if needed
+            // Add a rectangle shape at coordinates (2, 3)
+            // Parameters: pinX, pinY, master name, isCalculate flag
+            long shapeId = page.AddShape(2.0, 3.0, "Rectangle", false);
+
+            // Retrieve the shape object using its unique ID
+            Shape rectangle = page.Shapes.GetShape(shapeId);
+
+            // Ensure the shape is positioned at the desired coordinates
+            rectangle.XForm.PinX.Value = 2.0;
+            rectangle.XForm.PinY.Value = 3.0;
+
+            // Save the diagram to a VSDX file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
 }

@@ -1,59 +1,52 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.AutoLayout; // required for LayoutOptions
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the diagram from the specified file
+
+            // Paths for input and output diagrams
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from file
             Diagram diagram = new Diagram(inputPath);
 
-            // Example resizing: increase width and height of all shapes by 10%
-            foreach (Page page in diagram.Pages) // iterate each page
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes) // iterate each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Skip 1‑D connector shapes; only resize 2‑D shapes
-                    if (shape.OneD)
-                        continue;
-
-                    // Calculate new dimensions (10% increase)
-                    double newWidth = shape.XForm.Width.Value * 1.10;
-                    double newHeight = shape.XForm.Height.Value * 1.10;
-
-                    // Apply the new dimensions to the shape
-                    shape.XForm.Width.Value = newWidth;
-                    shape.XForm.Height.Value = newHeight;
+                    // Resize regular (non‑connector) shapes
+                    if (!shape.OneD) // shape is not a connector
+                    {
+                        // Increase width and height by 10%
+                        shape.XForm.Width.Value *= 1.1;
+                        shape.XForm.Height.Value *= 1.1;
+                    }
+                    else // shape is a connector (1‑D)
+                    {
+                        // Recalculate routing: enforce right‑angle routing style
+                        shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+                        // Reset reroute code to default (undefined)
+                        shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
+                        // Refresh connector geometry after changes
+                        shape.RefreshData();
+                    }
                 }
             }
 
-            // Recalculate connector routes after resizing to maintain diagram integrity
-            LayoutOptions layoutOpts = new LayoutOptions(); // default layout options
-            diagram.Layout(layoutOpts); // apply layout recalculation
-
-            // Save the updated diagram to the output file
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Simple error reporting
-            Console.Error.WriteLine("Error: " + ex.Message);
-            throw;
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,72 +1,80 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        // Lock object to synchronize diagram saving (Diagram is not thread‑safe)
-        private static readonly object _saveLock = new object();
-
         static void Main(string[] args)
         {
-            try
+            // Validate arguments
+            if (args.Length < 1)
             {
+                Console.WriteLine("Usage: DiagramBatchPdfExport <inputVisioFile> [outputFolder]");
+                return;
+            }
 
-                // Input Visio file path (first argument) or default
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string inputPath = args[0];
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Input file not found: {inputPath}");
+                return;
+            }
 
-                // Output directory (second argument) or default
-                string outputDir = args.Length > 1 ? args[1] : "output";
+            // Determine output folder
+            string outputFolder = args.Length >= 2 ? args[1] : Path.GetDirectoryName(inputPath);
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
 
-                // Ensure the output directory exists
-                Directory.CreateDirectory(outputDir);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Collect pages into a typed list for Parallel.ForEach
+            List<Page> pages = new List<Page>();
+            foreach (Page page in diagram.Pages)
+            {
+                pages.Add(page);
+            }
 
-                // Total number of pages in the diagram
-                int pageCount = diagram.Pages.Count;
-
-                // Create an array of page indices for parallel processing
-                int[] pageIndices = new int[pageCount];
-                for (int i = 0; i < pageCount; i++)
-                    pageIndices[i] = i;
-
-                // Export each page to a separate PDF file in parallel
-                Parallel.ForEach(pageIndices, pageIndex =>
+            // Parallel processing of each page
+            Parallel.ForEach(pages, page =>
+            {
+                try
                 {
-                    // Build the output PDF file name (Page_1.pdf, Page_2.pdf, ...)
-                    string outputPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.pdf");
-
-                    // Configure PDF save options for a single page
+                    // Prepare PDF save options for the specific page
                     PdfSaveOptions pdfOptions = new PdfSaveOptions
                     {
-                        // Render only the current page
-                        PageIndex = pageIndex,
+                        // PageIndex is zero‑based; Visio page IDs start at 1
+                        PageIndex = (int)page.ID - 1,
+                        // Export only the current page
                         PageCount = 1,
-                        // Do not export hidden pages
-                        ExportHiddenPage = false,
-                        // Explicitly set the format (optional but safe)
-                        SaveFormat = SaveFileFormat.Pdf
+                        // Use a fallback font in case the diagram references missing fonts
+                        DefaultFont = "Arial"
                     };
 
-                    // Diagram.Save is not thread‑safe, so synchronize the call
-                    lock (_saveLock)
+                    // Build output file name using page name (fallback to ID)
+                    string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{page.ID}" : page.Name;
+                    // Remove any invalid file name characters
+                    foreach (char c in Path.GetInvalidFileNameChars())
                     {
-                        diagram.Save(outputPath, pdfOptions);
+                        safePageName = safePageName.Replace(c, '_');
                     }
 
-                    Console.WriteLine($"Saved page {pageIndex + 1} to '{outputPath}'.");
-                });
+                    string outputPath = Path.Combine(outputFolder, $"{safePageName}.pdf");
 
-                Console.WriteLine("Batch PDF export completed.");
+                    // Save only the selected page as PDF
+                    diagram.Save(outputPath, pdfOptions);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
+                    Console.WriteLine($"Saved page '{page.Name}' to '{outputPath}'.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing page ID {page.ID}: {ex.Message}");
+                }
+            });
+        }
     }

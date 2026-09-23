@@ -1,27 +1,30 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Input and output file paths
+        // Path to the source Visio file
         string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        // Path to the output Visio file
         string outputPath = "output.vsdx";
 
         try
         {
-            // Load the diagram inside a using block to ensure proper disposal
+            // Load the diagram from the input file
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Locate the first hidden page (UIVisibility == Hidden)
+                // Locate the first hidden page (UIVisibility == UIVisibilityValue.Hidden)
                 Page hiddenPage = null;
                 foreach (Page page in diagram.Pages)
                 {
-                    // UIVisibility.Value is of type UIVisibilityValue enum; compare with Hidden
+                    // UIVisibility is stored in the PageProps section as UIVisibilityValue
                     if (page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden)
                     {
                         hiddenPage = page;
@@ -29,26 +32,29 @@ class Program
                     }
                 }
 
+                // If no hidden page is found, report and exit
                 if (hiddenPage == null)
                 {
-                    throw new Exception("No hidden page found in the diagram.");
+                    Console.Error.WriteLine("No hidden page found in the diagram.");
+                    return;
                 }
 
                 // Move the hidden page to the end of the page collection
-                int lastIndex = diagram.Pages.Count - 1;
-                hiddenPage.MoveTo(lastIndex);
+                int targetIndex = diagram.Pages.Count - 1;
+                hiddenPage.MoveTo(targetIndex);
 
-                // Verify that UIVisibility is still Hidden after moving
+                // Verify that UIVisibility remains hidden after moving
                 if (hiddenPage.PageSheet.PageProps.UIVisibility.Value != UIVisibilityValue.Hidden)
                 {
-                    throw new Exception("UIVisibility changed after moving the hidden page.");
+                    Console.Error.WriteLine("UIVisibility of the moved page is not hidden after relocation.");
+                    return;
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Hidden page moved to the end and UIVisibility verified as hidden.");
+            Console.WriteLine("Hidden page moved to the end and UIVisibility verified successfully.");
         }
         catch (Exception ex)
         {

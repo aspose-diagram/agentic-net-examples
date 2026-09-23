@@ -5,37 +5,37 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
             try
             {
-                // Load the Visio diagram from file
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output Visio file path
+                string outputPath = "output.vsdx";
+
+                // Load the diagram from the file
                 Diagram diagram = new Diagram(inputPath);
 
                 // Ensure there is at least one page
-                if (diagram.Pages.Count > 0)
+                if (diagram.Pages.Count == 0)
                 {
-                    // Access the first page (index 0)
-                    Page firstPage = diagram.Pages[0];
+                    throw new Exception("The diagram contains no pages.");
+                }
 
-                    // Set the page width to 8.5 inches
-                    firstPage.PageSheet.PageProps.PageWidth.Value = 8.5;
-                }
-                else
-                {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
+                // Access the first page (index 0)
+                Page firstPage = diagram.Pages[0];
+
+                // Set the page width to 8.5 inches (values are in inches)
+                firstPage.PageSheet.PageProps.PageWidth.Value = 8.5;
 
                 // Save the modified diagram back to a Visio file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

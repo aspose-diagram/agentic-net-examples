@@ -1,6 +1,8 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,35 +11,38 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
 
-            // Get the first page (or any specific page you need)
-            Page page = diagram.Pages[0];
-
-            // Configure autospace options (distance in inches)
-            AutoSpaceOptions options = new AutoSpaceOptions
+            // Load the diagram from a file stream
+            using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
-                DistanceInHorizontal = 0.5, // horizontal spacing
-                DistanceInVertical = 0.5    // vertical spacing
-            };
+                Diagram diagram = new Diagram(stream);
 
-            // Auto‑space all shapes on the page
-            page.AutoSpaceShapes(page.Shapes, options);
+                // Iterate through each page in the diagram
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                {
+                    // Configure auto‑spacing options
+                    AutoSpaceOptions options = new AutoSpaceOptions();
+                    options.DistanceInHorizontal = 2.0; // horizontal spacing in inches
+                    options.DistanceInVertical = 2.0;   // vertical spacing in inches
 
-            // After auto‑spacing, refresh each shape and log its new position
-            foreach (Shape shape in page.Shapes)
-            {
-                shape.RefreshData(); // ensure position data is current
+                    // Apply auto‑spacing to all shapes on the current page
+                    page.AutoSpaceShapes(page.Shapes, options);
 
-                double x = shape.XForm.PinX.Value; // X coordinate (inches)
-                double y = shape.XForm.PinY.Value; // Y coordinate (inches)
+                    // Log the new position of each shape after spacing
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, New Position -> PinX: {pinX}, PinY: {pinY}");
+                    }
+                }
 
-                Console.WriteLine($"Shape ID {shape.ID} new position: X = {x:F2} in, Y = {y:F2} in");
+                // Save the modified diagram (optional)
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

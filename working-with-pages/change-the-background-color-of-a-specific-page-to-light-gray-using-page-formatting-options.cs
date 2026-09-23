@@ -1,90 +1,77 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect three arguments: input diagram path, output diagram path, target page name
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <input.vsdx> <output.vsdx> <pageName>");
-            return;
-        }
-
-        // Assign input file path and verify existence
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Assign output file path (no existence check needed)
-        string outputPath = args[1];
-
-        // Assign target page name
-        string targetPageName = args[2];
-
         try
         {
-            // Load the diagram from the specified file
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output Visio file
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the page that needs its background changed
-            Page targetPage = diagram.Pages.GetPage(targetPageName);
-            if (targetPage == null)
+            // Specify the page to modify (e.g., the first page)
+            Page targetPage = diagram.Pages[0];
+
+            // Determine the maximum existing page ID to assign a unique ID to the new background page
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
             {
-                Console.Error.WriteLine($"Page not found: {targetPageName}");
-                return;
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
             }
 
             // Create a new background page
             Page backgroundPage = new Page();
+            backgroundPage.ID = maxPageId + 1;
+            backgroundPage.Name = "BackgroundPage";
+            backgroundPage.Background = BOOL.True; // Mark as a background page
 
-            // Mark the new page as a background page
-            backgroundPage.Background = BOOL.True;
-
-            // Copy dimensions from the target page to the background page
-            double pageWidth = targetPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = targetPage.PageSheet.PageProps.PageHeight.Value;
-            backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-            backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
-
-            // Calculate the center point for the rectangle shape (pinX, pinY)
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
-
-            // Add a rectangle shape that spans the entire page
-            long rectShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
-
-            // Retrieve the newly added shape to set its formatting
-            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
-
-            // Set fill pattern to solid (1) and fill color to light gray (#D3D3D3)
-            rectShape.Fill.FillPattern.Value = 1;
-            rectShape.Fill.FillForegnd.Value = "#D3D3D3";
-
-            // Remove any border by setting line pattern to 0 (no line)
-            rectShape.Line.LinePattern.Value = 0;
-
-            // Send the rectangle to the back so other shapes appear above it
-            rectShape.SendToBack();
-
-            // Add the background page to the diagram's page collection
+            // Add the background page to the diagram
             diagram.Pages.Add(backgroundPage);
 
-            // Link the target page to the newly created background page
+            // Retrieve page dimensions (in inches)
+            double pageWidth = targetPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = targetPage.PageSheet.PageProps.PageHeight.Value;
+
+            // Add a rectangle shape that spans the entire page on the background page
+            // Parameters: pinX, pinY (center of shape), width, height, master name, isCalculate flag
+            double pinX = pageWidth / 2.0;
+            double pinY = pageHeight / 2.0;
+            long shapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
+
+            // Retrieve the shape object
+            Shape bgShape = backgroundPage.Shapes.GetShape(shapeId);
+
+            // Set fill to solid light gray (#D3D3D3)
+            bgShape.Fill.FillPattern.Value = 1; // Solid fill
+            bgShape.Fill.FillForegnd.Value = "#D3D3D3";
+
+            // Remove border by setting line weight to zero
+            bgShape.Line.LineWeight.Value = 0.0;
+            bgShape.Line.LinePattern.Value = LinePatternValue.Solid;
+
+            // Send the shape to the back so it appears behind all other content
+            bgShape.SendToBack();
+
+            // Link the foreground page to the new background page
             targetPage.BackPage = backgroundPage;
 
-            // Save the modified diagram to the output file in VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Output any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -9,36 +9,30 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            using (Diagram diagram = new Diagram())
-            {
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    diagram.Pages.Add(new Page());
-                }
+            // Create a new empty Visio diagram (contains a default page)
+            Diagram diagram = new Diagram();
 
-                // Access the first page (page index 0)
-                Page page = diagram.Pages[0];
+            // Access the first (default) page – page index 0
+            Page page = diagram.Pages[0];
 
-                // Define position and size for the rectangle
-                double pinX = 2.0;   // X coordinate of the shape's pin (center) in inches
-                double pinY = 2.0;   // Y coordinate of the shape's pin (center) in inches
-                double width = 2.0;  // Desired width in inches
-                double height = 1.0; // Arbitrary height (can be adjusted as needed)
+            // Define shape parameters
+            double pinX = 2.0;      // X coordinate of the shape's center (in inches)
+            double pinY = 2.0;      // Y coordinate of the shape's center (in inches)
+            double width = 2.0;     // Desired width of the rectangle (in inches)
+            double height = 1.0;    // Height can be any value; using 1 inch here
+            bool isCalculate = false; // Do not recalculate geometry automatically
 
-                // Add a rectangle shape using the "Rectangle" master
-                long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle");
+            // Add a rectangle shape using the built‑in "Rectangle" master
+            long rectShapeId = page.AddShape(pinX, pinY, width, height, "Rectangle", isCalculate);
 
-                // Retrieve the shape to modify its properties
-                Shape rectShape = page.Shapes.GetShape(shapeId);
+            // Retrieve the shape object to modify its properties if needed
+            Shape rectShape = page.Shapes.GetShape(rectShapeId);
 
-                // Ensure the width is set to 2 inches (already set via AddShape, but reaffirmed here)
-                rectShape.XForm.Width.Value = 2.0;
+            // Ensure the width is exactly 2 inches (redundant because we passed it above)
+            rectShape.XForm.Width.Value = 2.0;
 
-                // Optional: save the diagram to verify the shape was added
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            }
+            // Save the diagram to a VSDX file
+            diagram.Save("RectangleDiagram.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

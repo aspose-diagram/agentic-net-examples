@@ -1,7 +1,6 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
@@ -10,28 +9,34 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vdx");
+            // Load the existing Visio diagram (load rule)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Verify that the document has at least three pages
+            // Verify that the diagram has at least three pages
             if (diagram.Pages.Count >= 3)
             {
-                // Access the third page (zero‑based index)
-                Page pageThree = diagram.Pages[2];
+                // Access the third page (zero‑based index 2)
+                Page page = diagram.Pages[2];
 
-                // Confirm the page contains no shapes
-                if (pageThree.Shapes.Count == 0)
+                // Check whether the page contains any shapes
+                if (page.Shapes.Count == 0)
                 {
-                    // Remove the empty page from the document
-                    diagram.Pages.Remove(pageThree);
-
-                    // Release unmanaged resources held by the page
-                    pageThree.Dispose();
+                    // Remove the empty page (delete operation)
+                    diagram.Pages.RemoveAt(2);
+                    Console.WriteLine("Page 3 was empty and has been removed.");
+                }
+                else
+                {
+                    Console.WriteLine("Page 3 contains shapes; it will not be removed.");
                 }
             }
+            else
+            {
+                Console.WriteLine("The diagram contains fewer than three pages.");
+            }
 
-            // Save the updated diagram
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            // Save the modified diagram (save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

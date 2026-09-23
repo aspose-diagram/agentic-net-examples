@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,108 +7,122 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Resolve input Visio file path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the Visio file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: DiagramReport <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        string visioPath = args[0];
-        // Guard: ensure the Visio file exists.
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
+        // Resolve output PDF report path (second argument or default)
+        string reportPath = args.Length > 1 ? args[1] : "Report.pdf";
 
-        string pdfPath = args[1];
-        // Guard: ensure the output directory exists (create if necessary).
-        string pdfDir = Path.GetDirectoryName(pdfPath);
-        if (!string.IsNullOrEmpty(pdfDir) && !Directory.Exists(pdfDir))
-        {
-            try { Directory.CreateDirectory(pdfDir); }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
-        }
+        // Create a temporary folder for page thumbnail images
+        string thumbFolder = Path.Combine(Path.GetTempPath(), "DiagramThumbnails");
+        Directory.CreateDirectory(thumbFolder);
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
-
-            // Create a new PDF document (fully qualified Aspose.Pdf namespace to avoid ambiguity).
-            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
-
-            // Iterate over all pages in the diagram.
-            int pageIndex = 0; // zero‑based index required by ImageSaveOptions.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block for proper disposal
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Add a new page to the PDF for this Visio page.
-                Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
+                // Instantiate a new PDF document (fully qualified to avoid namespace clash)
+                var pdfDoc = new Aspose.Pdf.Document();
 
-                // Determine if the Visio page is hidden (UIVisibility.Value is UIVisibilityValue).
-                bool isHidden = page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden;
-
-                // Build a metadata string for the current Visio page.
-                string meta = $"Page Index: {pageIndex}\n" +
-                              $"Page ID: {page.ID}\n" +
-                              $"Name: {page.Name}\n" +
-                              $"Universal Name: {page.NameU}\n" +
-                              $"Width (in): {page.PageSheet.PageProps.PageWidth.Value}\n" +
-                              $"Height (in): {page.PageSheet.PageProps.PageHeight.Value}\n" +
-                              $"Hidden: {isHidden}";
-
-                // Add the metadata as a text fragment.
-                Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(meta);
-                tf.TextState.FontSize = 12; // readable font size.
-                tf.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("Arial");
-                tf.Margin = new Aspose.Pdf.MarginInfo { Top = 20, Left = 20 };
-                pdfPage.Paragraphs.Add(tf);
-
-                // If the page is hidden, generate a thumbnail image.
-                if (isHidden)
+                // Iterate over each page in the Visio diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Configure image export options for a single page.
-                    ImageSaveOptions imgOpts = new ImageSaveOptions(SaveFileFormat.Png);
-                    imgOpts.PageIndex = pageIndex;          // render the current page.
-                    imgOpts.ExportHiddenPage = true;        // allow hidden page rendering.
-                    imgOpts.Resolution = 150;               // reasonable DPI for a thumbnail.
+                    // Retrieve the current page (typed as Aspose.Diagram.Page)
+                    Page page = diagram.Pages[i];
 
-                    // Export the page to a memory stream.
-                    using (MemoryStream imgStream = new MemoryStream())
+                    // Add a corresponding page to the PDF document
+                    var pdfPage = pdfDoc.Pages.Add();
+
+                    // Determine if the page is hidden by checking UIVisibility enum value
+                    bool isHidden = page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Visible ? false : true;
+
+                    // Build a metadata string for the current page
+                    string metadata = $"Page ID: {page.ID}, Name: {page.Name}, Universal Name: {page.NameU}, " +
+                                      $"Width: {page.PageSheet.PageProps.PageWidth.Value} in, " +
+                                      $"Height: {page.PageSheet.PageProps.PageHeight.Value} in, " +
+                                      $"Hidden: {isHidden}";
+
+                    // Insert the metadata text into the PDF page
+                    var textFragment = new Aspose.Pdf.Text.TextFragment(metadata);
+                    pdfPage.Paragraphs.Add(textFragment);
+
+                    // If the page is hidden, generate a PNG thumbnail and embed it
+                    if (isHidden)
                     {
-                        diagram.Save(imgStream, imgOpts);
-                        imgStream.Position = 0; // reset stream for reading.
+                        string thumbPath = Path.Combine(thumbFolder, $"Page_{page.ID}.png");
 
-                        // Create an Aspose.Pdf image from the stream.
-                        Aspose.Pdf.Image pdfImg = new Aspose.Pdf.Image();
-                        pdfImg.ImageStream = imgStream;
+                        try
+                        {
+                            // Configure image export options to include hidden pages
+                            var imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                            {
+                                PageIndex = i,          // zero‑based page index
+                                PageCount = 1,
+                                ExportHiddenPage = true // ensure hidden pages are rendered
+                            };
+                            // Export the hidden page as a PNG image
+                            diagram.Save(thumbPath, imgOptions);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Failed to export thumbnail for page {page.ID}: {ex.Message}");
+                            continue; // Skip embedding if export fails
+                        }
 
-                        // Scale the image to fit within the PDF page width (optional).
-                        pdfImg.FixWidth = pdfPage.PageInfo.Width - 40; // leave margins.
-
-                        // Add a small vertical gap before the image.
-                        pdfPage.Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("\nThumbnail:"));
-                        // Insert the image into the PDF page.
-                        pdfPage.Paragraphs.Add(pdfImg);
+                        // Embed the generated thumbnail image into the PDF page
+                        try
+                        {
+                            using (FileStream imgStream = new FileStream(thumbPath, FileMode.Open, FileAccess.Read))
+                            {
+                                var image = new Aspose.Pdf.Image
+                                {
+                                    ImageStream = imgStream
+                                };
+                                pdfPage.Paragraphs.Add(image);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Failed to embed thumbnail for page {page.ID}: {ex.Message}");
+                        }
                     }
                 }
 
-                // Increment the page index for the next iteration.
-                pageIndex++;
+                // Save the assembled PDF report
+                try
+                {
+                    pdfDoc.Save(reportPath);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to save PDF report: {ex.Message}");
+                }
             }
-
-            // Save the assembled PDF report.
-            pdfDoc.Save(pdfPath);
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Catch any unexpected errors during diagram processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
         }
+
+        // Attempt to clean up the temporary thumbnail folder
+        try
+        {
+            Directory.Delete(thumbFolder, true);
+        }
+        catch
+        {
+            // Ignored: cleanup failure does not affect the generated report
+        }
+
+        Console.WriteLine($"PDF report generated at: {Path.GetFullPath(reportPath)}");
     }
 }

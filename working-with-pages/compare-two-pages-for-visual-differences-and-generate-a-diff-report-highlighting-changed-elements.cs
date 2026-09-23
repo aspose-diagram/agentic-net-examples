@@ -1,160 +1,134 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect at least two arguments: source diagram path and target diagram path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: DiffPages <sourceDiagram> <targetDiagram> [reportPath]");
-            return;
-        }
-
-        // Assign input file paths.
-        string sourcePath = args[0];
-        // Guard: ensure source file exists.
-        if (!File.Exists(sourcePath)) { Console.Error.WriteLine($"File not found: {sourcePath}"); return; }
-
-        string targetPath = args[1];
-        // Guard: ensure target file exists.
-        if (!File.Exists(targetPath)) { Console.Error.WriteLine($"File not found: {targetPath}"); return; }
-
-        // Optional report output path.
-        string reportPath = args.Length >= 3 ? args[2] : null;
-        if (reportPath != null && string.IsNullOrWhiteSpace(reportPath))
-        {
-            Console.Error.WriteLine("Report path is empty.");
-            return;
-        }
-
         try
         {
-            // Load source diagram.
-            Diagram sourceDiagram = new Diagram(sourcePath);
-            // Load target diagram.
-            Diagram targetDiagram = new Diagram(targetPath);
 
-            // Retrieve the first page from each diagram (index 0).
-            Page sourcePage = sourceDiagram.Pages[0];
-            Page targetPage = targetDiagram.Pages[0];
+            // Path to the Visio file containing the pages to compare
+            string diagramPath = "input.vsdx";
 
-            // Build dictionaries keyed by shape universal name (NameU) for quick lookup.
-            var sourceShapes = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
-            foreach (Shape s in sourcePage.Shapes)
+            // Indices of the two pages to compare (0‑based)
+            int pageIndex1 = 0;
+            int pageIndex2 = 1;
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Use NameU as key; if empty, fallback to ID string.
-                string key = !string.IsNullOrEmpty(s.NameU) ? s.NameU : s.ID.ToString();
-                sourceShapes[key] = s;
-            }
-
-            var targetShapes = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
-            foreach (Shape s in targetPage.Shapes)
-            {
-                string key = !string.IsNullOrEmpty(s.NameU) ? s.NameU : s.ID.ToString();
-                targetShapes[key] = s;
-            }
-
-            // Prepare a StringBuilder for the diff report.
-            StringBuilder report = new StringBuilder();
-
-            // Detect removed and modified shapes.
-            foreach (var kvp in sourceShapes)
-            {
-                string name = kvp.Key;
-                Shape srcShape = kvp.Value;
-
-                if (!targetShapes.TryGetValue(name, out Shape tgtShape))
+                // Validate that the requested pages exist
+                if (diagram.Pages.Count <= Math.Max(pageIndex1, pageIndex2))
                 {
-                    // Shape exists in source but not in target → removed.
-                    report.AppendLine($"Removed shape: {name}");
-                    continue;
+                    Console.WriteLine("The diagram does not contain the specified pages.");
+                    return;
                 }
 
-                // Compare key visual properties.
-                List<string> changes = new List<string>();
+                Page page1 = diagram.Pages[pageIndex1];
+                Page page2 = diagram.Pages[pageIndex2];
 
-                // Position comparison (PinX, PinY).
-                double srcPinX = srcShape.XForm.PinX.Value;
-                double tgtPinX = tgtShape.XForm.PinX.Value;
-                if (Math.Abs(srcPinX - tgtPinX) > 0.001) changes.Add($"PinX: {srcPinX:F3} → {tgtPinX:F3}");
-
-                double srcPinY = srcShape.XForm.PinY.Value;
-                double tgtPinY = tgtShape.XForm.PinY.Value;
-                if (Math.Abs(srcPinY - tgtPinY) > 0.001) changes.Add($"PinY: {srcPinY:F3} → {tgtPinY:F3}");
-
-                // Size comparison (Width, Height).
-                double srcWidth = srcShape.XForm.Width.Value;
-                double tgtWidth = tgtShape.XForm.Width.Value;
-                if (Math.Abs(srcWidth - tgtWidth) > 0.001) changes.Add($"Width: {srcWidth:F3} → {tgtWidth:F3}");
-
-                double srcHeight = srcShape.XForm.Height.Value;
-                double tgtHeight = tgtShape.XForm.Height.Value;
-                if (Math.Abs(srcHeight - tgtHeight) > 0.001) changes.Add($"Height: {srcHeight:F3} → {tgtHeight:F3}");
-
-                // Text comparison.
-                string srcText = srcShape.Text?.Value?.Text ?? string.Empty;
-                string tgtText = tgtShape.Text?.Value?.Text ?? string.Empty;
-                if (!srcText.Equals(tgtText, StringComparison.Ordinal))
-                    changes.Add($"Text: \"{srcText}\" → \"{tgtText}\"");
-
-                // Line color comparison.
-                string srcLineColor = srcShape.Line?.LineColor?.Value ?? string.Empty;
-                string tgtLineColor = tgtShape.Line?.LineColor?.Value ?? string.Empty;
-                if (!srcLineColor.Equals(tgtLineColor, StringComparison.OrdinalIgnoreCase))
-                    changes.Add($"LineColor: {srcLineColor} → {tgtLineColor}");
-
-                // Fill color comparison.
-                string srcFillColor = srcShape.Fill?.FillForegnd?.Value ?? string.Empty;
-                string tgtFillColor = tgtShape.Fill?.FillForegnd?.Value ?? string.Empty;
-                if (!srcFillColor.Equals(tgtFillColor, StringComparison.OrdinalIgnoreCase))
-                    changes.Add($"FillColor: {srcFillColor} → {tgtFillColor}");
-
-                // If any differences were found, record them.
-                if (changes.Count > 0)
+                // Build a lookup dictionary for shapes on the second page
+                var page2Lookup = new Dictionary<string, Shape>();
+                foreach (Shape shape2 in page2.Shapes)
                 {
-                    report.AppendLine($"Modified shape: {name}");
-                    foreach (string change in changes)
-                        report.AppendLine($"  - {change}");
+                    string key = GetShapeKey(shape2);
+                    if (!page2Lookup.ContainsKey(key))
+                        page2Lookup[key] = shape2;
                 }
+
+                var differences = new List<string>();
+
+                // Compare each shape on the first page with the corresponding shape on the second page
+                foreach (Shape shape1 in page1.Shapes)
+                {
+                    string key = GetShapeKey(shape1);
+                    if (page2Lookup.TryGetValue(key, out Shape shape2))
+                    {
+                        CompareShapes(shape1, shape2, key, differences);
+                        // Remove matched shape to later detect shapes that exist only on page2
+                        page2Lookup.Remove(key);
+                    }
+                    else
+                    {
+                        differences.Add($"Shape '{key}' exists on Page {pageIndex1 + 1} but not on Page {pageIndex2 + 1}.");
+                    }
+                }
+
+                // Remaining shapes in the lookup are new on page2
+                foreach (var kvp in page2Lookup)
+                {
+                    differences.Add($"Shape '{kvp.Key}' exists on Page {pageIndex2 + 1} but not on Page {pageIndex1 + 1}.");
+                }
+
+                // Write the diff report to a text file
+                string reportPath = "DiffReport.txt";
+                File.WriteAllLines(reportPath, differences);
+                Console.WriteLine($"Diff report generated at: {reportPath}");
             }
 
-            // Detect added shapes (present only in target).
-            foreach (var kvp in targetShapes)
-            {
-                string name = kvp.Key;
-                if (!sourceShapes.ContainsKey(name))
-                {
-                    report.AppendLine($"Added shape: {name}");
-                }
-            }
-
-            // Output the diff report to console.
-            Console.WriteLine("=== Visual Diff Report ===");
-            Console.WriteLine(report.ToString());
-
-            // If a report file path was provided, write the report to that file.
-            if (!string.IsNullOrEmpty(reportPath))
-            {
-                try
-                {
-                    File.WriteAllText(reportPath, report.ToString());
-                    Console.WriteLine($"Report written to: {reportPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to write report file: {ex.Message}");
-                }
-            }
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
+    }
+
+    // Creates a stable identifier for a shape using its universal name and master name
+    private static string GetShapeKey(Shape shape)
+    {
+        string name = shape.NameU ?? string.Empty;
+        string master = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
+        return $"{name}|{master}";
+    }
+
+    // Compares selected visual properties of two shapes and records any differences
+    private static void CompareShapes(Shape s1, Shape s2, string key, List<string> diffs)
+    {
+        // Position
+        if (!AreClose(s1.XForm.PinX.Value, s2.XForm.PinX.Value) ||
+            !AreClose(s1.XForm.PinY.Value, s2.XForm.PinY.Value))
+        {
+            diffs.Add($"Shape '{key}' position changed from ({s1.XForm.PinX.Value}, {s1.XForm.PinY.Value}) to ({s2.XForm.PinX.Value}, {s2.XForm.PinY.Value}).");
+        }
+
+        // Size
+        if (!AreClose(s1.XForm.Width.Value, s2.XForm.Width.Value) ||
+            !AreClose(s1.XForm.Height.Value, s2.XForm.Height.Value))
+        {
+            diffs.Add($"Shape '{key}' size changed from ({s1.XForm.Width.Value} x {s1.XForm.Height.Value}) to ({s2.XForm.Width.Value} x {s2.XForm.Height.Value}).");
+        }
+
+        // Text content
+        string text1 = s1.Text.Value.Text ?? string.Empty;
+        string text2 = s2.Text.Value.Text ?? string.Empty;
+        if (!string.Equals(text1, text2, StringComparison.Ordinal))
+        {
+            diffs.Add($"Shape '{key}' text changed from \"{text1}\" to \"{text2}\".");
+        }
+
+        // Line color
+        string lineColor1 = s1.Line.LineColor.Value ?? string.Empty;
+        string lineColor2 = s2.Line.LineColor.Value ?? string.Empty;
+        if (!string.Equals(lineColor1, lineColor2, StringComparison.OrdinalIgnoreCase))
+        {
+            diffs.Add($"Shape '{key}' line color changed from {lineColor1} to {lineColor2}.");
+        }
+
+        // Fill color (foreground)
+        string fillColor1 = s1.Fill.FillForegnd.Value ?? string.Empty;
+        string fillColor2 = s2.Fill.FillForegnd.Value ?? string.Empty;
+        if (!string.Equals(fillColor1, fillColor2, StringComparison.OrdinalIgnoreCase))
+        {
+            diffs.Add($"Shape '{key}' fill color changed from {fillColor1} to {fillColor2}.");
+        }
+    }
+
+    // Helper to compare double values with a tolerance to avoid floating‑point noise
+    private static bool AreClose(double a, double b, double tolerance = 0.0001)
+    {
+        return Math.Abs(a - b) <= tolerance;
     }
 }

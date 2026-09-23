@@ -5,41 +5,35 @@ class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Prompt user for input Visio file path
+            Console.Write("Enter the path of the Visio file to process: ");
+            string inputPath = Console.ReadLine();
+
+            // Prompt user for output Visio file path
+            Console.Write("Enter the desired output file path (e.g., output.vsdx): ");
+            string outputPath = Console.ReadLine();
+
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output_without_connectors.vsdx";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Identify connector shapes: they are 1‑D shapes (OneD == true)
+                    if (shape.OneD)
                     {
-                        // Iterate through each shape on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Identify connector shapes: they are 1‑D shapes (OneD == true)
-                            if (shape.OneD)
-                            {
-                                // Mark the shape as deleted
-                                shape.Del = BOOL.True;
-                            }
-                        }
+                        // Mark the connector shape for deletion
+                        shape.Del = BOOL.True;
                     }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                Console.WriteLine("Connector shapes have been removed and diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("All connector shapes have been removed and the diagram saved.");
+        }
     }

@@ -1,52 +1,60 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ApplyStyleWithErrorHandling
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Index of the page we want to style
-            int targetPageIndex = 5; // Example index; may be out of range
+            // Create a simple stylesheet
+            StyleSheet style = new StyleSheet();
+            style.ID = diagram.StyleSheets.Count + 1;
+
+            // Character formatting (red text)
+            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+            ch.IX = 0;
+            ch.Color.Value = "#FF0000";
+            style.Chars.Add(ch);
+
+            // Line formatting (green line)
+            style.Line.LineColor.Value = "#00FF00";
+
+            // Fill formatting (blue fill)
+            style.Fill.FillForegnd.Value = "#0000FF";
+
+            // Add the stylesheet to the diagram
+            diagram.StyleSheets.Add(style);
+
+            // Index of the page we want to style (example: a non‑existent page)
+            int pageIndex = 5;
 
             try
             {
-                // Verify that the page index exists in the document
-                if (targetPageIndex < 0 || targetPageIndex >= diagram.Pages.Count)
-                    throw new ArgumentOutOfRangeException(
-                        nameof(targetPageIndex),
-                        $"Page index {targetPageIndex} does not exist. Valid range is 0 to {diagram.Pages.Count - 1}.");
+                // Attempt to retrieve the page; will throw if index is out of range
+                Page page = diagram.Pages[pageIndex];
 
-                // Retrieve the page using the GetPage method (by ID, which is the same as the index)
-                Page page = diagram.Pages.GetPage(targetPageIndex);
+                // Apply the stylesheet to the page (master, line, and fill styles)
+                page.ApplyStyle(style.ID, style.ID, style.ID);
 
-                // Define style IDs (use -1 for defaults you do not want to change)
-                int textStyleId = 0;   // Example text style ID
-                int lineStyleId = -1;  // Keep existing line style
-                int fillStyleId = -1;  // Keep existing fill style
-
-                // Apply the style to the page
-                page.ApplyStyle(textStyleId, lineStyleId, fillStyleId);
-            }
-            catch (ArgumentOutOfRangeException ex)
-            {
-                // Handle the case where the page index is invalid
-                Console.WriteLine($"Invalid page index: {ex.Message}");
+                Console.WriteLine($"Successfully applied stylesheet to page index {pageIndex}.");
             }
             catch (Exception ex)
             {
-                // Handle any other unexpected errors
-                Console.WriteLine($"An error occurred while applying the style: {ex.Message}");
+                // Handle errors such as invalid page index
+                Console.WriteLine($"Error: Unable to apply stylesheet to page index {pageIndex}. {ex.Message}");
             }
 
-            // Optionally, save the modified diagram (replace with desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

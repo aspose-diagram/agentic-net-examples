@@ -1,130 +1,73 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageSaveRetry
+class RetryPageSavingCallback : IPageSavingCallback
 {
-    // Custom callback to capture pages that failed during the initial save.
-    // The callback is invoked for each page when using PdfSaveOptions.
-    public class RetryPageSavingCallback : IPageSavingCallback
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Store indexes of pages that need to be retried.
-        public static List<int> FailedPageIndexes { get; } = new List<int>();
-
-        // Called before a page starts saving – not used here.
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            // No action needed at start.
-        }
-
-        // Called after a page has been saved.
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            // Simulate a failure condition.
-            // In a real scenario, you would inspect args for error information.
-            // For demonstration, treat odd‑numbered pages as failures.
-            if (args.PageIndex % 2 == 1) // zero‑based index
-            {
-                // Record the failed page for later retry.
-                FailedPageIndexes.Add(args.PageIndex);
-            }
-        }
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
     }
 
-    class Program
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        // Maximum number of retry attempts per page.
-        private const int MaxRetryAttempts = 3;
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        // No explicit failure flag is provided by the API.
+        // If an exception occurs during saving, it will be caught in the retry loop.
+    }
+}
 
-        static void Main()
+class Program
+{
+    static void Main()
+    {
+        try
         {
-            try
+
+            const string inputPath = "input.vsdx";
+            const string outputPath = "output.pdf";
+
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.PageSavingCallback = new RetryPageSavingCallback();
 
-                // Path to the source Visio diagram.
-                const string inputPath = "input.vsdx";
+                const int maxRetries = 3;
+                int attempt = 0;
+                bool saved = false;
 
-                // Path for the primary PDF output.
-                const string outputPdf = "output.pdf";
-
-                // Ensure the input file exists.
-                if (!File.Exists(inputPath))
+                while (attempt < maxRetries && !saved)
                 {
-                    throw new FileNotFoundException($"Input file not found: {inputPath}");
-                }
-
-                // Load the diagram.
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure PDF save options with the custom callback.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    try
                     {
-                        DefaultFont = "Arial",
-                        PageSavingCallback = new RetryPageSavingCallback()
-                    };
-
-                    // Initial save – pages that meet the simulated failure condition
-                    // will be recorded by the callback.
-                    diagram.Save(outputPdf, pdfOptions);
-
-                    // If any pages failed, attempt retries.
-                    if (RetryPageSavingCallback.FailedPageIndexes.Count > 0)
+                        diagram.Save(outputPath, pdfOptions);
+                        saved = true;
+                        Console.WriteLine("Diagram saved successfully.");
+                    }
+                    catch (Exception ex)
                     {
-                        Console.WriteLine("Retrying failed pages...");
-
-                        foreach (int pageIndex in RetryPageSavingCallback.FailedPageIndexes)
+                        attempt++;
+                        Console.WriteLine($"Save attempt {attempt} failed: {ex.Message}");
+                        if (attempt >= maxRetries)
                         {
-                            bool success = false;
-                            int attempt = 0;
-
-                            while (!success && attempt < MaxRetryAttempts)
-                            {
-                                attempt++;
-
-                                try
-                                {
-                                    // Create new PDF options targeting a single page.
-                                    PdfSaveOptions retryOptions = new PdfSaveOptions
-                                    {
-                                        DefaultFont = "Arial",
-                                        // Render only the specific page.
-                                        PageIndex = pageIndex,
-                                        PageCount = 1
-                                    };
-
-                                    // Save the specific page to a temporary file.
-                                    string tempFile = $"output_page_{pageIndex}_retry_{attempt}.pdf";
-                                    diagram.Save(tempFile, retryOptions);
-
-                                    // If no exception, the retry succeeded.
-                                    Console.WriteLine($"Page {pageIndex} saved successfully on attempt {attempt}.");
-                                    success = true;
-                                }
-                                catch (Exception ex)
-                                {
-                                    // Log the failure and continue to next attempt.
-                                    Console.WriteLine($"Attempt {attempt} for page {pageIndex} failed: {ex.Message}");
-                                    if (attempt >= MaxRetryAttempts)
-                                    {
-                                        Console.WriteLine($"Page {pageIndex} could not be saved after {MaxRetryAttempts} attempts.");
-                                    }
-                                }
-                            }
+                            Console.WriteLine("Maximum retry attempts reached. Save operation aborted.");
+                            throw;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Retrying save operation...");
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine("All pages saved successfully on the first pass.");
-                    }
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

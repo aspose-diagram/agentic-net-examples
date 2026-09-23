@@ -1,36 +1,31 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply a validation formula that enforces a minimum length for the shape's title (NameU)
-                    // The formula returns "Invalid" if the title is shorter than 5 characters, otherwise an empty string.
-                    shape.Event.EventDblClick.Ufe.F = "IF(LEN(NameU) < 5, \"Invalid\", \"\")";
+                    // Apply a global event formula that can be used to validate shape titles.
+                    // This example assigns a double‑click event that calls a custom validation routine.
+                    shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"ValidateTitle\")";
                 }
             }
 
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Global validation formula applied and diagram saved to: " + outputPath);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

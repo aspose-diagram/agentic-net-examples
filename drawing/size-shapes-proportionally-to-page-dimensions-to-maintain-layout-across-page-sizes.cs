@@ -1,75 +1,57 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
-{
-    public static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Desired page size (in inches). Example: Letter landscape 11 x 8.5 inches
-            double targetPageWidth = 11.0;
-            double targetPageHeight = 8.5;
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Original page dimensions
-                double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Compute scaling factors for X and Y axes
-                double scaleX = targetPageWidth / originalWidth;
-                double scaleY = targetPageHeight / originalHeight;
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the scaled output file
+                string outputPath = "output_scaled.vsdx";
 
-                // Use uniform scaling to preserve aspect ratio (optional)
-                double uniformScale = Math.Min(scaleX, scaleY);
-                scaleX = uniformScale;
-                scaleY = uniformScale;
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Adjust each shape on the page
-                foreach (Shape shape in page.Shapes)
+                // Define the base page size (in inches) that the original layout was designed for
+                const double basePageWidth = 8.5;   // e.g., Letter width
+                const double basePageHeight = 11.0; // e.g., Letter height
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Current page dimensions
+                    double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Scale width and height
-                    shape.XForm.Width.Value *= scaleX;
-                    shape.XForm.Height.Value *= scaleY;
+                    // Compute scaling factors relative to the base size
+                    double scaleX = currentWidth / basePageWidth;
+                    double scaleY = currentHeight / basePageHeight;
 
-                    // Reposition the shape's PinX and PinY to keep relative layout
-                    // Translate Pin to origin, scale, then translate back to new page center
-                    double offsetX = shape.XForm.PinX.Value - (originalWidth / 2.0);
-                    double offsetY = shape.XForm.PinY.Value - (originalHeight / 2.0);
+                    // Scale each shape on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Scale position
+                        shape.XForm.PinX.Value *= scaleX;
+                        shape.XForm.PinY.Value *= scaleY;
 
-                    shape.XForm.PinX.Value = (offsetX * scaleX) + (targetPageWidth / 2.0);
-                    shape.XForm.PinY.Value = (offsetY * scaleY) + (targetPageHeight / 2.0);
+                        // Scale size
+                        shape.XForm.Width.Value *= scaleX;
+                        shape.XForm.Height.Value *= scaleY;
+                    }
                 }
 
-                // Update the page size to the target dimensions
-                page.PageSheet.PageProps.PageWidth.Value = targetPageWidth;
-                page.PageSheet.PageProps.PageHeight.Value = targetPageHeight;
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to release resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

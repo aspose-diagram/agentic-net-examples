@@ -12,29 +12,24 @@ class Program
             // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Draw a circle (ellipse with equal width and height)
+            // Draw a circle (equal width and height)
             // Parameters: pinX, pinY, width, height
-            long circleId = page.DrawEllipse(2.0, 2.0, 1.5, 1.5);
+            long circleId = page.DrawEllipse(2.0, 2.0, 2.0, 2.0);
 
-            // Draw an oval (ellipse with different width and height)
-            long ovalId = page.DrawEllipse(5.0, 2.0, 2.0, 1.0);
+            // Draw an oval (different width and height)
+            long ovalId = page.DrawEllipse(5.0, 2.0, 3.0, 2.0);
 
-            // Retrieve the Shape objects from their IDs
+            // Retrieve the shape objects
             Shape circleShape = page.Shapes.GetShape(circleId);
             Shape ovalShape = page.Shapes.GetShape(ovalId);
 
-            // Group the two shapes together
+            // Group the circle and oval together
             Shape groupShape = page.Shapes.Group(new Shape[] { circleShape, ovalShape });
 
             // Export the group as a single SVG file
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            // Optionally, set the page index if needed (default is 0)
-            svgOptions.PageIndex = 0;
+            groupShape.ToSvg("GroupedShape.svg", svgOptions);
 
-            // Save the group shape to SVG
-            groupShape.ToSvg("GroupedShapes.svg", svgOptions);
-
-            // Optional: inform the user
-            Console.WriteLine("Grouped circle and oval have been exported to GroupedShapes.svg");
+            Console.WriteLine("Group exported to GroupedShape.svg");
         }
     }

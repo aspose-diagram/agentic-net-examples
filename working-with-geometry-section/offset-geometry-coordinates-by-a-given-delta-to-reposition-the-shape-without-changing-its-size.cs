@@ -1,35 +1,52 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output Visio file path
+            string outputPath = "output_offset.vsdx";
 
-            // Access the first page (adjust index as needed)
-            Page page = diagram.Pages[0];
+            // Offset values (in inches)
+            double deltaX = 1.0; // move right by 1 inch
+            double deltaY = 0.5; // move up by 0.5 inch
 
-            // Select the shape you want to reposition (e.g., the first shape on the page)
-            Shape shape = page.Shapes[0];
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+            try
+            {
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-            // Define the offset in inches (positive X moves right, positive Y moves down)
-            double offsetX = 1.0; // move 1 inch to the right
-            double offsetY = 0.5; // move 0.5 inch down
+                        // Offset the shape position
+                        shape.XForm.PinX.Value += deltaX;
+                        shape.XForm.PinY.Value += deltaY;
+                    }
+                }
 
-            // Reposition the shape without altering its size
-            shape.Move(offsetX, offsetY);
-
-            // Refresh internal geometry data after moving
-            shape.RefreshData();
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            finally
+            {
+                // Release resources
+                diagram.Dispose();
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

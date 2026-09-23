@@ -4,54 +4,87 @@ using Aspose.Diagram;
 
 class Program
 {
+    // Required minimum version and build number
+    private static readonly Version RequiredVersion = new Version("23.9");
+    private const int RequiredBuildNumber = 12345; // example required build
+
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output PDF file.
+        // Expect input and output file paths as arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <input.vsdx> <output.pdf>");
+            Console.WriteLine("Usage: <inputVisioFile> <outputVisioFile>");
             return;
         }
 
-        // Assign input and output paths.
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: verify input file exists.
+        // Guard to ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Define the minimum required Aspose.Diagram version (major.minor.build.revision).
-        // Adjust this string to the version you need.
-        string requiredVersionString = "23.10.0.0";
+        string outputPath = args[1];
 
-        // Retrieve the actual library version from the assembly.
-        Version actualVersion = typeof(Diagram).Assembly.GetName().Version;
-        Version requiredVersion = new Version(requiredVersionString);
-
-        // Compare versions; abort if the library is older than required.
-        if (actualVersion < requiredVersion)
-        {
-            Console.Error.WriteLine($"Aspose.Diagram version {actualVersion} is older than required {requiredVersion}. Aborting conversion.");
-            return;
-        }
-
-        // Proceed with conversion inside a try/catch to handle Aspose-specific errors.
+        Diagram diagram;
         try
         {
-            // Load the Visio diagram from the input file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Save the diagram as PDF to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
+            // Load the diagram from the input file
+            diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Verify library version
+        Version currentVersion;
+        try
+        {
+            // diagram.Version returns a string; parse it into a Version object
+            currentVersion = new Version(diagram.Version);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Unable to parse Aspose.Diagram version: {ex.Message}");
+            return;
+        }
+
+        if (currentVersion < RequiredVersion)
+        {
+            Console.Error.WriteLine($"Aspose.Diagram version {currentVersion} is older than required {RequiredVersion}. Aborting conversion.");
+            return;
+        }
+
+        // Verify build number (DocumentProps.BuildNumberCreated is a string; parse to int)
+        int currentBuild;
+        try
+        {
+            currentBuild = int.Parse(diagram.DocumentProps.BuildNumberCreated);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to parse build number: {ex.Message}");
+            return;
+        }
+
+        if (currentBuild < RequiredBuildNumber)
+        {
+            Console.Error.WriteLine($"Aspose.Diagram build number {currentBuild} is older than required {RequiredBuildNumber}. Aborting conversion.");
+            return;
+        }
+
+        try
+        {
+            // If checks pass, proceed with conversion (example: save as VSDX)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
 }

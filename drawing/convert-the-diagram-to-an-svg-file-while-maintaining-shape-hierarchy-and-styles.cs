@@ -1,26 +1,33 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+                // Input Visio diagram file path (can be .vsdx, .vsd, etc.)
+                string inputPath = @"C:\Diagrams\sample.vsdx";
 
-            // Save the entire diagram as an SVG file.
-            // This preserves the shape hierarchy and all style information.
-            diagram.Save("output.svg", SaveFileFormat.Svg);
+                // Output SVG file path
+                string outputPath = @"C:\Diagrams\sample.svg";
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Load the Visio diagram using Aspose.Diagram
+                // This utilizes the standard load rule for Diagram objects.
+                Diagram diagram = new Diagram(inputPath);
+
+                // Save the diagram as SVG.
+                // Aspose.Diagram preserves shape hierarchy and styles during SVG export.
+                diagram.Save(outputPath, SaveFileFormat.Svg);
+
+                Console.WriteLine("Diagram successfully converted to SVG.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

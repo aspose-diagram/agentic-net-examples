@@ -1,42 +1,47 @@
-using Aspose.Diagram;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Collect all shape IDs from every page
-            List<long> shapeIds = new List<long>();
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path (first argument) or default.
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+                // Output JSON file path (second argument) or default.
+                string outputPath = args.Length > 1 ? args[1] : "shapeIds.json";
+
+                // Load the diagram.
+                Diagram diagram = new Diagram(inputPath);
+
+                // Collect all shape IDs.
+                List<long> shapeIds = new List<long>();
+                foreach (Page page in diagram.Pages)
                 {
-                    shapeIds.Add(shape.ID);
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        shapeIds.Add(shape.ID);
+                    }
                 }
+
+                // Serialize IDs to JSON with indentation.
+                string json = JsonSerializer.Serialize(shapeIds, new JsonSerializerOptions { WriteIndented = true });
+
+                // Write JSON to file.
+                File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Extracted {shapeIds.Count} shape IDs to \"{outputPath}\".");
+
             }
-
-            // Serialize the IDs to a formatted JSON string
-            string json = JsonSerializer.Serialize(shapeIds, new JsonSerializerOptions { WriteIndented = true });
-
-            // Write the JSON to a file
-            File.WriteAllText("shapeIds.json", json);
-
-            // Example of using the provided Save rule (optional, shows proper save usage)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

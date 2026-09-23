@@ -1,63 +1,48 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape to modify (example: shape with ID 1)
+            Shape shape = page.Shapes.GetShape(1);
+            if (shape == null)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the universal name of the shape to which the hyperlink will be added
-                string targetShapeNameU = "MyShape";
-
-                // Locate the shape across all pages
-                Shape targetShape = null;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.NameU == targetShapeNameU)
-                        {
-                            targetShape = shape;
-                            break;
-                        }
-                    }
-                    if (targetShape != null)
-                        break;
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine($"Shape with NameU '{targetShapeNameU}' not found.");
-                    return;
-                }
-
-                // Create a new hyperlink instance
-                Hyperlink hyperlink = new Hyperlink
-                {
-                    Name = "ExternalWebsiteLink",               // Optional internal identifier
-                    Address = { Value = "https://www.example.com" }, // External URL
-                    Description = { Value = "Visit Example.com" }   // Tooltip / descriptive name
-                };
-
-                // Ensure the Hyperlinks collection is initialized (it always is) and add the hyperlink
-                targetShape.Hyperlinks.Add(hyperlink);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Hyperlink added to shape '{targetShapeNameU}' and diagram saved to '{outputPath}'.");
-
+                Console.WriteLine("Shape with ID 1 not found.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Create a new hyperlink
+            Hyperlink hyperlink = new Hyperlink();
+            hyperlink.Name = "ExampleLink";
+            hyperlink.Address.Value = "https://www.example.com";
+            hyperlink.Description.Value = "Example Website";
+
+            // Add the hyperlink to the shape
+            shape.Hyperlinks.Add(hyperlink);
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

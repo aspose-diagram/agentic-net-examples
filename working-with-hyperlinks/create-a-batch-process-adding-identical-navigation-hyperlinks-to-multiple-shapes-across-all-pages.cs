@@ -8,50 +8,49 @@ class Program
             try
             {
 
-                // Input Visio file path (modify as needed)
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
-                // The hyperlink address to add to each shape
-                const string hyperlinkAddress = "https://example.com";
+                // Input and output file paths (can be passed as command‑line arguments)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-                // Load the diagram inside a using block to ensure proper disposal
+                // Load the Visio diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate over all pages in the diagram
+                    // Iterate through every page
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate over all shapes on the current page
+                        // Iterate through every shape on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.False)
+                            {
+                                // Ensure the Hyperlinks collection exists
+                                if (shape.Hyperlinks != null)
+                                {
+                                    // Create a new hyperlink pointing to the desired URL
+                                    Hyperlink link = new Hyperlink
+                                    {
+                                        Name = "NavLink"
+                                    };
+                                    link.Address.Value = "https://example.com";
 
-                            // Ensure the Hyperlinks collection is available
-                            if (shape.Hyperlinks == null)
-                                continue;
-
-                            // Create a new hyperlink instance
-                            Hyperlink link = new Hyperlink();
-                            link.Name = "WebLink";
-                            link.Address.Value = hyperlinkAddress;
-
-                            // Add the hyperlink to the shape's collection
-                            shape.Hyperlinks.Add(link);
+                                    // Add the hyperlink to the shape
+                                    shape.Hyperlinks.Add(link);
+                                }
+                            }
                         }
                     }
 
-                    // Save the modified diagram in VSDX format
+                    // Save the modified diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Hyperlinks added and diagram saved to: " + outputPath);
+                Console.WriteLine($"Hyperlinks added and diagram saved to '{outputPath}'.");
 
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Aspose.Diagram.DiagramException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
             }
     }
     }

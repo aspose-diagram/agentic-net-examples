@@ -9,39 +9,30 @@ class Program
         try
         {
 
-            // Path to the Visio file to be processed
-            string inputPath = "input.vsdx";
+            // Path to the Visio file
+            string filePath = "input.vsdx";
 
             // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Ensure the shape has a Hyperlinks collection
+                    // Check if the shape has any hyperlinks
                     if (shape.Hyperlinks != null)
                     {
-                        // Check each hyperlink attached to the shape
                         foreach (Hyperlink link in shape.Hyperlinks)
                         {
-                            // Retrieve the address value; it may be null
                             string address = link.Address?.Value;
-
-                            // Consider the hyperlink external if it starts with http:// or https://
                             if (!string.IsNullOrEmpty(address) &&
                                 (address.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                                  address.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
                             {
-                                // Output the identifier of the shape
-                                Console.WriteLine($"Shape ID: {shape.ID}");
-                                // One shape may have multiple hyperlinks; break after first external link found
+                                // Output the shape identifier and the external hyperlink
+                                Console.WriteLine($"Shape ID: {shape.ID}, External Link: {address}");
+                                // Stop checking further hyperlinks for this shape
                                 break;
                             }
                         }

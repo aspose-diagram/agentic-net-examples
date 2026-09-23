@@ -1,45 +1,51 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Select the shape to which the hyperlink will be added
-            // Here we use the first shape on the first page as an example
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
+                // Access the first page in the diagram
+                Page page = diagram.Pages[0];
 
-            // Create a new hyperlink instance
-            Hyperlink hyperlink = new Hyperlink();
+                // Retrieve the first shape on the page (replace with your own logic if needed)
+                Shape targetShape = null;
+                foreach (Shape shp in page.Shapes)
+                {
+                    targetShape = shp;
+                    break;
+                }
 
-            // Since the link points to a page within the same document,
-            // the Address can be left empty or set to an empty string
-            hyperlink.Address.Value = "";
+                if (targetShape == null)
+                {
+                    throw new Exception("No shape found on the first page.");
+                }
 
-            // Set SubAddress to the target page name (e.g., "Page-2")
-            hyperlink.SubAddress.Value = "Page-2";
+                // Create a new hyperlink and set its subaddress to navigate to a specific page
+                Hyperlink hyperlink = new Hyperlink();
+                // The subaddress should match the target page name (e.g., "Page-2")
+                hyperlink.SubAddress.Value = "Page-2";
+                // Optional: provide a description that appears as a tooltip
+                hyperlink.Description.Value = "Go to Page-2";
 
-            // Optional: provide a description for the hyperlink
-            hyperlink.Description.Value = "Navigate to Page-2";
+                // Add the hyperlink to the shape's Hyperlinks collection
+                targetShape.Hyperlinks.Add(hyperlink);
 
-            // Add the hyperlink to the shape's Hyperlinks collection
-            shape.Hyperlinks.Add(hyperlink);
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

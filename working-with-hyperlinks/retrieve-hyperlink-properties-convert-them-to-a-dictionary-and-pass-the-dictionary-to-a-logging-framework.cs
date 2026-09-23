@@ -10,40 +10,38 @@ class Program
             {
 
                 // Load the Visio diagram
-                string filePath = "sample.vsdx";
-                Diagram diagram = new Diagram(filePath);
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Dictionary to hold hyperlink information
+                Dictionary<string, string> hyperlinkDict = new Dictionary<string, string>();
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape has any hyperlinks
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                        // Ensure the shape has a Hyperlinks collection
+                        if (shape.Hyperlinks != null)
                         {
-                            int linkIndex = 0;
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                // Convert hyperlink properties to a dictionary
-                                var hyperlinkDict = new Dictionary<string, string>
-                                {
-                                    { "ShapeId", shape.ID.ToString() },
-                                    { "ShapeName", shape.Name ?? string.Empty },
-                                    { "LinkIndex", linkIndex.ToString() },
-                                    { "Name", link.Name ?? string.Empty },
-                                    { "Address", link.Address?.Value ?? string.Empty },
-                                    { "SubAddress", link.SubAddress?.Value ?? string.Empty },
-                                    { "Description", link.Description?.Value ?? string.Empty }
-                                };
+                                // Build a unique key for each hyperlink
+                                string key = $"Shape{shape.ID}_Link{link.Name}";
 
-                                // Pass the dictionary to the logging framework (console in this example)
-                                LogHyperlink(hyperlinkDict);
+                                // Concatenate hyperlink properties
+                                string value = $"Address={link.Address.Value}; " +
+                                               $"SubAddress={link.SubAddress.Value}; " +
+                                               $"Description={link.Description.Value}";
 
-                                linkIndex++;
+                                // Add to the dictionary (overwrite if duplicate key)
+                                hyperlinkDict[key] = value;
                             }
                         }
                     }
                 }
+
+                // Pass the dictionary to a logging routine
+                LogHyperlinks(hyperlinkDict);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -52,14 +50,12 @@ class Program
             }
     }
 
-        // Simple logger that writes dictionary contents to the console
-        static void LogHyperlink(Dictionary<string, string> dict)
+        // Simple logging method that writes each entry to the console
+        static void LogHyperlinks(Dictionary<string, string> dict)
         {
-            Console.WriteLine("Hyperlink Details:");
-            foreach (var kvp in dict)
+            foreach (KeyValuePair<string, string> entry in dict)
             {
-                Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+                Console.WriteLine($"{entry.Key}: {entry.Value}");
             }
-            Console.WriteLine();
         }
     }

@@ -4,50 +4,51 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the original diagram bytes (replace with your source)
-            byte[] diagramBytes = File.ReadAllBytes("input.vsdx");
+            // Example: assume we have a byte array containing a Visio diagram (VSDX format)
+            // In a real scenario this could come from a database, network stream, etc.
+            byte[] diagramData = File.ReadAllBytes("input.vsdx");
 
-            // Load diagram from a memory stream
-            using (MemoryStream inputStream = new MemoryStream(diagramBytes))
+            // Load the diagram from the memory stream.
+            // Aspose.Diagram does not support direct loading from a Stream, so we write the bytes to a temporary file first.
+            string tempInputPath = Path.GetTempFileName();
+            File.WriteAllBytes(tempInputPath, diagramData);
+            Diagram diagram = new Diagram(tempInputPath);
+
+            // Iterate through all pages and shapes to modify hyperlink targets.
+            foreach (Page page in diagram.Pages)
             {
-                Diagram diagram = new Diagram(inputStream);
-
-                // Iterate through all pages and shapes to modify hyperlink targets
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.Hyperlinks != null)
                     {
-                        if (shape.Hyperlinks != null)
+                        foreach (Hyperlink link in shape.Hyperlinks)
                         {
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                // Example replacement: change "http://old.com" to "https://new.com"
-                                if (link.Address != null && link.Address.Value != null &&
-                                    link.Address.Value.Contains("http://old.com"))
-                                {
-                                    link.Address.Value = link.Address.Value.Replace(
-                                        "http://old.com", "https://new.com");
-                                }
-                            }
+                            // Set a new address for each hyperlink.
+                            // Replace with the desired target URL.
+                            link.Address.Value = "https://newexample.com";
                         }
                     }
                 }
-
-                // Save the updated diagram back to a new memory stream
-                using (MemoryStream outputStream = new MemoryStream())
-                {
-                    diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                    outputStream.Position = 0; // Reset for further processing if needed
-
-                    // Example: write the updated diagram to a file
-                    File.WriteAllBytes("output.vsdx", outputStream.ToArray());
-                }
             }
+
+            // Save the updated diagram back into a memory stream.
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                // Reset the stream position if it will be read later.
+                outputStream.Position = 0;
+
+                // Example: write the updated diagram to a file for verification.
+                File.WriteAllBytes("output.vsdx", outputStream.ToArray());
+            }
+
+            // Clean up the temporary file.
+            File.Delete(tempInputPath);
 
         }
         catch (System.IO.FileNotFoundException ex)

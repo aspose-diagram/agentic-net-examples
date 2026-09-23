@@ -1,43 +1,44 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load the Visio diagram
-            var diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Define the new URL you want to set for the hyperlink
-            string newUrl = "https://www.example.com/newpage";
+            // New URL to assign to existing hyperlinks
+            string newUrl = "https://newexample.com";
 
-            // Iterate through all pages, shapes, and their hyperlinks
-            foreach (var page in diagram.Pages)
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                foreach (var shape in page.Shapes)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Hyperlinks collection may be null; check before iterating
+                    // Ensure the shape has a Hyperlinks collection
                     if (shape.Hyperlinks != null)
                     {
-                        foreach (var hyperlink in shape.Hyperlinks)
+                        // Update each hyperlink's address while keeping its description unchanged
+                        foreach (Hyperlink link in shape.Hyperlinks)
                         {
-                            // Preserve the existing description (no change needed)
-                            // Replace only the address (URL) of the hyperlink
-                            if (hyperlink.Address != null)
-                            {
-                                // Str2Value holds the actual string in its Value property
-                                hyperlink.Address.Value = newUrl;
-                            }
+                            link.Address.Value = newUrl;
+                            // link.Description.Value remains as is
                         }
                     }
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,28 +9,38 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio diagram file
+            string inputPath = "input.vsdx";
 
-            // Create or overwrite a text file to store the summary report
-            using (StreamWriter writer = new StreamWriter("HyperlinkReport.txt"))
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                int hyperlinkCount = 0;
+
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Count hyperlinks on the current page via its PageSheet
-                    int hyperlinkCount = page.PageSheet.Hyperlinks.Count;
-
-                    // Write the result to console
-                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) has {hyperlinkCount} hyperlink(s).");
-
-                    // Write the same information to the report file
-                    writer.WriteLine($"Page \"{page.Name}\": {hyperlinkCount} hyperlink(s)");
+                    // Ensure the shape has a Hyperlinks collection
+                    if (shape.Hyperlinks != null)
+                    {
+                        // Count each hyperlink attached to the shape
+                        foreach (Hyperlink link in shape.Hyperlinks)
+                        {
+                            hyperlinkCount++;
+                        }
+                    }
                 }
+
+                // Output the summary for the current page
+                Console.WriteLine($"Page '{page.Name}' (ID: {page.ID}) contains {hyperlinkCount} hyperlink(s).");
             }
 
-            // Release resources
-            diagram.Dispose();
+            // Optionally save the diagram (unchanged) to a new file
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

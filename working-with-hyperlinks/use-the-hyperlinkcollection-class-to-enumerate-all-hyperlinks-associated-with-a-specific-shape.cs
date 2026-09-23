@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -12,22 +12,22 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Retrieve a specific shape (example: shape with ID = 1 on the first page)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(1);
+            // Access a specific page (e.g., the first page)
+            Page page = diagram.Pages[0];
+
+            // Access a specific shape on the page (e.g., the first shape)
+            Shape shape = page.Shapes[0]; // Adjust the index or use shape ID as needed
 
             // Enumerate all hyperlinks associated with the shape
             foreach (Hyperlink hyperlink in shape.Hyperlinks)
             {
-                // Output hyperlink details
-                Console.WriteLine($"Address: {hyperlink.Address}");
-                Console.WriteLine($"Description: {hyperlink.Description}");
-                Console.WriteLine($"SubAddress: {hyperlink.SubAddress}");
-                Console.WriteLine($"NewWindow: {hyperlink.NewWindow}");
-                Console.WriteLine(new string('-', 40));
+                // Output hyperlink properties
+                Console.WriteLine("Address: " + hyperlink.Address);
+                Console.WriteLine("Description: " + hyperlink.Description);
+                Console.WriteLine("SubAddress: " + hyperlink.SubAddress);
+                Console.WriteLine("ExtraInfo: " + hyperlink.ExtraInfo);
+                Console.WriteLine("---------------------------");
             }
-
-            // Optionally save the diagram after processing
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

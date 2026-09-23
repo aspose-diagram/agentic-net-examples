@@ -1,74 +1,79 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output image file
+            string outputPath = "output.png";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the target font name (case-sensitive as stored in the diagram)
+            string targetFont = "Arial";
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the target font name (case-sensitive as stored in the diagram)
-                string targetFont = "Calibri";
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check if the shape contains any characters
+                    if (shape.Chars == null || shape.Chars.Count == 0)
+                        continue;
+
+                    bool usesTargetFont = false;
+
+                    // Examine each character's font name
+                    foreach (Aspose.Diagram.Char ch in shape.Chars)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape contains text
-                        if (shape.Text == null || string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                            continue;
-
-                        bool fontMatchFound = false;
-
-                        // Check each character run for the target font
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        if (ch.FontName != null && ch.FontName.Value == targetFont)
                         {
-                            if (ch.FontName != null && ch.FontName.Value == targetFont)
-                            {
-                                fontMatchFound = true;
-                                break;
-                            }
-                        }
-
-                        // If the shape contains text using the target font, apply shadow to the shape
-                        if (fontMatchFound)
-                        {
-                            // Enable simple shadow
-                            shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                            // Shadow color (black)
-                            shape.Fill.ShdwForegnd.Value = "#000000";
-                            // Shadow transparency (30% transparent)
-                            shape.Fill.ShdwForegndTrans.Value = 0.3;
-                            // Shadow offset (adjust as needed)
-                            shape.Fill.ShapeShdwOffsetX.Value = 0.05;
-                            shape.Fill.ShapeShdwOffsetY.Value = 0.05;
+                            usesTargetFont = true;
+                            break;
                         }
                     }
+
+                    // If the shape uses the target font, apply a simple shadow effect
+                    if (usesTargetFont)
+                    {
+                        // Enable simple shadow
+                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+
+                        // Set shadow color (dark gray)
+                        shape.Fill.ShdwForegnd.Value = "#808080";
+
+                        // Set shadow transparency (30% transparent)
+                        shape.Fill.ShdwForegndTrans.Value = 0.3;
+
+                        // Set shadow offsets (in inches)
+                        shape.Fill.ShapeShdwOffsetX.Value = 0.05;
+                        shape.Fill.ShapeShdwOffsetY.Value = 0.05;
+                    }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram as a PNG image
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save(outputPath, saveOptions);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

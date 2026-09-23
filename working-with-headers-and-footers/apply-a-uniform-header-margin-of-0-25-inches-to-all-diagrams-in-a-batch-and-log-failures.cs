@@ -3,66 +3,53 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input folder containing diagrams; default to "Diagrams" if not provided
+        string inputFolder = args.Length > 0 ? args[0] : "Diagrams";
+
+        // Output folder for processed diagrams; default to "Processed"
+        string outputFolder = args.Length > 1 ? args[1] : "Processed";
+
+        // Ensure the output directory exists
+        if (!Directory.Exists(outputFolder))
         {
-            // Folder containing the Visio files to process.
-            string inputFolder = @"C:\VisioFiles";
-            // Optional: folder to save the updated files.
-            string outputFolder = @"C:\VisioFiles\Processed";
+            Directory.CreateDirectory(outputFolder);
+        }
 
-            // Ensure the output folder exists.
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            // Process each Visio file in the input folder.
-            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in files)
+        // Get all Visio files in the input folder (common extensions)
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in diagramFiles)
+        {
+            // Filter supported Visio extensions
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
             {
-                // Consider only supported Visio extensions.
-                string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" &&
-                    extension != ".vsx" && extension != ".vtx" && extension != ".vsdm")
-                {
-                    continue;
-                }
-
-                try
-                {
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply a uniform header margin of 0.25 inches.
-                    diagram.HeaderFooter.HeaderMargin.Value = 0.25;
-
-                    // Determine the save format based on the original extension.
-                    SaveFileFormat format = extension switch
-                    {
-                        ".vsdx" => SaveFileFormat.Vsdx,
-                        ".vsd"  => SaveFileFormat.Vsd,
-                        ".vdx"  => SaveFileFormat.Vdx,
-                        ".vsx"  => SaveFileFormat.Vsx,
-                        ".vtx"  => SaveFileFormat.Vtx,
-                        ".vsdm" => SaveFileFormat.Vsdm,
-                        _       => SaveFileFormat.Vsdx
-                    };
-
-                    // Build the output file path.
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                    // Save the updated diagram.
-                    diagram.Save(outputPath, format);
-
-                    Console.WriteLine($"Successfully processed: {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    // Log any failures without stopping the batch.
-                    Console.WriteLine($"Failed to process: {filePath}");
-                    Console.WriteLine($"Error: {ex.Message}");
-                }
+                continue;
             }
 
-            Console.WriteLine("Batch processing completed.");
+            try
+            {
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Apply a uniform header margin of 0.25 inches
+                diagram.HeaderFooter.HeaderMargin.Value = 0.25;
+
+                // Determine output path (same file name in the output folder)
+                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                // Save the diagram using VSDX format (works for all supported types)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Successfully processed: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                // Log any failures without stopping the batch
+                Console.WriteLine($"Failed to process '{Path.GetFileName(filePath)}': {ex.Message}");
+            }
         }
     }
+}

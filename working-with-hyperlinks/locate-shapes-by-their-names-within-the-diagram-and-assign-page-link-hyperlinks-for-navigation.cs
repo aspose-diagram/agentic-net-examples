@@ -1,60 +1,71 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Path to the output Visio file
+        string outputPath = "output.vsdx";
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output Visio file path
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            // Mapping of shape universal names to target page names for navigation
+            // Define shape name to target page name mappings (case‑insensitive)
             var navigationMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                { "HomeButton", "HomePage" },
-                { "DetailsButton", "DetailsPage" }
+                { "ShapeA", "Page-2" },
+                { "ShapeB", "Page-3" }
+                // Add more mappings as needed
             };
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes to assign hyperlinks
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape == null) continue;
-
-                    // Check if the shape name exists in the navigation map
+                    // If the shape's universal name matches a map entry, create a hyperlink
                     if (navigationMap.TryGetValue(shape.NameU, out string targetPage))
                     {
-                        // Create a new hyperlink
-                        Hyperlink link = new Hyperlink();
-                        // Set the internal page link (SubAddress) to the target page name
+                        // Instantiate a new hyperlink object
+                        Hyperlink link = new Hyperlink
+                        {
+                            Name = "PageLink"
+                        };
+                        // Empty external address – linking within the document
+                        link.Address.Value = "";
+                        // SubAddress specifies the target page name
                         link.SubAddress.Value = targetPage;
-                        // Optional: set a description for the hyperlink
+                        // Optional tooltip description
                         link.Description.Value = $"Navigate to {targetPage}";
-                        // Add the hyperlink to the shape's collection
+
+                        // Add the hyperlink directly to the shape's read‑only collection
                         shape.Hyperlinks.Add(link);
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the output file using the correct overload
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

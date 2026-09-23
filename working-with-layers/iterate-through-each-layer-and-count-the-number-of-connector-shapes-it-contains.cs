@@ -1,59 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram (replace with your actual file path)
+            string filePath = "input.vsdx";
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through each layer on the current page
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Iterate through each layer defined on the page
-                    foreach (Layer layer in page.PageSheet.Layers)
+                    int connectorCount = 0;
+
+                    // Examine each shape on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        int layerIndex = layer.IX;                     // Index of the layer
-                        string layerName = layer.Name.Value;           // Human‑readable name of the layer
-                        int connectorCount = 0;
-
-                        // Examine every shape on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
                         {
-                            // Connector shapes are 1‑D shapes (OneD == true)
-                            if (shape.OneD)
-                            {
-                                // Layer membership is stored as a semicolon‑separated list of indexes
-                                string memberString = shape.LayerMem.LayerMember.Value;
+                            // Retrieve the layer membership string (semicolon‑separated indexes)
+                            string layerMember = shape.LayerMem.LayerMember.Value;
 
-                                if (!string.IsNullOrEmpty(memberString))
+                            if (!string.IsNullOrEmpty(layerMember))
+                            {
+                                // Split the membership string and check for the current layer index
+                                string[] members = layerMember.Split(';');
+                                foreach (string member in members)
                                 {
-                                    string[] memberIndexes = memberString.Split(';');
-                                    foreach (string idx in memberIndexes)
+                                    if (member == layer.IX.ToString())
                                     {
-                                        if (idx == layerIndex.ToString())
-                                        {
-                                            connectorCount++;
-                                            break; // Shape counted for this layer; no need to check other indexes
-                                        }
+                                        connectorCount++;
+                                        break;
                                     }
                                 }
                             }
                         }
-
-                        Console.WriteLine($"Layer '{layerName}' contains {connectorCount} connector shape(s).");
                     }
-                }
 
+                    Console.WriteLine($"Layer '{layer.Name.Value}' (Index {layer.IX}) contains {connectorCount} connector shape(s).");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -4,67 +4,67 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
-    {
-        TestPageWidthNegativeThrows();
-        TestPageWidthPositiveNoException();
-        Console.WriteLine("All tests completed.");
-    }
-
-    // Helper that validates width before assigning to the page property
+    // Helper to set page width with validation
     static void SetPageWidth(Page page, double width)
     {
-        // Throw if the width is negative to satisfy the test expectation
+        // Validate width is non-negative; throw ArgumentException if invalid
         if (width < 0)
             throw new ArgumentException("Page width cannot be negative.");
 
-        // Assign the validated width to the diagram page
+        // Assign the validated width to the page's PageWidth cell
         page.PageSheet.PageProps.PageWidth.Value = width;
     }
 
-    // Verify that setting a negative width throws an exception
-    static void TestPageWidthNegativeThrows()
+    static void Main()
     {
-        using (var diagram = new Diagram())
+        // Wrap Aspose operations to capture unexpected errors
+        try
         {
-            // Access the first page (a new diagram always contains at least one page)
-            var page = diagram.Pages[0];
-            bool exceptionThrown = false;
-
-            try
+            // Create a new empty diagram
+            using (Diagram diagram = new Diagram())
             {
-                // Attempt to assign a negative width via the helper
-                SetPageWidth(page, -5.0);
-            }
-            catch (Exception)
-            {
-                exceptionThrown = true;
-            }
+                // Access the first page (a default page is created)
+                Page page = diagram.Pages[0];
 
-            if (!exceptionThrown)
-                throw new Exception("Expected exception was not thrown when setting a negative PageWidth.");
-            else
-                Console.WriteLine("TestPageWidthNegativeThrows passed.");
+                // Test that setting a positive width works without exception
+                try
+                {
+                    SetPageWidth(page, 8.5); // inches
+                    Console.WriteLine("Positive width set successfully.");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Setting a positive width should not throw an exception.", ex);
+                }
+
+                // Test that setting a negative width throws an exception
+                bool exceptionThrown = false;
+                try
+                {
+                    SetPageWidth(page, -5.0); // invalid negative width
+                }
+                catch (ArgumentException)
+                {
+                    // Expected exception type
+                    exceptionThrown = true;
+                    Console.WriteLine("Negative width correctly threw ArgumentException.");
+                }
+                catch (Exception ex)
+                {
+                    // Unexpected exception type
+                    throw new Exception("Unexpected exception type thrown for negative width.", ex);
+                }
+
+                if (!exceptionThrown)
+                {
+                    throw new Exception("Expected ArgumentException was not thrown for negative width.");
+                }
+            }
         }
-    }
-
-    // Verify that setting a positive width does NOT throw an exception
-    static void TestPageWidthPositiveNoException()
-    {
-        using (var diagram = new Diagram())
+        catch (Exception ex)
         {
-            var page = diagram.Pages[0];
-            try
-            {
-                // Assign a valid positive width via the helper
-                SetPageWidth(page, 8.5);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Unexpected exception when setting a positive PageWidth: " + ex.Message);
-            }
-
-            Console.WriteLine("TestPageWidthPositiveNoException passed.");
+            // Log any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

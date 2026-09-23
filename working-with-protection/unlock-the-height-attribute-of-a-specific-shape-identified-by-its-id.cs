@@ -1,36 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // ID of the shape whose height attribute should be unlocked
+            long shapeId = 5; // replace with the actual shape ID
+
+            // Retrieve the shape from the first page (adjust page index if needed)
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Specify the ID of the shape whose height attribute should be unlocked
-                long shapeId = 123; // TODO: replace with the actual shape ID
-
-                // Retrieve the shape from the first page (adjust page index if needed)
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-
-                // Unlock the height attribute by disabling the height lock protection
-                shape.Protection.LockHeight.Value = BOOL.False;
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                throw new Exception($"Shape with ID {shapeId} not found.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Unlock the height attribute by disabling the height lock protection
+            shape.Protection.LockHeight.Value = BOOL.False;
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

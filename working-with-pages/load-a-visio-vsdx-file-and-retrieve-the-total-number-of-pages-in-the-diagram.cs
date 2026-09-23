@@ -15,11 +15,8 @@ class Program
             // Retrieve the total number of pages in the diagram
             int totalPages = diagram.Pages.Count;
 
-            // Output the page count
-            Console.WriteLine($"Total pages: {totalPages}");
-
-            // Clean up resources
-            diagram.Dispose();
+            // Output the result
+            Console.WriteLine($"Total number of pages: {totalPages}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,7 +1,6 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,23 +12,19 @@ class Program
             Diagram diagram = null;
             try
             {
-                // Load an existing Visio diagram from a file
+                // Load an existing diagram
                 diagram = new Diagram("input.vsdx");
 
-                // ----- Place any diagram processing logic here -----
-                // Example: modify pages, shapes, etc.
-                // --------------------------------------------------
+                // TODO: add processing logic here (e.g., modify shapes, pages, etc.)
 
-                // Save the modified diagram to a new file
+                // Save the modified diagram
                 diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
             finally
             {
-                // Ensure the Diagram object is properly disposed even if an exception occurs
+                // Ensure the Diagram object is disposed even if an exception occurs
                 if (diagram != null)
-                {
                     diagram.Dispose();
-                }
             }
 
         }

@@ -9,50 +9,59 @@ class Program
             try
             {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Ensure there is at least one window (required for proper rendering)
-                if (diagram.Windows.Count == 0)
+                // Load the existing Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    Window w = new Window();
-                    w.WindowType = WindowTypeValue.Drawing;
-                    w.WindowState = WindowStateValue.Maximized;
-                    w.WindowWidth = 1100;
-                    w.WindowHeight = 700;
-                    diagram.Windows.Add(w);
+                    throw new Exception("The diagram contains no pages.");
                 }
 
-                // Add a simple rectangle shape to the active page
-                // Parameters: pinX, pinY, master name, page index (0 = first page)
-                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-                Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+                // Work with the first page
+                Page page = diagram.Pages[0];
 
-                // Create a new hyperlink
+                // Find the first non-deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.False)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    throw new Exception("No suitable shape found on the page.");
+                }
+
+                // Create a new hyperlink (or use an existing one)
                 Hyperlink link = new Hyperlink();
-                link.Name = "WebLink";
+                link.Name = "SampleLink";
                 link.Address.Value = "https://example.com";
+                link.Description.Value = "Open Example.com";
 
-                // Set the hyperlink to open in the same window
-                // NewWindow = FALSE means the link will not open a new window
+                // Set the hyperlink to open in the same window (NewWindow = false)
                 link.NewWindow.Value = BOOL.False;
 
-                // Optionally clear the Frame property (default is empty string)
-                link.Frame.Value = "";
+                // Add the hyperlink to the shape's collection
+                targetShape.Hyperlinks.Add(link);
 
-                // Add the hyperlink to the shape's Hyperlinks collection
-                shape.Hyperlinks.Add(link);
-
-                // Save the diagram to a VSDX file
-                string outputPath = "HyperlinkDemo.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Diagram saved to '{outputPath}'. Hyperlink set to open in the same window.");
+                Console.WriteLine("Hyperlink target set to open in the same window and diagram saved successfully.");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

@@ -4,88 +4,60 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Verify that input and output folder arguments are provided
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine("Usage: BatchVdxToPdf <inputFolder> <outputFolder>");
-            return;
-        }
+            // Folder containing VDX files. Change as needed or pass as first argument.
+            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioFiles";
 
-        // Assign input and output folder paths
-        string inputFolder = args[0];
-        string outputFolder = args[1];
-
-        // Guard: ensure input folder exists
-        if (!Directory.Exists(inputFolder))
-        {
-            Console.Error.WriteLine($"Input folder not found: {inputFolder}");
-            return;
-        }
-
-        // Guard: ensure output folder exists (create if missing)
-        if (!Directory.Exists(outputFolder))
-        {
-            try
+            if (!Directory.Exists(folderPath))
             {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                Console.WriteLine($"Folder not found: {folderPath}");
                 return;
             }
-        }
 
-        // Retrieve all VDX files in the input folder
-        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx");
-
-        // Iterate over each VDX file
-        foreach (string filePath in vdxFiles)
-        {
-            // Guard: ensure the VDX file still exists
-            if (!File.Exists(filePath))
+            // Get all VDX files in the folder.
+            string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx", SearchOption.TopDirectoryOnly);
+            if (vdxFiles.Length == 0)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
+                Console.WriteLine("No VDX files found.");
+                return;
             }
 
-            Console.WriteLine($"Processing file: {filePath}");
-
-            try
+            foreach (string vdxPath in vdxFiles)
             {
-                // Load the Visio diagram from the VDX file
-                using (Diagram diagram = new Diagram(filePath))
+                try
                 {
-                    // Iterate over each page in the diagram
-                    foreach (Page page in diagram.Pages)
+                    // Load the Visio diagram.
+                    using (Diagram diagram = new Diagram(vdxPath))
                     {
-                        // Set the page orientation to Portrait
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        // Set each page's orientation to Portrait.
+                        foreach (Page page in diagram.Pages)
+                        {
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        }
+
+                        // Prepare PDF save options.
+                        PdfSaveOptions pdfOptions = new PdfSaveOptions
+                        {
+                            DefaultFont = "Arial",
+                            SaveFormat = SaveFileFormat.Pdf
+                        };
+
+                        // Determine output PDF path.
+                        string pdfPath = Path.ChangeExtension(vdxPath, ".pdf");
+
+                        // Save the diagram as PDF.
+                        diagram.Save(pdfPath, pdfOptions);
+                        Console.WriteLine($"Converted: {Path.GetFileName(vdxPath)} -> {Path.GetFileName(pdfPath)}");
                     }
-
-                    // Prepare PDF save options (optional: set default font)
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
-
-                    // Build the output PDF file path (same name, .pdf extension)
-                    string outputPdfPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".pdf");
-
-                    // Save the diagram as PDF using the specified options
-                    diagram.Save(outputPdfPath, pdfOptions);
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
+                }
+            }
 
-                Console.WriteLine($"Successfully saved PDF: {Path.GetFileName(outputFolder)}");
-            }
-            catch (Exception ex)
-            {
-                // Log any errors that occur during processing of the current file
-                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
-            }
+            Console.WriteLine("Batch processing completed.");
         }
-
-        Console.WriteLine("Batch processing completed.");
     }
-}

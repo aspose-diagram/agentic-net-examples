@@ -5,42 +5,39 @@ using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Determine the input Visio file path (expects a macro-enabled .vsdm file)
-            string filePath = args.Length > 0 ? args[0] : "input.vsdm";
+            // Path to the Visio file (must be a macro‑enabled .vsdm or .vsdx with VBA)
+            string filePath = "sample.vsdm";
 
             // Load the diagram
             Diagram diagram = new Diagram(filePath);
 
-            // Access the VBA project associated with the diagram
+            // Access the VBA project
             VbaProject vbaProject = diagram.VbaProject;
 
-            // Retrieve signature information
-            bool isSigned = vbaProject.IsSigned;
-            string projectName = vbaProject.Name; // Project name may contain author information
+            // Output basic VBA project information
+            Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+            Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
 
-            // Output the retrieved details
-            Console.WriteLine($"VBA Project Name: {projectName}");
-            Console.WriteLine($"Is Signed: {isSigned}");
+            // The Aspose.Diagram.Vba API provides only IsSigned and Name.
+            // Detailed signer information (e.g., signer name) is not exposed directly.
+            // To obtain such details you would need to inspect the underlying digital
+            // signature using external certificate APIs.
 
-            // Detailed signer information is not exposed by the Aspose.Diagram API.
-            if (isSigned)
+            // List VBA modules (optional, for completeness)
+            foreach (VbaModule module in vbaProject.Modules)
             {
-                Console.WriteLine("Signature is present, but signer name cannot be retrieved via the current API.");
-            }
-            else
-            {
-                Console.WriteLine("The VBA project is not digitally signed.");
+                Console.WriteLine($"Module: {module.Name}");
             }
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

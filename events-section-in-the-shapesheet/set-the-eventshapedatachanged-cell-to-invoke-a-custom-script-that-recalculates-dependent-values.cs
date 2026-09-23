@@ -1,59 +1,41 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input file path
+        // Define the input Visio file path
         string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
+        // Verify that the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Define output file path
-        string outputPath = "output.vsdx";
-
         try
         {
             // Load the existing Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page in the diagram
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Locate the first non‑deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                // Compare the deletion flag using the BOOL enum
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
+            // Retrieve a shape by its ID (example uses ID = 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            if (targetShape == null)
-            {
-                throw new Exception("No shape found in the diagram.");
-            }
+            // Set the TheData event cell to call a custom script named "RecalcScript"
+            // The formula uses the CALLTHIS function to invoke the script.
+            shape.Event.TheData.Ufe.F = "CALLTHIS(\"RecalcScript\")";
 
-            // Assign a custom script to the EventXFMod cell (shape data changed event)
-            // This formula invokes a VBA macro named RecalcDependentValues
-            targetShape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"RecalcDependentValues\")";
-
-            // Save the modified diagram using the VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram to a new file
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

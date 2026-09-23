@@ -1,71 +1,79 @@
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading;
 using Aspose.Diagram;
 
-class DiagramUpdater
+class Program
 {
-    // Updates a Visio diagram by refreshing its data sources with retry logic.
-    // inputPath  - path to the source diagram file.
-    // outputPath - path where the updated diagram will be saved.
-    // maxRetries - maximum number of refresh attempts.
-    // initialDelay - initial wait time before retrying; defaults to 2 seconds.
-    public static void UpdateDiagramWithRetry(string inputPath, string outputPath, int maxRetries = 3, TimeSpan? initialDelay = null)
+    // Attempts to download a Visio file from the given URL with retry logic.
+    // Returns a Diagram instance if successful, otherwise throws the last exception.
+    static Diagram LoadDiagramWithRetry(string url, int maxRetries, int delayMilliseconds)
     {
-        // Load the diagram using the provided constructor (lifecycle rule).
-        Diagram diagram = new Diagram(inputPath);
-
-        int attempt = 0;
-        TimeSpan delay = initialDelay ?? TimeSpan.FromSeconds(2);
-
-        while (true)
+        using (HttpClient client = new HttpClient())
         {
-            try
+            int attempt = 0;
+            while (true)
             {
-                // Refresh all DataRecordSets in the diagram (feature rule).
-                diagram.Refresh();
-
-                // Refresh succeeded; exit the retry loop.
-                break;
-            }
-            catch (DiagramException ex)
-            {
-                attempt++;
-
-                if (attempt > maxRetries)
+                try
                 {
-                    // Exceeded allowed retries – rethrow as a more descriptive exception.
-                    throw new InvalidOperationException(
-                        $"Failed to refresh diagram after {maxRetries} attempts.", ex);
+                    // Download the file content.
+                    HttpResponseMessage response = client.GetAsync(url).Result;
+                    response.EnsureSuccessStatusCode();
+
+                    // Load the content into a MemoryStream and create the Diagram.
+                    using (MemoryStream ms = new MemoryStream(response.Content.ReadAsByteArrayAsync().Result))
+                    {
+                        // Diagram constructor loads the Visio file from the stream.
+                        return new Diagram(ms);
+                    }
                 }
+                catch (Exception ex) when (ex is HttpRequestException || ex is IOException)
+                {
+                    attempt++;
+                    if (attempt > maxRetries)
+                    {
+                        // All retries exhausted – rethrow the exception.
+                        throw new Exception($"Failed to load diagram after {maxRetries} attempts.", ex);
+                    }
 
-                // Wait before the next retry.
-                Thread.Sleep(delay);
-
-                // Exponential back‑off for subsequent attempts.
-                delay = TimeSpan.FromMilliseconds(delay.TotalMilliseconds * 2);
+                    // Wait before the next retry.
+                    Thread.Sleep(delayMilliseconds);
+                }
             }
         }
-
-        // Save the updated diagram using the appropriate Save method (lifecycle rule).
-        // Adjust the format as needed (e.g., VDX, VSDX, etc.).
-        diagram.Save(outputPath, SaveFileFormat.Vdx);
     }
 
-    // Example entry point.
-    static void Main()
+    static void Main(string[] args)
     {
-        string sourceFile = @"C:\Diagrams\SourceDiagram.vsdx";
-        string targetFile = @"C:\Diagrams\UpdatedDiagram.vsdx";
+        // Example parameters – adjust as needed.
+        string diagramUrl = "https://example.com/sample.vsdx";
+        int maxRetries = 3;
+        int retryDelayMs = 2000; // 2 seconds between attempts.
 
         try
         {
-            UpdateDiagramWithRetry(sourceFile, targetFile, maxRetries: 5);
-            Console.WriteLine("Diagram updated and saved successfully.");
+            // Load the diagram with retry logic.
+            Diagram diagram = LoadDiagramWithRetry(diagramUrl, maxRetries, retryDelayMs);
+
+            // Perform a simple update: add a rectangle shape to the first page.
+            Page firstPage = diagram.Pages[0];
+            // Draw a rectangle at (2,2) with width 4 and height 2 inches.
+            long shapeId = firstPage.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+            // Retrieve the shape to add text.
+            var shape = firstPage.Shapes.GetShape(shapeId);
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Updated via retry logic"));
+
+            // Save the updated diagram to a local file.
+            string outputPath = "updated_output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram successfully loaded, updated, and saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error updating diagram: {ex.Message}");
+            Console.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,98 +1,72 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect two arguments: input VSDX path and output PDF path.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine("Usage: <program> <input.vsdx> <output.pdf>");
-            return;
-        }
-
-        // Input diagram file path.
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output PDF file path.
-        string outputPath = args[1];
-        // Guard: ensure the output directory exists (create if missing).
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
-        try
-        {
-            // Load the Visio diagram from the VSDX file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate all pages and shapes to locate foreign (image) shapes.
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file (VSDX) and output PDF paths
+                string visioPath = "input.vsdx";
+                string intermediatePdfPath = "temp_output.pdf";
+                string finalPdfPath = "output_with_images.pdf";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioPath, LoadFileFormat.Vsdx);
+
+                // Collect all foreign (image) shapes' binary data
+                List<(byte[] Data, string FileName)> images = new List<(byte[] Data, string FileName)>();
+                int imageCounter = 1;
+
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify image shapes by TypeValue.Foreign.
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Extract raw image bytes.
-                        byte[] imageBytes = shape.ForeignData.Value;
-                        // Log image extraction (size in bytes) – images will be embedded automatically in PDF.
-                        Console.WriteLine($"Extracted image from shape ID {shape.ID}: {imageBytes.Length} bytes");
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                        {
+                            // Use a simple naming scheme for the extracted images
+                            string fileName = $"Image_{imageCounter}.png";
+                            images.Add((shape.ForeignData.Value, fileName));
+                            imageCounter++;
+                        }
                     }
                 }
+
+                // Export the diagram to PDF (images are already embedded as part of the diagram)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format tracking
+                diagram.Save(intermediatePdfPath, pdfOptions);
+
+                // Load the generated PDF using Aspose.Pdf (fully qualified to avoid namespace conflict)
+                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(intermediatePdfPath);
+
+                // Embed each extracted image as an attached file (high‑quality resource)
+                foreach (var img in images)
+                {
+                    using (MemoryStream ms = new MemoryStream(img.Data))
+                    {
+                        // The FileSpecification constructor takes a stream and a file name
+                        Aspose.Pdf.FileSpecification fileSpec = new Aspose.Pdf.FileSpecification(ms, img.FileName);
+                        pdfDocument.EmbeddedFiles.Add(fileSpec);
+                    }
+                }
+
+                // Save the final PDF with embedded image resources
+                pdfDocument.Save(finalPdfPath);
+
+                Console.WriteLine($"PDF generated at: {finalPdfPath}");
+                Console.WriteLine($"Embedded {images.Count} image(s) as resources.");
+
             }
-
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Use a common fallback font.
-                DefaultFont = "Arial",
-                // Do not export hidden pages.
-                ExportHiddenPage = false
-                // AutoFitPageToDrawingContent property is unavailable in this version; omitted.
-            };
-
-            // Assign a custom page‑saving callback to log page processing.
-            pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
-
-            // Save the diagram as a PDF using the configured options.
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"PDF successfully saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
-
-// Custom callback to receive page‑saving events during PDF export.
-class CustomPageSavingCallback : IPageSavingCallback
-{
-    // Called before a page starts saving.
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
     }
-
-    // Called after a page has finished saving.
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1}");
-        // Continue processing remaining pages (default behavior).
-        args.HasMorePages = true;
-    }
-}

@@ -4,42 +4,72 @@ using System.Security.Cryptography;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExport
+namespace DiagramHtmlExportWithEncryption
 {
-    // Custom stream provider that encrypts each resource stream before writing to disk.
+    // Custom stream provider that encrypts image streams before they are written to disk
     public class EncryptedStreamProvider : IStreamProvider
     {
-        // Example AES key and IV (16 bytes each for AES-128). In real scenarios, use secure key management.
-        private readonly byte[] _key = new byte[16] { 0x10, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF };
-        private readonly byte[] _iv  = new byte[16] { 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10, 0xEF, 0xCD, 0xAB, 0x89, 0x67, 0x45, 0x23, 0x01 };
+        // Simple AES key and IV for demonstration (DO NOT use hard‑coded keys in production)
+        private static readonly byte[] _key = new byte[32] {
+            0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+            0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,
+            0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+            0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F };
+        private static readonly byte[] _iv = new byte[16] {
+            0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,
+            0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF };
 
+        // Called by Aspose.Diagram before writing an image stream
         public void InitStream(StreamProviderOptions options)
         {
-            // Determine a safe output path for the encrypted resource.
-            string fileName = Path.GetFileName(options.DefaultPath);
-            string encryptedDir = Path.Combine("encrypted_resources");
-            Directory.CreateDirectory(encryptedDir);
-            string encryptedPath = Path.Combine(encryptedDir, "enc_" + fileName);
-
-            // Create a file stream that will receive encrypted data.
-            FileStream fileStream = new FileStream(encryptedPath, FileMode.Create, FileAccess.Write);
-
-            // Set up AES encryption.
-            Aes aes = Aes.Create();
-            aes.Key = _key;
-            aes.IV = _iv;
-
-            // Wrap the file stream with a CryptoStream for encryption.
-            CryptoStream cryptoStream = new CryptoStream(fileStream, aes.CreateEncryptor(), CryptoStreamMode.Write);
-
-            // Assign the encrypted stream back to the options so Aspose writes into it.
-            options.Stream = cryptoStream;
+            // Provide a temporary memory stream where the library will write the image bytes
+            options.Stream = new MemoryStream();
         }
 
+        // Called after the image data has been written to the temporary stream
         public void CloseStream(StreamProviderOptions options)
         {
-            // Ensure the CryptoStream (and underlying file stream) are properly closed.
-            options.Stream?.Close();
+            // Retrieve the in‑memory image data
+            var memoryStream = options.Stream as MemoryStream;
+            if (memoryStream == null)
+                return;
+
+            byte[] plainBytes = memoryStream.ToArray();
+
+            // Encrypt the image bytes
+            byte[] encryptedBytes = Encrypt(plainBytes);
+
+            // Write the encrypted data to the target path supplied by Aspose.Diagram
+            // DefaultPath contains the file name that would have been used for the image
+            using (var fileStream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write))
+            {
+                fileStream.Write(encryptedBytes, 0, encryptedBytes.Length);
+            }
+
+            // Clean up the temporary stream
+            memoryStream.Dispose();
+        }
+
+        // AES encryption helper
+        private static byte[] Encrypt(byte[] data)
+        {
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = _key;
+                aes.IV = _iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+
+                using (var encryptor = aes.CreateEncryptor())
+                using (var ms = new MemoryStream())
+                {
+                    using (var cryptoStream = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                    {
+                        cryptoStream.Write(data, 0, data.Length);
+                    }
+                    return ms.ToArray();
+                }
+            }
         }
     }
 
@@ -50,18 +80,17 @@ namespace DiagramHtmlExport
             try
             {
 
-                // Load an existing Visio diagram.
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Configure HTML export options with the custom encrypted stream provider.
+                // Configure HTML export options and assign the custom stream provider
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
                 htmlOptions.StreamProvider = new EncryptedStreamProvider();
 
-                // Export the diagram to HTML; resources will be written encrypted.
+                // Export the diagram to HTML; image files will be encrypted by the provider
                 diagram.Save("output.html", htmlOptions);
 
-                Console.WriteLine("HTML export completed. Encrypted resources are stored in the 'encrypted_resources' folder.");
+                Console.WriteLine("HTML export completed. Image files are encrypted.");
 
             }
             catch (System.IO.FileNotFoundException ex)

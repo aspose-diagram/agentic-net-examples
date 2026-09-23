@@ -1,31 +1,28 @@
 using System;
 using System.IO;
-using System.Text;
-using System.Net.Http;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class HttpResponseStreamProvider : IStreamProvider
 {
-    private readonly Func<Stream> _streamFactory;
+    private readonly Stream _responseStream;
 
-    public HttpResponseStreamProvider(Func<Stream> streamFactory)
+    public HttpResponseStreamProvider(Stream responseStream)
     {
-        _streamFactory = streamFactory;
+        _responseStream = responseStream ?? throw new ArgumentNullException(nameof(responseStream));
     }
 
-    // Called by Aspose.Diagram before writing data
+    // Called by Aspose.Diagram when it needs to write a resource (e.g., images, CSS) during HTML export.
     public void InitStream(StreamProviderOptions options)
     {
-        // Provide the HTTP response stream to the save operation
-        options.Stream = _streamFactory();
+        // Direct the output to the HTTP response stream.
+        options.Stream = _responseStream;
     }
 
-    // Called by Aspose.Diagram after writing data
+    // Called after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Ensure all data is flushed; do not close the response stream here
-        options.Stream?.Flush();
+        // No additional cleanup required; the framework will handle flushing/closing the response.
     }
 }
 
@@ -36,34 +33,19 @@ class Program
         try
         {
 
-            // Load a diagram (replace with your actual file path)
-            string diagramPath = "sample.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
+            // Load an existing Visio diagram.
+            var diagram = new Diagram("sample.vsdx");
 
-            // Simulate an HTTP response body using a memory stream
-            using (MemoryStream responseStream = new MemoryStream())
-            {
-                // Create the custom stream provider that returns the response stream
-                IStreamProvider provider = new HttpResponseStreamProvider(() => responseStream);
+            // Configure HTML export options.
+            var htmlOptions = new HTMLSaveOptions();
 
-                // Configure HTML save options and assign the stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = provider;
+            // In a real ASP.NET Core controller you would pass HttpContext.Response.Body.
+            // For this console example we stream to a file that represents the HTTP response body.
+            using var responseStream = new FileStream("output.html", FileMode.Create, FileAccess.Write);
+            htmlOptions.StreamProvider = new HttpResponseStreamProvider(responseStream);
 
-                // Export the diagram to HTML; the filename is ignored when using StreamProvider
-                diagram.Save("ignored.html", htmlOptions);
-
-                // Retrieve the generated HTML from the memory stream
-                responseStream.Position = 0;
-                string htmlContent = new StreamReader(responseStream, Encoding.UTF8).ReadToEnd();
-
-                // Simulate sending the HTML via an HTTP response
-                HttpResponseMessage response = new HttpResponseMessage();
-                response.Content = new StringContent(htmlContent, Encoding.UTF8, "text/html");
-
-                // Output the result length to the console
-                Console.WriteLine($"HTML content length: {htmlContent.Length}");
-            }
+            // Export the diagram to HTML; resources are streamed via the custom provider.
+            diagram.Save("placeholder.html", htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

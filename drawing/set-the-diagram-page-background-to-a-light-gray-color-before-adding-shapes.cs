@@ -13,47 +13,54 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Ensure there is at least one foreground page
-            Page foregroundPage = diagram.Pages[0];
+            // -------------------------------------------------
+            // Create the foreground page (the main drawing page)
+            // -------------------------------------------------
+            Page foregroundPage = new Page();
+            diagram.Pages.Add(foregroundPage);
 
-            // Create a background page
+            // -------------------------------------------------
+            // Create a background page that will hold the background color
+            // -------------------------------------------------
             Page backgroundPage = new Page();
-            backgroundPage.Background = BOOL.True;
-
-            // Match background page size to the foreground page size
-            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
-            backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-            backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
-
-            // Add the background page to the diagram
+            backgroundPage.Background = BOOL.True; // Mark as a background page
             diagram.Pages.Add(backgroundPage);
 
-            // Add a rectangle shape that covers the entire page on the background page
-            // PinX and PinY are the center of the shape
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
-            long rectShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle");
-            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
+            // Retrieve page dimensions from the foreground page
+            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-            // Set the rectangle fill to a light gray color (#D3D3D3) and solid fill pattern
-            rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-            rectShape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray
+            // -------------------------------------------------
+            // Add a rectangle shape that spans the entire page on the background page
+            // -------------------------------------------------
+            long bgShapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, "Rectangle", false);
+            Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
 
-            // Remove any outline by setting line pattern to none
-            rectShape.Line.LinePattern.Value = 0;               // No line
-            rectShape.Line.LineWeight.Value = 0;
+            // Set the shape to a solid fill with light gray color (#ADD8E6)
+            bgShape.Fill.FillPattern.Value = 1;               // Solid fill
+            bgShape.Fill.FillBkgnd.Value = "#ADD8E6";         // Light gray background color
 
-            // Send the rectangle to the back and lock its selection
-            rectShape.SendToBack();
-            rectShape.Protection.LockSelect.Value = BOOL.True;
+            // Remove any outline stroke
+            bgShape.Line.LinePattern.Value = 0;               // No line pattern (invisible)
+
+            // Send the background shape to the back and lock it from selection
+            bgShape.SendToBack();
+            bgShape.Protection.LockSelect.Value = BOOL.True;
 
             // Link the foreground page to the background page
             foregroundPage.BackPage = backgroundPage;
 
-            // Save the diagram (you can add more shapes before this step if needed)
-            string outputPath = "DiagramWithBackground.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // -------------------------------------------------
+            // Example: add a regular shape on the foreground page
+            // -------------------------------------------------
+            long shapeId = foregroundPage.AddShape(2, 2, 1, 1, "Rectangle", false);
+            Shape shape = foregroundPage.Shapes.GetShape(shapeId);
+            shape.Text.Value.Add(new Txt("Sample Shape"));
+
+            // -------------------------------------------------
+            // Save the diagram
+            // -------------------------------------------------
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

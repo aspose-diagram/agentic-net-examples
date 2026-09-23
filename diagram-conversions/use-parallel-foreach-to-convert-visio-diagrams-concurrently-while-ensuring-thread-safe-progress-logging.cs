@@ -1,65 +1,55 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System.Collections.Concurrent;
 
-class VisioBatchConverter
+class Program
 {
-    // Object used for synchronizing console output
-    private static readonly object _consoleLock = new object();
+    // Thread‑safe logger using a lock object
+    private static readonly object _logLock = new object();
 
-    static void Main()
+    static void Main(string[] args)
     {
-        // Define source Visio files (could be populated dynamically)
-        List<string> sourceFiles = new List<string>
-        {
-            @"C:\Visio\Input\Diagram1.vsdx",
-            @"C:\Visio\Input\Diagram2.vsdx",
-            @"C:\Visio\Input\Diagram3.vsdx"
-        };
-
-        // Destination folder for converted PDFs
-        string outputFolder = @"C:\Visio\Output";
+        // Input and output directories can be passed as arguments
+        string inputDir = args.Length > 0 ? args[0] : "InputDiagrams";
+        string outputDir = args.Length > 1 ? args[1] : "ConvertedDiagrams";
 
         // Ensure the output directory exists
-        Directory.CreateDirectory(outputFolder);
+        Directory.CreateDirectory(outputDir);
 
-        // Parallel conversion
-        Parallel.ForEach(sourceFiles, sourcePath =>
+        // Get all Visio files to process
+        string[] visioFiles = Directory.GetFiles(inputDir, "*.vsdx", SearchOption.AllDirectories);
+
+        // Process files in parallel
+        Parallel.ForEach(visioFiles, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, filePath =>
         {
             try
             {
-                // Load the diagram using the constructor that accepts a file path
-                using (Diagram diagram = new Diagram(sourcePath))
-                {
-                    // Build output file name (same base name, .pdf extension)
-                    string outputPath = Path.Combine(
-                        outputFolder,
-                        Path.GetFileNameWithoutExtension(sourcePath) + ".pdf");
+                // Load the Visio diagram (using the provided load rule)
+                Diagram diagram = new Diagram(filePath);
 
-                    // Save the diagram in PDF format using the Save method with SaveFileFormat
-                    diagram.Save(outputPath, SaveFileFormat.Pdf);
-                }
+                // Determine output file path (PDF format as an example)
+                string outputFile = Path.Combine(outputDir,
+                    Path.GetFileNameWithoutExtension(filePath) + ".pdf");
+
+                // Save the diagram (using the provided save rule)
+                diagram.Save(outputFile, SaveFileFormat.Pdf);
 
                 // Thread‑safe progress logging
-                lock (_consoleLock)
+                lock (_logLock)
                 {
-                    Console.WriteLine($"Successfully converted: {Path.GetFileName(sourcePath)}");
+                    Console.WriteLine($"[SUCCESS] Converted: {filePath} -> {outputFile}");
                 }
             }
             catch (Exception ex)
             {
                 // Thread‑safe error logging
-                lock (_consoleLock)
+                lock (_logLock)
                 {
-                    Console.WriteLine($"Error converting {Path.GetFileName(sourcePath)}: {ex.Message}");
+                    Console.WriteLine($"[ERROR] Failed to convert {filePath}: {ex.Message}");
                 }
             }
         });
-
-        // Final completion message
-        Console.WriteLine("Batch conversion completed.");
     }
 }

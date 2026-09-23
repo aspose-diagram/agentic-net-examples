@@ -5,26 +5,29 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram from a file.
-            Diagram diagram = new Diagram("input.vsd");
+            // Path to the source Visio file (VSDX, VDX, etc.)
+            string inputPath = "input.vsdx";
 
-            // Configure HTML save options.
-            // SaveAsSingleFile = true embeds all resources (including SVG) directly into the HTML.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                SaveAsSingleFile = true,
-                ExportHiddenPage = false,
-                ExportGuideShapes = false,
-                // Optional: set resolution, page size, etc., as needed.
-            };
+            // Desired path for the exported HTML file
+            string outputPath = "output.html";
 
-            // Export the diagram to an HTML file with inline SVG markup.
-            diagram.Save("output.html", htmlOptions);
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Set up HTML export options.
+            // By default Aspose.Diagram embeds shape graphics as inline SVG.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+            // If the library version supports it, you can ensure images are embedded:
+            // htmlOptions.IsExportEmbeddedImages = true; // Uncomment if the property exists
+
+            // Export the diagram to HTML with inline SVG markup
+            diagram.Save(outputPath, htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

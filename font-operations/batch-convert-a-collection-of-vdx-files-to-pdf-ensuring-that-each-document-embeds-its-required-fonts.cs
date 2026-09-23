@@ -3,72 +3,53 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VdxToPdfBatchConverter
-{
-    // Converts all VDX files in the specified input folder to PDF files in the output folder.
-    // Each PDF will embed fonts by specifying a default fallback font.
-    public static void ConvertFolder(string inputFolder, string outputFolder)
+class Program
     {
-        // Ensure output directory exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Get all VDX files in the input folder (non‑recursive)
-        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx");
-
-        foreach (string vdxPath in vdxFiles)
+        static void Main(string[] args)
         {
-            // Load the Visio diagram from the VDX file
-            Diagram diagram = new Diagram(vdxPath);
+            // Determine input and output directories
+            string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            string outputFolder = args.Length > 1 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "PdfOutput");
+
+            // Create output directory if it does not exist
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            // Configure font folder (adjust path as needed for the environment)
+            // This ensures that Aspose.Diagram can locate system fonts for embedding.
+            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+            FontConfigs.DefaultFontName = "Arial";
 
             // Prepare PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Process each VDX file in the input folder
+            string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
+            foreach (string vdxPath in vdxFiles)
             {
-                // Set a default font to be used when the original font is missing.
-                // This also forces embedding of the specified font if it is installed.
-                DefaultFont = "Arial",
+                try
+                {
+                    // Load the Visio diagram
+                    Diagram diagram = new Diagram(vdxPath, LoadFileFormat.Vdx);
 
-                // Use PDF 1.5 compliance (fonts are embedded by default).
-                Compliance = PdfCompliance.Pdf15,
+                    // Build output PDF file path
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vdxPath);
+                    string pdfPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
 
-                // Render all pages
-                PageCount = int.MaxValue,
+                    // Save as PDF with the configured options
+                    diagram.Save(pdfPath, pdfOptions);
 
-                // Ensure hidden pages are also exported if needed
-                ExportHiddenPage = true
-            };
-
-            // Build output PDF file path (same name, .pdf extension)
-            string pdfFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
-            string pdfPath = Path.Combine(outputFolder, pdfFileName);
-
-            // Save the diagram as PDF using the specified options
-            diagram.Save(pdfPath, pdfOptions);
-
-            // Release resources held by the diagram
-            diagram.Dispose();
-        }
-    }
-
-    // Example usage
-    static void Main(string[] args)
-    {
-        try
-        {
-
-            // Input folder containing VDX files
-            string inputFolder = @"C:\Visio\VDXFiles";
-
-            // Output folder for generated PDFs
-            string outputFolder = @"C:\Visio\PDFOutputs";
-
-            ConvertFolder(inputFolder, outputFolder);
+                    Console.WriteLine($"Converted: {vdxPath} -> {pdfPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing '{vdxPath}': {ex.Message}");
+                }
+            }
 
             Console.WriteLine("Batch conversion completed.");
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
-}

@@ -1,51 +1,58 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Use the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Define position and size for the pentagon (in inches)
-            double pinX = 5.0;   // X coordinate of the shape's pin (center)
-            double pinY = 5.0;   // Y coordinate of the shape's pin (center)
-            double width = 2.0;  // Width of the pentagon
-            double height = 2.0; // Height of the pentagon
-
-            // Add a pentagon shape using the built‑in master named "Pentagon"
-            long pentagonId = page.AddShape(pinX, pinY, width, height, "Pentagon");
-            Shape pentagon = page.Shapes.GetShape(pentagonId);
-
-            // Clear any existing text and add the annotation label
-            pentagon.Text.Value.Clear();
-            pentagon.Text.Value.Add(new Txt("Annotation"));
-
-            // Center the text horizontally within the shape
-            if (pentagon.Paras.Count > 0)
+            try
             {
-                pentagon.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Find the first shape that uses the "Pentagon" master
+                Shape pentagonShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Master != null && shape.Master.Name == "Pentagon")
+                    {
+                        pentagonShape = shape;
+                        break;
+                    }
+                }
+
+                if (pentagonShape == null)
+                {
+                    Console.WriteLine("Pentagon shape not found.");
+                    return;
+                }
+
+                // Clear any existing text and add the annotation text
+                pentagonShape.Text.Value.Clear();
+                pentagonShape.Text.Value.Add(new Txt("Annotation"));
+
+                // Center the text within the pentagon
+                // TxtPinX/Y define the position of the text block; 0.5 = 50% of the shape width/height
+                pentagonShape.TextXForm.TxtPinX.Value = 0.5;
+                pentagonShape.TextXForm.TxtPinY.Value = 0.5;
+
+                // TxtLocPinX/Y define the local pivot point of the text block; set to 0.5 to center it
+                pentagonShape.TextXForm.TxtLocPinX.Value = 0.5;
+                pentagonShape.TextXForm.TxtLocPinY.Value = 0.5;
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Annotation added and diagram saved as output.vsdx.");
+
             }
-
-            // Center the text vertically within the shape
-            pentagon.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-            // Save the diagram to a VSDX file
-            diagram.Save("PentagonWithLabel.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

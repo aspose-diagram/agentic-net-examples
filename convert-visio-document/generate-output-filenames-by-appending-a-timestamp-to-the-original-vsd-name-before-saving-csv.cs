@@ -10,21 +10,24 @@ class Program
         {
 
             // Path to the source VSD file
-            string inputVsdPath = @"C:\Diagrams\sample.vsd";
+            string inputFilePath = @"C:\Diagrams\sample.vsd";
 
-            // Load the diagram (creation and loading)
-            Diagram diagram = new Diagram(inputVsdPath);
+            // Load the VSD diagram
+            Diagram diagram = new Diagram(inputFilePath);
 
-            // Build a timestamp string (e.g., 20230820153045)
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            // Create a timestamp string (e.g., 20230921_154530)
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-            // Create the output CSV filename by inserting the timestamp before the extension
-            string directory = Path.GetDirectoryName(inputVsdPath);
-            string baseName = Path.GetFileNameWithoutExtension(inputVsdPath);
-            string outputCsvPath = Path.Combine(directory, $"{baseName}_{timestamp}.csv");
+            // Build the output CSV file name by inserting the timestamp before the extension
+            string directory = Path.GetDirectoryName(inputFilePath);
+            string baseName = Path.GetFileNameWithoutExtension(inputFilePath);
+            string outputFileName = $"{baseName}_{timestamp}.csv";
+            string outputFilePath = Path.Combine(directory, outputFileName);
 
-            // Save the diagram as CSV using the provided Save(string, SaveFileFormat) method
-            diagram.Save(outputCsvPath, SaveFileFormat.Csv);
+            // Save the diagram as CSV using the generated file name
+            diagram.Save(outputFilePath, SaveFileFormat.Csv);
+
+            Console.WriteLine($"Diagram saved as CSV: {outputFilePath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

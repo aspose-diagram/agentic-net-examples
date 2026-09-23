@@ -1,37 +1,23 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Reflection;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the Visio diagram to validate
-                string diagramPath = "input.vsdx";
+            // Input Visio file path (first argument or default)
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Perform validation
-                ValidateEventFormulas(diagram);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Validates that all shape IDs referenced in event formulas exist in the diagram.
-        /// </summary>
-        /// <param name="diagram">The loaded Aspose.Diagram instance.</param>
-        private static void ValidateEventFormulas(Diagram diagram)
-        {
             // Collect all existing shape IDs across all pages
             HashSet<long> existingShapeIds = new HashSet<long>();
             foreach (Page page in diagram.Pages)
@@ -42,45 +28,33 @@ class Program
                 }
             }
 
-            // Regular expression to capture shape IDs in formulas (e.g., Sheet.5)
-            Regex sheetIdRegex = new Regex(@"Sheet\.(\d+)", RegexOptions.Compiled);
+            // Event cell names to validate (including EventCalc if present)
+            string[] eventNames = { "EventXFMod", "EventDblClick", "EventDrop", "EventMultiDrop", "TheText", "TheData", "EventCalc" };
 
-            // Iterate through each shape and inspect its event formulas
+            // Regex to find shape ID references like Sheet.5!
+            Regex sheetIdRegex = new Regex(@"Sheet\.(\d+)!");
+
+            bool validationFailed = false;
+
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // List of event cells to check
-                    var eventFormulas = new List<string>();
-
-                    // Guard against null Event section
-                    if (shape.Event != null)
+                    foreach (string eventName in eventNames)
                     {
-                        // Known event cells (add more if needed)
-                        if (!string.IsNullOrEmpty(shape.Event.EventXFMod?.Ufe?.F))
-                            eventFormulas.Add(shape.Event.EventXFMod.Ufe.F);
-                        if (!string.IsNullOrEmpty(shape.Event.EventDblClick?.Ufe?.F))
-                            eventFormulas.Add(shape.Event.EventDblClick.Ufe.F);
-                        if (!string.IsNullOrEmpty(shape.Event.EventDrop?.Ufe?.F))
-                            eventFormulas.Add(shape.Event.EventDrop.Ufe.F);
-                        if (!string.IsNullOrEmpty(shape.Event.EventMultiDrop?.Ufe?.F))
-                            eventFormulas.Add(shape.Event.EventMultiDrop.Ufe.F);
-                        if (!string.IsNullOrEmpty(shape.Event.TheText?.Ufe?.F))
-                            eventFormulas.Add(shape.Event.TheText.Ufe.F);
-                        if (!string.IsNullOrEmpty(shape.Event.TheData?.Ufe?.F))
-                            eventFormulas.Add(shape.Event.TheData.Ufe.F);
-                    }
+                        string formula = GetEventFormula(shape, eventName);
+                        if (string.IsNullOrEmpty(formula))
+                            continue;
 
-                    // Validate each formula
-                    foreach (string formula in eventFormulas)
-                    {
+                        // Find all shape ID references in the formula
                         foreach (Match match in sheetIdRegex.Matches(formula))
                         {
                             if (long.TryParse(match.Groups[1].Value, out long referencedId))
                             {
                                 if (!existingShapeIds.Contains(referencedId))
                                 {
-                                    Console.WriteLine($"Error: Shape ID {shape.ID} on page '{page.Name}' references non‑existent shape ID {referencedId} in formula \"{formula}\".");
+                                    Console.WriteLine($"Invalid reference in shape ID {shape.ID}, event '{eventName}': referenced shape ID {referencedId} does not exist.");
+                                    validationFailed = true;
                                 }
                             }
                         }
@@ -88,6 +62,51 @@ class Program
                 }
             }
 
-            Console.WriteLine("Event formula validation completed.");
+            if (validationFailed)
+            {
+                throw new Exception("Validation failed: some EventCalc formulas reference non-existing shape IDs.");
+            }
+            else
+            {
+                Console.WriteLine("All EventCalc formulas reference existing shape IDs.");
+            }
+
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
+
+    // Retrieves the formula string from a specific event cell using reflection
+    private static string GetEventFormula(Shape shape, string eventName)
+    {
+        if (shape?.Event == null)
+            return null;
+
+        // Get the event property (e.g., EventDblClick) from the Event section
+        PropertyInfo eventProp = shape.Event.GetType().GetProperty(eventName);
+        if (eventProp == null)
+            return null;
+
+        object eventObj = eventProp.GetValue(shape.Event);
+        if (eventObj == null)
+            return null;
+
+        // Get the Ufe property which holds the formula container
+        PropertyInfo ufeProp = eventObj.GetType().GetProperty("Ufe");
+        if (ufeProp == null)
+            return null;
+
+        object ufeObj = ufeProp.GetValue(eventObj);
+        if (ufeObj == null)
+            return null;
+
+        // Get the actual formula string from the F property
+        PropertyInfo fProp = ufeObj.GetType().GetProperty("F");
+        if (fProp == null)
+            return null;
+
+        return fProp.GetValue(ufeObj) as string;
+    }
+}

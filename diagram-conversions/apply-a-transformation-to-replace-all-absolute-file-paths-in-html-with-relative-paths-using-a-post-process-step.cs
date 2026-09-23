@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,41 +11,36 @@ class Program
             try
             {
 
-                // Input Visio file path (absolute)
+                // Input Visio file path (absolute or relative)
                 string visioPath = @"C:\Diagrams\sample.vsdx";
 
-                // Output HTML file path (absolute)
+                // Output HTML file path
                 string htmlPath = @"C:\Diagrams\output.html";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(visioPath);
 
-                // Export diagram to HTML using default options
+                // Export diagram to HTML
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
                 diagram.Save(htmlPath, htmlOptions);
 
                 // Post‑process the generated HTML to replace absolute file paths with relative paths
-                // Read the HTML content
                 string htmlContent = File.ReadAllText(htmlPath);
 
-                // Determine the directory part of the HTML file path
-                string baseDirectory = Path.GetDirectoryName(Path.GetFullPath(htmlPath));
+                // Regex to match Windows absolute paths (e.g., C:\folder\file.png)
+                string pattern = @"[A-Za-z]:\\[^\s""']+";
 
-                if (!string.IsNullOrEmpty(baseDirectory))
+                // Replace each absolute path with just the file name (relative to the HTML file)
+                string processedContent = Regex.Replace(htmlContent, pattern, match =>
                 {
-                    // Ensure the directory ends with a separator for accurate replacement
-                    string baseDirWithSeparator = baseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    // Extract the file name from the absolute path
+                    string fileName = Path.GetFileName(match.Value);
+                    // Return the relative path (just the file name)
+                    return fileName;
+                }, RegexOptions.IgnoreCase);
 
-                    // Replace back‑slash absolute paths with relative paths
-                    htmlContent = htmlContent.Replace(baseDirWithSeparator, string.Empty);
-
-                    // Also replace forward‑slash variants (in case HTML uses them)
-                    string baseDirWithForwardSlash = baseDirectory.Replace('\\', '/').TrimEnd('/') + "/";
-                    htmlContent = htmlContent.Replace(baseDirWithForwardSlash, string.Empty);
-                }
-
-                // Write the modified HTML back to the file
-                File.WriteAllText(htmlPath, htmlContent);
+                // Write the transformed HTML back to the file
+                File.WriteAllText(htmlPath, processedContent);
 
                 Console.WriteLine("HTML export completed and absolute paths have been converted to relative paths.");
 

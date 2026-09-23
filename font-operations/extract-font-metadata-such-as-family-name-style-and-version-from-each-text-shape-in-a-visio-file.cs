@@ -1,94 +1,87 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 using Aspose.Drawing.Text;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument
-        if (args.Length == 0)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Please provide the path to the Visio file as an argument.");
-            return;
-        }
-
-        string visioPath = args[0];
-        // Guard against missing file
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Build a lookup of fonts used in the diagram (family name -> Font object)
-            Dictionary<string, Font> diagramFontMap = new Dictionary<string, Font>(StringComparer.OrdinalIgnoreCase);
-            foreach (Font font in diagram.Fonts)
+            try
             {
-                // Store each unique font by its family name
-                if (!diagramFontMap.ContainsKey(font.Name))
-                {
-                    diagramFontMap[font.Name] = font;
-                }
-            }
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Path to the Visio file (adjust as needed)
+                string visioPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Prepare system font collection for version lookup
+                InstalledFontCollection systemFonts = new InstalledFontCollection();
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Verify the shape contains visible text
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
-
-                        // Enumerate character formatting runs within the shape
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        // Check if the shape contains any text
+                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                         {
-                            string familyName = ch.FontName.Value;          // Font family used by this run
-                            StyleValue styleEnum = ch.Style.Value;          // Style (Bold, Italic, etc.)
+                            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
 
-                            // Font version information is not available in Aspose.Diagram; default to "N/A"
-                            string versionInfo = "N/A";
-
-                            // If the font exists in the diagram's font collection, we could retrieve additional data here
-                            if (diagramFontMap.TryGetValue(familyName, out Font _))
+                            // Iterate through each character formatting run
+                            foreach (Aspose.Diagram.Char ch in shape.Chars)
                             {
-                                // No version property; keep placeholder
+                                // Font family name used by this character run
+                                string fontName = ch.FontName.Value;
+
+                                // Determine style (Bold, Italic, Underline) from StyleValue flags
+                                StyleValue styleFlags = ch.Style.Value;
+                                string styleDesc = "";
+                                if ((styleFlags & StyleValue.Bold) != 0) styleDesc += "Bold ";
+                                if ((styleFlags & StyleValue.Italic) != 0) styleDesc += "Italic ";
+                                if ((styleFlags & StyleValue.Underline) != 0) styleDesc += "Underline ";
+                                if (string.IsNullOrWhiteSpace(styleDesc)) styleDesc = "Regular";
+
+                                // Attempt to retrieve version information from the installed system fonts
+                                string fontVersion = "N/A";
+                                foreach (var sysFont in systemFonts.Families)
+                                {
+                                    // The exact property names may vary; use common ones
+                                    // Assume sysFont.Name provides the family name and sysFont.Version provides version info
+                                    if (sysFont.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        try
+                                        {
+                                            var versionProp = sysFont.GetType().GetProperty("Version");
+                                            if (versionProp != null)
+                                            {
+                                                object verObj = versionProp.GetValue(sysFont);
+                                                fontVersion = verObj?.ToString() ?? "N/A";
+                                            }
+                                        }
+                                        catch
+                                        {
+                                            // If reflection fails, keep version as N/A
+                                        }
+                                        break;
+                                    }
+                                }
+
+                                Console.WriteLine($"  Font: {fontName}");
+                                Console.WriteLine($"  Style: {styleDesc.Trim()}");
+                                Console.WriteLine($"  Version: {fontVersion}");
                             }
 
-                            // Output extracted metadata for the character run
-                            Console.WriteLine($"  Font Family: {familyName}");
-                            Console.WriteLine($"  Style: {styleEnum}");
-                            Console.WriteLine($"  Version: {versionInfo}");
+                            Console.WriteLine(); // Blank line between shapes
                         }
-
-                        // Separator for readability between shapes
-                        Console.WriteLine(new string('-', 40));
                     }
                 }
-            }
 
-            // Optional: Validate that all fonts used in the diagram are installed on the system
-            InstalledFontCollection installedFonts = new InstalledFontCollection();
-            foreach (Font font in diagram.Fonts)
-            {
-                bool isInstalled = installedFonts.Families.Any(f => string.Equals(f.Name, font.Name, StringComparison.OrdinalIgnoreCase));
-                Console.WriteLine($"Font '{font.Name}' installed on system: {isInstalled}");
             }
-        }
-        catch (Exception ex)
-        {
-            // Report any errors encountered during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

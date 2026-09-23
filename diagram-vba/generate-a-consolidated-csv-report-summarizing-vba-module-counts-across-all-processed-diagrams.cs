@@ -2,86 +2,66 @@ using System;
 using System.IO;
 using System.Text;
 using Aspose.Diagram;
-using Aspose.Diagram.Vba;
 
-class VbaModuleReport
-{
-    static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            // Directory containing Visio diagram files (VSD, VSDX, VDX, etc.)
+            string diagramsFolder = @"C:\Diagrams";
 
-            // Expect diagram file paths as command‑line arguments
-            if (args.Length == 0)
+            // Output CSV file path
+            string csvReportPath = @"C:\Reports\VbaModuleCounts.csv";
+
+            // Prepare CSV content with header
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("DiagramFile,ModuleCount");
+
+            // Get all Visio files in the folder (including subfolders)
+            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.*", SearchOption.AllDirectories);
+            foreach (string filePath in diagramFiles)
             {
-                Console.WriteLine("Please provide at least one Visio diagram file path.");
-                return;
-            }
+                // Filter supported Visio extensions
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsd" && extension != ".vsdx" && extension != ".vdx" && extension != ".vsdm")
+                    continue;
 
-            var csv = new StringBuilder();
-            // CSV header
-            csv.AppendLine("DiagramPath,TotalModules,Procedural,Document,Class,Designer");
-
-            foreach (var diagramPath in args)
-            {
-                // Load diagram using the Diagram(string) constructor (load rule)
-                using (var diagram = new Diagram(diagramPath))
+                try
                 {
-                    int total = 0;
-                    int procedural = 0, document = 0, @class = 0, designer = 0;
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                    var vbaProject = diagram.VbaProject;
-                    if (vbaProject != null)
-                    {
-                        var modules = vbaProject.Modules;
-                        total = modules.Count;
+                    // Count VBA modules; VbaProject may be null if no VBA present
+                    int moduleCount = diagram.VbaProject?.Modules?.Count ?? 0;
 
-                        // Iterate through each VbaModule and count by type
-                        foreach (VbaModule module in modules)
-                        {
-                            switch (module.Type)
-                            {
-                                case VbaModuleType.Procedural:
-                                    procedural++;
-                                    break;
-                                case VbaModuleType.Document:
-                                    document++;
-                                    break;
-                                case VbaModuleType.Class:
-                                    @class++;
-                                    break;
-                                case VbaModuleType.Designer:
-                                    designer++;
-                                    break;
-                            }
-                        }
-                    }
-
-                    // Append a CSV line for the current diagram
-                    csv.AppendLine($"{Escape(diagramPath)},{total},{procedural},{document},{@class},{designer}");
+                    // Append result to CSV
+                    string line = $"{EscapeCsv(filePath)},{moduleCount}";
+                    csvBuilder.AppendLine(line);
+                }
+                catch (Exception ex)
+                {
+                    // In case of load failure, log the error and continue
+                    Console.WriteLine($"Error processing '{filePath}': {ex.Message}");
                 }
             }
 
-            // Write the consolidated CSV report to disk (save rule)
-            const string outputFile = "VbaModuleReport.csv";
-            File.WriteAllText(outputFile, csv.ToString());
-            Console.WriteLine($"VBA module report generated: {outputFile}");
+            // Ensure the output directory exists
+            Directory.CreateDirectory(Path.GetDirectoryName(csvReportPath));
 
+            // Write CSV to file
+            File.WriteAllText(csvReportPath, csvBuilder.ToString(), Encoding.UTF8);
+
+            Console.WriteLine($"VBA module count report generated at: {csvReportPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+
+        // Helper to escape CSV fields that may contain commas or quotes
+        private static string EscapeCsv(string field)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+            {
+                string escaped = field.Replace("\"", "\"\"");
+                return $"\"{escaped}\"";
+            }
+            return field;
         }
     }
-
-    // Helper to escape commas and quotes in CSV fields
-    static string Escape(string value)
-    {
-        if (value.Contains(",") || value.Contains("\""))
-        {
-            value = value.Replace("\"", "\"\"");
-            return $"\"{value}\"";
-        }
-        return value;
-    }
-}

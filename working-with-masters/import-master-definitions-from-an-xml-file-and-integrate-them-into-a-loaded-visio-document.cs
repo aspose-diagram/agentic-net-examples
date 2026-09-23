@@ -1,37 +1,44 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-using Aspose.Diagram.Saving; // for SaveFileFormat if needed
-
-class ImportMastersExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the target Visio document and the XML file containing master definitions
-            string targetVisioPath = "target.vsdx";
-            string mastersXmlPath = "masters.xml";
+            // Path to the existing Visio document that will receive the masters
+            string targetDiagramPath = "target.vsdx";
 
-            // Load the target Visio diagram
-            Diagram targetDiagram = new Diagram(targetVisioPath);
+            // Path to the XML file that contains master definitions (saved as a Visio diagram)
+            string masterDefinitionsPath = "masters.xml";
 
-            // Load the XML file that holds master definitions.
-            // Assuming the XML follows the VDX (Visio XML) format.
-            Diagram masterSourceDiagram = new Diagram(mastersXmlPath, LoadFileFormat.Vdx);
+            // Path where the updated diagram will be saved
+            string outputDiagramPath = "output.vsdx";
 
-            // Iterate through each master in the source diagram and add it to the target diagram
-            foreach (Master srcMaster in masterSourceDiagram.Masters)
+            // Load the target diagram
+            Diagram targetDiagram = new Diagram(targetDiagramPath);
+
+            // Load the diagram that holds the master definitions (XML format is supported)
+            Diagram masterDiagram = new Diagram(masterDefinitionsPath);
+
+            // Iterate through each master in the source diagram
+            foreach (Master sourceMaster in masterDiagram.Masters)
             {
-                // AddMaster copies the master by its Name (or NameU) from the source diagram
-                // The method returns the unique ID of the added master in the target diagram.
-                targetDiagram.AddMaster(masterSourceDiagram, srcMaster.Name);
+                // Check if a master with the same name already exists in the target diagram
+                if (!targetDiagram.Masters.IsExist(sourceMaster.Name))
+                {
+                    // Import the master from the source diagram into the target diagram
+                    // Overload that accepts a source Diagram instance and the master name
+                    targetDiagram.AddMaster(masterDiagram, sourceMaster.Name);
+                }
             }
 
-            // Save the updated diagram to a new file
-            targetDiagram.Save("updated_output.vsdx", SaveFileFormat.Vsdx);
+            // Save the updated diagram with the newly imported masters
+            targetDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

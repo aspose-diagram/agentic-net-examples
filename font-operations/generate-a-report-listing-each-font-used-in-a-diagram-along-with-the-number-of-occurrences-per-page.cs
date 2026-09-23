@@ -9,83 +9,58 @@ class Program
             try
             {
 
-                // Determine the diagram file path
-                string diagramPath;
-                if (args.Length > 0)
-                {
-                    diagramPath = args[0];
-                }
-                else
-                {
-                    Console.Write("Enter the path to the Visio diagram file: ");
-                    diagramPath = Console.ReadLine();
-                }
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Collect all font names used in the diagram
-                HashSet<string> allFontNames = new HashSet<string>();
-                foreach (Font font in diagram.Fonts) // explicit type as required
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    if (!string.IsNullOrEmpty(font.Name))
-                    {
-                        allFontNames.Add(font.Name);
-                    }
-                }
+                    // Dictionary to hold font name and its occurrence count on the current page
+                    Dictionary<string, int> fontCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate through each page and count font occurrences
-                foreach (Page page in diagram.Pages) // explicit type
-                {
-                    // Initialize count dictionary for this page
-                    Dictionary<string, int> fontCounts = new Dictionary<string, int>();
-                    foreach (string fn in allFontNames)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        fontCounts[fn] = 0;
-                    }
-
-                    // Examine each shape on the page
-                    foreach (Shape shape in page.Shapes) // explicit type
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Count fonts used in character formatting runs
-                        foreach (Aspose.Diagram.Char ch in shape.Chars) // explicit type
+                        // Iterate through character formatting runs within the shape
+                        foreach (Aspose.Diagram.Char ch in shape.Chars)
                         {
+                            // Retrieve the font name; FontName is a Cell, so use .Value
                             string fontName = ch.FontName.Value;
-                            if (!string.IsNullOrEmpty(fontName) && fontCounts.ContainsKey(fontName))
+
+                            if (!string.IsNullOrEmpty(fontName))
                             {
-                                fontCounts[fontName]++;
+                                if (fontCounts.ContainsKey(fontName))
+                                    fontCounts[fontName]++;
+                                else
+                                    fontCounts[fontName] = 1;
                             }
                         }
                     }
 
                     // Output the report for the current page
-                    Console.WriteLine($"Page: {page.Name} (ID: {page.ID})");
-                    bool anyFont = false;
-                    foreach (var kvp in fontCounts)
+                    Console.WriteLine($"Page: {page.NameU}");
+                    if (fontCounts.Count == 0)
                     {
-                        if (kvp.Value > 0)
-                        {
-                            Console.WriteLine($"  Font: {kvp.Key} - Occurrences: {kvp.Value}");
-                            anyFont = true;
-                        }
+                        Console.WriteLine("  No fonts found on this page.");
                     }
-
-                    if (!anyFont)
+                    else
                     {
-                        Console.WriteLine("  No fonts detected on this page.");
+                        foreach (KeyValuePair<string, int> entry in fontCounts)
+                        {
+                            Console.WriteLine($"  Font: {entry.Key}, Occurrences: {entry.Value}");
+                        }
                     }
 
                     Console.WriteLine(); // Blank line between pages
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

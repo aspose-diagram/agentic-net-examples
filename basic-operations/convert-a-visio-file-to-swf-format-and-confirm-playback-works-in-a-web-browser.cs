@@ -1,60 +1,56 @@
-using System.IO;
 using System;
-using System.Diagnostics;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class VisioToSwfConverter
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Input Visio file path
-            string inputPath = "sample.vsd";
-            // Output SWF file path
-            string outputSwf = "sample.swf";
-            // HTML file that will embed the SWF for browser playback
-            string htmlPath = "sample.html";
+                // Input Visio file path (can be .vsdx, .vsd, etc.)
+                string visioPath = @"C:\Input\sample.vsdx";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Output SWF file path
+                string swfPath = @"C:\Output\sample.swf";
 
-            // Configure SWF save options (include integrated viewer)
-            SWFSaveOptions options = new SWFSaveOptions();
-            options.ViewerIncluded = true; // default is true, set explicitly
+                // Load the Visio diagram (create/load rule)
+                Diagram diagram = new Diagram(visioPath);
 
-            // Save the diagram as SWF using the configured options
-            diagram.Save(outputSwf, options);
+                // Save the diagram as SWF (save rule)
+                diagram.Save(swfPath, SaveFileFormat.Swf);
 
-            // Generate a simple HTML page that embeds the SWF file
-            string htmlContent = $@"<!DOCTYPE html>
-            <html>
-            <head>
-            <title>Visio SWF Playback</title>
-            </head>
-            <body>
-            <object width='100%' height='800' data='{outputSwf}' type='application/x-shockwave-flash'>
-            <param name='movie' value='{outputSwf}' />
-            <param name='play' value='true' />
-            <param name='loop' value='false' />
-            <param name='quality' value='high' />
-            Your browser does not support SWF playback.
-            </object>
-            </body>
-            </html>";
+                // Generate a simple HTML page to test playback in a web browser
+                string htmlPath = Path.Combine(Path.GetDirectoryName(swfPath), "test.html");
+                string htmlContent = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                <title>Visio SWF Playback Test</title>
+                </head>
+                <body>
+                <h2>SWF Playback Test</h2>
+                <!-- Embed the generated SWF file -->
+                <object width=""800"" height=""600"" data=""{Path.GetFileName(swfPath)}"" type=""application/x-shockwave-flash"">
+                <param name=""movie"" value=""{Path.GetFileName(swfPath)}"" />
+                <param name=""quality"" value=""high"" />
+                <embed src=""{Path.GetFileName(swfPath)}"" width=""800"" height=""600"" quality=""high"" type=""application/x-shockwave-flash""></embed>
+                Your browser does not support SWF playback.
+                </object>
+                </body>
+                </html>";
 
-            // Write the HTML file to disk
-            System.IO.File.WriteAllText(htmlPath, htmlContent);
+                File.WriteAllText(htmlPath, htmlContent);
 
-            // Open the HTML file in the default web browser to verify playback
-            Process.Start(new ProcessStartInfo(htmlPath) { UseShellExecute = true });
+                Console.WriteLine("Conversion completed.");
+                Console.WriteLine($"SWF file saved at: {swfPath}");
+                Console.WriteLine($"HTML test page created at: {htmlPath}");
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

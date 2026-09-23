@@ -11,21 +11,19 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
+            // Filter custom properties whose names start with "Dept"
+            var deptProps = diagram.DocumentProps.CustomProps
+                .Where(p => p.Name != null && p.Name.StartsWith("Dept", StringComparison.OrdinalIgnoreCase));
 
-            // Filter custom properties whose names start with "Dept" and select their values
-            var deptValues = diagram.DocumentProps.CustomProps
-                .Where(cp => cp.Name != null && cp.Name.StartsWith("Dept"))
-                .Select(cp => cp.CustomValue?.ValueString);
-
-            // Output the values
-            foreach (var value in deptValues)
+            // List the names and values of the filtered custom properties
+            foreach (var prop in deptProps)
             {
-                Console.WriteLine(value);
+                string value = prop.CustomValue?.ValueString ?? string.Empty;
+                Console.WriteLine($"{prop.Name}: {value}");
             }
 
         }

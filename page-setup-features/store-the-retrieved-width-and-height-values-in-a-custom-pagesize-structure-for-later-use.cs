@@ -2,10 +2,10 @@ using System;
 using Aspose.Diagram;
 
 // Custom structure to hold page dimensions
-    struct PageSize
+    public struct PageSize
     {
-        public double Width;
-        public double Height;
+        public double Width;   // Width in inches
+        public double Height;  // Height in inches
 
         public PageSize(double width, double height)
         {
@@ -15,37 +15,37 @@ using Aspose.Diagram;
 
         public override string ToString()
         {
-            return $"Width: {Width} inches, Height: {Height} inches";
+            return $"Width: {Width} in, Height: {Height} in";
         }
     }
 
     class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                // Path to the Visio file (adjust as needed)
+                string diagramPath = "sample.vsdx";
 
-                // Get the first page of the diagram
-                Page page = diagram.Pages[0];
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(diagramPath))
+                {
+                    // Retrieve the first page (index 0)
+                    Page page = diagram.Pages[0];
 
-                // Retrieve page width and height (values are in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Access page width and height via the PageProps cells
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Store the dimensions in the custom PageSize struct
-                PageSize size = new PageSize(pageWidth, pageHeight);
+                    // Store dimensions in the custom PageSize structure
+                    PageSize size = new PageSize(pageWidth, pageHeight);
 
-                // Output the stored size for verification
-                Console.WriteLine($"Stored page size: {size}");
-
-                // Save the diagram (optional, demonstrates lifecycle usage)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Output the stored values for verification
+                    Console.WriteLine("Retrieved page size:");
+                    Console.WriteLine(size);
+                }
 
             }
             catch (System.IO.FileNotFoundException ex)

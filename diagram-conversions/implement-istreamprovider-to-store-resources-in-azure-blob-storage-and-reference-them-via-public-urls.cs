@@ -3,85 +3,104 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExport
+namespace DiagramExport
 {
-    // Implements IStreamProvider to write external resources (e.g., images) to a local folder.
-    // This avoids Azure SDK version conflicts while satisfying the IStreamProvider contract.
+    // Implements IStreamProvider to upload HTML resources (images, CSS, etc.) to Azure Blob Storage.
     public class AzureBlobStreamProvider : IStreamProvider
     {
-        private readonly string _outputFolder;
+        private readonly string _connectionString;
+        private readonly string _containerName;
 
-        // Constructor receives a folder path where resources will be stored.
-        public AzureBlobStreamProvider(string outputFolder)
+        public AzureBlobStreamProvider(string connectionString, string containerName)
         {
-            // Ensure the target folder exists.
-            _outputFolder = outputFolder;
-            if (!Directory.Exists(_outputFolder))
-            {
-                Directory.CreateDirectory(_outputFolder);
-            }
+            // Validate constructor arguments.
+            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+            _containerName = containerName ?? throw new ArgumentNullException(nameof(containerName));
         }
 
-        // Called by Aspose.Diagram when a resource stream is required.
+        // Called by Aspose.Diagram before writing a resource.
         public void InitStream(StreamProviderOptions options)
         {
-            // Extract the file name from the default path (e.g., "image1.png").
-            string fileName = Path.GetFileName(options.DefaultPath);
-            // Combine with the output folder to get the full local path.
-            string fullPath = Path.Combine(_outputFolder, fileName);
-            // Open a writable file stream (overwrite if it already exists).
-            Stream fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
-            // Assign the stream so Aspose writes directly to the file.
-            options.Stream = fileStream;
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            // The DefaultPath contains the relative path/filename for the resource (e.g., "images/img1.png").
+            string blobName = options.DefaultPath.Replace('\\', '/');
+
+            // Use reflection to avoid compile‑time dependency on Azure.Storage.Blobs (prevents version conflicts).
+            // Load the BlobContainerClient type.
+            Type containerClientType = Type.GetType("Azure.Storage.Blobs.BlobContainerClient, Azure.Storage.Blobs");
+            if (containerClientType == null) throw new InvalidOperationException("Azure.Storage.Blobs assembly not found.");
+
+            // Create an instance: new BlobContainerClient(connectionString, containerName)
+            object containerClient = Activator.CreateInstance(containerClientType, _connectionString, _containerName);
+            if (containerClient == null) throw new InvalidOperationException("Failed to create BlobContainerClient.");
+
+            // Call CreateIfNotExists() to ensure the container exists.
+            var createIfNotExistsMethod = containerClientType.GetMethod("CreateIfNotExists", Type.EmptyTypes);
+            createIfNotExistsMethod?.Invoke(containerClient, null);
+
+            // Get the BlobClient for the specific blob name.
+            var getBlobClientMethod = containerClientType.GetMethod("GetBlobClient", new[] { typeof(string) });
+            object blobClient = getBlobClientMethod?.Invoke(containerClient, new object[] { blobName });
+            if (blobClient == null) throw new InvalidOperationException("Failed to get BlobClient.");
+
+            // Open a writable stream to the blob (overwrite = true).
+            Type blobClientType = blobClient.GetType();
+            var openWriteMethod = blobClientType.GetMethod("OpenWrite", new[] { typeof(bool) });
+            Stream blobStream = (Stream)openWriteMethod?.Invoke(blobClient, new object[] { true });
+
+            // Assign the stream to the options so Aspose.Diagram can write the resource.
+            options.Stream = blobStream;
         }
 
-        // Called after the resource has been written.
+        // Called by Aspose.Diagram after the resource has been written.
         public void CloseStream(StreamProviderOptions options)
         {
-            // Dispose the stream to finalize the write operation.
-            options.Stream?.Dispose();
+            // Dispose the stream if it was created.
+            if (options?.Stream != null)
+            {
+                options.Stream.Dispose();
+            }
         }
     }
 
     class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
-            // Local folder to simulate Azure Blob container for resource files.
-            const string resourceFolder = "blobResources";
+            // Path to the source Visio file.
+            string visioPath = "input.vsdx";
 
-            // Path to the source Visio diagram.
-            const string diagramPath = "input.vsdx";
-
-            // Guard: ensure the diagram file exists before proceeding.
-            if (!File.Exists(diagramPath))
+            // Guard: ensure the Visio file exists before proceeding.
+            if (!File.Exists(visioPath))
             {
-                Console.Error.WriteLine($"File not found: {diagramPath}");
+                Console.Error.WriteLine($"File not found: {visioPath}");
                 return;
             }
 
             try
             {
-                // Load the diagram from the specified file.
-                Diagram diagram = new Diagram(diagramPath);
+                // Load the diagram from the Visio file.
+                Diagram diagram = new Diagram(visioPath);
 
-                // Configure HTML export options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // The provider will write external resources to the local folder.
-                    StreamProvider = new AzureBlobStreamProvider(resourceFolder)
-                };
+                // Azure Blob Storage connection details.
+                string azureConnectionString = "DefaultEndpointsProtocol=https;AccountName=youraccount;AccountKey=yourkey;EndpointSuffix=core.windows.net";
+                string containerName = "visio-resources";
 
-                // Export the diagram to HTML. Resources (images, etc.) will be stored in the folder.
-                const string outputHtmlPath = "output.html";
+                // Set up HTML export options with the custom stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new AzureBlobStreamProvider(azureConnectionString, containerName);
+
+                // Export the diagram to HTML. Resources will be uploaded to Azure Blob Storage.
+                string outputHtmlPath = "output.html";
                 diagram.Save(outputHtmlPath, htmlOptions);
 
-                Console.WriteLine("Diagram exported to HTML. Resources are stored in the local folder.");
+                Console.WriteLine("Diagram exported to HTML. Resources stored in Azure Blob Storage.");
             }
             catch (Exception ex)
             {
-                // Write any Aspose or I/O errors to the error console.
-                Console.Error.WriteLine($"Error during export: {ex.Message}");
+                // Write any errors to the error console.
+                Console.Error.WriteLine($"Error: {ex.Message}");
             }
         }
     }

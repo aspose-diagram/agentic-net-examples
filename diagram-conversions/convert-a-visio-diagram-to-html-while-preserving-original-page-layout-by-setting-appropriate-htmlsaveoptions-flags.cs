@@ -10,30 +10,26 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
 
-            // Configure HTML save options to keep the original page layout
+            // Path for the generated HTML output
+            string outputPath = "output.html";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(sourcePath);
+
+            // Configure HTML export options to keep the original page layout
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // Preserve original page size (do not enlarge to fit content)
-                EnlargePage = false,
-                // Export all pages, not only the foreground ones
-                SaveForegroundPagesOnly = false,
-                // Do not include hidden pages in the output
+                // Do not export hidden pages (preserves visible layout only)
                 ExportHiddenPage = false,
-                // Generate separate HTML files per page (not a single combined file)
-                SaveAsSingleFile = false,
-                // Keep the toolbar in the generated HTML (optional)
-                SaveToolBar = true,
-                // Render starting from the first page
-                PageIndex = 0,
-                // Render all pages
-                PageCount = int.MaxValue
+                // Do not include comments in the HTML output
+                IsExportComments = false
             };
 
             // Save the diagram as HTML using the configured options
-            diagram.Save("output.html", htmlOptions);
+            diagram.Save(outputPath, htmlOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

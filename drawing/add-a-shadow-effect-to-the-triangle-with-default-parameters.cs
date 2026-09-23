@@ -1,38 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
 
-            // Get the first (default) page
+            // Load an existing Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume the triangle is on the first page
             Page page = diagram.Pages[0];
 
-            // Define points for a triangle (closed polygon)
-            // Points: (2,2) -> (4,2) -> (3,4) -> back to (2,2)
-            double[] trianglePoints = new double[] { 2, 2, 4, 2, 3, 4, 2, 2 };
+            // Find the shape whose master name is "Triangle"
+            Shape triangleShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Master != null && shape.Master.Name == "Triangle")
+                {
+                    triangleShape = shape;
+                    break;
+                }
+            }
 
-            // Draw the triangle; returns the shape ID (long)
-            long triangleId = page.DrawPolyline(trianglePoints);
+            if (triangleShape == null)
+            {
+                Console.WriteLine("Triangle shape not found.");
+                return;
+            }
 
-            // Retrieve the shape object using the ID
-            Shape triangle = page.Shapes.GetShape(triangleId);
+            // Apply default shadow effect using cell-based API
+            // Simple shadow type
+            triangleShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+            // Shadow color (gray)
+            triangleShape.Fill.ShdwForegnd.Value = "#808080";
+            // Shadow transparency (30% transparent)
+            triangleShape.Fill.ShdwForegndTrans.Value = 0.3;
+            // Shadow offsets (default small offsets)
+            triangleShape.Fill.ShapeShdwOffsetX.Value = 0.1;
+            triangleShape.Fill.ShapeShdwOffsetY.Value = 0.1;
 
-            // Apply a simple shadow with default parameters
-            // Enable shadow
-            triangle.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-            // Default shadow color (black)
-            triangle.Fill.ShdwForegnd.Value = "#000000";
-            // Default shadow transparency (30% transparent)
-            triangle.Fill.ShdwForegndTrans.Value = 0.3;
-            // Default shadow offsets
-            triangle.Fill.ShapeShdwOffsetX.Value = 0.1;
-            triangle.Fill.ShapeShdwOffsetY.Value = 0.1;
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("TriangleWithShadow.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with shadow applied to triangle at '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,50 +1,40 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
-        {
-            try
-            {
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+        // Get the first (default) page
+        Page page = diagram.Pages[0];
 
-                // Access the first page (adjust index as needed)
-                Page page = diagram.Pages[0];
+        // Draw a rectangle shape (returns the shape ID)
+        long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-                // Retrieve a shape by its ID (replace 1 with the actual shape ID you want to modify)
-                Shape shape = page.Shapes.GetShape(1);
+        // Retrieve the shape object using the ID
+        Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Enable gradient fill
-                shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+        // Enable gradient fill
+        shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-                // Set gradient direction to vertical (top‑to‑bottom)
-                // 0 = Left‑to‑Right, 1 = Top‑to‑Bottom, 2 = Diagonal (based on Visio conventions)
-                shape.Fill.GradientFill.GradientDir.Value = 1;
+        // Set gradient direction to vertical (top‑to‑bottom)
+        shape.Fill.GradientFill.GradientDir.Value = 1; // 1 = vertical
 
-                // Clear any existing gradient stops
-                shape.Fill.GradientFill.GradientStops.Clear();
+        // Optional: define gradient stops (top red, bottom green)
+        shape.Fill.GradientFill.GradientStops.Clear();
+        shape.Fill.GradientFill.GradientStops.Add(
+            new DoubleValue(0, MeasureConst.NUM),
+            new ColorValue("#FF0000", MeasureConst.Undefined));
+        shape.Fill.GradientFill.GradientStops.Add(
+            new DoubleValue(1, MeasureConst.NUM),
+            new ColorValue("#00FF00", MeasureConst.Undefined));
 
-                // Add gradient stops (example: red at the top, green at the bottom)
-                shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(0, MeasureConst.NUM),               // Position at start (0%)
-                    new ColorValue("#FF0000", MeasureConst.Undefined)); // Red color
-
-                shape.Fill.GradientFill.GradientStops.Add(
-                    new DoubleValue(1, MeasureConst.NUM),               // Position at end (100%)
-                    new ColorValue("#00FF00", MeasureConst.Undefined)); // Green color
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Save the diagram to a VSDX file
+        diagram.Save("GradientVertical.vsdx", SaveFileFormat.Vsdx);
     }
-    }
+}

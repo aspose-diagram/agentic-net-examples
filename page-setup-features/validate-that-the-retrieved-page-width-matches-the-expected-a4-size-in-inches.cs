@@ -9,35 +9,32 @@ class Program
         try
         {
 
-            // Path to the Visio diagram to be validated
-            string diagramPath = "input.vsdx";
+            // Path to the Visio file to be validated
+            string filePath = "input.vsdx";
 
-            // Load the diagram; the Diagram constructor handles file loading
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the diagram
+            using (Diagram diagram = new Diagram(filePath))
             {
-                // Retrieve the first page (index 0)
+                // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Get the page width in inches
-                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                // Retrieve the page width in inches
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-                // Expected A4 width in inches (8.27 inches)
+                // Expected A4 width in inches
                 const double expectedA4Width = 8.27;
 
-                // Allow a small tolerance for floating‑point differences
+                // Tolerance for floating‑point comparison
                 const double tolerance = 0.01;
 
                 // Validate the width
-                if (Math.Abs(pageWidthInches - expectedA4Width) > tolerance)
+                if (Math.Abs(pageWidth - expectedA4Width) > tolerance)
                 {
-                    // Width does not match the expected A4 size – raise an error
-                    throw new Exception(
-                        $"Page width validation failed. Actual: {pageWidthInches} inches, Expected: {expectedA4Width} inches.");
+                    throw new Exception($"Page width {pageWidth} inches does not match expected A4 width {expectedA4Width} inches.");
                 }
                 else
                 {
-                    // Width matches the expected A4 size
-                    Console.WriteLine($"Page width validation succeeded: {pageWidthInches} inches.");
+                    Console.WriteLine($"Page width validation passed: {pageWidth} inches.");
                 }
             }
 

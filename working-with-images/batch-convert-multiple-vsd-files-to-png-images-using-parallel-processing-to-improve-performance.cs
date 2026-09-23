@@ -1,47 +1,74 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
-        {
+        // Input folder containing VSD files
+        string inputFolder = @"C:\VisioFiles";
+        // Output folder for PNG images
+        string outputFolder = @"C:\VisioPngOutput";
 
-            // Folder containing the source VSD files
-            string inputFolder = @"C:\InputVsd";
-
-            // Folder where PNG images will be saved
-            string outputFolder = @"C:\OutputPng";
-
-            // Ensure the output directory exists
+        // Ensure output directory exists
+        if (!Directory.Exists(outputFolder))
             Directory.CreateDirectory(outputFolder);
 
-            // Get all VSD files in the input folder
-            string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd");
+        // Collect all supported Visio files (VSD, VSDX, VSDM, etc.)
+        string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly);
+        string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
+        string[] allFiles = new string[vsdFiles.Length + vsdxFiles.Length];
+        vsdFiles.CopyTo(allFiles, 0);
+        vsdxFiles.CopyTo(allFiles, vsdFiles.Length);
 
-            // Convert each VSD to PNG in parallel
-            Parallel.ForEach(vsdFiles, vsdPath =>
-            {
-                // Load the diagram from the VSD file
-                using (Diagram diagram = new Diagram(vsdPath))
-                {
-                    // Build the output PNG file path
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vsdPath);
-                    string pngPath = Path.Combine(outputFolder, fileNameWithoutExt + ".png");
-
-                    // Save the diagram as a PNG image
-                    diagram.Save(pngPath, SaveFileFormat.Png);
-                }
-            });
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
+        // Process each file in parallel for better performance
+        Parallel.ForEach(allFiles, filePath =>
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            // Guard: ensure the file actually exists before attempting to load
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                return;
+            }
+
+            try
+            {
+                // Load the Visio diagram from the file
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate pages using an index to avoid missing Page.Index property
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    Page page = diagram.Pages[i];
+
+                    // Build output file name: OriginalName_Page{index}.png
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(
+                        outputFolder,
+                        $"{fileNameWithoutExt}_Page{i}.png");
+
+                    // Configure PNG save options for the current page
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    pngOptions.PageIndex = i;   // zero‑based page index
+                    pngOptions.PageCount = 1;   // export only this page
+
+                    // Save the page as a PNG image
+                    diagram.Save(outputPath, pngOptions);
+                }
+
+                Console.WriteLine($"Successfully processed: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                // Report any errors that occur during processing
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
+        });
+
+        Console.WriteLine("Batch conversion completed.");
     }
 }

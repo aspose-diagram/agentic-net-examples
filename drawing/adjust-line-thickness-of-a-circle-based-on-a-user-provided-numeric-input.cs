@@ -6,8 +6,8 @@ class Program
     {
         static void Main()
         {
-            // Prompt the user for the desired line thickness (in inches)
-            Console.Write("Enter line thickness (in inches, e.g., 0.02): ");
+            // Prompt user for line thickness (in inches)
+            Console.Write("Enter line thickness for the circle (in inches, e.g., 0.02): ");
             string input = Console.ReadLine();
 
             if (!double.TryParse(input, out double lineThickness) || lineThickness <= 0)
@@ -19,27 +19,29 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Use the first page (default page is always present)
+            // Add a new page to the diagram
+            diagram.Pages.Add(new Page());
             Page page = diagram.Pages[0];
 
             // Draw a circle (ellipse with equal width and height)
-            // Parameters: PinX, PinY (center), Width, Height
-            double centerX = 5.0;   // inches from the left edge
-            double centerY = 5.0;   // inches from the top edge
-            double diameter = 4.0;  // inches
-
+            // Parameters: pinX, pinY (center), width, height
+            double centerX = 5.0; // inches
+            double centerY = 5.0; // inches
+            double diameter = 2.0; // inches
             long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
 
-            // Retrieve the shape object to modify its line properties
+            // Retrieve the created shape
             Shape circleShape = page.Shapes.GetShape(shapeId);
 
-            // Set the line thickness (weight) using the user-provided value
+            // Adjust the line thickness
             circleShape.Line.LineWeight.Value = lineThickness;
 
-            // Save the diagram as a PNG image
-            string outputPath = "CircleWithCustomThickness.png";
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save(outputPath, saveOptions);
+            // Optional: set a visible line color
+            circleShape.Line.LineColor.Value = "#0000FF"; // blue
+
+            // Save the diagram to a VSDX file
+            string outputPath = "CircleWithCustomLineThickness.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             Console.WriteLine($"Diagram saved to '{outputPath}' with line thickness {lineThickness} inches.");
         }

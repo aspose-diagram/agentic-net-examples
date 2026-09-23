@@ -1,33 +1,34 @@
-using System;
 using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-         try
-         {
+        try
+        {
 
-             // Load an existing Visio diagram
-             Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-             // Specify the numeric ID of the page you want to work with
-             int pageId = 2; // replace with the desired page ID
+            // Numeric ID of the page to retrieve (example: 2)
+            int pageId = 2;
 
-             // Retrieve the page by its ID and keep a reference for later modifications
-             Page targetPage = diagram.Pages.GetPage(pageId);
+            // Retrieve the page by its numeric ID
+            Page targetPage = diagram.Pages[pageId];
 
-             // Example modification: change the page name (optional)
-             // targetPage.Name = "Modified Page";
+            // The page reference can now be used for further modifications
+            // Example modification: rename the page
+            targetPage.Name = "ModifiedPage";
 
-             // Save the diagram after any modifications (if needed)
-             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram after modifications
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-         }
-         catch (System.IO.FileNotFoundException ex)
-         {
-             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-         }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

@@ -1,104 +1,150 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class DiagramProtectionComparer
+class Program
 {
-    // Compare two Protection objects property by property
-    static bool ProtectionsEqual(Protection p1, Protection p2)
+    static void Main(string[] args)
     {
-        if (p1 == null || p2 == null) return p1 == p2;
+        // Expect two file paths as arguments
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: DiagramProtectionComparer <DiagramPath1> <DiagramPath2>");
+            return;
+        }
 
-        return
-            p1.LockAspect == p2.LockAspect &&
-            p1.LockBegin == p2.LockBegin &&
-            p1.LockCalcWH == p2.LockCalcWH &&
-            p1.LockCrop == p2.LockCrop &&
-            p1.LockCustProp == p2.LockCustProp &&
-            p1.LockDelete == p2.LockDelete &&
-            p1.LockEnd == p2.LockEnd &&
-            p1.LockFormat == p2.LockFormat &&
-            p1.LockFromGroupFormat == p2.LockFromGroupFormat &&
-            p1.LockGroup == p2.LockGroup &&
-            p1.LockHeight == p2.LockHeight &&
-            p1.LockMoveX == p2.LockMoveX &&
-            p1.LockMoveY == p2.LockMoveY &&
-            p1.LockRotate == p2.LockRotate &&
-            p1.LockSelect == p2.LockSelect &&
-            p1.LockTextEdit == p2.LockTextEdit &&
-            p1.LockThemeColors == p2.LockThemeColors &&
-            p1.LockThemeEffects == p2.LockThemeEffects &&
-            p1.LockVtxEdit == p2.LockVtxEdit &&
-            p1.LockWidth == p2.LockWidth;
+        string path1 = args[0];
+        // Guard: ensure first file exists
+        if (!File.Exists(path1))
+        {
+            Console.Error.WriteLine($"File not found: {path1}");
+            return;
+        }
+
+        string path2 = args[1];
+        // Guard: ensure second file exists
+        if (!File.Exists(path2))
+        {
+            Console.Error.WriteLine($"File not found: {path2}");
+            return;
+        }
+
+        Diagram diagram1;
+        Diagram diagram2;
+        try
+        {
+            // Load the two diagrams (may throw if file is invalid)
+            diagram1 = new Diagram(path1);
+            diagram2 = new Diagram(path2);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagrams: {ex.Message}");
+            return;
+        }
+
+        // Compare global document protection settings
+        CompareDocumentProtection(diagram1, diagram2);
+
+        // Compare shape‑level protection settings
+        CompareShapeProtection(diagram1, diagram2);
     }
 
-    // Build a lookup of shape IDs to their Protection settings for a diagram
-    static Dictionary<long, Protection> BuildProtectionMap(Diagram diagram)
+    private static void CompareDocumentProtection(Diagram d1, Diagram d2)
     {
-        var map = new Dictionary<long, Protection>();
-        foreach (Page page in diagram.Pages)
+        // DocumentSettings protection properties are of type BOOL, not BoolValue
+        var protections = new (string Name, BOOL D1, BOOL D2)[]
+        {
+            ("ProtectBkgnds", d1.DocumentSettings.ProtectBkgnds, d2.DocumentSettings.ProtectBkgnds),
+            ("ProtectMasters", d1.DocumentSettings.ProtectMasters, d2.DocumentSettings.ProtectMasters),
+            ("ProtectShapes",  d1.DocumentSettings.ProtectShapes,  d2.DocumentSettings.ProtectShapes),
+            ("ProtectStyles",  d1.DocumentSettings.ProtectStyles,  d2.DocumentSettings.ProtectStyles)
+        };
+
+        foreach (var (name, val1, val2) in protections)
+        {
+            if (val1 != val2)
+            {
+                Console.WriteLine($"Document protection mismatch: {name} - Diagram1={val1}, Diagram2={val2}");
+            }
+        }
+    }
+
+    private static void CompareShapeProtection(Diagram d1, Diagram d2)
+    {
+        // Build a lookup for shapes in diagram2: key = pageId|shapeId
+        var shapeMap2 = new System.Collections.Generic.Dictionary<string, Shape>();
+        foreach (Page page in d2.Pages)
         {
             foreach (Shape shape in page.Shapes)
             {
-                // Use Shape ID as unique key
-                map[shape.ID] = shape.Protection;
+                string key = $"{page.ID}_{shape.ID}";
+                shapeMap2[key] = shape;
             }
         }
-        return map;
-    }
 
-    static void Main()
-    {
-        try
+        // List of protection properties to compare (all are BoolValue cells)
+        string[] protectionProps = new string[]
         {
+            "LockMoveX", "LockMoveY", "LockWidth", "LockHeight", "LockRotate",
+            "LockVtxEdit", "LockAspect", "LockBegin", "LockEnd", "LockDelete",
+            "LockFormat", "LockFromGroupFormat", "LockGroup", "LockSelect",
+            "LockTextEdit", "LockThemeColors", "LockThemeEffects", "LockThemeFonts",
+            "LockThemeIndex", "LockCustProp", "LockCalcWH", "LockCrop"
+        };
 
-            // Load the two diagrams (lifecycle rule: use provided constructor)
-            var diagramPath1 = "DiagramA.vsdx";
-            var diagramPath2 = "DiagramB.vsdx";
-
-            using (var diagram1 = new Diagram(diagramPath1))
-            using (var diagram2 = new Diagram(diagramPath2))
+        foreach (Page page1 in d1.Pages)
+        {
+            foreach (Shape shape1 in page1.Shapes)
             {
-                // Build protection dictionaries
-                var protectionMap1 = BuildProtectionMap(diagram1);
-                var protectionMap2 = BuildProtectionMap(diagram2);
-
-                // Compare shapes present in both diagrams
-                foreach (var kvp in protectionMap1)
+                string key = $"{page1.ID}_{shape1.ID}";
+                if (!shapeMap2.TryGetValue(key, out Shape shape2))
                 {
-                    var shapeId = kvp.Key;
-                    var prot1 = kvp.Value;
-
-                    if (protectionMap2.TryGetValue(shapeId, out var prot2))
-                    {
-                        if (!ProtectionsEqual(prot1, prot2))
-                        {
-                            Console.WriteLine($"Inconsistent protection for Shape ID {shapeId}:");
-                            Console.WriteLine($"  Diagram A - LockAspect: {prot1.LockAspect}, LockDelete: {prot1.LockDelete}, LockMoveX: {prot1.LockMoveX}");
-                            Console.WriteLine($"  Diagram B - LockAspect: {prot2.LockAspect}, LockDelete: {prot2.LockDelete}, LockMoveX: {prot2.LockMoveX}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Shape ID {shapeId} exists in Diagram A but not in Diagram B.");
-                    }
+                    Console.WriteLine($"Shape missing in Diagram2: PageID={page1.ID}, ShapeID={shape1.ID}");
+                    continue;
                 }
 
-                // Detect shapes that exist only in Diagram B
-                foreach (var shapeId in protectionMap2.Keys)
+                foreach (string propName in protectionProps)
                 {
-                    if (!protectionMap1.ContainsKey(shapeId))
+                    // Use reflection to get the BoolValue property from shape.Protection
+                    var propInfo = typeof(Protection).GetProperty(propName);
+                    if (propInfo == null) continue; // safety
+
+                    var bv1 = propInfo.GetValue(shape1.Protection) as BoolValue;
+                    var bv2 = propInfo.GetValue(shape2.Protection) as BoolValue;
+
+                    BOOL v1 = bv1?.Value ?? BOOL.False;
+                    BOOL v2 = bv2?.Value ?? BOOL.False;
+
+                    if (v1 != v2)
                     {
-                        Console.WriteLine($"Shape ID {shapeId} exists in Diagram B but not in Diagram A.");
+                        Console.WriteLine($"Protection mismatch on PageID={page1.ID}, ShapeID={shape1.ID}, Property={propName}: Diagram1={v1}, Diagram2={v2}");
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Detect shapes present in Diagram2 but not in Diagram1
+        var shapeSet1 = new System.Collections.Generic.HashSet<string>();
+        foreach (Page page in d1.Pages)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            foreach (Shape shape in page.Shapes)
+            {
+                shapeSet1.Add($"{page.ID}_{shape.ID}");
+            }
+        }
+
+        foreach (Page page2 in d2.Pages)
+        {
+            foreach (Shape shape2 in page2.Shapes)
+            {
+                string key = $"{page2.ID}_{shape2.ID}";
+                if (!shapeSet1.Contains(key))
+                {
+                    Console.WriteLine($"Shape missing in Diagram1: PageID={page2.ID}, ShapeID={shape2.ID}");
+                }
+            }
         }
     }
 }

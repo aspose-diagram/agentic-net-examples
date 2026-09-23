@@ -1,60 +1,29 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class HyperlinkRemover
+class Program
     {
-        /// <summary>
-        /// Removes all hyperlinks from every shape on the specified page,
-        /// as well as any page‑level hyperlinks.
-        /// </summary>
-        /// <param name="diagram">The loaded Aspose.Diagram Diagram instance.</param>
-        /// <param name="pageName">The name of the page from which hyperlinks should be removed.</param>
-        public static void RemoveAllShapeHyperlinks(Diagram diagram, string pageName)
-        {
-            // Locate the target page by its name.
-            Page targetPage = null;
-            foreach (Page page in diagram.Pages)
-            {
-                if (string.Equals(page.Name, pageName, StringComparison.OrdinalIgnoreCase))
-                {
-                    targetPage = page;
-                    break;
-                }
-            }
-
-            if (targetPage == null)
-                throw new ArgumentException($"Page \"{pageName}\" not found in the diagram.");
-
-            // Remove page‑level hyperlinks, if any.
-            if (targetPage.PageSheet != null && targetPage.PageSheet.Hyperlinks != null)
-            {
-                targetPage.PageSheet.Hyperlinks.Clear();
-            }
-
-            // Iterate through all shapes on the page and clear their hyperlink collections.
-            foreach (Shape shape in targetPage.Shapes)
-            {
-                if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                {
-                    shape.Hyperlinks.Clear();
-                }
-            }
-        }
-
-        // Example usage:
-        public static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Load the diagram (replace with your actual file path).
-                Diagram diagram = new Diagram("input.vsdx");
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Name of the page from which hyperlinks will be removed
+                string targetPageName = "Page-1";
+                // Output Visio file path
+                string outputPath = "output.vsdx";
 
-                // Remove hyperlinks from the page named "Page-1".
-                RemoveAllShapeHyperlinks(diagram, "Page-1");
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Save the modified diagram (replace with your desired output path).
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Remove all hyperlinks from shapes on the specified page
+                RemoveHyperlinksFromPage(diagram, targetPageName);
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -62,4 +31,30 @@ public class HyperlinkRemover
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        /// <summary>
+        /// Removes every hyperlink from all shapes on a given page.
+        /// </summary>
+        /// <param name="diagram">The loaded Diagram instance.</param>
+        /// <param name="pageName">The universal name of the page to process.</param>
+        private static void RemoveHyperlinksFromPage(Diagram diagram, string pageName)
+        {
+            // Retrieve the page by its universal name
+            Page page = diagram.Pages.GetPage(pageName);
+            if (page == null)
+            {
+                throw new Exception($"Page '{pageName}' not found in the diagram.");
+            }
+
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
+            {
+                // Ensure the Hyperlinks collection exists and contains items
+                if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                {
+                    // Clear all hyperlinks from the shape
+                    shape.Hyperlinks.Clear();
+                }
+            }
+        }
     }

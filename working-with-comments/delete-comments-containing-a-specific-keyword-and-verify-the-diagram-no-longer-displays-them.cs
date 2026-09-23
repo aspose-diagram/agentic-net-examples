@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,27 +9,33 @@ class Program
         try
         {
 
-            // Input Visio file path
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            // Output Visio file path after comment removal
+            // Path where the modified file will be saved
             string outputPath = "output.vsdx";
-            // Keyword to search for in comments
+            // Keyword to search for inside comments
             string keyword = "TODO";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and remove comments containing the keyword
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Annotations (comments) are stored in the page's PageSheet
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Access the collection of annotations (comments) on the page
+                var annotations = page.PageSheet.Annotations;
+
+                // Remove annotations that contain the keyword.
+                // Iterate backwards to safely remove items while looping.
+                for (int i = annotations.Count - 1; i >= 0; i--)
                 {
-                    string commentText = annotation.Comment.Value;
-                    if (!string.IsNullOrEmpty(commentText) && commentText.Contains(keyword))
+                    Annotation ann = annotations[i];
+                    string commentText = ann.Comment.Value ?? string.Empty;
+
+                    if (commentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Clear the comment text to effectively delete it
-                        annotation.Comment.Value = string.Empty;
+                        // Delete the annotation
+                        annotations.RemoveAt(i);
                     }
                 }
             }
@@ -38,20 +43,20 @@ class Program
             // Verification: ensure no remaining comment contains the keyword
             foreach (Page page in diagram.Pages)
             {
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                foreach (Annotation ann in page.PageSheet.Annotations)
                 {
-                    string commentText = annotation.Comment.Value;
-                    if (!string.IsNullOrEmpty(commentText) && commentText.Contains(keyword))
+                    string commentText = ann.Comment.Value ?? string.Empty;
+                    if (commentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                     {
-                        throw new Exception($"Comment with keyword \"{keyword}\" still exists after deletion.");
+                        throw new Exception("Keyword still found in a comment after deletion.");
                     }
                 }
             }
 
-            Console.WriteLine("All comments containing the keyword have been removed successfully.");
-
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Comments containing the keyword have been removed and the diagram saved.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,43 +1,74 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists before loading
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Auto‑space shapes on each page
         try
         {
-
-            // Load the diagram (using the provided load rule)
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            foreach (Page page in diagram.Pages)
             {
-                // Configure layout options with desired spacing (in inches)
-                LayoutOptions layoutOptions = new LayoutOptions
+                // Configure spacing options (in inches)
+                AutoSpaceOptions options = new AutoSpaceOptions
                 {
-                    SpaceShapes = 0.5f // example spacing
+                    DistanceInHorizontal = 0.5,
+                    DistanceInVertical = 0.5
                 };
 
-                // Apply layout (spacing) to each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    page.Layout(layoutOptions);
-                }
-
-                // Validate the diagram after spacing
-                // Aspose.Diagram provides a Validation property to access validation results
-                Validation validation = diagram.Validation;
-                Console.WriteLine($"Validation issues count: {validation.Issues.Count}");
-
-                // Save the diagram (using the provided save rule)
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Apply auto‑spacing to all shapes on the current page
+                page.AutoSpaceShapes(page.Shapes, options);
             }
 
+            // Validate the diagram by attempting a save to a memory stream.
+            // If the save succeeds without exception, the diagram is considered valid.
+            using (MemoryStream validationStream = new MemoryStream())
+            {
+                diagram.Save(validationStream, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Diagram validation completed successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occurred during spacing or validation
+            Console.Error.WriteLine($"Diagram processing failed: {ex.Message}");
+            return;
+        }
+
+        // Guard: ensure the output directory exists before saving
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        // Save the updated diagram to the specified output path
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
 }

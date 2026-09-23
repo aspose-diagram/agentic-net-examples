@@ -1,47 +1,48 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a line definition
-                    if (shape.Line == null || shape.Line.LinePattern == null)
-                        continue;
-
-                    // Process only shapes with a solid line pattern
-                    // In Visio, a solid line corresponds to LinePatternValue.Solid
-                    if (shape.Line.LinePattern.Value == LinePatternValue.Solid)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Example customization: change the line color to red
-                        shape.Line.LineColor.Value = "#FF0000";
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Additional customizations can be added here
+                        // Check if the shape's line pattern is solid
+                        if (shape.Line.LinePattern.Value == LinePatternValue.Solid)
+                        {
+                            // Example customization: change the fill foreground color to light green
+                            shape.Fill.FillForegnd.Value = "#90EE90";
+
+                            // Example customization: increase line weight
+                            shape.Line.LineWeight.Value = 0.05; // inches
+                        }
                     }
                 }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

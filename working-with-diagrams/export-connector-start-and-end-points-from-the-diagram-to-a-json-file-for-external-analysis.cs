@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Aspose.Diagram;
 
@@ -9,11 +10,9 @@ namespace DiagramConnectorExport
     // DTO for JSON serialization
     public class ConnectorInfo
     {
-        public long Id { get; set; }
-        public double StartX { get; set; }
-        public double StartY { get; set; }
-        public double EndX { get; set; }
-        public double EndY { get; set; }
+        public long ConnectorId { get; set; }
+        public long StartShapeId { get; set; }
+        public long EndShapeId { get; set; }
     }
 
     public class Program
@@ -23,49 +22,80 @@ namespace DiagramConnectorExport
             try
             {
 
-                // Path to the Visio file (adjust as needed)
-                const string inputPath = "input.vsdx";
-                const string outputPath = "connectors.json";
+                // Path to the Visio diagram file
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    var connectors = new List<ConnectorInfo>();
+                Diagram diagram = new Diagram(diagramPath);
 
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                // List to hold connector information
+                List<ConnectorInfo> connectors = new List<ConnectorInfo>();
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
                         {
-                            // Identify connector shapes (1‑D shapes)
-                            if (shape.OneD)
+                            long connectorId = shape.ID;
+
+                            // Find connections where this connector is the source (FromSheet)
+                            var relatedConnections = page.Connects
+                                .Where(c => c.FromSheet == connectorId)
+                                .ToList();
+
+                            // Expect exactly two connections: Begin and End
+                            long startShapeId = 0;
+                            long endShapeId = 0;
+
+                            foreach (var conn in relatedConnections)
                             {
-                                // Ensure XForm1D is available
-                                if (shape.XForm1D != null)
+                                // Determine which end based on the cell name
+                                if (conn.FromCell != null && conn.FromCell.Contains("Begin", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    var info = new ConnectorInfo
-                                    {
-                                        Id = shape.ID,
-                                        StartX = shape.XForm1D.BeginX.Value,
-                                        StartY = shape.XForm1D.BeginY.Value,
-                                        EndX = shape.XForm1D.EndX.Value,
-                                        EndY = shape.XForm1D.EndY.Value
-                                    };
-                                    connectors.Add(info);
+                                    startShapeId = conn.ToSheet;
+                                }
+                                else if (conn.FromCell != null && conn.FromCell.Contains("End", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    endShapeId = conn.ToSheet;
                                 }
                             }
+
+                            // Fallback: if cell names are not available, assign based on order
+                            if (startShapeId == 0 && relatedConnections.Count > 0)
+                            {
+                                startShapeId = relatedConnections[0].ToSheet;
+                            }
+                            if (endShapeId == 0 && relatedConnections.Count > 1)
+                            {
+                                endShapeId = relatedConnections[1].ToSheet;
+                            }
+
+                            // Add to the result list
+                            connectors.Add(new ConnectorInfo
+                            {
+                                ConnectorId = connectorId,
+                                StartShapeId = startShapeId,
+                                EndShapeId = endShapeId
+                            });
                         }
                     }
-
-                    // Serialize connector data to JSON with indentation
-                    string json = JsonSerializer.Serialize(connectors, new JsonSerializerOptions { WriteIndented = true });
-
-                    // Write JSON to file
-                    File.WriteAllText(outputPath, json);
-
-                    Console.WriteLine($"Exported {connectors.Count} connectors to '{outputPath}'.");
                 }
+
+                // Serialize the connector list to JSON
+                string jsonOutput = JsonSerializer.Serialize(connectors, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                // Write JSON to file
+                string outputPath = "connectors.json";
+                File.WriteAllText(outputPath, jsonOutput);
+
+                Console.WriteLine($"Exported {connectors.Count} connectors to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

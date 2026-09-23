@@ -1,63 +1,73 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Define the folder containing the Visio files
+            string inputFolder = @"C:\VisioFiles\Input";
+            string outputFolder = @"C:\VisioFiles\Output";
+
+            // Ensure the output folder exists
+            if (!Directory.Exists(outputFolder))
             {
+                Directory.CreateDirectory(outputFolder);
+            }
 
-                // Input folder containing Visio files
-                string inputFolder = @"C:\Visio\Input";
-                // Output folder for processed files
-                string outputFolder = @"C:\Visio\Output";
+            // Get all Visio files (VSDX, VDX, VSD) in the input folder
+            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+            List<string> supportedExtensions = new List<string> { ".vsdx", ".vsd", ".vdx" };
 
-                // Ensure output directory exists
-                if (!Directory.Exists(outputFolder))
-                {
-                    Directory.CreateDirectory(outputFolder);
-                }
+            foreach (string filePath in visioFiles)
+            {
+                if (!supportedExtensions.Contains(Path.GetExtension(filePath).ToLower()))
+                    continue; // Skip non‑Visio files
 
-                // Get all Visio files (VSDX) in the input folder
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-
-                foreach (string filePath in diagramFiles)
+                try
                 {
                     // Load the diagram
                     Diagram diagram = new Diagram(filePath);
 
-                    // Access custom properties collection
+                    // Remove custom properties named "DeprecatedFlag"
                     var customProps = diagram.DocumentProps.CustomProps;
-
-                    // Iterate backwards to safely remove items
-                    for (int i = customProps.Count - 1; i >= 0; i--)
+                    // Collect properties to remove to avoid modifying the collection while iterating
+                    List<CustomProp> propsToRemove = new List<CustomProp>();
+                    foreach (CustomProp prop in customProps)
                     {
-                        var prop = customProps[i];
-                        // Remove property named "DeprecatedFlag"
                         if (prop.Name == "DeprecatedFlag")
                         {
-                            customProps.Remove(prop);
+                            propsToRemove.Add(prop);
                         }
                     }
 
-                    // Prepare output file path
-                    string fileName = Path.GetFileName(filePath);
-                    string outputPath = Path.Combine(outputFolder, fileName);
+                    foreach (CustomProp prop in propsToRemove)
+                    {
+                        customProps.Remove(prop);
+                    }
 
-                    // Save the modified diagram
+                    // Save the modified diagram to the output folder (overwrite if exists)
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
-                Console.WriteLine("Processing completed.");
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Processing completed.");
+
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

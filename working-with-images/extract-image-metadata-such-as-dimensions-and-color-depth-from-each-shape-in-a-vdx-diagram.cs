@@ -5,15 +5,15 @@ using Aspose.Drawing;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Path to the VDX file (modify as needed)
+            // Path to the VDX diagram file
             string diagramPath = "input.vdx";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(diagramPath, LoadFileFormat.Vdx);
 
             // Iterate through all pages
@@ -23,28 +23,25 @@ class Program
                 foreach (Shape shape in page.Shapes)
                 {
                     // Identify image (foreign) shapes
-                    if (shape.Type == TypeValue.Foreign)
+                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
                     {
-                        // Retrieve shape dimensions (in inches)
-                        double widthInches = shape.XForm.Width.Value;
-                        double heightInches = shape.XForm.Height.Value;
+                        // Extract the raw image bytes
+                        byte[] imageBytes = shape.ForeignData.Value;
 
-                        Console.WriteLine($"Shape ID: {shape.ID}");
-                        Console.WriteLine($"  Dimensions: {widthInches:F2}\" x {heightInches:F2}\"");
-
-                        // Retrieve raw image data
-                        byte[] imageData = shape.ForeignData.Value;
-                        if (imageData == null || imageData.Length == 0)
-                        {
-                            Console.WriteLine("  No image data found.");
-                            continue;
-                        }
-
-                        // Load image using Aspose.Drawing to get color depth
-                        using (MemoryStream ms = new MemoryStream(imageData))
+                        // Load the image using Aspose.Drawing
+                        using (MemoryStream ms = new MemoryStream(imageBytes))
                         using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                         {
+                            // Get image dimensions in pixels
+                            int width = img.Width;
+                            int height = img.Height;
+
+                            // Get color depth (bits per pixel)
                             int colorDepth = Aspose.Drawing.Image.GetPixelFormatSize(img.PixelFormat);
+
+                            // Output metadata
+                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}");
+                            Console.WriteLine($"  Dimensions: {width} x {height} pixels");
                             Console.WriteLine($"  Color Depth: {colorDepth} bits per pixel");
                         }
                     }

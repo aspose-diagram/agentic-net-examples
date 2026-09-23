@@ -1,34 +1,31 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Set the left header text (optional, can be any string)
-            diagram.HeaderFooter.HeaderLeft = "My Header";
+            // Set the left header text
+            diagram.HeaderFooter.HeaderLeft = "Sample Header";
 
-            // Access the header/footer font object
-            HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
+            // Configure the header/footer font: Arial, 10 pt, bold
+            // Height uses a negative value: Height = -(PointSize * 1.333) rounded
+            // For 10 pt: -(10 * 1.333) ≈ -13
+            diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial";
+            diagram.HeaderFooter.HeaderFooterFont.Height = -13;   // 10 pt
+            diagram.HeaderFooter.HeaderFooterFont.Weight = 700; // Bold (700)
 
-            // Define the font name as Arial
-            headerFont.FaceName = "Arial";
-
-            // Define the font size as 10 points
-            headerFont.Height = 10;
-
-            // Apply bold style (weight 700 corresponds to bold in GDI)
-            headerFont.Weight = 700;
-
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

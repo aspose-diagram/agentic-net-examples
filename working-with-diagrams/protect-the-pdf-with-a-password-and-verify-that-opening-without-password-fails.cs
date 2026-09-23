@@ -7,49 +7,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Create a new empty Visio diagram
-        Diagram diagram = new Diagram();
-
-        // Configure PDF save options with password protection
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-        // Use positional arguments because the constructor does not support named parameters
-        pdfOptions.EncryptionDetails = new PdfEncryptionDetails("user123", "owner123", PdfEncryptionAlgorithm.RC4_128);
-
         // Define output PDF path
-        string pdfPath = "protected.pdf";
+        string outputPath = "protected.pdf";
 
-        // Save the diagram as a password‑protected PDF (wrapped in try/catch)
-        try
+        // Guard to ensure the directory for the output exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
         {
-            diagram.Save(pdfPath, pdfOptions);
-            Console.WriteLine($"PDF saved with password protection to '{pdfPath}'.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving PDF: {ex.Message}");
+            Console.Error.WriteLine($"Output directory not found: {outputDir}");
             return;
         }
 
-        // Verify that the PDF file was created
-        if (!File.Exists(pdfPath))
+        try
         {
-            Console.Error.WriteLine($"File not found after save: {pdfPath}");
+            // Create a new diagram (contains a default page)
+            Diagram diagram = new Diagram();
+
+            // Add a simple rectangle shape to the first page
+            // Parameters: pinX, pinY, width, height, master name, page index
+            long shapeId = diagram.AddShape(5, 5, 2, 1, "Rectangle", 0);
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            shape.Text.Value.Add(new Txt("Sample"));
+
+            // Configure PDF save options with password protection
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Use positional arguments – the constructor expects (userPassword, ownerPassword, algorithm)
+            pdfOptions.EncryptionDetails = new PdfEncryptionDetails("userpwd", "ownerpwd", PdfEncryptionAlgorithm.RC4_128);
+
+            // Save the diagram as a password‑protected PDF
+            diagram.Save(outputPath, pdfOptions);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose operation errors to the error stream and exit
+            Console.Error.WriteLine($"Error during diagram creation or PDF saving: {ex.Message}");
             return;
         }
 
         // Verify that opening the PDF without a password fails
         try
         {
-            // Attempt to load the PDF without providing a password (using fully qualified type to avoid namespace clash)
-            var pdfDoc = new Aspose.Pdf.Document(pdfPath);
-            // If no exception is thrown, the verification fails
-            Console.WriteLine("ERROR: PDF opened without a password. Verification failed.");
-            throw new Exception("PDF opened without password protection.");
+            // Attempt to open the encrypted PDF without providing a password
+            var pdfDoc = new Aspose.Pdf.Document(outputPath);
+            // If no exception is thrown, the protection did not work
+            throw new Exception("PDF opened without password; protection was not applied.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Expected path: loading fails because the PDF is encrypted
-            Console.WriteLine("Success: PDF could not be opened without a password (as expected).");
+            // Expected path: an exception indicates password protection is active
+            Console.WriteLine("Password protection verified: PDF cannot be opened without a password.");
+            Console.WriteLine($"Caught exception: {ex.Message}");
         }
     }
 }

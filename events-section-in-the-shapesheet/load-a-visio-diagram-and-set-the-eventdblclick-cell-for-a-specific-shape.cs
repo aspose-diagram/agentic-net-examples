@@ -9,45 +9,30 @@ class Program
         try
         {
 
-            // Paths to the input and output Visio files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+
+            // Path for the modified Visio file
             string outputPath = "output.vsdx";
 
             // Load the diagram from the file
             Diagram diagram = new Diagram(inputPath);
 
-            // NameU of the shape whose double‑click event we want to set
-            string targetShapeNameU = "MyShape";
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
 
-            Shape targetShape = null;
+            // ID of the shape whose double‑click event you want to set
+            // Replace this with the actual shape ID in your diagram
+            long shapeId = 1;
 
-            // Search for the shape by its universal name across all pages
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU == targetShapeNameU)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-                if (targetShape != null)
-                    break;
-            }
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-            if (targetShape == null)
-            {
-                Console.WriteLine($"Shape with NameU '{targetShapeNameU}' not found.");
-                return;
-            }
+            // Assign a Visio formula to the double‑click event cell
+            shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
 
-            // Set the double‑click event formula
-            targetShape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"ShowAlert\")";
-
-            // Save the modified diagram
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with updated double‑click event.");
 
         }
         catch (System.IO.FileNotFoundException ex)

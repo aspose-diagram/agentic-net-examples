@@ -4,54 +4,53 @@ using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramThumbnailsToZip
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Path to the source Visio diagram
-            string diagramPath = "input.vsdx";
+            // Input diagram file path and output zip file path
+            string diagramPath = @"C:\Diagrams\sample.vsdx";
+            string zipPath = @"C:\Diagrams\thumbnails.zip";
 
-            // Path where the zip archive with thumbnails will be created
-            string zipPath = "thumbnails.zip";
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the diagram using the constructor that accepts a file name
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Create a zip archive for the thumbnails
+            using (FileStream zipFileStream = new FileStream(zipPath, FileMode.Create))
+            using (ZipArchive zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Create))
             {
-                // Create the zip archive for writing
-                using (FileStream zipStream = new FileStream(zipPath, FileMode.Create))
-                using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+                // Iterate through each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Iterate through all pages in the diagram
-                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    // Configure image save options for the current page
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
                     {
-                        // Configure image save options for the current page
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                        {
-                            PageIndex = i,      // zero‑based index of the page to render
-                            PageCount = 1,      // render only this page
-                            Resolution = 96     // optional: set DPI for the thumbnail
-                        };
+                        PageIndex = i,   // zero‑based page index
+                        PageCount = 1    // export only this page
+                    };
 
-                        // Render the page to a memory stream
-                        using (MemoryStream imgStream = new MemoryStream())
-                        {
-                            diagram.Save(imgStream, imgOptions);
-                            imgStream.Seek(0, SeekOrigin.Begin);
+                    // Save the page to a memory stream
+                    using (MemoryStream imageStream = new MemoryStream())
+                    {
+                        diagram.Save(imageStream, saveOptions);
+                        imageStream.Position = 0; // reset stream position for reading
 
-                            // Add the image as an entry in the zip archive
-                            string entryName = $"page_{i + 1}.png";
-                            ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-                            using (Stream entryStream = entry.Open())
-                            {
-                                imgStream.CopyTo(entryStream);
-                            }
+                        // Add the image as an entry in the zip archive
+                        string entryName = $"Page_{i + 1}.png"; // human‑readable page number
+                        ZipArchiveEntry entry = zipArchive.CreateEntry(entryName, CompressionLevel.Optimal);
+                        using (Stream entryStream = entry.Open())
+                        {
+                            imageStream.CopyTo(entryStream);
                         }
                     }
                 }
             }
+
+            // Optional: inform the user
+            Console.WriteLine($"Thumbnails for {diagram.Pages.Count} pages saved to '{zipPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

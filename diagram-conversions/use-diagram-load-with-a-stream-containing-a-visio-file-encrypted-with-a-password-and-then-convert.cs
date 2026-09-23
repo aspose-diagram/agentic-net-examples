@@ -4,48 +4,43 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the encrypted Visio file (password handling is not supported via API)
+        string inputPath = "encrypted.vsdx";
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Desired output PDF file path
+        string outputPath = "converted.pdf";
+
+        try
+        {
+            // Load the Visio diagram from a file stream using the constructor (Diagram.Load does not exist)
+            using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
+                Diagram diagram = new Diagram(stream);
 
-                // Input Visio file path (encrypted file). Password handling is not supported,
-                // so the file must be accessible without a password for this example.
-                string inputPath = "encrypted_diagram.vsdx";
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // specify PDF format
+                pdfOptions.DefaultFont = "Arial"; // fallback font if diagram fonts are missing
 
-                // Output PDF file path.
-                string outputPath = "converted_diagram.pdf";
-
-                try
-                {
-                    // Load the Visio diagram from a file stream.
-                    using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
-                    {
-                        // The Diagram constructor loads the document from the stream.
-                        Diagram diagram = new Diagram(stream);
-
-                        // Prepare PDF save options (default options are sufficient for conversion).
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-                        // Save the diagram as a PDF file.
-                        diagram.Save(outputPath, pdfOptions);
-                    }
-
-                    Console.WriteLine($"Diagram successfully converted and saved to '{outputPath}'.");
-                }
-                catch (Exception ex)
-                {
-                    // Output any errors that occur during loading or saving.
-                    Console.WriteLine("An error occurred during conversion:");
-                    Console.WriteLine(ex.Message);
-                    throw;
-                }
-
+                // Save the diagram as PDF using the options object
+                diagram.Save(outputPath, pdfOptions);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("Conversion completed.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+        }
     }
-    }
+}

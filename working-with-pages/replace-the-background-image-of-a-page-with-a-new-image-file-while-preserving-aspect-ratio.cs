@@ -2,90 +2,79 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file, new background image, output diagram file
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <imagePath> <outputPath>");
-            return;
-        }
+        // Input Visio file, background image file and output Visio file paths.
+        string diagramPath = "input.vsdx";
+        if (!File.Exists(diagramPath)) { Console.Error.WriteLine($"File not found: {diagramPath}"); return; }
 
-        string diagramPath = args[0];
-        // Guard: ensure diagram file exists
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
+        string imagePath = "background.png";
+        if (!File.Exists(imagePath)) { Console.Error.WriteLine($"File not found: {imagePath}"); return; }
 
-        string imagePath = args[1];
-        // Guard: ensure image file exists
-        if (!File.Exists(imagePath))
-        {
-            Console.Error.WriteLine($"File not found: {imagePath}");
-            return;
-        }
-
-        string outputPath = args[2];
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Use the first page (index 0) as the target page
+            // Get the first page (you can change the index or retrieve by name if needed).
             Page page = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+            // Hide any existing background image shapes (type Foreign) on the page.
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Type == TypeValue.Foreign)
+                {
+                    // Mark shape as deleted (hidden) while preserving it in the document.
+                    shape.Del = BOOL.True;
+                }
+            }
 
-            // Load the image to obtain its pixel size and DPI using Aspose.Drawing.Image
+            // Load the image to obtain its pixel dimensions and DPI.
             using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(imagePath))
             {
-                // Convert pixel dimensions to inches using DPI
                 double imgWidthInches = img.Width / img.HorizontalResolution;
                 double imgHeightInches = img.Height / img.VerticalResolution;
 
-                // Compute scaling factor to fit the image within the page while preserving aspect ratio
+                // Page dimensions (in inches).
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Compute scaling factor to preserve aspect ratio and fit within the page.
                 double scale = Math.Min(pageWidth / imgWidthInches, pageHeight / imgHeightInches);
 
-                // Calculate the final width and height for the shape (still in inches)
-                double targetWidth = imgWidthInches * scale;
-                double targetHeight = imgHeightInches * scale;
+                double finalWidth = imgWidthInches * scale;
+                double finalHeight = imgHeightInches * scale;
 
-                // Center the shape on the page (PinX/PinY represent the shape's center)
+                // Center position for the background shape.
                 double pinX = pageWidth / 2.0;
                 double pinY = pageHeight / 2.0;
 
-                // Insert the image as a shape on the page
-                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                // Insert the image as a shape on the page.
+                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
                 {
-                    // AddShape returns the shape ID (long)
-                    long shapeId = page.AddShape(pinX, pinY, targetWidth, targetHeight, imgStream);
+                    long shapeId = page.AddShape(pinX, pinY, finalWidth, finalHeight, fs);
+                    Shape bgShape = page.Shapes.GetShape((int)shapeId);
 
-                    // Retrieve the shape object to adjust its properties
-                    Shape bgShape = page.Shapes.GetShape(shapeId);
-
-                    // Send the image shape to the back so it appears behind other content
+                    // Send the image to the back so other shapes appear above it.
                     bgShape.SendToBack();
 
-                    // Make the background non‑selectable to avoid accidental edits
+                    // Make the background shape non‑selectable.
                     bgShape.Protection.LockSelect.Value = BOOL.True;
                 }
             }
 
-            // Save the modified diagram (preserve original format if possible)
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Background image replaced successfully. Saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any Aspose or I/O errors
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,92 +1,89 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace ShapeFieldExport
+namespace DiagramFieldExport
 {
-    // DTO for individual field information
+    // DTO for field information
     public class FieldInfo
     {
         public int IX { get; set; }
-        public int Type { get; set; }          // Underlying enum value
-        public string Value { get; set; }      // field.Value.Val
-        public string Format { get; set; }     // field.Format.Val
+        public string Value { get; set; }
+        public string Format { get; set; }
+        public int Type { get; set; }
     }
 
-    // DTO for shape information including its fields
-    public class ShapeFieldInfo
+    // DTO for shape information
+    public class ShapeInfo
     {
-        public long ShapeId { get; set; }
-        public string Name { get; set; }
+        public long Id { get; set; }
         public string NameU { get; set; }
         public List<FieldInfo> Fields { get; set; } = new();
     }
 
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main()
         {
             try
             {
 
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
+                // Load the Visio diagram (adjust the path as needed)
+                string diagramPath = "input.vsdx";
+                Diagram diagram = new Diagram(diagramPath);
 
-                // Output JSON file path
-                string jsonOutputPath = "shape_fields.json";
+                // Collect shape information
+                List<ShapeInfo> shapesData = new();
 
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // List to hold extracted information
-                List<ShapeFieldInfo> shapeData = new();
-
-                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Prepare shape info container
-                        ShapeFieldInfo shapeInfo = new()
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        ShapeInfo shapeInfo = new ShapeInfo
                         {
-                            ShapeId = shape.ID,
-                            Name = shape.Name,
+                            Id = shape.ID,
                             NameU = shape.NameU
                         };
 
-                        // Extract fields if any exist
+                        // Extract fields (text insertion fields) if any
                         if (shape.Fields != null && shape.Fields.Count > 0)
                         {
                             foreach (Field field in shape.Fields)
                             {
-                                FieldInfo fInfo = new()
+                                // Field.Value is read‑only; use its .Val property for the actual string
+                                string fieldValue = field.Value?.Val ?? string.Empty;
+                                string fieldFormat = field.Format?.Val ?? string.Empty;
+                                int fieldType = (int)field.Type?.Value;
+
+                                shapeInfo.Fields.Add(new FieldInfo
                                 {
                                     IX = field.IX,
-                                    Type = (int)field.Type.Value,
-                                    Value = field.Value?.Val,
-                                    Format = field.Format?.Val
-                                };
-                                shapeInfo.Fields.Add(fInfo);
+                                    Value = fieldValue,
+                                    Format = fieldFormat,
+                                    Type = fieldType
+                                });
                             }
                         }
 
-                        shapeData.Add(shapeInfo);
+                        shapesData.Add(shapeInfo);
                     }
                 }
 
-                // Serialize to JSON with indentation for readability
-                JsonSerializerOptions options = new()
-                {
-                    WriteIndented = true
-                };
-                string json = JsonSerializer.Serialize(shapeData, options);
+                // Serialize to JSON
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string jsonOutput = JsonSerializer.Serialize(shapesData, jsonOptions);
 
                 // Write JSON to file
-                File.WriteAllText(jsonOutputPath, json);
+                string outputPath = "shape_fields.json";
+                File.WriteAllText(outputPath, jsonOutput);
 
-                Console.WriteLine($"Export completed. JSON saved to: {jsonOutputPath}");
+                Console.WriteLine($"Export completed. JSON saved to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

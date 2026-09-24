@@ -1,106 +1,106 @@
-using System;
 using System.IO;
+using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class Program
+class VisioOverlapResolver
 {
-    static void Main(string[] args)
+    // Represents a simple rectangle for overlap detection
+    private struct Rect
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        public double Left;
+        public double Right;
+        public double Top;
+        public double Bottom;
+    }
+
+    // Compute the bounding rectangle of a shape based on its geometry
+    private static Rect GetShapeRect(Shape shape)
+    {
+        // PinX/Y are the center of the shape
+        double pinX = shape.XForm.PinX.Value;
+        double pinY = shape.XForm.PinY.Value;
+        double width = shape.XForm.Width.Value;
+        double height = shape.XForm.Height.Value;
+
+        double left = pinX - width / 2.0;
+        double right = pinX + width / 2.0;
+        double top = pinY + height / 2.0;
+        double bottom = pinY - height / 2.0;
+
+        return new Rect { Left = left, Right = right, Top = top, Bottom = bottom };
+    }
+
+    // Simple rectangle overlap test
+    private static bool Overlaps(Rect a, Rect b)
+    {
+        return a.Left < b.Right && a.Right > b.Left && a.Bottom < b.Top && a.Top > b.Bottom;
+    }
+
+    // Resolve overlaps on a single page by nudging overlapping shapes to the right
+    private static void ResolvePageOverlaps(Page page)
+    {
+        // Collect shapes that have geometry (skip connectors, groups, etc.)
+        List<Shape> shapes = new List<Shape>();
+        foreach (Shape shape in page.Shapes)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
+            // Only consider shapes with a visible geometry (Width/Height > 0)
+            if (shape.XForm.Width.Value > 0 && shape.XForm.Height.Value > 0)
+                shapes.Add(shape);
         }
 
-        // Output Visio file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Simple O(n^2) detection and resolution
+        for (int i = 0; i < shapes.Count; i++)
+        {
+            Shape shapeA = shapes[i];
+            Rect rectA = GetShapeRect(shapeA);
 
+            for (int j = i + 1; j < shapes.Count; j++)
+            {
+                Shape shapeB = shapes[j];
+                Rect rectB = GetShapeRect(shapeB);
+
+                if (Overlaps(rectA, rectB))
+                {
+                    // Move shapeB to the right by its width plus a small gap
+                    double gap = 0.2; // optional extra spacing
+                    double shift = shapeB.XForm.Width.Value + gap;
+                    shapeB.XForm.PinX.Value += shift;
+
+                    // Recalculate rectangle for shapeB after moving
+                    rectB = GetShapeRect(shapeB);
+                    // Update stored rectangle for future checks
+                    shapes[j] = shapeB;
+                }
+            }
+        }
+    }
+
+    static void Main()
+    {
         try
         {
-            // Load the diagram from the specified file
+
+            // Load the Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram contains at least one page
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Process each page separately
+            // Process each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Collect non‑deleted, non‑connector shapes for processing
-                var shapeIds = new System.Collections.Generic.List<long>();
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True) continue;
-                    // Skip 1‑D connector shapes
-                    if (shape.OneD) continue;
-                    shapeIds.Add(shape.ID);
-                }
-
-                // Simple collision resolution: shift overlapping shapes to the right
-                const double margin = 0.5; // extra space in inches between shapes
-                const double step = 0.5;   // incremental move step in inches
-
-                // Iterate over shapes in the order they were added
-                for (int i = 0; i < shapeIds.Count; i++)
-                {
-                    Shape shapeI = page.Shapes.GetShape(shapeIds[i]);
-
-                    // Compute bounding box for shapeI
-                    double iLeft = shapeI.XForm.PinX.Value - shapeI.XForm.Width.Value / 2.0;
-                    double iRight = shapeI.XForm.PinX.Value + shapeI.XForm.Width.Value / 2.0;
-                    double iTop = shapeI.XForm.PinY.Value + shapeI.XForm.Height.Value / 2.0;
-                    double iBottom = shapeI.XForm.PinY.Value - shapeI.XForm.Height.Value / 2.0;
-
-                    bool moved;
-                    do
-                    {
-                        moved = false;
-                        // Compare with all previously positioned shapes
-                        for (int j = 0; j < i; j++)
-                        {
-                            Shape shapeJ = page.Shapes.GetShape(shapeIds[j]);
-
-                            // Compute bounding box for shapeJ
-                            double jLeft = shapeJ.XForm.PinX.Value - shapeJ.XForm.Width.Value / 2.0;
-                            double jRight = shapeJ.XForm.PinX.Value + shapeJ.XForm.Width.Value / 2.0;
-                            double jTop = shapeJ.XForm.PinY.Value + shapeJ.XForm.Height.Value / 2.0;
-                            double jBottom = shapeJ.XForm.PinY.Value - shapeJ.XForm.Height.Value / 2.0;
-
-                            // Check for rectangle intersection
-                            bool overlapX = iLeft < jRight && iRight > jLeft;
-                            bool overlapY = iBottom < jTop && iTop > jBottom;
-                            if (overlapX && overlapY)
-                            {
-                                // Overlap detected – shift shapeI to the right
-                                shapeI.XForm.PinX.Value += step;
-                                // Re‑calculate bounding box after move
-                                iLeft = shapeI.XForm.PinX.Value - shapeI.XForm.Width.Value / 2.0;
-                                iRight = shapeI.XForm.PinX.Value + shapeI.XForm.Width.Value / 2.0;
-                                // Mark that we moved and need to re‑check against earlier shapes
-                                moved = true;
-                                break;
-                            }
-                        }
-                    } while (moved);
-                }
+                ResolvePageOverlaps(page);
             }
 
-            // Save the adjusted diagram to the output file
+            // Save the modified diagram (replace with desired output path)
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved without overlaps to: {outputPath}");
+
+            Console.WriteLine("Overlap detection and repositioning completed.");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Report any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,80 +1,75 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramPlugins
 {
-    static void Main(string[] args)
+    // Plugin that disables guide visibility when page count exceeds a threshold.
+    public static class ShowGuidesPlugin
     {
-        // Expect two arguments: input diagram path and maximum allowed page count
-        if (args.Length < 2)
+        // Applies the rule to the diagram located at inputPath and saves to outputPath.
+        public static void Apply(string inputPath, string outputPath, int maxPageCount)
         {
-            Console.WriteLine("Usage: DiagramGuidePlugin <inputFilePath> <maxPageCount>");
-            return;
-        }
+            // Load the diagram from file.
+            Diagram diagram = new Diagram(inputPath);
 
-        string inputPath = args[0];
-        if (!int.TryParse(args[1], out int maxPageCount))
-        {
-            Console.WriteLine("Invalid maxPageCount. It must be an integer.");
-            return;
-        }
+            // Check the total number of pages.
+            int pageCount = diagram.Pages.Count;
 
-        // Load the diagram from the specified file
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        int pageCount = diagram.Pages.Count;
-        Console.WriteLine($"Diagram contains {pageCount} page(s).");
-
-        // If the page count exceeds the threshold, disable guide visibility
-        if (pageCount > maxPageCount)
-        {
-            Console.WriteLine($"Page count exceeds {maxPageCount}. Setting ShowGuides to false.");
-
-            // Ensure there is at least one window; create a default one if none exist
-            if (diagram.Windows.Count == 0)
+            // If the diagram has more pages than allowed, hide guides globally.
+            if (pageCount > maxPageCount)
             {
-                Window defaultWindow = new Window();
-                defaultWindow.WindowType = WindowTypeValue.Drawing;
-                defaultWindow.ShowGuides = BOOL.False;
-                diagram.Windows.Add(defaultWindow);
-            }
-            else
-            {
+                // Ensure there is at least one window; create one if none exist.
+                if (diagram.Windows.Count == 0)
+                {
+                    Window window = new Window();
+                    window.WindowType = WindowTypeValue.Drawing;
+                    window.WindowState = WindowStateValue.Maximized;
+                    diagram.Windows.Add(window);
+                }
+
+                // Set ShowGuides to FALSE for all windows.
                 foreach (Window win in diagram.Windows)
                 {
                     win.ShowGuides = BOOL.False;
                 }
             }
-        }
-        else
-        {
-            Console.WriteLine("Page count within limit. No changes applied.");
-        }
 
-        // Prepare output file path (adds "_modified" suffix)
-        string outputPath = System.IO.Path.Combine(
-            System.IO.Path.GetDirectoryName(inputPath) ?? string.Empty,
-            System.IO.Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
-
-        // Save the (potentially) modified diagram
-        try
-        {
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
-        catch (Exception ex)
+    }
+
+    // Console entry point.
+    public class Program
+    {
+        public static void Main(string[] args)
         {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            // Expect three arguments: input file, output file, max page count.
+            if (args.Length != 3)
+            {
+                Console.WriteLine("Usage: DiagramPlugins <inputPath> <outputPath> <maxPageCount>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+            if (!int.TryParse(args[2], out int maxPageCount))
+            {
+                Console.WriteLine("Invalid maxPageCount value.");
+                return;
+            }
+
+            try
+            {
+                ShowGuidesPlugin.Apply(inputPath, outputPath, maxPageCount);
+                Console.WriteLine("Processing completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
         }
     }
 }

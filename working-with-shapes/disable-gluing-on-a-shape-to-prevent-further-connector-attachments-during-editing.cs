@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,15 +14,16 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape you want to modify (example uses shape ID = 1)
-            long shapeId = 1;
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Disable dynamic gluing for this shape to prevent further connector attachments
-            shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Disable dynamic gluing for the shape
+                    // This prevents connectors from being attached to the shape during editing
+                    shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+                }
+            }
 
             // Save the modified diagram
             string outputPath = "output.vsdx";

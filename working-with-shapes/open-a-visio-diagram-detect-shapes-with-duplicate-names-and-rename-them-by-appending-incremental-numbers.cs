@@ -3,47 +3,48 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-class RenameDuplicateShapes
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your actual file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Dictionary to keep track of how many times each shape name appears
+            // Dictionary to keep track of name occurrences (case‑insensitive)
             var nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes without a name
-                    if (string.IsNullOrEmpty(shape.Name))
-                        continue;
+                    // Get the current shape name
+                    string currentName = shape.Name;
 
-                    // If the name has been seen before, rename the shape
-                    if (nameCounts.ContainsKey(shape.Name))
+                    // If the name has been seen before, rename it
+                    if (nameCounts.ContainsKey(currentName))
                     {
-                        // Increment the occurrence count
-                        nameCounts[shape.Name]++;
+                        // Increment the counter for this base name
+                        int duplicateIndex = ++nameCounts[currentName];
 
-                        // Append an incremental number to make the name unique
-                        shape.Name = $"{shape.Name}_{nameCounts[shape.Name]}";
+                        // Create a new unique name by appending the index
+                        string newName = $"{currentName}_{duplicateIndex}";
+
+                        // Apply the new name to the shape
+                        shape.Name = newName;
                     }
                     else
                     {
-                        // First occurrence of this name
-                        nameCounts[shape.Name] = 1;
+                        // First occurrence of this name – initialize its counter
+                        nameCounts[currentName] = 1;
                     }
                 }
             }
 
-            // Save the modified diagram to a new file
+            // Save the modified diagram (replace with your desired output path)
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

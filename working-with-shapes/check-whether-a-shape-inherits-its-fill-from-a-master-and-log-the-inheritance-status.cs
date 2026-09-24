@@ -1,37 +1,43 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram
-            var diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the Visio file (provide via command line or use default)
+                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape has a master and inherits fill formatting from it
-                    bool inheritsFill = shape.Master != null && shape.InheritFill != null;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked for deletion
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Log the inheritance status
-                    Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Inherits Fill: {inheritsFill}");
+                        // Determine if the shape's fill properties match the inherited fill values
+                        bool inheritsFill =
+                            shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
+                            shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value &&
+                            shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
+
+                        // Log the inheritance status
+                        Console.WriteLine($"Shape ID {shape.ID}, NameU '{shape.NameU}': Inherits Fill = {inheritsFill}");
+                    }
                 }
+
             }
-
-            // Save the diagram (no modifications made, just to follow lifecycle rules)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

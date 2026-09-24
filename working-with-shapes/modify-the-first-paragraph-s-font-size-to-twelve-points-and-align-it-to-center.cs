@@ -1,63 +1,80 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Define input file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Find the first non‑deleted shape on the page
+            Shape firstShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Load an existing Visio diagram
-                // Replace "input.vsdx" with the path to your diagram file
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Get the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Retrieve the first shape on the page
-                Shape firstShape = null;
-                foreach (Shape shape in page.Shapes)
+                if (shape.Del == BOOL.False)
                 {
                     firstShape = shape;
                     break;
                 }
-
-                if (firstShape == null)
-                {
-                    throw new Exception("No shapes found on the first page.");
-                }
-
-                // Ensure the shape contains text and at least one paragraph
-                if (firstShape.Text == null || firstShape.Paras.Count == 0)
-                {
-                    throw new Exception("The first shape does not contain any text paragraphs.");
-                }
-
-                // Align the first paragraph to center
-                // HorzAlignValue.Center is the enum value for center alignment
-                firstShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-
-                // Set the font size of all characters in the shape to 12 points (12/72 inches)
-                double fontSizeInInches = 12.0 / 72.0;
-                foreach (Aspose.Diagram.Char ch in firstShape.Chars)
-                {
-                    ch.Size.Value = fontSizeInInches;
-                }
-
-                // Save the modified diagram
-                // Replace "output.vsdx" with the desired output path
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-                // Clean up resources
-                diagram.Dispose();
-
-                Console.WriteLine("Paragraph formatting applied and diagram saved successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (firstShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No visible shape found on the first page.");
+                return;
             }
+
+            // Verify the shape contains at least one paragraph
+            if (firstShape.Paras.Count == 0)
+            {
+                Console.WriteLine("The first shape does not contain any paragraphs.");
+                return;
+            }
+
+            // Set the first paragraph's horizontal alignment to center
+            firstShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+
+            // Ensure there is at least one character run for font size adjustment
+            if (firstShape.Chars.Count == 0)
+            {
+                // Create a default character entry
+                Aspose.Diagram.Char defaultChar = new Aspose.Diagram.Char();
+                defaultChar.IX = 0;
+                firstShape.Chars.Add(defaultChar);
+            }
+
+            // Set the font size of the first character (12 points = 12/72 inches)
+            firstShape.Chars[0].Size.Value = 12.0 / 72.0;
+
+            // Define output file path
+            string outputPath = "output.vsdx";
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("First paragraph updated and diagram saved to " + outputPath);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

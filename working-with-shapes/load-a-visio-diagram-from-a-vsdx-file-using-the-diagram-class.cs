@@ -1,26 +1,24 @@
-using System;
+using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Path to the VSDX file to be loaded
-                string inputPath = "example.vsdx";
+            // Load the Visio diagram from a VSDX file
+            Diagram diagram = new Diagram("sample.vsdx");
 
-                // Load the Visio diagram from the specified file
-                Diagram diagram = new Diagram(inputPath);
+            // Example: output number of pages to verify loading
+            Console.WriteLine($"Diagram loaded successfully. Pages count: {diagram.Pages.Count}");
 
-                // Simple verification: output the number of pages loaded
-                Console.WriteLine($"Diagram loaded successfully. Pages count: {diagram.Pages.Count}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

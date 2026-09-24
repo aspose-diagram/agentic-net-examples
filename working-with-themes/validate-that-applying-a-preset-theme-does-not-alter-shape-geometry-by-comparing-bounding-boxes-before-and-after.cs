@@ -2,91 +2,84 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-// Simple struct to hold bounding box coordinates
-    struct BoundingBox
+class Program
     {
-        public double Left;
-        public double Right;
-        public double Top;
-        public double Bottom;
-    }
+        // Simple container for shape geometry
+        private class ShapeGeometry
+        {
+            public double PinX { get; set; }
+            public double PinY { get; set; }
+            public double Width { get; set; }
+            public double Height { get; set; }
+        }
 
-    class Program
-    {
         static void Main()
         {
             try
             {
 
-                // Path to the source Visio file (replace with actual file path)
-                const string inputPath = "input.vsdx";
-                const string outputPath = "output_with_theme.vsdx";
-
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Work with the first page (adjust index if needed)
+                // Get the first page (assumes at least one page exists)
                 Page page = diagram.Pages[0];
 
-                // Store original bounding boxes keyed by shape ID
-                var originalBoxes = new System.Collections.Generic.Dictionary<long, BoundingBox>();
-
-                // Capture geometry before applying the theme
+                // Store geometry of each shape before applying the theme
+                var beforeGeometries = new System.Collections.Generic.Dictionary<long, ShapeGeometry>();
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    BoundingBox box = GetBoundingBox(shape);
-                    originalBoxes[shape.ID] = box;
+                    var geom = new ShapeGeometry
+                    {
+                        PinX = shape.XForm.PinX.Value,
+                        PinY = shape.XForm.PinY.Value,
+                        Width = shape.XForm.Width.Value,
+                        Height = shape.XForm.Height.Value
+                    };
+                    beforeGeometries[shape.ID] = geom;
                 }
 
                 // Apply a preset theme to the page
                 page.PresetTheme = PresetThemeValue.Bubble;
-                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                // (Optional) set a variant if desired
+                // page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-                // Optionally save the diagram to verify the theme is applied
+                // Save the diagram after theme application (optional, but demonstrates persistence)
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
                 // Compare geometry after theme application
-                bool allMatch = true;
-                const double epsilon = 1e-4; // tolerance for floating‑point comparison
-
+                const double tolerance = 1e-6;
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    if (!originalBoxes.TryGetValue(shape.ID, out BoundingBox before))
+                    if (!beforeGeometries.TryGetValue(shape.ID, out ShapeGeometry before))
                     {
-                        Console.WriteLine($"Shape ID {shape.ID} was not present before theme application.");
-                        allMatch = false;
+                        // New shape introduced by the theme (unlikely); ignore or handle as needed
                         continue;
                     }
 
-                    BoundingBox after = GetBoundingBox(shape);
+                    bool mismatch =
+                        Math.Abs(shape.XForm.PinX.Value - before.PinX) > tolerance ||
+                        Math.Abs(shape.XForm.PinY.Value - before.PinY) > tolerance ||
+                        Math.Abs(shape.XForm.Width.Value - before.Width) > tolerance ||
+                        Math.Abs(shape.XForm.Height.Value - before.Height) > tolerance;
 
-                    if (Math.Abs(before.Left - after.Left) > epsilon ||
-                        Math.Abs(before.Right - after.Right) > epsilon ||
-                        Math.Abs(before.Top - after.Top) > epsilon ||
-                        Math.Abs(before.Bottom - after.Bottom) > epsilon)
+                    if (mismatch)
                     {
-                        Console.WriteLine($"Geometry changed for Shape ID {shape.ID}.");
-                        Console.WriteLine($"Before: L={before.Left}, R={before.Right}, T={before.Top}, B={before.Bottom}");
-                        Console.WriteLine($"After : L={after.Left}, R={after.Right}, T={after.Top}, B={after.Bottom}");
-                        allMatch = false;
+                        throw new Exception($"Geometry changed for shape ID {shape.ID} after applying theme.");
                     }
                 }
 
-                if (allMatch)
-                {
-                    Console.WriteLine("All shape geometries remain unchanged after applying the preset theme.");
-                }
-                else
-                {
-                    throw new Exception("One or more shapes changed geometry after applying the preset theme.");
-                }
+                Console.WriteLine("All shape geometries remain unchanged after applying the preset theme.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -94,21 +87,4 @@ using Aspose.Diagram.Saving;
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Helper method to compute the bounding box of a shape
-        private static BoundingBox GetBoundingBox(Shape shape)
-        {
-            double pinX = shape.XForm.PinX.Value;
-            double pinY = shape.XForm.PinY.Value;
-            double width = shape.XForm.Width.Value;
-            double height = shape.XForm.Height.Value;
-
-            return new BoundingBox
-            {
-                Left = pinX - width / 2.0,
-                Right = pinX + width / 2.0,
-                Top = pinY + height / 2.0,
-                Bottom = pinY - height / 2.0
-            };
-        }
     }

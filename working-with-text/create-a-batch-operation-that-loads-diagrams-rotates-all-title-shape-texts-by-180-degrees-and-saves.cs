@@ -1,62 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Input and output directories can be passed as arguments; otherwise use defaults.
+            string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
+            string outputFolder = args.Length > 1 ? args[1] : "OutputDiagrams";
+
+            // Ensure the output directory exists.
+            if (!Directory.Exists(outputFolder))
             {
+                Directory.CreateDirectory(outputFolder);
+            }
 
-                // Input folder containing Visio files
-                string inputFolder = @"C:\Diagrams\Input";
-                // Output folder for processed files
-                string outputFolder = @"C:\Diagrams\Output";
+            // Process all Visio files (VSDX) in the input folder.
+            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
 
-                // Ensure output directory exists
-                if (!Directory.Exists(outputFolder))
+            foreach (string filePath in diagramFiles)
+            {
+                try
                 {
-                    Directory.CreateDirectory(outputFolder);
-                }
+                    // Load the diagram.
+                    Diagram diagram = new Diagram(filePath);
 
-                // Process each .vsdx file in the input folder
-                foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
-                {
-                    // Load the diagram
-                    using (Diagram diagram = new Diagram(filePath))
+                    // Iterate through all pages and shapes.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all pages
-                        foreach (Page page in diagram.Pages)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through all shapes on the page
-                            foreach (Shape shape in page.Shapes)
+                            // Identify title shapes by their universal name.
+                            if (!string.IsNullOrEmpty(shape.NameU) &&
+                                shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Identify title shapes by name (case‑insensitive contains "Title")
-                                if (!string.IsNullOrEmpty(shape.NameU) &&
-                                    shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
+                                // Ensure the TextXForm object exists.
+                                if (shape.TextXForm != null)
                                 {
-                                    // Rotate the text block by 180 degrees (π radians)
+                                    // Rotate the text by 180 degrees (π radians).
                                     shape.TextXForm.TxtAngle.Value = Math.PI;
                                 }
                             }
                         }
-
-                        // Save the modified diagram to the output folder
-                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
                     }
 
-                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                    // Build the output file path.
+                    string outputFileName = Path.GetFileNameWithoutExtension(filePath) + "_rotated.vsdx";
+                    string outputPath = Path.Combine(outputFolder, outputFileName);
+
+                    // Save the modified diagram.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                    Console.WriteLine($"Processed and saved: {outputPath}");
                 }
-
-                Console.WriteLine("Batch processing completed.");
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
             }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
+
+            Console.WriteLine("Batch processing completed.");
+        }
     }

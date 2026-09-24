@@ -1,54 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // The ID of the shape we want to retrieve
+            long shapeId = 12345; // example ID
+
             try
             {
-
-                // Path to the source Visio file
-                string inputPath = "sample.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Choose the page (first page in this example)
-                Page page = diagram.Pages[0];
-
-                // The shape ID we want to retrieve (example value)
-                long shapeId = 12345;
-
-                try
-                {
-                    // Attempt to get the shape by its ID
-                    Shape shape = page.Shapes.GetShape(shapeId);
-
-                    // If GetShape returns null (unlikely), handle it explicitly
-                    if (shape == null)
-                    {
-                        Console.WriteLine($"Shape with ID {shapeId} was not found (null returned).");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Shape found: ID={shape.ID}, Name={shape.Name}");
-                        // Additional processing on the shape can be placed here
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Catch any exception that occurs when the shape ID does not exist
-                    Console.WriteLine($"Error retrieving shape with ID {shapeId}: {ex.Message}");
-                }
-
-                // Optional: save the diagram after any modifications
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Attempt to get the shape by ID from the first page
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                Console.WriteLine($"Shape found: ID={shape.ID}, NameU={shape.NameU}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Handle the case where the shape ID does not exist
+                Console.WriteLine($"Error: Shape with ID {shapeId} was not found. Details: {ex.Message}");
             }
+
+            // Optionally save the diagram after processing
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -8,72 +10,77 @@ class Program
             try
             {
 
-                // Input and output file paths (can be passed as command‑line arguments)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                try
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define required custom properties and their default values
+                var requiredProperties = new Dictionary<string, string>
                 {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(inputPath);
+                    { "PropA", "DefaultA" },
+                    { "PropB", "DefaultB" },
+                    { "PropC", "DefaultC" }
+                };
 
-                    // Define the default custom property details
-                    const string defaultPropName = "DefaultProp";
-                    const string defaultPropLabel = "Default Property";
-                    const string defaultPropValue = "DefaultValue";
-
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
+                        // Ensure the Props collection is not null
+                        if (shape.Props == null)
+                            continue;
+
+                        // Track existing property names for quick lookup
+                        var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (Prop existingProp in shape.Props)
                         {
-                            // Ensure the Props collection exists
-                            if (shape.Props == null)
-                                continue;
+                            if (!string.IsNullOrEmpty(existingProp.Name))
+                                existingNames.Add(existingProp.Name);
+                        }
 
-                            // Check whether the shape already contains the default property
-                            bool hasDefault = false;
-                            foreach (Prop existingProp in shape.Props)
-                            {
-                                if (existingProp.Name == defaultPropName)
-                                {
-                                    hasDefault = true;
-                                    break;
-                                }
-                            }
+                        // Add missing properties with default values
+                        foreach (var kvp in requiredProperties)
+                        {
+                            string propName = kvp.Key;
+                            string defaultValue = kvp.Value;
 
-                            // If missing, add the default custom property
-                            if (!hasDefault)
+                            if (!existingNames.Contains(propName))
                             {
+                                // Create a new custom property (Prop)
                                 Prop newProp = new Prop();
-                                newProp.Name = defaultPropName;
-                                newProp.Label.Value = defaultPropLabel;
-                                newProp.Value.Val = defaultPropValue;
-                                newProp.Type.Value = TypePropValue.String; // String type
 
+                                // Set the property name (identifier)
+                                newProp.Name = propName;
+
+                                // Set a user-friendly label (optional)
+                                newProp.Label.Value = propName;
+
+                                // Set the default value
+                                newProp.Value.Val = defaultValue;
+
+                                // Define the property type as string
+                                newProp.Type.Value = TypePropValue.String;
+
+                                // Add the new property to the shape's Props collection
                                 shape.Props.Add(newProp);
-
-                                Console.WriteLine($"Added default property to shape ID {shape.ID} on page \"{page.Name}\".");
                             }
                         }
                     }
+                }
 
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to \"{outputPath}\".");
-                }
-                catch (Exception ex)
-                {
-                    // Report any errors
-                    Console.WriteLine("An error occurred:");
-                    Console.WriteLine(ex.Message);
-                    throw;
-                }
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram processing completed. Saved to: " + outputPath);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

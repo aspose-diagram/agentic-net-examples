@@ -1,44 +1,65 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
+using Aspose.Diagram.Saving; // Required for shape operations per rules
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the first argument to be the Visio file path
+        string filePath = args.Length > 0 ? args[0] : string.Empty;
+        // Guard: ensure the file path is provided and the file exists
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            Console.Error.WriteLine("Error: No file path provided.");
+            return;
+        }
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            bool violationFound = false; // Track if any shape violates the rule
 
-            // Iterate through all pages and shapes
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Determine the zero‑based index of the current page within the diagram
+                int pageIndex = diagram.Pages.IndexOf(page);
+
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape has a ThreeDFormat and a RotationYAngle defined
-                    if (shape.ThreeDFormat != null && shape.ThreeDFormat.RotationYAngle != null)
+                    // Access the Y‑axis rotation angle (in degrees) from the 3D format
+                    double rotationY = shape.ThreeDFormat.RotationYAngle.Value;
+
+                    // Check if the rotation exceeds 360 degrees
+                    if (rotationY > 360.0)
                     {
-                        double angle = shape.ThreeDFormat.RotationYAngle.Value;
-                        // Validate that the angle does not exceed 360 degrees
-                        if (angle > 360.0)
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' exceeds 360° (Current: {angle}°).");
-                            // Optionally, correct the value
-                            shape.ThreeDFormat.RotationYAngle.Value = 360.0;
-                        }
+                        // Report the offending shape with its ID, page index, and rotation value
+                        Console.Error.WriteLine($"Violation: Shape ID {shape.ID} on page index {pageIndex} has RotationYAngle = {rotationY}° (exceeds 360°).");
+                        violationFound = true;
                     }
                 }
             }
 
-            // Save the diagram (if any modifications were made)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // If no violations were detected, output a success message
+            if (!violationFound)
+            {
+                Console.WriteLine("Validation passed: No shape exceeds a RotationYAngle of 360 degrees.");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

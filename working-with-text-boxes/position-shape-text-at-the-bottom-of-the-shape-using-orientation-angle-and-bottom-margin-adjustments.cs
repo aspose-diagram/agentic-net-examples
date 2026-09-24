@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,49 +9,43 @@ class Program
         try
         {
 
-            // Input and output file paths
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+            // Desired text rotation (degrees) and bottom margin (inches)
+            double angleDegrees = 0;      // No rotation; change as needed
+            double bottomMargin = 0.1;    // Example bottom margin
 
-            // Find the first non-deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Convert degrees to radians for the TxtAngle property
+            double angleRadians = (Math.PI / 180) * angleDegrees;
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                if (shape.Del == BOOL.False)
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = shape;
-                    break;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Set the text orientation angle
+                    shape.TextXForm.TxtAngle.Value = angleRadians;
+
+                    // Position the text at the bottom of the shape
+                    // TxtLocPinY defines the offset from the text block's bottom edge to its local pin
+                    // Subtract the desired margin so the text sits above the bottom edge
+                    shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value - bottomMargin;
+
+                    // TxtPinY defines the distance from the shape's bottom edge to the text block origin
+                    shape.TextXForm.TxtPinY.Value = bottomMargin;
                 }
             }
 
-            if (targetShape == null)
-            {
-                throw new Exception("No visible shape found on the page.");
-            }
-
-            // Desired text orientation angle in degrees (modify as needed)
-            double angleDeg = 0.0;
-            double angleRad = (Math.PI / 180.0) * angleDeg;
-
-            // Apply rotation to the text block
-            targetShape.TextXForm.TxtAngle.Value = angleRad;
-
-            // Position text at the bottom of the shape
-            // Set the local pin Y to the height of the text block (so the bottom aligns)
-            targetShape.TextXForm.TxtLocPinY.Value = targetShape.TextXForm.TxtHeight.Value;
-            // Set the pin Y to 0 (bottom edge of the shape)
-            targetShape.TextXForm.TxtPinY.Value = 0.0;
-
-            // Optional: adjust bottom margin of the text block (e.g., 0.1 inches)
-            targetShape.TextBlock.BottomMargin.Value = 0.1;
-
             // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

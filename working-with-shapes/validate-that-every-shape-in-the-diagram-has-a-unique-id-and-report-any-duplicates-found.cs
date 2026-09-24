@@ -3,62 +3,78 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
+public class DiagramValidator
+{
+    /// <summary>
+    /// Validates that every shape in the diagram has a unique ID.
+    /// Prints duplicate IDs and the shapes that share them.
+    /// </summary>
+    /// <param name="filePath">Path to the Visio diagram file (e.g., .vsdx).</param>
+    public static void ValidateUniqueShapeIds(string filePath)
+    {
+        // Load the diagram using Aspose.Diagram
+        Diagram diagram = new Diagram(filePath);
+
+        // Dictionary to map shape ID to list of shapes that use it
+        var idMap = new Dictionary<long, List<Shape>>();
+
+        // Iterate through all pages and their shapes
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                long shapeId = shape.ID;
+
+                // Add shape to the map
+                if (!idMap.ContainsKey(shapeId))
+                {
+                    idMap[shapeId] = new List<Shape>();
+                }
+                idMap[shapeId].Add(shape);
+            }
+        }
+
+        // Find and report duplicate IDs
+        bool duplicatesFound = false;
+        foreach (var kvp in idMap)
+        {
+            if (kvp.Value.Count > 1)
+            {
+                duplicatesFound = true;
+                Console.WriteLine($"Duplicate Shape ID: {kvp.Key}");
+                foreach (Shape dupShape in kvp.Value)
+                {
+                    // Report page name and shape name for context
+                    string pageName = dupShape.Page != null ? dupShape.Page.NameU : "UnknownPage";
+                    string shapeName = dupShape.NameU ?? "UnnamedShape";
+                    Console.WriteLine($"\tPage: {pageName}, Shape Name: {shapeName}");
+                }
+            }
+        }
+
+        if (!duplicatesFound)
+        {
+            Console.WriteLine("All shape IDs are unique.");
+        }
+    }
+}
+
+// Example usage:
+// DiagramValidator.ValidateUniqueShapeIds("C:\\Diagrams\\sample.vsdx");
+
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Map each Shape ID to the list of (Page, Shape) pairs that share that ID
-            var idMap = new Dictionary<long, List<(Page page, Shape shape)>>();
-
-            // Traverse all pages and their shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    long id = shape.ID;
-
-                    if (!idMap.ContainsKey(id))
-                    {
-                        idMap[id] = new List<(Page, Shape)>();
-                    }
-
-                    idMap[id].Add((page, shape));
-                }
-            }
-
-            // Detect and report duplicate IDs
-            bool duplicatesFound = false;
-
-            foreach (var entry in idMap)
-            {
-                if (entry.Value.Count > 1) // More than one shape with the same ID
-                {
-                    duplicatesFound = true;
-                    Console.WriteLine($"Duplicate Shape ID: {entry.Key}");
-
-                    foreach (var (page, shape) in entry.Value)
-                    {
-                        // Shape.Name may be empty; include page name for context
-                        Console.WriteLine($"\tPage: {page.Name}, Shape Name: {shape.Name}");
-                    }
-                }
-            }
-
-            if (!duplicatesFound)
-            {
-                Console.WriteLine("No duplicate shape IDs found.");
-            }
+            DiagramValidator.ValidateUniqueShapeIds("");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

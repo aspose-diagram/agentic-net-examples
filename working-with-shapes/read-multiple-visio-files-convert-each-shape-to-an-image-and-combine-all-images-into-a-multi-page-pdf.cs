@@ -8,158 +8,109 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt for the folder containing Visio files if not provided as an argument.
-        string folderPath = args.Length > 0 ? args[0] : "";
-        if (string.IsNullOrWhiteSpace(folderPath))
+        // Folder containing Visio files (change as needed)
+        string inputFolder = @"C:\VisioFiles";
+        // Verify the input folder exists
+        if (!Directory.Exists(inputFolder))
         {
-            Console.Write("Enter the full path to the folder with Visio files: ");
-            folderPath = Console.ReadLine() ?? "";
-        }
-
-        // Guard: ensure the folder exists before proceeding.
-        if (!Directory.Exists(folderPath))
-        {
-            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            Console.Error.WriteLine($"Folder not found: {inputFolder}");
             return;
         }
 
-        // Prepare a list to hold paths of temporary PNG images generated from shapes.
-        List<string> tempImagePaths = new List<string>();
+        // Output PDF file
+        string outputPdfPath = @"C:\Output\CombinedShapes.pdf";
 
-        // Enumerate supported Visio file extensions.
-        string[] visioExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
+        // Collect temporary image file paths
+        List<string> imageFiles = new List<string>();
 
-        // Iterate over each Visio file in the specified folder.
-        foreach (string visioFilePath in Directory.GetFiles(folderPath))
+        // Process each Visio file in the folder
+        foreach (string visioPath in Directory.GetFiles(inputFolder, "*.vsdx"))
         {
-            // Guard: verify each discovered file actually exists (redundant but follows the rule).
-            if (!File.Exists(visioFilePath))
+            // Verify the Visio file exists (should always be true from GetFiles, but guard per rules)
+            if (!File.Exists(visioPath))
             {
-                Console.Error.WriteLine($"File not found: {visioFilePath}");
+                Console.Error.WriteLine($"File not found: {visioPath}");
                 continue;
             }
 
-            // Process only files with supported Visio extensions.
-            if (Array.IndexOf(visioExtensions, Path.GetExtension(visioFilePath).ToLower()) < 0)
-                continue;
-
             try
             {
-                // Load the Visio diagram from the file.
-                Diagram diagram = new Diagram(visioFilePath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioPath);
 
-                // Iterate through each page in the diagram.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Create a unique temporary file name for the shape image.
-                        string tempImagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
+                        // Export the shape to a PNG image
+                        string tempImagePath = Path.Combine(Path.GetTempPath(),
+                            Guid.NewGuid().ToString() + ".png");
 
-                        // Guard: ensure the temporary path is valid (file does not exist yet).
-                        if (File.Exists(tempImagePath))
-                        {
-                            Console.Error.WriteLine($"Unexpected existing temp file: {tempImagePath}");
-                            continue;
-                        }
-
-                        // Configure PNG export options.
                         ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-
-                        // Export the shape to a PNG file.
                         shape.ToImage(tempImagePath, imgOptions);
-
-                        // Guard: verify the image was created successfully.
-                        if (!File.Exists(tempImagePath))
-                        {
-                            Console.Error.WriteLine($"Failed to create image for shape ID {shape.ID} in file {visioFilePath}");
-                            continue;
-                        }
-
-                        // Store the temporary image path for later PDF assembly.
-                        tempImagePaths.Add(tempImagePath);
+                        imageFiles.Add(tempImagePath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Log any errors that occur while processing a Visio file.
-                Console.Error.WriteLine($"Error processing '{visioFilePath}': {ex.Message}");
+                // Log any errors that occur while processing a Visio file
+                Console.Error.WriteLine($"Error processing '{visioPath}': {ex.Message}");
             }
         }
-
-        // If no images were generated, exit early.
-        if (tempImagePaths.Count == 0)
-        {
-            Console.WriteLine("No shapes were exported; PDF will not be created.");
-            return;
-        }
-
-        // Define the output PDF file path in the current working directory.
-        string outputPdfPath = Path.Combine(Directory.GetCurrentDirectory(), "CombinedShapes.pdf");
 
         try
         {
-            // Create a new Aspose.Pdf document (fully qualified to avoid namespace conflicts).
+            // Create a new PDF document using fully qualified Aspose.Pdf types
             Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
 
-            // Add each PNG image as a separate page in the PDF.
-            foreach (string imgPath in tempImagePaths)
+            // Add each image as a separate page
+            foreach (string imgPath in imageFiles)
             {
-                // Guard: ensure the image file still exists before adding.
-                if (!File.Exists(imgPath))
-                {
-                    Console.Error.WriteLine($"Image file missing before PDF insertion: {imgPath}");
-                    continue;
-                }
-
-                // Create a new page in the PDF document.
+                // Add a new page
                 Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
 
-                // Load the image bytes into a memory stream.
-                using (FileStream imgStream = new FileStream(imgPath, FileMode.Open, FileAccess.Read))
-                {
-                    // Create an Aspose.Pdf image object and assign the stream.
-                    Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image
-                    {
-                        ImageStream = imgStream
-                    };
+                // Create an image object and set its source file
+                Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
+                pdfImage.File = imgPath;
 
-                    // Add the image to the page's paragraph collection.
-                    pdfPage.Paragraphs.Add(pdfImage);
-                }
+                // Fit the image to the page dimensions
+                pdfImage.FixWidth = pdfPage.PageInfo.Width;
+                pdfImage.FixHeight = pdfPage.PageInfo.Height;
+
+                // Add the image to the page
+                pdfPage.Paragraphs.Add(pdfImage);
             }
 
-            // Save the assembled PDF to the designated output path.
-            pdfDoc.Save(outputPdfPath, Aspose.Pdf.SaveFormat.Pdf);
-
-            Console.WriteLine($"PDF successfully created at: {outputPdfPath}");
+            // Save the combined PDF
+            pdfDoc.Save(outputPdfPath);
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during PDF creation.
+            // Log any errors that occur during PDF creation
             Console.Error.WriteLine($"Error creating PDF: {ex.Message}");
+            return;
         }
-        finally
+
+        // Clean up temporary image files
+        foreach (string imgPath in imageFiles)
         {
-            // Clean up all temporary image files.
-            foreach (string imgPath in tempImagePaths)
+            try
             {
-                try
-                {
-                    if (File.Exists(imgPath))
-                        File.Delete(imgPath);
-                }
-                catch
-                {
-                    // Suppress any cleanup errors to avoid breaking the main flow.
-                }
+                File.Delete(imgPath);
+            }
+            catch
+            {
+                // Ignore any errors during cleanup
             }
         }
+
+        Console.WriteLine($"PDF created successfully at: {outputPdfPath}");
     }
 }

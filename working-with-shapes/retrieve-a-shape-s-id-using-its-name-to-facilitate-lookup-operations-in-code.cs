@@ -10,25 +10,41 @@ class Program
         {
 
             // Path to the Visio file
-            string diagramPath = "input.vsdx";
-
-            // Name of the shape whose ID we want to retrieve
-            string targetShapeName = "MyShape";
+            string filePath = "sample.vsdx";
 
             // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(filePath);
 
-            // Find the shape ID by name
-            long shapeId = FindShapeIdByName(diagram, targetShapeName);
+            // The shape name to search for (NameU is the universal name)
+            string targetShapeName = "MyShape";
+
+            // Variable to hold the found shape ID
+            long foundShapeId = -1;
+
+            // Iterate through all pages and shapes to locate the shape by name
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.NameU == targetShapeName)
+                    {
+                        foundShapeId = shape.ID;
+                        break;
+                    }
+                }
+
+                if (foundShapeId != -1)
+                    break;
+            }
 
             // Output the result
-            if (shapeId != -1)
+            if (foundShapeId != -1)
             {
-                Console.WriteLine($"Shape \"{targetShapeName}\" has ID: {shapeId}");
+                Console.WriteLine($"Shape '{targetShapeName}' found with ID: {foundShapeId}");
             }
             else
             {
-                Console.WriteLine($"Shape \"{targetShapeName}\" was not found in the diagram.");
+                Console.WriteLine($"Shape '{targetShapeName}' not found in the diagram.");
             }
 
         }
@@ -36,24 +52,5 @@ class Program
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
-    }
-
-    // Searches all pages and shapes for a shape with the specified name.
-    // Returns the shape's ID if found; otherwise returns -1.
-    static long FindShapeIdByName(Diagram diagram, string shapeName)
-    {
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                // Compare both NameU (universal) and Name (local) case‑insensitively
-                if (string.Equals(shape.NameU, shapeName, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(shape.Name, shapeName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return shape.ID;
-                }
-            }
-        }
-        return -1;
     }
 }

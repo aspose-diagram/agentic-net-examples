@@ -1,47 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: input Visio file path and output Visio file path.
-            if (args.Length < 2)
+
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Usage: VisioConnectorStyler <inputPath> <outputPath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            try
-            {
-                // Load the Visio diagram from the specified file.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify connector shapes (1‑D) and apply dashed line style
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes (1‑D shapes).
-                        if (shape.OneD)
-                        {
-                            // Set the line pattern to dashed.
-                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
-                        }
+                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
                     }
                 }
+            }
 
-                // Save the modified diagram to the output path in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing diagram: {ex.Message}");
-            }
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

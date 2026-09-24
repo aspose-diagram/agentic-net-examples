@@ -2,17 +2,17 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class Program
+class MoveShapesOnDetailsPage
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Locate the page named "Details"
+            // Find the page named "Details"
             Page detailsPage = null;
             foreach (Page page in diagram.Pages)
             {
@@ -23,14 +23,18 @@ class Program
                 }
             }
 
-            // If the page exists, move each shape 20 units to the right (X axis)
+            // If the page exists, move each shape on it
             if (detailsPage != null)
             {
                 foreach (Shape shape in detailsPage.Shapes)
                 {
-                    // Move adds the offset to the current position; Y offset is 0
-                    shape.Move(20.0, 0.0);
+                    // Add 20 units to the X coordinate (PinX)
+                    shape.XForm.PinX.Value += 20;
                 }
+            }
+            else
+            {
+                Console.WriteLine("Page named \"Details\" not found.");
             }
 
             // Save the modified diagram

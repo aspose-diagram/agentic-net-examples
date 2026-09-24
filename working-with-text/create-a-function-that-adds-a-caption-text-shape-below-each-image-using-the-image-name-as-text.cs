@@ -1,103 +1,82 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output Visio file.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
-            return;
+            // Example usage:
+            // args[0] = input Visio file path
+            // args[1] = output Visio file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramCaptionExample <input.vsdx> <output.vsdx>");
+                return;
+            }
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+
+            AddCaptionsBelowImages(inputPath, outputPath);
+            Console.WriteLine($"Diagram saved with captions to: {outputPath}");
         }
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        /// <summary>
+        /// Loads a Visio diagram, finds all image (foreign) shapes, and adds a text shape
+        /// directly below each image using the image's name as the caption.
+        /// </summary>
+        /// <param name="inputFile">Path to the source Visio file.</param>
+        /// <param name="outputFile">Path where the modified Visio file will be saved.</param>
+        static void AddCaptionsBelowImages(string inputFile, string outputFile)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            // Load the diagram
+            Diagram diagram = new Diagram(inputFile);
 
-        string outputPath = args[1];
-        // Guard: ensure the directory for the output file exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
-
-        try
-        {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Collect foreign (image) shapes first to avoid modifying the collection while iterating.
-                var imageShapeIds = new System.Collections.Generic.List<long>();
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify image shapes by TypeValue.Foreign.
+                    // Identify image shapes (foreign objects)
                     if (shape.Type == TypeValue.Foreign)
                     {
-                        imageShapeIds.Add(shape.ID);
-                    }
-                }
+                        // Use the universal name of the shape as the caption text
+                        string captionText = shape.NameU ?? "Image";
 
-                // Process each image shape.
-                foreach (long shapeId in imageShapeIds)
-                {
-                    Shape imgShape = page.Shapes.GetShape(shapeId);
-                    if (imgShape == null) continue; // Safety check.
+                        // Retrieve geometric data of the image shape
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
 
-                    // Use the shape's universal name as the caption text (fallback to empty string).
-                    string captionText = imgShape.NameU ?? string.Empty;
+                        // Position the caption below the image
+                        // Image bottom Y = PinY - (Height / 2)
+                        // Add a small offset (0.2 inches) for spacing
+                        double captionPinX = pinX;
+                        double captionPinY = pinY - (height / 2) - 0.2;
 
-                    // Determine position for the caption: directly below the image.
-                    double imgPinX = imgShape.XForm.PinX.Value;
-                    double imgPinY = imgShape.XForm.PinY.Value;
-                    double imgWidth = imgShape.XForm.Width.Value;
-                    double imgHeight = imgShape.XForm.Height.Value;
+                        // Define a reasonable size for the caption text shape
+                        double captionWidth = width;
+                        double captionHeight = 0.3; // height of the text box in inches
 
-                    // Bottom edge of the image.
-                    double imgBottomY = imgPinY - (imgHeight / 2.0);
+                        // Add the text shape to the page
+                        // AddText returns a Shape object representing the new text shape
+                        Shape captionShape = page.AddText(
+                            captionPinX,
+                            captionPinY,
+                            captionWidth,
+                            captionHeight,
+                            captionText);
 
-                    // Define caption dimensions.
-                    double captionWidth = imgWidth;          // Same width as the image.
-                    double captionHeight = 0.2;              // 0.2 inches height for the text box.
-                    double margin = 0.05;                    // Small gap between image and caption.
-
-                    // Center the caption horizontally with the image.
-                    double captionPinX = imgPinX;
-
-                    // Position the caption below the image, accounting for margin.
-                    double captionPinY = imgBottomY - margin - (captionHeight / 2.0);
-
-                    // Add a text shape (caption) to the page.
-                    Shape captionShape = page.AddText(captionPinX, captionPinY, captionWidth, captionHeight, captionText);
-
-                    // Optional: set a simple text formatting (e.g., center alignment).
-                    // Align the text horizontally by setting the paragraph alignment.
-                    if (captionShape.Paras.Count > 0)
-                    {
-                        captionShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+                        // Optional: center the text horizontally within the shape
+                        // (Visio centers text by default, so no extra formatting needed)
                     }
                 }
             }
 
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with captions to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Save the modified diagram
+            diagram.Save(outputFile, SaveFileFormat.Vsdx);
         }
     }
-}

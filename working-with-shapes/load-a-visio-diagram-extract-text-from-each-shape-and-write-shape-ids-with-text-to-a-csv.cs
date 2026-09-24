@@ -3,88 +3,65 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Verify that both input and output file paths are provided.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputCsvPath>");
-            return;
-        }
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: VisioTextExtractor <inputVisioPath> <outputCsvPath>");
+                return;
+            }
 
-        // Assign input and output paths from command‑line arguments.
-        string inputPath = args[0];
-        // Guard: ensure the Visio file exists before proceeding.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            string inputPath = args[0];
+            string outputCsvPath = args[1];
 
-        string outputPath = args[1];
-        // Guard: ensure the directory for the CSV exists (create if necessary).
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
+            // Load the Visio diagram
+            Diagram diagram;
             try
             {
-                Directory.CreateDirectory(outputDir);
+                diagram = new Diagram(inputPath);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
                 return;
             }
-        }
 
-        try
-        {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Open a StreamWriter for the CSV output (overwrites existing file).
-            using (StreamWriter writer = new StreamWriter(outputPath, false))
+            // Open CSV writer
+            try
             {
-                // Write CSV header.
-                writer.WriteLine("ShapeID,Text");
-
-                // Iterate over each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                using (var writer = new StreamWriter(outputCsvPath, false))
                 {
-                    // Iterate over each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Write CSV header
+                    writer.WriteLine("ShapeId,Text");
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve the plain text of the shape.
-                        string text = shape.Text.Value.Text;
-
-                        // Normalize text: replace line breaks and commas to keep CSV well‑formed.
-                        if (!string.IsNullOrEmpty(text))
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            text = text.Replace("\r\n", " ").Replace("\n", " ").Replace("\r", " ");
-                            text = text.Replace(",", " "); // Simple comma removal.
+                            // Retrieve shape ID
+                            long shapeId = shape.ID;
+
+                            // Retrieve plain text of the shape
+                            string text = shape.Text.Value.Text ?? string.Empty;
+
+                            // Clean text for CSV (replace commas and newlines)
+                            text = text.Replace(",", " ").Replace("\r", " ").Replace("\n", " ").Trim();
+
+                            // Write CSV line
+                            writer.WriteLine($"{shapeId},\"{text}\"");
                         }
-
-                        // Escape double quotes by doubling them, then wrap the field in quotes.
-                        string escapedText = $"\"{text.Replace("\"", "\"\"")}\"";
-
-                        // Write the shape ID and its text to the CSV.
-                        writer.WriteLine($"{shape.ID},{escapedText}");
                     }
                 }
-            }
 
-            // Inform the user that processing completed successfully.
-            Console.WriteLine($"Extraction completed. CSV saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occurred during loading or processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Extraction completed. CSV saved to: {outputCsvPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to write CSV: {ex.Message}");
+            }
         }
     }
-}

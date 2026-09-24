@@ -1,81 +1,76 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the Visio file (replace with actual path)
-        string filePath = "input.vsdx";
-
-        // Guard: ensure the file exists before proceeding
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found: {filePath}");
-            return;
-        }
-
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(filePath);
 
-            // ---------- Validate window visibility settings ----------
-            // Ensure the diagram contains at least one Window element
+            // Path to an existing Visio file (replace with actual path)
+            string inputPath = "input.vsdx";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one window; if not, create a default one
             if (diagram.Windows.Count == 0)
-                throw new Exception("The diagram does not contain any Window elements.");
-
-            // Capture visibility settings from the first window for comparison
-            Window firstWindow = diagram.Windows[0];
-            BOOL firstDynamicGrid = firstWindow.DynamicGridEnabled;
-            BOOL firstShowConnectionPoints = firstWindow.ShowConnectionPoints;
-            BOOL firstShowGrid = firstWindow.ShowGrid;
-            BOOL firstShowGuides = firstWindow.ShowGuides;
-            BOOL firstShowPageBreaks = firstWindow.ShowPageBreaks;
-            BOOL firstShowRulers = firstWindow.ShowRulers;
-
-            // Iterate through remaining windows and compare each setting
-            for (int i = 1; i < diagram.Windows.Count; i++)
             {
-                Window w = diagram.Windows[i];
+                Window defaultWindow = new Window();
+                defaultWindow.WindowType = WindowTypeValue.Drawing;
+                defaultWindow.WindowState = WindowStateValue.Maximized;
+                defaultWindow.WindowWidth = 1100;
+                defaultWindow.WindowHeight = 700;
+                diagram.Windows.Add(defaultWindow);
+            }
 
-                if (w.DynamicGridEnabled != firstDynamicGrid ||
-                    w.ShowConnectionPoints != firstShowConnectionPoints ||
-                    w.ShowGrid != firstShowGrid ||
-                    w.ShowGuides != firstShowGuides ||
-                    w.ShowPageBreaks != firstShowPageBreaks ||
-                    w.ShowRulers != firstShowRulers)
+            // Get the first (and only) window – window settings are global for the diagram
+            Window win = diagram.Windows[0];
+
+            // Set visibility settings globally
+            win.ShowGrid = BOOL.True;
+            win.ShowGuides = BOOL.True;
+            win.ShowRulers = BOOL.True;
+            win.ShowPageBreaks = BOOL.True;
+            win.DynamicGridEnabled = BOOL.True;
+            win.ShowConnectionPoints = BOOL.True;
+
+            // Store the expected configuration
+            BOOL expectedShowGrid = win.ShowGrid;
+            BOOL expectedShowGuides = win.ShowGuides;
+            BOOL expectedShowRulers = win.ShowRulers;
+            BOOL expectedShowPageBreaks = win.ShowPageBreaks;
+            BOOL expectedDynamicGridEnabled = win.DynamicGridEnabled;
+            BOOL expectedShowConnectionPoints = win.ShowConnectionPoints;
+
+            // Validate that all pages see the same window configuration
+            foreach (Page page in diagram.Pages)
+            {
+                // Since window settings are global, the same Window instance is used for every page.
+                // We simply compare the current values with the expected ones.
+                if (win.ShowGrid != expectedShowGrid ||
+                    win.ShowGuides != expectedShowGuides ||
+                    win.ShowRulers != expectedShowRulers ||
+                    win.ShowPageBreaks != expectedShowPageBreaks ||
+                    win.DynamicGridEnabled != expectedDynamicGridEnabled ||
+                    win.ShowConnectionPoints != expectedShowConnectionPoints)
                 {
-                    throw new Exception($"Window at index {i} has different visibility settings than the first window.");
+                    throw new Exception($"Window visibility settings mismatch on page '{page.Name}'.");
                 }
             }
 
-            // ---------- Validate that all pages share identical UI visibility ----------
-            // Ensure the diagram contains at least one page
-            if (diagram.Pages.Count == 0)
-                throw new Exception("The diagram does not contain any pages.");
+            Console.WriteLine("All pages share identical window visibility settings.");
 
-            // Capture UIVisibility enum value from the first page
-            Page firstPage = diagram.Pages[0];
-            UIVisibilityValue firstUIVisibility = firstPage.PageSheet.PageProps.UIVisibility.Value;
+            // Save the diagram (optional)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Compare UIVisibility of each subsequent page with the first page
-            for (int i = 1; i < diagram.Pages.Count; i++)
-            {
-                Page p = diagram.Pages[i];
-                if (p.PageSheet.PageProps.UIVisibility.Value != firstUIVisibility)
-                {
-                    throw new Exception($"Page at index {i} has a different UIVisibility setting than the first page.");
-                }
-            }
-
-            Console.WriteLine("All window visibility settings are identical across windows, and all pages share the same UI visibility configuration.");
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any errors encountered during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

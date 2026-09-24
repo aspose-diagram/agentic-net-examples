@@ -1,34 +1,61 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the first argument to be the Visio file path.
+        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Verify the file exists before proceeding.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+                    // Ensure the InheritFill collection is available.
+                    if (shape.InheritFill == null)
+                    {
+                        Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) has no InheritFill data.");
+                        continue;
+                    }
 
-            // Get a shape (skip the page shape at index 0)
-            Shape shape = page.Shapes[1];
+                    // Compare a representative fill property (foreground color) with the inherited value.
+                    bool inheritsForeground = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
 
-            // Determine if the shape inherits fill formatting from its master.
-            // If FillStyle is null, the shape uses the master’s fill settings.
-            bool inheritsFromMaster = shape.FillStyle == null;
+                    // Compare the fill pattern as an additional check.
+                    bool inheritsPattern = shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
 
-            // Output the result
-            Console.WriteLine($"Shape ID {shape.ID} inherits fill from master: {inheritsFromMaster}");
+                    // Determine overall inheritance based on both checks.
+                    bool inheritsFill = inheritsForeground && inheritsPattern;
 
+                    // Output the result for the current shape.
+                    Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) inherits fill: {inheritsFill}");
+                }
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

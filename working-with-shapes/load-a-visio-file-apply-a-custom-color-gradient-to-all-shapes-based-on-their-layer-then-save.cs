@@ -1,102 +1,74 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Validate input arguments
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputVisioPath]");
-            return;
-        }
-
-        // Input Visio file path
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Determine output path (optional second argument or default)
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_gradient.vsdx");
-
         try
         {
+
+            // Paths to the input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Build a map of layer index to gradient colors
-                // For demonstration, use a few preset color pairs; extra layers reuse the last pair
-                var layerColors = new System.Collections.Generic.Dictionary<int, (string start, string end)>();
-                string[] startColors = { "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF" };
-                string[] endColors   = { "#800000", "#008000", "#000080", "#808000", "#800080", "#008080" };
-                int colorIdx = 0;
-
-                // Populate the dictionary with layer indices
-                foreach (Layer layer in page.PageSheet.Layers)
-                {
-                    // Use the layer's index (IX) as the key
-                    int layerIdx = layer.IX;
-                    // Assign a color pair, cycling if there are more layers than colors
-                    layerColors[layerIdx] = (startColors[colorIdx % startColors.Length], endColors[colorIdx % endColors.Length]);
-                    colorIdx++;
-                }
-
-                // Iterate through each shape on the current page
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True) continue;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
                     // Retrieve the layer membership string (e.g., "0;2")
-                    string layerMember = shape.LayerMem.LayerMember.Value ?? string.Empty;
-                    if (string.IsNullOrWhiteSpace(layerMember)) continue; // shape not assigned to any layer
+                    string layerMember = shape.LayerMem.LayerMember.Value;
+                    if (string.IsNullOrEmpty(layerMember))
+                        continue;
 
-                    // Use the first listed layer index for gradient selection
+                    // Use the first layer index to decide the gradient colors
                     string[] layerIndices = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (layerIndices.Length == 0) continue;
+                    if (layerIndices.Length == 0)
+                        continue;
 
-                    // Parse the first layer index
-                    if (!int.TryParse(layerIndices[0], out int firstLayerIdx)) continue;
+                    if (!int.TryParse(layerIndices[0], out int layerIdx))
+                        continue;
 
-                    // Determine gradient colors for this layer; fallback to a default if missing
-                    if (!layerColors.TryGetValue(firstLayerIdx, out var colors))
-                    {
-                        colors = ("#CCCCCC", "#EEEEEE"); // default light gray gradient
-                    }
+                    // Choose gradient colors based on the layer index
+                    // Even layers: blue → green, Odd layers: red → yellow
+                    string startColor = (layerIdx % 2 == 0) ? "#0000FF" : "#FF0000";
+                    string endColor   = (layerIdx % 2 == 0) ? "#00FF00" : "#FFFF00";
 
-                    // Apply gradient fill to the shape
-                    shape.Fill.FillPattern.Value = 25; // gradient fill pattern
-                    shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // enable gradient
-                    shape.Fill.GradientFill.GradientDir.Value = 0; // horizontal direction
-                    shape.Fill.GradientFill.GradientStops.Clear(); // clear existing stops
-                    // Add start color at position 0
+                    // Apply a left‑to‑right gradient fill to the shape
+                    shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
+                    shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                    shape.Fill.GradientFill.GradientDir.Value = 0; // Left to right
+                    shape.Fill.GradientFill.GradientStops.Clear();
+
+                    // Gradient stop at position 0 (start color)
                     shape.Fill.GradientFill.GradientStops.Add(
                         new DoubleValue(0, MeasureConst.NUM),
-                        new ColorValue(colors.start, MeasureConst.Undefined));
-                    // Add end color at position 1
+                        new ColorValue(startColor, MeasureConst.Undefined));
+
+                    // Gradient stop at position 1 (end color)
                     shape.Fill.GradientFill.GradientStops.Add(
                         new DoubleValue(1, MeasureConst.NUM),
-                        new ColorValue(colors.end, MeasureConst.Undefined));
+                        new ColorValue(endColor, MeasureConst.Undefined));
                 }
             }
 
-            // Save the modified diagram to the output path in VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with gradients: {outputPath}");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

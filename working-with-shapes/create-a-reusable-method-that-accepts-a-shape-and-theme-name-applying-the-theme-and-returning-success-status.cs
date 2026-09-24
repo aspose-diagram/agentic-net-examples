@@ -1,34 +1,34 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-public static class DiagramHelper
+public static class ThemeHelper
 {
     /// <summary>
     /// Applies a preset theme to the specified shape.
     /// </summary>
     /// <param name="shape">The shape to which the theme will be applied.</param>
-    /// <param name="themeName">Name of the theme (e.g., "Office", "Linear", "Zephyr").</param>
-    /// <returns>True if the theme was applied successfully; otherwise false.</returns>
-    public static bool ApplyTheme(Shape shape, string themeName)
+    /// <param name="themeName">Name of the preset theme (e.g., "Bubble").</param>
+    /// <returns>True if the theme was applied successfully; otherwise, false.</returns>
+    public static bool ApplyThemeToShape(Shape shape, string themeName)
     {
         // Validate inputs
         if (shape == null || string.IsNullOrWhiteSpace(themeName))
             return false;
 
-        // Try to convert the theme name to the corresponding PresetThemeValue enum value
-        if (Enum.TryParse<PresetThemeValue>(themeName, true, out var themeValue))
+        // Attempt to convert the string to the corresponding PresetThemeValue enum member
+        if (Enum.TryParse<PresetThemeValue>(themeName, true, out var presetTheme))
         {
-            // Ensure the parsed value is a defined enum member and not NoTheme
-            if (Enum.IsDefined(typeof(PresetThemeValue), themeValue) && themeValue != PresetThemeValue.NoTheme)
-            {
-                // Apply the theme using the PresetTheme property (rule)
-                shape.PresetTheme = themeValue;
-                return true;
-            }
+            // Apply the theme to the shape
+            shape.PresetTheme = presetTheme;
+
+            // Optionally set a default variant (can be adjusted as needed)
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+            return true;
         }
 
-        // Theme name could not be mapped to a valid enum value
+        // Theme name does not match any known PresetThemeValue
         return false;
     }
 }

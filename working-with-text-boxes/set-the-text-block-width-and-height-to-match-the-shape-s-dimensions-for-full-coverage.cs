@@ -1,37 +1,40 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Iterate through all shapes on the first page (adjust as needed)
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Ensure the shape has a TextXForm (text block) to modify
-                if (shape.TextXForm != null && shape.XForm != null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Set the text block width to the shape's width
+                    // Skip shapes that are marked for deletion
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Align the text block size with the shape's dimensions
                     shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
-
-                    // Set the text block height to the shape's height
                     shape.TextXForm.TxtHeight.Value = shape.XForm.Height.Value;
-
-                    // Refresh shape data so the changes take effect
-                    shape.RefreshData();
                 }
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

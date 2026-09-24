@@ -1,85 +1,83 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
 namespace VisioBoundingBoxExporter
 {
-    // Simple DTO to hold shape dimensions
+    // Simple DTO for JSON serialization
     public class ShapeInfo
     {
-        public long Id { get; set; }
+        public int PageIndex { get; set; }
+        public long ShapeId { get; set; }
         public string Name { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
+        public string NameU { get; set; }
         public double PinX { get; set; }
         public double PinY { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
     }
 
     public class Program
     {
         public static void Main(string[] args)
         {
-            // Determine input and output paths
-            string inputPath;
-            string outputPath;
-
-            if (args.Length >= 2)
+            // Validate arguments
+            if (args.Length < 2)
             {
-                inputPath = args[0];
-                outputPath = args[1];
-            }
-            else
-            {
-                Console.Write("Enter path to Visio file: ");
-                inputPath = Console.ReadLine();
-
-                Console.Write("Enter path for output JSON file: ");
-                outputPath = Console.ReadLine();
+                Console.WriteLine("Usage: VisioBoundingBoxExporter <inputVisioFile> <outputJsonFile>");
+                return;
             }
 
-            // Validate input file existence
-            if (!File.Exists(inputPath))
-            {
-                throw new FileNotFoundException($"Visio file not found: {inputPath}");
-            }
+            string inputPath = args[0];
+            string outputPath = args[1];
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Collect shape information
-            List<ShapeInfo> shapesInfo = new List<ShapeInfo>();
+            var shapesInfo = new List<ShapeInfo>();
+            int pageIndex = 0;
 
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes marked as deleted
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    ShapeInfo info = new ShapeInfo
+                    var info = new ShapeInfo
                     {
-                        Id = shape.ID,
-                        Name = shape.NameU,
-                        Width = shape.XForm.Width.Value,
-                        Height = shape.XForm.Height.Value,
+                        PageIndex = pageIndex,
+                        ShapeId = shape.ID,
+                        Name = shape.Name,
+                        NameU = shape.NameU,
                         PinX = shape.XForm.PinX.Value,
-                        PinY = shape.XForm.PinY.Value
+                        PinY = shape.XForm.PinY.Value,
+                        Width = shape.XForm.Width.Value,
+                        Height = shape.XForm.Height.Value
                     };
 
                     shapesInfo.Add(info);
                 }
+
+                pageIndex++;
             }
 
             // Serialize to JSON with indentation for readability
-            string json = JsonSerializer.Serialize(shapesInfo, new JsonSerializerOptions { WriteIndented = true });
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            string json = JsonSerializer.Serialize(shapesInfo, jsonOptions);
 
             // Write JSON to the specified file
             File.WriteAllText(outputPath, json);
 
-            Console.WriteLine($"Bounding box data for {shapesInfo.Count} shapes written to {outputPath}");
+            Console.WriteLine($"Bounding box data for {shapesInfo.Count} shapes written to '{outputPath}'.");
         }
     }
 }

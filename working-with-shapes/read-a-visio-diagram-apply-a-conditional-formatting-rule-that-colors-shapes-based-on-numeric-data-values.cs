@@ -1,69 +1,67 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the source Visio file and the output file
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Process each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Threshold for conditional coloring
-                double threshold = 100.0;
-
-                try
+                // Process each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(inputPath);
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Iterate through all pages and shapes
-                    foreach (Page page in diagram.Pages)
+                    // Assume the numeric value to evaluate is stored in Data1 (string)
+                    string dataValue = shape.Data1;
+
+                    // Try to parse the string as a double
+                    if (double.TryParse(dataValue, out double numericValue))
                     {
-                        foreach (Shape shape in page.Shapes)
+                        // Apply fill color based on the numeric range
+                        if (numericValue < 10)
                         {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            // Retrieve the numeric data from Data1 (string property)
-                            string dataValue = shape.Data1;
-
-                            if (!string.IsNullOrWhiteSpace(dataValue) && double.TryParse(dataValue, out double numericValue))
-                            {
-                                // Apply fill color based on the numeric value
-                                if (numericValue > threshold)
-                                {
-                                    // Red fill for values above the threshold
-                                    shape.Fill.FillForegnd.Value = "#FF0000";
-                                }
-                                else
-                                {
-                                    // Green fill for values at or below the threshold
-                                    shape.Fill.FillForegnd.Value = "#00FF00";
-                                }
-                            }
+                            // Light blue for low values
+                            shape.Fill.FillForegnd.Value = "#ADD8E6";
                         }
+                        else if (numericValue < 20)
+                        {
+                            // Light green for medium values
+                            shape.Fill.FillForegnd.Value = "#90EE90";
+                        }
+                        else
+                        {
+                            // Light pink for high values
+                            shape.Fill.FillForegnd.Value = "#FFB6C1";
+                        }
+
+                        // Ensure the fill pattern is solid (pattern index 1)
+                        shape.Fill.FillPattern.Value = 1;
                     }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine("Diagram saved successfully to: " + outputPath);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("An error occurred: " + ex.Message);
-                    throw;
-                }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram to a new file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

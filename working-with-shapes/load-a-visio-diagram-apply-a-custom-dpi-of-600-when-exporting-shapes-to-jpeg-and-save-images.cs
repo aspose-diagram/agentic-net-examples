@@ -3,48 +3,53 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportShapesWithCustomDpi
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Ensure the output directory exists
-            string outputFolder = "ExportedShapes";
-            Directory.CreateDirectory(outputFolder);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output folder for JPEG images
+                string outputFolder = "ExportedShapes";
+                if (!Directory.Exists(outputFolder))
+                    Directory.CreateDirectory(outputFolder);
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Configure image save options with 600 DPI resolution
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                imgOptions.Resolution = 600f;               // DPI
+                imgOptions.ExportHiddenPage = false;        // Do not export hidden pages
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Configure image save options for JPEG with 600 DPI
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                    imgOptions.Resolution = 600;          // Set DPI
-                    imgOptions.JpegQuality = 100;        // Optional: maximum quality
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Build a unique file name for the shape image
-                    string imagePath = Path.Combine(
-                        outputFolder,
-                        $"Page_{page.ID}_Shape_{shape.ID}.jpg");
+                        // Build a unique file name for each shape
+                        string shapeFileName = $"Page{page.ID}_Shape{shape.ID}.jpg";
+                        string outputPath = Path.Combine(outputFolder, shapeFileName);
 
-                    // Export the shape to a JPEG image using the specified options
-                    shape.ToImage(imagePath, imgOptions);
+                        // Export the shape to JPEG using the configured options
+                        shape.ToImage(outputPath, imgOptions);
+                    }
                 }
+
+                Console.WriteLine("Shape export completed.");
+
             }
-
-            // Release resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

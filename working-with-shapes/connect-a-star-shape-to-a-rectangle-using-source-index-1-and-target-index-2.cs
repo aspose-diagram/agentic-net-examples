@@ -1,49 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty Visio diagram
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Add a Star shape to the first page (page index 0)
-                // PinX = 2.0, PinY = 5.0 (position in inches)
-                long starShapeId = diagram.AddShape(2.0, 5.0, "Star", 0);
+            // Load masters for the required shapes from a stencil file
+            // (Replace "stencil.vss" with the actual path to your stencil)
+            string stencilPath = "stencil.vss";
+            diagram.AddMaster(stencilPath, "Star");
+            diagram.AddMaster(stencilPath, "Rectangle");
+            diagram.AddMaster(stencilPath, "Dynamic connector");
 
-                // Add a Rectangle shape to the same page
-                // PinX = 5.0, PinY = 5.0
-                long rectangleShapeId = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-                // Add a Dynamic Connector shape (used to link the two shapes)
-                // Position is not important; it will be adjusted automatically
-                long connectorShapeId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
+            // Add a star shape
+            // Parameters: pinX, pinY, master name, page index (0 for the first page)
+            long starShapeId = diagram.AddShape(2.0, 2.0, "Star", 0);
 
-                // Retrieve the first page to perform the connection
-                Page page = diagram.Pages[0];
+            // Add a rectangle shape
+            long rectShapeId = diagram.AddShape(5.0, 2.0, "Rectangle", 0);
 
-                // Connect the Star (source) to the Rectangle (target) using
-                // source connection index = 1 and target connection index = 2
-                page.ConnectShapesViaConnectorIndex(
-                    starShapeId,      // source shape ID
-                    1,                // source connection index
-                    rectangleShapeId, // target shape ID
-                    2,                // target connection index
-                    connectorShapeId  // connector shape ID
-                );
+            // Add a dynamic connector shape
+            Shape connectorShape = new Shape();
+            long connectorShapeId = diagram.AddShape(connectorShape, "Dynamic connector", 0);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Connect the star to the rectangle using connection point indexes
+            // Source index = 1, Target index = 2
+            page.ConnectShapesViaConnectorIndex(starShapeId, 1, rectShapeId, 2, connectorShapeId);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the diagram to a VSDX file
+            diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

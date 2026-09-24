@@ -1,75 +1,62 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load the existing Visio diagram (SolutionXML)
-            Diagram diagram = new Diagram("SolutionXML.vsdx");
-
-            // ------------------------------------------------------------
-            // Locate the target shape.
-            // Here we assume the shape we want to augment has the ID 5
-            // on the first page. Adjust the ID or page index as needed.
-            // ------------------------------------------------------------
-            long targetShapeId = 5;
-            Shape targetShape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
-
-            // ------------------------------------------------------------
-            // Ensure a DataRecordSet exists; create one if the document has none.
-            // ------------------------------------------------------------
-            DataRecordSet dataRecordSet;
-            if (diagram.DataRecordSets.Count == 0)
+            try
             {
-                dataRecordSet = new DataRecordSet
+
+                // Path to the existing Visio file
+                string inputPath = "input.vsdx";
+                // Path where the modified Visio file will be saved
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Identify the target shape (example uses shape ID = 1)
+                long targetShapeId = 1;
+                Shape targetShape = null;
+
+                foreach (Page page in diagram.Pages)
                 {
-                    ID = 1,
-                    Name = "CustomData"
-                };
-                diagram.DataRecordSets.Add(dataRecordSet);
+                    // GetShape expects an integer ID; cast long to int safely
+                    Shape shape = page.Shapes.GetShape((int)targetShapeId);
+                    if (shape != null)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    throw new Exception($"Shape with ID {targetShapeId} not found.");
+                }
+
+                // Build custom XML that references the shape
+                string customXml = $"<CustomData><ShapeID>{targetShape.ID}</ShapeID><Info>Sample data for shape</Info></CustomData>";
+
+                // Create a new SolutionXML entry
+                SolutionXML solXml = new SolutionXML();
+                solXml.Name = "CustomShapeData";
+                solXml.XmlValue = customXml;
+
+                // Add the entry to the diagram's SolutionXML collection
+                diagram.SolutionXMLs.Add(solXml);
+
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Diagram updated and saved successfully.");
+
             }
-            else
+            catch (System.IO.FileNotFoundException ex)
             {
-                dataRecordSet = diagram.DataRecordSets[0];
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // ------------------------------------------------------------
-            // Create a new Row that links the shape to the DataRecordSet.
-            // RowID uses the next available ID from the DataRecordSet.
-            // ------------------------------------------------------------
-            Row newRow = new Row
-            {
-                RowID = dataRecordSet.NextRowID,
-                ShapeID = targetShapeId,
-                PageID = diagram.Pages[0].ID
-            };
-
-            // Add the row to the DataRecordSet's RowMaps collection.
-            dataRecordSet.RowMaps.Add(newRow);
-
-            // ------------------------------------------------------------
-            // Optionally store a custom value directly in the shape's data fields.
-            // This demonstrates adding a custom data element to the shape itself.
-            // ------------------------------------------------------------
-            targetShape.Data1 = "MyCustomValue";
-
-            // Refresh the shape so that Visio recalculates any dependent data.
-            targetShape.RefreshData();
-
-            // ------------------------------------------------------------
-            // Save the updated diagram back to disk.
-            // ------------------------------------------------------------
-            diagram.Save("SolutionXML_Updated.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

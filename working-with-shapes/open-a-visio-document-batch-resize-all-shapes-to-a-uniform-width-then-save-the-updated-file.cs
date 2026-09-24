@@ -1,39 +1,45 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments: input file path, output file path, desired uniform width (in inches)
-        if (args.Length < 3)
+        try
         {
-            Console.WriteLine("Usage: <program> <input.vsdx> <output.vsdx> <widthInInches>");
-            return;
-        }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        double uniformWidth = double.Parse(args[2]);
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output_resized.vsdx";
 
-        // Load the Visio document
-        using (Diagram diagram = new Diagram(inputPath))
-        {
-            // Loop through every page in the document
+            // Load the diagram from file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Uniform width to apply to all shapes (in inches)
+            double uniformWidth = 2.0;
+
+            // Process each page and each shape
             foreach (Page page in diagram.Pages)
             {
-                // Loop through every shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Set the shape's width to the uniform value
-                    shape.SetWidth(uniformWidth);
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Set the shape's width
+                    shape.XForm.Width.Value = uniformWidth;
                 }
             }
 
-            // Save the modified diagram back to a file
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

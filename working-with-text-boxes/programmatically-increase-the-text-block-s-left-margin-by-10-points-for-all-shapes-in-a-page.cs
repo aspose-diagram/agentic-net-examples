@@ -1,6 +1,7 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,26 +10,28 @@ class Program
         try
         {
 
-            // Load the diagram (replace with your file path)
+            // Load the Visio diagram from a file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Loop through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Get the first page (or any specific page you need)
+            Page page = diagram.Pages[0];
+
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                // Loop through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Ensure the shape has a TextBlock before modifying
+                if (shape.TextBlock != null)
                 {
-                    // Check if the shape has a TextBlock (all shapes do, but guard against null)
-                    if (shape.TextBlock != null)
-                    {
-                        // Increase the left margin by 10 points
-                        shape.TextBlock.LeftMargin.Value += 10;
-                    }
+                    // Increase the left margin by 10 points
+                    shape.TextBlock.LeftMargin.Value += 10;
                 }
             }
 
-            // Save the updated diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

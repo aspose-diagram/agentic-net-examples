@@ -1,62 +1,74 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class BatchResizeShapes
+class Program
 {
-    static void Main()
+    // Predefined width for the target shape (in inches)
+    private const double TargetWidth = 2.0;
+
+    static void Main(string[] args)
     {
-        try
+        // Expect two arguments: input folder and output folder
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: BatchResize <inputFolder> <outputFolder>");
+            return;
+        }
 
-            // Directory containing source VSDX files
-            string inputDirectory = @"C:\Visio\Input";
-            // Directory where resized files will be saved
-            string outputDirectory = @"C:\Visio\Output";
+        string inputFolder = args[0];
+        string outputFolder = args[1];
 
-            // Ensure output directory exists
-            Directory.CreateDirectory(outputDirectory);
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
 
-            // Width (in inches) to set for each target shape
-            double targetWidth = 2.0;
+        // Create output folder if it does not exist
+        if (!Directory.Exists(outputFolder))
+        {
+            Directory.CreateDirectory(outputFolder);
+        }
 
-            // Name (universal name) of the shape to resize
-            string targetShapeNameU = "MyShape";
-
-            // Process each VSDX file in the input directory
-            foreach (string filePath in Directory.GetFiles(inputDirectory, "*.vsdx"))
+        // Process each VSDX file in the input folder
+        string[] files = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in files)
+        {
+            try
             {
-                // Load the diagram using the constructor that accepts a file path
-                using (Diagram diagram = new Diagram(filePath))
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify the target shape by its universal name (adjust as needed)
+                        if (shape.NameU == "TargetShape")
                         {
-                            // Check if the shape matches the target name
-                            if (string.Equals(shape.NameU, targetShapeNameU, StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Resize the shape width to the predefined value
-                                shape.SetWidth(targetWidth);
-                            }
+                            // Resize the shape width to the predefined value
+                            shape.XForm.Width.Value = TargetWidth;
                         }
                     }
-
-                    // Build output file path
-                    string outputPath = Path.Combine(outputDirectory, Path.GetFileName(filePath));
-
-                    // Save the modified diagram back to VSDX format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-            }
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                // Save the modified diagram to the output folder (overwrite if exists)
+                string fileName = Path.GetFileName(filePath);
+                string outputPath = Path.Combine(outputFolder, fileName);
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Processed and saved: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
 }

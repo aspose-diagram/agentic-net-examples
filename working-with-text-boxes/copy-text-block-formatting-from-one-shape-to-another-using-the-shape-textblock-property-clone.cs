@@ -1,45 +1,59 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class CopyTextBlockFormatting
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Identify source and target shapes (by their IDs)
-            // Adjust the page index and shape IDs as needed
-            int pageIndex = 0;
-            long sourceShapeId = 1;   // ID of the shape to copy formatting from
-            long targetShapeId = 2;   // ID of the shape to apply formatting to
+            // Assume source and target shape IDs are known
+            long sourceShapeId = 1; // replace with actual source shape ID
+            long targetShapeId = 2; // replace with actual target shape ID
 
-            // Retrieve the shapes
-            Shape sourceShape = diagram.Pages[pageIndex].Shapes.GetShape(sourceShapeId);
-            Shape targetShape = diagram.Pages[pageIndex].Shapes.GetShape(targetShapeId);
+            // Retrieve the shapes from the first page
+            Page page = diagram.Pages[0];
+            Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
+            Shape targetShape = page.Shapes.GetShape(targetShapeId);
 
-            // Clone the source shape's TextBlock
-            TextBlock clonedTextBlock = (TextBlock)sourceShape.TextBlock.Clone();
+            if (sourceShape == null)
+            {
+                throw new Exception($"Source shape with ID {sourceShapeId} not found.");
+            }
 
-            // Copy each formatting property to the target shape's TextBlock
-            // (Only the properties that define the block's appearance are copied)
-            targetShape.TextBlock.BottomMargin = clonedTextBlock.BottomMargin;
-            targetShape.TextBlock.DefaultTabStop = clonedTextBlock.DefaultTabStop;
-            targetShape.TextBlock.Del = clonedTextBlock.Del;
-            targetShape.TextBlock.LeftMargin = clonedTextBlock.LeftMargin;
-            targetShape.TextBlock.RightMargin = clonedTextBlock.RightMargin;
-            targetShape.TextBlock.TextBkgnd = clonedTextBlock.TextBkgnd;
-            targetShape.TextBlock.TextBkgndTrans = clonedTextBlock.TextBkgndTrans;
-            targetShape.TextBlock.TextDirection = clonedTextBlock.TextDirection;
-            targetShape.TextBlock.TopMargin = clonedTextBlock.TopMargin;
-            targetShape.TextBlock.VerticalAlign = clonedTextBlock.VerticalAlign;
+            if (targetShape == null)
+            {
+                throw new Exception($"Target shape with ID {targetShapeId} not found.");
+            }
+
+            // Copy TextBlock formatting from source to target
+            // Margins
+            targetShape.TextBlock.LeftMargin.Value = sourceShape.TextBlock.LeftMargin.Value;
+            targetShape.TextBlock.RightMargin.Value = sourceShape.TextBlock.RightMargin.Value;
+            targetShape.TextBlock.TopMargin.Value = sourceShape.TextBlock.TopMargin.Value;
+            targetShape.TextBlock.BottomMargin.Value = sourceShape.TextBlock.BottomMargin.Value;
+
+            // Text direction and vertical alignment
+            targetShape.TextBlock.TextDirection.Value = sourceShape.TextBlock.TextDirection.Value;
+            targetShape.TextBlock.VerticalAlign.Value = sourceShape.TextBlock.VerticalAlign.Value;
+
+            // Background color and transparency
+            targetShape.TextBlock.TextBkgnd.Ufe.F = sourceShape.TextBlock.TextBkgnd.Ufe.F;
+            targetShape.TextBlock.TextBkgndTrans.Value = sourceShape.TextBlock.TextBkgndTrans.Value;
+
+            // Default tab stop
+            targetShape.TextBlock.DefaultTabStop.Value = sourceShape.TextBlock.DefaultTabStop.Value;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

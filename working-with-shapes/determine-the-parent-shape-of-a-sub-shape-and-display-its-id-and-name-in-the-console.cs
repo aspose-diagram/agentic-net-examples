@@ -1,39 +1,39 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Identify the sub‑shape (by ID or name). Here we use an example ID = 5.
-            // You can also use GetShapeIncludingChild(string) if you know the shape name.
-            Shape subShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(5);
-
-            // Retrieve the parent shape of the sub‑shape.
-            Shape parentShape = subShape.ParentShape;
-
-            // Display the parent shape's ID and name.
-            if (parentShape != null)
+            try
             {
-                Console.WriteLine($"Parent Shape ID: {parentShape.ID}");
-                Console.WriteLine($"Parent Shape Name: {parentShape.Name}");
-            }
-            else
-            {
-                Console.WriteLine("The specified shape does not have a parent shape.");
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Load the Visio diagram (replace with your actual file path)
+                string inputPath = "sample.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Check if the shape has a parent (i.e., it is a sub‑shape of a group)
+                        if (shape.ParentShape != null)
+                        {
+                            Shape parent = shape.ParentShape;
+
+                            // Display sub‑shape and its parent information
+                            Console.WriteLine($"Sub‑shape ID: {shape.ID}, Name: {shape.Name}");
+                            Console.WriteLine($"Parent shape ID: {parent.ID}, Name: {parent.Name}");
+                            Console.WriteLine(); // Blank line for readability
+                        }
+                    }
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

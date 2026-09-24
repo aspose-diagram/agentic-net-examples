@@ -3,32 +3,51 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramProcessor
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the original Visio diagram
-            string originalPath = "original.vdx";
+            // Paths for the original diagram, backup copy, and the final output
+            string inputPath = "input.vsdx";
+            string backupPath = "input_backup.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Path where the backup copy will be saved
-            string backupPath = "original_backup.vdx";
+            try
+            {
+                // Load the original diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load the original diagram
-            Diagram diagram = new Diagram(originalPath);
+                // Save a backup copy before any modifications
+                diagram.Save(backupPath, SaveFileFormat.Vsdx);
 
-            // Create save options for VDX format (Visio XML)
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx);
+                // Apply a watermark to the first page
+                Page page = diagram.Pages[0];
 
-            // Save a backup copy of the original diagram before any modifications
-            diagram.Save(backupPath, saveOptions);
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // -----------------------------------------------------------------
-            // At this point you can apply watermark changes to 'diagram'.
-            // The backup file remains unchanged and can be used for recovery.
-            // -----------------------------------------------------------------
+                // Center position for the watermark
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Add watermark text covering the full page area
+                // Font size is specified in inches (0.25 inches ≈ 18 points)
+                page.AddText(pinX, pinY, pageWidth, pageHeight,
+                             "CONFIDENTIAL", "Calibri", "#a5a5a5", 0.25);
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            catch (Exception ex)
+            {
+                // Simple error handling
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

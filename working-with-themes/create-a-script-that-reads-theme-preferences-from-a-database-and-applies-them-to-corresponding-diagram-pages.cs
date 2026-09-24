@@ -1,113 +1,71 @@
-using System;
 using System.IO;
+using System;
 using System.Data;
-using System.Data.SqlClient;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+
+using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect three arguments: input diagram path, output diagram path, and DB connection string.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <connectionString>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: ensure the input diagram file exists.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-        string connectionString = args[2];
-
-        Diagram diagram = null;
-
         try
         {
-            // Load the Visio diagram from the specified file.
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
 
-        // Open a SQL connection to read theme preferences.
-        using (SqlConnection conn = new SqlConnection(connectionString))
-        {
-            try
-            {
-                conn.Open();
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Database connection failed: {ex.Message}");
-                return;
-            }
+            // ----- Simulated database table with theme preferences -----
+            DataTable themeTable = new DataTable();
+            themeTable.Columns.Add("PageName", typeof(string));
+            themeTable.Columns.Add("PresetTheme", typeof(string));
+            themeTable.Columns.Add("PresetThemeVariant", typeof(string));
 
-            // Query expects a table named PageThemes with columns PageName (string) and ThemeName (string).
-            const string query = "SELECT PageName, ThemeName FROM PageThemes";
+            // Sample data – in a real scenario this would come from a DB query
+            themeTable.Rows.Add("Page-1", "Bubble", "Variant1");
+            themeTable.Rows.Add("Page-2", "Bubble", "Variant2");
+            themeTable.Rows.Add("Summary", "Bubble", "Variant3");
 
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            // ----- Load the Visio diagram -----
+            string inputPath = "input.vsdx"; // replace with actual file path
+            Diagram diagram = new Diagram(inputPath);
+
+            // ----- Apply theme preferences to each page -----
+            foreach (DataRow row in themeTable.Rows)
             {
-                try
+                string pageName = row["PageName"] as string;
+                string themeName = row["PresetTheme"] as string;
+                string variantName = row["PresetThemeVariant"] as string;
+
+                // Retrieve the page by its name; skip if not found
+                Page page = diagram.Pages.GetPage(pageName);
+                if (page == null)
                 {
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            // Retrieve page name and desired theme from the current row.
-                            string pageName = reader["PageName"] as string;
-                            string themeName = reader["ThemeName"] as string;
-
-                            if (string.IsNullOrWhiteSpace(pageName) || string.IsNullOrWhiteSpace(themeName))
-                                continue; // Skip incomplete rows.
-
-                            // Attempt to locate the page by its name (case‑sensitive match).
-                            Page page = diagram.Pages.GetPage(pageName);
-                            if (page == null)
-                            {
-                                Console.Error.WriteLine($"Page not found: {pageName}");
-                                continue;
-                            }
-
-                            // Parse the theme name into the PresetThemeValue enum.
-                            if (Enum.TryParse<PresetThemeValue>(themeName, ignoreCase: true, out var themeEnum))
-                            {
-                                // Apply the theme to the page.
-                                page.PresetTheme = themeEnum;
-                            }
-                            else
-                            {
-                                Console.Error.WriteLine($"Invalid theme '{themeName}' for page '{pageName}'.");
-                            }
-                        }
-                    }
+                    Console.WriteLine($"Page \"{pageName}\" not found in diagram.");
+                    continue;
                 }
-                catch (Exception ex)
+
+                // Parse enum values from strings (case‑insensitive)
+                if (Enum.TryParse<PresetThemeValue>(themeName, true, out var themeEnum) &&
+                    Enum.TryParse<PresetThemeVariantValue>(variantName, true, out var variantEnum))
                 {
-                    Console.Error.WriteLine($"Error reading theme data: {ex.Message}");
-                    return;
+                    // Apply the theme and variant to the page
+                    page.PresetTheme = themeEnum;
+                    page.PresetThemeVariant = variantEnum;
+                    Console.WriteLine($"Applied theme {themeEnum} ({variantEnum}) to page \"{pageName}\".");
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid theme or variant for page \"{pageName}\".");
                 }
             }
-        }
 
-        try
-        {
-            // Save the modified diagram to the output path using VSDX format.
+            // ----- Save the updated diagram -----
+            string outputPath = "output.vsdx"; // replace with desired output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to \"{outputPath}\".");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

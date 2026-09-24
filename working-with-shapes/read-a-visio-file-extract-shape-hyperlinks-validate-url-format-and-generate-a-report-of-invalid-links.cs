@@ -1,81 +1,86 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Input Visio file path (modify as needed or pass as first argument)
+            string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+            if (!File.Exists(visioPath))
             {
+                Console.WriteLine($"File not found: {visioPath}");
+                return;
+            }
 
-                // Input Visio file path (first argument) or default.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
 
-                // Output report file path (second argument) or default.
-                string reportPath = args.Length > 1 ? args[1] : "InvalidHyperlinksReport.txt";
+            // Prepare a list to collect invalid hyperlink information
+            List<string> invalidLinks = new List<string>();
 
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
+            // Regular expression for basic URL validation
+            Regex urlRegex = new Regex(@"^(https?|ftp)://[^\s/$.?#].[^\s]*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-                // Collect information about invalid hyperlinks.
-                List<string> invalidLinks = new List<string>();
-
-                // Iterate through all pages and shapes.
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has a Hyperlinks collection.
-                        if (shape.Hyperlinks != null)
-                        {
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                // Retrieve the address string; it may be null.
-                                string address = link.Address?.Value;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                                // Validate the URL format.
-                                if (!IsValidUrl(address))
-                                {
-                                    string info = $"Page: {page.NameU}, Shape: {shape.NameU}, Hyperlink: {address ?? "(null)"}";
-                                    invalidLinks.Add(info);
-                                }
-                            }
+                    // Ensure the Hyperlinks collection exists
+                    if (shape.Hyperlinks == null)
+                        continue;
+
+                    // Iterate through each hyperlink in the shape
+                    foreach (Hyperlink link in shape.Hyperlinks)
+                    {
+                        // Retrieve the address value
+                        string address = link.Address.Value;
+
+                        // Validate the URL format
+                        if (string.IsNullOrWhiteSpace(address) || !urlRegex.IsMatch(address))
+                        {
+                            // Record details of the invalid link
+                            string info = $"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}, Hyperlink Address: {address}";
+                            invalidLinks.Add(info);
                         }
                     }
                 }
+            }
 
-                // Output results.
-                if (invalidLinks.Count == 0)
+            // Output the report
+            Console.WriteLine("Invalid Hyperlinks Report:");
+            if (invalidLinks.Count == 0)
+            {
+                Console.WriteLine("No invalid hyperlinks found.");
+            }
+            else
+            {
+                foreach (string line in invalidLinks)
                 {
-                    Console.WriteLine("No invalid hyperlinks found.");
+                    Console.WriteLine(line);
                 }
-                else
+
+                // Optionally write the report to a text file
+                string reportPath = "InvalidHyperlinksReport.txt";
+                try
                 {
-                    Console.WriteLine($"Found {invalidLinks.Count} invalid hyperlink(s). Report written to: {reportPath}");
                     File.WriteAllLines(reportPath, invalidLinks);
+                    Console.WriteLine($"Report saved to: {Path.GetFullPath(reportPath)}");
                 }
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to write report file: {ex.Message}");
+                }
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
-
-        // Helper method to validate absolute HTTP/HTTPS URLs.
-        private static bool IsValidUrl(string url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-                return false;
-
-            if (Uri.TryCreate(url, UriKind.Absolute, out Uri uriResult))
-            {
-                return uriResult.Scheme == Uri.UriSchemeHttp ||
-                       uriResult.Scheme == Uri.UriSchemeHttps;
-            }
-
-            return false;
         }
     }

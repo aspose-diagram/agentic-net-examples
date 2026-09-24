@@ -1,28 +1,33 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram (replace with your source file)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // ---- Perform any modifications to the diagram here ----
-            // Example: change the title of the document (optional)
-            // diagram.DocumentProps.Title = "Modified Diagram";
+                // Example modification: set the first page size to 11 x 8.5 inches
+                if (diagram.Pages.Count > 0)
+                {
+                    Page firstPage = diagram.Pages[0];
+                    firstPage.PageSheet.PageProps.PageWidth.Value = 11.0;   // width in inches
+                    firstPage.PageSheet.PageProps.PageHeight.Value = 8.5;   // height in inches
+                }
 
-            // Save the modified diagram to a new VSDX file using the Save method
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram to a new VSDX file
+                string outputPath = "output_modified.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

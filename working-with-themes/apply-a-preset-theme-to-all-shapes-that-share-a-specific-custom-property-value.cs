@@ -1,77 +1,64 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for Diagram.Save overloads
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Input Visio file path – change as needed
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path – change as needed
-        string outputPath = "output.vsdx";
-
-        // Custom property name and value that identify target shapes
-        string targetPropName = "Category";
-        string targetPropValue = "Important";
-
         try
         {
-            // Load the diagram from the input file
+
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Custom property name and value to filter shapes
+            string targetPropName = "Category";
+            string targetPropValue = "Important";
+
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
                 // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a Props collection before accessing it
-                    if (shape.Props == null) continue;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Flag indicating whether the shape matches the custom property criteria
-                    bool matches = false;
-
-                    // Search for the custom property by name and compare its value
+                    // Determine if the shape has the target custom property value
+                    bool hasTargetProperty = false;
                     foreach (Prop prop in shape.Props)
                     {
                         if (prop.Name == targetPropName && prop.Value.Val == targetPropValue)
                         {
-                            matches = true;
+                            hasTargetProperty = true;
                             break;
                         }
                     }
 
-                    // If the shape matches, apply the preset theme settings
-                    if (matches)
+                    // Apply the preset theme to matching shapes
+                    if (hasTargetProperty)
                     {
-                        // Apply a preset theme (write‑only property)
                         shape.PresetTheme = PresetThemeValue.Bubble;
-
-                        // Apply a theme variant (write‑only property)
                         shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                        // Apply a quick style variant (write‑only property)
-                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
                     }
                 }
             }
 
-            // Save the modified diagram using the VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

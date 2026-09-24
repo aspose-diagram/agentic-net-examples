@@ -1,111 +1,77 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Configuration model for rotation angle (in degrees)
-    private class Config
-    {
-        public double RotationAngle { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram, output diagram, config file
-        if (args.Length != 3)
+        // Expected arguments: <inputVisioPath> <outputVisioPath> [rotationAngleDegrees]
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <configJsonPath>");
+            // Inform the user about correct usage and exit gracefully
+            Console.Error.WriteLine("Usage: <inputVisioPath> <outputVisioPath> [rotationAngleDegrees]");
             return;
         }
 
+        // Assign input and output file paths
         string inputPath = args[0];
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
         string outputPath = args[1];
-        // No existence check for outputPath (it will be created)
 
-        string configPath = args[2];
-        if (!File.Exists(configPath)) { Console.Error.WriteLine($"File not found: {configPath}"); return; }
-
-        // Read and deserialize configuration
-        Config config;
-        try
+        // Verify that the input file exists
+        if (!File.Exists(inputPath))
         {
-            string json = File.ReadAllText(configPath);
-            config = JsonSerializer.Deserialize<Config>(json);
-            if (config == null)
-            {
-                Console.Error.WriteLine("Configuration file is empty or invalid.");
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Load the Visio diagram
-        Diagram diagram;
+        // Default rotation angle is 45 degrees if not provided
+        double rotationAngleDeg = 45.0;
+        if (args.Length >= 3 && double.TryParse(args[2], out double parsedAngle))
+        {
+            rotationAngleDeg = parsedAngle;
+        }
+
         try
         {
-            diagram = new Diagram(inputPath);
+            // Load the Visio diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Use the first page for the watermark
+            Page page = diagram.Pages[0];
+
+            // Retrieve page dimensions (in inches)
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Position the watermark to cover the whole page (centered)
+            double pinX = pageWidth / 2.0;
+            double pinY = pageHeight / 2.0;
+            double watermarkWidth = pageWidth;
+            double watermarkHeight = pageHeight;
+
+            // Add the watermark text shape; font size is in inches (0.25 ≈ 18pt)
+            Shape watermarkShape = page.AddText(
+                pinX,
+                pinY,
+                watermarkWidth,
+                watermarkHeight,
+                "CONFIDENTIAL",
+                "Calibri",
+                "#a5a5a5",
+                0.25);
+
+            // Apply the user‑specified rotation angle (degrees) to the watermark shape
+            watermarkShape.SetAngle(rotationAngleDeg);
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Iterate through all pages and add a rotated text watermark
-        try
-        {
-            foreach (Page page in diagram.Pages)
-            {
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Center position for the watermark
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Use full page size for the watermark shape
-                double shapeWidth = pageWidth;
-                double shapeHeight = pageHeight;
-
-                // Add a text shape as watermark (light gray, small font)
-                Shape watermark = page.AddText(
-                    pinX,               // X coordinate (center)
-                    pinY,               // Y coordinate (center)
-                    shapeWidth,         // Width of the shape
-                    shapeHeight,        // Height of the shape
-                    "Watermark",        // Watermark text
-                    "Arial",            // Font name
-                    "#CCCCCC",          // Font color (hex)
-                    0.5);               // Font size (in inches)
-
-                // Convert rotation angle from degrees to radians and apply to text
-                double angleRadians = (Math.PI / 180.0) * config.RotationAngle;
-                watermark.TextXForm.TxtAngle.Value = angleRadians;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error adding watermark: {ex.Message}");
-            return;
-        }
-
-        // Save the modified diagram as PDF (watermark visible)
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -5,48 +5,44 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Paths for input diagram and output diagram with watermark
+            // Input and output file paths (adjust as needed)
             string inputPath = "input.vsdx";
-            string outputPath = "output_watermarked.vsdx";
+            string outputPath = "output_with_watermark.vsdx";
 
-            // Load the existing Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Watermark configuration
+            // Watermark text and appearance
             string watermarkText = "CONFIDENTIAL";
-            string fontName = "Arial";
-            string fontColor = "#CCCCCC"; // Light gray color in hex
-            double fontSizePoints = 72;   // Font size in points
-            double fontSizeInches = fontSizePoints / 72.0; // Convert points to inches (required by AddText)
+            string fontName = "Calibri";
+            string fontColor = "#A5A5A5"; // Light gray in hex
+            double fontSizePoints = 72; // 72 points = 1 inch
+            double fontSizeInches = fontSizePoints / 72.0;
 
-            // Add the watermark to every page
+            // Add watermark to each page
             foreach (Page page in diagram.Pages)
             {
                 // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Center of the page – used as the pin position for the text shape
+                // Center position for the watermark
                 double pinX = pageWidth / 2.0;
                 double pinY = pageHeight / 2.0;
 
-                // Add a full‑page text shape that acts as a watermark.
-                // Overload: AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSizeInches)
-                page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSizeInches);
+                // Add a full‑page transparent text shape as watermark
+                // Width and height are set to the full page size to cover the entire area
+                page.AddText(pinX, pinY, pageWidth, pageHeight,
+                             watermarkText, fontName, fontColor, fontSizeInches);
             }
 
-            // Configure save options to avoid extra layout processing
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdx);
-            saveOptions.AutoFitPageToDrawingContent = false; // Prevent page resizing during save
-            saveOptions.DefaultFont = "Arial";               // Fallback font for missing glyphs
-
             // Save the modified diagram
-            diagram.Save(outputPath, saveOptions);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

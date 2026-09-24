@@ -3,71 +3,56 @@ using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 
-class VisioShapeSummary
+class VisioMasterSummary
 {
     static void Main()
     {
         try
         {
 
-            // Input Visio file path
-            string inputFile = "input.vsdx";
+            // Load the Visio diagram from file
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Output summary text file path
-            string outputFile = "summary.txt";
-
-            // Load the Visio diagram from file (uses Diagram(string) constructor)
-            Diagram diagram = new Diagram(inputFile);
-
-            // Dictionary to hold shape count per master (key: master name)
+            // Dictionary to hold master name and its shape count
             Dictionary<string, int> masterShapeCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-            // Initialize dictionary entries for all masters present in the document
-            foreach (Master master in diagram.Masters)
-            {
-                string masterName = !string.IsNullOrEmpty(master.NameU) ? master.NameU : master.Name;
-                if (!string.IsNullOrEmpty(masterName) && !masterShapeCounts.ContainsKey(masterName))
-                {
-                    masterShapeCounts[masterName] = 0;
-                }
-            }
-
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Each shape may reference a master; if so, count it
-                    Master shapeMaster = shape.Master;
-                    if (shapeMaster != null)
+                    // Only consider shapes that are based on a master
+                    if (shape.Master != null)
                     {
-                        string masterName = !string.IsNullOrEmpty(shapeMaster.NameU) ? shapeMaster.NameU : shapeMaster.Name;
-                        if (string.IsNullOrEmpty(masterName))
-                            continue; // skip if master has no identifiable name
+                        string masterName = shape.Master.NameU;
 
-                        // Ensure the master is present in the dictionary
-                        if (!masterShapeCounts.ContainsKey(masterName))
-                        {
-                            masterShapeCounts[masterName] = 0;
-                        }
-
-                        masterShapeCounts[masterName]++;
+                        if (masterShapeCounts.ContainsKey(masterName))
+                            masterShapeCounts[masterName]++;
+                        else
+                            masterShapeCounts[masterName] = 1;
+                    }
+                    else
+                    {
+                        // Optionally handle shapes without a master (e.g., count as "NoMaster")
+                        const string noMasterKey = "NoMaster";
+                        if (masterShapeCounts.ContainsKey(noMasterKey))
+                            masterShapeCounts[noMasterKey]++;
+                        else
+                            masterShapeCounts[noMasterKey] = 1;
                     }
                 }
             }
 
             // Write the summary to a text file
-            using (StreamWriter writer = new StreamWriter(outputFile))
+            using (StreamWriter writer = new StreamWriter("summary.txt"))
             {
-                writer.WriteLine("Shape Count per Master:");
-                foreach (var kvp in masterShapeCounts)
+                foreach (KeyValuePair<string, int> entry in masterShapeCounts)
                 {
-                    writer.WriteLine($"{kvp.Key}: {kvp.Value}");
+                    writer.WriteLine($"{entry.Key}: {entry.Value}");
                 }
             }
 
-            // Optional: inform the user
-            Console.WriteLine($"Summary written to '{outputFile}'.");
+            Console.WriteLine("Summary written to summary.txt");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -8,115 +8,78 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Expect three arguments: input Visio file, mapping CSV file, output Visio file
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: VisioBatchDataUpdater <inputVisioPath> <mappingCsvPath> <outputVisioPath>");
-                return;
-            }
-
-            string inputVisioPath = args[0];
-            string csvPath = args[1];
-            string outputVisioPath = args[2];
-
-            // Validate input files
-            if (!File.Exists(inputVisioPath))
-            {
-                Console.WriteLine($"Error: Visio file not found at '{inputVisioPath}'.");
-                return;
-            }
-
-            if (!File.Exists(csvPath))
-            {
-                Console.WriteLine($"Error: CSV file not found at '{csvPath}'.");
-                return;
-            }
-
-            // Load the Visio diagram
-            Diagram diagram;
             try
             {
-                diagram = new Diagram(inputVisioPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load Visio file: {ex.Message}");
-                return;
-            }
 
-            // Read CSV mapping into a dictionary
-            // Expected CSV format: ShapeNameU,Data1,Data2,Data3
-            var mapping = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
-            try
-            {
-                using (var reader = new StreamReader(csvPath))
+                // Input Visio file path
+                string inputVisioPath = "input.vsdx";
+                // CSV mapping file path (format: ShapeName,Data1,Data2,Data3)
+                string csvMappingPath = "mapping.csv";
+                // Output Visio file path
+                string outputVisioPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputVisioPath);
+
+                // Read CSV and build a lookup dictionary keyed by shape universal name
+                var shapeDataMap = new Dictionary<string, (string Data1, string Data2, string Data3)>(StringComparer.OrdinalIgnoreCase);
+                if (File.Exists(csvMappingPath))
                 {
-                    string line;
-                    while ((line = reader.ReadLine()) != null)
+                    string[] csvLines = File.ReadAllLines(csvMappingPath);
+                    foreach (string line in csvLines)
                     {
                         // Skip empty lines
                         if (string.IsNullOrWhiteSpace(line))
                             continue;
 
-                        // Split by comma (basic CSV, no quoted commas handling)
+                        // Split by comma (basic CSV handling; assumes no commas inside fields)
                         string[] parts = line.Split(',');
-
-                        if (parts.Length < 2)
-                            continue; // Not enough data, ignore
+                        if (parts.Length < 4)
+                            continue; // Not enough columns, ignore
 
                         string shapeName = parts[0].Trim();
-                        // Ensure we have exactly three data fields; missing fields are set to empty string
-                        string[] dataFields = new string[3];
-                        for (int i = 0; i < 3; i++)
-                        {
-                            if (i + 1 < parts.Length)
-                                dataFields[i] = parts[i + 1].Trim();
-                            else
-                                dataFields[i] = string.Empty;
-                        }
+                        string data1 = parts[1].Trim();
+                        string data2 = parts[2].Trim();
+                        string data3 = parts[3].Trim();
 
-                        mapping[shapeName] = dataFields;
+                        shapeDataMap[shapeName] = (data1, data2, data3);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to read CSV file: {ex.Message}");
-                return;
-            }
-
-            // Apply data fields to matching shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                else
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Console.WriteLine($"CSV mapping file not found: {csvMappingPath}");
+                    return;
+                }
 
-                    // Use universal name for matching
-                    string shapeNameU = shape.NameU ?? string.Empty;
-
-                    if (mapping.TryGetValue(shapeNameU, out string[] fields))
+                // Iterate through all pages and shapes, applying data fields where a mapping exists
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Assign Data1, Data2, Data3 directly (no .Value)
-                        shape.Data1 = fields[0];
-                        shape.Data2 = fields[1];
-                        shape.Data3 = fields[2];
-                        Console.WriteLine($"Updated shape '{shapeNameU}' (ID: {shape.ID}) with Data1='{fields[0]}', Data2='{fields[1]}', Data3='{fields[2]}'.");
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Use the universal name for matching
+                        if (shapeDataMap.TryGetValue(shape.NameU, out var values))
+                        {
+                            // Assign Data1, Data2, Data3 directly (these are string properties)
+                            shape.Data1 = values.Data1;
+                            shape.Data2 = values.Data2;
+                            shape.Data3 = values.Data3;
+                        }
                     }
                 }
-            }
 
-            // Save the updated diagram
-            try
-            {
-                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputVisioPath}'.");
+                // Save the updated diagram in VSDX format
+                diagram.Save(outputVisioPath, SaveFileFormat.Csv);
+
+                Console.WriteLine($"Diagram saved to {outputVisioPath}");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }

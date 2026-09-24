@@ -1,52 +1,67 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Expect two arguments: input Visio file path and output Visio file path.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioHyperlinkUpdater <input.vsdx> <output.vsdx>");
-                return;
-            }
+            // Determine input and output file paths.
+            string inputPath;
+            string outputPath;
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            if (args.Length >= 2)
+            {
+                inputPath = args[0];
+                outputPath = args[1];
+            }
+            else
+            {
+                Console.WriteLine("Enter the full path to the Visio file to process:");
+                inputPath = Console.ReadLine();
+
+                Console.WriteLine("Enter the full path for the updated Visio file to save:");
+                outputPath = Console.ReadLine();
+            }
 
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the Hyperlinks collection exists.
-                    if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Determine if the shape already has at least one hyperlink.
+                    bool hasHyperlink = shape.Hyperlinks != null && shape.Hyperlinks.Count > 0;
+
+                    if (!hasHyperlink)
                     {
                         // Build a default URL based on the shape's universal name.
                         // If NameU is empty, fall back to the shape's ID.
-                        string shapeIdentifier = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : shape.ID.ToString();
-                        string defaultUrl = $"https://example.com/{shapeIdentifier}";
+                        string baseName = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : shape.ID.ToString();
+                        string defaultUrl = $"https://example.com/{baseName}";
 
                         // Create and configure a new hyperlink.
                         Hyperlink link = new Hyperlink();
                         link.Name = "DefaultLink";
                         link.Address.Value = defaultUrl;
-                        link.Description.Value = "Automatically added default hyperlink";
+                        link.Description.Value = $"Auto‑generated link for shape '{baseName}'";
 
                         // Add the hyperlink to the shape.
                         shape.Hyperlinks.Add(link);
-
-                        Console.WriteLine($"Added hyperlink to shape '{shapeIdentifier}' on page '{page.NameU}'.");
                     }
                 }
             }
 
-            // Save the updated diagram.
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+            Console.WriteLine($"Processing complete. Updated file saved to: {outputPath}");
         }
     }

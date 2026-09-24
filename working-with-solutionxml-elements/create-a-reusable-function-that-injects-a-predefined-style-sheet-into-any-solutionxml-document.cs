@@ -4,26 +4,30 @@ using Aspose.Diagram;
 
 class Program
 {
+    // Predefined style sheet XML content
+    private const string PredefinedStyleSheetXml = @"
+<StyleSheet>
+    <Name>MyPredefinedStyle</Name>
+    <FillForegnd>#FFCC00</FillForegnd>
+    <LinePattern>1</LinePattern>
+    <LineWeight>0.02</LineWeight>
+</StyleSheet>";
+
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Predefined style sheet XML to be injected
-            string styleSheetXml = @"<StyleSheet name=""MyCustomStyle"">
-            <FillForegnd>#FFCC00</FillForegnd>
-            <LinePattern>1</LinePattern>
-            <LineWeight>0.02</LineWeight>
-            </StyleSheet>";
-
-            // Inject the style sheet into the diagram's SolutionXML collection
-            InjectStyleSheet(diagram, "CustomStyleSheet", styleSheetXml);
+            // Inject the predefined style sheet into the diagram's SolutionXML collection
+            InjectPredefinedStyleSheet(diagram, "MyPredefinedStyle", PredefinedStyleSheetXml);
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)
@@ -33,25 +37,19 @@ class Program
     }
 
     /// <summary>
-    /// Adds a SolutionXML element containing a style sheet definition to the specified diagram.
+    /// Adds a SolutionXML entry containing a predefined style sheet.
     /// </summary>
-    /// <param name="diagram">The Aspose.Diagram.Diagram instance to modify.</param>
-    /// <param name="name">A unique name for the SolutionXML entry.</param>
+    /// <param name="diagram">The diagram to modify.</param>
+    /// <param name="name">The identifier name for the SolutionXML element.</param>
     /// <param name="xmlContent">The XML string representing the style sheet.</param>
-    public static void InjectStyleSheet(Diagram diagram, string name, string xmlContent)
+    private static void InjectPredefinedStyleSheet(Diagram diagram, string name, string xmlContent)
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty.", nameof(name));
-        if (string.IsNullOrEmpty(xmlContent)) throw new ArgumentException("XML content cannot be null or empty.", nameof(xmlContent));
-
-        // Create a new SolutionXML object and set its properties
-        SolutionXML solutionXml = new SolutionXML
-        {
-            Name = name,
-            XmlValue = xmlContent
-        };
+        // Create a new SolutionXML instance
+        SolutionXML styleSheetSolution = new SolutionXML();
+        styleSheetSolution.Name = name;
+        styleSheetSolution.XmlValue = xmlContent.Trim();
 
         // Add the SolutionXML to the diagram's collection
-        diagram.SolutionXMLs.Add(solutionXml);
+        diagram.SolutionXMLs.Add(styleSheetSolution);
     }
 }

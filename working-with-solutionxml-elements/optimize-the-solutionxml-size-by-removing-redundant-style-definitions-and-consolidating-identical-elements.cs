@@ -5,75 +5,72 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "optimized.vsdx";
+                // Path for the optimized output file
+                string outputPath = "output_optimized.vsdx";
 
                 // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // ---------- Remove redundant StyleSheets ----------
-                    // Build a dictionary to keep the first occurrence of each unique style definition.
-                    // For simplicity, styles are considered identical if their Name is the same.
-                    // In a real scenario, you would compare all relevant style properties.
-                    var uniqueStyles = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                    var styleIndicesToRemove = new List<int>();
+                    // ---------- Remove duplicate StyleSheets ----------
+                    // Track the first occurrence of each style name
+                    var seenStyleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    // Collect styles to remove to avoid modifying the collection while iterating
+                    var stylesToRemove = new List<StyleSheet>();
 
-                    for (int i = 0; i < diagram.StyleSheets.Count; i++)
+                    foreach (StyleSheet style in diagram.StyleSheets)
                     {
-                        var style = diagram.StyleSheets[i];
-                        if (uniqueStyles.ContainsKey(style.Name))
+                        if (seenStyleNames.Contains(style.Name))
                         {
-                            // Duplicate found – mark for removal
-                            styleIndicesToRemove.Add(i);
+                            // Duplicate found
+                            stylesToRemove.Add(style);
                         }
                         else
                         {
-                            uniqueStyles[style.Name] = i;
+                            seenStyleNames.Add(style.Name);
                         }
                     }
 
-                    // Remove duplicates in reverse order to keep indices valid
-                    for (int i = styleIndicesToRemove.Count - 1; i >= 0; i--)
+                    // Remove the duplicates
+                    foreach (StyleSheet dupStyle in stylesToRemove)
                     {
-                        diagram.StyleSheets.RemoveAt(styleIndicesToRemove[i]);
+                        diagram.StyleSheets.Remove(dupStyle);
                     }
 
-                    // ---------- Consolidate identical SolutionXML elements ----------
-                    // Identify SolutionXML entries with the same Name and XmlValue.
-                    var seenSolutionXml = new HashSet<string>();
-                    var solutionXmlIndicesToRemove = new List<int>();
+                    // ---------- Remove duplicate SolutionXML entries ----------
+                    var seenSolutionNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var solutionsToRemove = new List<SolutionXML>();
 
-                    for (int i = 0; i < diagram.SolutionXMLs.Count; i++)
+                    foreach (SolutionXML solXml in diagram.SolutionXMLs)
                     {
-                        var solXml = diagram.SolutionXMLs[i];
+                        // Consider both Name and XmlValue for uniqueness
                         string key = $"{solXml.Name}|{solXml.XmlValue}";
-                        if (seenSolutionXml.Contains(key))
+                        if (seenSolutionNames.Contains(key))
                         {
-                            // Duplicate entry – mark for removal
-                            solutionXmlIndicesToRemove.Add(i);
+                            solutionsToRemove.Add(solXml);
                         }
                         else
                         {
-                            seenSolutionXml.Add(key);
+                            seenSolutionNames.Add(key);
                         }
                     }
 
-                    // Remove duplicate SolutionXML entries (reverse order)
-                    for (int i = solutionXmlIndicesToRemove.Count - 1; i >= 0; i--)
+                    foreach (SolutionXML dupSol in solutionsToRemove)
                     {
-                        diagram.SolutionXMLs.RemoveAt(solutionXmlIndicesToRemove[i]);
+                        diagram.SolutionXMLs.Remove(dupSol);
                     }
 
-                    // ---------- Save the optimized diagram ----------
+                    // Save the optimized diagram
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Optimization complete. Saved to '{outputPath}'.");
                 }
+
+                Console.WriteLine("Optimization completed successfully.");
 
             }
             catch (System.IO.FileNotFoundException ex)

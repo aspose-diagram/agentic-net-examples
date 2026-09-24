@@ -1,77 +1,69 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
-using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
 
-class Program
+public class VisioXmlValidator
 {
-    static void Main()
+    // Validates a Visio SolutionXML file against the Visio XSD schema.
+    // Returns true if the XML conforms to the schema; otherwise false.
+    public static bool Validate(string xmlFilePath, string xsdFilePath)
+    {
+        bool isValid = true;
+
+        // Set up the XML schema set and add the Visio schema.
+        XmlSchemaSet schemas = new XmlSchemaSet();
+        schemas.Add(null, xsdFilePath); // No target namespace specified for Visio schema.
+
+        // Configure the XML reader settings for validation.
+        XmlReaderSettings settings = new XmlReaderSettings
+        {
+            ValidationType = ValidationType.Schema,
+            Schemas = schemas,
+            // Stop on the first validation error if desired.
+            // ValidationFlags = XmlSchemaValidationFlags.ReportValidationWarnings
+        };
+
+        // Attach a validation event handler to capture any schema violations.
+        settings.ValidationEventHandler += (sender, args) =>
+        {
+            // Mark the document as invalid and output the error details.
+            isValid = false;
+            Console.WriteLine($"Validation {args.Severity}: {args.Message}");
+        };
+
+        // Create an XML reader that validates while reading the document.
+        using (XmlReader reader = XmlReader.Create(xmlFilePath, settings))
+        {
+            try
+            {
+                // Parse the entire XML document. Validation occurs automatically.
+                while (reader.Read()) { }
+            }
+            catch (XmlException ex)
+            {
+                // XML is not well-formed.
+                isValid = false;
+                Console.WriteLine($"XML parsing error: {ex.Message}");
+            }
+        }
+
+        return isValid;
+    }
+
+    // Example usage.
+    public static void Main()
     {
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string xmlPath = "Solution.xml";   // Path to the Visio SolutionXML file.
+            string xsdPath = "VisioSchema.xsd"; // Path to the Visio XSD schema file.
 
-            // Path to the Visio XSD schema file
-            string schemaPath = "VisioSchema.xsd";
-
-            // Prepare the schema set
-            XmlSchemaSet schemaSet = new XmlSchemaSet();
-            schemaSet.Add(null, schemaPath);
-
-            // List to collect validation messages
-            List<string> validationMessages = new List<string>();
-
-            // Iterate over each SolutionXML in the diagram
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
-            {
-                string xmlContent = solXml.XmlValue;
-                if (string.IsNullOrWhiteSpace(xmlContent))
-                    continue; // Skip empty entries
-
-                // Configure XML reader settings for schema validation
-                XmlReaderSettings settings = new XmlReaderSettings
-                {
-                    Schemas = schemaSet,
-                    ValidationType = ValidationType.Schema,
-                    ValidationFlags = XmlSchemaValidationFlags.ReportValidationWarnings
-                };
-
-                // Capture validation events
-                settings.ValidationEventHandler += (sender, e) =>
-                {
-                    string msg = $"SolutionXML '{solXml.Name}': {e.Severity} - {e.Message}";
-                    validationMessages.Add(msg);
-                };
-
-                // Perform validation
-                using (XmlReader reader = XmlReader.Create(new System.IO.StringReader(xmlContent), settings))
-                {
-                    try
-                    {
-                        while (reader.Read()) { }
-                    }
-                    catch (XmlException ex)
-                    {
-                        validationMessages.Add($"SolutionXML '{solXml.Name}': XML parsing error - {ex.Message}");
-                    }
-                }
-            }
-
-            // Output validation results
-            if (validationMessages.Count == 0)
-            {
-                Console.WriteLine("All SolutionXML entries are valid against the Visio schema.");
-            }
-            else
-            {
-                Console.WriteLine("Validation errors/warnings:");
-                foreach (string msg in validationMessages)
-                    Console.WriteLine(msg);
-            }
+            bool result = Validate(xmlPath, xsdPath);
+            Console.WriteLine(result
+                ? "SolutionXML is valid against the Visio schema."
+                : "SolutionXML failed validation against the Visio schema.");
 
         }
         catch (System.IO.FileNotFoundException ex)

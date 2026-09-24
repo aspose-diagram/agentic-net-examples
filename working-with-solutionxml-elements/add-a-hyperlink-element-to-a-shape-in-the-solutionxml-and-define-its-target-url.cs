@@ -1,42 +1,61 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        try
+        {
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+            // Paths for input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-        // Draw a rectangle shape on the page
-        // Parameters: pinX, pinY, width, height (all in inches)
-        long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Retrieve the Shape object using the returned ID
-        Shape shape = page.Shapes.GetShape(shapeId);
+            // Assume the shape we want to modify is on the first page and named "MyShape"
+            Page page = diagram.Pages[0];
+            Shape targetShape = null;
+            foreach (Shape shp in page.Shapes)
+            {
+                if (shp.NameU == "MyShape")
+                {
+                    targetShape = shp;
+                    break;
+                }
+            }
 
-        // Create a new Hyperlink and set its properties
-        Hyperlink link = new Hyperlink();
-        link.Name = "MyLink";
-        link.Address.Value = "https://example.com";
-        link.Description.Value = "Example website";
+            if (targetShape == null)
+            {
+                throw new Exception("Shape with NameU 'MyShape' was not found.");
+            }
 
-        // Add the hyperlink to the shape's Hyperlinks collection
-        shape.Hyperlinks.Add(link);
+            // Create a new hyperlink and set its properties
+            Hyperlink link = new Hyperlink();
+            link.Name = "WebLink";
+            link.Address.Value = "https://www.example.com";
+            link.Description.Value = "Example website";
 
-        // Create a SolutionXML element that records the hyperlink information
-        SolutionXML solXml = new SolutionXML();
-        solXml.Name = "HyperlinkInfo";
-        solXml.XmlValue = $"<Hyperlink Name=\"{link.Name}\" URL=\"{link.Address.Value}\" Description=\"{link.Description.Value}\"/>";
+            // Add the hyperlink to the shape's Hyperlinks collection
+            targetShape.Hyperlinks.Add(link);
 
-        // Add the SolutionXML element to the diagram
-        diagram.SolutionXMLs.Add(solXml);
+            // Record the hyperlink information in a SolutionXML element
+            SolutionXML solXml = new SolutionXML();
+            solXml.Name = "ShapeHyperlinkInfo";
+            solXml.XmlValue = $"<Hyperlink Name=\"{link.Name}\" URL=\"{link.Address.Value}\" Description=\"{link.Description.Value}\" />";
+            diagram.SolutionXMLs.Add(solXml);
 
-        // Save the diagram to a VSDX file
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

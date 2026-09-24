@@ -1,58 +1,69 @@
 using System;
 using System.IO;
-using System.Linq;
+using System.Linq; // Required for OfType<T>()
 using System.Xml.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input file path
+        // Define input and output file paths
         string inputPath = "input.vsdx";
-        // Verify input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
 
-        // Define output file path
-        string outputPath = "output_cleaned.vsdx";
+        string outputPath = "output.vsdx";
 
+        Diagram diagram;
         try
         {
-            // Load the Visio diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over each SolutionXML element to clean its XML content
-            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
-            {
-                // Skip if the XML value is null or whitespace
-                if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
-                    continue;
-
-                // Parse the XML content while preserving whitespace
-                XDocument doc = XDocument.Parse(solutionXml.XmlValue, System.Xml.Linq.LoadOptions.PreserveWhitespace);
-
-                // Remove all comment nodes from the XML document
-                foreach (var comment in doc.DescendantNodes().OfType<XComment>())
-                {
-                    comment.Remove();
-                }
-
-                // Write the cleaned XML back to the SolutionXML element
-                solutionXml.XmlValue = doc.ToString();
-            }
-
-            // Save the cleaned diagram to the output file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Load the Visio diagram
+            diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all SolutionXML elements and remove XML comments
+        foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        {
+            if (string.IsNullOrWhiteSpace(solXml.XmlValue))
+                continue; // Skip empty entries
+
+            XDocument xmlDoc;
+            try
+            {
+                // Parse the XML content stored in the SolutionXML element
+                xmlDoc = XDocument.Parse(solXml.XmlValue);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to parse SolutionXML '{solXml.Name}': {ex.Message}");
+                continue; // Move to the next SolutionXML
+            }
+
+            // Remove all comment nodes from the parsed XML document
+            foreach (var comment in xmlDoc.DescendantNodes().OfType<XComment>())
+            {
+                comment.Remove();
+            }
+
+            // Store the cleaned XML back into the SolutionXML element
+            solXml.XmlValue = xmlDoc.ToString();
+        }
+
+        try
+        {
+            // Save the updated diagram with cleaned SolutionXML data
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("All SolutionXML comments have been removed and diagram saved.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
 }

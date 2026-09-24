@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
@@ -8,22 +9,40 @@ class Program
             try
             {
 
-                // Load the Visio diagram file (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
+                // Path to the Visio diagram file (VSX, VSDX, etc.)
+                string diagramPath = @"C:\Diagrams\SampleDiagram.vsdx";
 
-                // Iterate through each page and count the shapes
-                foreach (Page page in diagram.Pages)
+                // Load the diagram using Aspose.Diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Prepare a StringWriter to build the summary report
+                using (StringWriter reportWriter = new StringWriter())
                 {
-                    // ShapeCollection provides a Count property
-                    int shapeCount = page.Shapes.Count;
+                    reportWriter.WriteLine("Shape Count Summary Report");
+                    reportWriter.WriteLine("==========================");
+                    reportWriter.WriteLine();
 
-                    // Output the result for the current page
-                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) contains {shapeCount} shape(s).");
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Count the number of shapes on the current page
+                        int shapeCount = page.Shapes.Count;
+
+                        // Write the page name and shape count to the report
+                        reportWriter.WriteLine($"Page: {page.Name}");
+                        reportWriter.WriteLine($"  Shape Count: {shapeCount}");
+                        reportWriter.WriteLine();
+                    }
+
+                    // Output the report to the console
+                    Console.WriteLine(reportWriter.ToString());
+
+                    // Optionally, save the report to a text file
+                    string reportPath = @"C:\Diagrams\ShapeCountReport.txt";
+                    File.WriteAllText(reportPath, reportWriter.ToString());
+
+                    Console.WriteLine($"Report saved to: {reportPath}");
                 }
-
-                // Optionally, keep the console window open
-                Console.WriteLine("Shape count summary completed.");
-                Console.ReadKey();
 
             }
             catch (System.IO.FileNotFoundException ex)

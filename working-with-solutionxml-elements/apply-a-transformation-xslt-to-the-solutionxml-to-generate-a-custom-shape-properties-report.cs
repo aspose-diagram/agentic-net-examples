@@ -4,52 +4,66 @@ using System.Xml;
 using System.Xml.Xsl;
 using Aspose.Diagram;
 
-class ShapePropertiesReportGenerator
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram
-            var diagram = new Diagram("input.vsdx");
-
-            // Retrieve the first SolutionXML (adjust the index or name as needed)
-            if (diagram.SolutionXMLs.Count == 0)
+            try
             {
-                Console.WriteLine("No SolutionXML data found in the diagram.");
-                return;
+
+                // Path to the Visio file
+                string visioPath = "input.vsdx";
+
+                // Path to the XSLT file that defines the report format
+                string xsltPath = "ShapePropertiesReport.xslt";
+
+                // Output directory for the generated reports
+                string outputDir = "Reports";
+
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Prepare the XSLT transformer
+                XslCompiledTransform xslt = new XslCompiledTransform();
+                xslt.Load(xsltPath);
+
+                // Iterate over all SolutionXML elements in the diagram
+                int index = 1;
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+                {
+                    // The XML content stored in the SolutionXML element
+                    string xmlContent = solutionXml.XmlValue;
+
+                    // Load the XML content into an XmlReader
+                    using (StringReader stringReader = new StringReader(xmlContent))
+                    using (XmlReader xmlReader = XmlReader.Create(stringReader))
+                    // Prepare the output file for this SolutionXML element
+                    using (FileStream outputStream = new FileStream(
+                        Path.Combine(outputDir, $"SolutionXmlReport_{index}.html"),
+                        FileMode.Create, FileAccess.Write))
+                    using (XmlWriter xmlWriter = XmlWriter.Create(outputStream, xslt.OutputSettings))
+                    {
+                        // Apply the XSLT transformation
+                        xslt.Transform(xmlReader, xmlWriter);
+                    }
+
+                    Console.WriteLine($"Report generated for SolutionXML #{index}");
+                    index++;
+                }
+
+                // Optionally, save the diagram if any modifications were made
+                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
             }
-
-            var solutionXml = diagram.SolutionXMLs[0]; // or locate by Name if required
-            string xmlContent = solutionXml.XmlValue;
-
-            // Load the XSLT transformation
-            var xslt = new XslCompiledTransform();
-            xslt.Load("transform.xslt"); // path to your XSLT file
-
-            // Perform the transformation
-            string report;
-            using (var xmlReader = XmlReader.Create(new StringReader(xmlContent)))
-            using (var resultWriter = new StringWriter())
+            catch (System.IO.FileNotFoundException ex)
             {
-                xslt.Transform(xmlReader, null, resultWriter);
-                report = resultWriter.ToString();
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the generated report to an HTML file
-            File.WriteAllText("ShapePropertiesReport.html", report);
-            Console.WriteLine("Report generated: ShapePropertiesReport.html");
-
-            // Optional: store the report back into the diagram as a new SolutionXML entry
-            // var reportSolutionXml = new SolutionXML("ShapePropertiesReport", report);
-            // diagram.SolutionXMLs.Add(reportSolutionXml);
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

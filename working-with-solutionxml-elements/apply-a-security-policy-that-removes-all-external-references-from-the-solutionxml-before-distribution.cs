@@ -1,86 +1,39 @@
 using System.IO;
 using System;
-using System.Linq;
-using System.Xml.Linq;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class SolutionXmlSecurityPolicy
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source and destination Visio files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Path to the sanitized output file
+            string outputPath = "output_sanitized.vsdx";
 
-            // Load the Visio diagram (uses the provided load rule)
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all SolutionXML entries in the diagram
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            // Regular expression to match typical external references (http, https, file URLs)
+            Regex externalRefPattern = new Regex(@"(https?://\S+)|(file://\S+)", RegexOptions.IgnoreCase);
+
+            // Iterate through all SolutionXML elements and remove external references
+            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
             {
-                // Skip if the XML content is null or empty
-                if (string.IsNullOrEmpty(solXml.XmlValue))
-                    continue;
-
-                XDocument xDoc;
-                try
+                if (!string.IsNullOrEmpty(solutionXml.XmlValue))
                 {
-                    // Parse the XML string into an XDocument for manipulation
-                    xDoc = XDocument.Parse(solXml.XmlValue);
+                    // Replace any external reference with an empty string
+                    string sanitizedXml = externalRefPattern.Replace(solutionXml.XmlValue, string.Empty);
+                    solutionXml.XmlValue = sanitizedXml;
                 }
-                catch
-                {
-                    // If parsing fails, leave the original XML unchanged
-                    continue;
-                }
-
-                // ------------------------------------------------------------
-                // Remove potential external references
-                // ------------------------------------------------------------
-
-                // 1. Remove attributes that point to external resources (e.g., href, src)
-                var elementsWithExternalAttrs = xDoc.Descendants()
-                    .Where(e => e.Attributes().Any(a =>
-                        (a.Name.LocalName.Equals("href", StringComparison.OrdinalIgnoreCase) ||
-                         a.Name.LocalName.Equals("src", StringComparison.OrdinalIgnoreCase)) &&
-                        !string.IsNullOrWhiteSpace(a.Value)))
-                    .ToList();
-
-                foreach (var element in elementsWithExternalAttrs)
-                {
-                    // Remove only the external attributes, keep other attributes intact
-                    var attrsToRemove = element.Attributes()
-                        .Where(a => a.Name.LocalName.Equals("href", StringComparison.OrdinalIgnoreCase) ||
-                                    a.Name.LocalName.Equals("src", StringComparison.OrdinalIgnoreCase))
-                        .ToList();
-
-                    foreach (var attr in attrsToRemove)
-                        attr.Remove();
-                }
-
-                // 2. Remove entire elements that are explicitly marked as external references
-                var externalReferenceElements = xDoc.Descendants()
-                    .Where(e => e.Name.LocalName.Equals("ExternalReference", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                foreach (var extElem in externalReferenceElements)
-                    extElem.Remove();
-
-                // ------------------------------------------------------------
-                // Write the sanitized XML back to the SolutionXML object
-                // ------------------------------------------------------------
-                // Preserve XML declaration if present
-                string cleanedXml = xDoc.Declaration != null
-                    ? xDoc.Declaration.ToString() + Environment.NewLine + xDoc.ToString()
-                    : xDoc.ToString();
-
-                solXml.XmlValue = cleanedXml;
             }
 
-            // Save the modified diagram (uses the provided save rule)
+            // Save the sanitized diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

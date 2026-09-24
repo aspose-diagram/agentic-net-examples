@@ -1,152 +1,170 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-namespace DiagramVersionControl
+namespace DiagramSolutionXmlVersionControl
 {
-    // Simple version control for Diagram SolutionXML changes.
-    public class SolutionXmlVersionControl
+    // Simple version control for Diagram SolutionXML elements.
+    class VersionControl
     {
-        private Diagram _diagram;                     // Loaded diagram instance
-        private readonly string _baseDiagramPath;     // Path to the original diagram file
-        private readonly string _diffFolderPath;      // Folder where diff files are stored
-        private int _currentVersion;                  // Incremental version number
+        // Path to the file that stores the latest snapshot of SolutionXMLs.
+        private const string SnapshotFileName = "latest_snapshot.xml";
 
-        // In‑memory list of diffs applied in the current session (for reconstruction if needed)
-        private readonly List<SolutionXML> _pendingDiffs = new List<SolutionXML>();
-
-        public SolutionXmlVersionControl(string baseDiagramPath, string diffFolderPath)
+        // Saves a new version and creates a diff file based on changes since the last snapshot.
+        public void SaveVersion(string diagramPath, string versionFolder)
         {
-            _baseDiagramPath = baseDiagramPath;
-            _diffFolderPath = diffFolderPath;
-            _currentVersion = 0;
+            // Ensure the version folder exists.
+            Directory.CreateDirectory(versionFolder);
 
-            // Ensure diff folder exists
-            Directory.CreateDirectory(_diffFolderPath);
-        }
-
-        // Load the base diagram from file
-        public void Load()
-        {
-            // Aspose.Diagram loads the diagram; no custom create/load rule is required here
-            _diagram = new Diagram(_baseDiagramPath);
-        }
-
-        // Save the current diagram state back to the original file
-        public void Save()
-        {
-            if (_diagram == null)
-                throw new InvalidOperationException("Diagram not loaded.");
-
-            // Save using VDX format (Visio 2003-2007). Adjust format as needed.
-            _diagram.Save(_baseDiagramPath, SaveFileFormat.Vdx);
-        }
-
-        // Add a new SolutionXML entry to the diagram
-        public void AddSolutionXml(string name, string xmlValue)
-        {
-            if (_diagram == null)
-                throw new InvalidOperationException("Diagram not loaded.");
-
-            var solutionXml = new SolutionXML(name, xmlValue);
-            _diagram.SolutionXMLs.Add(solutionXml);
-            _pendingDiffs.Add(solutionXml); // Track for diff file creation
-        }
-
-        // Commit pending SolutionXML changes as a diff file
-        public void Commit()
-        {
-            if (_pendingDiffs.Count == 0)
-                return; // Nothing to commit
-
-            _currentVersion++;
-
-            // Create a diff file that contains only the newly added SolutionXML entries
-            string diffFilePath = Path.Combine(_diffFolderPath, $"diff_{_currentVersion}.xml");
-
-            using (var writer = new StreamWriter(diffFilePath))
-            {
-                writer.WriteLine("<SolutionXMLDiffs>");
-                foreach (var xml in _pendingDiffs)
-                {
-                    writer.WriteLine("  <SolutionXML>");
-                    writer.WriteLine($"    <Name>{System.Security.SecurityElement.Escape(xml.Name)}</Name>");
-                    writer.WriteLine($"    <XmlValue>{System.Security.SecurityElement.Escape(xml.XmlValue)}</XmlValue>");
-                    writer.WriteLine("  </SolutionXML>");
-                }
-                writer.WriteLine("</SolutionXMLDiffs>");
-            }
-
-            // Clear pending diffs after they have been persisted
-            _pendingDiffs.Clear();
-        }
-
-        // Reconstruct a diagram at a specific version by applying diffs sequentially
-        public Diagram ReconstructVersion(int targetVersion)
-        {
-            if (targetVersion < 0)
-                throw new ArgumentOutOfRangeException(nameof(targetVersion));
-
-            // Load a fresh copy of the base diagram
-            var reconstructed = new Diagram(_baseDiagramPath);
-
-            // Apply diffs up to the requested version
-            for (int v = 1; v <= targetVersion; v++)
-            {
-                string diffFilePath = Path.Combine(_diffFolderPath, $"diff_{v}.xml");
-                if (!File.Exists(diffFilePath))
-                    break; // No further diffs
-
-                var diffXml = System.Xml.Linq.XDocument.Load(diffFilePath);
-                foreach (var elem in diffXml.Root.Elements("SolutionXML"))
-                {
-                    string name = elem.Element("Name")?.Value ?? string.Empty;
-                    string xmlValue = elem.Element("XmlValue")?.Value ?? string.Empty;
-                    var solutionXml = new SolutionXML(name, xmlValue);
-                    reconstructed.SolutionXMLs.Add(solutionXml);
-                }
-            }
-
-            return reconstructed;
-        }
-
-        // Get the current version number (number of committed diffs)
-        public int CurrentVersion => _currentVersion;
-    }
-
-    // Example usage
-    class Program
-    {
-        static void Main()
-        {
+            // Load the diagram inside a try/catch to capture Aspose errors.
+            Diagram diagram;
             try
             {
-
-                string diagramPath = @"C:\Diagrams\sample.vdx";
-                string diffFolder = @"C:\Diagrams\Diffs";
-
-                var vcs = new SolutionXmlVersionControl(diagramPath, diffFolder);
-                vcs.Load();
-
-                // Add a new SolutionXML entry
-                vcs.AddSolutionXml("CustomData", "<custom><value>123</value></custom>");
-
-                // Commit the change as a diff file
-                vcs.Commit();
-
-                // Save the updated diagram
-                vcs.Save();
-
-                // Reconstruct diagram at version 1
-                Diagram version1Diagram = vcs.ReconstructVersion(1);
-                // version1Diagram can now be saved or inspected as needed
-
+                diagram = new Diagram(diagramPath);
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+                return;
             }
+
+            // Build a dictionary of current SolutionXML entries (Name -> XmlValue).
+            Dictionary<string, string> current = diagram.SolutionXMLs
+                .Cast<SolutionXML>()
+                .ToDictionary(s => s.Name, s => s.XmlValue ?? string.Empty);
+
+            // Load previous snapshot if it exists.
+            string snapshotPath = Path.Combine(versionFolder, SnapshotFileName);
+            Dictionary<string, string> previous = File.Exists(snapshotPath)
+                ? LoadSnapshot(snapshotPath)
+                : new Dictionary<string, string>();
+
+            // Determine added entries.
+            var added = current.Keys.Except(previous.Keys)
+                .Select(name => new { Name = name, NewValue = current[name] })
+                .ToList();
+
+            // Determine removed entries.
+            var removed = previous.Keys.Except(current.Keys)
+                .Select(name => new { Name = name, OldValue = previous[name] })
+                .ToList();
+
+            // Determine modified entries.
+            var modified = current.Keys.Intersect(previous.Keys)
+                .Where(name => current[name] != previous[name])
+                .Select(name => new { Name = name, OldValue = previous[name], NewValue = current[name] })
+                .ToList();
+
+            // If there are changes, write a diff file.
+            if (added.Any() || removed.Any() || modified.Any())
+            {
+                string diffFileName = $"diff_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xml";
+                string diffFilePath = Path.Combine(versionFolder, diffFileName);
+                // Cast anonymous type lists to List<dynamic> to match method signature.
+                WriteDiffFile(
+                    diffFilePath,
+                    added.Cast<dynamic>().ToList(),
+                    removed.Cast<dynamic>().ToList(),
+                    modified.Cast<dynamic>().ToList());
+                Console.WriteLine($"Diff file created: {diffFilePath}");
+            }
+            else
+            {
+                Console.WriteLine("No changes detected; no diff file created.");
+            }
+
+            // Update the latest snapshot.
+            WriteSnapshotFile(snapshotPath, current);
+        }
+
+        // Loads a snapshot XML file into a dictionary.
+        private Dictionary<string, string> LoadSnapshot(string path)
+        {
+            XDocument doc = XDocument.Load(path);
+            return doc.Root
+                .Elements("SolutionXML")
+                .ToDictionary(
+                    e => (string)e.Attribute("Name"),
+                    e => (string)e.Attribute("XmlValue") ?? string.Empty);
+        }
+
+        // Writes the current state as a snapshot XML file.
+        private void WriteSnapshotFile(string path, Dictionary<string, string> data)
+        {
+            XDocument doc = new XDocument(
+                new XElement("SolutionXMLs",
+                    data.Select(kv =>
+                        new XElement("SolutionXML",
+                            new XAttribute("Name", kv.Key),
+                            new XAttribute("XmlValue", kv.Value)))));
+
+            doc.Save(path);
+        }
+
+        // Writes a diff XML file describing added, removed, and modified entries.
+        private void WriteDiffFile(string path,
+            List<dynamic> added,
+            List<dynamic> removed,
+            List<dynamic> modified)
+        {
+            XDocument diffDoc = new XDocument(
+                new XElement("Diff",
+                    new XElement("Added",
+                        added.Select(a =>
+                            new XElement("SolutionXML",
+                                new XAttribute("Name", a.Name),
+                                new XAttribute("XmlValue", a.NewValue)))),
+                    new XElement("Removed",
+                        removed.Select(r =>
+                            new XElement("SolutionXML",
+                                new XAttribute("Name", r.Name),
+                                new XAttribute("XmlValue", r.OldValue)))),
+                    new XElement("Modified",
+                        modified.Select(m =>
+                            new XElement("SolutionXML",
+                                new XAttribute("Name", m.Name),
+                                new XAttribute("OldValue", m.OldValue),
+                                new XAttribute("NewValue", m.NewValue))))));
+
+            diffDoc.Save(path);
+        }
     }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Expect two arguments: diagram file path and version folder path.
+            if (args.Length != 2)
+            {
+                Console.WriteLine("Usage: DiagramSolutionXmlVersionControl <diagramPath> <versionFolder>");
+                return;
+            }
+
+            string diagramPath = args[0];
+            string versionFolder = args[1];
+
+            // Guard against missing diagram file.
+            if (!File.Exists(diagramPath))
+            {
+                Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+                return;
+            }
+
+            try
+            {
+                VersionControl vc = new VersionControl();
+                vc.SaveVersion(diagramPath, versionFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

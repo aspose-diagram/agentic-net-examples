@@ -1,25 +1,29 @@
-using System;
 using System.IO;
+using System;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create custom XML for version tracking
-            string customXml = "<VersionInfo><Version>1.0.0</Version></VersionInfo>";
+            // Create a SolutionXML element to store version information
+            SolutionXML versionInfo = new SolutionXML();
+            versionInfo.Name = "VersionInfo";
+            versionInfo.XmlValue = diagram.Version; // Use the diagram's built‑in version string
 
-            // Add the custom SolutionXML entry to the document
-            Aspose.Diagram.SolutionXML versionXml = new Aspose.Diagram.SolutionXML("CustomVersionInfo", customXml);
-            diagram.SolutionXMLs.Add(versionXml);
+            // Add the custom SolutionXML to the document
+            diagram.SolutionXMLs.Add(versionInfo);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Save the diagram with the new custom property
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -4,44 +4,57 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-class ExportSolutionXmlToJson
+namespace DiagramSolutionXmlExport
 {
-    static void Main(string[] args)
+    // DTO for JSON serialization
+    public class SolutionXmlDto
     {
-        try
+        public string Name { get; set; } = null!;
+        public string XmlValue { get; set; } = null!;
+    }
+
+    public class Program
+    {
+        public static void Main()
         {
-
-            // Path to the source Visio file
-            string inputVisioPath = "input.vsd";
-
-            // Path where the formatted JSON will be saved
-            string outputJsonPath = "solutionxml.json";
-
-            // Load the Visio diagram (uses Aspose.Diagram's constructor)
-            Diagram diagram = new Diagram(inputVisioPath);
-
-            // Collect each SolutionXML entry (Name and XmlValue) into a list
-            var solutionXmlItems = new List<object>();
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            try
             {
-                solutionXmlItems.Add(new
+
+                // Path to the Visio file
+                string visioPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Collect SolutionXML entries
+                List<SolutionXmlDto> solutionXmlList = new List<SolutionXmlDto>();
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    Name = solXml.Name,
-                    XmlValue = solXml.XmlValue
-                });
+                    solutionXmlList.Add(new SolutionXmlDto
+                    {
+                        Name = solutionXml.Name,
+                        XmlValue = solutionXml.XmlValue
+                    });
+                }
+
+                // Serialize to formatted JSON
+                JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                string json = JsonSerializer.Serialize(solutionXmlList, jsonOptions);
+
+                // Write JSON to file
+                string outputPath = "solutionxml.json";
+                File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Exported {solutionXmlList.Count} SolutionXML entries to '{outputPath}'.");
+
             }
-
-            // Serialize the list to formatted (indented) JSON
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string jsonContent = JsonSerializer.Serialize(solutionXmlItems, jsonOptions);
-
-            // Write the JSON string to the output file
-            File.WriteAllText(outputJsonPath, jsonContent);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

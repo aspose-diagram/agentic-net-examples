@@ -1,50 +1,49 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main()
     {
         try
         {
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram from the file system
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page of the diagram
+            // Assume the shape we want to modify is on the first page and has the universal name "MyShape"
             Page page = diagram.Pages[0];
-
-            // Find the first non‑deleted shape on the page
             Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
+
+            foreach (Shape shape in page.Shapes)
             {
-                if (s.Del == BOOL.False)
+                if (shape.NameU == "MyShape")
                 {
-                    targetShape = s;
+                    targetShape = shape;
                     break;
                 }
             }
 
             if (targetShape == null)
             {
-                throw new Exception("No non‑deleted shape found on the first page.");
+                throw new Exception("Shape with NameU 'MyShape' not found.");
             }
 
             // Apply a preset theme to the shape
             targetShape.PresetTheme = PresetThemeValue.Bubble;
             targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-            // Update line weight (in inches) and dash pattern after the theme is applied
-            targetShape.Line.LineWeight.Value = 0.05;               // 0.05 inches thick
-            targetShape.Line.LinePattern.Value = LinePatternValue.Dash; // Dashed line
+            // After applying the theme, update line weight and dash pattern
+            // Line weight is in inches; here we set it to 0.02 inches
+            targetShape.Line.LineWeight.Value = 0.02;
+
+            // Set dash pattern using the LinePatternValue enum (e.g., Dash)
+            targetShape.Line.LinePattern.Value = LinePatternValue.Dash;
 
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

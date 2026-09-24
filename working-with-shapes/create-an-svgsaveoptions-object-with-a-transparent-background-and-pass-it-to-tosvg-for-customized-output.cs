@@ -10,41 +10,40 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram.
-            // Replace the path with the actual file location.
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Get the first page of the diagram.
-            Page page = diagram.Pages[0];
-
-            // Retrieve the first shape on the page.
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
+            // Prepare SVG save options with transparent background (default behavior)
+            SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                shape = s;
+                // Fit the SVG to the viewport; background remains transparent
+                SVGFitToViewPort = true,
+                // Do not export guide shapes
+                ExportGuideShapes = false,
+                // Do not export comments
+                IsExportComments = false
+            };
+
+            // Export the first shape on the first page to SVG using the custom options
+            Page firstPage = diagram.Pages[0];
+            Shape firstShape = null;
+            foreach (Shape shape in firstPage.Shapes)
+            {
+                firstShape = shape;
                 break;
             }
 
-            if (shape == null)
+            if (firstShape != null)
             {
-                throw new Exception("No shape found on the first page.");
+                firstShape.ToSvg("shape_output.svg", svgOptions);
+            }
+            else
+            {
+                throw new Exception("No shapes found on the first page.");
             }
 
-            // Create SVG save options.
-            // By default the background is transparent; no explicit property exists to set it.
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-            // Optional customizations:
-            svgOptions.EnlargePage = false;          // Do not enlarge the page to fit content.
-            svgOptions.SVGFitToViewPort = true;      // Fit the SVG to the viewport.
-            svgOptions.IsExportComments = false;     // Do not export comments.
-
-            // Export the shape to an SVG file using the customized options.
-            string outputPath = "shape_output.svg";
-            shape.ToSvg(outputPath, svgOptions);
-
-            Console.WriteLine($"Shape exported to SVG at: {outputPath}");
+            // Optionally, export the entire diagram to SVG using the same options
+            diagram.Save("diagram_output.svg", svgOptions);
 
         }
         catch (System.IO.FileNotFoundException ex)

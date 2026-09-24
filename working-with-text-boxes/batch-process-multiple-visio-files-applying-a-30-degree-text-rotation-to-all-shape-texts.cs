@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,47 +10,54 @@ class Program
             try
             {
 
-                // Determine the folder containing Visio files.
-                // If a folder path is passed as an argument, use it; otherwise use the current directory.
-                string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+                // Folder containing Visio files to process
+                string inputFolder = @"C:\VisioFiles\Input";
+                // Folder where rotated files will be saved
+                string outputFolder = @"C:\VisioFiles\Output";
 
-                // Find all Visio files (VSDX format) in the folder.
-                string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+                // Ensure output folder exists
+                if (!Directory.Exists(outputFolder))
+                    Directory.CreateDirectory(outputFolder);
 
-                // Prepare an output subfolder to store the modified files.
-                string outputFolder = Path.Combine(inputFolder, "Processed");
-                Directory.CreateDirectory(outputFolder);
-
-                // Rotation angle: 30 degrees converted to radians (required by TxtAngle).
-                double angleRadians = Math.PI / 180.0 * 30.0;
-
+                // Get all Visio files (VSDX, VSD, VDX) in the input folder
+                string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
                 foreach (string filePath in visioFiles)
                 {
-                    // Load the diagram from file.
+                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                        continue; // Skip non‑Visio files
+
+                    // Load the diagram
                     Diagram diagram = new Diagram(filePath);
 
-                    // Iterate through every page and every shape.
+                    // Iterate through all pages
                     foreach (Page page in diagram.Pages)
                     {
+                        // Iterate through all shapes on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Retrieve plain text of the shape.
-                            string shapeText = shape.Text.Value.Text;
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                            // Apply rotation only if the shape contains text.
-                            if (!string.IsNullOrWhiteSpace(shapeText))
+                            // Ensure the TextXForm object exists
+                            if (shape.TextXForm != null)
                             {
-                                shape.TextXForm.TxtAngle.Value = angleRadians;
+                                // Convert 30 degrees to radians
+                                double angleRad = (Math.PI / 180.0) * 30.0;
+                                shape.TextXForm.TxtAngle.Value = angleRad;
                             }
                         }
                     }
 
-                    // Save the modified diagram to the output folder, preserving the original format.
+                    // Build output file path (preserve original file name)
                     string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                    // Save the modified diagram back to VSDX format (or original format if desired)
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Processing completed. Modified files are located in: " + outputFolder);
+                Console.WriteLine("Batch processing completed.");
 
             }
             catch (System.IO.DirectoryNotFoundException ex)

@@ -11,7 +11,7 @@ class Program
             try
             {
 
-                // Input and output file paths (adjust as needed)
+                // Input and output file paths
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
@@ -25,25 +25,34 @@ class Program
                     pages.Add(p);
                 }
 
-                // Update user-defined cells concurrently
+                // Parallel processing of pages
                 Parallel.ForEach(pages, page =>
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Collect shapes of the current page
+                    List<Shape> shapes = new List<Shape>();
+                    foreach (Shape s in page.Shapes)
                     {
-                        // Iterate over all user-defined cells of the shape
-                        foreach (User userCell in shape.Users)
+                        shapes.Add(s);
+                    }
+
+                    // Parallel processing of shapes within the page
+                    Parallel.ForEach(shapes, shape =>
+                    {
+                        // Iterate through user-defined cells of the shape
+                        foreach (User user in shape.Users)
                         {
-                            // Example: update a cell named "MyCell"
-                            if (userCell.Name == "MyCell")
+                            // Update the cell named "MyCell"
+                            if (user.Name == "MyCell")
                             {
-                                // Set the new value; adjust logic as required
-                                userCell.Value.Val = "UpdatedValue";
+                                // Example update: set the value to the current timestamp ticks
+                                user.Value.Val = DateTime.Now.Ticks.ToString();
+                                break; // Exit after updating the target cell
                             }
                         }
-                    }
+                    });
                 });
 
-                // Save the modified diagram
+                // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

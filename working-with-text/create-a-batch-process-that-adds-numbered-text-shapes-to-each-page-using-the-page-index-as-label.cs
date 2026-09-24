@@ -1,42 +1,58 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Loop through all pages in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            try
             {
-                Page page = diagram.Pages[i];
 
-                // Position (in inches) where the text will be placed on each page
-                double pinX = 1.0;   // X coordinate
-                double pinY = 1.0;   // Y coordinate
-                double width = 2.0; // Width of the text box
-                double height = 0.5; // Height of the text box
+                // Input Visio file path (replace with actual path)
+                string inputPath = "input.vsdx";
+                // Output Visio file path
+                string outputPath = "output.vsdx";
 
-                // Text to display – using the page index (1‑based) as the label
-                string text = $"Page {i + 1}";
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Add the text shape to the current page
-                page.AddText(pinX, pinY, width, height, text);
+                // Iterate through each page and add a numbered text shape
+                int pageNumber = 0;
+                foreach (Page page in diagram.Pages)
+                {
+                    pageNumber++;
+
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Define position and size for the text shape
+                    double pinX = 1.0;                     // X coordinate (center) from left
+                    double pinY = pageHeight - 1.0;        // Y coordinate (center) from top
+                    double shapeWidth = 2.0;               // Width of the text shape
+                    double shapeHeight = 0.5;              // Height of the text shape
+
+                    // Create label using the page index
+                    string label = $"Page {pageNumber}";
+
+                    // Add the text shape to the current page
+                    Shape textShape = page.AddText(pinX, pinY, shapeWidth, shapeHeight, label);
+
+                    // Optional: set font size and color (using shape's text collection)
+                    textShape.Text.Value.Clear();
+                    textShape.Text.Value.Add(new Txt(label));
+                    // Example of setting font size (in inches) and color
+                    // textShape.Chars[0].Size.Value = 12.0 / 72.0; // 12 pt
+                    // textShape.Chars[0].Color.Value = "#000000"; // Black
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -1,58 +1,86 @@
-using System.IO;
 using System;
-using System.Xml.Linq;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using System.Xml.Linq;
+using System.Xml;
 
-public class DiagramProcessor
-{
-    // Validates that every element in the XML has an explicit namespace.
-    private static void ValidateNamespaces(string xmlContent)
-    {
-        // Parse the XML string into an XDocument.
-        XDocument document = XDocument.Parse(xmlContent);
-
-        // Iterate through all elements and check their namespace.
-        foreach (XElement element in document.Descendants())
-        {
-            if (element.Name.Namespace == XNamespace.None)
-            {
-                // Throw an exception if an element lacks a namespace.
-                throw new InvalidOperationException(
-                    $"Element '{element.Name}' does not have an explicit XML namespace.");
-            }
-        }
-    }
-
-    // Loads a diagram, validates its SolutionXML namespaces, and saves the diagram.
-    public static void ProcessDiagram(string inputFilePath, string outputFilePath)
-    {
-        // Load the diagram from the specified file.
-        Diagram diagram = new Diagram(inputFilePath);
-
-        // Validate each SolutionXML entry before saving.
-        foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
-        {
-            ValidateNamespaces(solutionXml.XmlValue);
-        }
-
-        // Save the diagram to the desired output location.
-        diagram.Save(outputFilePath, SaveFileFormat.Vdx);
-    }
-}
-
+/// <summary>
+/// Demonstrates loading a Visio diagram, validating the XML namespaces
+/// of all SolutionXML elements, and saving the diagram.
+/// </summary>
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        Diagram diagram;
         try
         {
-
-            DiagramProcessor.ProcessDiagram("", "");
-
+            // Load the diagram (Aspose operation)
+            diagram = new Diagram(inputPath);
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Report loading errors
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Validate SolutionXML namespaces before saving
+        ValidateSolutionXmlNamespaces(diagram);
+
+        // Path for the output Visio file
+        string outputPath = "output.vsdx";
+
+        try
+        {
+            // Save the diagram after successful validation (Aspose operation)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Report saving errors
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Parses each SolutionXML.XmlValue and ensures that the XML is well‑formed
+    /// and that all namespace prefixes are properly declared.
+    /// Throws an exception if any validation error is found.
+    /// </summary>
+    /// <param name="diagram">The diagram whose SolutionXML collection will be validated.</param>
+    private static void ValidateSolutionXmlNamespaces(Diagram diagram)
+    {
+        foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        {
+            if (string.IsNullOrWhiteSpace(solXml.XmlValue))
+            {
+                // Empty XML is considered valid; continue to next item
+                continue;
+            }
+
+            try
+            {
+                // Parse the XML string. XDocument will throw if the XML is not well‑formed
+                // or if a namespace prefix is used without a corresponding declaration.
+                XDocument.Parse(solXml.XmlValue, System.Xml.Linq.LoadOptions.SetLineInfo);
+            }
+            catch (XmlException ex)
+            {
+                // Include the name of the SolutionXML element in the error message
+                throw new Exception($"Invalid XML in SolutionXML '{solXml.Name}': {ex.Message}", ex);
+            }
         }
     }
 }

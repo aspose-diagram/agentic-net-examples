@@ -1,74 +1,68 @@
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
     {
         static void Main(string[] args)
         {
-            try
+            // Expect arguments: inputVisioPath outputVisioPath templateShapeName
+            if (args.Length < 3)
             {
-
-                // Input and output file paths
-                string inputPath = "template.vsdx";
-                string outputPath = "result.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Identify the template shape (by NameU, adjust as needed)
-                Shape templateShape = null;
-                foreach (Shape shape in diagram.Pages[0].Shapes)
-                {
-                    if (shape.NameU != null && shape.NameU.Equals("TemplateShape", StringComparison.OrdinalIgnoreCase))
-                    {
-                        templateShape = shape;
-                        break;
-                    }
-                }
-
-                if (templateShape == null)
-                {
-                    Console.WriteLine("Template shape not found.");
-                    return;
-                }
-
-                // Collect target shapes (all shapes on the first page except the template)
-                var targetShapes = new System.Collections.Generic.List<Shape>();
-                foreach (Shape shape in diagram.Pages[0].Shapes)
-                {
-                    if (shape.ID != templateShape.ID)
-                    {
-                        targetShapes.Add(shape);
-                    }
-                }
-
-                // Copy connection points from the template to each target shape
-                foreach (Shape target in targetShapes)
-                {
-                    // Clear existing connections on the target shape
-                    target.Connections.Clear();
-
-                    // Replicate each connection from the template
-                    foreach (Connection tmplConn in templateShape.Connections)
-                    {
-                        Connection newConn = new Connection();
-                        // Copy the X and Y formulas (Ufe.F) from the template connection
-                        newConn.X.Ufe.F = tmplConn.X.Ufe.F;
-                        newConn.Y.Ufe.F = tmplConn.Y.Ufe.F;
-                        target.Connections.Add(newConn);
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
+                Console.WriteLine("Usage: DiagramConnectionPointCopy <inputPath> <outputPath> <templateShapeName>");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            string inputPath = args[0];
+            string outputPath = args[1];
+            string templateShapeName = args[2];
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Work with the first page (adjust if needed)
+            Page page = diagram.Pages[0];
+
+            // Locate the template shape by its universal name (NameU)
+            Shape templateShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                if (shape.NameU == templateShapeName)
+                {
+                    templateShape = shape;
+                    break;
+                }
             }
-    }
+
+            if (templateShape == null)
+            {
+                throw new Exception($"Template shape '{templateShapeName}' not found on page '{page.Name}'.");
+            }
+
+            // Iterate over all shapes on the page and copy connection points
+            foreach (Shape targetShape in page.Shapes)
+            {
+                // Skip the template shape itself
+                if (targetShape.ID == templateShape.ID)
+                    continue;
+
+                // Clear existing connection points on the target shape
+                targetShape.Connections.Clear();
+
+                // Copy each connection point from the template shape
+                foreach (Connection templateConn in templateShape.Connections)
+                {
+                    Connection newConn = new Connection();
+                    // Copy the X and Y formulas (Ufe.F) that define the connection point position
+                    newConn.X.Ufe.F = templateConn.X.Ufe.F;
+                    newConn.Y.Ufe.F = templateConn.Y.Ufe.F;
+                    targetShape.Connections.Add(newConn);
+                }
+            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Connection points copied from '{templateShapeName}' to all other shapes.");
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
     }

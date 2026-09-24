@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
     {
@@ -8,29 +9,42 @@ class Program
             try
             {
 
-                // Path to the source Visio file
+                // Load an existing Visio diagram.
+                // Replace the path with the actual file location.
                 string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Get the first page (you can change the index as needed)
-                Page page = diagram.Pages[0];
+                // The universal name of the shape to enable gluing on.
+                string targetShapeNameU = "MyShape";
 
-                // Retrieve a shape by its ID (example uses ID = 1)
-                // In a real scenario, locate the shape by name or other criteria
-                Shape shape = page.Shapes.GetShape(1);
+                bool shapeFound = false;
 
-                // Enable dynamic glue on the shape so connectors can attach automatically
-                // GlueTypeValue.AllowDynamicGlue enables glue; other option is NoAllowDynamicGlue
-                shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
+                // Iterate through all pages and shapes to locate the target shape.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU == targetShapeNameU)
+                        {
+                            // Enable dynamic gluing for the shape.
+                            // This allows connectors to automatically attach to the shape.
+                            shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
 
-                // Save the modified diagram
+                            shapeFound = true;
+                            break;
+                        }
+                    }
+
+                    if (shapeFound)
+                        break;
+                }
+
+                if (!shapeFound)
+                    throw new Exception($"Shape with NameU '{targetShapeNameU}' was not found in the diagram.");
+
+                // Save the modified diagram.
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Glue enabled on shape ID 1 and diagram saved to " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -12,23 +12,24 @@ class Program
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first (active) page
-            Page page = diagram.ActivePage;
+            // Add a rectangle shape to the diagram.
+            // The AddShape method returns the automatically assigned shape ID (type long).
+            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
 
-            // Add a shape (e.g., a rectangle master) at position (2.0, 2.0)
-            // The AddShape method returns the automatically assigned shape ID (long)
-            long newShapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Retrieve the Shape object using the returned ID.
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Retrieve the shape instance using the returned ID
-            Shape newShape = page.Shapes.GetShape(newShapeId);
+            // Output the shape ID for verification or further processing.
+            Console.WriteLine($"New shape ID: {shapeId}");
 
-            // Output the ID for verification or further processing
-            Console.WriteLine($"New shape ID: {newShapeId}");
+            // Example of a further operation: set the shape's text.
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Hello Aspose.Diagram"));
 
         }
-        catch (System.NullReferenceException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

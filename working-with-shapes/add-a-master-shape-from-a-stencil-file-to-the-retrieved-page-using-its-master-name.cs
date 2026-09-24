@@ -1,52 +1,45 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Load an existing Visio diagram (or create a new one)
-                // Replace with your actual diagram file path
-                string diagramPath = "input.vsdx";
-                using (Diagram diagram = new Diagram(diagramPath))
-                {
-                    // Import a master shape from a stencil file.
-                    // Replace with the actual stencil file path and master name you need.
-                    string stencilPath = "stencil.vssx";
-                    string masterName = "Rectangle"; // Example master name present in the stencil
-                    diagram.AddMaster(stencilPath, masterName);
+            // Paths to the source diagram, stencil file and the output diagram
+            string diagramPath = "input.vsdx";
+            string stencilPath = "shapes.vssx";
+            string masterName = "Rectangle"; // name of the master shape in the stencil
+            string outputPath = "output.vsdx";
 
-                    // Retrieve the first page of the diagram.
-                    // You can also use diagram.Pages.GetPage("Page-1") to fetch by name.
-                    Page page = diagram.Pages[0];
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-                    // Add a shape based on the imported master to the page.
-                    // PinX and PinY are the coordinates (in inches) where the shape will be placed.
-                    double pinX = 2.0; // X coordinate
-                    double pinY = 2.0; // Y coordinate
-                    long shapeId = page.AddShape(pinX, pinY, masterName);
+            // Import the master shape from the stencil file into the diagram
+            diagram.AddMaster(stencilPath, masterName);
 
-                    // Optionally retrieve the created shape to modify its properties.
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt("Added via master"));
+            // Retrieve the first page of the diagram
+            Page page = diagram.Pages[0];
 
-                    // Save the modified diagram.
-                    // Replace with your desired output path.
-                    string outputPath = "output.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
+            // Add a shape based on the imported master to the page
+            // Parameters: pinX, pinY (position), master name, isCalculate flag
+            long shapeId = page.AddShape(2.0, 2.0, masterName, false);
 
-                Console.WriteLine("Master shape added and diagram saved successfully.");
+            // Optionally retrieve the shape object for further modifications
+            Shape shape = page.Shapes.GetShape(shapeId);
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Added via master"));
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

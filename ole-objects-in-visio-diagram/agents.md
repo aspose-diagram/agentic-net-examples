@@ -7,7 +7,7 @@ package: Aspose.Diagram
 version: 26.9.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-09-23
+generated: 2026-09-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -23,7 +23,7 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.9.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-23 |
+| Last Updated | 2026-09-24 |
 
 ## Persona
 
@@ -273,4 +273,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-23 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-09-24 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

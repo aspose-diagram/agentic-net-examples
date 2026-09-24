@@ -4,58 +4,60 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the first argument to be the Visio file path.
+        string inputPath = args.Length > 0 ? args[0] : "";
+        // Guard: ensure the file path is provided.
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            Console.Error.WriteLine("Error: No input file path specified.");
+            return;
+        }
+        // Guard: verify the file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Write a header line for the report.
+            Console.WriteLine("ShapeID\tShapeNameU\tFillInherited\tLineInherited");
 
-            // Path for the generated CSV report
-            string reportPath = "ShapeReport.csv";
-
-            using (StreamWriter writer = new StreamWriter(reportPath))
+            // Iterate through each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Write CSV header
-                writer.WriteLine("ShapeID,Name,InheritFill,InheritLine");
-
-                // Iterate through all pages and their shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve shape ID and name
-                        long shapeId = shape.ID;
-                        string shapeName = shape.Name ?? string.Empty;
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Determine inheritance status for Fill and Line
-                        string inheritFill = shape.InheritFill != null ? "Inherited" : "NotInherited";
-                        string inheritLine = shape.InheritLine != null ? "Inherited" : "NotInherited";
+                    // Determine if the fill properties are inherited.
+                    bool fillInherited = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
+                                         shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value &&
+                                         shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
 
-                        // Write a line to the CSV file
-                        writer.WriteLine($"{shapeId},{EscapeCsv(shapeName)},{inheritFill},{inheritLine}");
-                    }
+                    // Determine if the line properties are inherited.
+                    bool lineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
+                                         shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value &&
+                                         shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
+
+                    // Output the shape information as a tab‑separated line.
+                    Console.WriteLine($"{shape.ID}\t{shape.NameU}\t{fillInherited}\t{lineInherited}");
                 }
             }
-
-            Console.WriteLine($"Report generated: {Path.GetFullPath(reportPath)}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose‑Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper method to escape CSV fields containing commas, quotes, or newlines
-    static string EscapeCsv(string field)
-    {
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
-        {
-            field = field.Replace("\"", "\"\"");
-            return $"\"{field}\"";
-        }
-        return field;
     }
 }

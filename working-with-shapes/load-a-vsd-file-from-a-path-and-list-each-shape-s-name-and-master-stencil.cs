@@ -10,29 +10,25 @@ class Program
         {
 
             // Path to the VSD file
-            string filePath = @"C:\Path\To\YourFile.vsd";
+            string filePath = @"C:\Path\To\Your\Diagram.vsd";
 
-            // Load the diagram using the VSD format
-            Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsd);
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages in the document
+            // Iterate through each page and its shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Shape's own name
+                    // Get the shape's name
                     string shapeName = shape.Name;
 
-                    // Name of the master (stencil) the shape is based on, if any
-                    string masterName = shape.Master != null ? shape.Master.Name : "None";
+                    // Get the master stencil name (if the shape is based on a master)
+                    string masterStencil = shape.Master != null ? shape.Master.NameU : "N/A";
 
-                    Console.WriteLine($"Shape: {shapeName}, Master Stencil: {masterName}");
+                    Console.WriteLine($"Shape Name: {shapeName}, Master Stencil: {masterStencil}");
                 }
             }
-
-            // Release resources
-            diagram.Dispose();
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

@@ -1,44 +1,42 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file (VSDX, VSD, etc.)
-            string visioPath = "input.vsdx";
-
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(visioPath))
+            try
             {
-                // Iterate through all pages in the document
+
+                // Path to the Visio file to be processed
+                string inputPath = "input.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine($"Page: {page.Name}");
-
-                    // Iterate through all shapes on the current page
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
-
-                        // Retrieve all user‑defined cells (User section) of the shape
-                        foreach (User userCell in shape.Users)
+                        // Ensure the shape has a Users collection
+                        if (shape.Users != null)
                         {
-                            // Output the name of the user cell and its evaluated value
-                            Console.WriteLine($"    User Cell - Name: {userCell.Name}, Value: {userCell.Value}");
+                            // Iterate through all user‑defined cells of the shape
+                            foreach (User userCell in shape.Users)
+                            {
+                                // Output the page name, shape ID, user cell name and its value
+                                Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {userCell.NameU}, Value: {userCell.Value.Val}");
+                            }
                         }
                     }
                 }
-            }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

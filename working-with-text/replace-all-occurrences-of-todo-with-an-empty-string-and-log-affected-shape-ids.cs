@@ -4,45 +4,43 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the source Visio file
+                // Load the Visio diagram
                 string inputPath = "input.vsdx";
-                // Path for the cleaned output file
-                string outputPath = "output_cleaned.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the plain text of the shape
-                        string shapeText = shape.Text.Value.Text;
+                        bool shapeModified = false;
 
-                        // Check if the text contains the placeholder "TODO"
-                        if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("TODO"))
+                        // Iterate through the text runs of the shape
+                        foreach (var item in shape.Text.Value)
                         {
-                            // Replace all occurrences of "TODO" with an empty string
-                            string cleanedText = shapeText.Replace("TODO", string.Empty);
+                            if (item is Txt txt && txt.Text != null && txt.Text.Contains("TODO"))
+                            {
+                                // Replace all occurrences of 'TODO' with an empty string
+                                txt.Text = txt.Text.Replace("TODO", string.Empty);
+                                shapeModified = true;
+                            }
+                        }
 
-                            // Update the shape's text content
-                            shape.Text.Value.Clear();
-                            shape.Text.Value.Add(new Txt(cleanedText));
-
-                            // Log the affected shape ID
-                            Console.WriteLine($"Shape ID {shape.ID} had 'TODO' removed.");
+                        // Log the ID of any shape that was modified
+                        if (shapeModified)
+                        {
+                            Console.WriteLine($"Modified shape ID: {shape.ID}");
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the updated diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

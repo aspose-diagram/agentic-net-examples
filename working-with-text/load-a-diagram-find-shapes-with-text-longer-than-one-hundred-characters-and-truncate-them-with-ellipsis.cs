@@ -8,42 +8,41 @@ class Program
             try
             {
 
-                // Input and output file paths.
-                // You can replace these with your own paths or pass them via command‑line arguments.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Load the Visio diagram.
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the plain text of the shape.
-                        string fullText = shape.Text.Value.Text;
+                        // Get the plain text of the shape
+                        string text = shape.Text.Value.Text;
 
-                        // If the text exceeds 100 characters, truncate it and add an ellipsis.
-                        if (!string.IsNullOrEmpty(fullText) && fullText.Length > 100)
+                        // If the text exceeds 100 characters, truncate and add an ellipsis
+                        if (!string.IsNullOrEmpty(text) && text.Length > 100)
                         {
-                            string truncated = fullText.Substring(0, 100) + "…";
+                            string truncated = text.Substring(0, 100) + "…";
 
-                            // Replace the shape's text with the truncated version.
+                            // Replace the shape's text with the truncated version
                             shape.Text.Value.Clear();
                             shape.Text.Value.Add(new Txt(truncated));
                         }
                     }
                 }
 
-                // Save the modified diagram.
+                // Save the modified diagram (preserving the original format)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

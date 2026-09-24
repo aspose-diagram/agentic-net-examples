@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -9,29 +9,32 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the modified Visio file
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
             // ID of the shape whose theme we want to change
-            int targetShapeId = 5; // replace with the actual shape ID
+            long targetShapeId = 5; // replace with the actual shape ID
 
-            // Iterate through pages and shapes to locate the shape by ID
-            foreach (Page page in diagram.Pages)
+            // Retrieve the shape from the first page
+            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            if (shape == null)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.ID == targetShapeId)
-                    {
-                        // Apply a preset theme (e.g., Office) to the shape
-                        shape.PresetTheme = PresetThemeValue.Office;
-                        // If you need a different theme, use another PresetThemeValue enum member
-                        break; // shape found, exit inner loop
-                    }
-                }
+                throw new Exception($"Shape with ID {targetShapeId} not found.");
             }
 
+            // Apply a preset theme to the shape
+            shape.PresetTheme = PresetThemeValue.Bubble;
+            // Optionally, set a variant and quick style
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

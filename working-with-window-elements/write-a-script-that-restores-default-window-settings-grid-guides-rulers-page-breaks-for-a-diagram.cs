@@ -4,14 +4,15 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input and output file paths
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path to the output Visio file
+            string outputPath = "output.vsdx";
 
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
@@ -19,33 +20,28 @@ class Program
             // Ensure there is at least one window; if not, create a default drawing window
             if (diagram.Windows.Count == 0)
             {
-                Window defaultWindow = new Window
-                {
-                    WindowType = WindowTypeValue.Drawing,
-                    WindowState = WindowStateValue.Maximized,
-                    WindowWidth = 1100,
-                    WindowHeight = 700
-                };
+                Window defaultWindow = new Window();
+                defaultWindow.WindowType = WindowTypeValue.Drawing;
+                defaultWindow.WindowState = WindowStateValue.Maximized;
+                defaultWindow.WindowWidth = 1100;
+                defaultWindow.WindowHeight = 700;
                 diagram.Windows.Add(defaultWindow);
             }
 
-            // Restore default visibility settings for each window
-            foreach (Window window in diagram.Windows)
-            {
-                window.ShowGrid = BOOL.True;
-                window.ShowGuides = BOOL.True;
-                window.ShowRulers = BOOL.True;
-                window.ShowPageBreaks = BOOL.True;
-            }
+            // Restore default visibility settings for the first window
+            Window window = diagram.Windows[0];
+            window.ShowGrid = BOOL.True;          // Show grid
+            window.ShowGuides = BOOL.True;        // Show guides
+            window.ShowRulers = BOOL.True;        // Show rulers
+            window.ShowPageBreaks = BOOL.True;    // Show page breaks
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with default window settings to: {outputPath}");
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

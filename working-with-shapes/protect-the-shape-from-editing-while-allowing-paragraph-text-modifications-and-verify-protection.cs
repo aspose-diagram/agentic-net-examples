@@ -1,55 +1,117 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        // Define input file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        Diagram diagram;
+        try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the existing Visio diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+        // Work with the first page of the diagram
+        Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page (pinX, pinY, width, height)
-            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
-            // Retrieve the shape instance (GetShape expects an int)
-            Shape shape = page.Shapes.GetShape((int)rectId);
-
-            // Set protection flags to lock most editing actions
-            shape.Protection.LockMoveX.Value = BOOL.True;      // Prevent horizontal move
-            shape.Protection.LockMoveY.Value = BOOL.True;      // Prevent vertical move
-            shape.Protection.LockWidth.Value = BOOL.True;      // Prevent width change
-            shape.Protection.LockHeight.Value = BOOL.True;     // Prevent height change
-            shape.Protection.LockRotate.Value = BOOL.True;     // Prevent rotation
-            shape.Protection.LockDelete.Value = BOOL.True;     // Prevent deletion
-            shape.Protection.LockFormat.Value = BOOL.True;     // Prevent format changes
-            shape.Protection.LockVtxEdit.Value = BOOL.True;    // Prevent vertex editing
-
-            // Allow paragraph text modifications by ensuring text edit lock is FALSE
-            shape.Protection.LockTextEdit.Value = BOOL.False;
-
-            // Verify that the protection settings have been applied correctly
-            if (shape.Protection.LockMoveX.Value != BOOL.True ||
-                shape.Protection.LockMoveY.Value != BOOL.True ||
-                shape.Protection.LockWidth.Value != BOOL.True ||
-                shape.Protection.LockHeight.Value != BOOL.True ||
-                shape.Protection.LockRotate.Value != BOOL.True ||
-                shape.Protection.LockDelete.Value != BOOL.True ||
-                shape.Protection.LockFormat.Value != BOOL.True ||
-                shape.Protection.LockVtxEdit.Value != BOOL.True)
+        // Locate a target shape (first non‑connector with a name)
+        Shape targetShape = null;
+        foreach (Shape shape in page.Shapes)
+        {
+            if (!shape.OneD && !string.IsNullOrEmpty(shape.NameU))
             {
-                throw new Exception("One or more shape lock properties were not set to TRUE as expected.");
+                targetShape = shape;
+                break;
             }
+        }
 
-            if (shape.Protection.LockTextEdit.Value != BOOL.False)
-            {
-                throw new Exception("LockTextEdit property is not FALSE; paragraph text editing is not allowed.");
-            }
+        if (targetShape == null)
+        {
+            Console.WriteLine("No suitable shape found on the page.");
+            return;
+        }
 
-            Console.WriteLine("Shape protection configured successfully. Text editing remains enabled.");
+        // Apply protection to prevent editing (movement, resize, rotation, etc.)
+        targetShape.Protection.LockMoveX.Value = BOOL.True;
+        targetShape.Protection.LockMoveY.Value = BOOL.True;
+        targetShape.Protection.LockWidth.Value = BOOL.True;
+        targetShape.Protection.LockHeight.Value = BOOL.True;
+        targetShape.Protection.LockRotate.Value = BOOL.True;
+        targetShape.Protection.LockDelete.Value = BOOL.True;
+        targetShape.Protection.LockSelect.Value = BOOL.True;
+        targetShape.Protection.LockFormat.Value = BOOL.True;
+        targetShape.Protection.LockGroup.Value = BOOL.True;
+        targetShape.Protection.LockVtxEdit.Value = BOOL.True;
+        targetShape.Protection.LockCustProp.Value = BOOL.True;
+        targetShape.Protection.LockThemeColors.Value = BOOL.True;
+        targetShape.Protection.LockThemeEffects.Value = BOOL.True;
+        targetShape.Protection.LockBegin.Value = BOOL.True;
+        targetShape.Protection.LockEnd.Value = BOOL.True;
+        targetShape.Protection.LockCalcWH.Value = BOOL.True;
+        targetShape.Protection.LockCrop.Value = BOOL.True;
+        targetShape.Protection.LockFromGroupFormat.Value = BOOL.True;
+        targetShape.Protection.LockAspect.Value = BOOL.True;
 
-            // Save the diagram to verify the protection persists
-            diagram.Save("ProtectedShape.vsdx", SaveFileFormat.Vsdx);
+        // Allow paragraph text editing while other edits are locked
+        targetShape.Protection.LockTextEdit.Value = BOOL.False;
+
+        // Verify that protection settings were applied correctly
+        bool allLocked =
+            targetShape.Protection.LockMoveX.Value == BOOL.True &&
+            targetShape.Protection.LockMoveY.Value == BOOL.True &&
+            targetShape.Protection.LockWidth.Value == BOOL.True &&
+            targetShape.Protection.LockHeight.Value == BOOL.True &&
+            targetShape.Protection.LockRotate.Value == BOOL.True &&
+            targetShape.Protection.LockDelete.Value == BOOL.True &&
+            targetShape.Protection.LockSelect.Value == BOOL.True &&
+            targetShape.Protection.LockFormat.Value == BOOL.True &&
+            targetShape.Protection.LockGroup.Value == BOOL.True &&
+            targetShape.Protection.LockVtxEdit.Value == BOOL.True &&
+            targetShape.Protection.LockCustProp.Value == BOOL.True &&
+            targetShape.Protection.LockThemeColors.Value == BOOL.True &&
+            targetShape.Protection.LockThemeEffects.Value == BOOL.True &&
+            targetShape.Protection.LockBegin.Value == BOOL.True &&
+            targetShape.Protection.LockEnd.Value == BOOL.True &&
+            targetShape.Protection.LockCalcWH.Value == BOOL.True &&
+            targetShape.Protection.LockCrop.Value == BOOL.True &&
+            targetShape.Protection.LockFromGroupFormat.Value == BOOL.True &&
+            targetShape.Protection.LockAspect.Value == BOOL.True &&
+            targetShape.Protection.LockTextEdit.Value == BOOL.False;
+
+        if (!allLocked)
+        {
+            throw new Exception("Protection settings verification failed.");
+        }
+        else
+        {
+            Console.WriteLine("Shape protection applied and verified successfully.");
+        }
+
+        // Define output file path
+        string outputPath = "output_protected.vsdx";
+
+        try
+        {
+            // Save the modified diagram with protection applied
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
+}

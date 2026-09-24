@@ -9,19 +9,21 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Load the Visio diagram
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the shape with ID 10 from the first page
-            long targetShapeId = 10L;
-            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            // Access the first page (adjust if needed)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape with ID 10
+            Shape shape = page.Shapes.GetShape(10);
             if (shape == null)
             {
-                throw new Exception($"Shape with ID {targetShapeId} not found.");
+                throw new Exception("Shape with ID 10 not found.");
             }
 
-            // Find the built‑in 'Heading 1' stylesheet
+            // Locate the built‑in stylesheet named "Heading 1"
             StyleSheet headingStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
@@ -33,15 +35,15 @@ class Program
             }
             if (headingStyle == null)
             {
-                throw new Exception("The 'Heading 1' stylesheet was not found in the diagram.");
+                throw new Exception("Stylesheet 'Heading 1' not found.");
             }
 
-            // Apply the stylesheet to the shape (text, fill, and line styles)
+            // Apply the stylesheet to the shape for title formatting
             shape.TextStyle = headingStyle;
             shape.FillStyle = headingStyle;
             shape.LineStyle = headingStyle;
 
-            // Save the modified diagram
+            // Save the updated diagram
             string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 

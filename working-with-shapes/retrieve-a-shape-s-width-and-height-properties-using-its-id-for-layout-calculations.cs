@@ -1,47 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio diagram file
-            string diagramPath = "input.vsdx";
-
-            // The ID of the shape whose dimensions are required
-            long shapeId = 5; // replace with the actual shape ID
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Access the first page (adjust if the shape is on a different page)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Ensure the shape exists before accessing its properties
-            if (shape != null)
+            try
             {
-                // Width and Height are stored in the XForm cell collection (values are in inches)
-                double width = shape.XForm.Width.Value;
-                double height = shape.XForm.Height.Value;
 
-                Console.WriteLine($"Shape ID {shapeId} - Width: {width} inches, Height: {height} inches");
+                // Path to the Visio file
+                string diagramPath = "example.vsdx";
+
+                // Shape ID to retrieve (replace with actual ID)
+                long shapeId = 5;
+
+                // Load the diagram from a file stream
+                using (FileStream stream = new FileStream(diagramPath, FileMode.Open, FileAccess.Read))
+                {
+                    Diagram diagram = new Diagram(stream);
+
+                    // Access the first page (index 0)
+                    Page page = diagram.Pages[0];
+
+                    // Retrieve the shape by its ID
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Get width and height (values are in inches)
+                    double width = shape.XForm.Width.Value;
+                    double height = shape.XForm.Height.Value;
+
+                    // Output the dimensions
+                    Console.WriteLine($"Shape ID: {shapeId}");
+                    Console.WriteLine($"Width: {width} inches");
+                    Console.WriteLine($"Height: {height} inches");
+                }
+
             }
-            else
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Shape with ID {shapeId} was not found on page {page.Name}.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,40 +9,35 @@ class Program
         try
         {
 
-            // Input and output file paths
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
+            // Path to save the modified Visio file
             string outputPath = "output.vsdx";
 
-            // Master ID to filter shapes (replace with the actual ID you need)
+            // Master ID to filter shapes (adjust as needed)
             int targetMasterId = 5;
-
-            // Desired rotation angle in degrees
+            // Uniform rotation angle in degrees
             double rotationAngle = 45.0;
 
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page and each shape
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate over all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate over all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Process only shapes that have a master with the specified ID
+                    if (shape.Master != null && shape.Master.ID == targetMasterId)
                     {
-                        // Check that the shape has a master and that its master ID matches the target
-                        if (shape.Master != null && shape.Master.ID == targetMasterId)
-                        {
-                            // Rotate the shape by setting the XForm.Angle property (degrees)
-                            shape.XForm.Angle.Value = rotationAngle;
-                        }
+                        // Apply the rotation
+                        shape.XForm.Angle.Value = rotationAngle;
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Shapes with master ID {0} rotated by {1} degrees and saved to {2}.",
-                targetMasterId, rotationAngle, outputPath);
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

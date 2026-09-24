@@ -1,54 +1,71 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio file path – replace with your actual file location
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path to store the modified diagram
+        string outputPath = "output.vsdx";
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page of the diagram (index 0)
+            Page page = diagram.Pages[0];
+
+            // Ensure the page contains at least one shape
+            if (page.Shapes.Count == 0)
             {
-
-                // Create a new blank diagram
-                Diagram diagram = new Diagram();
-
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the page
-                // Parameters: PinX, PinY, Width, Height, MasterName
-                long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle");
-
-                // Retrieve the shape object using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Set a 45‑degree rotation around the X‑axis
-                shape.ThreeDFormat.RotationXAngle.Value = 45.0;
-
-                // Optionally set other 3D format properties for completeness
-                shape.ThreeDFormat.RotationYAngle.Value = 0.0;
-                shape.ThreeDFormat.RotationZAngle.Value = 0.0;
-                shape.ThreeDFormat.RotationType.Value = RotationTypeValue.Parallel;
-                shape.ThreeDFormat.Perspective.Value = 0.0;
-                shape.ThreeDFormat.DistanceFromGround.Value = 0.0;
-                shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
-
-                // Retrieve and display the 3D format properties
-                Console.WriteLine("ThreeDFormat properties of the shape:");
-                Console.WriteLine($"RotationXAngle: {shape.ThreeDFormat.RotationXAngle.Value}");
-                Console.WriteLine($"RotationYAngle: {shape.ThreeDFormat.RotationYAngle.Value}");
-                Console.WriteLine($"RotationZAngle: {shape.ThreeDFormat.RotationZAngle.Value}");
-                Console.WriteLine($"RotationType: {shape.ThreeDFormat.RotationType.Value}");
-                Console.WriteLine($"Perspective: {shape.ThreeDFormat.Perspective.Value}");
-                Console.WriteLine($"DistanceFromGround: {shape.ThreeDFormat.DistanceFromGround.Value}");
-                Console.WriteLine($"KeepTextFlat: {shape.ThreeDFormat.KeepTextFlat.Value}");
-
-                // Save the diagram (optional)
-                diagram.Save("RotatedShape.vsdx", SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine("No shapes found on the first page.");
+                return;
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Retrieve the first shape on the page
+            Shape shape = page.Shapes[0];
+
+            // Set a 45‑degree rotation around the X‑axis using the ThreeDFormat property
+            shape.ThreeDFormat.RotationXAngle.Value = 45.0;
+
+            // Retrieve various ThreeDFormat properties for reporting
+            double rotX = shape.ThreeDFormat.RotationXAngle.Value;
+            double rotY = shape.ThreeDFormat.RotationYAngle.Value;
+            double rotZ = shape.ThreeDFormat.RotationZAngle.Value;
+            RotationTypeValue rotType = shape.ThreeDFormat.RotationType.Value;
+            double perspective = shape.ThreeDFormat.Perspective.Value;
+            double distanceFromGround = shape.ThreeDFormat.DistanceFromGround.Value;
+            BOOL keepTextFlat = shape.ThreeDFormat.KeepTextFlat.Value;
+
+            // Output the retrieved ThreeDFormat values to the console
+            Console.WriteLine($"Shape ID {shape.ID} ThreeDFormat properties:");
+            Console.WriteLine($"  RotationXAngle: {rotX}");
+            Console.WriteLine($"  RotationYAngle: {rotY}");
+            Console.WriteLine($"  RotationZAngle: {rotZ}");
+            Console.WriteLine($"  RotationType: {rotType}");
+            Console.WriteLine($"  Perspective: {perspective}");
+            Console.WriteLine($"  DistanceFromGround: {distanceFromGround}");
+            Console.WriteLine($"  KeepTextFlat: {keepTextFlat}");
+
+            // Save the modified diagram to a new file using the Vsdx format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any exception details to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

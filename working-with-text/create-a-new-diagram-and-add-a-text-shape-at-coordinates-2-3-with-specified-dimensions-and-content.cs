@@ -1,33 +1,26 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Create a new empty diagram
+            // Create a new empty Visio diagram
             Diagram diagram = new Diagram();
 
-            // Access the active page of the diagram
-            Page page = diagram.ActivePage;
+            // Get the first (default) page
+            Page page = diagram.Pages[0];
 
-            // Add a text shape at coordinates (2,3) with width 2, height 1 and the desired text
-            Shape textShape = page.AddText(2, 3, 2, 1, "Your text content here");
+            // Define position (PinX, PinY) and size (Width, Height) for the text shape
+            double pinX = 2.0;   // X coordinate in inches
+            double pinY = 3.0;   // Y coordinate in inches
+            double width = 2.0;  // Width of the text box in inches
+            double height = 1.0; // Height of the text box in inches
 
-            // Refresh shape data to ensure proper rendering
-            textShape.RefreshData();
+            // Add a standalone text shape with the specified content
+            Shape textShape = page.AddText(pinX, pinY, width, height, "Hello Aspose!");
 
             // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.NullReferenceException ex)
-        {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
         }
     }
-}

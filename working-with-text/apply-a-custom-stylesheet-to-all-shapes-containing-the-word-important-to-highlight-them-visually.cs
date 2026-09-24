@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,40 +7,31 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the existing Visio diagram
+
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a new stylesheet that will be applied to matching shapes
+            // Create a custom stylesheet to highlight shapes
             StyleSheet highlightStyle = new StyleSheet();
-            // Assign a unique ID for the stylesheet
             highlightStyle.ID = diagram.StyleSheets.Count + 1;
 
-            // Example visual settings: red fill, white text, thick black line
-            // Configure character (text) formatting
-            Aspose.Diagram.Char textChar = new Aspose.Diagram.Char();
-            textChar.IX = 0; // first character run
-            textChar.Color.Value = "#FFFFFF"; // white text
-            textChar.Size.Value = 0.15; // approx 10pt (in inches)
-            highlightStyle.Chars.Add(textChar);
+            // Set line color (red) and fill foreground color (yellow)
+            highlightStyle.Line.LineColor.Value = "#FF0000";
+            highlightStyle.Fill.FillForegnd.Value = "#FFFF00";
 
-            // Configure line formatting (color and weight)
-            highlightStyle.Line.LineColor.Value = "#FF0000"; // red line
-            highlightStyle.Line.LineWeight.Value = 0.03; // thicker line
+            // Optional: set a character style (white text)
+            Aspose.Diagram.Char charStyle = new Aspose.Diagram.Char();
+            charStyle.IX = 0;
+            charStyle.Color.Value = "#FFFFFF";
+            highlightStyle.Chars.Add(charStyle);
 
-            // Configure fill formatting (solid red fill)
-            highlightStyle.Fill.FillForegnd.Value = "#FF0000"; // red fill
-            // Note: FillPattern can be omitted; default is solid
-
-            // Add the stylesheet to the diagram's collection
+            // Add the stylesheet to the diagram
             diagram.StyleSheets.Add(highlightStyle);
 
             // Iterate through all pages and shapes
@@ -65,13 +56,13 @@ class Program
                 }
             }
 
-            // Save the modified diagram using a valid overload (second argument is a SaveFileFormat)
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

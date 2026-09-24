@@ -1,68 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Cells;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Paths – adjust as needed
-            string visioPath = "input.vsdx";
-            string excelPath = "data.xlsx";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Load the Excel workbook
-            Workbook workbook = new Workbook(excelPath);
-            Worksheet sheet = workbook.Worksheets[0];
-
-            // Build a map: Shape NameU -> Data value (assumes column A = shape name, column B = value)
-            var shapeData = new System.Collections.Generic.Dictionary<string, string>();
-            int lastRow = sheet.Cells.MaxDataRow;
-            for (int i = 1; i <= lastRow; i++) // start at 1 to skip header row
+            try
             {
-                string shapeName = sheet.Cells[i, 0].StringValue?.Trim();
-                string value = sheet.Cells[i, 1].StringValue?.Trim();
 
-                if (!string.IsNullOrEmpty(shapeName))
+                // Paths to the Visio file and the external CSV (exported from Excel)
+                string visioPath = "input.vsdx";
+                string csvPath = "data.csv";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Read CSV data into a dictionary: key = shape NameU, value = data to assign
+                var dataMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                if (File.Exists(csvPath))
                 {
-                    shapeData[shapeName] = value ?? string.Empty;
-                }
-            }
+                    string[] lines = File.ReadAllLines(csvPath);
+                    foreach (string line in lines)
+                    {
+                        // Skip empty lines
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
 
-            // Apply data graphics: set Data1 of each matching shape
-            foreach (Page page in diagram.Pages)
-            {
+                        // Expected format: ShapeName,Value
+                        string[] parts = line.Split(',');
+                        if (parts.Length >= 2)
+                        {
+                            string shapeName = parts[0].Trim();
+                            string value = parts[1].Trim();
+                            if (!dataMap.ContainsKey(shapeName))
+                            {
+                                dataMap.Add(shapeName, value);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"CSV file not found: {csvPath}");
+                    return;
+                }
+
+                // Iterate over shapes on the first page and assign Data1 based on the CSV mapping
+                Page page = diagram.Pages[0];
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // If the shape's universal name exists in the Excel map, assign the value
-                    if (shapeData.TryGetValue(shape.NameU, out string val))
+                    // Use the universal name of the shape to look up data
+                    string shapeNameU = shape.NameU;
+                    if (dataMap.TryGetValue(shapeNameU, out string dataValue))
                     {
-                        shape.Data1 = val; // Direct assignment, no .Value
-                        Console.WriteLine($"Data applied to shape '{shape.NameU}' (ID {shape.ID})");
+                        // Assign the external value to the shape's Data1 field
+                        shape.Data1 = dataValue;
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Csv);
+                Console.WriteLine($"Diagram saved to {outputPath}");
+
             }
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

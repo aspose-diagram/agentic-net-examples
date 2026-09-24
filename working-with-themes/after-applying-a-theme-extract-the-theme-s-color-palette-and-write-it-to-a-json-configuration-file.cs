@@ -3,55 +3,50 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Apply a preset theme to the first page
+            Page page = diagram.Pages[0];
+            page.PresetTheme = PresetThemeValue.Bubble;
+            page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+            // (Optional) Save the diagram after applying the theme
+            diagram.Save("themed_output.vsdx", SaveFileFormat.Vsdx);
+
+            // Extract the color palette from the diagram
+            var palette = new List<object>();
+            foreach (ColorEntry entry in diagram.Colors)
             {
-
-                // Paths (replace with actual file locations as needed)
-                string diagramPath = "input.vsdx";
-                string jsonOutputPath = "themeColors.json";
-                string savedDiagramPath = "output_with_theme.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Apply a preset theme to the first page (example: Bubble theme)
-                if (diagram.Pages.Count > 0)
-                {
-                    diagram.Pages[0].PresetTheme = PresetThemeValue.Bubble;
-                }
-
-                // Extract the document's color palette
-                List<string> palette = new List<string>();
-                foreach (var color in diagram.Colors)
-                {
-                    // Safe string representation of each color entry
-                    palette.Add(color.ToString());
-                }
-
-                // Prepare an object for JSON serialization
-                var themeConfig = new
-                {
-                    ThemeColors = palette
-                };
-
-                // Serialize to formatted JSON
-                string json = JsonSerializer.Serialize(themeConfig, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write JSON to file
-                File.WriteAllText(jsonOutputPath, json);
-
-                // Optionally save the diagram with the applied theme
-                diagram.Save(savedDiagramPath, SaveFileFormat.Vsdx);
-
+                Aspose.Drawing.Color aspColor = entry.Color;
+                string hex = $"#{aspColor.R:X2}{aspColor.G:X2}{aspColor.B:X2}";
+                palette.Add(new { Index = entry.IX, Hex = hex });
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Serialize the palette to JSON
+            string json = JsonSerializer.Serialize(palette, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to a configuration file
+            string outputJsonPath = "themeColors.json";
+            File.WriteAllText(outputJsonPath, json);
+
+            Console.WriteLine($"Theme color palette extracted to '{outputJsonPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

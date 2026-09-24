@@ -8,11 +8,17 @@ class Program
             try
             {
 
-                // Path to the Visio file to validate. Can be passed as a command‑line argument.
-                string filePath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Expect the Visio file path as the first argument.
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Usage: ConnectorJumpStyleValidator <VisioFilePath>");
+                    return;
+                }
+
+                string visioPath = args[0];
 
                 // Load the diagram.
-                Diagram diagram = new Diagram(filePath);
+                Diagram diagram = new Diagram(visioPath);
 
                 bool validationFailed = false;
 
@@ -22,42 +28,29 @@ class Program
                     // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Connectors are 1‑D shapes.
+                        // Identify connector shapes (1‑D shapes).
                         if (shape.OneD)
                         {
-                            // Ensure the Layout object exists.
-                            if (shape.Layout != null)
-                            {
-                                // Retrieve the line jump style for the connector.
-                                ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+                            // Retrieve the line jump style.
+                            ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
 
-                                // Undefined indicates that no explicit jump style is set.
-                                if (jumpStyle == ConLineJumpStyleValue.Undefined)
-                                {
-                                    Console.WriteLine(
-                                        $"Connector ID {shape.ID} on page \"{page.Name}\" has an undefined line jump style.");
-                                    validationFailed = true;
-                                }
-                            }
-                            else
+                            // Undefined jump style is not allowed.
+                            if (jumpStyle == ConLineJumpStyleValue.Undefined)
                             {
-                                // If Layout is missing, treat it as undefined.
-                                Console.WriteLine(
-                                    $"Connector ID {shape.ID} on page \"{page.Name}\" lacks a Layout object (treated as undefined jump style).");
                                 validationFailed = true;
+                                Console.WriteLine($"Connector (ID: {shape.ID}) on page '{page.Name}' has undefined line jump style.");
                             }
                         }
                     }
                 }
 
-                // Report the overall result.
                 if (validationFailed)
                 {
-                    throw new Exception("Validation failed: one or more connectors have undefined line jump styles.");
+                    throw new Exception("Validation failed: One or more connectors have undefined line jump styles.");
                 }
                 else
                 {
-                    Console.WriteLine("Validation passed: all connectors have defined line jump styles.");
+                    Console.WriteLine("Validation succeeded: All connectors have defined line jump styles.");
                 }
 
             }

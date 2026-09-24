@@ -9,27 +9,24 @@ class Program
             try
             {
 
-                // Input and output file paths
+                // Load an existing Visio diagram
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Assume we work with the first page and a shape with ID 1
+                // Assume we work with the first page and the first shape
                 Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(1);
+                Shape shape = page.Shapes.GetShape(1); // shape ID 1 for example
 
-                // Apply the preset theme with retry logic
-                const int maxAttempts = 3;
-                bool success = ApplyPresetThemeWithRetry(shape, maxAttempts);
+                // Desired theme settings
+                PresetThemeValue theme = PresetThemeValue.Bubble;
+                PresetThemeVariantValue variant = PresetThemeVariantValue.Variant1;
+                PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
 
-                if (!success)
-                {
-                    throw new Exception($"Failed to apply preset theme after {maxAttempts} attempts.");
-                }
+                // Apply the theme with retry logic
+                ApplyPresetThemeWithRetry(shape, theme, variant, quickStyle, maxRetries: 3);
 
                 // Save the modified diagram
+                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
@@ -40,60 +37,65 @@ class Program
     }
 
         /// <summary>
-        /// Attempts to set a preset theme on a shape, retrying after unlocking protection if needed.
+        /// Attempts to set a preset theme on a shape, retrying if the shape is locked.
+        /// The method temporarily clears protection locks, applies the theme, then restores original lock states.
         /// </summary>
-        /// <param name="shape">The target shape.</param>
-        /// <param name="maxAttempts">Maximum number of attempts.</param>
-        /// <returns>True if the theme was applied successfully; otherwise false.</returns>
-        private static bool ApplyPresetThemeWithRetry(Shape shape, int maxAttempts)
+        static void ApplyPresetThemeWithRetry(Shape shape,
+                                              PresetThemeValue theme,
+                                              PresetThemeVariantValue variant,
+                                              PresetQuickStyleValue quickStyle,
+                                              int maxRetries)
         {
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            // Store original lock values
+            BOOL originalLockMoveX = shape.Protection.LockMoveX.Value;
+            BOOL originalLockMoveY = shape.Protection.LockMoveY.Value;
+            BOOL originalLockWidth = shape.Protection.LockWidth.Value;
+            BOOL originalLockHeight = shape.Protection.LockHeight.Value;
+            BOOL originalLockRotate = shape.Protection.LockRotate.Value;
+            BOOL originalLockVtxEdit = shape.Protection.LockVtxEdit.Value;
+
+            int attempt = 0;
+            while (attempt < maxRetries)
             {
                 try
                 {
-                    // Set the preset theme and variant (write‑only properties)
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    // Temporarily remove locks to allow theme change
+                    shape.Protection.LockMoveX.Value = BOOL.False;
+                    shape.Protection.LockMoveY.Value = BOOL.False;
+                    shape.Protection.LockWidth.Value = BOOL.False;
+                    shape.Protection.LockHeight.Value = BOOL.False;
+                    shape.Protection.LockRotate.Value = BOOL.False;
+                    shape.Protection.LockVtxEdit.Value = BOOL.False;
 
-                    // Optionally set a quick style
-                    shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                    // Apply the preset theme and related properties
+                    shape.PresetTheme = theme;
+                    shape.PresetThemeVariant = variant;
+                    shape.PresetThemeQuickStyle = quickStyle;
 
-                    // If no exception, the operation succeeded
-                    return true;
+                    // If we reach this point, the operation succeeded
+                    break;
                 }
                 catch (Exception ex)
                 {
-                    // Log the failure (console output for this example)
-                    Console.WriteLine($"Attempt {attempt} failed: {ex.Message}");
+                    // Log the exception and retry
+                    Console.WriteLine($"Attempt {attempt + 1} failed: {ex.Message}");
+                    attempt++;
 
-                    // Unlock possible protection flags that could prevent theme changes
-                    UnlockShapeProtection(shape);
+                    if (attempt >= maxRetries)
+                    {
+                        Console.WriteLine("Maximum retry attempts reached. Theme not applied.");
+                    }
+                }
+                finally
+                {
+                    // Restore original lock states after each attempt
+                    shape.Protection.LockMoveX.Value = originalLockMoveX;
+                    shape.Protection.LockMoveY.Value = originalLockMoveY;
+                    shape.Protection.LockWidth.Value = originalLockWidth;
+                    shape.Protection.LockHeight.Value = originalLockHeight;
+                    shape.Protection.LockRotate.Value = originalLockRotate;
+                    shape.Protection.LockVtxEdit.Value = originalLockVtxEdit;
                 }
             }
-
-            // All attempts failed
-            return false;
-        }
-
-        /// <summary>
-        /// Clears common protection flags on a shape to allow modifications.
-        /// </summary>
-        /// <param name="shape">The shape to unlock.</param>
-        private static void UnlockShapeProtection(Shape shape)
-        {
-            // Unlock theme‑related protection
-            shape.Protection.LockThemeColors.Value = BOOL.False;
-            shape.Protection.LockThemeEffects.Value = BOOL.False;
-
-            // Unlock other typical protection flags that might interfere
-            shape.Protection.LockMoveX.Value = BOOL.False;
-            shape.Protection.LockMoveY.Value = BOOL.False;
-            shape.Protection.LockWidth.Value = BOOL.False;
-            shape.Protection.LockHeight.Value = BOOL.False;
-            shape.Protection.LockRotate.Value = BOOL.False;
-            shape.Protection.LockDelete.Value = BOOL.False;
-            shape.Protection.LockFormat.Value = BOOL.False;
-            shape.Protection.LockSelect.Value = BOOL.False;
-            shape.Protection.LockTextEdit.Value = BOOL.False;
         }
     }

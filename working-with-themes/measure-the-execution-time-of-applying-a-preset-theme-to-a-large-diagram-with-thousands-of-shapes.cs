@@ -1,41 +1,46 @@
-using System.IO;
 using System;
 using System.Diagnostics;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load a diagram that contains the preset theme you want to apply.
-            // This diagram acts as the source for the theme.
-            Diagram sourceDiagram = new Diagram("themeSource.vsdx");
+                // Path to the source Visio file (replace with actual path)
+                string inputPath = "large_diagram.vsdx";
+                // Path for the output file after applying the theme
+                string outputPath = "large_diagram_themed.vsdx";
 
-            // Load the large target diagram that has thousands of shapes.
-            Diagram targetDiagram = new Diagram("largeDiagram.vsdx");
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Start measuring the time required to apply the theme.
-            Stopwatch timer = Stopwatch.StartNew();
+                // Start timing the theme application
+                Stopwatch stopwatch = Stopwatch.StartNew();
 
-            // Apply the theme from the source diagram to the target diagram.
-            targetDiagram.CopyTheme(sourceDiagram);
+                // Apply a preset theme to each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Example theme; adjust as needed
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                }
 
-            // Stop the timer.
-            timer.Stop();
+                // Stop timing
+                stopwatch.Stop();
 
-            // Output the elapsed time in milliseconds.
-            Console.WriteLine($"Theme applied in {timer.ElapsedMilliseconds} ms.");
+                // Output the elapsed time
+                Console.WriteLine($"Applying preset theme took: {stopwatch.Elapsed.TotalMilliseconds} ms");
 
-            // Save the themed diagram (optional).
-            targetDiagram.Save("largeDiagram_Themed.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

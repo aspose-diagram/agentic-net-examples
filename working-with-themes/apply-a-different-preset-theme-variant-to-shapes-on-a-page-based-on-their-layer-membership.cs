@@ -1,80 +1,68 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path
-        string outputPath = "output.vsdx";
-
-        try
-        {
-            // Load the diagram from the input file
-            using Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate over all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Define which PresetThemeVariant to apply for each layer index
+                Dictionary<int, PresetThemeVariantValue> layerVariantMap = new Dictionary<int, PresetThemeVariantValue>
                 {
-                    // Retrieve the layer membership string (e.g., "0;2")
-                    string layerMember = shape.LayerMem.LayerMember.Value;
+                    { 0, PresetThemeVariantValue.Variant1 },
+                    { 1, PresetThemeVariantValue.Variant2 },
+                    { 2, PresetThemeVariantValue.Variant3 }
+                    // Add more mappings as needed
+                };
 
-                    // If the shape is not assigned to any layer, skip it
-                    if (string.IsNullOrWhiteSpace(layerMember))
-                        continue;
-
-                    // Split the membership string into individual layer indexes
-                    string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    // Determine the variant based on the first layer the shape belongs to
-                    PresetThemeVariantValue variant = PresetThemeVariantValue.Variant3; // default
-
-                    foreach (string part in parts)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (int.TryParse(part, out int layerIndex))
-                        {
-                            // Example mapping: layer 0 → Variant1, layer 1 → Variant2, others → Variant3
-                            if (layerIndex == 0)
-                                variant = PresetThemeVariantValue.Variant1;
-                            else if (layerIndex == 1)
-                                variant = PresetThemeVariantValue.Variant2;
-                            else
-                                variant = PresetThemeVariantValue.Variant3;
+                        // Retrieve the layer membership string (e.g., "0;1")
+                        string layerMember = shape.LayerMem.LayerMember.Value;
 
-                            // Once a matching layer is found, stop checking further layers
-                            break;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue; // Shape is not assigned to any layer
+
+                        // Split the membership string into individual layer indexes
+                        string[] parts = layerMember.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        // Determine the first matching layer that has a variant mapping
+                        foreach (string part in parts)
+                        {
+                            if (int.TryParse(part, out int layerIndex) && layerVariantMap.TryGetValue(layerIndex, out PresetThemeVariantValue variant))
+                            {
+                                // Apply a preset theme and the corresponding variant to the shape
+                                shape.PresetTheme = PresetThemeValue.Bubble;
+                                shape.PresetThemeVariant = variant;
+                                // Once a variant is applied, stop checking other layers for this shape
+                                break;
+                            }
                         }
                     }
-
-                    // Apply a base preset theme (required before setting a variant)
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-
-                    // Apply the selected variant to the shape
-                    shape.PresetThemeVariant = variant;
                 }
-            }
 
-            // Save the modified diagram to the output file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

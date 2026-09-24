@@ -2,41 +2,44 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class ApplyUniformTheme
+class Program
 {
     static void Main()
     {
-        try
+        // Folder containing the VSDX files
+        string folderPath = @"C:\Diagrams";
+
+        if (!Directory.Exists(folderPath))
         {
-
-            // Folder containing the VSDX files to process
-            string diagramsFolder = @"C:\Diagrams";
-
-            // Path to a template diagram that has the desired preset theme
-            string themeTemplatePath = @"C:\Theme\themeTemplate.vsdx";
-
-            // Load the template diagram (source of the theme)
-            using (Diagram themeDiagram = new Diagram(themeTemplatePath))
-            {
-                // Iterate over all VSDX files in the specified folder
-                foreach (string diagramPath in Directory.GetFiles(diagramsFolder, "*.vsdx"))
-                {
-                    // Load the current diagram
-                    using (Diagram diagram = new Diagram(diagramPath))
-                    {
-                        // Copy the theme from the template diagram to the current diagram
-                        diagram.CopyTheme(themeDiagram);
-
-                        // Save the diagram back, overwriting the original file
-                        diagram.Save(diagramPath, SaveFileFormat.Vsdx);
-                    }
-                }
-            }
-
+            Console.WriteLine($"Folder not found: {folderPath}");
+            return;
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+
+        // Get all VSDX files in the folder
+        string[] files = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
+
+        foreach (string filePath in files)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            try
+            {
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Apply a uniform preset theme to every page
+                foreach (Page page in diagram.Pages)
+                {
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                }
+
+                // Save the diagram back to the same file
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+            }
         }
     }
 }

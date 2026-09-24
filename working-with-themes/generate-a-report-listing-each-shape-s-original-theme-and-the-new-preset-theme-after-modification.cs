@@ -9,11 +9,11 @@ class Program
             try
             {
 
-                // Paths to the source and destination Visio files
+                // Input and output file paths
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                string outputPath = "output_modified.vsdx";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes
@@ -21,26 +21,27 @@ class Program
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Store shape identification info
+                        long shapeId = shape.ID;
+                        string shapeName = shape.NameU;
 
-                        // Original theme cannot be read (write‑only), so we log it as N/A
-                        Console.WriteLine($"Shape ID {shape.ID}, NameU \"{shape.NameU}\": Original Theme = N/A");
+                        // Original theme cannot be read (write‑only), so we note it as unknown
+                        string originalTheme = "Unknown";
 
                         // Apply a new preset theme to the shape
                         shape.PresetTheme = PresetThemeValue.Bubble;
                         shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-                        // Log the new theme information
-                        Console.WriteLine($"Shape ID {shape.ID}, NameU \"{shape.NameU}\": New Theme = Bubble, Variant = Variant1, QuickStyle = VariantStyle1");
+                        // New theme information
+                        string newTheme = "Bubble (Variant1)";
+
+                        // Output the report line for this shape
+                        Console.WriteLine($"Shape ID: {shapeId}, Name: {shapeName}, Original Theme: {originalTheme}, New Theme: {newTheme}");
                     }
                 }
 
                 // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
 
             }
             catch (System.IO.FileNotFoundException ex)

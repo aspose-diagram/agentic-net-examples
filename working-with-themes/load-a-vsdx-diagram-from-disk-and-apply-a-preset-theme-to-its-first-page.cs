@@ -1,39 +1,36 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class ApplyPresetTheme
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the diagram that will receive the theme
-            string targetDiagramPath = "input.vsdx";
+            // Paths to the input and output Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Path to a diagram (or template) that contains the desired preset theme
-            string themeDiagramPath = "theme.vsdx";
+            // Load the diagram from disk
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the target diagram from disk
-            using (Diagram targetDiagram = new Diagram(targetDiagramPath))
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                // Load the source diagram that holds the preset theme
-                using (Diagram sourceThemeDiagram = new Diagram(themeDiagramPath))
-                {
-                    // Copy the theme from the source diagram to the target diagram
-                    targetDiagram.CopyTheme(sourceThemeDiagram);
-                }
-
-                // The theme is now applied to the whole document.
-                // If you need to ensure the first page is the active one, you can access it via index:
-                // Page firstPage = targetDiagram.Pages[0];
-                // (ActivePage is read‑only; operations are performed on the diagram as a whole.)
-
-                // Save the modified diagram back to disk
-                targetDiagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("The diagram does not contain any pages.");
+                return;
             }
+
+            // Apply a preset theme to the first page
+            Page firstPage = diagram.Pages[0];
+            firstPage.PresetTheme = PresetThemeValue.Bubble;
+            firstPage.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}' with the theme applied.");
 
         }
         catch (System.IO.FileNotFoundException ex)

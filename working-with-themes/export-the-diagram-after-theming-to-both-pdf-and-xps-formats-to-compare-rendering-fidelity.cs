@@ -10,21 +10,35 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
 
-            // Export the diagram to PDF format
-            diagram.Save("output.pdf", SaveFileFormat.Pdf);
+            // Load the diagram
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Prepare XPS save options (customize as needed)
-            XPSSaveOptions xpsOptions = new XPSSaveOptions
+            // Apply a preset theme to each page
+            foreach (Page page in diagram.Pages)
             {
-                // Example: include hidden pages in the XPS output
-                ExportHiddenPage = true
-            };
+                // Set the theme (write‑only property)
+                page.PresetTheme = PresetThemeValue.Bubble;
+                // Set a variant for the theme
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            }
 
-            // Export the diagram to XPS format using the specified options
-            diagram.Save("output.xps", xpsOptions);
+            // Export to PDF
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";               // Fallback font
+            pdfOptions.ExportHiddenPage = false;            // Do not export hidden pages
+            string pdfOutput = "output.pdf";
+            diagram.Save(pdfOutput, pdfOptions);
+
+            // Export to XPS
+            XPSSaveOptions xpsOptions = new XPSSaveOptions();
+            xpsOptions.ExportHiddenPage = false;            // Do not export hidden pages
+            string xpsOutput = "output.xps";
+            diagram.Save(xpsOutput, xpsOptions);
+
+            Console.WriteLine("Export completed: PDF and XPS files generated.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -5,72 +5,60 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input Visio file path
+                // Input Visio file path (modify as needed)
                 string inputPath = "input.vsdx";
-                // Output CSV file path
-                string outputCsvPath = "TagFrequencyReport.csv";
 
-                // Dictionary to hold tag (custom property name) frequencies
+                // Output CSV file path
+                string outputCsv = "tag_report.csv";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Dictionary to hold tag (custom property) frequencies
                 Dictionary<string, int> tagCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                try
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Load the Visio diagram
-                    using (Diagram diagram = new Diagram(inputPath))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each page in the diagram
-                        foreach (Page page in diagram.Pages)
+                        // Ensure the shape has custom properties (Props)
+                        if (shape.Props != null)
                         {
-                            // Iterate through each shape on the page
-                            foreach (Shape shape in page.Shapes)
+                            foreach (Prop prop in shape.Props)
                             {
-                                // Iterate through each custom property (Prop) of the shape
-                                foreach (Prop prop in shape.Props)
-                                {
-                                    string tagName = prop.Name ?? string.Empty;
+                                string tagName = prop.Name ?? string.Empty;
 
-                                    if (tagCounts.ContainsKey(tagName))
-                                    {
-                                        tagCounts[tagName] = tagCounts[tagName] + 1;
-                                    }
-                                    else
-                                    {
-                                        tagCounts.Add(tagName, 1);
-                                    }
-                                }
+                                if (tagCounts.ContainsKey(tagName))
+                                    tagCounts[tagName]++;
+                                else
+                                    tagCounts[tagName] = 1;
                             }
                         }
                     }
-
-                    // Write the frequency report to a CSV file
-                    using (StreamWriter writer = new StreamWriter(outputCsvPath))
-                    {
-                        // CSV header
-                        writer.WriteLine("Tag,Count");
-
-                        // Write each tag and its count
-                        foreach (KeyValuePair<string, int> entry in tagCounts)
-                        {
-                            // Escape double quotes in tag names if necessary
-                            string escapedTag = entry.Key.Replace("\"", "\"\"");
-                            writer.WriteLine($"\"{escapedTag}\",{entry.Value}");
-                        }
-                    }
-
-                    Console.WriteLine($"Tag frequency report generated successfully at: {outputCsvPath}");
                 }
-                catch (Exception ex)
+
+                // Write the frequency report to a CSV file
+                using (StreamWriter writer = new StreamWriter(outputCsv))
                 {
-                    // Report any errors that occur during processing
-                    Console.WriteLine("An error occurred while generating the tag frequency report:");
-                    Console.WriteLine(ex.Message);
-                    throw;
+                    // CSV header
+                    writer.WriteLine("Tag,Count");
+
+                    // Write each tag and its count
+                    foreach (KeyValuePair<string, int> kvp in tagCounts)
+                    {
+                        // Escape commas in tag names if necessary
+                        string escapedTag = kvp.Key.Contains(",") ? $"\"{kvp.Key}\"" : kvp.Key;
+                        writer.WriteLine($"{escapedTag},{kvp.Value}");
+                    }
                 }
+
+                Console.WriteLine($"Tag frequency report generated: {outputCsv}");
 
             }
             catch (System.IO.FileNotFoundException ex)

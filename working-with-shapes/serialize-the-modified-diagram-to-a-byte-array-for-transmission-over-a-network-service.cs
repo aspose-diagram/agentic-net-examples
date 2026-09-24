@@ -1,44 +1,41 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+
+public class DiagramSerializer
+{
+    /// <summary>
+    /// Loads a diagram, applies modifications, and returns the serialized diagram as a byte array.
+    /// </summary>
+    /// <param name="inputPath">Path to the source diagram file (e.g., .vsdx, .vdx).</param>
+    /// <returns>Byte array containing the diagram data ready for network transmission.</returns>
+    public byte[] SerializeDiagram(string inputPath)
+    {
+        // Load the diagram from the specified file.
+        Diagram diagram = new Diagram(inputPath);
+
+        // -------------------------------------------------
+        // Place any diagram modifications here.
+        // Example: change the background color of the first page.
+        // diagram.Pages[0].BackgroundColor = Color.White;
+        // -------------------------------------------------
+
+        // Save the diagram into a memory stream using the desired format.
+        using (MemoryStream memoryStream = new MemoryStream())
+        {
+            // Choose the appropriate SaveFileFormat (e.g., VDX, VSDX, PDF, etc.).
+            diagram.Save(memoryStream, SaveFileFormat.Vdx);
+
+            // Convert the stream contents to a byte array.
+            return memoryStream.ToArray();
+        }
+    }
+}
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
-        {
-
-            // Load an existing Visio diagram from a file.
-            // This uses the Diagram(string) constructor (create/load rule).
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // TODO: Apply any modifications to the diagram here.
-            // e.g., diagram.Pages[0].Shapes.Add(...);
-
-            // Serialize the diagram to a byte array.
-            // A MemoryStream is used as the target stream.
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                // Save the diagram into the stream in VDX format.
-                // This follows the Save(Stream, SaveFileFormat) rule.
-                diagram.Save(memoryStream, SaveFileFormat.Vdx);
-
-                // Convert the stream contents to a byte array for transmission.
-                byte[] diagramBytes = memoryStream.ToArray();
-
-                // diagramBytes now contains the serialized diagram data.
-                // It can be sent over a network service as needed.
-            }
-
-            // Release resources held by the diagram.
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // See classes above
     }
 }

@@ -1,52 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramTextPopulator <inputVisioFile> <outputVisioFile>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Input and output file paths (adjust as needed)
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes.
+                    // Skip shapes that are marked as deleted
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve plain text of the shape.
+                    // Get the plain text of the shape
                     string currentText = shape.Text.Value.ToString();
 
-                    // If the shape has no text (null, empty or whitespace), assign a unique identifier.
+                    // If the text is empty or whitespace, assign a new unique identifier
                     if (string.IsNullOrWhiteSpace(currentText))
                     {
                         string uniqueId = Guid.NewGuid().ToString();
 
-                        // Clear any existing text runs and add the new identifier.
+                        // Clear any existing text runs and add the new identifier
                         shape.Text.Value.Clear();
                         shape.Text.Value.Add(new Txt(uniqueId));
-
-                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' populated with ID: {uniqueId}");
                     }
                 }
             }
 
-            // Save the modified diagram in VSDX format.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

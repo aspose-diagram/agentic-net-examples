@@ -1,34 +1,33 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class VisioMerger
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Paths to the source Visio files
-            string firstFile = "FirstDiagram.vsdx";
-            string secondFile = "SecondDiagram.vsdx";
+            // Paths to the Visio files to be merged
+            string firstVisioPath = "Diagram1.vsdx";
+            string secondVisioPath = "Diagram2.vsdx";
 
-            // Load the first diagram (this will be the target diagram)
-            using (Diagram targetDiagram = new Diagram(firstFile))
-            {
-                // Load the second diagram that will be merged into the target
-                using (Diagram sourceDiagram = new Diagram(secondFile))
-                {
-                    // Combine the source diagram into the target diagram.
-                    // This preserves layers, shapes, and connections.
-                    targetDiagram.Combine(sourceDiagram);
-                }
+            // Path for the merged output file
+            string outputPath = "MergedDiagram.vsdx";
 
-                // Save the merged diagram to a new file
-                string outputFile = "MergedDiagram.vsdx";
-                targetDiagram.Save(outputFile, SaveFileFormat.Vsdx);
-            }
+            // Load the first diagram (target diagram)
+            Diagram targetDiagram = new Diagram(firstVisioPath);
+
+            // Load the second diagram (source diagram)
+            Diagram sourceDiagram = new Diagram(secondVisioPath);
+
+            // Merge the source diagram into the target diagram.
+            // This copies all pages, masters, layers, and connections.
+            targetDiagram.Combine(sourceDiagram);
+
+            // Save the merged diagram.
+            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

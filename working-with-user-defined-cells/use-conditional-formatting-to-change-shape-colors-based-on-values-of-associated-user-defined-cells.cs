@@ -4,62 +4,44 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths (can be passed as command‑line arguments)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Look for a user‑defined cell named "Value"
-                        User userCell = null;
-                        foreach (User user in shape.Users)
+                        // Look for a user‑defined cell named "Status"
+                        foreach (User userCell in shape.Users)
                         {
-                            if (user.Name == "Value")
+                            if (userCell.Name == "Status")
                             {
-                                userCell = user;
-                                break;
-                            }
-                        }
+                                string cellValue = userCell.Value.Val?.Trim();
 
-                        // If the user cell exists, evaluate its value and apply color
-                        if (userCell != null)
-                        {
-                            double numericValue;
-                            // Try to parse the cell value as a double
-                            if (double.TryParse(userCell.Value.Val, out numericValue))
-                            {
-                                // Example rule: values > 100 -> red, otherwise -> green
-                                if (numericValue > 100)
+                                // Apply conditional color based on the cell value
+                                if (cellValue == "1")
                                 {
-                                    // Set fill foreground color to red
-                                    shape.Fill.FillForegnd.Value = "#FF0000";
+                                    // Green fill for status = 1
+                                    shape.Fill.FillForegnd.Value = "#00FF00";
                                 }
                                 else
                                 {
-                                    // Set fill foreground color to green
-                                    shape.Fill.FillForegnd.Value = "#00FF00";
+                                    // Red fill for any other status
+                                    shape.Fill.FillForegnd.Value = "#FF0000";
                                 }
-                            }
-                            else
-                            {
-                                // If parsing fails, you could apply a default color (optional)
-                                shape.Fill.FillForegnd.Value = "#CCCCCC"; // light gray
+
+                                // No need to check other user cells for this shape
+                                break;
                             }
                         }
                     }
@@ -69,9 +51,9 @@ class Program
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

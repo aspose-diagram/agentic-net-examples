@@ -6,67 +6,75 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect three arguments: input Visio file, JSON file with replacements, output PDF file
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: VisioBatchReplace <input.vsdx> <replacements.json> <output.pdf>");
-                return;
-            }
 
-            string inputVisioPath = args[0];
-            string jsonPath = args[1];
-            string outputPdfPath = args[2];
+            // Input Visio file path
+            string visioPath = "input.vsdx";
+            // JSON file containing placeholder replacements
+            string jsonPath = "placeholders.json";
+            // Output PDF file path
+            string pdfOutputPath = "output.pdf";
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputVisioPath);
-
-            // Read and deserialize the JSON file into a dictionary
+            // Load JSON into a dictionary
+            if (!File.Exists(jsonPath))
+                throw new FileNotFoundException($"JSON file not found: {jsonPath}");
             string jsonContent = File.ReadAllText(jsonPath);
             Dictionary<string, string> replacements = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
+            if (replacements == null)
+                throw new Exception("Failed to deserialize JSON replacements.");
 
-            // Iterate through all pages and shapes to replace placeholder text
+            // Load the Visio diagram
+            if (!File.Exists(visioPath))
+                throw new FileNotFoundException($"Visio file not found: {visioPath}");
+            Diagram diagram = new Diagram(visioPath);
+
+            // Iterate all pages and shapes to replace placeholders
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
                     // Get the plain text of the shape
                     string shapeText = shape.Text.Value.Text;
-
                     if (string.IsNullOrWhiteSpace(shapeText))
-                        continue;
+                        continue; // Skip shapes without text
 
-                    // Perform replacements
-                    bool changed = false;
+                    string updatedText = shapeText;
+
+                    // Perform batch replacements
                     foreach (KeyValuePair<string, string> kvp in replacements)
                     {
-                        if (shapeText.Contains(kvp.Key))
+                        // Assuming placeholders are in the form {{Key}}
+                        string placeholder = $"{{{{{kvp.Key}}}}}";
+                        if (updatedText.Contains(placeholder))
                         {
-                            shapeText = shapeText.Replace(kvp.Key, kvp.Value);
-                            changed = true;
+                            updatedText = updatedText.Replace(placeholder, kvp.Value);
                         }
                     }
 
-                    // If any replacement occurred, update the shape's text
-                    if (changed)
+                    // If text changed, update the shape
+                    if (updatedText != shapeText)
                     {
                         shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt(shapeText));
+                        shape.Text.Value.Add(new Txt(updatedText));
                     }
                 }
             }
 
             // Save the modified diagram as PDF
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            diagram.Save(outputPdfPath, pdfOptions);
+            pdfOptions.DefaultFont = "Arial"; // Fallback font
+            diagram.Save(pdfOutputPath, pdfOptions);
 
-            Console.WriteLine("Export completed successfully.");
+            Console.WriteLine("Placeholder replacement completed and PDF saved successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

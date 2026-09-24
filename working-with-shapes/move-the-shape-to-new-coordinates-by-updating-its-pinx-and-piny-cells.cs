@@ -1,40 +1,43 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Paths to the source and destination Visio files
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-            // Access the first page (index 0) and a shape on that page.
-            // Shape index 1 is typically the first user shape (0 is the background shape).
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[1];
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Define the new absolute coordinates (in inches) for the shape's pin.
-            double newPinX = 5.0; // X‑coordinate
-            double newPinY = 3.0; // Y‑coordinate
+                // Choose the page (first page in this example)
+                Page page = diagram.Pages[0];
 
-            // Update the PinX and PinY cells directly.
-            shape.XForm.PinX.Value = newPinX;
-            shape.XForm.PinY.Value = newPinY;
+                // Identify the shape to move (shape with ID = 1 in this example)
+                // Adjust the ID as needed for your specific shape
+                long shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Refresh the shape to apply the changes to its geometry and connections.
-            shape.RefreshData();
+                // New coordinates (in inches)
+                double newPinX = 5.0;
+                double newPinY = 3.0;
 
-            // Save the modified diagram (replace with your desired output path).
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Update the shape's position
+                shape.XForm.PinX.Value = newPinX;
+                shape.XForm.PinY.Value = newPinY;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

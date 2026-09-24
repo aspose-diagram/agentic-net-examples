@@ -5,18 +5,18 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Example usage: pass the path to a Visio file as the first argument.
+            // Example usage: provide the path to a Visio file.
             if (args.Length == 0)
             {
-                Console.WriteLine("Please provide the path to a Visio file.");
+                Console.WriteLine("Please provide the path to a Visio file as an argument.");
                 return;
             }
 
-            string filePath = args[0];
+            string visioPath = args[0];
 
             try
             {
-                ToggleShowGrid(filePath);
+                ToggleShowGrid(visioPath);
                 Console.WriteLine("ShowGrid property toggled for all windows.");
             }
             catch (Exception ex)
@@ -29,13 +29,13 @@ class Program
         /// Loads a Visio diagram, toggles the ShowGrid flag for every open window,
         /// and saves the diagram back to the same file.
         /// </summary>
-        /// <param name="path">Full path to the Visio file.</param>
-        public static void ToggleShowGrid(string path)
+        /// <param name="filePath">Path to the Visio file.</param>
+        static void ToggleShowGrid(string filePath)
         {
             // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(path);
+            Diagram diagram = new Diagram(filePath);
 
-            // Ensure there is at least one window; if none, create a default drawing window.
+            // Ensure there is at least one window; if none, add a default drawing window.
             if (diagram.Windows.Count == 0)
             {
                 Window defaultWindow = new Window
@@ -43,19 +43,19 @@ class Program
                     WindowType = WindowTypeValue.Drawing,
                     WindowState = WindowStateValue.Maximized,
                     WindowWidth = 1100,
-                    WindowHeight = 700
+                    WindowHeight = 700,
+                    ShowGrid = BOOL.True // initial value; will be toggled below
                 };
                 diagram.Windows.Add(defaultWindow);
             }
 
-            // Iterate over all windows and toggle the ShowGrid property.
+            // Iterate through all windows and toggle the ShowGrid property.
             foreach (Window window in diagram.Windows)
             {
-                // ShowGrid uses the BOOL enum (TRUE/FALSE).
                 window.ShowGrid = (window.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
             }
 
-            // Save the modified diagram. Using VSDX as a common format.
-            diagram.Save(path, SaveFileFormat.Vsdx);
+            // Save the modified diagram back to the original file (VSDX format).
+            diagram.Save(filePath, SaveFileFormat.Vsdx);
         }
     }

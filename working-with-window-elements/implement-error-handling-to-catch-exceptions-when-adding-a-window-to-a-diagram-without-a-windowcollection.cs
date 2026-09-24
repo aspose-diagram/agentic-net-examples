@@ -6,52 +6,24 @@ class Program
 {
     static void Main()
     {
+        // Load an existing diagram (or create a new one)
+        Diagram diagram = new Diagram(); // using the provided create rule
+
+        // Attempt to add a Window to the diagram
         try
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = null;
-            try
-            {
-                diagram = new Diagram("input.vsdx");
-            }
-            catch (DiagramException loadEx)
-            {
-                Console.WriteLine($"Failed to load diagram: {loadEx.Message}");
-                return;
-            }
-
-            // Ensure the diagram has a Windows collection before adding a new window
-            if (diagram.Windows == null)
-            {
-                Console.WriteLine("The diagram does not contain a Windows collection.");
-                return;
-            }
-
-            // Create a new window instance
-            Window newWindow = new Window
-            {
-                // Example: set the window type to Drawing
-                WindowType = WindowTypeValue.Drawing
-            };
-
-            // Attempt to add the window and handle possible exceptions
-            try
-            {
-                diagram.Windows.Add(newWindow);
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Window added and diagram saved successfully.");
-            }
-            catch (DiagramException addEx)
-            {
-                Console.WriteLine($"Error adding window to diagram: {addEx.Message}");
-            }
-
+            // The Windows collection may be null if the diagram does not support windows.
+            // This will throw a NullReferenceException or ArgumentNullException.
+            diagram.Windows.Add(new Window());
+            Console.WriteLine("Window added successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Handle any exception that occurs during the addition.
+            Console.WriteLine($"Error adding Window: {ex.Message}");
         }
+
+        // Save the diagram (using the provided save rule)
+        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
 }

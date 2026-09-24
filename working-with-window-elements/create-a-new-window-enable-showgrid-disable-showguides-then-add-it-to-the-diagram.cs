@@ -1,26 +1,28 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
-        {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
 
-            // Create a new window instance
-            Window newWindow = new Window();
+        // Create a new window instance
+        Window window = new Window();
 
-            // Enable the grid display in the window
-            newWindow.ShowGrid = BOOL.True;
+        // Enable the grid display for this window
+        window.ShowGrid = BOOL.True;
 
-            // Disable the guides display in the window
-            newWindow.ShowGuides = BOOL.False;
+        // Disable the guides display for this window
+        window.ShowGuides = BOOL.False;
 
-            // Add the configured window to the diagram's window collection
-            diagram.Windows.Add(newWindow);
+        // Add the configured window to the diagram
+        diagram.Windows.Add(window);
 
-            // Optional: output confirmation
-            Console.WriteLine("Window added. ShowGrid = " + newWindow.ShowGrid + ", ShowGuides = " + newWindow.ShowGuides);
-        }
+        // The diagram now contains the new window with the specified settings.
+        // If you need to persist the diagram, uncomment the following line:
+        // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
     }
+}

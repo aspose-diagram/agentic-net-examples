@@ -1,82 +1,91 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.WriteLine("Usage: <exe> <VisioFilePath> <on|off|toggle>");
+            Console.WriteLine("Usage: ToggleRulers <VisioFilePath> [on|off]");
             return;
         }
 
-        string inputPath = args[0];
-        string command = args[1].Trim().ToLowerInvariant();
+        string filePath = args[0];
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
+        // Determine desired state
+        BOOL desiredState;
+        if (args.Length >= 2)
+        {
+            desiredState = ParseState(args[1]);
+        }
+        else
+        {
+            Console.Write("Enable ShowRulers? (y/n): ");
+            string input = Console.ReadLine()?.Trim().ToLowerInvariant();
+            desiredState = (input == "y" || input == "yes" || input == "true") ? BOOL.True : BOOL.False;
+        }
 
         // Load the Visio diagram
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+        Diagram diagram = new Diagram(filePath);
 
-        // Ensure there is at least one window; create one if none exist
+        // Ensure there is at least one window to modify
         if (diagram.Windows.Count == 0)
         {
-            var newWindow = new Window
+            Window newWindow = new Window
             {
                 WindowType = WindowTypeValue.Drawing,
-                WindowState = WindowStateValue.Maximized,
-                WindowWidth = 1100,
-                WindowHeight = 700
+                WindowState = WindowStateValue.Maximized
             };
             diagram.Windows.Add(newWindow);
         }
 
-        // Access the first window (global settings are per window)
-        Window win = diagram.Windows[0];
+        // Toggle ShowRulers on the first window
+        Window window = diagram.Windows[0];
+        window.ShowRulers = desiredState;
 
-        // Determine the desired state
-        BOOL newState;
-        if (command == "on" || command == "true" || command == "1")
-        {
-            newState = BOOL.True;
-        }
-        else if (command == "off" || command == "false" || command == "0")
-        {
-            newState = BOOL.False;
-        }
-        else if (command == "toggle")
-        {
-            newState = (win.ShowRulers == BOOL.True) ? BOOL.False : BOOL.True;
-        }
-        else
-        {
-            Console.WriteLine("Invalid command. Use 'on', 'off', or 'toggle'.");
-            return;
-        }
+        // Determine save format based on file extension
+        SaveFileFormat saveFormat = GetSaveFormat(Path.GetExtension(filePath));
 
-        // Apply the new ShowRulers setting
-        win.ShowRulers = newState;
-        Console.WriteLine($"ShowRulers set to {(newState == BOOL.True ? "True" : "False")}.");
+        // Save the diagram back to the same file
+        diagram.Save(filePath, saveFormat);
 
-        // Save the diagram (overwrite the original file)
-        try
+        Console.WriteLine($"ShowRulers set to {(desiredState == BOOL.True ? "ON" : "OFF")} and diagram saved.");
+    }
+
+    // Parses a string like "on"/"off" into BOOL
+    private static BOOL ParseState(string value)
+    {
+        string lowered = value.Trim().ToLowerInvariant();
+        return (lowered == "on" || lowered == "true" || lowered == "yes") ? BOOL.True : BOOL.False;
+    }
+
+    // Maps file extensions to SaveFileFormat enum values
+    private static SaveFileFormat GetSaveFormat(string extension)
+    {
+        switch (extension.ToLowerInvariant())
         {
-            diagram.Save(inputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            case ".vsdx": return SaveFileFormat.Vsdx;
+            case ".vsd":  return SaveFileFormat.Vsd;
+            case ".vdx":  return SaveFileFormat.Vdx;
+            case ".vsx":  return SaveFileFormat.Vsx;
+            case ".vtx":  return SaveFileFormat.Vtx;
+            case ".vssx": return SaveFileFormat.Vssx;
+            case ".vstx": return SaveFileFormat.Vstx;
+            case ".vsdm": return SaveFileFormat.Vsdm;
+            case ".vssm": return SaveFileFormat.Vssm;
+            case ".vstm": return SaveFileFormat.Vstm;
+            case ".vss":  return SaveFileFormat.Vss;
+            case ".vst":  return SaveFileFormat.Vst;
+            default:      return SaveFileFormat.Vsdx; // fallback
         }
     }
 }

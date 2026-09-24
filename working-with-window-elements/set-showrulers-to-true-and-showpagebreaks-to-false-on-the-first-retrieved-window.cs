@@ -1,42 +1,45 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Verify that the diagram contains at least one window
-            if (diagram.Windows.Count == 0)
+            try
             {
-                Console.WriteLine("The diagram does not contain any windows.");
-                return;
+
+                // Load an existing Visio diagram (replace with your actual file path)
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure there is at least one window; if not, create a default drawing window
+                if (diagram.Windows.Count == 0)
+                {
+                    Window newWindow = new Window
+                    {
+                        WindowType = WindowTypeValue.Drawing,
+                        WindowState = WindowStateValue.Maximized,
+                        WindowWidth = 1100,
+                        WindowHeight = 700
+                    };
+                    diagram.Windows.Add(newWindow);
+                }
+
+                // Retrieve the first window
+                Window firstWindow = diagram.Windows[0];
+
+                // Set ShowRulers to true and ShowPageBreaks to false
+                firstWindow.ShowRulers = BOOL.True;
+                firstWindow.ShowPageBreaks = BOOL.False;
+
+                // Optionally save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Retrieve the first window in the collection
-            Window window = diagram.Windows[0];
-
-            // Set the required visibility options
-            window.ShowRulers = BOOL.True;        // Show rulers
-            window.ShowPageBreaks = BOOL.False;   // Hide page breaks
-
-            // Save the modified diagram (optional)
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Window settings have been updated and the diagram saved.");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

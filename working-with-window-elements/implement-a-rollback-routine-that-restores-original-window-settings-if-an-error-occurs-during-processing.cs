@@ -1,111 +1,118 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-
-public class DiagramProcessor
-{
-    /// <summary>
-    /// Loads a Visio diagram, performs processing, and rolls back window settings if an error occurs.
-    /// </summary>
-    /// <param name="inputPath">Path to the source .vsdx file.</param>
-    /// <param name="outputPath">Path where the processed file should be saved.</param>
-    public static void ProcessDiagram(string inputPath, string outputPath)
-    {
-        // Load the diagram (lifecycle rule: load)
-        Diagram diagram = new Diagram(inputPath);
-
-        // Preserve original window settings
-        List<Window> originalWindows = new List<Window>();
-        foreach (Window win in diagram.Windows)
-        {
-            // Deep copy of the window's relevant properties
-            Window copy = new Window
-            {
-                ID = win.ID,
-                WindowState = win.WindowState,
-                WindowLeft = win.WindowLeft,
-                WindowTop = win.WindowTop,
-                WindowWidth = win.WindowWidth,
-                WindowHeight = win.WindowHeight,
-                ShowGrid = win.ShowGrid,
-                ShowGuides = win.ShowGuides,
-                ShowRulers = win.ShowRulers,
-                ShowConnectionPoints = win.ShowConnectionPoints,
-                ShowPageBreaks = win.ShowPageBreaks,
-                ViewScale = win.ViewScale,
-                ViewCenterX = win.ViewCenterX,
-                ViewCenterY = win.ViewCenterY,
-                // Add any other properties that are important for your scenario
-            };
-            originalWindows.Add(copy);
-        }
-
-        try
-        {
-            // ----- Begin processing logic -----
-            // Example: modify window settings (replace with real processing)
-            foreach (Window win in diagram.Windows)
-            {
-                // Example modification: maximize all windows
-                win.WindowState = WindowStateValue.Maximized;
-            }
-
-            // Additional processing steps can be placed here.
-            // If any step throws, the catch block will restore the original settings.
-            // ----- End processing logic -----
-        }
-        catch (Exception ex)
-        {
-            // Rollback: restore the original window collection
-            diagram.Windows.Clear();
-            foreach (Window original in originalWindows)
-            {
-                // Add a fresh copy to avoid reference issues
-                Window restored = new Window
-                {
-                    ID = original.ID,
-                    WindowState = original.WindowState,
-                    WindowLeft = original.WindowLeft,
-                    WindowTop = original.WindowTop,
-                    WindowWidth = original.WindowWidth,
-                    WindowHeight = original.WindowHeight,
-                    ShowGrid = original.ShowGrid,
-                    ShowGuides = original.ShowGuides,
-                    ShowRulers = original.ShowRulers,
-                    ShowConnectionPoints = original.ShowConnectionPoints,
-                    ShowPageBreaks = original.ShowPageBreaks,
-                    ViewScale = original.ViewScale,
-                    ViewCenterX = original.ViewCenterX,
-                    ViewCenterY = original.ViewCenterY
-                };
-                diagram.Windows.Add(restored);
-            }
-
-            // Optionally rethrow or handle the exception as needed
-            Console.WriteLine($"Error during processing: {ex.Message}");
-            // Rethrow to inform caller that processing failed
-            throw;
-        }
-
-        // Save the diagram (lifecycle rule: save)
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-    }
-}
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    // Snapshot of window settings to allow rollback
+    class WindowSnapshot
+    {
+        public int ID;
+        public WindowTypeValue Type;
+        public long Height;
+        public long Width;
+        public WindowStateValue State;
+        public BOOL ShowGrid;
+        public BOOL ShowGuides;
+        public BOOL ShowRulers;
+        public BOOL ShowPageBreaks;
+        public BOOL DynamicGridEnabled;
+        public BOOL ShowConnectionPoints;
+    }
+
+    static void Main()
     {
         try
         {
 
-            DiagramProcessor.ProcessDiagram("", "");
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one window; if not, create a default one
+            if (diagram.Windows.Count == 0)
+            {
+                Window defaultWindow = new Window();
+                defaultWindow.WindowType = WindowTypeValue.Drawing;
+                defaultWindow.WindowState = WindowStateValue.Maximized;
+                defaultWindow.WindowWidth = 1100;
+                defaultWindow.WindowHeight = 700;
+                diagram.Windows.Add(defaultWindow);
+            }
+
+            // Capture original window settings
+            var originalSettings = new System.Collections.Generic.List<WindowSnapshot>();
+            foreach (Window win in diagram.Windows)
+            {
+                originalSettings.Add(new WindowSnapshot
+                {
+                    ID = win.ID,
+                    Type = win.WindowType,
+                    Height = win.WindowHeight,
+                    Width = win.WindowWidth,
+                    State = win.WindowState,
+                    ShowGrid = win.ShowGrid,
+                    ShowGuides = win.ShowGuides,
+                    ShowRulers = win.ShowRulers,
+                    ShowPageBreaks = win.ShowPageBreaks,
+                    DynamicGridEnabled = win.DynamicGridEnabled,
+                    ShowConnectionPoints = win.ShowConnectionPoints
+                });
+            }
+
+            try
+            {
+                // Example processing that modifies window settings
+                foreach (Window win in diagram.Windows)
+                {
+                    win.ShowGrid = BOOL.False;
+                    win.ShowGuides = BOOL.False;
+                    win.ShowRulers = BOOL.False;
+                    win.ShowPageBreaks = BOOL.False;
+                    win.DynamicGridEnabled = BOOL.False;
+                    win.ShowConnectionPoints = BOOL.False;
+                    win.WindowState = WindowStateValue.Minimized;
+                }
+
+                // Simulate an error (remove this line in production)
+                int triggerError = 0;
+                int fail = 10 / triggerError; // This will throw DivideByZeroException
+            }
+            catch (Exception ex)
+            {
+                // Rollback to original settings
+                for (int i = 0; i < diagram.Windows.Count && i < originalSettings.Count; i++)
+                {
+                    Window win = diagram.Windows[i];
+                    WindowSnapshot snap = originalSettings[i];
+
+                    win.ID = snap.ID;
+                    win.WindowType = snap.Type;
+                    win.WindowHeight = snap.Height;
+                    win.WindowWidth = snap.Width;
+                    win.WindowState = snap.State;
+                    win.ShowGrid = snap.ShowGrid;
+                    win.ShowGuides = snap.ShowGuides;
+                    win.ShowRulers = snap.ShowRulers;
+                    win.ShowPageBreaks = snap.ShowPageBreaks;
+                    win.DynamicGridEnabled = snap.DynamicGridEnabled;
+                    win.ShowConnectionPoints = snap.ShowConnectionPoints;
+                }
+
+                Console.WriteLine("An error occurred: " + ex.Message);
+                Console.WriteLine("Window settings have been restored to their original values.");
+            }
+
+            // Save the diagram (whether modified or rolled back)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Diagram saved to " + outputPath);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

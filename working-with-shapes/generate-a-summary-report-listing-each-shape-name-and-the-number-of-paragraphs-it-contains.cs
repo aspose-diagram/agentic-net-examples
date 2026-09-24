@@ -1,33 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input Visio file path (adjust as needed)
+            string inputPath = "input.vsdx";
 
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Output report file path
+            string reportPath = "ShapeParagraphReport.txt";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a text report
+            using (StreamWriter writer = new StreamWriter(reportPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                writer.WriteLine("Shape Name\tParagraph Count");
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Get the shape name; if Name is null, use an empty string
-                    string shapeName = shape.Name ?? string.Empty;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Use universal name if available, otherwise fallback to name
+                        string shapeName = shape.NameU ?? shape.Name ?? "Unnamed";
 
-                    // Count the number of paragraphs (Paras) in the shape
-                    int paragraphCount = shape.Paras.Count;
+                        // Number of paragraphs in the shape
+                        int paragraphCount = shape.Paras != null ? shape.Paras.Count : 0;
 
-                    // Output the summary line for this shape
-                    Console.WriteLine($"Shape: {shapeName}, Paragraphs: {paragraphCount}");
+                        writer.WriteLine($"{shapeName}\t{paragraphCount}");
+                    }
                 }
             }
+
+            Console.WriteLine($"Report generated at: {Path.GetFullPath(reportPath)}");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,84 +1,78 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Work with the first page (adjust if needed)
+            Page page = diagram.Pages[0];
+
+            // Identify the shape that will be deleted (by its universal name)
+            string targetNameU = "TargetShape";
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Load the Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
-
-                // Find the target shape by its universal name (adjust as needed)
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                if (s.NameU == targetNameU)
                 {
-                    if (shape.NameU != null && shape.NameU.Equals("TargetShape", StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetShape = shape;
-                        break;
-                    }
+                    targetShape = s;
+                    break;
                 }
+            }
 
-                if (targetShape == null)
+            if (targetShape == null)
+            {
+                Console.WriteLine($"Shape with NameU '{targetNameU}' not found.");
+                return;
+            }
+
+            // Disable gluing on the target shape
+            targetShape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+
+            // Detach (delete) all connector shapes attached to the target shape
+            foreach (Shape shape in page.Shapes)
+            {
+                // Connectors are 1‑D shapes
+                if (shape.OneD)
                 {
-                    Console.WriteLine("Target shape not found.");
-                    return;
-                }
-
-                // Disable dynamic gluing for the target shape
-                // GlueTypeValue.NoAllowDynamicGlue disables outgoing dynamic glue
-                targetShape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
-
-                // Collect IDs of all connector shapes attached to the target shape
-                List<long> connectorsToRemove = new List<long>();
-                foreach (Connect connect in page.Connects)
-                {
-                    if (connect.FromSheet == targetShape.ID || connect.ToSheet == targetShape.ID)
+                    // Retrieve IDs of shapes connected to this connector
+                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+                    if (connectedIds != null)
                     {
-                        // The connector shape ID is stored in the Connect element's FromSheet or ToSheet
-                        // (the connector itself is the shape that owns the connection)
-                        // Determine which side is the connector (1‑D shape)
-                        long possibleConnectorId = (connect.FromSheet == targetShape.ID) ? connect.ToSheet : connect.FromSheet;
-                        // Verify the shape is a connector (OneD == true)
-                        Shape possibleConnector = page.Shapes.GetShape(possibleConnectorId);
-                        if (possibleConnector != null && possibleConnector.OneD)
+                        foreach (long id in connectedIds)
                         {
-                            connectorsToRemove.Add(possibleConnectorId);
+                            if (id == targetShape.ID)
+                            {
+                                // Mark the connector for deletion
+                                shape.Del = BOOL.True;
+                                break;
+                            }
                         }
                     }
                 }
-
-                // Mark each connector for deletion
-                foreach (long connectorId in connectorsToRemove)
-                {
-                    Shape connectorShape = page.Shapes.GetShape(connectorId);
-                    if (connectorShape != null)
-                    {
-                        connectorShape.Del = BOOL.True;
-                    }
-                }
-
-                // Optionally, also mark the target shape for deletion if desired
-                // targetShape.Del = BOOL.True;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Connectors detached and diagram saved.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Optionally mark the target shape itself for deletion
+            targetShape.Del = BOOL.True;
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Connectors detached and shape prepared for deletion.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

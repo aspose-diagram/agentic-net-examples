@@ -1,6 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
 class Program
 {
@@ -12,28 +12,14 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (you can change the index as needed)
-            Page page = diagram.Pages[0];
+            // Locate the shape you want to rotate.
+            // Here we assume the shape has ID = 1 on the first page.
+            int shapeId = 1;
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Locate the shape by its universal name (NameU)
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.NameU == "MyShape")
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
-
-            if (targetShape == null)
-            {
-                throw new Exception("Shape with NameU 'MyShape' not found.");
-            }
-
-            // Rotate the shape to the desired angle (degrees)
-            double angleInDegrees = 45.0;
-            targetShape.SetAngle(angleInDegrees);
+            // Set the desired rotation angle (in degrees).
+            double angle = 45.0; // rotate 45 degrees
+            shape.SetAngle(angle);
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

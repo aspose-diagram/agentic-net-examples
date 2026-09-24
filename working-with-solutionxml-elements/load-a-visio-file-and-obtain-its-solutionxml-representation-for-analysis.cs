@@ -1,27 +1,27 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file to be loaded
+            string inputPath = "input.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all SolutionXML elements and output their data
+            if (diagram.SolutionXMLs.Count == 0)
             {
-
-                // Path to the Visio file to be loaded
-                string visioPath = "input.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Verify that the diagram contains any SolutionXML elements
-                if (diagram.SolutionXMLs.Count == 0)
-                {
-                    Console.WriteLine("No SolutionXML elements found in the diagram.");
-                    return;
-                }
-
-                // Iterate through each SolutionXML element and display its data
+                Console.WriteLine("No SolutionXML elements found in the diagram.");
+            }
+            else
+            {
                 foreach (SolutionXML solXml in diagram.SolutionXMLs)
                 {
                     Console.WriteLine($"Name: {solXml.Name}");
@@ -29,11 +29,12 @@ class Program
                     Console.WriteLine(solXml.XmlValue);
                     Console.WriteLine(new string('-', 40));
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

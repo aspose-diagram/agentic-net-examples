@@ -1,52 +1,62 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        static void Main()
         {
-            Console.WriteLine("Usage: <exe> <inputVisioFile> <outputVisioFile>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram.
-        Diagram diagram = new Diagram(inputPath);
-
-        // Define the conditional formatting XML.
-        string conditionalXml = @"<ConditionalFormatting>
-    <Rule DataValue="">100"" HighlightColor=""#FF0000""/>
-</ConditionalFormatting>";
-
-        // Try to find an existing SolutionXML with the same name.
-        bool updated = false;
-        foreach (SolutionXML existing in diagram.SolutionXMLs)
-        {
-            if (existing.Name == "ConditionalFormatting")
+            try
             {
-                existing.XmlValue = conditionalXml;
-                updated = true;
-                break;
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if the shape has a Data1 value that can be parsed as a number
+                        if (!string.IsNullOrWhiteSpace(shape.Data1) && double.TryParse(shape.Data1, out double dataValue))
+                        {
+                            // Example condition: highlight shapes where Data1 > 100
+                            if (dataValue > 100)
+                            {
+                                // Apply highlight color (red) to the shape's fill foreground
+                                shape.Fill.FillForegnd.Value = "#FF0000";
+                            }
+                        }
+                    }
+                }
+
+                // Create a SolutionXML element that describes the conditional formatting rule
+                SolutionXML conditionalXml = new SolutionXML();
+                conditionalXml.Name = "ConditionalFormatting";
+                conditionalXml.XmlValue =
+                    "<ConditionalFormatting>" +
+                    "  <Rule>" +
+                    "    <Condition>Data1 > 100</Condition>" +
+                    "    <HighlightColor>#FF0000</HighlightColor>" +
+                    "  </Rule>" +
+                    "</ConditionalFormatting>";
+
+                // Add the SolutionXML to the diagram
+                diagram.SolutionXMLs.Add(conditionalXml);
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-        }
-
-        // If not found, add a new SolutionXML element.
-        if (!updated)
-        {
-            SolutionXML solXml = new SolutionXML();
-            solXml.Name = "ConditionalFormatting";
-            solXml.XmlValue = conditionalXml;
-            diagram.SolutionXMLs.Add(solXml);
-        }
-
-        // Save the modified diagram in VSDX format.
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"Diagram saved to '{outputPath}' with conditional formatting rule.");
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

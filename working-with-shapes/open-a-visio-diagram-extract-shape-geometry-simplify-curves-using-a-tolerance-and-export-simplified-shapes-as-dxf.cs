@@ -7,71 +7,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output SVG file path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputSvgPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: ensure the input Visio file exists.
+        // Input Visio file path (change as needed)
+        string inputPath = "input.vsdx";
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string outputPath = args[1];
-        // Guard: ensure the directory for the output file exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
+        // Output SVG file path (DXF not supported by Aspose.Diagram)
+        string outputPath = "simplified_output.svg";
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define a tolerance (in inches) for curve simplification.
-            double tolerance = 0.01; // Adjust as needed.
-
-            // Iterate over all pages in the diagram.
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page.
+                // Iterate through each shape on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes.
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True) continue;
 
-                    // NOTE: The SimplifyGeometry method is not available in this version of Aspose.Diagram.
-                    // If curve simplification is required, it must be implemented manually by processing
-                    // the shape's Geoms collection. For now, this step is omitted.
+                    // Extract geometric data (Geoms collection)
+                    // Note: Detailed curve simplification is not implemented here.
+                    // This placeholder demonstrates where one would process each geometry segment.
+                    foreach (Geom geom in shape.Geoms)
+                    {
+                        // Each Geom contains a collection of coordinate commands (MoveTo, LineTo, CurveTo, etc.)
+                        // For demonstration, we simply output the type of each coordinate command.
+                        foreach (object coord in geom.CoordinateCol)
+                        {
+                            // Identify the command type via its class name
+                            string commandType = coord.GetType().Name;
+                            Console.WriteLine($"Shape ID {shape.ID}: Geom command {commandType}");
+                        }
+                    }
+
+                    // Example of a simple geometry simplification:
+                    // Replace CurveTo segments with approximated LineTo segments based on a tolerance.
+                    // The actual implementation would require curve flattening logic, which is omitted.
                 }
             }
 
-            // NOTE: Aspose.Diagram does not support direct DXF export.
-            // As a workaround, export the simplified diagram to SVG, which can be
-            // converted to DXF using external tools if required.
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                // Export hidden pages is set to false to keep the output clean.
-                ExportHiddenPage = false
-            };
-
-            // Save the diagram (with simplified geometry) to the specified SVG file.
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Simplified diagram saved to: {outputPath}");
+            // Save the (potentially simplified) diagram as SVG.
+            // DXF export is not available in Aspose.Diagram, so SVG is used as an alternative.
+            diagram.Save(outputPath, SaveFileFormat.Svg);
+            Console.WriteLine($"Diagram exported to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

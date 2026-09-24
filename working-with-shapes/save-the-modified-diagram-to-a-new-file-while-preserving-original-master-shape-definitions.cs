@@ -1,39 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path – replace with your actual file location.
+        string inputPath = "input.vsdx";
+
+        // Verify that the source file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output file path for the modified diagram.
+        string outputPath = "output_modified.vsdx";
+
         try
         {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the original Visio diagram
-            Diagram diagram = new Diagram("input.vdx");
-
-            // Add a master shape from a template (preserves original master definitions)
-            // The master name must exist in the template file.
-            int masterId = diagram.AddMaster("template.vdx", "Rectangle");
-
-            // Add a shape based on the newly added master to the first page
-            // Parameters: PinX, PinY, master name, and page index (0 = first page)
-            diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-
-            // Configure save options – using VDX format and auto‑fit page to content
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vdx)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count > 0)
             {
-                AutoFitPageToDrawingContent = true
-            };
+                // Access the first page.
+                Page page = diagram.Pages[0];
 
-            // Save the modified diagram to a new file while keeping all master definitions
-            diagram.Save("output.vdx", saveOptions);
+                // Ensure the page contains at least one shape.
+                if (page.Shapes.Count > 0)
+                {
+                    // Retrieve the first shape on the page.
+                    Shape shape = page.Shapes[0];
 
+                    // Clear any existing text runs.
+                    shape.Text.Value.Clear();
+
+                    // Add new text to the shape.
+                    shape.Text.Value.Add(new Txt("Modified Text"));
+                }
+                else
+                {
+                    Console.WriteLine("No shapes found on the first page; nothing to modify.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("The diagram contains no pages; cannot perform modifications.");
+            }
+
+            // Save the modified diagram to a new file.
+            // Using SaveFileFormat.Vsdx preserves all master shape definitions.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

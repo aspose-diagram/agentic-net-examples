@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
 namespace ParagraphSerializationExample
 {
-    // DTO representing the serializable data of a paragraph
+    // DTO representing a paragraph's formatting properties
     public class ParagraphDto
     {
-        public int Index { get; set; }
         public string HorzAlign { get; set; }
         public double IndLeft { get; set; }
         public double IndRight { get; set; }
@@ -27,34 +27,28 @@ namespace ParagraphSerializationExample
             try
             {
 
-                // Path to the Visio file (adjust as needed)
+                // Load an existing Visio diagram
                 string diagramPath = "input.vsdx";
-
-                // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Get the first page
+                // Choose the page and shape you want to serialize paragraphs from
+                // Here we use the first page and the first shape as an example
                 Page page = diagram.Pages[0];
-
-                // Get the first shape on the page (adjust selection logic as needed)
                 if (page.Shapes.Count == 0)
                 {
                     Console.WriteLine("No shapes found on the first page.");
                     return;
                 }
 
+                // Retrieve the shape (by index)
                 Shape shape = page.Shapes[0];
 
                 // Collect paragraph information
-                List<ParagraphDto> paragraphs = new List<ParagraphDto>();
-
-                for (int i = 0; i < shape.Paras.Count; i++)
+                List<ParagraphDto> paragraphList = new List<ParagraphDto>();
+                foreach (Para para in shape.Paras)
                 {
-                    var para = shape.Paras[i];
-
                     ParagraphDto dto = new ParagraphDto
                     {
-                        Index = i,
                         HorzAlign = para.HorzAlign.Value.ToString(),
                         IndLeft = para.IndLeft.Value,
                         IndRight = para.IndRight.Value,
@@ -65,15 +59,24 @@ namespace ParagraphSerializationExample
                         Bullet = para.Bullet.Value.ToString(),
                         BulletStr = para.BulletStr.Value
                     };
-
-                    paragraphs.Add(dto);
+                    paragraphList.Add(dto);
                 }
 
-                // Serialize to JSON
-                string json = JsonSerializer.Serialize(paragraphs, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize the collection to JSON
+                JsonSerializerOptions options = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                string json = JsonSerializer.Serialize(paragraphList, options);
 
-                // Output JSON (could be written to a file or sent to a service)
+                // Output JSON to console
+                Console.WriteLine("Serialized Paragraph Collection:");
                 Console.WriteLine(json);
+
+                // Optionally write JSON to a file
+                string outputPath = "paragraphs.json";
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"JSON saved to {outputPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

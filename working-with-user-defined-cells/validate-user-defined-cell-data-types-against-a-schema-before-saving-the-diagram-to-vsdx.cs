@@ -1,47 +1,71 @@
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
                 // Input and output file paths
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                string outputPath = "validated_output.vsdx";
 
-                // Define a simple schema: user cell name -> expected .NET type
-                var schema = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "Cost", typeof(double) },
-                    { "Quantity", typeof(int) },
-                    { "StartDate", typeof(DateTime) },
-                    { "IsActive", typeof(bool) }
-                };
-
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Validate each user-defined cell against the schema
+                // Define a simple schema for user-defined cells
+                // Key: cell name, Value: expected .NET type
+                var schema = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Length", typeof(double) },
+                    { "Count", typeof(int) },
+                    { "StartDate", typeof(DateTime) }
+                    // Add more entries as needed
+                };
+
+                // Validate each shape's user-defined cells against the schema
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
+                        if (shape.Users == null) continue;
+
                         foreach (User userCell in shape.Users)
                         {
-                            if (schema.TryGetValue(userCell.Name, out Type expectedType))
+                            if (!schema.TryGetValue(userCell.Name, out Type expectedType))
+                                continue; // No validation rule for this cell
+
+                            string cellValue = userCell.Value?.Val ?? string.Empty;
+                            bool isValid = true;
+
+                            if (expectedType == typeof(int))
                             {
-                                string cellValue = userCell.Value?.Val ?? string.Empty;
-                                bool isValid = ValidateValue(cellValue, expectedType);
-                                if (!isValid)
-                                {
-                                    throw new Exception(
-                                        $"Validation failed for shape ID {shape.ID}, user cell '{userCell.Name}'. " +
-                                        $"Expected {expectedType.Name}, got '{cellValue}'.");
-                                }
+                                isValid = int.TryParse(cellValue, out _);
+                            }
+                            else if (expectedType == typeof(double))
+                            {
+                                isValid = double.TryParse(cellValue, out _);
+                            }
+                            else if (expectedType == typeof(DateTime))
+                            {
+                                isValid = DateTime.TryParse(cellValue, out _);
+                            }
+                            else
+                            {
+                                // For string or other types, consider it always valid
+                                isValid = true;
+                            }
+
+                            if (!isValid)
+                            {
+                                string message = $"Validation failed: Shape ID {shape.ID}, User Cell '{userCell.Name}' " +
+                                                 $"has value '{cellValue}' which is not a valid {expectedType.Name}.";
+                                // Throwing stops the process; alternatively, log and continue
+                                throw new Exception(message);
                             }
                         }
                     }
@@ -56,20 +80,4 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
-
-        // Helper method to validate a string value against an expected .NET type
-        static bool ValidateValue(string value, Type expectedType)
-        {
-            if (expectedType == typeof(int))
-                return int.TryParse(value, out _);
-            if (expectedType == typeof(double))
-                return double.TryParse(value, out _);
-            if (expectedType == typeof(bool))
-                return bool.TryParse(value, out _);
-            if (expectedType == typeof(DateTime))
-                return DateTime.TryParse(value, out _);
-
-            // If the expected type is not one of the above, treat it as a string (always valid)
-            return true;
-        }
     }

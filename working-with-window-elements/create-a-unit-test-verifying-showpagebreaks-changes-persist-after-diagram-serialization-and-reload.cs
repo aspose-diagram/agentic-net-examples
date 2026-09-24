@@ -7,53 +7,52 @@ class Program
 {
     static void Main()
     {
-        // Define a temporary file path for the diagram
-        string filePath = Path.Combine(Path.GetTempPath(), "ShowPageBreaksTest.vsdx");
-
-        // ---------- Create a new diagram ----------
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Add a window to the diagram (new diagrams have no windows by default)
+        // Add a window because a new diagram has none by default
         Window window = new Window();
-        window.WindowType = WindowTypeValue.Drawing;          // Set window type to Drawing
-        window.WindowState = WindowStateValue.Maximized;      // Maximize the window
-        window.ShowPageBreaks = BOOL.True;                    // Enable ShowPageBreaks
-
-        // Add the window to the diagram's window collection
+        window.WindowType = WindowTypeValue.Drawing;
+        window.WindowState = WindowStateValue.Maximized;
+        window.WindowWidth = 800;
+        window.WindowHeight = 600;
         diagram.Windows.Add(window);
 
-        // Save the diagram to a file (VSDX format)
-        diagram.Save(filePath, SaveFileFormat.Vsdx);
+        // Set ShowPageBreaks to true
+        diagram.Windows[0].ShowPageBreaks = BOOL.True;
 
-        // ---------- Load the diagram back ----------
-        Diagram loadedDiagram = new Diagram(filePath);
+        // Prepare a temporary file path for saving
+        string tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vsdx");
 
-        // Verify that a window exists
-        if (loadedDiagram.Windows.Count == 0)
-        {
-            throw new Exception("No windows were found after loading the diagram.");
-        }
-
-        // Retrieve the first window
-        Window loadedWindow = loadedDiagram.Windows[0];
-
-        // Verify that ShowPageBreaks persisted
-        if (loadedWindow.ShowPageBreaks != BOOL.True)
-        {
-            throw new Exception("ShowPageBreaks value did not persist after serialization.");
-        }
-
-        // If we reach this point, the test succeeded
-        Console.WriteLine("ShowPageBreaks persisted correctly after save and reload.");
-
-        // Optional: clean up the temporary file
         try
         {
-            File.Delete(filePath);
+            // Save the diagram to VSDX format
+            diagram.Save(tempPath, SaveFileFormat.Vsdx);
+
+            // Load the diagram back from the saved file
+            Diagram loadedDiagram = new Diagram(tempPath);
+
+            // Verify that the ShowPageBreaks setting persisted
+            if (loadedDiagram.Windows.Count == 0)
+            {
+                throw new Exception("Loaded diagram contains no windows.");
+            }
+
+            BOOL showPageBreaks = loadedDiagram.Windows[0].ShowPageBreaks;
+            if (showPageBreaks != BOOL.True)
+            {
+                throw new Exception("ShowPageBreaks value did not persist after reload.");
+            }
+
+            Console.WriteLine("ShowPageBreaks persisted correctly after serialization and reload.");
         }
-        catch
+        finally
         {
-            // Ignore any cleanup errors
+            // Clean up the temporary file
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
         }
     }
 }

@@ -1,80 +1,87 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for Aspose.Diagram operations
 
-class ShapeInheritanceCsvExporter
+class Program
 {
     static void Main(string[] args)
     {
         // Expect two arguments: input Visio file path and output CSV file path
-        if (args.Length != 2)
+        if (args.Length < 2)
         {
-            Console.WriteLine("Usage: ShapeInheritanceCsvExporter <input.vsdx> <output.csv>");
+            Console.Error.WriteLine("Usage: ShapeInheritanceReport <inputVisioPath> <outputCsvPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram using Aspose.Diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Prepare a StringBuilder for CSV content
-        StringBuilder csvBuilder = new StringBuilder();
-
-        // Write CSV header
-        csvBuilder.AppendLine("PageName,ShapeID,ShapeNameU,MasterName,InheritPropsCount,HasInheritFill,HasInheritLine,HasInheritTextBlock");
-
-        // Iterate through all pages
-        foreach (Page page in diagram.Pages)
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
         {
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        // Guard: ensure output directory exists (create if missing)
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            try
             {
-                // Basic shape information
-                string pageName = page.NameU ?? string.Empty;
-                string shapeId = shape.ID.ToString();
-                string shapeNameU = shape.NameU ?? string.Empty;
-
-                // Master information (if the shape is based on a master)
-                string masterName = shape.Master != null ? shape.Master.NameU ?? string.Empty : string.Empty;
-
-                // Inherited properties count
-                int inheritPropsCount = shape.InheritProps != null ? shape.InheritProps.Count : 0;
-
-                // Flags for other inheritance collections
-                bool hasInheritFill = shape.InheritFill != null;
-                bool hasInheritLine = shape.InheritLine != null;
-                bool hasInheritTextBlock = shape.InheritTextBlock != null;
-
-                // Build CSV line (escape commas if needed)
-                string line = string.Format("{0},{1},{2},{3},{4},{5},{6},{7}",
-                    EscapeCsv(pageName),
-                    EscapeCsv(shapeId),
-                    EscapeCsv(shapeNameU),
-                    EscapeCsv(masterName),
-                    inheritPropsCount,
-                    hasInheritFill,
-                    hasInheritLine,
-                    hasInheritTextBlock);
-
-                csvBuilder.AppendLine(line);
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
             }
         }
 
-        // Write CSV content to the output file
-        File.WriteAllText(outputPath, csvBuilder.ToString(), Encoding.UTF8);
-    }
-
-    // Helper method to escape CSV fields containing commas or quotes
-    private static string EscapeCsv(string field)
-    {
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+        try
         {
-            field = field.Replace("\"", "\"\"");
-            return $"\"{field}\"";
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Open a StreamWriter for the CSV output (overwrite if exists)
+            using (StreamWriter writer = new StreamWriter(outputPath, false))
+            {
+                // Write CSV header
+                writer.WriteLine("PageIndex,ShapeID,ShapeName,MasterName,IsDeleted");
+
+                // Iterate through each page in the diagram
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                {
+                    Page page = diagram.Pages[pageIdx];
+
+                    // Iterate through each shape on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Retrieve shape ID (as long) and convert to string
+                        string shapeId = shape.ID.ToString();
+
+                        // Retrieve the universal name of the shape (may be empty)
+                        string shapeName = shape.NameU ?? string.Empty;
+
+                        // Retrieve master name if the shape has a master; otherwise empty
+                        string masterName = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
+
+                        // Determine deletion status using BOOL enum (TRUE = deleted)
+                        bool isDeleted = shape.Del == BOOL.True;
+
+                        // Compose CSV line with proper escaping for commas
+                        string csvLine = $"{pageIdx},{shapeId},\"{shapeName}\",\"{masterName}\",{isDeleted}";
+                        writer.WriteLine(csvLine);
+                    }
+                }
+            }
+
+            Console.WriteLine($"CSV report generated successfully at: {outputPath}");
         }
-        return field;
+        catch (Exception ex)
+        {
+            // Log any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

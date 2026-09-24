@@ -1,79 +1,97 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using Aspose.Diagram;
 
-class DiagnosticTool
-{
-    static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect the Visio file path as the first argument
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Please provide the path to the Visio file as a command‑line argument.");
+                return;
+            }
 
-            // Input Visio file path (first argument or default)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string inputPath = args[0];
+            Diagram diagram;
 
-            // Load the Visio diagram (load rule)
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            try
+            {
+                diagram = new Diagram(inputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-            // Dictionaries to track user-defined cell names and shapes lacking them
-            var userNameToShapes = new Dictionary<string, List<Shape>>(StringComparer.OrdinalIgnoreCase);
-            var shapesMissingUsers = new List<Shape>();
+            var reportLines = new List<string>();
+            int pageIndex = 0;
 
-            // Iterate through all pages and shapes
+            // Iterate through pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // If the shape has no user-defined cells, record it as missing
+                    // Check for missing user‑defined cells
                     if (shape.Users == null || shape.Users.Count == 0)
                     {
-                        shapesMissingUsers.Add(shape);
+                        string msg = $"Page {pageIndex}, Shape ID {shape.ID} ({shape.NameU}) has no user‑defined cells.";
+                        Console.WriteLine(msg);
+                        reportLines.Add(msg);
                         continue;
                     }
 
-                    // Record each user-defined cell name and associate it with the shape
+                    // Detect duplicate user‑defined cell names within the shape
+                    var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var duplicateNames = new List<string>();
+
                     foreach (User user in shape.Users)
                     {
-                        // Prefer the universal name; fallback to the local name
-                        string cellName = !string.IsNullOrEmpty(user.NameU) ? user.NameU : user.Name;
-                        if (string.IsNullOrEmpty(cellName))
-                            continue; // Skip unnamed cells
+                        string name = user.NameU ?? user.Name;
+                        if (!seenNames.Add(name))
+                        {
+                            duplicateNames.Add(name);
+                        }
+                    }
 
-                        if (!userNameToShapes.ContainsKey(cellName))
-                            userNameToShapes[cellName] = new List<Shape>();
-
-                        userNameToShapes[cellName].Add(shape);
+                    if (duplicateNames.Count > 0)
+                    {
+                        string dupList = string.Join(", ", duplicateNames);
+                        string msg = $"Page {pageIndex}, Shape ID {shape.ID} ({shape.NameU}) has duplicate user‑defined cell names: {dupList}.";
+                        Console.WriteLine(msg);
+                        reportLines.Add(msg);
                     }
                 }
+
+                pageIndex++;
             }
 
-            // Output shapes that are missing user-defined cells
-            Console.WriteLine("=== Shapes Missing User-Defined Cells ===");
-            foreach (Shape shape in shapesMissingUsers)
+            // Write the diagnostic report to a text file
+            string reportPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "diagnostic_report.txt");
+            try
             {
-                string pageName = shape.Page?.Name ?? "UnknownPage";
-                Console.WriteLine($"Page: {pageName}, Shape ID: {shape.ID}, Name: {shape.NameU}");
+                File.WriteAllLines(reportPath, reportLines);
+                Console.WriteLine($"Diagnostic report written to: {reportPath}");
             }
-
-            // Output duplicate user-defined cell names across shapes
-            Console.WriteLine("\n=== Duplicate User-Defined Cell Names ===");
-            var duplicates = userNameToShapes.Where(kvp => kvp.Value.Count > 1);
-            foreach (var kvp in duplicates)
+            catch (Exception ex)
             {
-                Console.WriteLine($"Cell Name: {kvp.Key}");
-                foreach (Shape shape in kvp.Value)
-                {
-                    string pageName = shape.Page?.Name ?? "UnknownPage";
-                    Console.WriteLine($"\tPage: {pageName}, Shape ID: {shape.ID}, Name: {shape.NameU}");
-                }
+                Console.WriteLine($"Failed to write report file: {ex.Message}");
             }
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Save a copy of the diagram (unchanged) to demonstrate save usage
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "diagnostic_output.vsdx");
+            try
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            }
         }
     }
-}

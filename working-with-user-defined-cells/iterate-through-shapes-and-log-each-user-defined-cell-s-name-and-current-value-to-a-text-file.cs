@@ -3,45 +3,46 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Path of the text file where the log will be written
-            string logFilePath = "UserCellsLog.txt";
-
-            // Open a StreamWriter for the log file
-            using (StreamWriter writer = new StreamWriter(logFilePath))
+            try
             {
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+
+                // Path to the Visio file to be processed
+                string diagramPath = "input.vsdx";
+
+                // Path to the output text file
+                string outputPath = "UserCellsLog.txt";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Open a StreamWriter to write the log
+                using (StreamWriter writer = new StreamWriter(outputPath))
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all user‑defined cells of the shape
-                        foreach (User userCell in shape.Users)
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Write the page name, shape name, user cell name and its current value
-                            writer.WriteLine(
-                                $"Page: {page.Name}, Shape: {shape.Name}, UserCell: {userCell.NameU}, Value: {userCell.Value}");
+                            // Iterate through all user-defined cells of the shape
+                            foreach (User userCell in shape.Users)
+                            {
+                                // Log the cell name and its current value
+                                writer.WriteLine($"{userCell.Name}: {userCell.Value.Val}");
+                            }
                         }
                     }
                 }
+
+                Console.WriteLine($"User-defined cells have been logged to '{outputPath}'.");
+
             }
-
-            // No changes are made to the diagram, so saving is optional.
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

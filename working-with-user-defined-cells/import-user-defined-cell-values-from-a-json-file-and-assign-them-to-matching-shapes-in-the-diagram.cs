@@ -4,126 +4,111 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramJsonImporter
+namespace DiagramUserCellUpdater
 {
-    // Represents a single shape entry in the JSON file.
-    public class ShapeData
+    // Model representing the JSON structure for shape updates
+    public class ShapeUpdate
     {
-        // Universal name of the shape to match (case‑insensitive).
-        public string NameU { get; set; }
-
-        // Dictionary of user‑defined cell names and their string values.
-        public Dictionary<string, string> Cells { get; set; }
+        public string ShapeNameU { get; set; }
+        public Dictionary<string, string> UserCells { get; set; }
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            // Expected arguments:
-            // 0 - path to the source Visio diagram (e.g., .vsdx)
-            // 1 - path to the JSON file containing cell values
-            // 2 - path where the updated diagram will be saved
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: DiagramJsonImporter <diagramPath> <jsonPath> <outputPath>");
-                return;
-            }
-
-            string diagramPath = args[0];
-            string jsonPath = args[1];
-            string outputPath = args[2];
-
             try
             {
-                // Load the Visio diagram.
+
+                // Paths – adjust as needed
+                string diagramPath = "input.vsdx";
+                string jsonPath = "cellValues.json";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Read and deserialize the JSON content.
+                // Read and deserialize the JSON file
                 string jsonContent = File.ReadAllText(jsonPath);
-                List<ShapeData> shapeDataList = JsonSerializer.Deserialize<List<ShapeData>>(jsonContent);
+                List<ShapeUpdate> updates = JsonSerializer.Deserialize<List<ShapeUpdate>>(jsonContent);
 
-                if (shapeDataList == null)
+                if (updates == null)
                 {
-                    Console.WriteLine("JSON file does not contain any shape data.");
+                    Console.WriteLine("No updates found in JSON.");
                     return;
                 }
 
-                // Iterate over each shape entry from the JSON.
-                foreach (ShapeData shapeData in shapeDataList)
+                // Iterate through each update entry
+                foreach (var update in updates)
                 {
-                    if (string.IsNullOrWhiteSpace(shapeData.NameU) || shapeData.Cells == null)
-                        continue; // Skip invalid entries.
+                    bool shapeFound = false;
 
-                    // Search for a matching shape by its universal name across all pages.
-                    Shape matchingShape = null;
+                    // Search all pages for a shape with matching NameU
                     foreach (Page page in diagram.Pages)
                     {
                         foreach (Shape shape in page.Shapes)
                         {
-                            if (string.Equals(shape.NameU, shapeData.NameU, StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(shape.NameU, update.ShapeNameU, StringComparison.OrdinalIgnoreCase))
                             {
-                                matchingShape = shape;
+                                shapeFound = true;
+
+                                // Apply each user-defined cell value
+                                foreach (var kvp in update.UserCells)
+                                {
+                                    string cellName = kvp.Key;
+                                    string cellValue = kvp.Value;
+
+                                    // Try to find an existing User cell
+                                    User existingUser = null;
+                                    foreach (User user in shape.Users)
+                                    {
+                                        if (string.Equals(user.Name, cellName, StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(user.NameU, cellName, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            existingUser = user;
+                                            break;
+                                        }
+                                    }
+
+                                    if (existingUser != null)
+                                    {
+                                        // Update existing cell
+                                        existingUser.Value.Val = cellValue;
+                                    }
+                                    else
+                                    {
+                                        // Create a new User cell
+                                        User newUser = new User();
+                                        newUser.Name = cellName;
+                                        newUser.NameU = cellName;
+                                        newUser.Value.Val = cellValue;
+                                        shape.Users.Add(newUser);
+                                    }
+                                }
+
+                                // Once the shape is processed, break out of inner loops
                                 break;
                             }
                         }
-                        if (matchingShape != null)
-                            break;
+
+                        if (shapeFound) break;
                     }
 
-                    if (matchingShape == null)
+                    if (!shapeFound)
                     {
-                        Console.WriteLine($"Shape with NameU '{shapeData.NameU}' not found in the diagram.");
-                        continue;
-                    }
-
-                    // Assign or update each user‑defined cell.
-                    foreach (KeyValuePair<string, string> cellEntry in shapeData.Cells)
-                    {
-                        string cellName = cellEntry.Key;
-                        string cellValue = cellEntry.Value ?? string.Empty;
-
-                        // Look for an existing User cell with the same name.
-                        User existingUser = null;
-                        foreach (User user in matchingShape.Users)
-                        {
-                            if (string.Equals(user.Name, cellName, StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(user.NameU, cellName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                existingUser = user;
-                                break;
-                            }
-                        }
-
-                        if (existingUser != null)
-                        {
-                            // Update the value of the existing user‑defined cell.
-                            existingUser.Value.Val = cellValue;
-                        }
-                        else
-                        {
-                            // Create a new user‑defined cell and add it to the shape.
-                            User newUser = new User
-                            {
-                                Name = cellName,
-                                NameU = cellName,
-                                Value = { Val = cellValue }
-                            };
-                            matchingShape.Users.Add(newUser);
-                        }
+                        Console.WriteLine($"Shape with NameU '{update.ShapeNameU}' not found.");
                     }
                 }
 
-                // Save the modified diagram.
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("An error occurred:");
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
+    }
     }
 }

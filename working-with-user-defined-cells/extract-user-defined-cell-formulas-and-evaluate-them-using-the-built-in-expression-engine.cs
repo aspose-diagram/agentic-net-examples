@@ -1,7 +1,7 @@
 using System.IO;
 using System;
-using System.Data;
 using Aspose.Diagram;
+using System.Data;
 
 class Program
 {
@@ -10,11 +10,11 @@ class Program
         try
         {
 
-            // Path to the Visio file (replace with your actual file path)
-            string inputPath = "input.vsdx";
+            // Path to the Visio diagram file
+            string filePath = "input.vsdx";
 
             // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(filePath);
 
             // Iterate through all pages, shapes, and user‑defined cells
             foreach (Page page in diagram.Pages)
@@ -23,27 +23,25 @@ class Program
                 {
                     foreach (User userCell in shape.Users)
                     {
-                        string cellName = userCell.NameU;
-                        string cellValue = userCell.Value.Val;
+                        string cellName = userCell.NameU;          // Universal name of the user cell
+                        string formula = userCell.Value.Val;       // The formula or value stored in the cell
 
-                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {cellName}, Value: {cellValue}");
+                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {cellName}, Formula: {formula}");
 
-                        // If the cell contains a formula (starts with '=') evaluate it
-                        if (!string.IsNullOrEmpty(cellValue) && cellValue.StartsWith("="))
+                        // Try to evaluate the formula using a simple .NET expression evaluator
+                        try
                         {
-                            string expression = cellValue.TrimStart('=');
-
-                            try
-                            {
-                                // Simple arithmetic evaluation using DataTable.Compute
-                                object result = new DataTable().Compute(expression, null);
-                                Console.WriteLine($"  Evaluated Result: {result}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"  Evaluation failed: {ex.Message}");
-                            }
+                            // DataTable.Compute can handle basic arithmetic expressions
+                            object result = new DataTable().Compute(formula, null);
+                            Console.WriteLine($"Evaluated Result: {result}");
                         }
+                        catch (Exception ex)
+                        {
+                            // If the formula cannot be evaluated, report the error
+                            Console.WriteLine($"Could not evaluate formula: {ex.Message}");
+                        }
+
+                        Console.WriteLine(); // Blank line for readability
                     }
                 }
             }

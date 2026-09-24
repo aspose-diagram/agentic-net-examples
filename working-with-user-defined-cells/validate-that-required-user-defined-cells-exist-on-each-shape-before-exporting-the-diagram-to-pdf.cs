@@ -1,63 +1,74 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // List of required user-defined cell names (without the "User." prefix)
-            var requiredCells = new List<string> { "MyCell1", "MyCell2" };
-
-            // Load the Visio diagram
-            using (var diagram = new Diagram("input.vsdx"))
+            try
             {
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+
+                // Path for the exported PDF
+                string outputPath = "output.pdf";
+
+                // Define the required user‑defined cell names
+                string[] requiredUserCells = { "Cost", "Owner", "Status" };
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
                 // Validate each shape on every page
-                foreach (var page in diagram.Pages)
+                foreach (Page page in diagram.Pages)
                 {
-                    foreach (var shape in page.Shapes)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        ValidateShapeUserCells(shape, requiredCells);
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        foreach (string cellName in requiredUserCells)
+                        {
+                            bool cellExists = false;
+
+                            // Iterate the Users collection to find the cell
+                            foreach (User userCell in shape.Users)
+                            {
+                                // Compare by the universal name (NameU) or the local name (Name)
+                                if (userCell.NameU == cellName || userCell.Name == cellName)
+                                {
+                                    cellExists = true;
+                                    break;
+                                }
+                            }
+
+                            if (!cellExists)
+                            {
+                                // Report missing cell and abort the export
+                                throw new Exception($"Shape ID {shape.ID} on page '{page.Name}' is missing required user‑defined cell '{cellName}'.");
+                            }
+                        }
                     }
                 }
 
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.ExportHiddenPage = false; // Export only visible pages
+
                 // Export the diagram to PDF
-                var pdfOptions = new PdfSaveOptions
-                {
-                    ExportGuideShapes = true // keep default behavior
-                };
-                diagram.Save("output.pdf", pdfOptions);
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine("Diagram exported successfully to PDF.");
+
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    static void ValidateShapeUserCells(Shape shape, List<string> requiredCells)
-    {
-        // Collect existing user-defined cell names for the shape
-        var existingNames = new HashSet<string>();
-        foreach (var user in shape.Users)
-        {
-            existingNames.Add(user.Name);
-        }
-
-        // Check each required cell
-        foreach (var cellName in requiredCells)
-        {
-            if (!existingNames.Contains(cellName))
+            catch (System.IO.FileNotFoundException ex)
             {
-                throw new InvalidOperationException(
-                    $"Shape ID {shape.ID} on page '{shape.Page?.Name}' is missing required user-defined cell '{cellName}'.");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-        }
     }
-}
+    }

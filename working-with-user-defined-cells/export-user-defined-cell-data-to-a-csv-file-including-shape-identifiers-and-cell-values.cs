@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -15,34 +17,37 @@ class Program
                 // Output CSV file path
                 string outputCsv = "UserDefinedCells.csv";
 
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Create a StreamWriter for the CSV file
-                using (StreamWriter writer = new StreamWriter(outputCsv))
+                // Prepare a StringBuilder for CSV content
+                StringBuilder csvBuilder = new StringBuilder();
+
+                // Write CSV header
+                csvBuilder.AppendLine("ShapeID,UserCellName,UserCellValue");
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Write CSV header
-                    writer.WriteLine("PageIndex,ShapeID,ShapeName,UserName,UserValue");
-
-                    // Iterate through all pages
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Page page = diagram.Pages[pageIndex];
-
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
+                        // Iterate through user-defined cells (Users collection)
+                        foreach (User userCell in shape.Users)
                         {
-                            // Iterate through user-defined cells (Users collection)
-                            foreach (User userCell in shape.Users)
-                            {
-                                // Write a CSV line with shape identifier and user cell data
-                                writer.WriteLine($"{pageIndex},{shape.ID},{shape.NameU},{userCell.Name},{userCell.Value.Val}");
-                            }
+                            // Escape commas in values if necessary
+                            string cellName = EscapeCsv(userCell.Name);
+                            string cellValue = EscapeCsv(userCell.Value.Val);
+
+                            // Append a CSV line: ShapeID,UserCellName,UserCellValue
+                            csvBuilder.AppendLine($"{shape.ID},{cellName},{cellValue}");
                         }
                     }
                 }
 
-                Console.WriteLine($"User-defined cell data exported to '{outputCsv}'.");
+                // Write the CSV content to file
+                File.WriteAllText(outputCsv, csvBuilder.ToString(), Encoding.UTF8);
+
+                Console.WriteLine($"Export completed. CSV saved to: {outputCsv}");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -50,4 +55,19 @@ class Program
                 Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
+
+        // Helper method to escape CSV fields containing commas or quotes
+        private static string EscapeCsv(string field)
+        {
+            if (field == null)
+                return string.Empty;
+
+            if (field.Contains("\""))
+                field = field.Replace("\"", "\"\"");
+
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
+                field = $"\"{field}\"";
+
+            return field;
+        }
     }

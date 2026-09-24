@@ -1,107 +1,93 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    // Retrieves the value of a user‑defined cell by name.
+    // Returns null if the cell does not exist.
+    static string GetUserCellValue(Shape shape, string cellName)
     {
-        static void Main(string[] args)
+        if (shape == null || shape.Users == null)
+            return null;
+
+        foreach (User user in shape.Users)
         {
-            // Input and output file paths (adjust as needed)
+            if (user == null)
+                continue;
+
+            // Compare both the internal name and the universal name.
+            if (string.Equals(user.Name, cellName, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(user.NameU, cellName, StringComparison.OrdinalIgnoreCase))
+            {
+                return user.Value?.Val;
+            }
+        }
+
+        return null; // Cell not found.
+    }
+
+    static void Main()
+    {
+        try
+        {
+
+            // Path to the source Visio file.
             string inputPath = "input.vsdx";
+            // Path for the output Visio file after processing.
             string outputPath = "output.vsdx";
 
-            Diagram diagram = null;
-
-            try
+            // Load the diagram.
+            Diagram diagram;
+            using (FileStream fs = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
-                // Load the diagram from file
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading diagram: {ex.Message}");
-                return;
+                diagram = new Diagram(fs);
             }
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the Users collection is available
-                    if (shape.Users == null)
-                        continue;
+                    // Example: we expect a user‑defined cell named "Multiplier".
+                    string cellValue = GetUserCellValue(shape, "Multiplier");
 
-                    // Attempt to find a user-defined cell named "CustomValue"
-                    User customUser = null;
-                    foreach (User user in shape.Users)
+                    if (cellValue == null)
                     {
-                        if (string.Equals(user.Name, "CustomValue", StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(user.NameU, "CustomValue", StringComparison.OrdinalIgnoreCase))
-                        {
-                            customUser = user;
-                            break;
-                        }
+                        Console.WriteLine($"Warning: Shape ID {shape.ID} on page '{page.Name}' is missing the 'Multiplier' user‑defined cell. Skipping calculation.");
+                        continue; // Skip this shape because required data is absent.
                     }
 
-                    if (customUser == null)
+                    // Try to parse the cell value as a double.
+                    if (!double.TryParse(cellValue, out double multiplier))
                     {
-                        // Missing user-defined cell – log and continue
-                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' does not contain 'CustomValue' cell.");
+                        Console.WriteLine($"Error: Shape ID {shape.ID} has an invalid 'Multiplier' value ('{cellValue}'). Expected a numeric value. Skipping.");
                         continue;
                     }
 
-                    // Parse the cell value safely
-                    if (!double.TryParse(customUser.Value.Val, out double customValue))
+                    // Perform a simple calculation: increase the shape's width by the multiplier.
+                    try
                     {
-                        Console.WriteLine($"Invalid numeric value in 'CustomValue' for shape ID {shape.ID}: '{customUser.Value.Val}'.");
-                        continue;
+                        double originalWidth = shape.XForm.Width.Value;
+                        double newWidth = originalWidth * multiplier;
+                        shape.XForm.Width.Value = newWidth;
+
+                        Console.WriteLine($"Shape ID {shape.ID}: Width changed from {originalWidth} to {newWidth} using multiplier {multiplier}.");
                     }
-
-                    // Perform a sample calculation (e.g., double the value)
-                    double resultValue = customValue * 2;
-
-                    // Store the result in a user-defined cell named "Result"
-                    User resultUser = null;
-                    foreach (User user in shape.Users)
+                    catch (Exception ex)
                     {
-                        if (string.Equals(user.Name, "Result", StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(user.NameU, "Result", StringComparison.OrdinalIgnoreCase))
-                        {
-                            resultUser = user;
-                            break;
-                        }
+                        Console.WriteLine($"Exception while updating shape ID {shape.ID}: {ex.Message}");
                     }
-
-                    if (resultUser == null)
-                    {
-                        // Create the cell if it does not exist
-                        resultUser = new User
-                        {
-                            Name = "Result",
-                            Value = { Val = resultValue.ToString() }
-                        };
-                        shape.Users.Add(resultUser);
-                    }
-                    else
-                    {
-                        // Update existing cell
-                        resultUser.Value.Val = resultValue.ToString();
-                    }
-
-                    Console.WriteLine($"Shape ID {shape.ID}: CustomValue={customValue}, Result={resultValue}");
                 }
             }
 
-            try
-            {
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error saving diagram: {ex.Message}");
-            }
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

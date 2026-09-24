@@ -7,70 +7,62 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path (default if not provided)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            // Desired SVG output path (default if not provided)
-            string outputPath = args.Length > 1 ? args[1] : "output.svg";
+            // Paths for input Visio file and output SVG
+            string inputPath = "input.vsdx";
+            string outputSvgPath = "output.svg";
 
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare SVG save options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.ExportHiddenPage = false; // do not export hidden pages
+            // Configure SVG export options
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                ExportHiddenPage = false,
+                ExportGuideShapes = false,
+                SVGFitToViewPort = true
+            };
 
-            // Save to a temporary SVG file first
-            string tempSvgPath = Path.ChangeExtension(Path.GetTempFileName(), ".svg");
-            diagram.Save(tempSvgPath, svgOptions);
+            // Export the diagram to SVG
+            diagram.Save(outputSvgPath, svgOptions);
 
-            // Load the generated SVG as XML
-            XDocument svgDoc = XDocument.Load(tempSvgPath);
+            // Load the generated SVG for post‑processing
+            XDocument svgDoc = XDocument.Load(outputSvgPath);
 
-            // Iterate all pages and shapes to embed user‑defined cells as custom attributes
+            // Iterate through all shapes and embed user‑defined cells as custom attributes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Find the SVG element that corresponds to this shape (by id attribute)
-                    XElement svgElement = svgDoc.Descendants()
-                                                .FirstOrDefault(e => (string)e.Attribute("id") == shape.ID.ToString());
+                    // Find the SVG element that corresponds to the shape ID
+                    var element = svgDoc.Descendants()
+                        .FirstOrDefault(e => (string)e.Attribute("id") == shape.ID.ToString());
 
-                    if (svgElement != null)
+                    if (element != null)
                     {
                         // Add each user‑defined cell as an attribute on the SVG element
                         foreach (User userCell in shape.Users)
                         {
-                            // Use the cell's name as attribute name and its value as attribute value
-                            svgElement.SetAttributeValue(userCell.Name, userCell.Value.Val);
+                            // Use the cell name as attribute name and its value as attribute value
+                            element.SetAttributeValue(userCell.Name, userCell.Value.Val);
                         }
                     }
                 }
             }
 
-            // Save the modified SVG to the final output location
-            svgDoc.Save(outputPath);
+            // Save the modified SVG with custom attributes
+            svgDoc.Save(outputSvgPath);
 
-            // Clean up the temporary file
-            try
-            {
-                File.Delete(tempSvgPath);
-            }
-            catch
-            {
-                // If deletion fails, ignore – the temp file will be removed later by the OS
-            }
-
-            Console.WriteLine($"Diagram exported to SVG with custom attributes at: {outputPath}");
+            Console.WriteLine($"Diagram exported to SVG with custom attributes at: {outputSvgPath}");
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

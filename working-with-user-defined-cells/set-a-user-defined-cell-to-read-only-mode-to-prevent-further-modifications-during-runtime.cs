@@ -9,35 +9,34 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Add a rectangle shape on the first page (page index 0)
-            double pinX = 2.0;
-            double pinY = 2.0;
-            string masterName = "Rectangle";
-            int pageIndex = 0;
-            long shapeId = diagram.AddShape(pinX, pinY, masterName, pageIndex);
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-            // Retrieve the shape object from the page
-            Shape shape = diagram.Pages[pageIndex].Shapes.GetShape((int)shapeId);
+            // Add a rectangle shape to the diagram (position X=2, Y=2, master name "Rectangle", on page index 0)
+            long shapeId = diagram.AddShape(2, 2, "Rectangle", 0);
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Create a user‑defined cell (custom property) and add it to the shape
+            // Create a user‑defined cell (custom property)
             User userCell = new User();
-            userCell.Name = "MyReadOnlyCell";
+            userCell.Name = "MyCustomCell";
             userCell.Value.Val = "123";
             shape.Users.Add(userCell);
 
-            // Lock custom properties to make the user‑defined cell read‑only at runtime
+            // Set the shape's protection to lock custom properties, making the user‑defined cell read‑only
             shape.Protection.LockCustProp.Value = BOOL.True;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("ReadOnlyCellDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

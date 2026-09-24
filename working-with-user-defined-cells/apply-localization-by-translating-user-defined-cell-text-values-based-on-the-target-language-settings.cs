@@ -1,62 +1,52 @@
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
     {
-        // Simple mock translation method.
-        // In a real scenario, replace this with a call to a translation service.
+        // Simple translation stub – in real scenarios replace with actual translation service
         static string Translate(string text, string targetLanguage)
         {
-            // Example: append language code to demonstrate translation.
-            return $"{text} [{targetLanguage}]";
+            // Example: append language code to simulate translation
+            return $"{text}_{targetLanguage}";
         }
 
-        static void Main()
+        static void Main(string[] args)
         {
-            try
+            if (args.Length < 3)
             {
+                Console.WriteLine("Usage: DiagramLocalization <inputPath> <outputPath> <targetLanguageCode>");
+                return;
+            }
 
-                // Path to the source Visio file.
-                string inputPath = "input.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
+            string targetLanguage = args[2];
 
-                // Path for the localized output file.
-                string outputPath = "output_localized.vsdx";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Target language code (e.g., "es" for Spanish, "fr" for French).
-                string targetLanguage = "es";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page.
-                    foreach (Shape shape in page.Shapes)
+                    // Process each user-defined cell (custom property)
+                    foreach (User userCell in shape.Users)
                     {
-                        // Iterate through user-defined cells (Users collection).
-                        foreach (User userCell in shape.Users)
+                        string originalValue = userCell.Value.Val;
+                        if (!string.IsNullOrEmpty(originalValue))
                         {
-                            // Original value.
-                            string originalValue = userCell.Value.Val;
-
-                            // Translate the value.
                             string translatedValue = Translate(originalValue, targetLanguage);
-
-                            // Assign the translated text back to the cell.
                             userCell.Value.Val = translatedValue;
                         }
                     }
                 }
-
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}' with localized user-defined cells.");
+        }
     }

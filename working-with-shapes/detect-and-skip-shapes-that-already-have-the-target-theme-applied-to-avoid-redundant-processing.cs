@@ -10,63 +10,65 @@ class Program
             try
             {
 
-                // Load the Visio diagram
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the processed output file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the target theme and variant
+                // Define the target theme to apply
                 PresetThemeValue targetTheme = PresetThemeValue.Bubble;
                 PresetThemeVariantValue targetVariant = PresetThemeVariantValue.Variant1;
+                PresetQuickStyleValue targetQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-                // Name of the custom property used to track theme application
-                const string themePropName = "ThemeApplied";
-
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Check if the shape already has the target theme applied
-                        bool alreadyApplied = false;
-                        foreach (Prop prop in shape.Props)
+                        // Check if the shape already has the theme applied.
+                        // Since the PresetTheme property is write‑only, we use a custom
+                        // shape property ("ThemeApplied") as a marker.
+                        bool alreadyThemed = false;
+                        if (shape.Props != null)
                         {
-                            if (prop.Name == themePropName && prop.Value.Val == targetTheme.ToString())
+                            foreach (Prop prop in shape.Props)
                             {
-                                alreadyApplied = true;
-                                break;
+                                if (prop.Name == "ThemeApplied" && prop.Value.Val == "True")
+                                {
+                                    alreadyThemed = true;
+                                    break;
+                                }
                             }
                         }
 
-                        if (alreadyApplied)
+                        if (alreadyThemed)
                         {
-                            // Skip processing for this shape
-                            Console.WriteLine($"Shape ID {shape.ID} already has theme {targetTheme}, skipping.");
+                            // Shape already processed – skip further work
                             continue;
                         }
 
-                        // Apply the theme to the shape
+                        // Apply the desired theme to the shape
                         shape.PresetTheme = targetTheme;
                         shape.PresetThemeVariant = targetVariant;
+                        shape.PresetThemeQuickStyle = targetQuickStyle;
 
-                        // Record the applied theme in a custom property
-                        Prop themeProp = new Prop();
-                        themeProp.Name = themePropName;
-                        themeProp.Value.Val = targetTheme.ToString();
-                        shape.Props.Add(themeProp);
-
-                        Console.WriteLine($"Applied theme {targetTheme} to shape ID {shape.ID}.");
+                        // Mark the shape as themed to avoid future redundant processing
+                        Prop themeMarker = new Prop();
+                        themeMarker.Name = "ThemeApplied";
+                        themeMarker.Value.Val = "True";
+                        shape.Props.Add(themeMarker);
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved to " + outputPath);
 
             }
             catch (System.IO.FileNotFoundException ex)

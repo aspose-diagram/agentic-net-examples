@@ -1,61 +1,79 @@
 using System;
+using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input Visio file path as first argument
+        if (args.Length < 1)
         {
-            // Expect two arguments: input Visio file path and output Visio file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramFillInheritanceBenchmark <input.vsdx> <output.vsdx>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: BenchmarkFillInherit <inputVisioPath> [outputVisioPath]");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
+        // Optional output path; if not provided, create a default name
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
+
+        try
+        {
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Benchmark: apply an explicit fill color to every shape (break inheritance)
+            // Access the first page (assumes at least one page exists)
+            Page page = diagram.Pages[0];
+
+            // Prepare a high‑resolution timer
             Stopwatch sw = new Stopwatch();
+
+            // Start timing the toggle operation
             sw.Start();
 
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Iterate over all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
-                {
-                    // Set a solid red fill color
-                    shape.Fill.FillForegnd.Value = "#FF0000";
-                }
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True) continue;
+
+                // Toggle the FillPattern cell between 0 (no fill) and 1 (solid fill)
+                // Using .Value is required for cell‑based properties
+                int currentPattern = (int)shape.Fill.FillPattern.Value;
+                shape.Fill.FillPattern.Value = currentPattern == 0 ? 1 : 0;
+
+                // Optionally toggle a foreground color to ensure the change is visible
+                // Here we switch between red and green hex strings
+                string currentColor = shape.Fill.FillForegnd.Value;
+                shape.Fill.FillForegnd.Value = string.Equals(currentColor, "#FF0000", StringComparison.OrdinalIgnoreCase)
+                    ? "#00FF00"
+                    : "#FF0000";
             }
 
+            // Stop timing after all shapes have been processed
             sw.Stop();
-            Console.WriteLine($"Time to set explicit fill on all shapes: {sw.ElapsedMilliseconds} ms");
 
-            // Benchmark: reset fill to the inherited value for every shape (enable inheritance)
-            sw.Restart();
+            // Report elapsed time in milliseconds
+            Console.WriteLine($"Toggled Fill properties for {page.Shapes.Count} shapes in {sw.ElapsedMilliseconds} ms.");
 
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
-            {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
-                {
-                    // Restore the fill color from the inherited fill values
-                    shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                }
-            }
-
-            sw.Stop();
-            Console.WriteLine($"Time to reset fill to inherited values on all shapes: {sw.ElapsedMilliseconds} ms");
-
-            // Save the modified diagram
+            // Save the modified diagram to the output path using VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine("Processing completed.");
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

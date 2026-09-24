@@ -3,47 +3,78 @@ using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-public static class DiagramHelper
+public class DiagramConnectorAnalyzer
 {
     /// <summary>
-    /// Returns a dictionary where each key is the ID of a shape that has gluing enabled
-    /// (i.e., has at least one connector glued to it) and the value is the number of
-    /// connectors (1‑D shapes) attached to that shape.
+    /// Returns a dictionary where each key is the ID of a shape that has dynamic glue enabled,
+    /// and the value is the number of 1‑D connector shapes attached (glued) to it.
     /// </summary>
-    /// <param name="diagram">The loaded Aspose.Diagram Diagram instance.</param>
-    /// <returns>Dictionary mapping shape ID to count of attached connectors.</returns>
-    public static Dictionary<long, int> GetConnectorCountsPerGluedShape(Diagram diagram)
+    /// <param name="filePath">Path to the Visio file to analyze.</param>
+    /// <returns>Dictionary mapping shape IDs to connector counts.</returns>
+    public static Dictionary<long, int> GetConnectorCounts(string filePath)
     {
-        var connectorCounts = new Dictionary<long, int>();
+        // Load the diagram from the specified file.
+        Diagram diagram = new Diagram(filePath);
 
-        // Iterate through all pages and shapes in the diagram
+        // Prepare the result container.
+        Dictionary<long, int> shapeConnectorCounts = new Dictionary<long, int>();
+
+        // Iterate through all pages in the diagram.
         foreach (Page page in diagram.Pages)
         {
+            // Iterate through all shapes on the current page.
             foreach (Shape shape in page.Shapes)
             {
-                // Retrieve IDs of all 1‑D shapes (connectors) glued to this shape.
-                // Using GluedShapesAll1D returns both incoming and outgoing connectors.
-                long[] gluedConnectorIds = shape.GluedShapes(
-                    GluedShapesFlags.GluedShapesAll1D,   // flag to get all 1‑D glued shapes
-                    null,                               // no category filter
-                    null);                              // no additional shape filter
-
-                // If there are any glued connectors, record the count.
-                if (gluedConnectorIds != null && gluedConnectorIds.Length > 0)
+                // Check if the shape allows dynamic glue.
+                // GlueTypeValue.AllowDynamicGlue indicates that the shape can be glued to connectors.
+                if (shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
                 {
-                    connectorCounts[shape.ID] = gluedConnectorIds.Length;
+                    // Retrieve all 1‑D (connector) shapes glued to this shape.
+                    // The method returns an array of connector shape IDs.
+                    long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+                    // If the method returns null, treat it as zero connectors.
+                    int connectorCount = gluedConnectorIds != null ? gluedConnectorIds.Length : 0;
+
+                    // Store the count using the shape's unique ID.
+                    shapeConnectorCounts[shape.ID] = connectorCount;
                 }
             }
         }
 
-        return connectorCounts;
+        return shapeConnectorCounts;
     }
-}
 
-class Program
-{
-    static void Main(string[] args)
+    // Example entry point demonstrating usage.
+    public static void Main()
     {
-        // See classes above
+        try
+        {
+
+            // Replace with the actual path to your Visio file.
+            string visioPath = "example.vsdx";
+
+            try
+            {
+                Dictionary<long, int> result = GetConnectorCounts(visioPath);
+
+                Console.WriteLine("Connector counts for gluing‑enabled shapes:");
+                foreach (KeyValuePair<long, int> kvp in result)
+                {
+                    Console.WriteLine($"Shape ID {kvp.Key}: {kvp.Value} connector(s)");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Propagate any errors (e.g., file not found, load failure).
+                Console.WriteLine($"Error: {ex.Message}");
+                throw;
+            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

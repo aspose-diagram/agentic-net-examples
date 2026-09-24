@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
@@ -13,16 +14,15 @@ class Program
             string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Process only connector shapes (1‑D shapes)
+                    // Identify connector shapes (1‑D shapes)
                     if (shape.OneD)
                     {
-                        // Set the line jump style to Arc for better visual clarity
+                        // Set the connector's line jump style to Arc
                         shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
                     }
                 }

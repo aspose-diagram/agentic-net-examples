@@ -2,127 +2,107 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Expect two arguments: input diagram path and output diagram path
-        if (args.Length < 2)
+        try
         {
-            Console.WriteLine("Usage: <program> <input.vsdx> <output.vsdx>");
-            return;
-        }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
+            // Store original user-defined cell values for rollback
+            // Key: shape ID, Value: dictionary of user cell name -> original value
+            var originalValues = new Dictionary<long, Dictionary<string, string>>();
 
-        // Store original user-defined cell values for rollback
-        // Key: shape ID, Value: dictionary of cell name -> original value
-        var originalValues = new Dictionary<long, Dictionary<string, string>>();
+            // Flag to indicate validation failure
+            bool validationFailed = false;
 
-        // Capture current values
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages and shapes to capture original values
+            foreach (Page page in diagram.Pages)
             {
-                var userValues = new Dictionary<string, string>();
-                foreach (User userCell in shape.Users)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Store by universal name (NameU) if available, otherwise Name
-                    string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
-                    userValues[cellName] = userCell.Value.Val;
-                }
+                    long shapeId = shape.ID;
+                    var userValues = new Dictionary<string, string>();
 
-                if (userValues.Count > 0)
-                {
-                    originalValues[shape.ID] = userValues;
-                }
-            }
-        }
-
-        // Example modification: set a user-defined cell "Width" to an invalid value for demonstration
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                foreach (User userCell in shape.Users)
-                {
-                    string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
-                    if (cellName.Equals("Width", StringComparison.OrdinalIgnoreCase))
+                    foreach (User userCell in shape.Users)
                     {
-                        // Intentionally set an invalid value
-                        userCell.Value.Val = "-10";
+                        // Store the current value
+                        userValues[userCell.Name] = userCell.Value.Val;
                     }
+
+                    originalValues[shapeId] = userValues;
                 }
             }
-        }
 
-        // Perform validation
-        bool validationFailed = false;
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Example validation: ensure that any user-defined cell named "Width" contains a positive number
+            foreach (Page page in diagram.Pages)
             {
-                foreach (User userCell in shape.Users)
+                foreach (Shape shape in page.Shapes)
                 {
-                    string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
-                    string cellValue = userCell.Value.Val;
-
-                    // Example rule: "Width" must be a positive number
-                    if (cellName.Equals("Width", StringComparison.OrdinalIgnoreCase))
+                    foreach (User userCell in shape.Users)
                     {
-                        if (!double.TryParse(cellValue, out double width) || width <= 0)
+                        if (string.Equals(userCell.Name, "Width", StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine($"Validation error on shape ID {shape.ID}: Width must be a positive number. Current value: {cellValue}");
-                            validationFailed = true;
+                            if (!double.TryParse(userCell.Value.Val, out double width) || width <= 0)
+                            {
+                                Console.WriteLine($"Validation failed for shape ID {shape.ID}: Width must be a positive number.");
+                                validationFailed = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (validationFailed)
+                        break;
+                }
+
+                if (validationFailed)
+                    break;
+            }
+
+            // If validation failed, rollback to original values
+            if (validationFailed)
+            {
+                Console.WriteLine("Rolling back changes to original user-defined cell values.");
+
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        long shapeId = shape.ID;
+                        if (originalValues.TryGetValue(shapeId, out var savedUserValues))
+                        {
+                            foreach (User userCell in shape.Users)
+                            {
+                                if (savedUserValues.TryGetValue(userCell.Name, out string originalVal))
+                                {
+                                    userCell.Value.Val = originalVal;
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-
-        // Rollback if validation failed
-        if (validationFailed)
-        {
-            Console.WriteLine("Validation failed. Rolling back changes to user-defined cells.");
-
-            foreach (var kvp in originalValues)
+            else
             {
-                long shapeId = kvp.Key;
-                var savedCells = kvp.Value;
-
-                // Find the shape by ID (search all pages)
-                Shape shape = null;
-                foreach (Page page in diagram.Pages)
-                {
-                    shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null) break;
-                }
-
-                if (shape == null) continue;
-
-                // Restore each saved cell value
-                foreach (User userCell in shape.Users)
-                {
-                    string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
-                    if (savedCells.TryGetValue(cellName, out string originalVal))
-                    {
-                        userCell.Value.Val = originalVal;
-                    }
-                }
+                Console.WriteLine("All validations passed. Proceeding with further processing if needed.");
             }
-        }
-        else
-        {
-            Console.WriteLine("Validation succeeded. No rollback needed.");
-        }
 
-        // Save the diagram (using SaveFileFormat.Vsdx as an example)
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"Diagram saved to {outputPath}");
+            // Save the diagram (overwrites the original file or saves to a new file)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
 }

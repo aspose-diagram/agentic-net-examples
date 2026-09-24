@@ -1,31 +1,29 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
+using System;
 
-class LocateShapeExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Assume a diagram is already loaded elsewhere and passed to this method.
-            // For demonstration, we reference an existing Diagram instance named 'diagram'.
-            Diagram diagram = new Diagram("input.vsdx"); // Load an existing Visio file
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Select the page that contains the shape (e.g., the first page)
-            Page page = diagram.Pages[0];
+            // Specify the page index (0‑based) and the shape ID you want to locate
+            int pageIndex = 0;          // first page
+            long shapeId = 5;           // example shape ID
 
-            // Specify the shape ID you want to locate
-            long shapeId = 5; // replace with the actual ID
+            // Retrieve the page from the diagram
+            Page page = diagram.Pages[pageIndex];
 
-            // Locate the shape using ShapeCollection.GetShape(long ID)
+            // Locate the shape on the page using its ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example usage: output some properties of the found shape
-            Console.WriteLine($"Found shape with ID: {shape.ID}");
-            Console.WriteLine($"Shape Name: {shape.Name}");
-            Console.WriteLine($"Shape Text: {shape.Text}");
+            // Example: output some shape information
+            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
 
         }
         catch (System.IO.FileNotFoundException ex)

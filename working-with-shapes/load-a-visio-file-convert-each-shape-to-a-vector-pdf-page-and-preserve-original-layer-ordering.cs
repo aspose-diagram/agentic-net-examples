@@ -1,8 +1,8 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
-class VisioToPdfPerShape
+class Program
 {
     static void Main()
     {
@@ -10,43 +10,50 @@ class VisioToPdfPerShape
         {
 
             // Path to the source Visio file
-            string visioPath = @"C:\VisioFiles\input.vsdx";
+            string inputPath = "input.vsdx";
 
-            // Folder where individual shape PDFs will be saved
-            string outputFolder = @"C:\VisioFiles\ShapePdfs";
+            // Load the Visio diagram
+            Diagram srcDiagram = new Diagram(inputPath);
 
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
+            // Counter to generate ordered PDF file names
+            int pdfPageIndex = 1;
 
-            // Load the Visio diagram (uses the Diagram(string) constructor)
-            using (Diagram diagram = new Diagram(visioPath))
+            // Iterate through each page in the source diagram
+            foreach (Page srcPage in srcDiagram.Pages)
             {
-                int pageIdx = 0;
-
-                // Iterate through each page in the document
-                foreach (Page page in diagram.Pages)
+                // Iterate layers in the order they appear on the page
+                foreach (Layer layer in srcPage.PageSheet.Layers)
                 {
-                    int shapeIdx = 0;
-
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate all shapes on the current page
+                    foreach (Shape shape in srcPage.Shapes)
                     {
-                        // Build a file name that reflects page and shape order
-                        // This preserves the original layer/shape ordering in the file names
-                        string pdfFile = Path.Combine(
-                            outputFolder,
-                            $"Page{pageIdx:D2}_Shape{shapeIdx:D4}.pdf");
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Convert the shape to a vector PDF page
-                        shape.ToPdf(pdfFile);
+                        // Determine if the shape belongs to the current layer
+                        string layerMember = shape.LayerMem?.LayerMember?.Value;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue;
 
-                        shapeIdx++;
+                        // LayerMember contains semicolon‑separated layer indexes (as strings)
+                        string[] memberIndexes = layerMember.Split(';');
+                        foreach (string idxStr in memberIndexes)
+                        {
+                            if (int.TryParse(idxStr, out int idx) && idx == layer.IX)
+                            {
+                                // Shape is part of the current layer – export it to a PDF page
+                                string outputPdf = $"Shape_{pdfPageIndex:D4}.pdf";
+                                shape.ToPdf(outputPdf);
+                                pdfPageIndex++;
+                                break; // Move to next shape after exporting
+                            }
+                        }
                     }
-
-                    pageIdx++;
                 }
             }
+
+            Console.WriteLine("Export completed. Generated " + (pdfPageIndex - 1) + " PDF files.");
 
         }
         catch (System.IO.FileNotFoundException ex)

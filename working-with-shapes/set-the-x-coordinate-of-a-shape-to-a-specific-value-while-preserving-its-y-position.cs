@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,37 +11,23 @@ class Program
         {
 
             // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // ID of the shape whose X coordinate we want to change
-            long targetShapeId = 5; // example ID; replace with actual ID
-            // Desired new X coordinate (PinX) in inches
-            double newPinX = 5.0;
-
-            // Access the first page (or specify a different page as needed)
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-            if (shape == null)
-            {
-                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
-                return;
-            }
+            // Retrieve the shape by its ID (replace 1 with the actual shape ID)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Preserve the current Y coordinate (PinY)
-            double currentPinY = shape.XForm.PinY.Value;
+            // Desired X coordinate (in inches)
+            double newX = 5.0;
 
-            // Set the new X coordinate while keeping Y unchanged
-            shape.XForm.PinX.Value = newPinX;
-            shape.XForm.PinY.Value = currentPinY; // optional, reinforces unchanged Y
+            // Set the X coordinate while preserving the existing Y coordinate
+            shape.XForm.PinX.Value = newX;
+            // Y coordinate remains unchanged: shape.XForm.PinY.Value
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Shape X coordinate updated successfully.");
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

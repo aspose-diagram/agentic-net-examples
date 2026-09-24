@@ -10,42 +10,40 @@ class Program
         try
         {
 
-            // Input Visio file path
+            // Input Visio file (adjust the path as needed)
             string inputPath = "input.vsdx";
 
-            // Output JPEG file path
+            // Output JPEG file (high‑quality)
             string outputPath = "output.jpg";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages to find background pages
+            // Apply a blur effect to all image shapes on background pages
             foreach (Page page in diagram.Pages)
             {
-                // Check if the page is marked as a background page
+                // Identify background pages
                 if (page.Background == BOOL.True)
                 {
-                    // Iterate through all shapes on the background page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Apply blur only to image (foreign) shapes that have an Image object
+                        // Process only foreign (image) shapes that have an Image object
                         if (shape.Type == TypeValue.Foreign && shape.Image != null)
                         {
-                            // Set blur intensity (value between 0.0 and 1.0)
-                            shape.Image.Blur.Value = 0.25;
+                            // Set blur amount (0.0 = no blur, 1.0 = maximum blur)
+                            shape.Image.Blur.Value = 0.5; // Adjust as required
                         }
                     }
                 }
             }
 
-            // Configure high‑quality JPEG export options
+            // Configure high‑quality JPEG export
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            // Set a high resolution (e.g., 300 DPI) for better quality
-            saveOptions.Resolution = 300f;
-            // Ensure hidden pages are not exported (optional)
-            saveOptions.ExportHiddenPage = false;
+            saveOptions.Resolution = 300f;          // DPI for high quality
+            saveOptions.PageIndex = 0;              // Export the first page (change if needed)
+            saveOptions.ExportHiddenPage = false;   // Do not export hidden pages
 
-            // Save the modified diagram as a JPEG image
+            // Save the diagram as a JPEG image
             diagram.Save(outputPath, saveOptions);
 
         }

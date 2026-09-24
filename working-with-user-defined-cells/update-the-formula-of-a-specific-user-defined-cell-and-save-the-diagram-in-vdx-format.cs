@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,46 +10,35 @@ class Program
         try
         {
 
-            // Paths for input and output files
+            // Path to the source Visio file
             string inputPath = "input.vsdx";
-            string outputPath = "output.vdx";
 
-            // Load the diagram (assuming the source is a VSDX file)
-            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Identify the shape and the user‑defined cell to modify
-            int targetShapeId = 1;               // replace with the actual shape ID
-            string userCellName = "MyUserCell";  // replace with the actual user cell name
-
-            // Access the first page (adjust if the shape resides on another page)
+            // Identify the page and shape that contains the user‑defined cell
+            // Here we assume the shape is on the first page and has ID 1
             Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(1); // shape ID = 1
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
+            // Name of the user‑defined cell to update
+            string targetUserCellName = "MyCell";
 
-            // Try to find the existing user‑defined cell
-            bool cellFound = false;
-            foreach (User user in shape.Users)
+            // New formula to assign to the user‑defined cell
+            string newFormula = "Width*Height";
+
+            // Locate the user‑defined cell and update its formula
+            foreach (User userCell in shape.Users)
             {
-                if (user.Name == userCellName || user.NameU == userCellName)
+                if (userCell.Name == targetUserCellName)
                 {
-                    // Update the formula/value of the user‑defined cell
-                    user.Value.Val = "Width*Height"; // example formula
-                    cellFound = true;
+                    userCell.Value.Val = newFormula;
                     break;
                 }
             }
 
-            // If the cell does not exist, create it and set the formula
-            if (!cellFound)
-            {
-                User newUser = new User();
-                newUser.Name = userCellName;
-                newUser.Value.Val = "Width*Height"; // example formula
-                shape.Users.Add(newUser);
-            }
-
             // Save the modified diagram in VDX format
+            string outputPath = "output.vdx";
             diagram.Save(outputPath, SaveFileFormat.Vdx);
 
         }

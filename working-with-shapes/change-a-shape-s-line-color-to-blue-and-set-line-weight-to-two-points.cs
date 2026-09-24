@@ -1,39 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Ensure input and output file paths are provided.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        // Assign input and output paths from command‑line arguments.
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Verify the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Iterate over all pages in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate over all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True) continue;
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+                    // Set the line color to blue using a hex string.
+                    shape.Line.LineColor.Value = "#0000FF";
 
-            // Add a rectangle shape to the page at position (2,2)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+                    // Set the line weight to two points (2/72 inches).
+                    shape.Line.LineWeight.Value = 2.0 / 72.0;
+                }
+            }
 
-            // Retrieve the shape instance using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Set the line color to blue (hex format)
-            shape.Line.LineColor.Value = "#0000FF";
-
-            // Set the line weight to two points (2/72 inches)
-            shape.Line.LineWeight.Value = 2.0 / 72.0;
-
-            // Save the diagram as VSDX
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any exception details to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

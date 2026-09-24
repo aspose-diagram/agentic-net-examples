@@ -1,58 +1,61 @@
+using System.IO;
 using System;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+            // Path for the cleaned Visio file
+            string outputPath = "output_cleaned.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the cleaned Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through all shapes on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Collect user-defined cells that have empty or whitespace values
-                            List<User> cellsToRemove = new List<User>();
-                            foreach (User userCell in shape.Users)
-                            {
-                                // userCell.Value may be null; guard against it
-                                string cellValue = userCell.Value?.Val;
-                                if (string.IsNullOrWhiteSpace(cellValue))
-                                {
-                                    cellsToRemove.Add(userCell);
-                                }
-                            }
+                    // Ensure the shape has a Users collection
+                    if (shape.Users == null)
+                        continue;
 
-                            // Remove the identified empty cells from the shape
-                            foreach (User userCell in cellsToRemove)
-                            {
-                                shape.Users.Remove(userCell);
-                            }
+                    // Collect user-defined cells with empty values
+                    List<User> usersToRemove = new List<User>();
+                    foreach (User userCell in shape.Users)
+                    {
+                        // userCell.Value may be null; guard against it
+                        string cellValue = userCell.Value?.Val;
+                        if (string.IsNullOrWhiteSpace(cellValue))
+                        {
+                            usersToRemove.Add(userCell);
                         }
                     }
 
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Remove the identified empty user-defined cells
+                    foreach (User userCell in usersToRemove)
+                    {
+                        shape.Users.Remove(userCell);
+                    }
                 }
-
-                Console.WriteLine("All empty user-defined cells have been removed and the diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -4,47 +4,61 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
-class DiagramTextExtractor
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram from file using the provided constructor
-            var diagram = new Diagram("input.vsdx");
-
-            var cleanedText = new StringBuilder();
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path (VSDX, VDX, etc.)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Output text file path
+                string outputPath = args.Length > 1 ? args[1] : "cleaned_text.txt";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                StringBuilder cleanedText = new StringBuilder();
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Get the plain text of the shape
-                    string text = shape.GetPureText();
-
-                    if (string.IsNullOrWhiteSpace(text))
-                        continue;
-
-                    // Filter out strings that consist only of digits
-                    if (!Regex.IsMatch(text.Trim(), @"^\d+$"))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        cleanedText.AppendLine(text);
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve plain text from the shape
+                        string text = shape.Text.Value.Text;
+
+                        if (string.IsNullOrWhiteSpace(text))
+                            continue;
+
+                        // Split text into words and filter out numeric strings
+                        string[] words = text.Split(new char[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string word in words)
+                        {
+                            // Skip if the word consists only of digits
+                            if (Regex.IsMatch(word, @"^\d+$"))
+                                continue;
+
+                            cleanedText.Append(word);
+                            cleanedText.Append(' ');
+                        }
                     }
                 }
+
+                // Write the cleaned content to the output file
+                File.WriteAllText(outputPath, cleanedText.ToString().Trim());
+
+                Console.WriteLine($"Extracted text saved to: {outputPath}");
+
             }
-
-            // Save the cleaned content to a text file (standard .NET I/O)
-            File.WriteAllText("cleaned_output.txt", cleanedText.ToString());
-
-            // Optional: release resources
-            diagram.Dispose();
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

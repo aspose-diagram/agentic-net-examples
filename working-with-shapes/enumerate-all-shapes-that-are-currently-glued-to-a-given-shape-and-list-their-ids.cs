@@ -1,49 +1,43 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram(@"input.vsdx");
-
-            // ID of the shape whose glued shapes we want to enumerate
-            long targetShapeId = 1; // TODO: replace with the actual shape ID
-
-            // Retrieve the shape object from the first page (adjust page index if needed)
-            Shape targetShape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
-
-            // Get IDs of all 1‑D shapes glued to the target shape
-            long[] glued1D = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-
-            // Get IDs of all 2‑D shapes glued to the target shape
-            long[] glued2D = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll2D, null, null);
-
-            // Combine the results into a single list
-            List<long> allGluedIds = new List<long>();
-            if (glued1D != null) allGluedIds.AddRange(glued1D);
-            if (glued2D != null) allGluedIds.AddRange(glued2D);
-
-            // Output the IDs of the glued shapes
-            Console.WriteLine($"Shapes glued to shape ID {targetShapeId}:");
-            foreach (long id in allGluedIds)
+            try
             {
-                Console.WriteLine(id);
+
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
+
+                // Access the first page (adjust index if needed)
+                Page page = diagram.Pages[0];
+
+                // Identify the target shape (by ID). Replace with the actual ID of the shape you want to inspect.
+                long targetShapeId = 1; // example ID
+                Shape targetShape = page.Shapes.GetShape(targetShapeId);
+
+                // Retrieve IDs of all shapes glued to the target shape.
+                // Using GluedShapesAll1D to get all 1‑D connector shapes glued to the shape.
+                long[] gluedShapeIds = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+                // List the IDs of the glued shapes.
+                Console.WriteLine($"Shapes glued to shape ID {targetShapeId}:");
+                foreach (long id in gluedShapeIds)
+                {
+                    Console.WriteLine($"- Glued Shape ID: {id}");
+                }
+
+                // (Optional) Save the diagram unchanged if a save operation is required by the workflow.
+                // string outputPath = "output.vsdx";
+                // diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // If you modify the diagram and need to save it, uncomment the line below
-            // diagram.Save(@"output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

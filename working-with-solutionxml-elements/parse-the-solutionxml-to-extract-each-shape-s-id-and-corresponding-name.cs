@@ -1,58 +1,57 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
 using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // List to hold extracted shape IDs and names
-            List<(long Id, string Name)> shapeInfo = new List<(long, string)>();
-
-            // Iterate through each SolutionXML attached to the diagram
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            try
             {
-                // The XML content stored in the SolutionXML object
-                string xmlContent = solXml.XmlValue;
-                if (string.IsNullOrWhiteSpace(xmlContent))
-                    continue;
 
-                // Parse the XML using LINQ to XML
-                XDocument xDoc = XDocument.Parse(xmlContent);
+                // Path to the Visio file
+                string visioPath = "input.vsdx";
 
-                // Assuming shape information is stored in elements named "Shape"
-                // with attributes "ID" and "Name". Adjust element/attribute names as needed.
-                foreach (XElement shapeElem in xDoc.Descendants("Shape"))
+                // Load the diagram
+                Diagram diagram = new Diagram(visioPath);
+
+                // Iterate through all SolutionXML entries in the document
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    XAttribute idAttr = shapeElem.Attribute("ID");
-                    XAttribute nameAttr = shapeElem.Attribute("Name");
-
-                    if (idAttr != null && nameAttr != null &&
-                        long.TryParse(idAttr.Value, out long shapeId))
+                    // Parse the XML content stored in the SolutionXML element
+                    XDocument xDoc;
+                    try
                     {
-                        shapeInfo.Add((shapeId, nameAttr.Value));
+                        xDoc = XDocument.Parse(solutionXml.XmlValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to parse SolutionXML '{solutionXml.Name}': {ex.Message}");
+                        continue;
+                    }
+
+                    // Find all shape elements (assumed to be named "Shape") and extract ID and Name attributes
+                    foreach (XElement shapeElem in xDoc.Descendants("Shape"))
+                    {
+                        // Attempt to read the ID attribute as a long
+                        long id = 0;
+                        XAttribute idAttr = shapeElem.Attribute("ID");
+                        if (idAttr != null && long.TryParse(idAttr.Value, out long parsedId))
+                        {
+                            id = parsedId;
+                        }
+
+                        // Read the Name attribute (if present)
+                        string name = shapeElem.Attribute("Name")?.Value ?? string.Empty;
+
+                        Console.WriteLine($"Shape ID: {id}, Name: {name}");
                     }
                 }
-            }
 
-            // Output the extracted IDs and Names
-            foreach (var (Id, Name) in shapeInfo)
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine($"Shape ID: {Id}, Name: {Name}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

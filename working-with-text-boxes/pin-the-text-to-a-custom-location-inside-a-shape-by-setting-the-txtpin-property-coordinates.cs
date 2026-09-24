@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,34 +9,37 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram (replace with your file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the first (default) page
+            // Access the first page
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape at PinX=2, PinY=2
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Add a rectangle shape to the page
+            // Parameters: PinX, PinY, master name, isCalculate (bool)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Retrieve the shape instance using its ID
+            // Retrieve the shape object using its ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
             // Clear any existing text and add new text
             shape.Text.Value.Clear();
             shape.Text.Value.Add(new Txt("Pinned Text"));
 
-            // Set custom text pin coordinates inside the shape
-            // These coordinates are relative to the shape's local coordinate system
-            shape.TextXForm.TxtPinX.Value = 0.5; // X offset
-            shape.TextXForm.TxtPinY.Value = 0.2; // Y offset
+            // Set custom text pin coordinates (relative to the shape)
+            // These values are in inches; adjust as needed
+            shape.TextXForm.TxtPinX.Value = 0.5; // X offset within the shape
+            shape.TextXForm.TxtPinY.Value = 0.3; // Y offset within the shape
 
-            // Save the diagram to a VSDX file
-            diagram.Save("PinnedTextDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

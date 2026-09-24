@@ -1,7 +1,6 @@
 using System.IO;
-using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using System;
 
 class Program
 {
@@ -10,13 +9,13 @@ class Program
         try
         {
 
-            // Create and load a diagram from a file
+            // Load the Visio diagram from file
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Save the diagram to a VDX file using the Save method
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            // Save the diagram to a new file (or format)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-            // Release unmanaged resources by disposing the Diagram object
+            // Dispose the Diagram object to free unmanaged resources and avoid memory leaks
             diagram.Dispose();
 
         }

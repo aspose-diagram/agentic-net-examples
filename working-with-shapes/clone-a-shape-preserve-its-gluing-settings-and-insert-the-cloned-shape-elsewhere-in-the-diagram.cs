@@ -1,124 +1,71 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";   // TODO: replace with actual file path
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page (adjust if needed)
+            Page page = diagram.Pages[0];
+
+            // Identify the shape to clone (replace with the actual shape ID)
+            long originalShapeId = 1; // example ID
+            Shape originalShape = page.Shapes.GetShape(originalShapeId);
+            if (originalShape == null)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_cloned.vsdx";
-                // NameU of the shape to clone (adjust as needed)
-                string shapeNameUToClone = "Rectangle";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page (or adjust to a specific page if required)
-                Page page = diagram.Pages[0];
-
-                // Locate the shape to clone by its universal name
-                Shape originalShape = null;
-                foreach (Shape shp in page.Shapes)
-                {
-                    if (shp.NameU == shapeNameUToClone)
-                    {
-                        originalShape = shp;
-                        break;
-                    }
-                }
-
-                if (originalShape == null)
-                {
-                    throw new Exception($"Shape with NameU '{shapeNameUToClone}' not found.");
-                }
-
-                // Add a new shape using the same master as the original shape.
-                // Position it slightly offset (e.g., 2 inches to the right) to avoid overlap.
-                double offsetX = 2.0; // inches
-                double newPinX = originalShape.XForm.PinX.Value + offsetX;
-                double newPinY = originalShape.XForm.PinY.Value;
-
-                // Ensure the master exists
-                if (originalShape.Master == null)
-                {
-                    throw new Exception("Original shape does not have an associated master.");
-                }
-
-                // Add the shape and retrieve its instance
-                long newShapeId = page.AddShape(newPinX, newPinY, originalShape.Master.Name);
-                Shape clonedShape = page.Shapes.GetShape(newShapeId);
-
-                // Copy all cell-based properties from the original shape to the cloned shape
-                clonedShape.Copy(originalShape);
-
-                // Preserve gluing (connections) by replicating each connector that involves the original shape
-                foreach (Connect conn in page.Connects)
-                {
-                    // Identify connections where the original shape participates
-                    bool isFrom = conn.FromSheet == originalShape.ID;
-                    bool isTo = conn.ToSheet == originalShape.ID;
-
-                    if (!isFrom && !isTo)
-                        continue; // Not related to the shape we are cloning
-
-                    // Determine the connector shape ID (the shape that is the connector)
-                    long connectorShapeId = isFrom ? conn.ToSheet : conn.FromSheet;
-
-                    // Retrieve the connector shape
-                    Shape connectorShape = page.Shapes.GetShape(connectorShapeId);
-                    if (connectorShape == null || connectorShape.Master == null)
-                        continue; // Skip if connector is missing or has no master
-
-                    // Find the opposite shape that the connector is attached to
-                    long oppositeShapeId = -1;
-                    foreach (Connect otherConn in page.Connects)
-                    {
-                        if (otherConn.FromSheet == connectorShapeId && otherConn.ToSheet != originalShape.ID)
-                        {
-                            oppositeShapeId = otherConn.ToSheet;
-                            break;
-                        }
-                        if (otherConn.ToSheet == connectorShapeId && otherConn.FromSheet != originalShape.ID)
-                        {
-                            oppositeShapeId = otherConn.FromSheet;
-                            break;
-                        }
-                    }
-
-                    if (oppositeShapeId == -1)
-                        continue; // No opposite shape found; cannot recreate connection
-
-                    // Clone the connector shape
-                    long newConnectorId = page.AddShape(
-                        connectorShape.XForm.PinX.Value,
-                        connectorShape.XForm.PinY.Value,
-                        connectorShape.Master.Name);
-                    Shape newConnectorShape = page.Shapes.GetShape(newConnectorId);
-                    newConnectorShape.Copy(connectorShape);
-
-                    // Connect the cloned shape with the opposite shape using the cloned connector
-                    page.ConnectShapesViaConnector(
-                        clonedShape.ID,
-                        ConnectionPointPlace.Center,
-                        oppositeShapeId,
-                        ConnectionPointPlace.Center,
-                        newConnectorId);
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                throw new Exception($"Shape with ID {originalShapeId} not found.");
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Add a new shape using the same master as the original shape.
+            // Position it 2 inches to the right of the original shape.
+            double newPinX = originalShape.XForm.PinX.Value + 2.0;
+            double newPinY = originalShape.XForm.PinY.Value;
+            string masterName = originalShape.Master?.Name ?? throw new Exception("Original shape has no master.");
+            long newShapeId = page.AddShape(newPinX, newPinY, masterName, false);
+            Shape clonedShape = page.Shapes.GetShape(newShapeId);
+
+            // Copy basic visual properties (size, text, fill, line) to preserve appearance.
+            clonedShape.XForm.Width.Value = originalShape.XForm.Width.Value;
+            clonedShape.XForm.Height.Value = originalShape.XForm.Height.Value;
+            clonedShape.Text.Value.Clear();
+            foreach (var txt in originalShape.Text.Value)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                if (txt is Txt t)
+                    clonedShape.Text.Value.Add(new Txt(t.Text));
             }
+            clonedShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
+            clonedShape.Fill.FillPattern.Value = originalShape.Fill.FillPattern.Value;
+            clonedShape.Line.LineColor.Value = originalShape.Line.LineColor.Value;
+            clonedShape.Line.LineWeight.Value = originalShape.Line.LineWeight.Value;
+            clonedShape.Line.LinePattern.Value = originalShape.Line.LinePattern.Value;
+
+            // Preserve gluing: rewire all connectors that were glued to the original shape
+            // to point to the cloned shape instead, keeping the same connection cells.
+            foreach (Connect conn in page.Connects)
+            {
+                if (conn.FromSheet == originalShapeId)
+                    conn.FromSheet = newShapeId;
+                if (conn.ToSheet == originalShapeId)
+                    conn.ToSheet = newShapeId;
+            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx"; // TODO: replace with desired output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

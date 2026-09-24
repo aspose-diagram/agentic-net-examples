@@ -1,52 +1,59 @@
 using System.IO;
 using System;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
         {
+            Console.WriteLine("Usage: DiagramTextCompact <inputFilePath> <outputFilePath>");
+            return;
+        }
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+        // Load the diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Iterate through all pages
+        foreach (Page page in diagram.Pages)
+        {
+            // Iterate through all shapes on the page
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Get the plain text of the shape
+                string originalText = shape.Text.Value.Text;
+
+                // If there is no text, continue
+                if (string.IsNullOrWhiteSpace(originalText))
+                    continue;
+
+                // Replace multiple consecutive spaces with a single space
+                string compactText = originalText;
+                while (compactText.Contains("  "))
                 {
-                    // Get the current plain text of the shape
-                    string originalText = shape.GetPureText();
+                    compactText = compactText.Replace("  ", " ");
+                }
 
-                    // Skip shapes without text
-                    if (string.IsNullOrEmpty(originalText))
-                        continue;
-
-                    // Replace any occurrence of two or more consecutive spaces with a single space
-                    string compactText = Regex.Replace(originalText, @" {2,}", " ");
-
-                    // If text was changed, update the shape
-                    if (!compactText.Equals(originalText))
-                    {
-                        // Replace the old text with the new compacted text
-                        shape.ReplaceText(originalText, compactText);
-
-                        // Refresh shape data so the layout updates correctly
-                        shape.RefreshData();
-                    }
+                // If text changed, update the shape's text
+                if (!compactText.Equals(originalText))
+                {
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt(compactText));
                 }
             }
-
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        // Save the modified diagram
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

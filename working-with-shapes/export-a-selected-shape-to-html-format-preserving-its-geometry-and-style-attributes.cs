@@ -9,52 +9,24 @@ class Program
             try
             {
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+                // Load the Visio diagram from file
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Path for the exported HTML file
-                string htmlOutputPath = "exportedShape.html";
+                // Get the first page (adjust index if needed)
+                Page page = diagram.Pages[0];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
+                // Identify the shape to export (replace with the actual shape ID)
+                int shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Define the name of the shape to export (case‑sensitive)
-                string targetShapeName = "MyShape";
-
-                Shape targetShape = null;
-
-                // Search for the shape by its universal name across all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        if (shape.NameU == targetShapeName)
-                        {
-                            targetShape = shape;
-                            break;
-                        }
-                    }
-
-                    if (targetShape != null)
-                        break;
-                }
-
-                // If the shape was not found, abort with an error
-                if (targetShape == null)
-                    throw new Exception($"Shape with NameU '{targetShapeName}' was not found.");
-
-                // Configure HTML export options (optional settings can be added here)
+                // Prepare HTML export options
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.DefaultFont = "Arial";
 
                 // Export the selected shape to HTML, preserving geometry and style
-                targetShape.ToHTML(htmlOutputPath, htmlOptions);
+                string outputPath = "shape.html";
+                shape.ToHTML(outputPath, htmlOptions);
 
-                Console.WriteLine($"Shape '{targetShapeName}' exported successfully to '{htmlOutputPath}'.");
+                Console.WriteLine($"Shape {shapeId} exported to HTML at '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

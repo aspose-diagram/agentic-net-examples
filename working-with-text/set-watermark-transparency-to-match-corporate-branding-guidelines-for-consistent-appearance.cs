@@ -1,56 +1,56 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Expect input and output file paths as command‑line arguments.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: DiagramWatermark <input.vsdx> <output.vsdx>");
+                return;
+            }
 
-            // Add a blank page to the diagram
-            diagram.Pages.Add(new Page());
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Get the first (and only) page
-            Page page = diagram.Pages[0];
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the page has standard dimensions (8.5" x 11")
-            page.PageSheet.PageProps.PageWidth.Value = 8.5;
-            page.PageSheet.PageProps.PageHeight.Value = 11.0;
+            // Iterate through all pages and add a semi‑transparent watermark.
+            foreach (Page page in diagram.Pages)
+            {
+                // Page dimensions (in inches).
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Calculate center position for the watermark
-            double pinX = page.PageSheet.PageProps.PageWidth.Value / 2.0;
-            double pinY = page.PageSheet.PageProps.PageHeight.Value / 2.0;
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Center position for the watermark.
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-            // Watermark text and styling
-            string watermarkText = "CONFIDENTIAL";
-            string fontName = "Arial";
-            string fontColor = "#CCCCCC"; // Light gray
-            double fontSizeInInches = 1.0; // 72 points = 1 inch
+                // Add a full‑page text shape as the watermark.
+                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches).
+                Shape watermark = page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                              "CONFIDENTIAL",
+                                              "Calibri",
+                                              "#A0A0A0",          // Light gray color.
+                                              0.25);               // Font size ~18pt (18/72).
 
-            // Add the watermark as a full‑page text shape (returns a Shape object)
-            Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                               watermarkText, fontName, fontColor, fontSizeInInches);
+                // Rotate the watermark for a typical diagonal appearance.
+                watermark.XForm.Angle.Value = 45.0;
 
-            // Set line (border) transparency to 30%
-            watermarkShape.Line.LineColorTrans.Value = 30;
+                // Apply transparency to both fill (background) and line (border) of the shape.
+                // Transparency values are percentages (0‑100).
+                watermark.Fill.FillForegndTrans.Value = 80;   // 80 % transparent fill.
+                watermark.Line.LineColorTrans.Value = 80;    // 80 % transparent line.
 
-            // Set fill (background) transparency to 30% for a subtle effect
-            watermarkShape.Fill.FillForegndTrans.Value = 30;
+                // Optionally hide the shape border by setting line weight to zero.
+                watermark.Line.LineWeight.Value = 0.0;
+            }
 
-            // Save the diagram in VSDX format
-            diagram.Save("WatermarkedDiagram.vsdx", SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
     }
-}

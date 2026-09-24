@@ -4,38 +4,80 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: diagram file path, shape name, expected shape ID
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <diagramPath> <shapeName> <expectedId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string targetShapeName = args[1];
+        string expectedIdStr = args[2];
+
+        // Verify the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Parse expected ID; if parsing fails, report error and exit
+        if (!int.TryParse(expectedIdStr, out int expectedId))
+        {
+            Console.Error.WriteLine($"Invalid expected ID: {expectedIdStr}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram using Aspose.Diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Flag to indicate whether the shape was found
+            bool shapeFound = false;
 
-            // Define the shape name to locate and the expected identifier
-            string targetShapeName = "MyShape";
-            long expectedShapeId = 12345L;
-
-            // Retrieve the shape by its name from the first page
-            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeName);
-
-            // Compare the retrieved shape's ID with the expected ID
-            if (shape != null && shape.ID == expectedShapeId)
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // IDs match – place your logic here
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Compare the shape's universal name (NameU) with the target name
+                    if (string.Equals(shape.NameU, targetShapeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        shapeFound = true; // Mark that we have located the shape
+
+                        // Compare the shape's ID with the expected identifier
+                        if (shape.ID == expectedId)
+                        {
+                            Console.WriteLine($"Success: Shape \"{targetShapeName}\" has the expected ID {expectedId}.");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Mismatch: Shape \"{targetShapeName}\" has ID {shape.ID}, expected {expectedId}.");
+                        }
+
+                        // Shape found; no need to continue searching
+                        break;
+                    }
+                }
+
+                if (shapeFound) break; // Exit outer loop if shape already located
             }
-            else
+
+            // If shape was not found after scanning all pages, inform the user
+            if (!shapeFound)
             {
-                // IDs do not match or shape not found – handle accordingly
+                Console.WriteLine($"Shape with name \"{targetShapeName}\" was not found in the diagram.");
             }
-
-            // Save the diagram if any modifications were made
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors and write to standard error
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

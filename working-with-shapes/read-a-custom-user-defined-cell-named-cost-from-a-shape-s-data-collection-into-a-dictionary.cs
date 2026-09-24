@@ -5,42 +5,40 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Path to the Visio diagram file
-        string diagramPath = "input.vsdx";
+        // Path to the Visio file
+        string inputPath = "input.vsdx";
 
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Dictionary to store shape ID (long) and its "Cost" user-defined cell value
-        Dictionary<long, string> costValues = new Dictionary<long, string>();
+        // Dictionary to hold shape identifier and its "Cost" value
+        Dictionary<string, string> costDictionary = new Dictionary<string, string>();
 
         try
         {
             // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through user-defined cells (Users collection) of the shape
-                    foreach (User userCell in shape.Users)
+                    // Iterate through the shape's Props collection (Shape Data section)
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Check if the user-defined cell name matches "Cost"
-                        if (userCell.Name == "Cost" || userCell.NameU == "Cost")
+                        // Look for the custom data field named "Cost"
+                        if (prop.Name == "Cost")
                         {
-                            // Store the value in the dictionary using the shape ID as the key
-                            costValues[shape.ID] = userCell.Value.Val;
-                            // Break after finding the first "Cost" cell for this shape
-                            break;
+                            // Use the shape's universal name (NameU) as the key
+                            // Store the value of the "Cost" field
+                            costDictionary[shape.NameU] = prop.Value.Val;
                         }
                     }
                 }
@@ -48,19 +46,16 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or processing to the error stream
+            // Write any Aspose.Diagram errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
             return;
         }
 
-        // Output the collected values
-        foreach (var kvp in costValues)
+        // Output the collected cost values
+        Console.WriteLine("Collected Cost values:");
+        foreach (KeyValuePair<string, string> entry in costDictionary)
         {
-            Console.WriteLine($"Shape ID: {kvp.Key}, Cost: {kvp.Value}");
+            Console.WriteLine($"Shape: {entry.Key}, Cost: {entry.Value}");
         }
-
-        // Keep console window open if needed
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadKey();
     }
 }

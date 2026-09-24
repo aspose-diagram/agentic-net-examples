@@ -1,80 +1,56 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file to process
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.WriteLine($"Processing Page: {page.NameU}");
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Verify that LocPinX and LocPinY cells exist
+                    if (shape.XForm.LocPinX == null || shape.XForm.LocPinY == null)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        Console.WriteLine($"Shape ID {shape.ID} does not contain LocPinX/Y cells. Skipping.");
+                        continue;
+                    }
 
-                        // Ensure LocPinX and LocPinY cells are present
-                        if (shape.XForm.LocPinX == null || shape.XForm.LocPinY == null)
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID} ('{shape.NameU}') lacks LocPinX/Y cells. Skipping.");
-                            continue;
-                        }
+                    try
+                    {
+                        // Calculate absolute coordinates based on Pin and LocPin values
+                        double absoluteX = shape.XForm.PinX.Value - shape.XForm.LocPinX.Value;
+                        double absoluteY = shape.XForm.PinY.Value - shape.XForm.LocPinY.Value;
 
-                        try
-                        {
-                            // Retrieve necessary values
-                            double pinX = shape.XForm.PinX.Value;
-                            double pinY = shape.XForm.PinY.Value;
-                            double locPinX = shape.XForm.LocPinX.Value;
-                            double locPinY = shape.XForm.LocPinY.Value;
-                            double angleDeg = shape.XForm.Angle.Value; // Angle is in degrees
-
-                            // Convert angle to radians for trigonometric calculations
-                            double angleRad = angleDeg * Math.PI / 180.0;
-
-                            // Calculate absolute coordinates considering the local pin offset and rotation
-                            double offsetX = -locPinX;
-                            double offsetY = -locPinY;
-
-                            double cos = Math.Cos(angleRad);
-                            double sin = Math.Sin(angleRad);
-
-                            double absoluteX = pinX + (offsetX * cos - offsetY * sin);
-                            double absoluteY = pinY + (offsetX * sin + offsetY * cos);
-
-                            Console.WriteLine($"Shape ID {shape.ID} ('{shape.NameU}'): Absolute X = {absoluteX:F3}, Y = {absoluteY:F3}");
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log the error and continue with the next shape
-                            Console.WriteLine($"Error processing Shape ID {shape.ID}: {ex.Message}. Skipping.");
-                        }
+                        Console.WriteLine($"Shape ID {shape.ID} absolute position: ({absoluteX}, {absoluteY})");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any unexpected errors and continue processing other shapes
+                        Console.WriteLine($"Error processing shape ID {shape.ID}: {ex.Message}");
                     }
                 }
-
-                // Optionally save the diagram after processing (no changes made here)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the diagram after processing
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

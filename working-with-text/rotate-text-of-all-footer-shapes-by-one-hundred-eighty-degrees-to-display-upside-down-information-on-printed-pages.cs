@@ -1,43 +1,41 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        // Expect two arguments: input Visio file path and output Visio file path.
-        if (args.Length < 2)
+        static void Main(string[] args)
         {
-            Console.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram.
-        Diagram diagram = new Diagram(inputPath);
-
-        // 180 degrees in radians.
-        double angleRadians = Math.PI;
-
-        // Iterate through all pages and their shapes.
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                // Identify footer shapes by name (case‑insensitive contains "Footer").
-                string nameU = shape.NameU ?? string.Empty;
-                if (nameU.IndexOf("Footer", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    // Rotate the text block of the shape by 180°.
-                    shape.TextXForm.TxtAngle.Value = angleRadians;
-                }
-            }
-        }
 
-        // Save the modified diagram.
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Input and output Visio file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Rotate the text inside the shape by 180 degrees (π radians)
+                        shape.TextXForm.TxtAngle.Value = Math.PI;
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

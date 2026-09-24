@@ -3,56 +3,40 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output CSV file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: SolutionXmlExport <inputVisioFile> <outputCsvFile>");
+                return;
+            }
 
-            // Path to the Visio file
-            string visioPath = "input.vsdx";
-
-            // Path to the output CSV file
-            string csvPath = "solutionxml.csv";
+            string visioPath = args[0];
+            string csvPath = args[1];
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(visioPath);
 
-            // Create a CSV file and write the header
-            using (StreamWriter writer = new StreamWriter(csvPath))
+            // Create or overwrite the CSV file
+            using (StreamWriter writer = new StreamWriter(csvPath, false))
             {
-                writer.WriteLine("Name,XmlValue");
+                // Write CSV header
+                writer.WriteLine("\"Name\",\"XmlValue\"");
 
-                // Iterate through each SolutionXML entry in the diagram
-                foreach (SolutionXML solXml in diagram.SolutionXMLs)
+                // Iterate through all SolutionXML elements
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    // Escape fields to handle commas, quotes, and newlines
-                    string name = EscapeCsv(solXml.Name);
-                    string xml = EscapeCsv(solXml.XmlValue);
+                    // Escape double quotes in values by doubling them
+                    string nameEscaped = solutionXml.Name?.Replace("\"", "\"\"") ?? string.Empty;
+                    string xmlEscaped = solutionXml.XmlValue?.Replace("\"", "\"\"") ?? string.Empty;
 
-                    // Write a CSV line for the current SolutionXML
-                    writer.WriteLine($"{name},{xml}");
+                    // Write a CSV line with quoted fields
+                    writer.WriteLine($"\"{nameEscaped}\",\"{xmlEscaped}\"");
                 }
             }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Export completed. CSV saved to: {csvPath}");
         }
     }
-
-    // Helper method to escape CSV fields according to RFC 4180
-    static string EscapeCsv(string field)
-    {
-        if (field == null) return string.Empty;
-
-        bool mustQuote = field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r");
-        if (mustQuote)
-        {
-            field = field.Replace("\"", "\"\"");
-            return $"\"{field}\"";
-        }
-        return field;
-    }
-}

@@ -1,54 +1,42 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (replace with actual path)
-                string inputPath = "input.vsdx";
-
-                // Output Visio file path
-                string outputPath = "output_reset_margins.vsdx";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has a TextBlock (all shapes have it, but check for safety)
-                        if (shape.TextBlock != null)
-                        {
-                            // Reset text margins to default (0 inches). 
-                            // Using DoubleValue with MeasureConst.IN for inches.
-                            shape.TextBlock.LeftMargin = new DoubleValue(0, MeasureConst.IN);
-                            shape.TextBlock.RightMargin = new DoubleValue(0, MeasureConst.IN);
-                            shape.TextBlock.TopMargin = new DoubleValue(0, MeasureConst.IN);
-                            shape.TextBlock.BottomMargin = new DoubleValue(0, MeasureConst.IN);
-                        }
-                    }
+                    // Reset text block margins to default (0 points)
+                    shape.TextBlock.LeftMargin = new DoubleValue(0, MeasureConst.PT);
+                    shape.TextBlock.RightMargin = new DoubleValue(0, MeasureConst.PT);
+                    shape.TextBlock.TopMargin = new DoubleValue(0, MeasureConst.PT);
+                    shape.TextBlock.BottomMargin = new DoubleValue(0, MeasureConst.PT);
                 }
-
-                // Save the modified diagram back to a file in VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up resources
-                diagram.Dispose();
-
-                Console.WriteLine("Text margins have been reset and diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

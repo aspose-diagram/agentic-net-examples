@@ -1,47 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the custom user-defined cell name and a default value
-                const string customCellName = "MyCustomCell";
-                const string defaultCellValue = "CustomValue";
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Create a new User cell
-                        User userCell = new User();
-                        userCell.Name = customCellName;          // Set the custom name
-                        userCell.Value.Val = defaultCellValue;   // Set the cell value
+                    // Skip shapes marked for deletion
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Add the user-defined cell to the shape's Users collection
-                        shape.Users.Add(userCell);
-                    }
+                    // Create a new user-defined cell
+                    User customCell = new User();
+                    customCell.Name = "MyCustomCell";
+                    customCell.Value.Val = "CustomValue";
+                    customCell.Prompt.Value = "Custom user-defined cell";
+
+                    // Add the cell to the shape
+                    shape.Users.Add(customCell);
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,56 +1,66 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard to ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path (second argument)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True) continue;
+
+                    // Determine if the shape is a connector (1‑D shape)
+                    bool isConnector = shape.OneD;
+
+                    if (isConnector)
                     {
-                        // Check if the shape is a connector (1‑D shape)
-                        if (shape.OneD)
-                        {
-                            // Enable line inheritance for connectors by copying inherited line values
-                            shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
-                            shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
-                            shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
-                            shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
-                            shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
-                        }
-                        else
-                        {
-                            // Disable line inheritance for non‑connectors by setting explicit line values
-                            shape.Line.LineColor.Value = "#000000";               // Black line color
-                            shape.Line.LineWeight.Value = 0.02;                  // 0.02 inches line weight
-                            shape.Line.LinePattern.Value = LinePatternValue.Solid; // Solid line pattern
-                            shape.Line.BeginArrow.Value = 0;                     // No begin arrow
-                            shape.Line.EndArrow.Value = 0;                       // No end arrow
-                        }
+                        // Enable line inheritance for connectors by setting color to "inherit"
+                        shape.Line.LineColor.Value = "inherit";
+                        // Keep other line properties unchanged to inherit defaults
+                    }
+                    else
+                    {
+                        // For non‑connectors, set explicit line properties (example: solid black line)
+                        shape.Line.LineColor.Value = "#000000";
+                        shape.Line.LineWeight.Value = 0.02; // inches
+                        shape.Line.LinePattern.Value = LinePatternValue.Solid;
+                        shape.Line.BeginArrow.Value = 0; // no arrow
+                        shape.Line.EndArrow.Value = 0;   // no arrow
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram using the VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

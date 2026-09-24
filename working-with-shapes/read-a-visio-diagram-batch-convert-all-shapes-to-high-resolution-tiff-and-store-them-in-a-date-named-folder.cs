@@ -4,49 +4,54 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Path to the source Visio file
-            string visioPath = @"C:\Input\diagram.vsdx";
-
-            // Load the Visio diagram using the Diagram constructor (load rule)
-            using (Diagram diagram = new Diagram(visioPath))
+            try
             {
-                // Create an output folder named with the current date (yyyyMMdd)
+
+                // Path to the source Visio file (modify as needed)
+                string inputPath = "input.vsdx";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Create a folder named with the current date (yyyyMMdd) in the current directory
                 string dateFolder = DateTime.Now.ToString("yyyyMMdd");
-                string outputDir = Path.Combine(@"C:\Output", dateFolder);
+                string outputDir = Path.Combine(Directory.GetCurrentDirectory(), dateFolder);
                 Directory.CreateDirectory(outputDir);
 
-                // Prepare image save options for high‑resolution TIFF
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff)
-                {
-                    // Set a high resolution (e.g., 300 DPI). Adjust as needed.
-                    Resolution = 300
-                };
-
-                // Iterate through all pages and their shapes
+                // Iterate through each page and each shape on the page
+                int pageNumber = 0;
                 foreach (Page page in diagram.Pages)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Build a unique file name for each shape
-                        string fileName = $"Shape_{shape.ID}.tiff";
-                        string filePath = Path.Combine(outputDir, fileName);
+                    pageNumber++;
 
-                        // Export the shape to a TIFF image using the ToImage method (rule)
-                        shape.ToImage(filePath, saveOptions);
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Build a unique file name for each shape
+                        string fileName = $"Page{pageNumber}_Shape{shape.ID}.tiff";
+                        string outputPath = Path.Combine(outputDir, fileName);
+
+                        // Configure high‑resolution TIFF export options
+                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+                        saveOptions.Resolution = 300f; // DPI
+
+                        // Export the shape to a TIFF file
+                        shape.ToImage(outputPath, saveOptions);
                     }
                 }
-            }
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+                Console.WriteLine($"All shapes have been exported to: {outputDir}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

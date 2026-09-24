@@ -1,41 +1,51 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
-
-            // Load an existing diagram (use the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Assume we work with the first shape on the first page
-            Shape shape = diagram.Pages[0].Shapes[0];
-
             try
             {
-                // Attempt to apply a preset theme style matrix.
-                // This will throw if the shape does not contain style data.
-                shape.SetPresetThemeStyleMatrics(
-                    PresetStyleMatricsValue.Style1,
-                    PresetColorMatricsValue.Color1);
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        try
+                        {
+                            // Attempt to apply a preset theme to the shape
+                            // These properties are write‑only; they may throw if the shape lacks style data
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the error but continue processing other shapes
+                            Console.WriteLine($"Failed to apply theme to shape ID {shape.ID}: {ex.Message}");
+                        }
+                    }
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved successfully.");
+
             }
-            catch (Exception ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                // Handle the situation where the shape cannot accept a theme.
-                Console.WriteLine($"Error applying theme to shape ID {shape.ID}: {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the diagram (use the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

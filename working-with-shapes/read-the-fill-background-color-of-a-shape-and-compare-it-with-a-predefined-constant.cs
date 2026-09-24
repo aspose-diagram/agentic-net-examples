@@ -1,48 +1,62 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        // Predefined constant color in hexadecimal format (Visio uses hex strings for colors)
-        private const string ExpectedFillColor = "#FF0000";
-
-        static void Main()
+        try
         {
-            try
+
+            // Path to the Visio file
+            string filePath = "input.vsdx";
+
+            // Universal name of the shape to inspect
+            string targetShapeNameU = "MyShape";
+
+            // Expected fill background color (hex string)
+            const string ExpectedFillColor = "#FF0000";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Get the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
+
+            // Locate the shape by its universal name
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Path to the Visio file (adjust as needed)
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram from file
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Retrieve a shape by its ID.
-                // Here we assume a shape with ID 1 exists; replace with the actual ID as required.
-                Shape shape = page.Shapes.GetShape(1);
-
-                // Read the background fill color of the shape.
-                // FillBkgnd holds the background color as a hex string (e.g., "#FF0000").
-                string actualFillColor = shape.Fill.FillBkgnd.Value;
-
-                // Compare the retrieved color with the predefined constant.
-                if (string.Equals(actualFillColor, ExpectedFillColor, StringComparison.OrdinalIgnoreCase))
+                if (shape.NameU == targetShapeNameU)
                 {
-                    Console.WriteLine("The shape's fill background color matches the expected value.");
+                    targetShape = shape;
+                    break;
                 }
-                else
-                {
-                    // Throw an exception to indicate the mismatch (as per the project's error handling policy).
-                    throw new Exception($"Fill color mismatch. Expected: {ExpectedFillColor}, Actual: {actualFillColor}");
-                }
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception($"Shape with NameU '{targetShapeNameU}' not found.");
             }
+
+            // Read the fill background color
+            string actualFillColor = targetShape.Fill.FillBkgnd.Value;
+
+            // Compare with the predefined constant
+            if (string.Equals(actualFillColor, ExpectedFillColor, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("Fill background color matches the expected value.");
+            }
+            else
+            {
+                Console.WriteLine($"Fill background color '{actualFillColor}' does not match expected '{ExpectedFillColor}'.");
+            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

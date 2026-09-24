@@ -1,136 +1,164 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, output folder, tolerance value.
-        if (args.Length < 3)
+        // Ramer‑Douglas‑Peucker polygon simplification
+        private static List<PointF> Simplify(List<PointF> points, double tolerance)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputFolder> <tolerance>");
-            return;
-        }
+            if (points == null || points.Count < 3)
+                return new List<PointF>(points);
 
-        // Assign and validate the input Visio file path.
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            int index = -1;
+            double maxDist = 0.0;
 
-        // Assign and ensure the output folder exists (create if missing).
-        string outputFolder = args[1];
-        if (!Directory.Exists(outputFolder))
-        {
-            try
+            PointF start = points[0];
+            PointF end = points[points.Count - 1];
+
+            for (int i = 1; i < points.Count - 1; i++)
             {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
-        }
-
-        // Parse the tolerance value (distance in inches) and validate.
-        if (!double.TryParse(args[2], out double tolerance) || tolerance < 0)
-        {
-            Console.Error.WriteLine("Invalid tolerance value. Provide a non‑negative number.");
-            return;
-        }
-
-        try
-        {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over each page in the diagram.
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate over each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                double dist = PerpendicularDistance(points[i], start, end);
+                if (dist > maxDist)
                 {
-                    // Process only shapes that contain geometry (ignore connectors, groups, etc.).
-                    if (shape.Geoms == null || shape.Geoms.Count == 0)
-                        continue;
-
-                    // Iterate over each geometry section of the shape.
-                    for (int g = 0; g < shape.Geoms.Count; g++)
-                    {
-                        Geom geom = shape.Geoms[g];
-                        // Collect points from MoveTo and LineTo commands.
-                        var points = new System.Collections.Generic.List<(double X, double Y)>();
-                        foreach (object seg in geom.CoordinateCol)
-                        {
-                            if (seg is MoveTo move)
-                            {
-                                points.Add((move.X.Value, move.Y.Value));
-                            }
-                            else if (seg is LineTo line)
-                            {
-                                points.Add((line.X.Value, line.Y.Value));
-                            }
-                            // Other segment types (ArcTo, etc.) are ignored for simplicity.
-                        }
-
-                        // Skip geometry sections with fewer than two points.
-                        if (points.Count < 2)
-                            continue;
-
-                        // Simplify points by removing those closer than the tolerance.
-                        var simplified = new System.Collections.Generic.List<(double X, double Y)>();
-                        simplified.Add(points[0]); // Always keep the first point.
-                        for (int i = 1; i < points.Count; i++)
-                        {
-                            var prev = simplified[simplified.Count - 1];
-                            double dx = points[i].X - prev.X;
-                            double dy = points[i].Y - prev.Y;
-                            double dist = Math.Sqrt(dx * dx + dy * dy);
-                            if (dist > tolerance)
-                                simplified.Add(points[i]);
-                        }
-
-                        // Ensure at least two points remain after simplification.
-                        if (simplified.Count < 2)
-                            continue;
-
-                        // Rebuild the geometry with the simplified points.
-                        geom.CoordinateCol.Clear(); // Remove existing segments.
-                        // First point becomes a MoveTo.
-                        MoveTo newMove = new MoveTo();
-                        newMove.X.Value = simplified[0].X;
-                        newMove.Y.Value = simplified[0].Y;
-                        geom.CoordinateCol.Add(newMove);
-                        // Subsequent points become LineTo commands.
-                        for (int i = 1; i < simplified.Count; i++)
-                        {
-                            LineTo newLine = new LineTo();
-                            newLine.X.Value = simplified[i].X;
-                            newLine.Y.Value = simplified[i].Y;
-                            geom.CoordinateCol.Add(newLine);
-                        }
-                    }
-
-                    // Export the (now simplified) shape to an individual SVG file.
-                    string svgPath = Path.Combine(outputFolder, $"shape_{shape.ID}.svg");
-                    SVGSaveOptions svgOptions = new SVGSaveOptions(); // Default options.
-                    shape.ToSvg(svgPath, svgOptions);
+                    maxDist = dist;
+                    index = i;
                 }
             }
 
-            // Optionally, save the modified diagram (with simplified geometry) back to a file.
-            string modifiedPath = Path.Combine(outputFolder, "modified.vsdx");
-            diagram.Save(modifiedPath, SaveFileFormat.Vsdx);
+            if (maxDist > tolerance && index != -1)
+            {
+                // Recursive simplification
+                List<PointF> firstPart = Simplify(points.GetRange(0, index + 1), tolerance);
+                List<PointF> secondPart = Simplify(points.GetRange(index, points.Count - index), tolerance);
+
+                // Merge results, avoiding duplicate point at the split
+                List<PointF> result = new List<PointF>(firstPart);
+                result.RemoveAt(result.Count - 1);
+                result.AddRange(secondPart);
+                return result;
+            }
+            else
+            {
+                // Only keep the endpoints
+                return new List<PointF> { start, end };
+            }
         }
-        catch (Exception ex)
+
+        // Perpendicular distance from a point to a line defined by two points
+        private static double PerpendicularDistance(PointF pt, PointF lineStart, PointF lineEnd)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            double dx = lineEnd.X - lineStart.X;
+            double dy = lineEnd.Y - lineStart.Y;
+
+            if (dx == 0 && dy == 0)
+                return Math.Sqrt(Math.Pow(pt.X - lineStart.X, 2) + Math.Pow(pt.Y - lineStart.Y, 2));
+
+            double numerator = Math.Abs(dy * pt.X - dx * pt.Y + lineEnd.X * lineStart.Y - lineEnd.Y * lineStart.X);
+            double denominator = Math.Sqrt(dx * dx + dy * dy);
+            return numerator / denominator;
         }
+
+        static void Main(string[] args)
+        {
+            try
+            {
+
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Output directory for SVG files
+                string outputDir = "SimplifiedSvg";
+                if (!Directory.Exists(outputDir))
+                    Directory.CreateDirectory(outputDir);
+
+                // Tolerance for polygon simplification (adjust as needed)
+                double tolerance = 0.5; // units are in inches (Visio internal units)
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Process each page
+                foreach (Page page in diagram.Pages)
+                {
+                    // Process each shape on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Only process shapes that have geometry
+                        if (shape.Geoms == null || shape.Geoms.Count == 0)
+                            continue;
+
+                        // Iterate through each geometry section of the shape
+                        foreach (Geom geom in shape.Geoms)
+                        {
+                            // Collect points from MoveTo and LineTo commands
+                            List<PointF> originalPoints = new List<PointF>();
+                            foreach (object coord in geom.CoordinateCol)
+                            {
+                                if (coord is MoveTo move)
+                                {
+                                    originalPoints.Add(new PointF((float)move.X.Value, (float)move.Y.Value));
+                                }
+                                else if (coord is LineTo line)
+                                {
+                                    originalPoints.Add(new PointF((float)line.X.Value, (float)line.Y.Value));
+                                }
+                                // Other geometry types (ArcTo, etc.) are ignored for simplicity
+                            }
+
+                            if (originalPoints.Count < 3)
+                                continue; // Not enough points to form a polygon
+
+                            // Simplify the point list
+                            List<PointF> simplified = Simplify(originalPoints, tolerance);
+
+                            // Ensure the polygon is closed by repeating the first point at the end if needed
+                            if (simplified[0].X != simplified[simplified.Count - 1].X ||
+                                simplified[0].Y != simplified[simplified.Count - 1].Y)
+                            {
+                                simplified.Add(simplified[0]);
+                            }
+
+                            // Convert points to a flat double array required by DrawPolyline
+                            double[] coords = new double[simplified.Count * 2];
+                            for (int i = 0; i < simplified.Count; i++)
+                            {
+                                coords[i * 2] = simplified[i].X;
+                                coords[i * 2 + 1] = simplified[i].Y;
+                            }
+
+                            // Create a new simplified shape on the same page
+                            long newShapeId = page.DrawPolyline(coords);
+                            Shape newShape = page.Shapes.GetShape(newShapeId);
+
+                            // Copy basic visual style from the original shape
+                            newShape.Fill.FillForegnd.Value = shape.Fill.FillForegnd.Value;
+                            newShape.Fill.FillPattern.Value = shape.Fill.FillPattern.Value;
+                            newShape.Line.LineColor.Value = shape.Line.LineColor.Value;
+                            newShape.Line.LineWeight.Value = shape.Line.LineWeight.Value;
+                            newShape.Line.LinePattern.Value = shape.Line.LinePattern.Value;
+
+                            // Export the simplified shape to SVG
+                            string svgPath = Path.Combine(outputDir, $"shape_{shape.ID}.svg");
+                            SVGSaveOptions svgOptions = new SVGSaveOptions();
+                            newShape.ToSvg(svgPath, svgOptions);
+                        }
+                    }
+                }
+
+                Console.WriteLine("Simplified SVG export completed.");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

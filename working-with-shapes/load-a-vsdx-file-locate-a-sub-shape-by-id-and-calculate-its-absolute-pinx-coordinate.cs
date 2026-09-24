@@ -1,36 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the Visio file (VSDX)
+        string inputPath = "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (VSDX) from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Assume the shape we are interested in is on the first page
+            Page page = diagram.Pages[0];
 
-            // Specify the ID of the sub‑shape you want to locate
-            int subShapeId = 5; // replace with the actual ID
+            // ID of the sub‑shape (replace with the actual ID)
+            long subShapeId = 12345;
 
-            // Retrieve the shape, including any child shapes inside groups
-            Shape subShape = diagram.Pages[0].Shapes.GetShapeIncludingChild(subShapeId);
+            // Retrieve the shape by its ID
+            Shape subShape = page.Shapes.GetShape(subShapeId);
 
-            // The XForm.PinX property holds the shape's PinX coordinate.
-            // For a sub‑shape this value is relative to its parent; to obtain the
-            // absolute page coordinate you can add the parent's offset if needed.
-            // Here we assume the shape is not nested deeper, or that PinX is already absolute.
-            double absolutePinX = subShape.XForm.PinX.Value;
+            // Calculate the absolute PinX coordinate of the sub‑shape
+            double absolutePinX = GetAbsolutePinX(subShape);
 
             // Output the result
             Console.WriteLine($"Absolute PinX of shape ID {subShapeId}: {absolutePinX}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    // Recursively computes the absolute PinX by adding parent offsets.
+    // This simple implementation adds the PinX of each ancestor shape.
+    // For complex groups with rotation, a full matrix transformation would be required.
+    private static double GetAbsolutePinX(Shape shape)
+    {
+        double pinX = shape.XForm.PinX.Value; // Base PinX of the shape
+
+        // Traverse up the hierarchy, adding each parent shape's PinX
+        Shape? parent = shape.ParentShape;
+        while (parent != null)
+        {
+            pinX += parent.XForm.PinX.Value;
+            parent = parent.ParentShape;
+        }
+
+        return pinX;
     }
 }

@@ -1,28 +1,21 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the existing Visio diagram (VS DX format)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
 
-            // -------------------------------------------------
-            // Place any diagram modifications here.
-            // Example (optional): rename the first page.
-            // if (diagram.Pages.Count > 0)
-            // {
-            //     diagram.Pages[0].Name = "ModifiedPage";
-            // }
-            // -------------------------------------------------
+            // (Optional) Perform any modifications to the diagram here
+            // Example: diagram.Pages[0].Name = "ModifiedPage";
 
-            // Save the diagram to a new VS DX file, preserving all original content
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to a new .vsdx file, preserving all original content
+            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

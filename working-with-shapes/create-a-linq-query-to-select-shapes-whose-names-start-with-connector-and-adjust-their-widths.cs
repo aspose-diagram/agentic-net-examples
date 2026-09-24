@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -9,20 +10,24 @@ class Program
             try
             {
 
-                // Load an existing Visio diagram (replace with your file path)
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path to the output Visio file
+                string outputPath = "output.vsdx";
+
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the new width for the connector shapes (in inches)
+                // Define the new width (in inches) for the connector shapes
                 double newWidth = 2.0;
 
-                // Process each page in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // LINQ query to select shapes whose Name starts with "Connector"
+                    // LINQ query to select shapes whose universal name starts with "Connector"
                     var connectorShapes = page.Shapes
-                                              .Cast<Shape>()
-                                              .Where(s => !string.IsNullOrEmpty(s.Name) && s.Name.StartsWith("Connector"));
+                                              .Where(shape => !string.IsNullOrEmpty(shape.NameU) &&
+                                                              shape.NameU.StartsWith("Connector", StringComparison.Ordinal));
 
                     // Adjust the width of each selected shape
                     foreach (Shape shape in connectorShapes)
@@ -31,8 +36,7 @@ class Program
                     }
                 }
 
-                // Save the modified diagram (replace with your desired output path)
-                string outputPath = "output.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             }

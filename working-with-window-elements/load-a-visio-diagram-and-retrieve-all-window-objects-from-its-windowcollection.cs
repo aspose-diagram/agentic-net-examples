@@ -9,25 +9,28 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram from file.
-            // Replace "input.vsdx" with the actual path to your Visio file.
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Path to the Visio file to be loaded
+            string filePath = "input.vsdx";
+
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
+
+            // Verify that the diagram contains windows
+            if (diagram.Windows.Count == 0)
             {
-                // Access the WindowCollection of the diagram.
-                WindowCollection windows = diagram.Windows;
+                Console.WriteLine("The diagram does not contain any windows.");
+                return;
+            }
 
-                // Iterate through all Window objects.
-                for (int i = 0; i < windows.Count; i++)
-                {
-                    Window win = windows[i];
-
-                    // Example: output some key properties of each window.
-                    Console.WriteLine($"Window ID: {win.ID}");
-                    Console.WriteLine($"  Type: {win.WindowType}");
-                    Console.WriteLine($"  Width: {win.WindowWidth}, Height: {win.WindowHeight}");
-                    Console.WriteLine($"  Left: {win.WindowLeft}, Top: {win.WindowTop}");
-                    Console.WriteLine();
-                }
+            // Iterate through all Window objects in the diagram's WindowCollection
+            foreach (Window window in diagram.Windows)
+            {
+                Console.WriteLine($"Window ID: {window.ID}");
+                Console.WriteLine($"Window Type: {window.WindowType}");
+                Console.WriteLine($"Window State: {window.WindowState}");
+                Console.WriteLine($"Window Width: {window.WindowWidth}");
+                Console.WriteLine($"Window Height: {window.WindowHeight}");
+                Console.WriteLine(new string('-', 30));
             }
 
         }

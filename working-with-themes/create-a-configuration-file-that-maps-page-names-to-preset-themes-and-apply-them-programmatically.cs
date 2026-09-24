@@ -1,82 +1,76 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 namespace DiagramThemeApplier
 {
-    // Model representing a mapping entry in the configuration file
+    // Represents a mapping between a page name and its desired theme.
     public class PageThemeMapping
     {
         public string PageName { get; set; }
-        public string Theme { get; set; }               // Name of PresetThemeValue enum (e.g., "Office")
-        public string Variant { get; set; }              // Optional: name of PresetThemeVariantValue enum
-        public string QuickStyle { get; set; }           // Optional: name of PresetQuickStyleValue enum
+        public string Theme { get; set; }
+        public string Variant { get; set; }
     }
 
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Paths – adjust as needed
-                string diagramPath = "input.vdx";
-                string outputPath = "output.vdx";
+                // Paths to the diagram file and the JSON configuration file.
+                string diagramPath = "input.vsdx";
                 string configPath = "pageThemes.json";
 
-                // Load configuration file (JSON)
-                // Example content:
-                // [
-                //   { "PageName": "Page-1", "Theme": "Office", "Variant": "Variant1", "QuickStyle": "VariantStyle2" },
-                //   { "PageName": "Page-2", "Theme": "Linear" }
-                // ]
-                List<PageThemeMapping> mappings = JsonSerializer.Deserialize<List<PageThemeMapping>>(
-                    File.ReadAllText(configPath));
-
-                // Load the diagram using Aspose.Diagram (lifecycle rule: load)
+                // Load the diagram.
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Apply themes based on configuration
-                foreach (Page page in diagram.Pages)
+                // Read and deserialize the configuration file.
+                if (!File.Exists(configPath))
+                    throw new FileNotFoundException($"Configuration file not found: {configPath}");
+
+                string json = File.ReadAllText(configPath);
+                List<PageThemeMapping> mappings = JsonSerializer.Deserialize<List<PageThemeMapping>>(json);
+
+                // Apply the preset themes to the corresponding pages.
+                foreach (PageThemeMapping mapping in mappings)
                 {
-                    // Find a mapping for the current page name
-                    PageThemeMapping map = mappings.Find(m => string.Equals(m.PageName, page.Name, StringComparison.OrdinalIgnoreCase));
-                    if (map == null) continue; // No mapping – skip
-
-                    // Set the preset theme
-                    if (!string.IsNullOrWhiteSpace(map.Theme))
+                    // Retrieve the page by name; GetPage returns null if not found.
+                    Page page = diagram.Pages.GetPage(mapping.PageName);
+                    if (page == null)
                     {
-                        // Convert string to PresetThemeValue enum
-                        if (Enum.TryParse<PresetThemeValue>(map.Theme, ignoreCase: true, out var themeValue))
-                        {
-                            page.PresetTheme = themeValue;
-                        }
+                        Console.WriteLine($"Page \"{mapping.PageName}\" not found in diagram.");
+                        continue;
                     }
 
-                    // Optional: set theme variant
-                    if (!string.IsNullOrWhiteSpace(map.Variant))
+                    // Parse the theme enum value.
+                    if (Enum.TryParse<PresetThemeValue>(mapping.Theme, out var themeEnum))
                     {
-                        if (Enum.TryParse<PresetThemeVariantValue>(map.Variant, ignoreCase: true, out var variantValue))
-                        {
-                            page.PresetThemeVariant = variantValue;
-                        }
+                        page.PresetTheme = themeEnum;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid theme \"{mapping.Theme}\" for page \"{mapping.PageName}\".");
+                        continue;
                     }
 
-                    // Optional: set quick style
-                    if (!string.IsNullOrWhiteSpace(map.QuickStyle))
+                    // Parse the variant enum value if provided.
+                    if (!string.IsNullOrWhiteSpace(mapping.Variant) &&
+                        Enum.TryParse<PresetThemeVariantValue>(mapping.Variant, out var variantEnum))
                     {
-                        if (Enum.TryParse<PresetQuickStyleValue>(map.QuickStyle, ignoreCase: true, out var quickStyleValue))
-                        {
-                            page.PresetThemeQuickStyle = quickStyleValue;
-                        }
+                        page.PresetThemeVariant = variantEnum;
                     }
                 }
 
-                // Save the modified diagram (lifecycle rule: save)
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
+                // Save the updated diagram.
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved with applied themes to \"{outputPath}\".");
 
             }
             catch (System.IO.FileNotFoundException ex)

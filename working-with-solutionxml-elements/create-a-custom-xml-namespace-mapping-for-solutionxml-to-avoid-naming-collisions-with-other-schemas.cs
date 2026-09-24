@@ -1,26 +1,33 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main()
     {
-        // Create a new diagram instance
+        // Create a new empty diagram
         Diagram diagram = new Diagram();
 
-        // Define XML that uses a custom namespace to avoid collisions
-        string customXml = @"<custom:Data xmlns:custom=""http://mycustomnamespace.com"">" +
-                           @"<custom:Item>Value</custom:Item>" +
-                           @"</custom:Data>";
+        // Define a custom XML namespace to avoid collisions with other schemas
+        string customNamespace = "http://example.com/custom";
+        string xmlContent = $"<Root xmlns:custom=\"{customNamespace}\">" +
+                            "<custom:Data>Sample value</custom:Data>" +
+                            "</Root>";
 
-        // Create a SolutionXML object with a unique name and the custom XML content
-        SolutionXML solutionXml = new SolutionXML("MyCustomData", customXml);
+        // Create a SolutionXML instance and assign the custom XML
+        SolutionXML solutionXml = new SolutionXML();
+        solutionXml.Name = "CustomNamespaceMapping";
+        solutionXml.XmlValue = xmlContent;
 
         // Add the SolutionXML to the diagram's collection
         diagram.SolutionXMLs.Add(solutionXml);
 
-        // Save the diagram to a file (choose any supported format)
-        diagram.Save("CustomNamespaceDiagram.vdx", SaveFileFormat.Vdx);
+        // Save the diagram to VSDX format
+        string outputPath = "output.vsdx";
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        Console.WriteLine($"Diagram saved to '{outputPath}' with custom SolutionXML namespace mapping.");
     }
 }

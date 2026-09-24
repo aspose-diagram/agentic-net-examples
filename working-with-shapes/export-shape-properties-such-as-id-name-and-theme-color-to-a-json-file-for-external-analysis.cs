@@ -4,9 +4,9 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace ShapeExportExample
+namespace DiagramShapeExport
 {
-    // DTO to hold shape information for JSON serialization
+    // DTO for JSON serialization
     public class ShapeInfo
     {
         public long Id { get; set; }
@@ -16,22 +16,22 @@ namespace ShapeExportExample
 
     public class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
             try
             {
 
                 // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
+                string visioPath = "input.vsdx";
 
                 // Output JSON file path
-                string outputPath = "shapes.json";
+                string jsonOutputPath = "shape_properties.json";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram(visioPath);
 
-                // List to collect shape information
-                List<ShapeInfo> shapeInfos = new List<ShapeInfo>();
+                // List to hold shape information
+                List<ShapeInfo> shapesInfo = new List<ShapeInfo>();
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
@@ -42,31 +42,28 @@ namespace ShapeExportExample
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve ID and Name
-                        long id = shape.ID;
-                        string name = shape.Name;
+                        // Retrieve fill foreground color as theme color (hex string)
+                        string themeColor = shape.Fill.FillForegnd.Value;
 
-                        // Retrieve theme color (using fill foreground color as an example)
-                        // Ensure the Fill and FillForegnd cells are present
-                        string themeColor = shape.Fill?.FillForegnd?.Value ?? "#000000";
-
-                        // Add to collection
-                        shapeInfos.Add(new ShapeInfo
+                        // Create DTO and add to list
+                        ShapeInfo info = new ShapeInfo
                         {
-                            Id = id,
-                            Name = name,
+                            Id = shape.ID,
+                            Name = shape.Name,
                             ThemeColor = themeColor
-                        });
+                        };
+                        shapesInfo.Add(info);
                     }
                 }
 
-                // Serialize the list to JSON with indentation
-                string json = JsonSerializer.Serialize(shapeInfos, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize to JSON with indentation for readability
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(shapesInfo, jsonOptions);
 
                 // Write JSON to file
-                File.WriteAllText(outputPath, json);
+                File.WriteAllText(jsonOutputPath, json);
 
-                Console.WriteLine($"Exported {shapeInfos.Count} shapes to '{outputPath}'.");
+                Console.WriteLine($"Exported {shapesInfo.Count} shape(s) to '{jsonOutputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)

@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,27 +9,37 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file (replace with your actual file path)
+            string filePath = "input.vsdx";
 
-            // ID of the shape whose connections we want to inspect
-            long targetShapeId = 1; // replace with the actual shape ID
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
-            // Retrieve the shape from the first page (adjust page index if needed)
-            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            // Access the first page
+            Page page = diagram.Pages[0];
 
-            // Get IDs of all shapes connected to the target shape (incoming and outgoing)
-            long[] connectedShapeIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
-
-            // Output the connected shape IDs
-            Console.WriteLine("Connected shape IDs:");
-            foreach (long id in connectedShapeIds)
+            // Get a shape to examine (here we take the first shape on the page)
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
             {
-                Console.WriteLine(id);
+                targetShape = s;
+                break;
             }
 
-            // Optionally save the diagram after any modifications
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shapes found on the first page.");
+                return;
+            }
+
+            // Retrieve IDs of all shapes connected to the target shape
+            long[] connectedIds = targetShape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+
+            Console.WriteLine($"Shape ID {targetShape.ID} is connected to {connectedIds.Length} shape(s):");
+            foreach (long id in connectedIds)
+            {
+                Console.WriteLine($"- Connected Shape ID: {id}");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

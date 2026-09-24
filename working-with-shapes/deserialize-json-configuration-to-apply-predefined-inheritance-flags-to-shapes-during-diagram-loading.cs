@@ -1,158 +1,125 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramInheritanceDemo
 {
-    // Represents inheritance settings for a single shape.
-    private class ShapeInheritanceConfig
+    // Represents a single shape inheritance configuration entry.
+    public class InheritanceConfig
     {
-        // Shape identifier (as stored in the Visio file).
         public long ShapeId { get; set; }
-
-        // When true, copy inherited fill values to the shape's own fill cells.
-        public bool? InheritFill { get; set; }
-
-        // When true, copy inherited line values to the shape's own line cells.
-        public bool? InheritLine { get; set; }
+        public bool InheritFill { get; set; }
+        public bool InheritLine { get; set; }
     }
 
-    // Root configuration object that can be extended later.
-    private class DiagramConfig
+    public class Program
     {
-        public List<ShapeInheritanceConfig> Shapes { get; set; } = new();
-    }
-
-    static void Main(string[] args)
-    {
-        // -----------------------------------------------------------------
-        // Resolve input arguments: config JSON, source diagram, output diagram.
-        // -----------------------------------------------------------------
-        string configPath = args.Length > 0 ? args[0] : "config.json";
-        if (!File.Exists(configPath))
+        // Entry point: args[0] = input diagram path, args[1] = JSON config path, args[2] = output diagram path
+        public static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {configPath}");
-            return;
-        }
-
-        string diagramPath = args.Length > 1 ? args[1] : "input.vsdx";
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
-
-        // ---------------------------------------------------------------
-        // Deserialize JSON configuration into strongly‑typed objects.
-        // ---------------------------------------------------------------
-        DiagramConfig config;
-        try
-        {
-            string json = File.ReadAllText(configPath);
-            config = JsonSerializer.Deserialize<DiagramConfig>(json);
-            if (config == null)
+            if (args.Length != 3)
             {
-                Console.Error.WriteLine("Failed to deserialize configuration.");
+                Console.WriteLine("Usage: DiagramInheritanceDemo <inputDiagram> <configJson> <outputDiagram>");
                 return;
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
-            return;
-        }
 
-        // ---------------------------------------------------------------
-        // Load the Visio diagram.
-        // ---------------------------------------------------------------
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(diagramPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            string diagramPath = args[0];
+            string jsonPath = args[1];
+            string outputPath = args[2];
 
-        // ---------------------------------------------------------------
-        // Apply inheritance flags to each shape defined in the config.
-        // ---------------------------------------------------------------
-        foreach (var shapeCfg in config.Shapes)
-        {
-            // Search all pages for the shape with the specified ID.
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            // Load JSON configuration
+            InheritanceConfig[] configs;
+            try
             {
-                // GetShape throws if the ID does not exist on this page; catch and continue.
-                try
+                string jsonContent = File.ReadAllText(jsonPath);
+                configs = JsonSerializer.Deserialize<InheritanceConfig[]>(jsonContent);
+                if (configs == null)
                 {
-                    targetShape = page.Shapes.GetShape(shapeCfg.ShapeId);
-                    if (targetShape != null) break;
-                }
-                catch { /* ignore and continue searching */ }
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeCfg.ShapeId} not found.");
-                continue;
-            }
-
-            // -----------------------------------------------------------
-            // If InheritFill flag is set, copy inherited fill cells to the shape.
-            // -----------------------------------------------------------
-            if (shapeCfg.InheritFill.HasValue && shapeCfg.InheritFill.Value)
-            {
-                try
-                {
-                    // Copy foreground, background and pattern values from the inherited fill.
-                    targetShape.Fill.FillForegnd.Value = targetShape.InheritFill.FillForegnd.Value;
-                    targetShape.Fill.FillBkgnd.Value = targetShape.InheritFill.FillBkgnd.Value;
-                    targetShape.Fill.FillPattern.Value = targetShape.InheritFill.FillPattern.Value;
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to apply inherited fill to shape {shapeCfg.ShapeId}: {ex.Message}");
+                    throw new Exception("Failed to deserialize JSON configuration.");
                 }
             }
-
-            // -----------------------------------------------------------
-            // If InheritLine flag is set, copy inherited line cells to the shape.
-            // -----------------------------------------------------------
-            if (shapeCfg.InheritLine.HasValue && shapeCfg.InheritLine.Value)
+            catch (Exception ex)
             {
-                try
+                Console.WriteLine($"Error reading JSON configuration: {ex.Message}");
+                return;
+            }
+
+            // Load the Visio diagram
+            Diagram diagram;
+            try
+            {
+                diagram = new Diagram(diagramPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading diagram: {ex.Message}");
+                return;
+            }
+
+            // Apply inheritance flags to each specified shape
+            foreach (InheritanceConfig cfg in configs)
+            {
+                bool shapeFound = false;
+
+                // Search all pages for the shape with the given ID
+                foreach (Page page in diagram.Pages)
                 {
-                    // Copy line color, weight and pattern from the inherited line.
-                    targetShape.Line.LineColor.Value = targetShape.InheritLine.LineColor.Value;
-                    targetShape.Line.LineWeight.Value = targetShape.InheritLine.LineWeight.Value;
-                    targetShape.Line.LinePattern.Value = targetShape.InheritLine.LinePattern.Value;
+                    Shape shape = null;
+                    try
+                    {
+                        shape = page.Shapes.GetShape(cfg.ShapeId);
+                    }
+                    catch
+                    {
+                        // GetShape throws if not found; ignore and continue
+                    }
+
+                    if (shape != null)
+                    {
+                        shapeFound = true;
+
+                        // Apply fill inheritance if requested
+                        if (cfg.InheritFill)
+                        {
+                            // Copy inherited fill foreground color
+                            shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
+                            // Copy inherited fill pattern
+                            shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                        }
+
+                        // Apply line inheritance if requested
+                        if (cfg.InheritLine)
+                        {
+                            // Copy inherited line color
+                            shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
+                            // Copy inherited line weight
+                            shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
+                            // Copy inherited line pattern
+                            shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
+                        }
+
+                        // No further processing needed for this shape
+                        break;
+                    }
                 }
-                catch (Exception ex)
+
+                if (!shapeFound)
                 {
-                    Console.Error.WriteLine($"Failed to apply inherited line to shape {shapeCfg.ShapeId}: {ex.Message}");
+                    Console.WriteLine($"Warning: Shape with ID {cfg.ShapeId} not found in the diagram.");
                 }
             }
-        }
 
-        // ---------------------------------------------------------------
-        // Save the modified diagram to the output file.
-        // ---------------------------------------------------------------
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Save the modified diagram
+            try
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving diagram: {ex.Message}");
+            }
         }
     }
 }

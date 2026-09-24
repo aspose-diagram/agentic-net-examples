@@ -1,45 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Create a new blank diagram
+            using (Diagram diagram = new Diagram())
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
                 // Add a new page to the diagram
                 Page page = new Page();
                 diagram.Pages.Add(page);
 
-                // Apply a preset theme to the page.
-                // The specific "flowchart" theme is not available in the enum,
-                // so we use a valid theme (Bubble) as an example.
+                // Apply a preset theme to the page (the closest available theme)
                 page.PresetTheme = PresetThemeValue.Bubble;
 
-                // Define position for the rectangle shape (in inches)
-                double pinX = 2.0;
-                double pinY = 2.0;
-                string masterName = "Rectangle";
-
-                // Add the rectangle shape to the page
-                long shapeId = page.AddShape(pinX, pinY, masterName);
-                Shape rectangle = page.Shapes.GetShape(shapeId);
+                // Add a rectangle shape at position (2, 2) on the page
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+                Shape rectangle = page.Shapes.GetShape((int)shapeId);
 
                 // Optionally add some text to the rectangle
                 rectangle.Text.Value.Add(new Txt("Rectangle"));
 
                 // Save the diagram to a VSDX file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                diagram.Save("FlowchartDiagram.vsdx", SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,83 +1,150 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // required for Aspose.Diagram types
 
 namespace ShapeStyleExport
 {
-    // DTO for line and fill properties
-    public class ShapeStyle
+    // DTO for line properties
+    public class LineDto
     {
-        public string LineColor { get; set; }
-        public double LineWeight { get; set; }
-        public int LinePattern { get; set; }
-        public int BeginArrow { get; set; }
-        public int EndArrow { get; set; }
+        // Hex color string (e.g., "#FF0000")
+        public string? Color { get; set; }
 
-        public string FillForegnd { get; set; }
-        public string FillBkgnd { get; set; }
-        public int FillPattern { get; set; }
+        // Line thickness in inches
+        public double? Weight { get; set; }
+
+        // Pattern name (enum converted to string)
+        public string? Pattern { get; set; }
+
+        // Arrow style indices
+        public int? BeginArrow { get; set; }
+        public int? EndArrow { get; set; }
     }
 
-    public class Program
+    // DTO for fill properties
+    public class FillDto
     {
-        public static void Main(string[] args)
+        // Foreground (fill) color hex
+        public string? Foreground { get; set; }
+
+        // Background (fill) color hex
+        public string? Background { get; set; }
+
+        // Fill pattern index
+        public int? Pattern { get; set; }
+
+        // Gradient enabled flag
+        public bool? GradientEnabled { get; set; }
+
+        // Gradient direction index
+        public int? GradientDirection { get; set; }
+    }
+
+    // Root DTO containing both line and fill sections
+    public class ShapeStyleDto
+    {
+        public LineDto Line { get; set; } = new();
+        public FillDto Fill { get; set; } = new();
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
-            // Validate arguments
-            if (args.Length < 2)
+            // Validate argument count
+            if (args.Length < 3)
             {
-                Console.WriteLine("Usage: ShapeStyleExport <inputVisioFile> <outputJsonFile>");
+                Console.Error.WriteLine("Usage: ShapeStyleExport <inputVisioPath> <shapeId> <outputJsonPath>");
                 return;
             }
 
+            // Input Visio file path
             string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Find the first non‑deleted shape on the first page
-            Page page = diagram.Pages[0];
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            if (!File.Exists(inputPath))
             {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No visible shape found in the diagram.");
+                Console.Error.WriteLine($"File not found: {inputPath}");
                 return;
             }
 
-            // Extract line properties
-            var line = targetShape.Line;
-            var fill = targetShape.Fill;
-
-            ShapeStyle style = new ShapeStyle
+            // Shape identifier (numeric ID)
+            if (!long.TryParse(args[1], out long shapeId))
             {
-                LineColor = line.LineColor.Value,
-                LineWeight = line.LineWeight.Value,
-                LinePattern = (int)line.LinePattern.Value,
-                BeginArrow = (int)line.BeginArrow.Value,
-                EndArrow = (int)line.EndArrow.Value,
+                Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
+                return;
+            }
 
-                FillForegnd = fill.FillForegnd.Value,
-                FillBkgnd = fill.FillBkgnd.Value,
-                FillPattern = (int)fill.FillPattern.Value
-            };
+            // Output JSON file path
+            string outputPath = args[2];
+            // Ensure the directory for the output exists
+            string? outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+                return;
+            }
 
-            // Serialize to JSON with indentation
-            string json = JsonSerializer.Serialize(style, new JsonSerializerOptions { WriteIndented = true });
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Write JSON to file
-            File.WriteAllText(outputPath, json);
+                // Retrieve the first page (index 0) – adjust if needed
+                Page page = diagram.Pages[0];
 
-            Console.WriteLine($"Shape style exported to '{outputPath}'.");
+                // Get the shape by its ID; cast to int because GetShape expects int
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    return;
+                }
+
+                // Prepare DTO for serialization
+                ShapeStyleDto styleDto = new ShapeStyleDto();
+
+                // ----- Extract line properties -----
+                // Color hex string
+                styleDto.Line.Color = shape.Line.LineColor.Value;
+                // Thickness in inches
+                styleDto.Line.Weight = shape.Line.LineWeight.Value;
+                // Convert enum to its name for readability
+                styleDto.Line.Pattern = shape.Line.LinePattern.Value.ToString();
+                // Arrow style indices (stored as IntValue)
+                styleDto.Line.BeginArrow = shape.Line.BeginArrow.Value;
+                styleDto.Line.EndArrow = shape.Line.EndArrow.Value;
+
+                // ----- Extract fill properties -----
+                // Foreground (fill) color
+                styleDto.Fill.Foreground = shape.Fill.FillForegnd.Value;
+                // Background (fill) color
+                styleDto.Fill.Background = shape.Fill.FillBkgnd.Value;
+                // Fill pattern index
+                styleDto.Fill.Pattern = shape.Fill.FillPattern.Value;
+                // Gradient enabled flag (BOOL enum)
+                styleDto.Fill.GradientEnabled = shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True;
+                // Gradient direction index
+                styleDto.Fill.GradientDirection = shape.Fill.GradientFill.GradientDir.Value;
+
+                // Serialize DTO to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                string json = JsonSerializer.Serialize(styleDto, jsonOptions);
+
+                // Write JSON to the output file
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Shape style exported successfully to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Log any unexpected errors
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
         }
     }
 }

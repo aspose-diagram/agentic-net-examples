@@ -1,62 +1,54 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "sample.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Get the first page in the diagram
+            Page page = diagram.Pages[0];
+
+            // Find the first non‑deleted shape on the page
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-
-                // Load an existing Visio diagram (replace with your actual file path)
-                string inputPath = "sample.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (index 0)
-                if (diagram.Pages.Count == 0)
+                if (shape.Del == BOOL.False)
                 {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
+                    targetShape = shape;
+                    break;
                 }
-
-                Page page = diagram.Pages[0];
-
-                // Retrieve a shape by its ID (example uses ID = 1)
-                // Adjust the ID as needed for your diagram
-                Shape shape = page.Shapes.GetShape(1);
-                if (shape == null)
-                {
-                    Console.WriteLine("Shape with ID 1 not found on the first page.");
-                    return;
-                }
-
-                // Access the inherited fill settings
-                var inheritFill = shape.InheritFill;
-                if (inheritFill == null)
-                {
-                    Console.WriteLine("Inherited fill information is unavailable for this shape.");
-                    return;
-                }
-
-                // Retrieve specific inherited fill properties
-                string foregndColor = inheritFill.FillForegnd.Value;   // Foreground fill color (hex string)
-                string bkgndColor = inheritFill.FillBkgnd.Value;      // Background fill color (hex string)
-                int fillPattern = inheritFill.FillPattern.Value;      // Fill pattern index
-                string shadowColor = inheritFill.ShdwForegnd.Value;   // Shadow foreground color
-                int shadowPattern = inheritFill.ShdwPattern.Value;    // Shadow pattern index
-
-                // Output the inherited fill values
-                Console.WriteLine("Inherited Fill Settings for Shape ID 1:");
-                Console.WriteLine($"  Foreground Color : {foregndColor}");
-                Console.WriteLine($"  Background Color : {bkgndColor}");
-                Console.WriteLine($"  Fill Pattern     : {fillPattern}");
-                Console.WriteLine($"  Shadow Color     : {shadowColor}");
-                Console.WriteLine($"  Shadow Pattern   : {shadowPattern}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No shape found on the page.");
+                return;
             }
+
+            // Access inherited fill settings
+            var inheritFill = targetShape.InheritFill;
+
+            Console.WriteLine("Inherited Fill Settings:");
+            Console.WriteLine($"Fill Foreground: {inheritFill.FillForegnd.Value}");
+            Console.WriteLine($"Fill Background: {inheritFill.FillBkgnd.Value}");
+            Console.WriteLine($"Fill Pattern: {inheritFill.FillPattern.Value}");
+            Console.WriteLine($"Shadow Foreground: {inheritFill.ShdwForegnd.Value}");
+            Console.WriteLine($"Shadow Background: {inheritFill.ShdwBkgnd.Value}");
+            Console.WriteLine($"Shadow Pattern: {inheritFill.ShdwPattern.Value}");
+            Console.WriteLine($"Shape Shadow Type: {inheritFill.ShapeShdwType.Value}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

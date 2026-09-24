@@ -1,38 +1,38 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (use the provided load rule)
-            Diagram diagram = new Diagram("{InputFilePath}");
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Create a new blank diagram
+            using (Diagram diagram = new Diagram())
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Create a timestamp string
-                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                // Add a VBA module (ThisDocument) to handle the ShapeAdded event
+                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "ThisDocument");
+                VbaModule module = diagram.VbaProject.Modules[moduleIndex];
 
-                    // Add the timestamp as a comment to the shape (uses the AddComment rule)
-                    page.AddComment(shape.ID, timestamp);
-                }
+                // VBA code that adds a timestamp paragraph to every newly added shape
+                string vbaCode = @"
+Option Explicit
+
+Private Sub Document_ShapeAdded(ByVal Shape As IVShape)
+    Dim timestamp As String
+    timestamp = Format(Now, ""yyyy-mm-dd hh:nn:ss"")
+    ' Append a new paragraph with the timestamp
+    Shape.Text = Shape.Text & vbCrLf & timestamp
+End Sub
+";
+
+                module.Codes = vbaCode;
+
+                // Save the diagram as a macro-enabled Visio file
+                string outputPath = "TimestampMacro.vsdm";
+                diagram.Save(outputPath, SaveFileFormat.Vsdm);
             }
 
-            // Save the modified diagram (use the provided save rule)
-            diagram.Save("{OutputFilePath}", SaveFileFormat.Vdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.WriteLine("Diagram with timestamp macro has been created and saved.");
         }
     }
-}

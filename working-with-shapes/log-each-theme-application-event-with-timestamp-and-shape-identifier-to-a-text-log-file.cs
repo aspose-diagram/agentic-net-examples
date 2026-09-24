@@ -1,47 +1,61 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ThemeApplicationLogger
-{
-    static void Main()
+class Program
     {
-        try
+        // Path to the input Visio file
+        private const string InputFilePath = "input.vsdx";
+        // Path to the output Visio file after theme application
+        private const string OutputFilePath = "output.vsdx";
+        // Path to the log file where theme application events are recorded
+        private const string LogFilePath = "theme_application_log.txt";
+
+        static void Main()
         {
-
-            // Paths for the source diagram and the log file
-            string diagramPath = "input.vsdx";
-            string logPath = "ThemeApplicationLog.txt";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Ensure the log file is empty before starting
-            File.WriteAllText(logPath, string.Empty);
-
-            // Iterate through all pages and shapes in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Ensure the log file exists and is empty at start
+                File.WriteAllText(LogFilePath, string.Empty);
+
+                // Load the diagram from the specified file
+                Diagram diagram = new Diagram(InputFilePath);
+
+                // Iterate through all pages and shapes to apply a theme
+                foreach (Page page in diagram.Pages)
                 {
-                    // Apply a preset theme to the shape (example: Office theme)
-                    shape.PresetTheme = PresetThemeValue.Office;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Apply a preset theme to the shape
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-                    // Build log entry with timestamp and shape identifier (ID)
-                    string logEntry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss}\tPage:{page.ID}\tShapeID:{shape.ID}\tTheme:Office";
-
-                    // Append the log entry to the text file
-                    File.AppendAllText(logPath, logEntry + Environment.NewLine);
+                        // Log the theme application event
+                        LogThemeApplication(shape.ID);
+                    }
                 }
+
+                // Save the modified diagram using the appropriate SaveFileFormat
+                diagram.Save(OutputFilePath, SaveFileFormat.Vsdx);
+
             }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
 
-            // Save the modified diagram (optional, if you want to keep changes)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
+        /// <summary>
+        /// Writes a log entry with the current timestamp and the shape identifier.
+        /// </summary>
+        /// <param name="shapeId">The unique identifier of the shape.</param>
+        private static void LogThemeApplication(long shapeId)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            string timestamp = DateTime.Now.ToString("o"); // ISO 8601 format
+            string logEntry = $"{timestamp} - Theme applied to shape ID: {shapeId}";
+            // Append the log entry to the log file
+            File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
         }
     }
-}

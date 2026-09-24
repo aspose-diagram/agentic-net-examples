@@ -1,129 +1,158 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Globalization;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file – adjust as needed.
-        string inputPath = "input.vsdx";
-        // Verify that the Visio file exists before proceeding.
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Path for the intermediate CSV file that will hold shape metadata.
-        string csvPath = "shapes.csv";
+        // Output CSV file path
+        string csvPath = "shapes_metadata.csv";
 
-        // --------------------------------------------------------------------
-        // STEP 1: Load the Visio diagram and extract shape metadata into CSV.
-        // --------------------------------------------------------------------
         try
         {
-            // Load the diagram from the specified file.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare a list to collect CSV lines; the first line is the header.
-            List<string> csvLines = new List<string>
+            // Write shape metadata to CSV
+            using (StreamWriter writer = new StreamWriter(csvPath, false, System.Text.Encoding.UTF8))
             {
-                "PageName,ShapeID,ShapeName,ShapeNameU,MasterName,Text,CustomPropsCount"
-            };
+                // Header
+                writer.WriteLine("PageName,ShapeID,Name,NameU,MasterName,PinX,PinY,Width,Height,Text");
 
-            // Iterate over each page in the diagram.
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate over each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True) continue;
+                    // Iterate shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Retrieve basic shape information, handling possible nulls.
-                    string pageName = page.Name ?? string.Empty;
-                    string shapeId = shape.ID.ToString();
-                    string shapeName = shape.Name ?? string.Empty;
-                    string shapeNameU = shape.NameU ?? string.Empty;
-                    string masterName = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
+                        // Gather metadata
+                        long shapeId = shape.ID; // shape.ID is a long
+                        string shapeName = shape.Name ?? string.Empty;
+                        string shapeNameU = shape.NameU ?? string.Empty;
+                        string masterName = shape.Master != null ? shape.Master.Name : string.Empty;
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
 
-                    // Extract plain text from the shape, sanitising commas and line breaks.
-                    string rawText = shape.Text.Value.Text;
-                    string cleanText = rawText.Replace("\r", " ").Replace("\n", " ").Replace(",", " ");
+                        // Get plain text, replace line breaks and commas to keep CSV format simple
+                        string text = shape.Text.Value.ToString()
+                                        .Replace("\r\n", " ")
+                                        .Replace("\n", " ")
+                                        .Replace(",", " ");
 
-                    // Count the number of custom properties (Props) attached to the shape.
-                    int customPropsCount = shape.Props != null ? shape.Props.Count : 0;
-
-                    // Assemble a CSV line with the collected data.
-                    string csvLine = $"{pageName},{shapeId},{shapeName},{shapeNameU},{masterName},{cleanText},{customPropsCount}";
-                    csvLines.Add(csvLine);
+                        // Write CSV line (values are quoted to protect commas in future text)
+                        writer.WriteLine(string.Format(CultureInfo.InvariantCulture,
+                            "\"{0}\",{1},\"{2}\",\"{3}\",\"{4}\",{5},{6},{7},{8},\"{9}\"",
+                            page.Name,
+                            shapeId,
+                            shapeName,
+                            shapeNameU,
+                            masterName,
+                            pinX,
+                            pinY,
+                            width,
+                            height,
+                            text));
+                    }
                 }
             }
-
-            // Write all CSV lines to the output file.
-            File.WriteAllLines(csvPath, csvLines);
         }
         catch (Exception ex)
         {
-            // Report any errors that occurred while processing the diagram.
+            // Log any Aspose.Diagram related errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
             return;
         }
 
-        // --------------------------------------------------------------------
-        // STEP 2: Read the CSV and generate a simple summary report.
-        // --------------------------------------------------------------------
-        try
+        // Generate a simple summary report from the CSV
+        int totalShapes = 0;
+        double totalWidth = 0.0;
+        double totalHeight = 0.0;
+        HashSet<string> distinctMasters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        using (StreamReader reader = new StreamReader(csvPath))
         {
-            // Read all lines from the CSV file.
-            string[] allLines = File.ReadAllLines(csvPath);
+            // Read header line
+            string headerLine = reader.ReadLine();
 
-            // Ensure there is data beyond the header.
-            if (allLines.Length <= 1)
+            // Process each data line
+            string line;
+            while ((line = reader.ReadLine()) != null)
             {
-                Console.WriteLine("No shape data found in CSV.");
-                return;
-            }
+                // Simple CSV split (fields are quoted, but we only need a few columns)
+                List<string> fields = new List<string>();
+                bool inQuotes = false;
+                string current = string.Empty;
+                foreach (char c in line)
+                {
+                    if (c == '\"')
+                    {
+                        inQuotes = !inQuotes;
+                        continue;
+                    }
 
-            // Counters for the summary.
-            int totalShapes = 0;
-            Dictionary<string, int> masterCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    if (c == ',' && !inQuotes)
+                    {
+                        fields.Add(current);
+                        current = string.Empty;
+                    }
+                    else
+                    {
+                        current += c;
+                    }
+                }
+                fields.Add(current); // last field
 
-            // Process each data line (skip header at index 0).
-            for (int i = 1; i < allLines.Length; i++)
-            {
-                // Split the CSV line into its constituent fields.
-                string[] fields = allLines[i].Split(',');
+                if (fields.Count < 9)
+                    continue; // malformed line
 
-                // Guard against malformed lines.
-                if (fields.Length < 7) continue;
+                // Parse required fields
+                string master = fields[4];
+                string widthStr = fields[7];
+                string heightStr = fields[8];
+
+                double widthVal = double.TryParse(widthStr, NumberStyles.Any, CultureInfo.InvariantCulture, out widthVal) ? widthVal : 0.0;
+                double heightVal = double.TryParse(heightStr, NumberStyles.Any, CultureInfo.InvariantCulture, out heightVal) ? heightVal : 0.0;
 
                 totalShapes++;
-
-                // The master name is the fifth column (index 4).
-                string master = fields[4];
-
-                // Tally the occurrence of each master type.
-                if (masterCounts.ContainsKey(master))
-                    masterCounts[master]++;
-                else
-                    masterCounts[master] = 1;
-            }
-
-            // Output the summary to the console.
-            Console.WriteLine($"Total shapes processed: {totalShapes}");
-            Console.WriteLine("Shapes per master type:");
-            foreach (KeyValuePair<string, int> entry in masterCounts)
-            {
-                Console.WriteLine($"  {entry.Key}: {entry.Value}");
+                totalWidth += widthVal;
+                totalHeight += heightVal;
+                if (!string.IsNullOrEmpty(master))
+                    distinctMasters.Add(master);
             }
         }
-        catch (Exception ex)
+
+        // Output summary to console
+        Console.WriteLine("=== Shape Metadata Summary ===");
+        Console.WriteLine("Total shapes processed: " + totalShapes);
+        Console.WriteLine("Distinct master shapes: " + distinctMasters.Count);
+        if (totalShapes > 0)
         {
-            // Report any errors that occurred while generating the report.
-            Console.Error.WriteLine($"Error generating report: {ex.Message}");
+            double avgWidth = totalWidth / totalShapes;
+            double avgHeight = totalHeight / totalShapes;
+            Console.WriteLine("Average width (inches): " + avgWidth.ToString("F2", CultureInfo.InvariantCulture));
+            Console.WriteLine("Average height (inches): " + avgHeight.ToString("F2", CultureInfo.InvariantCulture));
+        }
+        else
+        {
+            Console.WriteLine("No shapes found.");
         }
     }
 }

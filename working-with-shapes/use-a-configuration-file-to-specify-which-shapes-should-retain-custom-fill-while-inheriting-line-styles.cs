@@ -1,95 +1,112 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Configuration model matching the JSON file structure
-        private class Config
+        // Input Visio file path
+        string diagramPath = "input.vsdx";
+        if (!File.Exists(diagramPath))
         {
-            public List<long> RetainFillShapeIds { get; set; } = new();
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
         }
 
-        static void Main()
+        // Configuration file path (contains shape IDs, one per line)
+        string configPath = "retain_fill_config.txt";
+        if (!File.Exists(configPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {configPath}");
+            return;
+        }
+
+        // Output Visio file path
+        string outputPath = "output.vsdx";
+
+        // Read shape IDs that should retain their custom fill
+        var retainFillIds = new HashSet<long>();
+        try
+        {
+            foreach (var line in File.ReadAllLines(configPath))
             {
+                // Skip empty lines and comments
+                if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#"))
+                    continue;
 
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string configPath = "config.json";
-                string outputPath = "output.vsdx";
+                if (long.TryParse(line.Trim(), out long id))
+                    retainFillIds.Add(id);
+                else
+                    Console.Error.WriteLine($"Invalid shape ID in config: '{line}'");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading config file: {ex.Message}");
+            return;
+        }
 
-                // Load configuration
-                Config config = LoadConfig(configPath);
+        // Load the diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Process each page and shape
-                foreach (Page page in diagram.Pages)
+        // Process each shape on every page
+        try
+        {
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Apply inherited line style to all shapes
+                    if (shape.InheritLine != null)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
+                        shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
+                        shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
+                        shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
+                        shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
+                    }
 
-                        // If the shape ID is listed in the config, keep its fill
-                        // and force line properties to inherit from the parent style
-                        if (config.RetainFillShapeIds.Contains(shape.ID))
+                    // If the shape is NOT listed in the config, also inherit its fill
+                    if (!retainFillIds.Contains(shape.ID))
+                    {
+                        if (shape.InheritFill != null)
                         {
-                            // Inherit line color
-                            shape.Line.LineColor.Value = shape.InheritLine.LineColor.Value;
-
-                            // Inherit line weight
-                            shape.Line.LineWeight.Value = shape.InheritLine.LineWeight.Value;
-
-                            // Inherit line pattern
-                            shape.Line.LinePattern.Value = shape.InheritLine.LinePattern.Value;
-
-                            // Inherit begin arrow
-                            shape.Line.BeginArrow.Value = shape.InheritLine.BeginArrow.Value;
-
-                            // Inherit end arrow
-                            shape.Line.EndArrow.Value = shape.InheritLine.EndArrow.Value;
+                            shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
+                            shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
+                            shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
                         }
                     }
+                    // Shapes listed in retainFillIds keep their existing fill (no action needed)
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Helper method to read the JSON configuration file
-        private static Config LoadConfig(string path)
-        {
-            if (!File.Exists(path))
-            {
-                Console.WriteLine($"Configuration file '{path}' not found. Using empty configuration.");
-                return new Config();
-            }
-
-            try
-            {
-                string json = File.ReadAllText(path);
-                Config? cfg = JsonSerializer.Deserialize<Config>(json);
-                return cfg ?? new Config();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to parse configuration: {ex.Message}");
-                return new Config();
             }
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing shapes: {ex.Message}");
+            return;
+        }
+
+        // Save the modified diagram
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+        }
     }
+}

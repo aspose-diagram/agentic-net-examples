@@ -1,62 +1,48 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Iterate through all pages and shapes to locate group shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (adjust index if needed)
-                Page page = diagram.Pages[0];
-
-                // Find the first group shape on the page
-                Shape groupShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Identify a group shape
                     if (shape.Type == TypeValue.Group)
                     {
-                        groupShape = shape;
-                        break;
+                        // Locate the desired sub‑shape within the same page.
+                        // Replace "SubShapeName" with the actual NameU of the sub‑shape.
+                        foreach (Shape subShape in page.Shapes)
+                        {
+                            if (subShape.NameU == "SubShapeName")
+                            {
+                                // Set the width of the sub‑shape to 5.0 inches using double precision
+                                subShape.SetWidth(5.0);
+                                Console.WriteLine($"Width of sub‑shape '{subShape.NameU}' set to 5.0 inches.");
+                            }
+                        }
                     }
                 }
-
-                if (groupShape == null)
-                {
-                    throw new Exception("No group shape found on the page.");
-                }
-
-                // Retrieve a sub‑shape from the group.
-                // Here we take the first sub‑shape encountered.
-                Shape subShape = null;
-                foreach (Shape inner in groupShape.Shapes)
-                {
-                    subShape = inner;
-                    break;
-                }
-
-                if (subShape == null)
-                {
-                    throw new Exception("The group shape does not contain any sub‑shapes.");
-                }
-
-                // Adjust the width of the sub‑shape to 5.0 inches using SetWidth (double precision)
-                subShape.SetWidth(5.0);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

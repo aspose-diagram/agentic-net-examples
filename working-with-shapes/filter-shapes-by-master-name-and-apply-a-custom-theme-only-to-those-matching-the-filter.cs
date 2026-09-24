@@ -1,19 +1,16 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
                 // Define the master name to filter shapes
                 string targetMasterName = "Rectangle";
@@ -23,19 +20,19 @@ class Program
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has an associated master
+                        // Ensure the shape has an associated master before checking its name
                         if (shape.Master != null && shape.Master.Name == targetMasterName)
                         {
-                            // Apply a preset theme to the matching shape
+                            // Apply a custom preset theme to the matching shape
                             shape.PresetTheme = PresetThemeValue.Bubble;
-                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
                         }
                     }
                 }
 
                 // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
             }
             catch (System.IO.FileNotFoundException ex)

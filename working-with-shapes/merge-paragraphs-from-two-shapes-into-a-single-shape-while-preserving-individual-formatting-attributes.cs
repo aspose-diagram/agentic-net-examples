@@ -5,6 +5,17 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Helper to locate a shape on a page by its universal name (NameU)
+    static Shape FindShapeByName(Page page, string nameU)
+    {
+        foreach (Shape shape in page.Shapes)
+        {
+            if (shape.NameU == nameU)
+                return shape;
+        }
+        return null;
+    }
+
     static void Main()
     {
         try
@@ -16,75 +27,70 @@ class Program
             // Work with the first page
             Page page = diagram.Pages[0];
 
-            // Find the two source shapes by their universal names (adjust names as needed)
-            Shape sourceShape1 = null;
-            Shape sourceShape2 = null;
-            foreach (Shape shp in page.Shapes)
-            {
-                if (shp.NameU == "SourceShape1")
-                    sourceShape1 = shp;
-                else if (shp.NameU == "SourceShape2")
-                    sourceShape2 = shp;
-            }
+            // Locate the two source shapes (replace with actual shape names)
+            Shape sourceShape1 = FindShapeByName(page, "SourceShape1");
+            Shape sourceShape2 = FindShapeByName(page, "SourceShape2");
 
             if (sourceShape1 == null || sourceShape2 == null)
-                throw new Exception("Source shapes not found.");
+            {
+                Console.WriteLine("One or both source shapes were not found.");
+                return;
+            }
 
-            // Create a new rectangle shape that will hold the merged paragraphs
-            long targetShapeId = page.AddShape(5.0, 5.0, 2.0, 2.0, "Rectangle");
+            // Create a new target shape (using a simple rectangle master)
+            long targetShapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
             Shape targetShape = page.Shapes.GetShape(targetShapeId);
 
-            // Clear any existing content in the target shape
+            // Ensure the target shape starts with no paragraphs
             targetShape.Paras.Clear();
-            targetShape.Text.Value.Clear();
 
-            // Merge paragraphs from both source shapes
-            CopyParagraphs(sourceShape1, targetShape);
-            CopyParagraphs(sourceShape2, targetShape);
+            // Method to copy paragraphs from a source shape to the target shape
+            void CopyParagraphs(Shape src)
+            {
+                foreach (Para srcPara in src.Paras)
+                {
+                    // Create a new paragraph and copy formatting cells
+                    Para newPara = new Para();
+
+                    // Horizontal alignment
+                    newPara.HorzAlign.Value = srcPara.HorzAlign.Value;
+
+                    // Indentation
+                    newPara.IndLeft.Value = srcPara.IndLeft.Value;
+                    newPara.IndRight.Value = srcPara.IndRight.Value;
+                    newPara.IndFirst.Value = srcPara.IndFirst.Value;
+
+                    // Spacing
+                    newPara.SpBefore.Value = srcPara.SpBefore.Value;
+                    newPara.SpAfter.Value = srcPara.SpAfter.Value;
+                    newPara.SpLine.Value = srcPara.SpLine.Value;
+
+                    // Bullet settings
+                    newPara.Bullet.Value = srcPara.Bullet.Value;
+                    newPara.BulletStr.Value = srcPara.BulletStr.Value;
+                    newPara.BulletFont.Value = srcPara.BulletFont.Value;
+                    newPara.BulletFontSize.Value = srcPara.BulletFontSize.Value;
+                    newPara.Flags.Value = srcPara.Flags.Value;
+                    newPara.LocalizeBulletFont.Value = srcPara.LocalizeBulletFont.Value;
+                    newPara.TextPosAfterBullet.Value = srcPara.TextPosAfterBullet.Value;
+
+                    // Add the copied paragraph to the target shape
+                    targetShape.Paras.Add(newPara);
+                }
+            }
+
+            // Copy paragraphs from both source shapes
+            CopyParagraphs(sourceShape1);
+            CopyParagraphs(sourceShape2);
 
             // Save the modified diagram
             diagram.Save("merged_output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Paragraphs merged and diagram saved as merged_output.vsdx");
 
         }
         catch (System.IO.FileNotFoundException ex)
         {
             Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Copies all paragraphs (including formatting) from src to dest shape
-    static void CopyParagraphs(Shape src, Shape dest)
-    {
-        // Split the source shape's plain text into lines (Visio uses line breaks for paragraphs)
-        string[] paragraphTexts = src.Text.Value.Text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-
-        int index = 0;
-        foreach (Aspose.Diagram.Para srcPara in src.Paras)
-        {
-            // Create a new paragraph and copy formatting cells
-            Aspose.Diagram.Para newPara = new Aspose.Diagram.Para();
-
-            newPara.HorzAlign.Value = srcPara.HorzAlign.Value;
-            newPara.IndLeft.Value = srcPara.IndLeft.Value;
-            newPara.IndRight.Value = srcPara.IndRight.Value;
-            newPara.IndFirst.Value = srcPara.IndFirst.Value;
-            newPara.SpBefore.Value = srcPara.SpBefore.Value;
-            newPara.SpAfter.Value = srcPara.SpAfter.Value;
-            newPara.SpLine.Value = srcPara.SpLine.Value;
-            newPara.Bullet.Value = srcPara.Bullet.Value;
-            newPara.BulletStr.Value = srcPara.BulletStr.Value;
-
-            // Add the paragraph to the destination shape
-            dest.Paras.Add(newPara);
-
-            // Add the corresponding text run (if available)
-            if (index < paragraphTexts.Length)
-            {
-                string txt = paragraphTexts[index];
-                dest.Text.Value.Add(new Txt(txt));
-            }
-
-            index++;
         }
     }
 }

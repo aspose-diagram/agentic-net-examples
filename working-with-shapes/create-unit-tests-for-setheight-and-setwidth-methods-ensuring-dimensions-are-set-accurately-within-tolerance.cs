@@ -1,70 +1,83 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    // Tolerance for floating point comparison
+    private const double Tolerance = 0.001;
+
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Ensure there is at least one page (the default diagram contains one)
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the page
-                // PinX and PinY are the center of the shape; initial width and height are arbitrary
-                double initialPinX = 5.0;
-                double initialPinY = 5.0;
-                double initialWidth = 2.0;
-                double initialHeight = 1.0;
-                long shapeId = page.AddShape(initialPinX, initialPinY, initialWidth, initialHeight, "Rectangle");
-
-                // Retrieve the shape instance
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Define new dimensions to set
-                double newWidth = 3.75;
-                double newHeight = 2.5;
-
-                // Apply the new dimensions using SetWidth and SetHeight
-                shape.SetWidth(newWidth);
-                shape.SetHeight(newHeight);
-
-                // Tolerance for floating‑point comparison
-                double tolerance = 0.001;
-
-                // Verify width
-                double actualWidth = shape.XForm.Width.Value;
-                if (Math.Abs(actualWidth - newWidth) > tolerance)
-                {
-                    throw new Exception($"Width verification failed. Expected: {newWidth}, Actual: {actualWidth}");
-                }
-                else
-                {
-                    Console.WriteLine($"Width set correctly: {actualWidth}");
-                }
-
-                // Verify height
-                double actualHeight = shape.XForm.Height.Value;
-                if (Math.Abs(actualHeight - newHeight) > tolerance)
-                {
-                    throw new Exception($"Height verification failed. Expected: {newHeight}, Actual: {actualHeight}");
-                }
-                else
-                {
-                    Console.WriteLine($"Height set correctly: {actualHeight}");
-                }
-
-                // Optional: Save the diagram to verify visually (not required for the test)
-                // diagram.Save("TestDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            TestSetHeight(); // Run height test
+            TestSetWidth();  // Run width test
+            Console.WriteLine("All dimension tests passed.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Test failed: {ex.Message}");
+            // Re‑throw to indicate failure in a real test runner
+            throw;
+        }
     }
+
+    // Test that SetHeight correctly updates the shape's Height within tolerance
+    private static void TestSetHeight()
+    {
+        // Create a new empty diagram and add a page
+        Diagram diagram = new Diagram();
+        diagram.Pages.Add(new Page());
+        Page page = diagram.Pages[0];
+
+        // Add a rectangle shape (initial size does not matter)
+        // Cast literals to float because DrawRectangle expects float parameters
+        long shapeId = page.DrawRectangle(pinX: 2.0f, pinY: 2.0f, width: 3.0f, height: 3.0f);
+        Shape shape = page.Shapes.GetShape(shapeId);
+
+        // Desired new height
+        double newHeight = 5.123;
+
+        // Apply the height change
+        shape.SetHeight(newHeight);
+
+        // Verify the height was set correctly
+        double actualHeight = shape.XForm.Height.Value;
+        if (Math.Abs(actualHeight - newHeight) > Tolerance)
+        {
+            throw new Exception($"SetHeight test failed. Expected {newHeight}, but got {actualHeight}.");
+        }
+
+        Console.WriteLine($"SetHeight test passed. Height = {actualHeight}");
     }
+
+    // Test that SetWidth correctly updates the shape's Width within tolerance
+    private static void TestSetWidth()
+    {
+        // Create a new empty diagram and add a page
+        Diagram diagram = new Diagram();
+        diagram.Pages.Add(new Page());
+        Page page = diagram.Pages[0];
+
+        // Add a rectangle shape (initial size does not matter)
+        // Cast literals to float because DrawRectangle expects float parameters
+        long shapeId = page.DrawRectangle(pinX: 1.0f, pinY: 1.0f, width: 2.0f, height: 2.0f);
+        Shape shape = page.Shapes.GetShape(shapeId);
+
+        // Desired new width
+        double newWidth = 7.456;
+
+        // Apply the width change
+        shape.SetWidth(newWidth);
+
+        // Verify the width was set correctly
+        double actualWidth = shape.XForm.Width.Value;
+        if (Math.Abs(actualWidth - newWidth) > Tolerance)
+        {
+            throw new Exception($"SetWidth test failed. Expected {newWidth}, but got {actualWidth}.");
+        }
+
+        Console.WriteLine($"SetWidth test passed. Width = {actualWidth}");
+    }
+}

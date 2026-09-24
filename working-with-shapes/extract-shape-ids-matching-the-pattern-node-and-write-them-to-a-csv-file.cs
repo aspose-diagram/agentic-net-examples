@@ -1,7 +1,7 @@
+using Aspose.Diagram;
 using System;
 using System.IO;
-using System.Collections.Generic;
-using Aspose.Diagram;
+using System.Text.RegularExpressions;
 
 class Program
 {
@@ -10,42 +10,40 @@ class Program
         try
         {
 
-            // Path to the Visio file
-            string visioPath = "input.vsdx";
-            // Path to the CSV output file
-            string csvPath = "node_ids.csv";
+            // Load the Visio diagram (lifecycle rule)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
+            // CSV output file
+            string outputCsv = "shape_ids.csv";
 
-            // Collect IDs of shapes whose NameU matches "Node_*"
-            List<long> nodeIds = new List<long>();
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
+            // Prepare CSV writer
+            using (StreamWriter writer = new StreamWriter(outputCsv, false))
             {
-                foreach (Shape shape in page.Shapes)
+                // Write CSV header
+                writer.WriteLine("ShapeID");
+
+                // Pattern to match shape names like "Node_*"
+                Regex pattern = new Regex(@"^Node_.*$", RegexOptions.IgnoreCase);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // NameU holds the universal name of the shape
-                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.StartsWith("Node_"))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        nodeIds.Add(shape.ID);
+                        // Use the universal name of the shape for matching
+                        string shapeName = shape.NameU;
+                        if (pattern.IsMatch(shapeName))
+                        {
+                            // Write the shape's ID to CSV
+                            writer.WriteLine(shape.ID);
+                        }
                     }
                 }
             }
 
-            // Write the collected IDs to a CSV file (one ID per line)
-            using (StreamWriter writer = new StreamWriter(csvPath))
-            {
-                // Optional header
-                writer.WriteLine("ShapeID");
-                foreach (long id in nodeIds)
-                {
-                    writer.WriteLine(id);
-                }
-            }
-
-            Console.WriteLine($"Extracted {nodeIds.Count} shape IDs to '{csvPath}'.");
+            // No modifications made, so saving the diagram is optional
+            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

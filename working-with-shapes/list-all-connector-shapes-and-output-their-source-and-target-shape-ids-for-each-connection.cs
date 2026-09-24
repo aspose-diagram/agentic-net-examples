@@ -1,78 +1,72 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
                 // Path to the Visio file (adjust as needed)
-                string filePath = "input.vsdx";
+                string inputPath = "input.vsdx";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Load the diagram from a file stream
+                using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
                 {
-                    // Collect IDs of all connector shapes (1‑D shapes) on the current page
-                    HashSet<long> connectorIds = new HashSet<long>();
-                    foreach (Shape shape in page.Shapes)
+                    Diagram diagram = new Diagram(stream);
+
+                    // Iterate through all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        if (shape.OneD) // Connector shapes are 1‑D
+                        // Map connector shape ID -> list of shape IDs it is connected to
+                        Dictionary<long, List<long>> connectorMap = new Dictionary<long, List<long>>();
+
+                        // Populate the map using the Connects collection
+                        foreach (Connect connection in page.Connects)
                         {
-                            connectorIds.Add(shape.ID);
-                        }
-                    }
+                            long connectorId = connection.FromSheet; // The connector shape ID
+                            long targetShapeId = connection.ToSheet; // The shape it is glued to
 
-                    // If there are no connectors on this page, continue to the next page
-                    if (connectorIds.Count == 0)
-                        continue;
-
-                    Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) has {connectorIds.Count} connector(s):");
-
-                    // For each connector, find its connections via the page.Connects collection
-                    foreach (long connectorId in connectorIds)
-                    {
-                        // Gather connections where the connector participates
-                        List<Connect> relatedConnections = new List<Connect>();
-                        foreach (Connect conn in page.Connects)
-                        {
-                            if (conn.FromSheet == connectorId || conn.ToSheet == connectorId)
+                            if (!connectorMap.ContainsKey(connectorId))
                             {
-                                relatedConnections.Add(conn);
+                                connectorMap[connectorId] = new List<long>();
                             }
+                            connectorMap[connectorId].Add(targetShapeId);
                         }
 
-                        // Output source and target shape IDs for each connection of this connector
-                        foreach (Connect conn in relatedConnections)
+                        // Output information for each connector shape
+                        foreach (KeyValuePair<long, List<long>> entry in connectorMap)
                         {
-                            long sourceId = conn.FromSheet == connectorId ? conn.ToSheet : conn.FromSheet;
-                            long targetId = connectorId;
+                            long connectorId = entry.Key;
+                            List<long> connectedShapeIds = entry.Value;
 
-                            // Determine direction: if the connector is the FromSheet, then source is the other shape
-                            // and target is the connector itself; otherwise reverse.
-                            if (conn.FromSheet == connectorId)
+                            // Retrieve the connector shape to verify it is a 1‑D connector
+                            Shape connectorShape = page.Shapes.GetShape(connectorId);
+                            if (connectorShape == null || !connectorShape.OneD)
                             {
-                                sourceId = conn.ToSheet;
-                                targetId = conn.FromSheet;
+                                // Not a connector; skip
+                                continue;
+                            }
+
+                            // Expecting two ends for a typical connector
+                            if (connectedShapeIds.Count >= 2)
+                            {
+                                long sourceId = connectedShapeIds[0];
+                                long targetId = connectedShapeIds[1];
+                                Console.WriteLine($"Connector ID: {connectorId}, Source Shape ID: {sourceId}, Target Shape ID: {targetId}");
                             }
                             else
                             {
-                                sourceId = conn.FromSheet;
-                                targetId = conn.ToSheet;
+                                // Fallback for connectors with fewer than two connections
+                                Console.WriteLine($"Connector ID: {connectorId} has {connectedShapeIds.Count} connected shape(s).");
+                                for (int i = 0; i < connectedShapeIds.Count; i++)
+                                {
+                                    Console.WriteLine($"  Connected Shape {i + 1} ID: {connectedShapeIds[i]}");
+                                }
                             }
-
-                            Console.WriteLine($"  Connector ID {connectorId} connects from shape ID {sourceId} to shape ID {targetId}");
-                        }
-
-                        // If a connector has no entries in Connects, note it
-                        if (relatedConnections.Count == 0)
-                        {
-                            Console.WriteLine($"  Connector ID {connectorId} has no glued connections.");
                         }
                     }
                 }

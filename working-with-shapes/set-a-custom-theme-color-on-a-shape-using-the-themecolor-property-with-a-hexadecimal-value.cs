@@ -1,36 +1,46 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
+        // Define input file path
+        string inputPath = "input.vsdx";
+        // Verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Define output file path
+        string outputPath = "output.vsdx";
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the Visio diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Access the active page of the diagram
-            Page page = diagram.ActivePage;
+            // Access the first page of the diagram
+            Page page = diagram.Pages[0];
 
-            // Add a rectangle shape at coordinates (2, 2)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+            // Retrieve a shape by its ID (example ID = 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Retrieve the shape instance using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Apply a custom fill color (used as a theme color substitute) using a hexadecimal string
+            // Set a custom fill color on the shape using a hexadecimal value
+            // The FillForegnd cell holds the foreground fill color; assign via .Value
             shape.Fill.FillForegnd.Value = "#FF5733";
 
-            // Save the diagram to a VSDX file
-            diagram.Save("CustomThemeColor.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

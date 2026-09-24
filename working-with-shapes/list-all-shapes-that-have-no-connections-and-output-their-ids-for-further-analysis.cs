@@ -1,32 +1,48 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-class ListUnconnectedShapes
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram
-            // Replace "input.vsdx" with the path to your Visio file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file (adjust as needed)
+            string filePath = "input.vsdx";
 
-            // Iterate through all pages in the diagram
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
+
+            // Collect IDs of shapes that are part of any connection
+            HashSet<long> connectedShapeIds = new HashSet<long>();
+
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate all connections on the page
+                foreach (Connect connection in page.Connects)
+                {
+                    // FromSheet and ToSheet hold the shape IDs involved in the connection
+                    connectedShapeIds.Add(connection.FromSheet);
+                    connectedShapeIds.Add(connection.ToSheet);
+                }
+            }
+
+            // List shapes with no connections
+            Console.WriteLine("Shapes with no connections (IDs):");
+            foreach (Page page in diagram.Pages)
+            {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve IDs of shapes that are connected to the current shape
-                    // Using ConnectedShapesAllNodes to consider both incoming and outgoing connections
-                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // If no connections are found, output the shape's ID
-                    if (connectedIds == null || connectedIds.Length == 0)
+                    if (!connectedShapeIds.Contains(shape.ID))
                     {
-                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}");
+                        Console.WriteLine(shape.ID);
                     }
                 }
             }

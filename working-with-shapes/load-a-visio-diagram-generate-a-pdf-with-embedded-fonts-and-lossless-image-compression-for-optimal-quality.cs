@@ -14,18 +14,19 @@ class Program
             string inputPath = "input.vsdx";
             string outputPath = "output.pdf";
 
-            // Configure the folder that contains system fonts (adjust the path as needed)
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";                     // Fallback font if a required font is missing
-            pdfOptions.TextCompression = PdfTextCompression.Flate; // Lossless compression for PDF content streams
+            // Fallback font if any diagram fonts are missing
+            pdfOptions.DefaultFont = "Arial";
+            // Use PDF/A-1b compliance which embeds fonts and ensures high‑quality output
+            pdfOptions.Compliance = PdfCompliance.PdfA1b;
+            // Do not export hidden pages (optional, but keeps output clean)
+            pdfOptions.ExportHiddenPage = false;
 
-            // Save the diagram as a PDF with embedded fonts and lossless compression
+            // Save the diagram as a PDF with the specified options
             diagram.Save(outputPath, pdfOptions);
 
         }

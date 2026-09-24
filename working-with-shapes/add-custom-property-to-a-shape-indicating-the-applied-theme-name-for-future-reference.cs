@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
@@ -10,25 +10,34 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Theme name to record on each shape
-            string appliedThemeName = "CorporateTheme";
+            // Theme name that was applied (hard‑coded for this example)
+            string themeName = "Bubble";
 
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Example: apply a preset theme to the shape (optional)
-                    // shape.PresetTheme = PresetThemeValue.Theme1;
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Store the theme name in a custom property (using Data1)
-                    shape.Data1 = appliedThemeName;
+                    // Create a custom property to store the theme name
+                    Prop themeProp = new Prop();
+                    themeProp.Name = "AppliedTheme";
+                    themeProp.Label.Value = "Applied Theme";
+                    themeProp.Value.Val = themeName;
+                    themeProp.Type.Value = TypePropValue.String;
+
+                    // Add the custom property to the shape
+                    shape.Props.Add(themeProp);
                 }
             }
 
-            // Save the updated diagram
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

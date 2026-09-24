@@ -1,40 +1,52 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Path to the Visio file
+                string inputPath = "input.vsdx";
 
-            // Choose a shape – here we take the first shape on the first page
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the shape's positioning data is up‑to‑date
-            shape.RefreshData();
+                // Select the page (first page in this example)
+                Page page = diagram.Pages[0];
 
-            // Read XForm positioning values
-            double pinX = shape.XForm.PinX.Value;      // X coordinate of the shape's pin (center of rotation)
-            double pinY = shape.XForm.PinY.Value;      // Y coordinate of the shape's pin (center of rotation)
-            double width = shape.XForm.Width.Value;    // Width of the shape in drawing units
-            double height = shape.XForm.Height.Value;  // Height of the shape in drawing units
+                // Specify the shape ID you want to inspect.
+                // Replace this with the actual ID of the shape you are interested in.
+                long shapeId = 1;
 
-            // Example output
-            System.Console.WriteLine($"PinX: {pinX}");
-            System.Console.WriteLine($"PinY: {pinY}");
-            System.Console.WriteLine($"Width: {width}");
-            System.Console.WriteLine($"Height: {height}");
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                if (shape == null)
+                {
+                    Console.WriteLine($"Shape with ID {shapeId} not found.");
+                    return;
+                }
+
+                // Read XForm properties
+                double pinX = shape.XForm.PinX.Value;
+                double pinY = shape.XForm.PinY.Value;
+                double width = shape.XForm.Width.Value;
+                double height = shape.XForm.Height.Value;
+
+                // Output the values
+                Console.WriteLine($"Shape ID: {shapeId}");
+                Console.WriteLine($"PinX: {pinX}");
+                Console.WriteLine($"PinY: {pinY}");
+                Console.WriteLine($"Width: {width}");
+                Console.WriteLine($"Height: {height}");
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

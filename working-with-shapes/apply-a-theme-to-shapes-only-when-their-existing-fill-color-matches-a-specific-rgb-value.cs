@@ -9,15 +9,15 @@ class Program
             try
             {
 
-                // Input Visio file path
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Output Visio file path
+                // Path for the modified Visio file
                 string outputPath = "output.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Define the target fill color (hex string, case‑insensitive)
+                // Define the target fill color (hex string, case-insensitive)
                 const string targetFillColor = "#FF0000"; // Red
 
                 // Iterate through all pages and shapes
@@ -29,18 +29,14 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the Fill and FillForegnd cells exist
-                        if (shape.Fill == null || shape.Fill.FillForegnd == null)
-                            continue;
-
+                        // Retrieve the current fill foreground color
                         string currentFill = shape.Fill.FillForegnd.Value;
-                        if (string.IsNullOrEmpty(currentFill))
-                            continue;
 
-                        // Apply theme only when the fill color matches the target color
-                        if (string.Equals(currentFill, targetFillColor, StringComparison.OrdinalIgnoreCase))
+                        // Compare colors ignoring case
+                        if (!string.IsNullOrEmpty(currentFill) && 
+                            string.Equals(currentFill, targetFillColor, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Apply a preset theme to the shape
+                            // Apply a preset theme to the matching shape
                             shape.PresetTheme = PresetThemeValue.Bubble;
                             shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                             shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;

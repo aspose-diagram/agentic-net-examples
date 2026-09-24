@@ -1,52 +1,91 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class ValidateShapeRotation
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Ensure a file path argument is provided.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: <program> <VisioFilePath>");
+            return;
+        }
+
+        // Assign the first argument to a variable.
+        string visioPath = args[0];
+        // Guard: verify the file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(visioPath);
 
             bool violationFound = false;
+            int pageIndex = 0; // Zero‑based page index for reporting.
 
-            // Iterate through all pages and shapes
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve rotation angles; if a 3D format is not defined, default to 0
-                    double rotX = shape.ThreeDFormat?.RotationXAngle?.Value ?? 0;
-                    double rotY = shape.ThreeDFormat?.RotationYAngle?.Value ?? 0;
-                    double rotZ = shape.ThreeDFormat?.RotationZAngle?.Value ?? 0;
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Check if any axis exceeds ±180 degrees
-                    if (Math.Abs(rotX) > 180 || Math.Abs(rotY) > 180 || Math.Abs(rotZ) > 180)
+                    // Check Z‑axis rotation (shape's own angle).
+                    double angleZ = shape.XForm.Angle.Value;
+                    if (Math.Abs(angleZ) > 180)
                     {
+                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis Z, Angle {angleZ}");
                         violationFound = true;
-                        Console.WriteLine(
-                            $"Violation: Shape ID {shape.ID} on page \"{page.Name}\" exceeds rotation limit. " +
-                            $"X={rotX}, Y={rotY}, Z={rotZ}");
+                    }
+
+                    // Check 3‑D X‑axis rotation if present.
+                    double angleX = shape.ThreeDFormat.RotationXAngle.Value;
+                    if (Math.Abs(angleX) > 180)
+                    {
+                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis X, Angle {angleX}");
+                        violationFound = true;
+                    }
+
+                    // Check 3‑D Y‑axis rotation if present.
+                    double angleY = shape.ThreeDFormat.RotationYAngle.Value;
+                    if (Math.Abs(angleY) > 180)
+                    {
+                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis Y, Angle {angleY}");
+                        violationFound = true;
+                    }
+
+                    // Check 3‑D Z‑axis rotation if present.
+                    double angleZ3D = shape.ThreeDFormat.RotationZAngle.Value;
+                    if (Math.Abs(angleZ3D) > 180)
+                    {
+                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis Z (3D), Angle {angleZ3D}");
+                        violationFound = true;
                     }
                 }
+
+                pageIndex++; // Move to the next page index.
             }
 
+            // Report overall result if no violations were detected.
             if (!violationFound)
             {
-                Console.WriteLine("All shapes are within the 180-degree rotation limit on every axis.");
+                Console.WriteLine("No shape exceeds a rotation angle of 180 degrees on any axis.");
             }
-
-            // Save the diagram (optional, preserves original if no changes were made)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,68 +1,78 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio file
+        string diagramPath = "input.vsdx";
+        // Verify the file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Dictionary to store shape ID and its distinct paragraph font names
+        var shapeParagraphFonts = new Dictionary<long, List<string>>();
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate over every page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file (adjust as needed)
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Dictionary to hold shape ID -> list of paragraph font names
-                Dictionary<long, List<string>> shapeFonts = new Dictionary<long, List<string>>();
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate over every shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // List to collect unique font names for this shape
+                    var fonts = new List<string>();
+
+                    // Paragraph‑level font information is stored in the Char collection.
+                    // Each Char has a FontName cell; we gather distinct values.
+                    foreach (Aspose.Diagram.Char ch in shape.Chars)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve the font name from the Char cell
+                        string fontName = ch.FontName.Value;
 
-                        // Use a HashSet to collect unique font names for the shape
-                        HashSet<string> fontSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                        // Character-level font names (paragraph fonts are often stored here)
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        // Add non‑empty, non‑duplicate font names
+                        if (!string.IsNullOrEmpty(fontName) && !fonts.Contains(fontName))
                         {
-                            if (ch != null && !string.IsNullOrEmpty(ch.FontName.Value))
-                            {
-                                fontSet.Add(ch.FontName.Value);
-                            }
-                        }
-
-                        // If any fonts were found, add them to the dictionary
-                        if (fontSet.Count > 0)
-                        {
-                            shapeFonts[shape.ID] = new List<string>(fontSet);
+                            fonts.Add(fontName);
                         }
                     }
-                }
 
-                // Output the collected font information
-                foreach (KeyValuePair<long, List<string>> entry in shapeFonts)
+                    // Store the collected fonts (empty list if none found)
+                    shapeParagraphFonts[shape.ID] = fonts;
+                }
+            }
+
+            // Output the results for verification
+            foreach (KeyValuePair<long, List<string>> entry in shapeParagraphFonts)
+            {
+                Console.WriteLine($"Shape ID: {entry.Key}");
+                if (entry.Value.Count == 0)
                 {
-                    Console.WriteLine($"Shape ID: {entry.Key}");
-                    Console.WriteLine("  Fonts:");
-                    foreach (string fontName in entry.Value)
+                    Console.WriteLine("  No paragraph fonts found.");
+                }
+                else
+                {
+                    foreach (string font in entry.Value)
                     {
-                        Console.WriteLine($"    {fontName}");
+                        Console.WriteLine($"  Paragraph Font: {font}");
                     }
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

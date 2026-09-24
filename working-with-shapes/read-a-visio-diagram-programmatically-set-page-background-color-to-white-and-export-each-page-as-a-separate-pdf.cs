@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,96 +9,85 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure the required arguments are provided: input Visio file and output folder.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputDirectory>");
-            return;
-        }
-
-        // Guard the input file path.
-        string inputPath = args[0];
+        // Input Visio file path (first argument or a default path)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Guard the output directory (create it if it does not exist).
-        string outputDir = args[1];
-        if (!Directory.Exists(outputDir))
+        // Load the diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Collect original pages before adding background pages
+        List<Page> originalPages = new List<Page>();
+        foreach (Page p in diagram.Pages)
         {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
+            originalPages.Add(p);
         }
 
-        try
+        // Determine the current maximum page ID to assign unique IDs to new background pages
+        int maxPageId = diagram.Pages.Max(p => p.ID);
+
+        // Create a white background page for each original page
+        foreach (Page page in originalPages)
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
+            // Page dimensions
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Iterate through each page in the diagram.
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                // Retrieve the current page.
-                Page page = diagram.Pages[i];
+            // Create background page
+            Page bgPage = new Page();
+            bgPage.ID = ++maxPageId;
+            bgPage.Name = page.Name + "_Background";
 
-                // Obtain page dimensions (in inches).
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+            // Center coordinates for the rectangle shape
+            double pinX = pageWidth / 2.0;
+            double pinY = pageHeight / 2.0;
 
-                // Calculate the center point for a rectangle that covers the whole page.
-                double centerX = pageWidth / 2.0;
-                double centerY = pageHeight / 2.0;
+            // Draw a rectangle that covers the whole page
+            long rectShapeId = bgPage.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
+            Shape rectShape = bgPage.Shapes.GetShape(rectShapeId);
 
-                // Draw a rectangle shape that spans the entire page.
-                long rectId = page.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
+            // Set solid white fill
+            rectShape.Fill.FillPattern.Value = 1;               // Solid fill
+            rectShape.Fill.FillForegnd.Value = "#FFFFFF";       // White color
 
-                // Retrieve the shape object using the returned ID.
-                Shape backgroundShape = page.Shapes.GetShape((int)rectId);
+            // Remove outline
+            rectShape.Line.LinePattern.Value = 0;               // No line
 
-                // Set a solid fill pattern.
-                backgroundShape.Fill.FillPattern.Value = 1; // 1 = solid fill
+            // Send shape to back and lock selection
+            rectShape.SendToBack();
+            rectShape.Protection.LockSelect.Value = BOOL.True;
 
-                // Apply white color to the fill.
-                backgroundShape.Fill.FillForegnd.Value = "#FFFFFF";
+            // Add background page to diagram
+            diagram.Pages.Add(bgPage);
 
-                // Remove any border by setting line pattern to none.
-                backgroundShape.Line.LinePattern.Value = 0;
-
-                // Send the background shape to the back so other content appears on top.
-                backgroundShape.SendToBack();
-
-                // Lock the shape to prevent accidental selection/editing.
-                backgroundShape.Protection.LockSelect.Value = BOOL.True;
-
-                // Configure PDF save options to export only the current page.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    PageIndex = i,          // Zero‑based index of the page to export
-                    PageCount = 1,          // Export a single page
-                    DefaultFont = "Arial", // Fallback font for missing glyphs
-                    SaveFormat = SaveFileFormat.Pdf
-                };
-
-                // Build the output PDF file name (e.g., Page_1.pdf).
-                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.pdf");
-
-                // Export the page as a PDF file.
-                diagram.Save(outputPath, pdfOptions);
-            }
+            // Link the original page to its background page
+            page.BackPage = bgPage;
         }
-        catch (Exception ex)
+
+        // Prepare output directory
+        string outputDir = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "PdfPages");
+        Directory.CreateDirectory(outputDir);
+
+        // Export each original page as a separate PDF
+        for (int i = 0; i < originalPages.Count; i++)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Page page = originalPages[i];
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                PageIndex = i,                 // Export only this page
+                ExportHiddenPage = false,
+                DefaultFont = "Arial"
+            };
+
+            string outputFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_{page.Name}.pdf";
+            string outputPath = Path.Combine(outputDir, outputFileName);
+
+            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine($"Saved page '{page.Name}' to '{outputPath}'.");
         }
     }
 }

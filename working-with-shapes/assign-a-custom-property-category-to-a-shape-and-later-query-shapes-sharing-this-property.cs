@@ -1,69 +1,60 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        // Create a new empty diagram
+        Diagram diagram = new Diagram();
+
+        // Add a new page to the diagram
+        diagram.Pages.Add(new Page());
+        Page page = diagram.Pages[0];
+
+        // Add first rectangle shape using DrawRectangle (returns a shape ID)
+        long shapeId1 = page.DrawRectangle(2.0, 2.0, 2.0, 1.0);
+        Shape shape1 = page.Shapes.GetShape(shapeId1);
+
+        // Add custom property "Category" to the first shape
+        Prop categoryProp1 = new Prop();
+        categoryProp1.Name = "Category";
+        categoryProp1.Label.Value = "Category";
+        categoryProp1.Value.Val = "Finance";
+        categoryProp1.Type.Value = TypePropValue.String;
+        shape1.Props.Add(categoryProp1);
+
+        // Add second rectangle shape
+        long shapeId2 = page.DrawRectangle(5.0, 2.0, 2.0, 1.0);
+        Shape shape2 = page.Shapes.GetShape(shapeId2);
+
+        // Add the same custom property to the second shape
+        Prop categoryProp2 = new Prop();
+        categoryProp2.Name = "Category";
+        categoryProp2.Label.Value = "Category";
+        categoryProp2.Value.Val = "Finance";
+        categoryProp2.Type.Value = TypePropValue.String;
+        shape2.Props.Add(categoryProp2);
+
+        // Query and list all shapes that have the "Category" custom property
+        Console.WriteLine("Shapes with custom property \"Category\":");
+        foreach (Page pg in diagram.Pages)
         {
-            try
+            foreach (Shape shp in pg.Shapes)
             {
-
-                // Create a new diagram
-                Diagram diagram = new Diagram();
-
-                // Add a new page to the diagram
-                diagram.Pages.Add(new Page());
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the page
-                // Parameters: pinX, pinY, master name ("Rectangle")
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Ensure the shape has a Props collection (it always does)
-                // Create a custom property named "Category"
-                Prop categoryProp = new Prop();
-                categoryProp.Name = "Category";                 // Property name
-                categoryProp.Label.Value = "Category";          // Optional label
-                categoryProp.Type.Value = TypePropValue.String; // Data type
-                categoryProp.Value.Val = "Finance";             // Property value
-
-                // Add the custom property to the shape
-                shape.Props.Add(categoryProp);
-
-                // Save the diagram to a file
-                diagram.Save("CustomPropertyDiagram.vsdx", SaveFileFormat.Vsdx);
-
-                // -----------------------------------------------------------------
-                // Query shapes that have the custom property "Category"
-                // -----------------------------------------------------------------
-                Console.WriteLine("Shapes with custom property \"Category\":");
-                foreach (Page pg in diagram.Pages)
+                foreach (Prop prop in shp.Props)
                 {
-                    foreach (Shape shp in pg.Shapes)
+                    if (prop.Name == "Category")
                     {
-                        // Look for a property named "Category"
-                        foreach (Prop p in shp.Props)
-                        {
-                            if (p.Name == "Category")
-                            {
-                                Console.WriteLine($"Shape ID: {shp.ID}, Category Value: {p.Value.Val}");
-                                // Break after finding the property for this shape
-                                break;
-                            }
-                        }
+                        Console.WriteLine($"Shape ID: {shp.ID}, Category Value: {prop.Value.Val}");
+                        break; // property found, move to next shape
                     }
                 }
-
-                // Keep console window open when run outside of IDE
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+
+        // Save the diagram to a VSDX file
+        diagram.Save("CustomPropertyDemo.vsdx", SaveFileFormat.Vsdx);
     }
-    }
+}

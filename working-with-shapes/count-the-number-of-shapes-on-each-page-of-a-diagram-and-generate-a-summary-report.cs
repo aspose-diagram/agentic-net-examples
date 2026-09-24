@@ -1,39 +1,46 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 
 class ShapeCountReport
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
-            // Load the Visio diagram from file using the provided constructor (load rule)
-            string inputPath = "input.vsdx";
-            using (Diagram diagram = new Diagram(inputPath))
+            // Input diagram file (replace with actual path)
+            string inputPath = @"C:\Diagrams\sample.vsdx";
+
+            // Output report file (replace with desired path)
+            string outputPath = @"C:\Diagrams\ShapeCountReport.txt";
+
+            // Load the diagram using Aspose.Diagram (load rule)
+            Diagram diagram = new Diagram(inputPath);
+
+            // List to hold each page's summary line
+            List<string> reportLines = new List<string>();
+            reportLines.Add("Shape Count Summary Report");
+            reportLines.Add("==========================");
+            reportLines.Add(string.Empty);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Prepare a StringBuilder to collect the summary lines
-                StringBuilder reportBuilder = new StringBuilder();
+                // Count the shapes on the current page
+                int shapeCount = page.Shapes.Count;
 
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Count the shapes on the current page
-                    int shapeCount = page.Shapes.Count;
-
-                    // Append a formatted line to the report
-                    reportBuilder.AppendLine($"Page \"{page.Name}\" (ID: {page.ID}) contains {shapeCount} shape(s).");
-                }
-
-                // Write the summary report to a text file
-                string outputPath = "ShapeCountSummary.txt";
-                File.WriteAllText(outputPath, reportBuilder.ToString());
-
-                // Optionally, display the report path
-                Console.WriteLine($"Shape count summary saved to: {outputPath}");
+                // Build a summary line for this page
+                string line = $"Page {page.ID} (Name: {page.Name}): {shapeCount} shape{(shapeCount == 1 ? "" : "s")}";
+                reportLines.Add(line);
             }
+
+            // Write the summary report to a text file (free‑form code, no specific rule needed)
+            File.WriteAllLines(outputPath, reportLines);
+
+            // Optionally, display a confirmation message
+            Console.WriteLine($"Shape count report generated at: {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

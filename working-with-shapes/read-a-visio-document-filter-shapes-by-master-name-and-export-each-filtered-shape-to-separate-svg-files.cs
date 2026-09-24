@@ -4,69 +4,53 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path – use first argument or a default placeholder.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the Visio file exists before proceeding.
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Master name to filter shapes – use second argument or a default.
-        string targetMasterName = args.Length > 1 ? args[1] : "Rectangle";
-
-        // Output directory for generated SVG files.
-        string outputDir = "ExportedSvgs";
-        // Ensure the output directory exists.
-        if (!Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
-        try
-        {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            try
             {
-                Page page = diagram.Pages[pageIndex];
 
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+
+                // Directory where individual SVG files will be saved
+                string outputDir = "ExportedSvgs";
+
+                // Master name to filter shapes (adjust as needed)
+                string targetMasterName = "Rectangle";
+
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputDir))
+                    Directory.CreateDirectory(outputDir);
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that have no master (e.g., connectors, foreign objects).
-                    if (shape.Master == null)
-                        continue;
-
-                    // Compare the shape's master name with the target master name.
-                    if (string.Equals(shape.Master.Name, targetMasterName, StringComparison.OrdinalIgnoreCase))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Build a unique SVG file name using shape ID and page index.
-                        string svgFileName = $"Page{pageIndex + 1}_Shape{shape.ID}_{targetMasterName}.svg";
-                        string svgPath = Path.Combine(outputDir, svgFileName);
+                        // Skip deleted shapes and ensure the shape has a master
+                        if (shape.Del == BOOL.False && shape.Master != null && shape.Master.Name == targetMasterName)
+                        {
+                            // Build a unique file name for each shape
+                            string fileName = $"Shape_{shape.ID}_{Guid.NewGuid()}.svg";
+                            string outputPath = Path.Combine(outputDir, fileName);
 
-                        // Configure SVG save options (default options are sufficient for most cases).
-                        SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-                        // Export the individual shape to an SVG file.
-                        shape.ToSvg(svgPath, svgOptions);
-
-                        // Inform the user about the successful export.
-                        Console.WriteLine($"Exported shape ID {shape.ID} to '{svgPath}'.");
+                            // Export the shape to SVG
+                            SVGSaveOptions svgOptions = new SVGSaveOptions();
+                            shape.ToSvg(outputPath, svgOptions);
+                        }
                     }
                 }
+
+                Console.WriteLine("Export completed.");
+
             }
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose.Diagram errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

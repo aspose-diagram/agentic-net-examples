@@ -1,50 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Verify that a file path argument was provided
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: program <inputVisioFile>");
+            return;
+        }
+
+        // Assign the first argument to a variable representing the input file
+        string inputPath = args[0];
+
+        // Guard: ensure the specified file actually exists on disk
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Prepare a list to hold the IDs of shapes whose master name is "Process"
+        List<long> processShapeIds = new List<long>();
+
         try
         {
+            // Load the Visio diagram from the provided file path
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // List to hold IDs of shapes whose master name is "Process"
-            List<long> processShapeIds = new List<long>();
-
-            // Iterate through all pages in the diagram
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has an associated master and compare its universal name
-                    if (shape.Master != null && 
-                        string.Equals(shape.Master.NameU, "Process", StringComparison.OrdinalIgnoreCase))
+                    // Check that the shape has an associated master and that its name matches "Process"
+                    if (shape.Master != null && shape.Master.Name == "Process")
                     {
+                        // Store the shape's unique identifier for later analysis
                         processShapeIds.Add(shape.ID);
                     }
                 }
             }
 
-            // Output the collected IDs (or use them for further analysis)
-            Console.WriteLine("Shape IDs with master name \"Process\":");
+            // Output the collected shape IDs to the console
+            Console.WriteLine("Shape IDs with master name 'Process':");
             foreach (long id in processShapeIds)
             {
                 Console.WriteLine(id);
             }
-
-            // Save the diagram if any modifications were made (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occurred during loading or processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

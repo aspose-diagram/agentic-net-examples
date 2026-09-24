@@ -1,59 +1,65 @@
 using System;
 using Aspose.Diagram;
 
-public static class ShapeDimensionLogger
+namespace DiagramDimensionLogger
 {
-    // Logs the old width and the new width, then applies the change.
-    public static void SetWidthLogged(Shape shape, double newWidth)
+    // Extension methods to wrap SetWidth and SetHeight with logging
+    public static class ShapeDimensionLogger
     {
-        if (shape == null) throw new ArgumentNullException(nameof(shape));
+        // Logs old and new width, then sets the new width
+        public static void SetWidthLogged(this Shape shape, double newWidth)
+        {
+            // Retrieve current width (in inches)
+            double oldWidth = shape.XForm.Width.Value;
+            Console.WriteLine($"[Log] Shape ID {shape.ID}: Width changing from {oldWidth} to {newWidth}");
+            // Apply the new width
+            shape.SetWidth(newWidth);
+        }
 
-        double oldWidth = shape.XForm.Width.Value;
-        Console.WriteLine($"[Log] Shape ID {shape.ID}: Width changing from {oldWidth} to {newWidth}");
-        shape.SetWidth(newWidth);
+        // Logs old and new height, then sets the new height
+        public static void SetHeightLogged(this Shape shape, double newHeight)
+        {
+            // Retrieve current height (in inches)
+            double oldHeight = shape.XForm.Height.Value;
+            Console.WriteLine($"[Log] Shape ID {shape.ID}: Height changing from {oldHeight} to {newHeight}");
+            // Apply the new height
+            shape.SetHeight(newHeight);
+        }
     }
 
-    // Logs the old height and the new height, then applies the change.
-    public static void SetHeightLogged(Shape shape, double newHeight)
+    class Program
     {
-        if (shape == null) throw new ArgumentNullException(nameof(shape));
+        static void Main(string[] args)
+        {
+            try
+            {
 
-        double oldHeight = shape.XForm.Height.Value;
-        Console.WriteLine($"[Log] Shape ID {shape.ID}: Height changing from {oldHeight} to {newHeight}");
-        shape.SetHeight(newHeight);
+                // Load an existing Visio diagram
+                // Replace "input.vsdx" with the actual file path
+                Diagram diagram = new Diagram("input.vsdx");
+
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Example: modify the first shape on the page
+                // Retrieve the shape by its ID
+                // Replace 1 with the actual shape ID you want to modify
+                long shapeId = 1;
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Log and set new dimensions using the wrapper methods
+                shape.SetWidthLogged(2.5);   // Set width to 2.5 inches
+                shape.SetHeightLogged(1.8);  // Set height to 1.8 inches
+
+                // Save the modified diagram
+                // Replace "output.vsdx" with the desired output path
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
-
-public class Program
-{
-    public static void Main()
-    {
-        try
-        {
-
-            // Create a new empty diagram.
-            Diagram diagram = new Diagram();
-
-            // Add a new page (the default diagram already contains one page).
-            Page page = diagram.Pages[0];
-
-            // Add a rectangle shape (master name "Rectangle") at position (2,2) with initial size 1x1 inches.
-            long shapeId = page.AddShape(2.0, 2.0, 1.0, 1.0, "Rectangle");
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Log and change width.
-            ShapeDimensionLogger.SetWidthLogged(shape, 3.5);
-
-            // Log and change height.
-            ShapeDimensionLogger.SetHeightLogged(shape, 2.0);
-
-            // Save the diagram to verify changes (optional).
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
     }
 }

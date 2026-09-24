@@ -10,65 +10,69 @@ class Program
             try
             {
 
-                // Input Visio file path (first argument or default)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Input Visio file path
+                string inputPath = "input.vsdx";
 
-                // Output compliance report file
+                // Output compliance report file path
                 string reportPath = "ComplianceReport.txt";
 
-                // Define whitelist of allowed URLs
+                // Define whitelist of allowed URLs (exact matches)
                 HashSet<string> whitelist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    "https://example.com",
-                    "http://allowed.com"
-                    // Add more allowed URLs as needed
+                    "https://trusted.com",
+                    "http://example.org"
                 };
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Collect report lines
-                List<string> reportLines = new List<string>();
-                reportLines.Add("Visio Hyperlink Compliance Report");
-                reportLines.Add($"Generated on: {DateTime.Now}");
-                reportLines.Add("----------------------------------------------------");
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Prepare the report writer
+                using (StreamWriter writer = new StreamWriter(reportPath, false))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    writer.WriteLine("Visio Hyperlink Compliance Report");
+                    writer.WriteLine($"Generated on: {DateTime.Now}");
+                    writer.WriteLine(new string('=', 50));
+
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Ensure the Hyperlinks collection exists
-                        if (shape.Hyperlinks != null)
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
+                            // Skip shapes without hyperlinks collection
+                            if (shape.Hyperlinks == null)
+                                continue;
+
+                            // Iterate through each hyperlink of the shape
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                // Retrieve the URL from the hyperlink
+                                // Retrieve the URL address
                                 string url = link.Address.Value ?? string.Empty;
 
-                                // Validate against whitelist
-                                bool isAllowed = whitelist.Contains(url);
-                                string status = isAllowed ? "Allowed" : "Blocked";
+                                // Determine compliance
+                                bool isValid = whitelist.Contains(url);
 
-                                // Build report entry
-                                string line = $"Page: {page.Name}, Shape ID: {shape.ID}, Shape NameU: {shape.NameU}, URL: {url}, Status: {status}";
-                                reportLines.Add(line);
+                                // Build report line
+                                string status = isValid ? "VALID" : "INVALID";
+                                string line = $"Page: {page.NameU}, Shape ID: {shape.ID}, URL: {url} - {status}";
+
+                                // Write to console and report file
+                                Console.WriteLine(line);
+                                writer.WriteLine(line);
                             }
                         }
                     }
+
+                    writer.WriteLine(new string('=', 50));
+                    writer.WriteLine("Report generation completed.");
                 }
 
-                // Write the report to a text file
-                File.WriteAllLines(reportPath, reportLines);
-
-                // Output summary to console
-                Console.WriteLine($"Compliance report generated: {reportPath}");
-                Console.WriteLine($"Total entries: {reportLines.Count - 3}");
+                Console.WriteLine($"Compliance report saved to: {Path.GetFullPath(reportPath)}");
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

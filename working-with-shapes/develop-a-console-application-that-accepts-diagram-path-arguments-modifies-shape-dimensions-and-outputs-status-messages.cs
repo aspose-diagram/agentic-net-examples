@@ -6,33 +6,39 @@ class Program
     {
         static void Main(string[] args)
         {
-            // Validate command line arguments
-            if (args.Length < 1)
+            // Validate arguments
+            if (args == null || args.Length == 0)
             {
+                Console.WriteLine("Error: No diagram file path provided.");
                 Console.WriteLine("Usage: DiagramShapeModifier <inputDiagramPath> [outputDiagramPath]");
                 return;
             }
 
             string inputPath = args[0];
-            string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
-                Path.GetDirectoryName(inputPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
-
-            // Check if input file exists
             if (!File.Exists(inputPath))
             {
-                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                Console.WriteLine($"Error: The file \"{inputPath}\" does not exist.");
                 return;
+            }
+
+            // Determine output path
+            string outputPath;
+            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+            {
+                outputPath = args[1];
+            }
+            else
+            {
+                string directory = Path.GetDirectoryName(inputPath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_modified.vsdx");
             }
 
             try
             {
-                Console.WriteLine($"Loading diagram from: {inputPath}");
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
-
-                // Define new dimensions (in inches)
-                double newWidth = 2.0;
-                double newHeight = 1.0;
+                Console.WriteLine($"Loaded diagram: \"{inputPath}\"");
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
@@ -43,19 +49,20 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Update width and height
-                        shape.XForm.Width.Value = newWidth;
-                        shape.XForm.Height.Value = newHeight;
+                        // Modify dimensions (example: set width to 2 inches, height to 1 inch)
+                        shape.XForm.Width.Value = 2.0;
+                        shape.XForm.Height.Value = 1.0;
                     }
                 }
 
-                Console.WriteLine($"Saving modified diagram to: {outputPath}");
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram processing completed successfully.");
+                Console.WriteLine($"Diagram saved with modified shape dimensions to: \"{outputPath}\"");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                Console.WriteLine("An error occurred while processing the diagram:");
+                Console.WriteLine(ex.Message);
             }
         }
     }

@@ -1,94 +1,96 @@
 using System;
-using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing.Text;
+using Aspose.Drawing.Text; // Required for potential font enumeration
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: input Visio file, output SVG file, shape ID to export
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputSvgPath> <shapeId>");
+            return;
+        }
+
+        string visioPath = args[0];
+        // Guard: ensure the Visio file exists before proceeding
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
+        string svgPath = args[1];
+        string shapeIdArg = args[2];
+
+        // Guard: validate that the shape ID argument can be parsed to a long integer
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the provided file path
+            Diagram diagram = new Diagram(visioPath);
+
+            // Retrieve the first page (index 0) – adjust if a different page is required
+            Page page = diagram.Pages[0];
+
+            // Obtain the shape by its ID; GetShape returns null if the ID is not present
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the exported SVG file
-                string outputSvgPath = "shape_output.svg";
-
-                // Configure font folder (required before loading diagram)
-                // Adjust the path to the system fonts folder on the target machine
-                FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page
-                Page page = diagram.Pages[0];
-
-                // Find the first shape that contains text
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No shape with text found in the diagram.");
-                    return;
-                }
-
-                // Export the shape to SVG
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-                targetShape.ToSvg(outputSvgPath, svgOptions);
-                Console.WriteLine($"Shape exported to SVG: {outputSvgPath}");
-
-                // Verify that all fonts used in the diagram are installed on the system
-                var installedFonts = new InstalledFontCollection();
-
-                bool allDiagramFontsAvailable = true;
-                foreach (Aspose.Diagram.Font diagramFont in diagram.Fonts)
-                {
-                    bool found = installedFonts.Families.Any(f => f.Name.Equals(diagramFont.Name, StringComparison.OrdinalIgnoreCase));
-                    if (!found)
-                    {
-                        allDiagramFontsAvailable = false;
-                        Console.WriteLine($"Missing diagram font: {diagramFont.Name}");
-                    }
-                }
-
-                // Verify that the fonts used in the shape's text runs are installed
-                bool allShapeFontsAvailable = true;
-                foreach (Aspose.Diagram.Char ch in targetShape.Chars)
-                {
-                    string fontName = ch.FontName.Value;
-                    bool found = installedFonts.Families.Any(f => f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase));
-                    if (!found)
-                    {
-                        allShapeFontsAvailable = false;
-                        Console.WriteLine($"Missing font in shape text: {fontName}");
-                    }
-                }
-
-                // Report verification result
-                if (allDiagramFontsAvailable && allShapeFontsAvailable)
-                {
-                    Console.WriteLine("All fonts used by the diagram and the shape are available on the system.");
-                }
-                else
-                {
-                    throw new Exception("One or more required fonts are missing. See console output for details.");
-                }
-
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Collect all distinct font names used by the shape's character runs
+            HashSet<string> shapeFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (Aspose.Diagram.Char ch in shape.Chars)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Guard: ignore empty font entries
+                if (!string.IsNullOrWhiteSpace(ch.FontName.Value))
+                {
+                    shapeFonts.Add(ch.FontName.Value);
+                }
             }
+
+            // Export the specific shape to an SVG file using the built‑in ToSvg method
+            SVGSaveOptions svgOptions = new SVGSaveOptions(); // default options are sufficient
+            shape.ToSvg(svgPath, svgOptions);
+
+            // Read the generated SVG content for verification
+            string svgContent = File.ReadAllText(svgPath);
+
+            // Verify that each font used in the shape appears in the SVG output
+            foreach (string fontName in shapeFonts)
+            {
+                // Search for the font name in common SVG font-family attribute patterns
+                bool found = svgContent.Contains($"font-family:{fontName}", StringComparison.OrdinalIgnoreCase) ||
+                             svgContent.Contains($"font-family=\"{fontName}\"", StringComparison.OrdinalIgnoreCase) ||
+                             svgContent.Contains($"font-family='{fontName}'", StringComparison.OrdinalIgnoreCase);
+
+                if (!found)
+                {
+                    // Report missing font and abort with an exception
+                    Console.Error.WriteLine($"Font verification failed: '{fontName}' not found in SVG.");
+                    throw new Exception($"Font '{fontName}' missing in exported SVG.");
+                }
+            }
+
+            // If execution reaches this point, all fonts were successfully verified
+            Console.WriteLine("Shape exported to SVG successfully and all fonts were retained.");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose or I/O errors and report them to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,77 +1,94 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file and output PDF file.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        // Guard: ensure the directory for the PDF exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a new PDF document (fully qualified to avoid namespace clash).
+            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
+
+            // Add a page to the PDF.
+            Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
+
+            // Prepare a simple line spacing counter.
+            double cursorY = 0;
+            const double lineHeight = 12; // points
+
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (change as needed)
-                string inputPath = "input.vsdx";
-                // Output PDF report path
-                string outputPath = "RotationReport.pdf";
-
-                // Load the source diagram
-                Diagram sourceDiagram = new Diagram(inputPath);
-
-                // Build the report text
-                string report = "Rotation Settings Report (Fixed RotationType)\n";
-                report += "============================================\n\n";
-
-                foreach (Page page in sourceDiagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Check for Fixed RotationType (RotationType cell value 0 = Fixed).
+                    // The RotationType cell is accessed via shape.ThreeDFormat.RotationType.
+                    // If the cell is undefined, treat it as not Fixed.
+                    bool isFixed = false;
+                    if (shape.ThreeDFormat != null && shape.ThreeDFormat.RotationType != null)
                     {
-                        // Retrieve the rotation type from the 3D format
-                        RotationTypeValue rotationType = shape.ThreeDFormat.RotationType.Value;
+                        // RotationTypeValue.Undefined indicates no explicit setting.
+                        isFixed = shape.ThreeDFormat.RotationType.Value == RotationTypeValue.Undefined;
+                    }
 
-                        // Consider only shapes with a defined (fixed) rotation type
-                        if (rotationType != RotationTypeValue.Undefined)
-                        {
-                            // Rotation angle is stored in radians; convert to degrees for readability
-                            double angleRadians = shape.XForm.Angle.Value;
-                            double angleDegrees = angleRadians * 180.0 / Math.PI;
+                    // Only report shapes with Fixed rotation.
+                    if (isFixed)
+                    {
+                        // Retrieve the shape's rotation angle (in degrees) from XForm.Angle.
+                        double angleDeg = shape.XForm.Angle.Value;
 
-                            // Append shape information to the report
-                            report += $"Page: {page.NameU}, Shape ID: {shape.ID}, Name: {shape.NameU}\n";
-                            report += $"  Rotation Angle: {angleDegrees:F2}°\n";
-                            report += $"  Rotation Type : {rotationType}\n\n";
-                        }
+                        // Build a summary line.
+                        string line = $"Page: {page.NameU}, Shape ID: {shape.ID}, Name: {shape.NameU}, Angle: {angleDeg}°";
+
+                        // Create a text fragment for the PDF.
+                        Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(line);
+                        tf.Position = new Aspose.Pdf.Text.Position(0, cursorY);
+                        pdfPage.Paragraphs.Add(tf);
+
+                        // Move cursor down for the next line.
+                        cursorY += lineHeight;
                     }
                 }
-
-                // Create a new diagram to hold the report text
-                Diagram reportDiagram = new Diagram();
-
-                // Add a new page to the report diagram
-                reportDiagram.Pages.Add(new Page());
-
-                // Use the first (and only) page
-                Page reportPage = reportDiagram.Pages[0];
-
-                // Add a text shape containing the report
-                // Parameters: pinX, pinY, width, height, text
-                // Position the text shape near the top-left corner of the page
-                double pinX = 1.0;
-                double pinY = 9.0; // assuming default page height ~11 inches
-                double width = 9.0;
-                double height = 9.0;
-                reportPage.AddText(pinX, pinY, width, height, report);
-
-                // Save the report diagram as a PDF
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial"; // fallback font for missing glyphs
-                reportDiagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Rotation report generated: {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the PDF document.
+            pdfDoc.Save(outputPath);
+            Console.WriteLine($"PDF report generated at: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

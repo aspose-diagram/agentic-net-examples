@@ -1,45 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the Visio file path as the first argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+        // Verify that the provided file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio document.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Load an existing Visio diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Identify the shape whose master information we want.
-            // Here we assume the shape ID is known; replace with the actual ID as needed.
-            long shapeId = 1;
-
-            // Access the first page (or any specific page) and retrieve the shape.
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Obtain the master associated with the shape.
-            Master master = shape.Master;
-
-            // Log the master name if it exists.
-            if (master != null)
+            // Iterate through each page in the document.
+            foreach (Page page in diagram.Pages)
             {
-                Console.WriteLine("Master Name: " + master.Name);
-            }
-            else
-            {
-                Console.WriteLine("The selected shape does not have an associated master.");
-            }
+                // Iterate through each shape on the current page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // If the shape is based on a master (i.e., not a group or foreign shape).
+                    if (shape.Master != null)
+                    {
+                        // Retrieve the master name (universal name) from the stencil.
+                        string masterName = shape.Master.NameU;
 
-            // Save the diagram (uses the provided save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vdx);
-
+                        // Log the shape ID together with its master name.
+                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Master Name: {masterName}");
+                    }
+                    else
+                    {
+                        // Shape does not have a master; log that information.
+                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, No master associated.");
+                    }
+                }
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors encountered during processing.
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

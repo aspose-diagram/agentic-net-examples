@@ -1,58 +1,45 @@
 using System;
-using System.Text;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ShapeReport
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
+            // Prompt user for the Visio file path
+            Console.Write("Enter the path to the Visio file: ");
+            string filePath = Console.ReadLine();
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            StringBuilder sb = new StringBuilder();
-            // CSV header
-            sb.AppendLine("ShapeID,Name,Width,Height,PinX,PinY");
+            // Load the diagram
+            Diagram diagram = new Diagram(filePath);
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
                     // Retrieve required properties
-                    long id = shape.ID;
-                    string name = shape.Name ?? string.Empty;
+                    long shapeId = shape.ID;
+                    string shapeName = shape.NameU; // Universal name of the shape
                     double width = shape.XForm.Width.Value;
                     double height = shape.XForm.Height.Value;
                     double pinX = shape.XForm.PinX.Value;
                     double pinY = shape.XForm.PinY.Value;
 
-                    // Append a CSV line for the shape
-                    sb.AppendLine($"{id},{EscapeCsv(name)},{width},{height},{pinX},{pinY}");
+                    // Output the shape summary
+                    Console.WriteLine(
+                        $"Page: {page.Name}, Shape ID: {shapeId}, Name: {shapeName}, " +
+                        $"Width: {width}, Height: {height}, PinX: {pinX}, PinY: {pinY}");
                 }
             }
 
-            // Save the report to a CSV file
-            File.WriteAllText("ShapeReport.csv", sb.ToString());
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Optional: Save a copy of the diagram (demonstrates save usage)
+            string outputPath = "output_copy.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
     }
-
-    // Helper method to escape CSV fields containing commas, quotes, or newlines
-    static string EscapeCsv(string field)
-    {
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
-        {
-            field = field.Replace("\"", "\"\"");
-            return $"\"{field}\"";
-        }
-        return field;
-    }
-}

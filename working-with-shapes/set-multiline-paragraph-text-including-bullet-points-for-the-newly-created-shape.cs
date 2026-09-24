@@ -1,48 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Use the first page (a new diagram contains one default page)
-        Page page = diagram.Pages[0];
-
-        // Draw a simple rectangle shape (returns the shape ID)
-        long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
-
-        // Retrieve the shape instance from its ID
-        Shape shape = page.Shapes.GetShape(shapeId);
-
-        // Clear any existing text
-        shape.Text.Value.Clear();
-
-        // Add three separate text runs – each will become a paragraph
-        shape.Text.Value.Add(new Txt("First bullet point"));
-        shape.Text.Value.Add(new Txt("\nSecond bullet point"));
-        shape.Text.Value.Add(new Txt("\nThird bullet point"));
-
-        // Ensure there are three paragraphs (one per line)
-        // Apply bullet formatting and indentation to each paragraph
-        for (int i = 0; i < shape.Paras.Count && i < 3; i++)
+        static void Main()
         {
-            // Set bullet style (standard solid bullet)
-            shape.Paras[i].Bullet.Value = BulletValue.Style1;
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Optional: set left indentation (in inches)
-            shape.Paras[i].IndLeft.Value = 0.2;   // 0.2 inches from the left margin
-            shape.Paras[i].IndFirst.Value = 0.1; // first line indent
+            // Get the first page (a new diagram contains one default page)
+            Page page = diagram.Pages[0];
 
-            // Optional: set paragraph spacing
-            shape.Paras[i].SpBefore.Value = 0.05; // space before paragraph
-            shape.Paras[i].SpAfter.Value = 0.05;  // space after paragraph
+            // Add a rectangle shape to the page (pinX, pinY, width, height)
+            long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+
+            // Retrieve the shape instance
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Clear any existing text
+            shape.Text.Value.Clear();
+
+            // ----- First paragraph (bullet) -----
+            // Create a paragraph and set bullet style
+            Aspose.Diagram.Para para1 = new Aspose.Diagram.Para();
+            para1.Bullet.Value = BulletValue.Style1; // standard bullet
+            // Add the paragraph to the shape
+            shape.Paras.Add(para1);
+            // Add the text run for this paragraph
+            shape.Text.Value.Add(new Txt("First bullet point"));
+
+            // ----- Second paragraph (bullet) -----
+            Aspose.Diagram.Para para2 = new Aspose.Diagram.Para();
+            para2.Bullet.Value = BulletValue.Style1;
+            shape.Paras.Add(para2);
+            shape.Text.Value.Add(new Txt("Second bullet point"));
+
+            // ----- Third paragraph (bullet) -----
+            Aspose.Diagram.Para para3 = new Aspose.Diagram.Para();
+            para3.Bullet.Value = BulletValue.Style1;
+            shape.Paras.Add(para3);
+            shape.Text.Value.Add(new Txt("Third bullet point"));
+
+            // Save the diagram to VSDX format
+            diagram.Save("MultilineBulletShape.vsdx", SaveFileFormat.Vsdx);
         }
-
-        // Save the diagram to a VSDX file
-        diagram.Save("MultilineBulletShape.vsdx", SaveFileFormat.Vsdx);
     }
-}

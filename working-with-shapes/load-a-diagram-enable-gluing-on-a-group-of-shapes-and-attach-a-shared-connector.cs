@@ -2,6 +2,7 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,49 +11,54 @@ class Program
         try
         {
 
-            // Paths for input and output diagrams
+            // Load an existing Visio diagram
             string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Locate a group shape on the page (first one found)
-            Shape groupShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Type == TypeValue.Group)
-                {
-                    groupShape = shape;
-                    break;
-                }
-            }
+            // -----------------------------------------------------------------
+            // Create two sample shapes (rectangles) that will be grouped
+            // -----------------------------------------------------------------
+            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle", false);
+            long rect2Id = page.AddShape(4.0, 2.0, "Rectangle", false);
 
-            if (groupShape == null)
-            {
-                throw new Exception("No group shape found on the page.");
-            }
+            Shape rect1 = page.Shapes.GetShape(rect1Id);
+            Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-            // Enable dynamic gluing for the group shape
-            groupShape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
+            // Group the two rectangles into a single group shape
+            Shape group = page.Shapes.Group(new Shape[] { rect1, rect2 });
 
-            // Add a shared connector (Dynamic connector) to the page
-            long connectorId = page.AddShape(2.0, 2.0, "Dynamic connector", false);
+            // -----------------------------------------------------------------
+            // Enable gluing on the group shape
+            // -----------------------------------------------------------------
+            // Allow dynamic glue so other shapes/connectors can be glued to this group
+            group.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
+
+            // -----------------------------------------------------------------
+            // Create a shared connector (dynamic connector) and attach it
+            // -----------------------------------------------------------------
+            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
             Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Connect the group shape to the shared connector
-            page.ConnectShapesViaConnector(
-                groupShape.ID,
-                ConnectionPointPlace.Bottom,
-                connectorId,
-                ConnectionPointPlace.Top,
-                connectorId);
+            // Set the connector routing style (optional)
+            connector.SetConnectorsType(ConnectorsTypeValue.StraightLines);
 
+            // Connect the group shape to the second rectangle using the same connector
+            // Glue the start of the connector to the bottom of the group
+            // Glue the end of the connector to the top of the second rectangle
+            page.ConnectShapesViaConnector(
+                group.ID,
+                ConnectionPointPlace.Bottom,
+                rect2.ID,
+                ConnectionPointPlace.Top,
+                connector.ID);
+
+            // -----------------------------------------------------------------
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // -----------------------------------------------------------------
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

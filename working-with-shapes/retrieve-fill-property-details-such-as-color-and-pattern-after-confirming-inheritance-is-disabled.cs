@@ -1,47 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine diagram file path (use first argument or a default placeholder)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the diagram file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram (inheritance handling is performed internally)
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access a specific shape; here we use the first shape on the first page
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
-
-            // Determine whether the shape inherits fill formatting from a style/master
-            // If FillStyle is null, inheritance is disabled and the shape has its own Fill values
-            bool inheritanceDisabled = shape.FillStyle == null;
-
-            if (inheritanceDisabled)
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Retrieve the shape's own fill properties
-                Fill fill = shape.Fill;
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True) continue;
 
-                // Output fill pattern and colors
-                Console.WriteLine($"Fill Pattern   : {fill.FillPattern}");
-                Console.WriteLine($"Foreground Color: {fill.FillForegnd}");
-                Console.WriteLine($"Background Color: {fill.FillBkgnd}");
+                    // Determine if fill inheritance is disabled by comparing local fill values
+                    bool isFillForegndInherited = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+                    bool isFillPatternInherited = shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
+
+                    // If either fill foreground color or pattern is not inherited, treat inheritance as disabled
+                    if (!isFillForegndInherited || !isFillPatternInherited)
+                    {
+                        // Retrieve fill foreground color (hex string)
+                        string foreColor = shape.Fill.FillForegnd.Value;
+
+                        // Retrieve fill background color (hex string)
+                        string backColor = shape.Fill.FillBkgnd.Value;
+
+                        // Retrieve fill pattern index (integer)
+                        int pattern = (int)shape.Fill.FillPattern.Value;
+
+                        // Output shape identification and its fill details
+                        Console.WriteLine($"Page {page.ID}, Shape {shape.ID} ('{shape.Name}'):");
+                        Console.WriteLine($"  Fill Foreground: {foreColor}");
+                        Console.WriteLine($"  Fill Background: {backColor}");
+                        Console.WriteLine($"  Fill Pattern: {pattern}");
+                        Console.WriteLine();
+                    }
+                }
             }
-            else
-            {
-                Console.WriteLine("Inheritance is enabled; fill values are inherited from the style/master.");
-            }
-
-            // Save the diagram if any modifications were made (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

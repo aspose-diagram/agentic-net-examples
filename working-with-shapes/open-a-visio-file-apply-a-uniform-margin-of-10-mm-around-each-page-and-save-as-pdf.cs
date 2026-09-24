@@ -5,22 +5,24 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path (first argument) and output PDF path (second argument)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Path for the resulting PDF file
+            string outputPath = "output.pdf";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // 10 mm = 0.3937007874 inches
-            double marginInches = 10.0 / 25.4;
+            // Convert 10 mm to inches (1 inch = 25.4 mm)
+            double marginInches = 10.0 / 25.4; // ≈0.3937 inches
 
-            // Apply the margin to every page
+            // Apply the same margin to every page in the diagram
             foreach (Page page in diagram.Pages)
             {
                 var printProps = page.PageSheet.PrintProps;
@@ -30,18 +32,17 @@ class Program
                 printProps.PageRightMargin.Value = marginInches;
             }
 
-            // Configure PDF save options
+            // Configure PDF save options (optional: set a default font)
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Save the diagram as PDF
+            // Save the diagram as a PDF file
             diagram.Save(outputPath, pdfOptions);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

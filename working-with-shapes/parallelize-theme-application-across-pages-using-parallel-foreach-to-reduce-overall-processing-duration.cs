@@ -6,33 +6,34 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Gather all pages into a typed list for Parallel.ForEach
+                    // Collect pages into a typed list for Parallel.ForEach
                     List<Page> pages = new List<Page>();
-                    foreach (Page p in diagram.Pages)
+                    foreach (Page page in diagram.Pages)
                     {
-                        pages.Add(p);
+                        pages.Add(page);
                     }
 
                     // Apply a preset theme to each page in parallel
                     Parallel.ForEach(pages, page =>
                     {
+                        // Example: apply the "Bubble" theme with variant 1
                         page.PresetTheme = PresetThemeValue.Bubble;
                         page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                     });
 
                     // Save the modified diagram
+                    string outputPath = "output.vsdx";
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 

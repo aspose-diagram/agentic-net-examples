@@ -1,57 +1,70 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the output Visio file after processing
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve the LocPinX and LocPinY formulas
+                    string locPinXFormula = shape.XForm.LocPinX.Ufe.F;
+                    string locPinYFormula = shape.XForm.LocPinY.Ufe.F;
+
+                    // Validate that both formulas are numeric
+                    if (!IsNumeric(locPinXFormula))
                     {
-                        // Retrieve the formula strings for LocPinX and LocPinY
-                        string locPinXFormula = shape.XForm.LocPinX.Ufe.F;
-                        string locPinYFormula = shape.XForm.LocPinY.Ufe.F;
-
-                        // Try to parse the formulas as numeric values
-                        bool isLocPinXNumeric = double.TryParse(locPinXFormula, out double locPinXValue);
-                        bool isLocPinYNumeric = double.TryParse(locPinYFormula, out double locPinYValue);
-
-                        // If either cell does not contain a numeric value, report and skip calculation
-                        if (!isLocPinXNumeric || !isLocPinYNumeric)
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' has non‑numeric LocPin values.");
-                            Console.WriteLine($"  LocPinX: '{locPinXFormula}'  LocPinY: '{locPinYFormula}'");
-                            continue; // Skip absolute pin calculation for this shape
-                        }
-
-                        // Perform absolute pin calculation (example: set PinX/Y to the numeric LocPin values)
-                        shape.XForm.PinX.Value = locPinXValue;
-                        shape.XForm.PinY.Value = locPinYValue;
+                        throw new Exception($"Shape ID {shape.ID} on page '{page.Name}' has a non-numeric LocPinX value: '{locPinXFormula}'.");
                     }
+
+                    if (!IsNumeric(locPinYFormula))
+                    {
+                        throw new Exception($"Shape ID {shape.ID} on page '{page.Name}' has a non-numeric LocPinY value: '{locPinYFormula}'.");
+                    }
+
+                    // Perform absolute pin calculations (example logic)
+                    double locPinX = double.Parse(locPinXFormula);
+                    double locPinY = double.Parse(locPinYFormula);
+
+                    // Adjust the absolute PinX and PinY based on LocPin values
+                    shape.XForm.PinX.Value = shape.XForm.PinX.Value + locPinX;
+                    shape.XForm.PinY.Value = shape.XForm.PinY.Value + locPinY;
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
+
+    // Helper method to determine if a string represents a numeric value
+    static bool IsNumeric(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        value = value.Trim();
+        double result;
+        return double.TryParse(value, out result);
     }
+}

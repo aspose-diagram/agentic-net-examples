@@ -1,44 +1,39 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
-            // Create a new empty diagram instance
-            Diagram diagram = new Diagram();
 
-            // Ensure the diagram has at least one page; add a blank page if none exist
-            if (diagram.Pages.Count == 0)
+            // Create a new blank diagram
+            using (Diagram diagram = new Diagram())
             {
-                diagram.Pages.Add(new Page());
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
+
+                // Add a rectangle shape at coordinates (2,2)
+                // The fourth parameter 'false' indicates that the shape's geometry should not be recalculated automatically
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+
+                // Retrieve the shape object using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Output the unique identifier assigned by Aspose.Diagram
+                Console.WriteLine($"Created shape with ID: {shape.ID}");
+
+                // Save the diagram to a VSDX file
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
 
-            // Retrieve the first page for shape operations
-            Page page = diagram.Pages[0];
-
-            // Draw a rectangle at (2,2) with width and height of 1 inch; returns the shape's ID (long)
-            long shapeId = page.DrawRectangle(2.0, 2.0, 1.0, 1.0);
-
-            // Get the Shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Assign a unique identifier (GUID) directly to the shape's UniqueID property
-            shape.UniqueID = Guid.NewGuid();
-
-            // Define the output file path
-            string outputPath = "CreatedShape.vsdx";
-
-            // Save the diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Exception ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

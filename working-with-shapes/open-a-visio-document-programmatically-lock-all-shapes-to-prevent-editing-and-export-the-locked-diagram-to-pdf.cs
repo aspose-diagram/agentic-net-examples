@@ -1,54 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Output PDF file path
+        string outputPath = "locked_output.pdf";
+
+        try
         {
-            try
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to apply protection locks
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (modify as needed)
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "locked_output.pdf";
-
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through all shapes on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Apply full protection to the shape
-                            shape.Protection.LockMoveX.Value = BOOL.True;
-                            shape.Protection.LockMoveY.Value = BOOL.True;
-                            shape.Protection.LockWidth.Value = BOOL.True;
-                            shape.Protection.LockHeight.Value = BOOL.True;
-                            shape.Protection.LockRotate.Value = BOOL.True;
-                            shape.Protection.LockVtxEdit.Value = BOOL.True;
-                        }
-                    }
+                    // Skip shapes that are already marked for deletion
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Configure PDF save options
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                    // Optional: set a default font to avoid missing font issues
-                    pdfOptions.DefaultFont = "Arial";
-
-                    // Save the locked diagram as PDF
-                    diagram.Save(outputPath, pdfOptions);
+                    // Apply lock protection to prevent editing
+                    shape.Protection.LockMoveX.Value = BOOL.True;
+                    shape.Protection.LockMoveY.Value = BOOL.True;
+                    shape.Protection.LockWidth.Value = BOOL.True;
+                    shape.Protection.LockHeight.Value = BOOL.True;
+                    shape.Protection.LockRotate.Value = BOOL.True;
+                    shape.Protection.LockVtxEdit.Value = BOOL.True;
                 }
-
-                Console.WriteLine("Diagram locked and exported to PDF successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Configure PDF save options (optional: set default font)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the locked diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine("Diagram locked and exported to PDF successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

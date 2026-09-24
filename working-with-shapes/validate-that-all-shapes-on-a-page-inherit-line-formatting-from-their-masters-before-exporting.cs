@@ -1,59 +1,117 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect at least input and output file paths.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPdfPath> [pageIndex]");
+            return;
+        }
+
+        // Input Visio file path.
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output PDF file path.
+        string outputPath = args[1];
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Optional page index (default 0).
+        int pageIndex = 0;
+        if (args.Length >= 3 && !int.TryParse(args[2], out pageIndex))
+        {
+            Console.Error.WriteLine("Invalid page index argument.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Validate page index range.
+            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
             {
+                Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                return;
+            }
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Retrieve the target page.
+            Page page = diagram.Pages[pageIndex];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+            bool anyMismatch = false;
 
-                // Iterate through each page and each shape to validate line inheritance
-                foreach (Page page in diagram.Pages)
+            // Iterate all shapes on the page.
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip shapes without a master (e.g., group shapes) – they cannot inherit line formatting.
+                if (shape.Master == null)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Only validate shapes that have a master (i.e., can inherit formatting)
-                        if (shape.Master == null)
-                            continue;
-
-                        // Ensure InheritLine collection is available
-                        if (shape.InheritLine == null)
-                            continue;
-
-                        bool inheritsLine =
-                            shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
-                            shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value &&
-                            shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value &&
-                            shape.Line.BeginArrow.Value == shape.InheritLine.BeginArrow.Value &&
-                            shape.Line.EndArrow.Value == shape.InheritLine.EndArrow.Value;
-
-                        if (!inheritsLine)
-                        {
-                            throw new Exception(
-                                $"Shape ID {shape.ID} on page ID {page.ID} does not inherit line formatting from its master.");
-                        }
-                    }
+                    continue;
                 }
 
-                // All shapes passed validation; save the diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Access the shape's own line formatting.
+                string lineColor = shape.Line.LineColor.Value;
+                double lineWeight = shape.Line.LineWeight.Value;
+                LinePatternValue linePattern = shape.Line.LinePattern.Value;
 
+                // Access the inherited line formatting from the master.
+                string inheritColor = shape.InheritLine.LineColor.Value;
+                double inheritWeight = shape.InheritLine.LineWeight.Value;
+                LinePatternValue inheritPattern = shape.InheritLine.LinePattern.Value;
+
+                // Compare each property; if any differ, report a mismatch.
+                if (!string.Equals(lineColor, inheritColor, StringComparison.OrdinalIgnoreCase) ||
+                    Math.Abs(lineWeight - inheritWeight) > 0.0001 ||
+                    linePattern != inheritPattern)
+                {
+                    anyMismatch = true;
+                    Console.Error.WriteLine($"Shape ID {shape.ID} does not inherit line formatting from its master.");
+                    Console.Error.WriteLine($"  Own   - Color: {lineColor}, Weight: {lineWeight}, Pattern: {linePattern}");
+                    Console.Error.WriteLine($"  Inh.  - Color: {inheritColor}, Weight: {inheritWeight}, Pattern: {inheritPattern}");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // If mismatches were found, optionally abort export.
+            if (anyMismatch)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("Validation failed: some shapes do not inherit line formatting.");
+                // Uncomment the following line to stop the program before exporting.
+                // return;
             }
+            else
+            {
+                Console.WriteLine("All shapes inherit line formatting from their masters.");
+            }
+
+            // Prepare PDF save options (set a default font to avoid missing font warnings).
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+
+            // Export the diagram to PDF.
+            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

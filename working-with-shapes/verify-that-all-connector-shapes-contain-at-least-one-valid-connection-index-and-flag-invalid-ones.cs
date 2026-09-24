@@ -1,5 +1,6 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
     {
@@ -8,13 +9,14 @@ class Program
             try
             {
 
-                // Path to the Visio file; can be passed as a command‑line argument.
-                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Path to the Visio file to be validated.
+                // Replace with the actual file path as needed.
+                string diagramPath = "input.vsdx";
 
                 // Load the diagram.
                 Diagram diagram = new Diagram(diagramPath);
 
-                int invalidConnectorCount = 0;
+                bool hasInvalidConnectors = false;
 
                 // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
@@ -22,45 +24,48 @@ class Program
                     // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify connector shapes (1‑D shapes).
-                        if (shape.OneD)
+                        // Identify connector shapes.
+                        // Connectors are 1‑D shapes (OneD == true) and typically use the "Dynamic connector" master.
+                        if (shape.OneD && shape.Master != null && shape.Master.Name != null &&
+                            shape.Master.Name.IndexOf("Dynamic connector", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
+                            long connectorId = shape.ID;
                             bool hasConnection = false;
 
-                            // Examine the page's Connect collection to see if the connector participates in any connection.
+                            // Examine the Connect collection for any connection involving this connector.
                             foreach (Connect conn in page.Connects)
                             {
-                                if (conn.FromSheet == shape.ID || conn.ToSheet == shape.ID)
+                                if (conn.FromSheet == connectorId || conn.ToSheet == connectorId)
                                 {
                                     hasConnection = true;
                                     break;
                                 }
                             }
 
-                            // If no connection is found, flag the connector as invalid.
+                            // If no connection was found, flag the connector as invalid.
                             if (!hasConnection)
                             {
-                                invalidConnectorCount++;
-                                Console.WriteLine($"Invalid connector found: Shape ID {shape.ID} on page \"{page.Name}\" has no connections.");
+                                hasInvalidConnectors = true;
+                                Console.WriteLine($"Invalid connector found: Shape ID = {connectorId}, Name = {shape.Name}");
                             }
                         }
                     }
                 }
 
-                // Summary output.
-                if (invalidConnectorCount == 0)
+                if (hasInvalidConnectors)
                 {
-                    Console.WriteLine("All connector shapes have at least one valid connection.");
+                    // Optionally, throw an exception to indicate validation failure.
+                    throw new Exception("One or more connector shapes lack valid connection indexes.");
                 }
                 else
                 {
-                    Console.WriteLine($"Total invalid connectors: {invalidConnectorCount}");
+                    Console.WriteLine("All connector shapes contain at least one valid connection index.");
                 }
 
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

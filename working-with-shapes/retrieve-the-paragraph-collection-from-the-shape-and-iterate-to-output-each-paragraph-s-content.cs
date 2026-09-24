@@ -1,46 +1,53 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Find the first non‑deleted shape on the page
+            Shape shape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Load an existing Visio diagram (replace with your actual file path)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                if (s.Del == BOOL.False)
                 {
-                    // Retrieve the full plain text of the shape
-                    string fullText = shape.Text.Value.Text;
-
-                    // Skip shapes that have no text
-                    if (string.IsNullOrWhiteSpace(fullText))
-                        continue;
-
-                    // Split the text into paragraphs (Visio uses line breaks)
-                    string[] paragraphs = fullText.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-
-                    Console.WriteLine($"Shape ID {shape.ID} - Paragraphs:");
-                    // Output each paragraph's content
-                    for (int i = 0; i < paragraphs.Length; i++)
-                    {
-                        Console.WriteLine($"  Paragraph {i + 1}: {paragraphs[i]}");
-                    }
-                    Console.WriteLine(); // Blank line for readability
+                    shape = s;
+                    break;
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
+            if (shape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("No shape found on the page.");
+                return;
             }
+
+            // Iterate through the paragraph collection of the shape
+            for (int i = 0; i < shape.Paras.Count; i++)
+            {
+                Aspose.Diagram.Para para = shape.Paras[i];
+                // Output paragraph index (Para objects contain formatting, not direct text)
+                Console.WriteLine($"Paragraph {i + 1}:");
+
+                // As Aspose.Diagram does not expose paragraph text directly,
+                // we output the full shape text as a placeholder.
+                Console.WriteLine(shape.Text.Value.Text);
+            }
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

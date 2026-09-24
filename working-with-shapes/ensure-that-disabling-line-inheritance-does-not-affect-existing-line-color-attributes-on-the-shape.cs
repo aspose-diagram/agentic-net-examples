@@ -1,51 +1,61 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path
+        string outputPath = "output.vsdx";
+
+        try
+        {
+            // Load the diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (replace with actual paths as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Retrieve the first shape on the page (for demonstration purposes)
-                // Ensure the page contains at least one shape
-                if (page.Shapes.Count == 0)
+                // Iterate over all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.WriteLine("No shapes found on the page.");
-                    return;
+                    // Skip 1‑D connector shapes – they have no line fill to preserve
+                    if (shape.OneD) continue;
+
+                    // Store the current explicit line color (hex string)
+                    string originalLineColor = shape.Line.LineColor.Value;
+
+                    // Disable line inheritance by explicitly setting the line color
+                    // to its current value. This forces the shape to use its own value
+                    // rather than inheriting from a master or style.
+                    shape.Line.LineColor.Value = originalLineColor;
+
+                    // Verify that the line color remains unchanged after disabling inheritance
+                    if (shape.Line.LineColor.Value != originalLineColor)
+                    {
+                        Console.Error.WriteLine($"Line color altered for shape ID {shape.ID}");
+                    }
                 }
-
-                // Get the shape by its ID
-                Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-                // Store the current line color (hex string) of the shape
-                string originalLineColor = shape.Line.LineColor.Value;
-
-                // Disable line inheritance by explicitly setting the line color
-                // This ensures the shape retains its original line color even after inheritance is broken
-                shape.Line.LineColor.Value = originalLineColor;
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram saved successfully with line inheritance disabled.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output file using VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,58 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Create a new empty diagram instance.
+        Diagram diagram = new Diagram();
+
+        // Ensure the diagram contains at least one page.
+        if (diagram.Pages.Count == 0)
+        {
+            // Add a blank page when none exist.
+            diagram.Pages.Add(new Page());
+        }
+
+        // Prepare the current date string for the header.
+        string currentDate = DateTime.Now.ToString("d");
+
+        // Iterate over each page to add a header shape.
+        foreach (Page page in diagram.Pages)
+        {
+            // Retrieve page dimensions (in inches) for positioning.
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Define header dimensions and calculate its center position.
+            double headerHeight = 0.5;               // Header height in inches.
+            double headerWidth = pageWidth;          // Full page width.
+            double pinX = pageWidth / 2.0;           // Horizontal center.
+            double pinY = pageHeight - (headerHeight / 2.0); // Near top edge.
+
+            // Add a text shape containing the current date.
+            // AddText returns a Shape object.
+            Shape headerShape = page.AddText(pinX, pinY, headerWidth, headerHeight, currentDate);
+
+            // Optional: set vertical alignment to middle (horizontal alignment is default centered by pin position).
+            headerShape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+        }
+
+        // Define the output file path.
+        string outputPath = "DiagramWithHeaders.vsdx";
+
+        // Guard to ensure the output directory exists (no input file to check).
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory not found: {outputDir}");
+            return;
+        }
+
+        // Save the modified diagram inside a try/catch to capture any Aspose errors.
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare the header text (current date)
-            string headerText = DateTime.Now.ToString("d");
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Get page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Define header shape size
-                double headerWidth = 2.0;   // inches
-                double headerHeight = 0.5;  // inches
-
-                // Position the header consistently:
-                // 1 inch from the left edge, and 0.5 inch from the top edge.
-                double pinX = 1.0 + headerWidth / 2.0;          // center X
-                double pinY = pageHeight - 0.5;                 // center Y near top
-
-                // Add a text shape as the header on the current page
-                // Font: Arial, Color: Black, Size: 0.2 inches (~14 pt)
-                Shape headerShape = page.AddText(
-                    pinX,
-                    pinY,
-                    headerWidth,
-                    headerHeight,
-                    headerText,
-                    "Arial",
-                    "#000000",
-                    0.2);
-            }
-
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
 }

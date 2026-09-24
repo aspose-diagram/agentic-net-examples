@@ -1,45 +1,84 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Load the diagram that contains the shape to be examined
-            Diagram diagram = new Diagram("original.vsdx");
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
 
-            // Access the first page and the first shape on that page
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
+                // Output thumbnail paths
+                string beforePath = "thumbnail_before.png";
+                string afterPath = "thumbnail_after.png";
 
-            // Render the shape before any theme changes
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            shape.ToImage("shape_before.png", imgOptions);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Load a diagram that holds the desired theme
-            Diagram themeSource = new Diagram("theme_source.vsdx");
+                // -----------------------------------------------------------------
+                // Render thumbnail before applying any theme
+                // -----------------------------------------------------------------
+                ImageSaveOptions beforeOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                beforeOptions.PageIndex = 0;               // first page
+                beforeOptions.PageCount = 1;               // only one page
+                beforeOptions.ExportHiddenPage = false;    // ignore hidden pages
+                diagram.Save(beforePath, beforeOptions);
 
-            // Apply the theme from the source diagram to the target diagram
-            diagram.CopyTheme(themeSource);
+                // -----------------------------------------------------------------
+                // Apply a preset theme to the first page
+                // -----------------------------------------------------------------
+                Page firstPage = diagram.Pages[0];
+                firstPage.PresetTheme = PresetThemeValue.Bubble;
+                firstPage.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-            // Re‑acquire the shape after the theme has been applied (the shape instance may have been refreshed)
-            shape = diagram.Pages[0].Shapes[0];
+                // -----------------------------------------------------------------
+                // Render thumbnail after applying the theme
+                // -----------------------------------------------------------------
+                ImageSaveOptions afterOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                afterOptions.PageIndex = 0;
+                afterOptions.PageCount = 1;
+                afterOptions.ExportHiddenPage = false;
+                diagram.Save(afterPath, afterOptions);
 
-            // Render the shape after the theme has been applied
-            shape.ToImage("shape_after.png", imgOptions);
+                // -----------------------------------------------------------------
+                // Compare the two thumbnail files byte‑by‑byte
+                // -----------------------------------------------------------------
+                byte[] beforeBytes = File.ReadAllBytes(beforePath);
+                byte[] afterBytes = File.ReadAllBytes(afterPath);
 
-            // Optionally save the diagram with the new theme applied
-            diagram.Save("original_with_theme.vsdx", SaveFileFormat.Vsdx);
+                bool areEqual = beforeBytes.Length == afterBytes.Length;
+                if (areEqual)
+                {
+                    for (int i = 0; i < beforeBytes.Length; i++)
+                    {
+                        if (beforeBytes[i] != afterBytes[i])
+                        {
+                            areEqual = false;
+                            break;
+                        }
+                    }
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                if (areEqual)
+                {
+                    Console.WriteLine("The shape appearance did not change after applying the theme.");
+                }
+                else
+                {
+                    Console.WriteLine("The shape appearance changed after applying the theme.");
+                    Console.WriteLine($"Before thumbnail saved to: {Path.GetFullPath(beforePath)}");
+                    Console.WriteLine($"After thumbnail saved to: {Path.GetFullPath(afterPath)}");
+                }
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

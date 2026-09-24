@@ -4,54 +4,71 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-class Program
+namespace VisioHyperlinkExtractor
+{
+    // DTO for JSON output
+    public class ShapeHyperlinkInfo
     {
-        static void Main(string[] args)
+        public long Id { get; set; }
+        public List<string> Urls { get; set; } = new();
+    }
+
+    public class Program
+    {
+        public static void Main(string[] args)
         {
             try
             {
 
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
 
-                // Path for the output JSON file
-                string jsonOutputPath = "hyperlinks.json";
+                // Output JSON file path
+                string outputPath = "hyperlinks.json";
 
                 // Load the Visio diagram
-                using (Diagram diagram = new Diagram(visioPath))
-                {
-                    // List to hold shape‑id and hyperlink pairs
-                    var hyperlinkEntries = new List<object>();
+                Diagram diagram = new Diagram(inputPath);
 
-                    // Iterate through all pages in the diagram
-                    foreach (Page page in diagram.Pages)
+                // Collect shape IDs and their hyperlink URLs
+                List<ShapeHyperlinkInfo> result = new();
+
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the current page
-                        foreach (Shape shape in page.Shapes)
+                        // Ensure the shape has hyperlinks
+                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                         {
-                            // Each shape may contain zero or more hyperlinks
+                            ShapeHyperlinkInfo info = new ShapeHyperlinkInfo
+                            {
+                                Id = shape.ID
+                            };
+
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
-                                // Add an entry with the shape ID and the hyperlink address
-                                hyperlinkEntries.Add(new
+                                // Guard against null address cells
+                                if (link != null && link.Address != null && !string.IsNullOrWhiteSpace(link.Address.Value))
                                 {
-                                    ShapeId = shape.ID,
-                                    Url = link.Address
-                                });
+                                    info.Urls.Add(link.Address.Value);
+                                }
+                            }
+
+                            // Add only if at least one URL was found
+                            if (info.Urls.Count > 0)
+                            {
+                                result.Add(info);
                             }
                         }
                     }
-
-                    // Serialize the list to a formatted JSON string
-                    string json = JsonSerializer.Serialize(
-                        hyperlinkEntries,
-                        new JsonSerializerOptions { WriteIndented = true });
-
-                    // Write the JSON to the output file
-                    File.WriteAllText(jsonOutputPath, json);
                 }
 
-                Console.WriteLine("Hyperlink extraction completed. Output written to " + jsonOutputPath);
+                // Serialize the result to JSON with indentation
+                string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+
+                // Write JSON to the output file
+                File.WriteAllText(outputPath, json);
+
+                Console.WriteLine($"Extraction complete. JSON written to '{outputPath}'.");
 
             }
             catch (System.IO.FileNotFoundException ex)
@@ -60,3 +77,4 @@ class Program
             }
     }
     }
+}

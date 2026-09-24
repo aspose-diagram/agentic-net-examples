@@ -1,70 +1,59 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load the existing Visio diagram (create/load rule)
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Work with the first page (adjust as needed)
+            Page page = diagram.Pages[0];
+
+            // Locate the shape to duplicate (example: shape with NameU "Shape1")
+            Shape originalShape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Find the first non‑deleted shape on the page
-                Shape originalShape = null;
-                foreach (Shape shape in page.Shapes)
+                if (s.NameU == "Shape1")
                 {
-                    if (shape.Del == BOOL.False)
-                    {
-                        originalShape = shape;
-                        break;
-                    }
+                    originalShape = s;
+                    break;
                 }
-
-                if (originalShape == null)
-                {
-                    throw new Exception("No non‑deleted shape found to duplicate.");
-                }
-
-                // Retrieve the master name of the original shape
-                string masterName = originalShape.Master?.Name;
-                if (string.IsNullOrEmpty(masterName))
-                {
-                    throw new Exception("Original shape does not have an associated master.");
-                }
-
-                // Get the original shape's position
-                double originalPinX = originalShape.XForm.PinX.Value;
-                double originalPinY = originalShape.XForm.PinY.Value;
-
-                // Define an offset for the duplicated shape (e.g., 2 inches right and down)
-                double offsetX = 2.0;
-                double offsetY = 2.0;
-
-                double newPinX = originalPinX + offsetX;
-                double newPinY = originalPinY + offsetY;
-
-                // Add a new shape using the same master and the adjusted position
-                long newShapeId = page.AddShape(newPinX, newPinY, masterName);
-
-                // Optionally retrieve the newly added shape (not required for duplication)
-                Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (originalShape != null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Create a new shape (create rule)
+                Shape newShape = new Shape();
+
+                // Use the same master shape ID as the original
+                newShape.MasterShape = originalShape.MasterShape;
+
+                // Optionally copy the name and give it a distinct identifier
+                newShape.NameU = originalShape.NameU + "_Copy";
+
+                // Adjust position: offset the original shape by 1 inch (1440 twips)
+                double origPinX = originalShape.XForm.PinX.Value;
+                double origPinY = originalShape.XForm.PinY.Value;
+                newShape.XForm.PinX.Value = origPinX + 1440; // 1 inch to the right
+                newShape.XForm.PinY.Value = origPinY + 1440; // 1 inch down
+
+                // Add the new shape to the page (create rule)
+                page.Shapes.Add(newShape);
             }
+
+            // Save the modified diagram (save rule)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

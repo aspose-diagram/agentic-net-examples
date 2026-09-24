@@ -1,50 +1,51 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the Visio file to be loaded
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Count pages
+            int totalPages = diagram.Pages.Count;
+
+            // Initialize counters for shapes and connectors
+            int totalShapes = 0;
+            int totalConnectors = 0;
+
+            // Iterate through each page and its shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file. Use first command‑line argument if supplied.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                int pageCount = 0;
-                int shapeCount = 0;
-                int connectorCount = 0;
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    pageCount++;
+                    totalShapes++;
 
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Connectors are 1‑D shapes (dynamic connectors)
+                    if (shape.OneD)
                     {
-                        shapeCount++;
-
-                        // Connectors are 1‑D shapes.
-                        if (shape.OneD)
-                        {
-                            connectorCount++;
-                        }
+                        totalConnectors++;
                     }
                 }
-
-                // Output the summary report.
-                Console.WriteLine($"Total pages: {pageCount}");
-                Console.WriteLine($"Total shapes: {shapeCount}");
-                Console.WriteLine($"Total connectors: {connectorCount}");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Output the summary report
+            Console.WriteLine($"Total Pages: {totalPages}");
+            Console.WriteLine($"Total Shapes: {totalShapes}");
+            Console.WriteLine($"Total Connectors: {totalConnectors}");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,54 +1,44 @@
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Name and value of the custom property to filter by
-                string targetPropertyName = "Category";
-                string targetPropertyValue = "Important";
+                // Path to the Visio file to be processed
+                string inputPath = "input.vsdx";
 
                 // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+                Diagram diagram = new Diagram(inputPath);
 
-                // List to hold IDs of matching shapes
-                List<long> matchingShapeIds = new List<long>();
+                // Define the custom property name and the value to filter by
+                string targetPropName = "MyCustomProp";
+                string targetPropValue = "DesiredValue";
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has custom properties
-                        if (shape.Props != null)
+                        // Ensure the shape has custom properties collection
+                        if (shape.Props == null)
+                            continue;
+
+                        // Check each custom property (Prop) of the shape
+                        foreach (Prop prop in shape.Props)
                         {
-                            foreach (Prop prop in shape.Props)
+                            if (prop.Name == targetPropName && prop.Value.Val == targetPropValue)
                             {
-                                if (prop.Name == targetPropertyName && prop.Value.Val == targetPropertyValue)
-                                {
-                                    matchingShapeIds.Add(shape.ID);
-                                    // No need to check other properties for this shape
-                                    break;
-                                }
+                                // Output the shape ID that matches the criteria
+                                Console.WriteLine($"Matching Shape ID: {shape.ID}");
+                                // No need to check other properties of this shape
+                                break;
                             }
                         }
                     }
-                }
-
-                // Output the IDs of matching shapes
-                Console.WriteLine("Shapes with custom property '{0}' = '{1}':", targetPropertyName, targetPropertyValue);
-                foreach (long id in matchingShapeIds)
-                {
-                    Console.WriteLine("Shape ID: " + id);
                 }
 
             }

@@ -10,42 +10,38 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram from a file
+            string filePath = "input.vsdx";
+            Diagram diagram = new Diagram(filePath);
 
-            // Select the page to process (e.g., the first page)
+            // Access the first page (you can change the index to target a different page)
             Page page = diagram.Pages[0];
 
-            // List to store individual paragraph texts from all shapes
+            // List to store the paragraph texts from each shape
             List<string> paragraphTexts = new List<string>();
 
-            // Iterate through each shape on the selected page
+            // Iterate through all shapes on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Retrieve the combined text of the shape (all paragraphs)
-                string pureText = shape.GetPureText();
+                // Retrieve the plain text of the shape
+                string text = shape.Text.Value.Text;
 
-                // If the shape contains text, split it into separate paragraphs
-                if (!string.IsNullOrEmpty(pureText))
+                // Add non‑empty text entries to the list
+                if (!string.IsNullOrWhiteSpace(text))
                 {
-                    // Visio paragraphs are typically separated by line breaks
-                    string[] paragraphs = pureText.Split(
-                        new[] { "\r\n", "\n" },
-                        StringSplitOptions.RemoveEmptyEntries);
-
-                    // Add each paragraph to the collection
-                    paragraphTexts.AddRange(paragraphs);
+                    paragraphTexts.Add(text);
                 }
             }
 
-            // Example reporting: output collected paragraphs to the console
-            foreach (string paragraph in paragraphTexts)
+            // Output the collected texts for reporting
+            Console.WriteLine("Collected paragraph texts:");
+            foreach (string txt in paragraphTexts)
             {
-                Console.WriteLine(paragraph);
+                Console.WriteLine(txt);
             }
 
-            // Optionally save the diagram after processing
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Clean up resources
+            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

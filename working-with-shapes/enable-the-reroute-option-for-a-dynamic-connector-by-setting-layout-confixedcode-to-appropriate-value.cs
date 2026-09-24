@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,30 +10,25 @@ class Program
         try
         {
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through shapes on the first page to find a dynamic connector
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
+
+            // Iterate through all shapes on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Identify dynamic connectors: 1‑D shape with master name "Dynamic connector"
-                if (shape.OneD && shape.Master != null && shape.Master.Name == "Dynamic connector")
+                // Identify dynamic connector shapes by master name
+                if (shape.Master != null && shape.Master.Name == "Dynamic connector")
                 {
-                    // Enable reroute by setting ConFixedCode to its default (Undefined) value
+                    // Enable reroute option by setting ConFixedCode to Undefined (the only valid value)
                     shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
-                    // Optionally break after the first connector is processed
-                    break;
                 }
             }
 
             // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

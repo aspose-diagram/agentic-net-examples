@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,14 +9,24 @@ class Program
         try
         {
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Path to the Visio file to load
+            string inputPath = "input.vsdx";
+
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
 
             // Retrieve the page named "Page-2"
             Page page = diagram.Pages.GetPage("Page-2");
 
-            // Example usage: display page ID and name
-            Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+            // Output information about the retrieved page
+            if (page != null)
+            {
+                Console.WriteLine($"Page found: Name = {page.Name}, ID = {page.ID}");
+            }
+            else
+            {
+                Console.WriteLine("Page 'Page-2' not found.");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

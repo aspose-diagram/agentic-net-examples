@@ -1,57 +1,59 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-
-public class ShapeGrouper
-{
-    /// <summary>
-    /// Ensures that the shape with the specified ID on the given page is part of a group.
-    /// If the shape is not already grouped, it creates a new group containing only this shape.
-    /// </summary>
-    /// <param name="diagram">The loaded Aspose.Diagram Diagram instance.</param>
-    /// <param name="pageIndex">Zero‑based index of the page containing the shape.</param>
-    /// <param name="shapeId">The unique ID of the shape to check.</param>
-    public void EnsureShapeIsGrouped(Diagram diagram, int pageIndex, long shapeId)
-    {
-        // Get the target page.
-        Page page = diagram.Pages[pageIndex];
-
-        // Retrieve the shape by its ID.
-        Shape targetShape = page.Shapes.GetShape(shapeId);
-
-        // If the shape is already in a group, nothing to do.
-        if (targetShape.IsInGroup())
-        {
-            // Shape is already grouped.
-            return;
-        }
-
-        // The shape is not grouped; create a new group containing this shape.
-        // ShapeCollection.Group expects an array of Shape objects.
-        Shape[] shapesToGroup = new Shape[] { targetShape };
-
-        // Group the shapes. The method returns the newly created group shape.
-        Shape groupShape = page.Shapes.Group(shapesToGroup);
-
-        // Optional: configure group properties (e.g., SelectMode) if needed.
-        // groupShape.Group.SelectMode = SelectModeValue.GroupShapeOnly;
-    }
-}
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            var obj = new ShapeGrouper();
-            obj.EnsureShapeIsGrouped(null, 0, 0);
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Collect shapes that are not currently part of any group
+                List<Shape> shapesToGroup = new List<Shape>();
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Check group membership; IsInGroup returns true if the shape belongs to a group
+                    if (!shape.IsInGroup())
+                    {
+                        shapesToGroup.Add(shape);
+                    }
+                }
 
+                // For each ungrouped shape, create a new group containing only that shape
+                foreach (Shape shape in shapesToGroup)
+                {
+                    // Group method expects an array of Shape objects and returns the new group shape
+                    page.Shapes.Group(new Shape[] { shape });
+                }
+            }
+
+            // Save the modified diagram to the output path using VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.NullReferenceException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

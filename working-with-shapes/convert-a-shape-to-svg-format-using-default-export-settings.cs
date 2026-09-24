@@ -10,23 +10,21 @@ class Program
         try
         {
 
-            // Input diagram file (VDX, VSDX, etc.)
-            string diagramPath = "input.vsdx";
+            // Load an existing Visio diagram (replace with your file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Output SVG file for the shape
-            string svgPath = "shape.svg";
+            // Get the first page of the diagram
+            Page page = diagram.Pages[0];
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(diagramPath);
+            // Retrieve the first shape on the page
+            Shape shape = page.Shapes[0];
 
-            // Get a shape to export (example: first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[1];
+            // Export the shape to SVG using default settings
+            string outputSvgPath = "shape_output.svg";
+            shape.ToSvg(outputSvgPath, new SVGSaveOptions());
 
-            // Use default SVG export options
-            SVGSaveOptions options = new SVGSaveOptions();
-
-            // Export the selected shape to SVG
-            shape.ToSvg(svgPath, options);
+            Console.WriteLine($"Shape exported to SVG: {outputSvgPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

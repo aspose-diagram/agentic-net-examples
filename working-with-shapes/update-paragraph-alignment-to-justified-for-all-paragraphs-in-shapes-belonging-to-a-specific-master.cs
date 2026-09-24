@@ -1,48 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Name of the master whose shapes will be updated
-            string targetMasterName = "MyMaster";
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
+
+                // Name of the master whose shapes' paragraphs will be updated
+                string targetMasterName = "MyMaster";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Process only shapes that are instances of the specified master
-                    if (shape.Master != null && shape.Master.Name == targetMasterName)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Update each paragraph's horizontal alignment to Justify
-                        for (int i = 0; i < shape.Paras.Count; i++)
+                        // Process only shapes that are based on the specified master
+                        if (shape.Master != null && shape.Master.Name == targetMasterName)
                         {
-                            var para = shape.Paras[i];
-                            para.HorzAlign.Value = HorzAlignValue.Justify;
+                            // Update each paragraph's horizontal alignment to Justify
+                            foreach (Para para in shape.Paras)
+                            {
+                                para.HorzAlign.Value = HorzAlignValue.Justify;
+                            }
                         }
                     }
                 }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

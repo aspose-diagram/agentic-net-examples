@@ -1,66 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output.vsdx";
+
         try
         {
-
             // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram(inputPath);
 
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // First, collect the IDs of all group shapes on the page
-                List<long> groupIds = new List<long>();
+                // Collect all group shapes on the current page
+                List<Shape> groupShapes = new List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Identify group shapes by their Type
                     if (shape.Type == TypeValue.Group)
-                    {
-                        groupIds.Add(shape.ID);
-                    }
+                        groupShapes.Add(shape);
                 }
 
                 // Process each group shape
-                foreach (long groupId in groupIds)
+                foreach (Shape groupShape in groupShapes)
                 {
-                    // Retrieve the group shape by its ID
-                    Shape groupShape = page.Shapes.GetShape(groupId);
-
-                    // Store the IDs of the sub‑shapes contained in the group
+                    // Capture IDs of sub‑shapes before ungrouping
                     List<long> subShapeIds = new List<long>();
                     foreach (Shape sub in groupShape.Shapes)
-                    {
                         subShapeIds.Add(sub.ID);
-                    }
 
-                    // Expand (ungroup) the group shape to expose its members
+                    // Ungroup the shape; this removes the group and promotes its children to the page level
                     groupShape.Ungroup();
 
-                    // Apply individual rotation to each now‑exposed sub‑shape
-                    foreach (long subId in subShapeIds)
+                    // Rotate each former sub‑shape individually (example: 45 degrees)
+                    foreach (long id in subShapeIds)
                     {
-                        Shape subShape = page.Shapes.GetShape(subId);
-                        double angleDeg = 45.0; // example rotation angle in degrees
-                        double angleRad = Math.PI * angleDeg / 180.0; // convert to radians
-                        subShape.SetAngle(angleRad);
+                        // Retrieve the shape now residing directly on the page
+                        Shape subShape = page.Shapes.GetShape(id);
+                        // Set rotation angle in degrees
+                        subShape.XForm.Angle.Value = 45.0;
                     }
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram using the correct overload
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

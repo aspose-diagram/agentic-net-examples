@@ -9,53 +9,39 @@ class Program
             try
             {
 
-                // Input Visio file path
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
-                // Output PDF file path
+
+                // Path for the exported PDF
                 string outputPath = "output.pdf";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Desired font size in points (10 pt) converted to inches (1 pt = 1/72 inch)
+                // Desired font size in points (10 pt) converted to inches
                 double fontSizeInInches = 10.0 / 72.0;
 
-                // Iterate through all pages and shapes
+                // Iterate over all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape contains any text
+                        // Process only shapes that contain text
                         if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                         {
-                            // If the shape has no character entries, create one
-                            if (shape.Chars.Count == 0)
+                            // Set the font size for each character run
+                            foreach (Aspose.Diagram.Char ch in shape.Chars)
                             {
-                                Aspose.Diagram.Char newChar = new Aspose.Diagram.Char();
-                                newChar.IX = 0;
-                                newChar.Size.Value = fontSizeInInches;
-                                shape.Chars.Add(newChar);
-                            }
-                            else
-                            {
-                                // Set the font size for each character run
-                                foreach (Aspose.Diagram.Char ch in shape.Chars)
-                                {
-                                    ch.Size.Value = fontSizeInInches;
-                                }
+                                ch.Size.Value = fontSizeInInches;
                             }
                         }
                     }
                 }
 
-                // Configure PDF save options (optional default font)
+                // Export the diagram to PDF
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-
-                // Save the diagram as PDF
+                pdfOptions.DefaultFont = "Arial"; // fallback font
                 diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Diagram exported to PDF successfully: {outputPath}");
 
             }
             catch (System.IO.FileNotFoundException ex)

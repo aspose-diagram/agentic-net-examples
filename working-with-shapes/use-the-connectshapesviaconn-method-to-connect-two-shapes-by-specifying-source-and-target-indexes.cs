@@ -1,45 +1,46 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+            // Path to a stencil that contains the required masters (e.g., "Rectangle" and "Dynamic connector")
+            string stencilPath = @"C:\Stencils\basic.vss";
 
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
+            // Load the diagram with the stencil
+            Diagram diagram = new Diagram(stencilPath);
 
-                // Add two rectangle shapes
-                long shapeId1 = page.AddShape(2.0, 5.0, "Rectangle");
-                long shapeId2 = page.AddShape(6.0, 5.0, "Rectangle");
+            // Get the first page (default page)
+            Page page = diagram.Pages[0];
 
-                // Add a dynamic connector shape
-                long connectorId = page.AddShape(4.0, 5.0, "Dynamic connector");
+            // Add two rectangle shapes
+            long shapeId1 = page.AddShape(1.0, 1.0, "Rectangle", false);
+            long shapeId2 = page.AddShape(3.0, 1.0, "Rectangle", false);
 
-                // Connect shape 1 to shape 2 using the connector
-                // Use ConnectionPointPlace.Right for the source and ConnectionPointPlace.Bottom for the target
-                page.ConnectShapesViaConnector(
-                    shapeId1,
-                    ConnectionPointPlace.Right,
-                    shapeId2,
-                    ConnectionPointPlace.Bottom,
-                    connectorId);
+            // Add a dynamic connector shape
+            long connectorId = page.AddShape(2.0, 1.0, "Dynamic connector", false);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Connect the first rectangle to the second rectangle using the connector
+            page.ConnectShapesViaConnector(
+                shapeId1,
+                ConnectionPointPlace.Right,
+                shapeId2,
+                ConnectionPointPlace.Left,
+                connectorId);
 
-                Console.WriteLine("Diagram created and shapes connected successfully.");
+            // Save the resulting diagram
+            diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (System.IO.DirectoryNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

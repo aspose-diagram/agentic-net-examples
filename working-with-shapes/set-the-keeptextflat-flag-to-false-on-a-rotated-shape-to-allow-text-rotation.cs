@@ -1,50 +1,77 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for diagram save operations
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Verify that both input and output paths are provided
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        // Assign input file path and guard its existence
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Assign output file path and ensure its directory exists
+        string outputPath = args[1];
+        string outDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outDir) && !Directory.Exists(outDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outDir}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Retrieve the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Locate the first shape that is not marked as deleted
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page
-                Page page = diagram.Pages[0];
-
-                // Find the first shape on the page
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                // Check the deletion flag using the BOOL enum
+                if (s.Del == BOOL.False)
                 {
-                    targetShape = shape;
+                    targetShape = s;
                     break;
                 }
-
-                if (targetShape == null)
-                {
-                    throw new Exception("No shapes found on the first page.");
-                }
-
-                // Rotate the shape (example: 45 degrees)
-                double angleDegrees = 45.0;
-                double angleRadians = Math.PI * angleDegrees / 180.0;
-                targetShape.SetAngle(angleRadians);
-
-                // Disable KeepTextFlat to allow text rotation
-                // KeepTextFlat is a BOOL cell; set it to FALSE
-                targetShape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // If no suitable shape is found, report and exit
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("No suitable shape found in the diagram.");
+                return;
             }
+
+            // Rotate the shape by 45 degrees (value is in degrees)
+            targetShape.XForm.Angle.Value = 45;
+
+            // Disable KeepTextFlat to allow the text within the shape to rotate
+            targetShape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

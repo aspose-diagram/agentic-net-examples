@@ -3,41 +3,49 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeToSwfConverter
+class Program
 {
     static void Main()
     {
         try
         {
-            // Load the source Visio diagram
-            Diagram sourceDiagram = new Diagram("input.vsd");
 
-            // Retrieve the shape you want to convert (example: first shape on the first page)
-            Shape sourceShape = sourceDiagram.Pages[0].Shapes[0];
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Create a new diagram that will contain only the selected shape
-            Diagram singleShapeDiagram = new Diagram();
+            // Retrieve the first shape on the first page
+            Shape targetShape = null;
+            foreach (Shape shape in diagram.Pages[0].Shapes)
+            {
+                targetShape = shape;
+                break;
+            }
 
-            // Add a new blank page to the new diagram
-            Page newPage = new Page();
-            singleShapeDiagram.Pages.Add(newPage);
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shape found in the diagram.");
+                return;
+            }
 
-            // Determine the master name of the source shape (required for AddShape)
-            string masterName = sourceShape.Master?.Name ?? "Rectangle";
+            // Define the output path for the SWF file
+            string outputPath = "shape_output.swf";
 
-            // Add the shape to the new page using the overload that accepts a Shape instance
-            newPage.AddShape(sourceShape, masterName);
+            // Convert the shape to SWF format with error handling
+            try
+            {
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Swf);
+                targetShape.ToImage(outputPath, options);
+                Console.WriteLine($"Shape successfully exported to SWF: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during shape conversion: {ex.Message}");
+            }
 
-            // Configure SWF save options (default settings are sufficient for basic conversion)
-            SWFSaveOptions swfOptions = new SWFSaveOptions();
-
-            // Save the diagram (which now contains only the selected shape) as SWF
-            singleShapeDiagram.Save("shape.swf", swfOptions);
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Handle any errors that occur during the conversion process
-            Console.WriteLine($"Error converting shape to SWF: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

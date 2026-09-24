@@ -7,53 +7,33 @@ class Program
 {
     static void Main()
     {
+        string inputPath = "input.vsdx";
+        string outputPath = "output.svg";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            string inputFile = "input.vsdx";
-            string outputFile = "output.svg";
-
-            // Load the Visio diagram (uses the Diagram constructor as the load rule)
-            Diagram diagram = null;
-            try
-            {
-                diagram = new Diagram(inputFile);
-            }
-            catch (DiagramException loadEx)
-            {
-                // Log loading errors and exit
-                Console.Error.WriteLine($"Error loading diagram: {loadEx.Message}");
-                Console.Error.WriteLine(loadEx.StackTrace);
-                return;
-            }
-
-            // Configure SVG save options (uses the SVGSaveOptions class)
+            // Configure SVG save options
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            // Example: set the page index if needed
-            // svgOptions.PageIndex = 0;
 
-            // Attempt to save the diagram as SVG and handle conversion errors
-            try
-            {
-                diagram.Save(outputFile, svgOptions);
-                Console.WriteLine("Diagram successfully converted to SVG.");
-            }
-            catch (DiagramException svgEx)
-            {
-                // Log conversion errors
-                Console.Error.WriteLine($"Error during SVG conversion: {svgEx.Message}");
-                Console.Error.WriteLine(svgEx.StackTrace);
-            }
-            finally
-            {
-                // Ensure resources are released
-                diagram?.Dispose();
-            }
-
+            // Export the diagram to SVG
+            diagram.Save(outputPath, svgOptions);
+            Console.WriteLine($"Diagram successfully saved as SVG to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log detailed error information
+            Console.WriteLine("An error occurred during SVG conversion:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        }
+        catch (Exception ex)
+        {
+            // Catch any other unexpected exceptions
+            Console.WriteLine("An unexpected error occurred:");
+            Console.WriteLine($"Message: {ex.Message}");
         }
     }
 }

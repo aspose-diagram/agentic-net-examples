@@ -1,93 +1,53 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        // Size threshold in inches – shapes larger than this will have gluing disabled
-        const double SizeThreshold = 2.0;
-
         static void Main(string[] args)
         {
             try
             {
 
-                // Input folder (first argument) and output folder (second argument)
-                string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
-                string outputFolder = args.Length > 1 ? args[1] : "OutputDiagrams";
+                // Input and output file paths
+                string inputPath = "input.vsdx";
+                string outputPath = "output.vsdx";
 
-                // Ensure output folder exists
-                if (!Directory.Exists(outputFolder))
-                    Directory.CreateDirectory(outputFolder);
+                // Size threshold in inches (shapes larger than this will have gluing disabled)
+                double sizeThreshold = 2.0;
 
-                // Get all Visio files in the input folder (VSDX, VSD, VDX, etc.)
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-                foreach (string filePath in diagramFiles)
+                // Load the diagram inside a using block to ensure proper disposal
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Process only supported Visio formats based on file extension
-                    string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                    if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        Console.WriteLine($"Skipping unsupported file: {Path.GetFileName(filePath)}");
-                        continue;
-                    }
-
-                    try
-                    {
-                        // Load the diagram
-                        using (Diagram diagram = new Diagram(filePath))
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through all pages
-                            foreach (Page page in diagram.Pages)
-                            {
-                                // Iterate through all shapes on the page
-                                foreach (Shape shape in page.Shapes)
-                                {
-                                    // Retrieve shape dimensions (in inches)
-                                    double width = shape.XForm.Width.Value;
-                                    double height = shape.XForm.Height.Value;
+                            // Retrieve shape width and height (in inches)
+                            double width = shape.XForm.Width.Value;
+                            double height = shape.XForm.Height.Value;
 
-                                    // If either dimension exceeds the threshold, disable dynamic glue
-                                    if (width > SizeThreshold || height > SizeThreshold)
-                                    {
-                                        // Ensure the Misc cell collection is present before setting GlueType
-                                        if (shape.Misc != null && shape.Misc.GlueType != null)
-                                        {
-                                            shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
-                                        }
-                                    }
-                                }
+                            // Check if the shape exceeds the defined size threshold
+                            if (width > sizeThreshold || height > sizeThreshold)
+                            {
+                                // Disable dynamic gluing for this shape
+                                shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
                             }
-
-                            // Prepare output file path (preserve original file name)
-                            string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                            // Save the modified diagram in the same format as the original
-                            // Use the appropriate SaveFileFormat based on extension
-                            SaveFileFormat format = extension switch
-                            {
-                                ".vsdx" => SaveFileFormat.Vsdx,
-                                ".vsd" => SaveFileFormat.Vsd,
-                                ".vdx" => SaveFileFormat.Vdx,
-                                _ => SaveFileFormat.Vsdx // fallback (should not reach here)
-                            };
-
-                            diagram.Save(outputPath, format);
-                            Console.WriteLine($"Processed and saved: {outputPath}");
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Batch processing completed.");
+                Console.WriteLine("Processing completed. Modified diagram saved to: " + outputPath);
 
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
     }
     }

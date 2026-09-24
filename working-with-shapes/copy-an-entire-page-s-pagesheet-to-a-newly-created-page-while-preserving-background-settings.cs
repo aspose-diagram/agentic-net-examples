@@ -1,6 +1,6 @@
 using System.IO;
-using Aspose.Diagram;
 using System;
+using Aspose.Diagram;
 
 class Program
 {
@@ -9,29 +9,44 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Source page whose PageSheet will be copied (e.g., the first page)
-            Page sourcePage = diagram.Pages[0];
+            // Load the source diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Select the page to copy (e.g., the first page)
+                Page sourcePage = diagram.Pages[0];
 
-            // Create a new page instance
-            Page newPage = new Page(diagram.Pages.Count);
-            // Add the new page to the diagram's page collection
-            diagram.Pages.Add(newPage);
+                // Determine a new unique page ID
+                int maxId = 0;
+                foreach (Page p in diagram.Pages)
+                {
+                    if (p.ID > maxId)
+                        maxId = p.ID;
+                }
 
-            // Copy the entire PageSheet from the source page to the new page
-            newPage.PageSheet.Copy(sourcePage.PageSheet);
+                // Create a new blank page
+                Page newPage = new Page();
+                newPage.ID = maxId + 1;
+                newPage.Name = sourcePage.Name + "_Copy";
 
-            // Preserve background settings of the source page
-            newPage.Background = sourcePage.Background;
-            newPage.BackPage = sourcePage.BackPage;
+                // Clone the source page's PageSheet (including background settings)
+                newPage.Copy(sourcePage);
 
-            // Optionally give the new page a distinct name
-            newPage.Name = "CopiedPage";
+                // Ensure background flags are explicitly preserved
+                newPage.Background = sourcePage.Background;
+                newPage.BackPage = sourcePage.BackPage;
 
-            // Save the updated diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Add the new page to the diagram
+                diagram.Pages.Add(newPage);
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Page copied successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

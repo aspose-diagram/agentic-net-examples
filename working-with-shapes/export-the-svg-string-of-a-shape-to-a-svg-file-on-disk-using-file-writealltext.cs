@@ -3,46 +3,67 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportShapeSvg
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output SVG file path
+        string outputPath = "shape.svg";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("inputDiagram.vsdx");
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
 
-            // Get the first shape on the first page (adjust indices as needed)
-            Shape shape = diagram.Pages[0].Shapes[0];
-
-            // Temporary file to let Shape.ToSvg save the SVG content
-            string tempSvgPath = Path.Combine(Path.GetTempPath(), "tempShape.svg");
-
-            // Save the shape as SVG using the provided ToSvg method and default options
-            shape.ToSvg(tempSvgPath, new SVGSaveOptions());
-
-            // Read the generated SVG content into a string
-            string svgContent = File.ReadAllText(tempSvgPath);
-
-            // Define the final SVG file path
-            string finalSvgPath = "exportedShape.svg";
-
-            // Write the SVG string to the final file using File.WriteAllText
-            File.WriteAllText(finalSvgPath, svgContent);
-
-            // Optional: clean up the temporary file
-            if (File.Exists(tempSvgPath))
+            // Retrieve the first shape on the page
+            Shape shape = null;
+            foreach (Shape s in page.Shapes)
             {
-                File.Delete(tempSvgPath);
+                shape = s;
+                break;
             }
 
-            Console.WriteLine($"Shape exported to SVG file: {finalSvgPath}");
+            if (shape == null)
+            {
+                Console.Error.WriteLine("No shape found on the first page.");
+                return;
+            }
 
+            // Prepare SVG save options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+            // Temporary file to let Aspose write the SVG content
+            string tempSvgPath = Path.GetTempFileName();
+
+            // Export the shape to the temporary SVG file
+            shape.ToSvg(tempSvgPath, svgOptions);
+
+            // Read the generated SVG markup as a string
+            string svgContent = File.ReadAllText(tempSvgPath);
+
+            // Write the SVG string to the desired output file
+            File.WriteAllText(outputPath, svgContent);
+
+            // Clean up the temporary file
+            File.Delete(tempSvgPath);
+
+            Console.WriteLine($"Shape exported to SVG file: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any Aspose or I/O errors
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

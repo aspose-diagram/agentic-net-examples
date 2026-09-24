@@ -1,15 +1,13 @@
 using System;
-using System.IO;
-using System.Xml;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using System.Xml;
 
 class Program
     {
         static void Main(string[] args)
         {
-            // Input Visio file path (first argument) and output XML path (second argument)
-            if (args.Length < 2)
+            // Expect two arguments: input Visio file path and output XML file path
+            if (args.Length != 2)
             {
                 Console.WriteLine("Usage: DiagramExport <inputVisioFile> <outputXmlFile>");
                 return;
@@ -18,10 +16,10 @@ class Program
             string inputPath = args[0];
             string outputPath = args[1];
 
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare XML writer settings
+            // Configure XML writer for pretty output
             XmlWriterSettings settings = new XmlWriterSettings
             {
                 Indent = true,
@@ -33,74 +31,44 @@ class Program
                 writer.WriteStartDocument();
                 writer.WriteStartElement("Diagram");
 
-                // Export style sheets (theme related information)
-                writer.WriteStartElement("StyleSheets");
-                foreach (StyleSheet styleSheet in diagram.StyleSheets)
-                {
-                    writer.WriteStartElement("StyleSheet");
-                    writer.WriteAttributeString("ID", styleSheet.ID.ToString());
-                    writer.WriteAttributeString("Name", styleSheet.Name ?? string.Empty);
-                    writer.WriteEndElement(); // StyleSheet
-                }
-                writer.WriteEndElement(); // StyleSheets
-
-                // Iterate through pages
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
                     writer.WriteStartElement("Page");
                     writer.WriteAttributeString("ID", page.ID.ToString());
                     writer.WriteAttributeString("Name", page.Name ?? string.Empty);
-                    writer.WriteAttributeString("NameU", page.NameU ?? string.Empty);
 
-                    // Iterate through shapes on the page
+                    // Theme information is write‑only in the API; we cannot read it.
+                    // Export a placeholder to indicate theme data is unavailable.
+                    writer.WriteAttributeString("Theme", "Unavailable");
+
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         writer.WriteStartElement("Shape");
                         writer.WriteAttributeString("ID", shape.ID.ToString());
                         writer.WriteAttributeString("Name", shape.Name ?? string.Empty);
-                        writer.WriteAttributeString("NameU", shape.NameU ?? string.Empty);
+                        writer.WriteAttributeString("MasterName", shape.Master?.Name ?? "None");
                         writer.WriteAttributeString("Type", shape.Type.ToString());
 
-                        // Master name (if any)
-                        if (shape.Master != null)
-                        {
-                            writer.WriteAttributeString("MasterName", shape.Master.Name ?? string.Empty);
-                        }
-
-                        // Parent shape ID (if shape is part of a group)
+                        // Parent shape relationship (for grouped shapes)
                         if (shape.ParentShape != null)
                         {
                             writer.WriteAttributeString("ParentID", shape.ParentShape.ID.ToString());
                         }
 
-                        // Custom properties (Props)
+                        // Export custom properties (Props) as additional information
                         if (shape.Props != null && shape.Props.Count > 0)
                         {
-                            writer.WriteStartElement("Props");
+                            writer.WriteStartElement("CustomProperties");
                             foreach (Prop prop in shape.Props)
                             {
-                                writer.WriteStartElement("Prop");
+                                writer.WriteStartElement("Property");
                                 writer.WriteAttributeString("Name", prop.Name ?? string.Empty);
-                                writer.WriteAttributeString("Label", prop.Label?.Value ?? string.Empty);
                                 writer.WriteAttributeString("Value", prop.Value?.Val ?? string.Empty);
-                                writer.WriteEndElement(); // Prop
+                                writer.WriteEndElement(); // Property
                             }
-                            writer.WriteEndElement(); // Props
-                        }
-
-                        // Hyperlinks (if any)
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                        {
-                            writer.WriteStartElement("Hyperlinks");
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                writer.WriteStartElement("Hyperlink");
-                                writer.WriteAttributeString("Address", link.Address?.Value ?? string.Empty);
-                                writer.WriteAttributeString("SubAddress", link.SubAddress?.Value ?? string.Empty);
-                                writer.WriteAttributeString("Description", link.Description?.Value ?? string.Empty);
-                                writer.WriteEndElement(); // Hyperlink
-                            }
-                            writer.WriteEndElement(); // Hyperlinks
+                            writer.WriteEndElement(); // CustomProperties
                         }
 
                         writer.WriteEndElement(); // Shape
@@ -113,6 +81,6 @@ class Program
                 writer.WriteEndDocument();
             }
 
-            Console.WriteLine($"Diagram hierarchy exported to XML file: {outputPath}");
+            Console.WriteLine($"Diagram hierarchy exported to '{outputPath}'.");
         }
     }

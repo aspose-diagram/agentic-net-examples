@@ -11,49 +11,43 @@ class Program
         try
         {
 
-            // Path to a Visio stencil that contains the required masters (Dynamic connector, Rectangle)
-            // Replace with an actual .vssx/.vss file path on your system.
-            string stencilPath = @"C:\Stencils\Basic_U.vssx";
-
-            // Create an empty diagram.
+            // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Load the required masters from the stencil into the diagram.
-            diagram.AddMaster(stencilPath, "Dynamic connector");
-            diagram.AddMaster(stencilPath, "Rectangle");
-
-            // Add two rectangle shapes to the first page (page index 0).
-            long rect1Id = diagram.AddShape(2.0, 5.0, "Rectangle", 0);
-            long rect2Id = diagram.AddShape(6.0, 5.0, "Rectangle", 0);
-
-            // Add a dynamic connector shape.
-            long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
-
-            // Retrieve the connector shape object.
+            // Access the first page of the diagram
             Page page = diagram.Pages[0];
+
+            // Add two rectangle shapes to the page
+            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle", false);
+            long rect2Id = page.AddShape(6.0, 2.0, "Rectangle", false);
+
+            // Retrieve the shape objects for further customization
+            Shape rect1 = page.Shapes.GetShape(rect1Id);
+            Shape rect2 = page.Shapes.GetShape(rect2Id);
+
+            // Set fill colors so the shapes are visible
+            rect1.Fill.FillForegnd.Value = "#FFCC00";
+            rect2.Fill.FillForegnd.Value = "#00CCFF";
+
+            // Add a dynamic connector shape (initially straight)
+            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
             Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Change the connector style to curved.
+            // Change the connector style to a curved line
             connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
 
-            // Connect the two rectangles using the curved connector.
-            page.ConnectShapesViaConnector(
-                rect1Id,
-                ConnectionPointPlace.Right,
-                rect2Id,
-                ConnectionPointPlace.Left,
-                connectorId);
+            // Connect the two rectangles using the curved connector
+            page.ConnectShapesViaConnector(rect1Id, ConnectionPointPlace.Right, rect2Id, ConnectionPointPlace.Left, connectorId);
 
-            // Save the diagram as a PNG image to observe the curved connector rendering.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save("ConnectorCurved.png", saveOptions);
+            // Save the diagram as a PNG image to observe the curved connector
+            diagram.Save("ConnectorCurved.png", new ImageSaveOptions(SaveFileFormat.Png));
 
-            Console.WriteLine("Diagram saved as ConnectorCurved.png with a curved connector.");
+            Console.WriteLine("Diagram saved with a curved connector.");
 
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

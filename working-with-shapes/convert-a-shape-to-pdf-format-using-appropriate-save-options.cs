@@ -1,45 +1,51 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+class ShapeToPdfConverter
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Path to the source Visio file
-            string visioPath = "input.vsdx";
-            // Path where the shape will be saved as PDF
-            string pdfPath = "shape.pdf";
+            string sourceFile = "input.vsdx";
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(visioPath);
+            // Path for the resulting PDF file
+            string outputFile = "output.pdf";
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(sourceFile);
 
-            // Locate the first shape that is not marked as deleted
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // OPTIONAL: If you need to export only a specific shape,
+            // you can isolate it by hiding other shapes.
+            // Example: keep only shape with ID = 1 on the first page.
+            // int targetShapeId = 1;
+            // Page firstPage = diagram.Pages[0];
+            // foreach (Shape shape in firstPage.Shapes)
+            // {
+            //     // Hide all shapes except the target one
+            //     shape.Line.LinePattern = LinePattern.None;
+            //     shape.Fill.FillPattern = FillPattern.None;
+            // }
+            // // Ensure the target shape is visible
+            // Shape targetShape = firstPage.Shapes.GetShape(targetShapeId);
+            // targetShape.Line.LinePattern = LinePattern.Solid;
+            // targetShape.Fill.FillPattern = FillPattern.Solid;
+
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
             {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
+                // You can set additional options here if needed
+                // For example, to embed fonts or set page size.
+            };
 
-            if (targetShape == null)
-            {
-                Console.WriteLine("No suitable shape found to export.");
-                return;
-            }
+            // Save the diagram (or the isolated shape) as PDF
+            diagram.Save(outputFile, pdfOptions);
 
-            // Export the selected shape to a PDF file
-            targetShape.ToPdf(pdfPath);
-            Console.WriteLine($"Shape successfully exported to PDF: {pdfPath}");
+            Console.WriteLine("Shape has been exported to PDF successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

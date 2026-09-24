@@ -1,140 +1,86 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect four arguments: input diagram path, source shape ID, target shape ID, output diagram path.
-        if (args.Length < 4)
+        static void Main()
         {
-            Console.Error.WriteLine("Usage: <input.vsdx> <sourceShapeId> <targetShapeId> <output.vsdx>");
-            return;
-        }
-
-        // Assign input arguments to variables.
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        string sourceIdStr = args[1];
-        string targetIdStr = args[2];
-        string outputPath = args[3];
-
-        // Parse shape IDs; if parsing fails, report error and exit.
-        if (!long.TryParse(sourceIdStr, out long sourceShapeId))
-        {
-            Console.Error.WriteLine($"Invalid source shape ID: {sourceIdStr}");
-            return;
-        }
-        if (!long.TryParse(targetIdStr, out long targetShapeId))
-        {
-            Console.Error.WriteLine($"Invalid target shape ID: {targetIdStr}");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Use the first page (index 0) for shape operations.
-            Page page = diagram.Pages[0];
-
-            // Retrieve the source shape by ID; cast to int as required by GetShape.
-            Shape sourceShape = page.Shapes.GetShape((int)sourceShapeId);
-            // Retrieve the target shape by ID.
-            Shape targetShape = page.Shapes.GetShape((int)targetShapeId);
-
-            // Guard: ensure both shapes were found.
-            if (sourceShape == null)
+            try
             {
-                Console.Error.WriteLine($"Source shape with ID {sourceShapeId} not found.");
-                return;
-            }
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Target shape with ID {targetShapeId} not found.");
-                return;
-            }
 
-            // Clear any existing user-defined cells on the target shape to avoid duplicates.
-            targetShape.Users.Clear();
+                // Load an existing Visio diagram
+                string inputPath = "input.vsdx";
+                Diagram diagram = new Diagram(inputPath);
 
-            // Copy each user-defined cell from source to target.
-            foreach (User srcUser in sourceShape.Users)
-            {
-                // Create a new User instance for the target shape.
-                User tgtUser = new User();
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
 
-                // Copy the universal name (NameU) and local name (Name).
-                tgtUser.NameU = srcUser.NameU;
-                tgtUser.Name = srcUser.Name;
+                // Retrieve source and target shapes by their IDs (adjust IDs as needed)
+                Shape sourceShape = page.Shapes.GetShape(1);
+                Shape targetShape = page.Shapes.GetShape(2);
 
-                // Copy the cell value.
-                tgtUser.Value.Val = srcUser.Value.Val;
-
-                // Copy the prompt/description if present.
-                tgtUser.Prompt.Value = srcUser.Prompt.Value;
-
-                // Add the new user-defined cell to the target shape.
-                targetShape.Users.Add(tgtUser);
-            }
-
-            // Verify data integrity: ensure each source user cell matches the corresponding target cell.
-            bool integrityOk = true;
-            foreach (User srcUser in sourceShape.Users)
-            {
-                // Find the matching user in the target shape by NameU.
-                User matchingTgt = null;
-                foreach (User tgtUser in targetShape.Users)
+                if (sourceShape == null || targetShape == null)
                 {
-                    if (tgtUser.NameU == srcUser.NameU)
+                    throw new Exception("Source or target shape not found.");
+                }
+
+                // Clear any existing custom data cells on the target shape
+                targetShape.Users.Clear();
+
+                // Copy custom data cells (User-defined cells) from source to target
+                foreach (User srcUser in sourceShape.Users)
+                {
+                    User newUser = new User
                     {
-                        matchingTgt = tgtUser;
+                        Name = srcUser.Name,
+                        NameU = srcUser.NameU
+                    };
+                    newUser.Value.Val = srcUser.Value.Val;
+                    newUser.Prompt.Value = srcUser.Prompt.Value;
+
+                    targetShape.Users.Add(newUser);
+                }
+
+                // Verify that the copied data matches the source data
+                bool allMatch = true;
+                foreach (User srcUser in sourceShape.Users)
+                {
+                    User matchingUser = null;
+                    foreach (User tgtUser in targetShape.Users)
+                    {
+                        if (tgtUser.Name == srcUser.Name)
+                        {
+                            matchingUser = tgtUser;
+                            break;
+                        }
+                    }
+
+                    if (matchingUser == null || matchingUser.Value.Val != srcUser.Value.Val)
+                    {
+                        allMatch = false;
+                        Console.WriteLine($"Data mismatch for user cell '{srcUser.Name}'.");
                         break;
                     }
                 }
 
-                // If no matching cell is found, integrity fails.
-                if (matchingTgt == null)
+                if (allMatch)
                 {
-                    Console.Error.WriteLine($"Missing user cell '{srcUser.NameU}' in target shape.");
-                    integrityOk = false;
-                    continue;
+                    Console.WriteLine("Custom data cells copied successfully and verified.");
+                }
+                else
+                {
+                    throw new Exception("Verification of copied custom data cells failed.");
                 }
 
-                // Compare value and prompt; report any mismatches.
-                if (matchingTgt.Value.Val != srcUser.Value.Val)
-                {
-                    Console.Error.WriteLine($"Value mismatch for '{srcUser.NameU}': source='{srcUser.Value.Val}' target='{matchingTgt.Value.Val}'");
-                    integrityOk = false;
-                }
-                if (matchingTgt.Prompt.Value != srcUser.Prompt.Value)
-                {
-                    Console.Error.WriteLine($"Prompt mismatch for '{srcUser.NameU}': source='{srcUser.Prompt.Value}' target='{matchingTgt.Prompt.Value}'");
-                    integrityOk = false;
-                }
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             }
-
-            // If integrity check failed, abort saving.
-            if (!integrityOk)
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.Error.WriteLine("Data integrity verification failed. Diagram not saved.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Save the modified diagram to the output path using VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Indicate successful completion.
-            Console.WriteLine("Custom data cells copied and verified successfully.");
-        }
-        catch (Exception ex)
-        {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
     }
-}
+    }

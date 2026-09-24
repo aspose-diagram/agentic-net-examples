@@ -12,20 +12,18 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and their shapes
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply theme only to shapes whose name starts with "Process" (case‑insensitive)
+                    // Check if the shape name starts with "Process" (case‑insensitive)
                     if (!string.IsNullOrEmpty(shape.NameU) &&
                         shape.NameU.StartsWith("Process", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Set a preset theme (e.g., Office) for the shape
-                        shape.PresetTheme = PresetThemeValue.Office;
-
-                        // Optionally apply a quick style variant to enhance appearance
-                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        // Apply a preset theme to the matching shape
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                     }
                 }
             }

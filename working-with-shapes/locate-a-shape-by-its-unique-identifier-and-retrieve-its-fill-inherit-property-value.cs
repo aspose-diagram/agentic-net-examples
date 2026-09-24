@@ -1,35 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the Visio file
+        string filePath = "input.vsdx";
+        // Verify the file exists before proceeding
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(filePath);
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Unique identifier of the shape to locate (replace with actual ID)
+            long targetShapeId = 12345;
 
-            // Specify the unique identifier of the shape (replace with the actual ID)
-            int shapeId = 5;
+            // Retrieve the shape from the first page (adjust page index if needed)
+            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} not found.");
+                return;
+            }
 
-            // Locate the shape by its ID, including any child shapes
-            Shape shape = diagram.Pages[0].Shapes.GetShapeIncludingChild(shapeId);
+            // Determine if the shape's fill values are inherited.
+            // Compare each fill cell with its corresponding inherited value.
+            bool isFillInherited =
+                shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
+                shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value &&
+                shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
 
-            // Retrieve the InheritFill property (contains inherited fill formatting)
-            Fill inheritFill = shape.InheritFill;
+            string inheritValue = isFillInherited ? "True" : "False";
 
-            // Example: display some inherited fill properties
-            Console.WriteLine($"FillPattern: {inheritFill.FillPattern}");
-            Console.WriteLine($"Foreground Color: {inheritFill.FillForegnd}");
-            Console.WriteLine($"Background Color: {inheritFill.FillBkgnd}");
-
+            Console.WriteLine($"Shape ID: {targetShapeId}");
+            Console.WriteLine($"Fill.Inherit property value (derived): {inheritValue}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

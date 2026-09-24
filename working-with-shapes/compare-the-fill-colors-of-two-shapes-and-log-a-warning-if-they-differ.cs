@@ -1,51 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio diagram file (adjust as needed)
+        string diagramPath = "input.vsdx";
+
+        // Guard: ensure the diagram file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // IDs of the two shapes to compare (adjust as needed)
+        long shapeId1 = 1;
+        long shapeId2 = 2;
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Retrieve the first page (assuming shapes are on the first page)
+            Page page = diagram.Pages[0];
+
+            // Get the first shape by its ID
+            Shape shape1 = page.Shapes.GetShape(shapeId1);
+            if (shape1 == null)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Define the IDs of the two shapes to compare
-                // Replace these IDs with the actual shape IDs you want to compare
-                long shapeId1 = 1;
-                long shapeId2 = 2;
-
-                // Retrieve the shapes from the first page (index 0)
-                Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
-                Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
-
-                // Ensure both shapes were found
-                if (shape1 == null || shape2 == null)
-                {
-                    Console.WriteLine("One or both shapes could not be found.");
-                    return;
-                }
-
-                // Get the foreground fill color values (hex strings, e.g., "#FF0000")
-                string fillColor1 = shape1.Fill.FillForegnd.Value;
-                string fillColor2 = shape2.Fill.FillForegnd.Value;
-
-                // Compare the fill colors and log a warning if they differ
-                if (!string.Equals(fillColor1, fillColor2, StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Warning: Shape {shapeId1} fill color ({fillColor1}) differs from shape {shapeId2} fill color ({fillColor2}).");
-                }
-                else
-                {
-                    Console.WriteLine($"Shapes {shapeId1} and {shapeId2} have matching fill colors ({fillColor1}).");
-                }
-
+                Console.Error.WriteLine($"Shape with ID {shapeId1} not found.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Get the second shape by its ID
+            Shape shape2 = page.Shapes.GetShape(shapeId2);
+            if (shape2 == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Shape with ID {shapeId2} not found.");
+                return;
             }
+
+            // Extract the fill foreground color values (hex strings) from both shapes
+            string fillColor1 = shape1.Fill.FillForegnd.Value;
+            string fillColor2 = shape2.Fill.FillForegnd.Value;
+
+            // Compare the fill colors and log a warning if they differ
+            if (!string.Equals(fillColor1, fillColor2, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"Warning: Fill colors differ – Shape {shapeId1} = {fillColor1}, Shape {shapeId2} = {fillColor2}");
+            }
+            else
+            {
+                Console.WriteLine($"Info: Fill colors are identical – both are {fillColor1}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,80 +1,89 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 public class Program
 {
-    public static void Main()
+    public static void Main(string[] args)
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
+            // Input and output file paths (can be overridden via command‑line arguments)
             string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            string outputPath = "output.vsdx";
 
-            // Get the first page of the diagram
+            if (args.Length >= 1) inputPath = args[0];
+            if (args.Length >= 2) outputPath = args[1];
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
             Page page = diagram.Pages[0];
 
-            // Add a dynamic connector shape at an arbitrary location
-            double connectorPinX = 5.0;
-            double connectorPinY = 5.0;
-            long connectorId = page.AddShape(connectorPinX, connectorPinY, "Dynamic connector");
-            Shape connector = page.Shapes.GetShape(connectorId);
-
-            // Find the nearest shape that allows dynamic glue
-            Shape nearestShape = null;
-            double minDistance = double.MaxValue;
-
+            // Collect IDs of shapes that have dynamic glue enabled
+            List<long> gluingShapeIds = new List<long>();
             foreach (Shape shape in page.Shapes)
             {
-                // Skip deleted shapes and connectors (1‑D shapes)
-                if (shape.Del == BOOL.True || shape.OneD)
-                    continue;
-
-                // Check if the shape's glue type permits dynamic glue
-                if (shape.Misc.GlueType.Value != GlueTypeValue.AllowDynamicGlue)
-                    continue;
-
-                // Compute Euclidean distance between the connector and the candidate shape
-                double dx = connector.XForm.PinX.Value - shape.XForm.PinX.Value;
-                double dy = connector.XForm.PinY.Value - shape.XForm.PinY.Value;
-                double distance = Math.Sqrt(dx * dx + dy * dy);
-
-                if (distance < minDistance)
+                if (shape.Misc != null &&
+                    shape.Misc.GlueType != null &&
+                    shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
                 {
-                    minDistance = distance;
-                    nearestShape = shape;
+                    gluingShapeIds.Add(shape.ID);
                 }
             }
 
-            if (nearestShape != null)
+            // Iterate over connector shapes and attach each to the nearest gluing‑enabled shape
+            foreach (Shape connector in page.Shapes)
             {
-                // Attach the connector's beginning to the nearest shape (using Bottom of connector, Top of target shape)
-                page.ConnectShapesViaConnector(
-                    connectorId,
-                    ConnectionPointPlace.Bottom,
-                    nearestShape.ID,
-                    ConnectionPointPlace.Top,
-                    connectorId);
+                // Identify dynamic connector shapes (1‑D and master name matches)
+                if (connector.OneD && connector.Master != null && connector.Master.Name == "Dynamic connector")
+                {
+                    long nearestShapeId = -1;
+                    double minDistance = double.MaxValue;
 
-                Console.WriteLine($"Connector (ID={connectorId}) attached to shape (ID={nearestShape.ID}) at distance {minDistance:F2}.");
-            }
-            else
-            {
-                Console.WriteLine("No gluing‑enabled shape found to attach the connector.");
+                    double connX = connector.XForm.PinX.Value;
+                    double connY = connector.XForm.PinY.Value;
+
+                    // Find the nearest gluing‑enabled shape
+                    foreach (long candidateId in gluingShapeIds)
+                    {
+                        if (candidateId == connector.ID) continue; // skip self
+
+                        Shape candidate = page.Shapes.GetShape(candidateId);
+                        double dx = candidate.XForm.PinX.Value - connX;
+                        double dy = candidate.XForm.PinY.Value - connY;
+                        double distance = Math.Sqrt(dx * dx + dy * dy);
+
+                        if (distance < minDistance)
+                        {
+                            minDistance = distance;
+                            nearestShapeId = candidateId;
+                        }
+                    }
+
+                    if (nearestShapeId != -1)
+                    {
+                        // Glue the connector to the nearest shape at the Bottom connection point
+                        page.GlueShapes(connector.ID, ConnectionPointPlace.Bottom, nearestShapeId);
+                        Console.WriteLine($"Connector {connector.ID} glued to shape {nearestShapeId} (distance {minDistance:F2}).");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No gluing‑enabled shape found for connector {connector.ID}.");
+                    }
+                }
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

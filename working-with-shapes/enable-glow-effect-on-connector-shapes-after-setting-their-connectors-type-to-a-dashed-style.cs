@@ -1,70 +1,48 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation; // Required for ConnectionPointPlace if needed
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output Visio file
-        if (args.Length < 2)
+        static void Main()
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
-            return;
-        }
-
-        string inputPath = args[0];
-        // Guard: verify input file exists
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args[1];
-
-        try
-        {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the source Visio file
+                string inputPath = "input.vsdx";
+                // Path for the modified Visio file
+                string outputPath = "output_glow.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify connector shapes: they are 1‑D shapes (OneD == true)
-                    if (shape.OneD)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set the connector routing style to straight lines (optional)
-                        shape.SetConnectorsType(ConnectorsTypeValue.StraightLines);
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
+                        {
+                            // Set the line pattern to dashed
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                        // Apply a dashed line pattern to create the visual “dashed” style
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
-
-                        // Increase line weight slightly to make the dash more visible
-                        shape.Line.LineWeight.Value = 0.03; // inches
-
-                        // Set a bright line color (e.g., light cyan) to simulate a glow effect
-                        shape.Line.LineColor.Value = "#00FFFF";
-
-                        // Note: Aspose.Diagram does not expose a direct Glow or Shadow property.
-                        // The bright line color combined with increased weight and dash pattern
-                        // provides a simple glow-like appearance for connectors.
+                            // Approximate a glow effect by using a bright color and a thicker line
+                            shape.Line.LineColor.Value = "#FFFF00"; // Bright yellow
+                            shape.Line.LineWeight.Value = 0.05; // Thicker line for visual emphasis
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram to the output path using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

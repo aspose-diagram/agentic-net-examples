@@ -1,79 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        string outputPath = "output.vsdx";
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the diagram from the input file
             Diagram diagram = new Diagram(inputPath);
 
-            // Use the first page in the diagram
+            // Access the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Find two shapes to connect (example: first two non‑deleted shapes)
-            Shape shape1 = null;
-            Shape shape2 = null;
-            foreach (Shape shp in page.Shapes)
-            {
-                if (shp.Del == BOOL.True) continue; // skip deleted shapes
+            // Identify the shape to check (replace with actual ID or lookup logic)
+            long shapeId = 1; // example shape ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                if (shape1 == null)
-                    shape1 = shp;
-                else if (shape2 == null)
-                {
-                    shape2 = shp;
-                    break;
-                }
+            // Determine if the shape allows dynamic glue (gluing-enabled)
+            bool canGlue = shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
+
+            if (canGlue)
+            {
+                // Add a dynamic connector shape to the diagram
+                // Note: AddShape expects an int for the isCalculate flag (0 = false, 1 = true)
+                long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+
+                // Connect the original shape to itself (replace with desired target shape IDs)
+                page.ConnectShapesViaConnector(
+                    shapeId,
+                    ConnectionPointPlace.Bottom,
+                    shapeId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
+
+                Console.WriteLine("Connector attached successfully.");
+            }
+            else
+            {
+                Console.WriteLine("Shape is not gluing-enabled; connector not attached.");
             }
 
-            if (shape1 == null || shape2 == null)
-            {
-                Console.WriteLine("Not enough shapes to connect.");
-                return;
-            }
-
-            // Check if both shapes have gluing enabled (AllowDynamicGlue)
-            bool shape1Gluable = shape1.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-            bool shape2Gluable = shape2.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-
-            if (!shape1Gluable || !shape2Gluable)
-            {
-                Console.WriteLine("One or both shapes are not gluing‑enabled. Connector will not be attached.");
-                return;
-            }
-
-            // Add a dynamic connector shape to the page
-            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
-            Shape connector = page.Shapes.GetShape(connectorId);
-
-            // Optionally set connector routing style (right‑angle)
-            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-            // Connect shape1 to shape2 using the connector
-            page.ConnectShapesViaConnector(
-                shape1.ID,
-                ConnectionPointPlace.Bottom,
-                shape2.ID,
-                ConnectionPointPlace.Top,
-                connectorId);
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the output file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Connector attached and diagram saved successfully.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

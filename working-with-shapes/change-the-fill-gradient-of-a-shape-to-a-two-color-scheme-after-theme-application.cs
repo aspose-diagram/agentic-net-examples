@@ -10,45 +10,55 @@ class Program
             {
 
                 // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+                Diagram diagram = new Diagram("input.vsdx");
 
-                // Apply a preset theme to the first page (optional, demonstrates "after theme application")
+                // Access the first page
                 Page page = diagram.Pages[0];
-                page.PresetTheme = PresetThemeValue.Bubble;
-                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-                // Iterate through all shapes on the page and set a two‑color gradient fill
-                foreach (Shape shape in page.Shapes)
+                // Find the first non‑deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shp in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Enable gradient fill
-                    shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-                    shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-                    shape.Fill.GradientFill.GradientDir.Value = 0; // Direction (0 = left‑to‑right)
-
-                    // Clear any existing gradient stops
-                    shape.Fill.GradientFill.GradientStops.Clear();
-
-                    // Add first gradient stop (position 0, blue)
-                    shape.Fill.GradientFill.GradientStops.Add(
-                        new DoubleValue(0, MeasureConst.NUM),
-                        new ColorValue("#0000FF", MeasureConst.Undefined));
-
-                    // Add second gradient stop (position 1, green)
-                    shape.Fill.GradientFill.GradientStops.Add(
-                        new DoubleValue(1, MeasureConst.NUM),
-                        new ColorValue("#00FF00", MeasureConst.Undefined));
+                    if (shp.Del == BOOL.False)
+                    {
+                        targetShape = shp;
+                        break;
+                    }
                 }
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No suitable shape found.");
+                    return;
+                }
 
-                Console.WriteLine("Gradient fill applied and diagram saved to " + outputPath);
+                // Apply a two‑color gradient fill
+                // Set fill pattern to gradient (value 25)
+                targetShape.Fill.FillPattern.Value = 25;
+
+                // Enable gradient fill
+                targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+                // Set gradient direction (0 = horizontal, adjust as needed)
+                targetShape.Fill.GradientFill.GradientDir.Value = 0;
+
+                // Clear any existing gradient stops
+                targetShape.Fill.GradientFill.GradientStops.Clear();
+
+                // Add first gradient stop (position 0, red color)
+                targetShape.Fill.GradientFill.GradientStops.Add(
+                    new DoubleValue(0, MeasureConst.NUM),
+                    new ColorValue("#FF0000", MeasureConst.Undefined));
+
+                // Add second gradient stop (position 1, green color)
+                targetShape.Fill.GradientFill.GradientStops.Add(
+                    new DoubleValue(1, MeasureConst.NUM),
+                    new ColorValue("#00FF00", MeasureConst.Undefined));
+
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Gradient fill applied and diagram saved as output.vsdx.");
 
             }
             catch (System.IO.FileNotFoundException ex)

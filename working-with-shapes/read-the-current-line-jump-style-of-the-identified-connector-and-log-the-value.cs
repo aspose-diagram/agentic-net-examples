@@ -1,54 +1,52 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
-using Aspose.Diagram.Saving; // Required for shape operations per global rule
-
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the Visio file (adjust as needed)
-            string diagramPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Find a connector shape (1‑D shape). If you know the connector ID, you can retrieve it directly.
-            Shape connector = null;
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Identifier of the connector shape (replace with actual ID)
+                long connectorId = 123; // example ID
+
+                // Iterate through pages to find the connector
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.OneD) // Connectors are 1‑D shapes
+                    // Try to get the shape by ID; GetShape returns null if not found on this page
+                    Shape connector = page.Shapes.GetShape(connectorId);
+                    if (connector != null)
                     {
-                        connector = shape;
+                        // Ensure the shape is a connector (1‑D shape)
+                        if (connector.OneD)
+                        {
+                            // Read the current line jump style
+                            ConLineJumpStyleValue jumpStyle = connector.Layout.ConLineJumpStyle.Value;
+
+                            // Log the value
+                            Console.WriteLine($"Connector ID {connectorId} line jump style: {jumpStyle}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Shape with ID {connectorId} is not a connector.");
+                        }
+
+                        // Connector found, exit the loop
                         break;
                     }
                 }
-                if (connector != null)
-                    break;
-            }
 
-            if (connector == null)
+            }
+            catch (System.IO.FileNotFoundException ex)
             {
-                Console.WriteLine("No connector shape found in the diagram.");
-                return;
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
             }
-
-            // Read the current line jump style of the connector
-            var jumpStyle = connector.Layout.ConLineJumpStyle.Value; // ConLineJumpStyleValue enum
-
-            // Log the value
-            Console.WriteLine($"Connector ID {connector.ID} line jump style: {jumpStyle}");
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
     }
-}
+    }

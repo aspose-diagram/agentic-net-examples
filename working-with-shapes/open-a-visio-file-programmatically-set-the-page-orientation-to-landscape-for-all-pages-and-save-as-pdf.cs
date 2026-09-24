@@ -9,22 +9,23 @@ class Program
             try
             {
 
-                // Input Visio file path
+                // Input Visio file path (replace with actual path)
                 string inputPath = "input.vsdx";
+
                 // Output PDF file path
                 string outputPath = "output.pdf";
 
                 // Load the Visio diagram
                 Diagram diagram = new Diagram(inputPath);
 
-                // Set orientation to Landscape for every page
+                // Set each page's orientation to Landscape
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the PrintProps and set orientation
+                    // Access the PrintProps of the page and set orientation
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
 
-                // Prepare PDF save options (optional: set default font)
+                // Configure PDF save options (optional: set default font)
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.DefaultFont = "Arial";
 

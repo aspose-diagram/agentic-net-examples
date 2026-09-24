@@ -1,62 +1,65 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine input file path (first argument) or use a default placeholder.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Verify that the input file exists before proceeding.
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Determine output file path (second argument) or use a default name.
+        string outputPath = args.Length > 1 ? args[1] : "output_highlighted.vsdx";
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Add sample shapes using the built‑in "Rectangle" master
-                long rectId1 = page.AddShape(2.0, 2.0, "Rectangle");
-                long rectId2 = page.AddShape(5.0, 2.0, "Rectangle");
-                long rectId3 = page.AddShape(8.0, 2.0, "Rectangle");
-
-                // Retrieve the shape objects
-                Shape shape1 = page.Shapes.GetShape(rectId1);
-                Shape shape2 = page.Shapes.GetShape(rectId2);
-                Shape shape3 = page.Shapes.GetShape(rectId3);
-
-                // For demonstration, explicitly set a custom line color on shape2
-                // This disables line inheritance for that shape
-                shape2.Line.LineColor.Value = "#0000FF"; // Blue line
-
-                // Iterate all shapes on the page
-                foreach (Shape shp in page.Shapes)
+                // Iterate through each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Determine if line inheritance is disabled:
-                    // If the shape's line color differs from the inherited line color,
-                    // inheritance is considered disabled.
-                    bool lineInheritanceDisabled = shp.Line.LineColor.Value != shp.InheritLine.LineColor.Value;
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    if (lineInheritanceDisabled)
+                    // Determine if the shape's line properties are not inherited.
+                    // Compare the current line color with the inherited line color.
+                    bool lineColorInherited = string.Equals(
+                        shape.Line.LineColor.Value,
+                        shape.InheritLine.LineColor.Value,
+                        StringComparison.OrdinalIgnoreCase);
+
+                    // If the line color differs from the inherited value, inheritance is disabled.
+                    if (!lineColorInherited)
                     {
-                        // Highlight the shape with a custom color (e.g., bright red)
-                        shp.Line.LineColor.Value = "#FF0000";
-                    }
-                    else
-                    {
-                        // Optionally, set a different color for shapes that inherit lines
-                        shp.Line.LineColor.Value = "#00FF00"; // Green line
+                        // Apply a custom highlight color (bright red) to the shape's line.
+                        shape.Line.LineColor.Value = "#FF0000";
+
+                        // Optionally increase line weight for better visibility.
+                        shape.Line.LineWeight.Value = 0.05; // thickness in inches
                     }
                 }
-
-                // Save the diagram to a VSDX file
-                string outputPath = "HighlightedInheritance.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with highlighted shapes to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,6 +1,6 @@
-using System.IO;
 using System;
 using System.Diagnostics;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,31 +11,42 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load the Visio diagram (replace with your actual file path)
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Initialize SVG save options (customize if needed)
+            // Get the first page of the diagram
+            Page page = diagram.Pages[0];
+
+            // Prepare SVG save options (default options are sufficient)
             SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // Start timing the conversion of shapes to SVG
+            // Directory to store exported SVG files
+            string outputDir = "ExportedSvg";
+            Directory.CreateDirectory(outputDir);
+
+            // Measure the time taken to export up to 100 shapes to SVG
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            // Determine how many shapes to process (up to 100)
-            int shapeCount = Math.Min(100, diagram.Pages[0].Shapes.Count);
-
-            // Convert each shape to an individual SVG file
-            for (int i = 0; i < shapeCount; i++)
+            int exportedCount = 0;
+            foreach (Shape shape in page.Shapes)
             {
-                Shape shape = diagram.Pages[0].Shapes[i];
-                string svgFileName = $"shape_{i + 1}.svg";
-                shape.ToSvg(svgFileName, svgOptions);
+                if (exportedCount >= 100)
+                    break;
+
+                // Build a unique file name for each shape
+                string svgPath = Path.Combine(outputDir, $"shape_{shape.ID}.svg");
+
+                // Export the shape to SVG
+                shape.ToSvg(svgPath, svgOptions);
+
+                exportedCount++;
             }
 
-            // Stop timing
             stopwatch.Stop();
 
             // Log the duration
-            Console.WriteLine($"Converted {shapeCount} shapes to SVG in {stopwatch.ElapsedMilliseconds} ms.");
+            Console.WriteLine($"Exported {exportedCount} shapes to SVG in {stopwatch.Elapsed.TotalSeconds:F2} seconds.");
 
         }
         catch (System.IO.FileNotFoundException ex)

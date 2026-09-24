@@ -9,21 +9,25 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file (replace with your actual file path)
-            var diagram = new Diagram("sample.vsdx");
+            // Path to the Visio file to load
+            string inputPath = "example.vsdx";
 
-            // Choose the page that contains the shape (here we use the first page)
-            var page = diagram.Pages[0];
+            // Load the diagram from the file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Specify the ID of the shape you want to retrieve
-            long shapeId = 5; // example ID; replace with the actual ID you need
+            // The ID of the shape you want to select (replace with the actual ID)
+            long shapeId = 10;
+
+            // Access the first page of the diagram (index 0)
+            Page page = diagram.Pages[0];
 
             // Retrieve the shape by its ID
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example usage: output some properties of the retrieved shape
+            // Output basic information about the selected shape
             Console.WriteLine($"Shape ID: {shape.ID}");
             Console.WriteLine($"Shape Name: {shape.Name}");
+            Console.WriteLine($"Master Name: {(shape.Master != null ? shape.Master.Name : "None")}");
 
         }
         catch (System.IO.FileNotFoundException ex)

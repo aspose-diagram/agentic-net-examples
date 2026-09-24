@@ -1,63 +1,60 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeSvgToHtml
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main()
         {
-
-            // Load the diagram file (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Prepare a StringBuilder to build the final HTML document
-            StringBuilder htmlBuilder = new StringBuilder();
-            htmlBuilder.AppendLine("<!DOCTYPE html>");
-            htmlBuilder.AppendLine("<html><head><meta charset=\"UTF-8\"><title>Combined Shapes SVG</title></head><body>");
-
-            int shapeIndex = 0;
-
-            // Iterate through all shapes on the first page (adjust page index as needed)
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            try
             {
-                // Temporary file path for the SVG of the current shape
-                string tempSvgPath = Path.Combine(Path.GetTempPath(), $"shape_{shapeIndex}.svg");
 
-                // Configure SVG save options (customize as required)
-                SVGSaveOptions svgOptions = new SVGSaveOptions
+                // Load the Visio diagram
+                string diagramPath = "input.vsdx"; // replace with your diagram file path
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Prepare HTML output
+                string htmlHeader = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>Shapes SVG Export</title>\n</head>\n<body>\n";
+                string htmlFooter = "\n</body>\n</html>";
+                string htmlContent = string.Empty;
+
+                // Use the first page (adjust if needed)
+                Page page = diagram.Pages[0];
+
+                // Loop through each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    ExportElementAsRectTag = true   // example option
-                };
+                    // Generate a temporary SVG file path
+                    string tempSvgPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".svg");
 
-                // Save the shape to an SVG file using the provided ToSvg method
-                shape.ToSvg(tempSvgPath, svgOptions);
+                    // Export the shape to SVG
+                    SVGSaveOptions svgOptions = new SVGSaveOptions();
+                    shape.ToSvg(tempSvgPath, svgOptions);
 
-                // Read the generated SVG content
-                string svgContent = File.ReadAllText(tempSvgPath);
+                    // Read the SVG content
+                    string svgData = File.ReadAllText(tempSvgPath);
 
-                // Append the SVG markup to the HTML document
-                htmlBuilder.AppendLine(svgContent);
+                    // Append the SVG markup to the HTML content
+                    htmlContent += $"<div style=\"margin:10px; display:inline-block;\">\n{svgData}\n</div>\n";
 
-                // Clean up the temporary SVG file
-                File.Delete(tempSvgPath);
+                    // Clean up the temporary file
+                    File.Delete(tempSvgPath);
+                }
 
-                shapeIndex++;
+                // Combine header, content, and footer
+                string finalHtml = htmlHeader + htmlContent + htmlFooter;
+
+                // Save the HTML document
+                string outputHtmlPath = "ShapesExport.html";
+                File.WriteAllText(outputHtmlPath, finalHtml);
+
+                Console.WriteLine($"Export completed. HTML file saved to: {outputHtmlPath}");
+
             }
-
-            // Close the HTML tags
-            htmlBuilder.AppendLine("</body></html>");
-
-            // Write the combined HTML to a file
-            File.WriteAllText("CombinedShapes.html", htmlBuilder.ToString());
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

@@ -9,26 +9,45 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the shape by its name (replace with the actual shape name)
-            Shape shape = diagram.Pages[0].Shapes.GetShape("MyShapeName");
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
 
-            // Read the LocPinY value (y‑coordinate of the pin relative to the shape's origin)
-            double locPinY = shape.XForm.LocPinY.Value;
+            // Name of the shape to locate
+            string targetShapeName = "MyShape";
 
-            // Read the PinY value (y‑coordinate of the pin relative to the parent shape/page)
-            double pinY = shape.XForm.PinY.Value;
+            // Find the shape by its universal name
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.NameU == targetShapeName)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // Compute the absolute PinY value.
-            // Assuming the parent is the page, the absolute Y coordinate of the pin is:
+            if (targetShape == null)
+            {
+                throw new Exception($"Shape with name '{targetShapeName}' was not found.");
+            }
+
+            // Read LocPinY and PinY values
+            double locPinY = targetShape.XForm.LocPinY.Value;
+            double pinY = targetShape.XForm.PinY.Value;
+
+            // Compute the absolute PinY (example calculation)
             double absolutePinY = pinY + locPinY;
 
-            // Output the results
-            Console.WriteLine($"LocPinY: {locPinY}");
-            Console.WriteLine($"PinY: {pinY}");
-            Console.WriteLine($"Absolute PinY: {absolutePinY}");
+            Console.WriteLine($"Shape '{targetShapeName}' LocPinY: {locPinY}");
+            Console.WriteLine($"Shape '{targetShapeName}' PinY: {pinY}");
+            Console.WriteLine($"Computed absolute PinY: {absolutePinY}");
+
+            // Save the diagram (optional, no modifications made)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

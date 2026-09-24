@@ -1,60 +1,88 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments: input file, output file, area threshold.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <input.vsdx> <output.vsdx> <areaThreshold>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the source Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        // Guard: ensure the output directory exists (create if necessary).
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        // Parse the area threshold; if parsing fails, report and exit.
+        if (!double.TryParse(args[2], out double areaThreshold))
+        {
+            Console.Error.WriteLine($"Invalid area threshold: {args[2]}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Create a new diagram
-                Diagram diagram = new Diagram();
-
-                // Add a new page to the diagram
-                Page page = new Page();
-                diagram.Pages.Add(page);
-
-                // Define a threshold for shape area (in square inches)
-                double areaThreshold = 4.0; // Example: shapes larger than 4 sq. inches
-
-                // Add sample shapes to the page
-                // Shape 1: Small rectangle (2x1 inches) - area = 2
-                long shapeId1 = page.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle");
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
-                shape1.Fill.FillForegnd.Value = "#FFCCCC"; // Custom fill color
-
-                // Shape 2: Large rectangle (3x3 inches) - area = 9
-                long shapeId2 = page.AddShape(5.0, 5.0, 3.0, 3.0, "Rectangle");
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
-                shape2.Fill.FillForegnd.Value = "#CCCCFF"; // Custom fill color
-
-                // Iterate over all shapes on the page
+                // Iterate over each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Calculate shape area using Width and Height from XForm
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True) continue;
+
+                    // Retrieve width and height (in inches) from the shape's XForm.
                     double width = shape.XForm.Width.Value;
                     double height = shape.XForm.Height.Value;
+
+                    // Compute the shape's area.
                     double area = width * height;
 
-                    // Enable fill inheritance for shapes whose area exceeds the threshold
+                    // Apply fill inheritance only when the area exceeds the threshold.
                     if (area > areaThreshold)
                     {
-                        // Apply inherited fill properties
-                        shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                        shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
+                        // Copy inherited fill pattern.
                         shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                        // Copy inherited foreground fill color.
+                        shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
+                        // Copy inherited background fill color.
+                        shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
+                        // (Optional) Copy inherited foreground transparency.
+                        shape.Fill.FillForegndTrans.Value = shape.InheritFill.FillForegndTrans.Value;
+                        // (Optional) Copy inherited background transparency.
+                        shape.Fill.FillBkgndTrans.Value = shape.InheritFill.FillBkgndTrans.Value;
                     }
                 }
-
-                // Save the diagram to a VSDX file
-                diagram.Save("FillInheritanceResult.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

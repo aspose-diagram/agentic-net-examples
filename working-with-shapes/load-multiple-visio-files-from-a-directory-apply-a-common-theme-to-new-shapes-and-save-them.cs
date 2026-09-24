@@ -1,54 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ApplyCommonTheme
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Path to the directory containing Visio files to process
-            string inputDirectory = @"C:\VisioFiles\Input";
-
-            // Path to the directory where modified files will be saved
-            string outputDirectory = @"C:\VisioFiles\Output";
-
-            // Path to the source diagram that holds the desired theme
-            string themeDiagramPath = @"C:\VisioFiles\Theme\theme.vsdx";
+            // Directory containing Visio files
+            string inputDirectory = @"C:\VisioFiles";
+            // Directory to save processed files
+            string outputDirectory = @"C:\VisioFiles\Processed";
 
             // Ensure output directory exists
-            Directory.CreateDirectory(outputDirectory);
+            if (!Directory.Exists(outputDirectory))
+                Directory.CreateDirectory(outputDirectory);
 
-            // Load the source diagram that contains the theme to be copied
-            using (Diagram themeDiagram = new Diagram(themeDiagramPath))
+            // Get all Visio files (VSDX, VDX, VSD) in the input directory
+            string[] visioFiles = Directory.GetFiles(inputDirectory, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in visioFiles)
             {
-                // Get all Visio files (VSDX) in the input directory
-                string[] visioFiles = Directory.GetFiles(inputDirectory, "*.vsdx", SearchOption.TopDirectoryOnly);
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vdx" && extension != ".vsd")
+                    continue; // Skip non‑Visio files
 
-                foreach (string filePath in visioFiles)
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Apply a common theme to every shape in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Load the target diagram
-                    using (Diagram targetDiagram = new Diagram(filePath))
+                    // Optional: set a page‑level theme
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Copy the theme from the source diagram to the target diagram
-                        targetDiagram.CopyTheme(themeDiagram);
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Determine output file path (overwrite original or save to separate folder)
-                        string fileName = Path.GetFileName(filePath);
-                        string outputPath = Path.Combine(outputDirectory, fileName);
-
-                        // Save the modified diagram using the same format (VSDX)
-                        targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        // Apply the theme to the shape
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
                     }
                 }
+
+                // Determine output file path
+                string fileName = Path.GetFileName(filePath);
+                string outputPath = Path.Combine(outputDirectory, fileName);
+
+                // Save the modified diagram back to VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.WriteLine("Processing completed.");
         }
     }
-}

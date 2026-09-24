@@ -1,41 +1,39 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+                // Create a new blank diagram
+                Diagram diagram = new Diagram();
 
-            // Access the default first page
-            Page page = diagram.Pages[0];
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Add a rectangle shape at (2,2) inches
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
+                // Add a rectangle shape to the page
+                // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
+                long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
 
-            // Retrieve the Shape instance using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Retrieve the shape object using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Apply a dashed line pattern to the shape
-            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                // Apply a dashed line style by setting the line pattern to Dash
+                shape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-            // (Optional) Set line color and weight for visibility
-            shape.Line.LineColor.Value = "#FF0000"; // red color
-            shape.Line.LineWeight.Value = 0.02;    // line thickness in inches
+                // Optionally, set line weight for better visibility
+                shape.Line.LineWeight.Value = 0.02; // inches
 
-            // Save the diagram to a VSDX file
-            diagram.Save("DashedShape.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with a shape that has a dashed line style.");
+                // Save the diagram to a VSDX file
+                diagram.Save("DashedShape.vsdx", SaveFileFormat.Vsdx);
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

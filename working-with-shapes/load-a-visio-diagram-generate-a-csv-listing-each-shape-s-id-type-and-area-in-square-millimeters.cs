@@ -3,67 +3,58 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Determine input Visio file path (first argument or default).
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the input file exists before proceeding.
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Determine output CSV file path (second argument or default).
-        string outputPath = args.Length > 1 ? args[1] : "shapes.csv";
-
-        // Load the Visio diagram inside a try/catch to capture Aspose errors.
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Open a StreamWriter for the CSV output; ensure proper disposal.
-        using (var writer = new StreamWriter(outputPath))
-        {
-            // Write CSV header.
-            writer.WriteLine("ShapeID,ShapeType,AreaSqMm");
-
-            // Iterate over each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate over each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+
+                // Input Visio file path (first argument or default)
+                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+                // Output CSV file path (second argument or default)
+                string outputPath = args.Length > 1 ? args[1] : "shapes.csv";
+
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Prepare CSV content
+                using (var writer = new StreamWriter(outputPath, false))
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Write CSV header
+                    writer.WriteLine("ShapeID,ShapeType,AreaSqMm");
 
-                    // Retrieve shape ID (long) and type (enum).
-                    long shapeId = shape.ID;
-                    string shapeType = shape.Type.ToString();
+                    // Iterate through all pages and shapes
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                    // Retrieve width and height in inches from the shape's XForm.
-                    double widthInches = shape.XForm.Width.Value;
-                    double heightInches = shape.XForm.Height.Value;
+                            // Retrieve shape ID
+                            long shapeId = shape.ID;
 
-                    // Compute area in square millimeters (1 inch = 25.4 mm).
-                    double areaSqMm = widthInches * heightInches * 25.4 * 25.4;
+                            // Retrieve shape type as string
+                            string shapeType = shape.Type.ToString();
 
-                    // Write a CSV line with ID, type, and area (rounded to 2 decimals).
-                    writer.WriteLine($"{shapeId},{shapeType},{areaSqMm:F2}");
+                            // Width and height are in inches; convert to millimeters (1 inch = 25.4 mm)
+                            double widthInches = shape.XForm.Width.Value;
+                            double heightInches = shape.XForm.Height.Value;
+                            double areaSqMm = widthInches * heightInches * 25.4 * 25.4;
+
+                            // Write CSV line
+                            writer.WriteLine($"{shapeId},{shapeType},{areaSqMm:F2}");
+                        }
+                    }
                 }
-            }
-        }
 
-        // Inform the user that processing completed successfully.
-        Console.WriteLine($"CSV file generated at: {outputPath}");
+                Console.WriteLine($"CSV export completed: {outputPath}");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

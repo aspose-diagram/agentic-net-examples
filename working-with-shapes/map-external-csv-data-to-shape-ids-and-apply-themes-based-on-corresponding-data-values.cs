@@ -2,116 +2,112 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expected arguments: [0] input Visio file, [1] CSV file, [2] output Visio file
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: DiagramCsvThemeMapper <input.vsdx> <data.csv> <output.vsdx>");
-                return;
-            }
 
-            string diagramPath = args[0];
-            string csvPath = args[1];
-            string outputPath = args[2];
+            // Paths – adjust as needed
+            string diagramPath = "input.vsdx";
+            string csvPath = "mapping.csv";
+            string outputPath = "output.vsdx";
 
             // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(diagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Read CSV data into a dictionary: shapeId -> value
-            var shapeValues = new Dictionary<long, double>();
-            try
+            // Read CSV data (expected format: ShapeId,ThemeVariant)
+            var mappings = LoadCsvMappings(csvPath);
+
+            // Apply themes based on CSV values
+            foreach (var mapping in mappings)
             {
-                foreach (var line in File.ReadAllLines(csvPath))
+                long shapeId = mapping.Key;
+                PresetThemeVariantValue variant = mapping.Value;
+
+                // Find the shape by ID on the first page (adjust if needed)
+                Shape shape = null;
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    var parts = line.Split(',');
-                    if (parts.Length < 2)
-                        continue; // Invalid line
-
-                    if (long.TryParse(parts[0].Trim(), out long shapeId) &&
-                        double.TryParse(parts[1].Trim(), out double value))
-                    {
-                        shapeValues[shapeId] = value;
-                    }
+                    shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
+                        break;
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to read CSV: {ex.Message}");
-                return;
-            }
 
-            // Process each shape based on CSV values
-            // Assuming we work on the first page; adjust if needed
-            if (diagram.Pages.Count == 0)
-            {
-                Console.WriteLine("Diagram contains no pages.");
-                return;
-            }
-
-            Page page = diagram.Pages[0];
-
-            foreach (var kvp in shapeValues)
-            {
-                long shapeId = kvp.Key;
-                double value = kvp.Value;
-
-                // Retrieve the shape; GetShape returns null if not found
-                Shape shape = page.Shapes.GetShape(shapeId);
                 if (shape == null)
                 {
                     Console.WriteLine($"Shape with ID {shapeId} not found.");
                     continue;
                 }
 
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                {
-                    Console.WriteLine($"Shape ID {shapeId} is marked as deleted; skipping.");
-                    continue;
-                }
-
-                // Apply a theme based on the value
-                // Example logic: value >= 50 => Variant1, else Variant2
-                if (value >= 50)
-                {
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                }
-                else
-                {
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-                }
-
-                Console.WriteLine($"Applied theme to shape ID {shapeId} based on value {value}.");
+                // Apply a preset theme (Bubble) and the variant from CSV
+                shape.PresetTheme = PresetThemeValue.Bubble;
+                shape.PresetThemeVariant = variant;
+                // Optional: set a quick style
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
             }
 
             // Save the modified diagram
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
+            diagram.Save(outputPath, SaveFileFormat.Csv);
+            Console.WriteLine("Diagram saved to " + outputPath);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+
+    // Loads CSV and returns a dictionary of ShapeId -> ThemeVariant
+    private static Dictionary<long, PresetThemeVariantValue> LoadCsvMappings(string csvFilePath)
+    {
+        var result = new Dictionary<long, PresetThemeVariantValue>();
+
+        if (!File.Exists(csvFilePath))
+        {
+            Console.WriteLine("CSV file not found: " + csvFilePath);
+            return result;
+        }
+
+        var lines = File.ReadAllLines(csvFilePath);
+        foreach (var line in lines)
+        {
+            // Skip empty lines and header (assumes header contains non-numeric first token)
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            var parts = line.Split(',');
+            if (parts.Length < 2)
+                continue;
+
+            // Try parsing shape ID
+            if (!long.TryParse(parts[0].Trim(), out long shapeId))
+                continue;
+
+            // Try parsing variant number (1‑4)
+            if (!int.TryParse(parts[1].Trim(), out int variantNum))
+                continue;
+
+            PresetThemeVariantValue variant = GetVariantFromNumber(variantNum);
+            result[shapeId] = variant;
+        }
+
+        return result;
+    }
+
+    // Maps integer 1‑4 to the corresponding PresetThemeVariantValue enum
+    private static PresetThemeVariantValue GetVariantFromNumber(int number)
+    {
+        return number switch
+        {
+            1 => PresetThemeVariantValue.Variant1,
+            2 => PresetThemeVariantValue.Variant2,
+            3 => PresetThemeVariantValue.Variant3,
+            4 => PresetThemeVariantValue.Variant4,
+            _ => PresetThemeVariantValue.Variant1 // default fallback
+        };
+    }
+}

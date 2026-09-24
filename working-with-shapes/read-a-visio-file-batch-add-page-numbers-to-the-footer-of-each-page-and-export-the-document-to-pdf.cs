@@ -7,34 +7,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        try
+        if (args.Length < 2)
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the exported PDF file
-            string outputPath = "output.pdf";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Add page number field to the right side of the footer for all pages
-            diagram.HeaderFooter.FooterRight = "Page: &p";
-
-            // Configure PDF save options (optional: set a default font)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Export the diagram to PDF
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine("Export completed: PDF with page numbers created.");
-
+            Console.WriteLine("Usage: <inputVisioPath> <outputPdfPath>");
+            return;
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Load the Visio diagram
+        Diagram diagram = new Diagram(inputPath);
+
+        // Add page number placeholder to the footer (will be replaced per page)
+        diagram.HeaderFooter.FooterRight = "Page: &p";
+
+        // Set PDF save options (optional: specify default font)
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        pdfOptions.DefaultFont = "Arial";
+
+        // Export the diagram to PDF
+        diagram.Save(outputPath, pdfOptions);
+
+        Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
     }
 }

@@ -1,50 +1,47 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output Visio file path.
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: VisioOpacityUpdater <inputFilePath> <outputFilePath>");
+                return;
+            }
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Desired fill transparency (10% transparent => 90% opaque)
-            double transparencyPercent = 10.0;
+            // Desired opacity is 90% -> transparency is 10%.
+            double transparencyValue = 10.0;
 
-            // Iterate through all pages
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Set foreground fill transparency
-                    shape.Fill.FillForegndTrans.Value = transparencyPercent;
+                    // Set foreground fill transparency.
+                    shape.Fill.FillForegndTrans.Value = transparencyValue;
 
-                    // Set background fill transparency
-                    shape.Fill.FillBkgndTrans.Value = transparencyPercent;
+                    // Set background fill transparency (if applicable).
+                    shape.Fill.FillBkgndTrans.Value = transparencyValue;
                 }
             }
 
-            // Save the updated diagram (must specify a SaveFileFormat)
+            // Save the updated diagram (preserving original format, e.g., VSDX).
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Diagram saved with updated fill opacity to '{outputPath}'.");
         }
     }
-}

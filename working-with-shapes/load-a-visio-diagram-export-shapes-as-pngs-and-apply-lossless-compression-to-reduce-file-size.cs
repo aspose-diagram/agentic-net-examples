@@ -3,7 +3,7 @@ using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportShapesAsPng
+class Program
 {
     static void Main()
     {
@@ -11,10 +11,19 @@ class ExportShapesAsPng
         {
 
             // Path to the source Visio file
-            string sourceFile = "input.vsdx";
+            string inputPath = "input.vsdx";
 
-            // Load the Visio diagram using the constructor that accepts a file path
-            Diagram diagram = new Diagram(sourceFile);
+            // Folder where individual shape PNGs will be saved
+            string outputFolder = "ShapeImages";
+
+            // Create output folder if it does not exist
+            if (!System.IO.Directory.Exists(outputFolder))
+            {
+                System.IO.Directory.CreateDirectory(outputFolder);
+            }
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
@@ -22,19 +31,19 @@ class ExportShapesAsPng
                 // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Build a unique file name for the exported PNG
-                    string pngFile = $"shape_page{page.ID}_shape{shape.ID}.png";
+                    // Construct a unique file name for the shape image
+                    string fileName = $"Page{page.ID}_Shape{shape.ID}.png";
+                    string outputPath = System.IO.Path.Combine(outputFolder, fileName);
 
-                    // Create image save options for PNG format (lossless by nature)
+                    // Configure PNG export options (PNG is inherently lossless)
                     ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
 
-                    // Export the shape to a PNG file using the ToImage method
-                    shape.ToImage(pngFile, options);
+                    // Export the shape to a PNG file
+                    shape.ToImage(outputPath, options);
                 }
             }
 
-            // Release resources held by the diagram
-            diagram.Dispose();
+            Console.WriteLine("All shapes have been exported as PNG images.");
 
         }
         catch (System.IO.FileNotFoundException ex)

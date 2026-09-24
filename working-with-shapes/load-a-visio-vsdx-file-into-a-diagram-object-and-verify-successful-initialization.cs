@@ -12,21 +12,18 @@ class Program
             // Path to the VSDX file to be loaded
             string filePath = "sample.vsdx";
 
-            // Load the Visio diagram using the constructor that accepts a file name
+            // Load the Visio file into a Diagram object
             Diagram diagram = new Diagram(filePath);
 
-            // Verify successful initialization by checking the Pages collection
-            if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
+            // Verify that the Diagram object was initialized successfully
+            if (diagram != null && diagram.Pages.Count > 0)
             {
                 Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
             }
             else
             {
-                Console.WriteLine("Failed to load diagram.");
+                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
             }
-
-            // Clean up resources
-            diagram.Dispose();
 
         }
         catch (System.IO.FileNotFoundException ex)

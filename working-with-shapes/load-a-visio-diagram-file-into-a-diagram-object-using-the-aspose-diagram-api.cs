@@ -9,19 +9,19 @@ class Program
         try
         {
 
-            // Path to the Visio diagram file to be loaded
-            string visioFilePath = "example.vsdx";
+            // Path to the Visio file to be loaded
+            string visioFilePath = @"C:\Path\To\Your\Diagram.vsdx";
 
-            // Load the diagram using the constructor that accepts a file name
+            // Load the Visio diagram into a Diagram object
             Diagram diagram = new Diagram(visioFilePath);
 
-            // The diagram is now loaded and can be used for further processing
+            // At this point the diagram is loaded and can be manipulated
             Console.WriteLine($"Diagram loaded. Pages count: {diagram.Pages.Count}");
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (System.IO.DirectoryNotFoundException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
         }
     }
 }

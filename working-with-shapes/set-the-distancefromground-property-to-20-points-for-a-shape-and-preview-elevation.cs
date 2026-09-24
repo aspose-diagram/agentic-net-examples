@@ -1,40 +1,59 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file and output PNG preview file.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPngPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio file or create a new diagram
-            Diagram diagram = new Diagram(); // creates an empty diagram
+            // Retrieve the first page (index 0) – adjust as needed for other pages.
+            Page page = diagram.Pages[0];
 
-            // Ensure there is at least one page
-            Page page = diagram.ActivePage;
+            // Retrieve the first shape on the page – replace with a specific shape ID if required.
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Add a rectangle shape to the page (pinX, pinY, width, height, master name)
-            long shapeId = page.AddShape(2.0, 2.0, 1.5, 1.0, "Rectangle");
+            // Set the distance from ground (elevation) to 20 points.
+            shape.ThreeDFormat.DistanceFromGround.Value = 20;
 
-            // Retrieve the concrete Shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Optional: set a rotation angle to better visualize the elevation in the preview.
+            // Here we rotate 30 degrees around the X‑axis.
+            shape.ThreeDFormat.RotationXAngle.Value = 30;
 
-            // Set the distance from ground (elevation) to 20 points
-            shape.ThreeDFormat.DistanceFromGround.Value = 20.0;
+            // Prepare PNG export options.
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Refresh the shape so the change is reflected in the diagram view
-            shape.RefreshData();
+            // Export the diagram (including the modified shape) to a PNG file.
+            diagram.Save(outputPath, pngOptions);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Successfully updated shape elevation and saved preview to: {outputPath}");
         }
-        catch (System.NullReferenceException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[NullReferenceException] {ex.Message}");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

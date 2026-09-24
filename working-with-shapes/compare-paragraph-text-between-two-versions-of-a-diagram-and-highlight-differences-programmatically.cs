@@ -10,51 +10,56 @@ class Program
         try
         {
 
-            // Paths to the two diagram versions
-            string diagramPath1 = "DiagramV1.vsdx";
-            string diagramPath2 = "DiagramV2.vsdx";
-            string outputPath = "DiagramDiffHighlighted.vsdx";
+            // Paths to the original and updated Visio files
+            string oldDiagramPath = "oldDiagram.vsdx";
+            string newDiagramPath = "newDiagram.vsdx";
+            string outputDiagramPath = "newDiagram_HighlightedDifferences.vsdx";
 
-            // Load the diagrams
-            Diagram diagram1 = new Diagram(diagramPath1);
-            Diagram diagram2 = new Diagram(diagramPath2);
+            // Load both diagrams
+            Diagram oldDiagram = new Diagram(oldDiagramPath);
+            Diagram newDiagram = new Diagram(newDiagramPath);
 
-            // Iterate through pages of the first diagram
-            foreach (Page page1 in diagram1.Pages)
+            // Iterate through pages (assumes same page order and count)
+            for (int pageIndex = 0; pageIndex < oldDiagram.Pages.Count; pageIndex++)
             {
-                // Find the corresponding page in the second diagram by ID
-                Page page2 = diagram2.Pages.GetPage(page1.ID);
-                if (page2 == null)
-                {
-                    continue; // No matching page, skip
-                }
+                Page oldPage = oldDiagram.Pages[pageIndex];
+                Page newPage = newDiagram.Pages[pageIndex];
 
-                // Iterate through shapes on the page
-                foreach (Shape shape1 in page1.Shapes)
+                // Iterate through shapes on the old page
+                foreach (Shape oldShape in oldPage.Shapes)
                 {
-                    // Find shape with the same ID in the second diagram
-                    Shape shape2 = page2.Shapes.GetShape(shape1.ID);
-                    if (shape2 == null)
-                    {
-                        continue; // No matching shape, skip
-                    }
+                    // Skip deleted shapes
+                    if (oldShape.Del == BOOL.True)
+                        continue;
+
+                    // Find the corresponding shape in the new diagram by ID
+                    Shape newShape = newPage.Shapes.GetShape(oldShape.ID);
+                    if (newShape == null || newShape.Del == BOOL.True)
+                        continue;
 
                     // Retrieve plain text from both shapes
-                    string text1 = shape1.Text.Value.Text ?? string.Empty;
-                    string text2 = shape2.Text.Value.Text ?? string.Empty;
+                    string oldText = oldShape.Text.Value.Text ?? string.Empty;
+                    string newText = newShape.Text.Value.Text ?? string.Empty;
 
-                    // Compare the texts
-                    if (!string.Equals(text1, text2, StringComparison.Ordinal))
+                    // Compare texts; if different, highlight the shape in the new diagram
+                    if (!string.Equals(oldText, newText, StringComparison.Ordinal))
                     {
-                        // Highlight differences by setting a yellow fill color
-                        shape1.Fill.FillForegnd.Value = "#FFFF00";
-                        shape2.Fill.FillForegnd.Value = "#FFFF00";
+                        Console.WriteLine($"Difference found in Shape ID {oldShape.ID} on Page {pageIndex + 1}");
+                        Console.WriteLine($"Old Text: \"{oldText}\"");
+                        Console.WriteLine($"New Text: \"{newText}\"");
+
+                        // Highlight by setting the fill foreground color to red
+                        newShape.Fill.FillForegnd.Value = "#FF0000";
+
+                        // Optionally, also change the line color to red for better visibility
+                        newShape.Line.LineColor.Value = "#FF0000";
                     }
                 }
             }
 
             // Save the highlighted diagram
-            diagram1.Save(outputPath, SaveFileFormat.Vsdx);
+            newDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Highlighted diagram saved to: {outputDiagramPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

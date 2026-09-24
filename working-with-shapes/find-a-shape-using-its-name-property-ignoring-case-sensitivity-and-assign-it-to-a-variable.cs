@@ -1,34 +1,40 @@
-using System;
 using System.IO;
+using Aspose.Diagram;
+using System;
+using System.Linq;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (assumes a load rule is defined elsewhere)
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
+            // Load the diagram (replace with your file path)
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // The name of the shape we want to locate (case‑insensitive)
-            string shapeNameToFind = "MyShape";
+            // Name of the shape to find (case‑insensitive)
+            string targetName = "MyShape";
 
-            // Variable that will hold the found shape
-            Aspose.Diagram.Shape foundShape = null;
+            // Variable to hold the found shape
+            Shape foundShape = null;
 
-            // Iterate through all shapes on the first page (adjust page index as needed)
-            foreach (Aspose.Diagram.Shape shape in diagram.Pages[0].Shapes)
+            // Search through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Compare shape names ignoring case
-                if (string.Equals(shape.Name, shapeNameToFind, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    foundShape = shape;
+                // Find the first shape whose Name matches targetName ignoring case
+                foundShape = page.Shapes.FirstOrDefault(s =>
+                    string.Equals(s.Name, targetName, StringComparison.OrdinalIgnoreCase));
+
+                if (foundShape != null)
                     break; // Exit loop once the shape is found
-                }
             }
 
-            // At this point 'foundShape' contains the shape with the specified name (or null if not found)
+            // Example usage: output the shape ID if found
+            if (foundShape != null)
+                Console.WriteLine($"Found shape ID: {foundShape.ID}");
+            else
+                Console.WriteLine("Shape not found.");
 
         }
         catch (System.IO.FileNotFoundException ex)

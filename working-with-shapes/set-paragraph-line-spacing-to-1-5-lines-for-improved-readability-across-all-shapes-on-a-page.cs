@@ -1,45 +1,39 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            // Expect two arguments: input Visio file path and output file path.
-            if (args.Length < 2)
+            Console.WriteLine("Usage: <exe> <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Load the Visio diagram.
+        Diagram diagram = new Diagram(inputPath);
+
+        // Iterate through every page, shape, and paragraph to set line spacing.
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                Console.WriteLine("Usage: DiagramParagraphSpacing <inputPath> <outputPath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Each shape can contain multiple paragraphs.
+                foreach (Para para in shape.Paras)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Iterate through each paragraph of the shape's text.
-                    foreach (Para para in shape.Paras)
-                    {
-                        // Set line spacing to 1.5 lines.
-                        // The SpLine property controls line spacing; value is in points.
-                        // A value of 1.5 corresponds to 1.5 lines.
-                        para.SpLine.Value = 1.5;
-                    }
+                    // Set line spacing to 1.5 lines.
+                    para.SpLine.Value = 1.5;
                 }
             }
-
-            // Save the modified diagram to the output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
+
+        // Save the modified diagram (preserving the original format).
+        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
+}

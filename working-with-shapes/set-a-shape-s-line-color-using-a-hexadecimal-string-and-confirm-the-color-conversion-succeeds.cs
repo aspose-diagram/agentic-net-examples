@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,35 +9,35 @@ class Program
         try
         {
 
-            // Create a new empty diagram
+            // Create a new diagram (empty)
             Diagram diagram = new Diagram();
 
-            // Add a rectangle shape to the first page (page index 0)
-            // The AddShape method returns the shape ID (long)
-            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            // Ensure there is at least one page
+            Page page = diagram.Pages[0];
 
-            // Retrieve the concrete Shape object using the ID
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, width, height, master name, isCalculate
+            long shapeId = page.AddShape(2.0, 2.0, 1.0, 0.5, "Rectangle", false);
+
+            // Retrieve the shape object
+            Shape shape = page.Shapes.GetShape(shapeId);
 
             // Set the line color using a hexadecimal string
-            string expectedHex = "#FF0000"; // Red
-            shape.Line.LineColor.Value = expectedHex;
+            string hexColor = "#FF0000"; // Red
+            shape.Line.LineColor.Value = hexColor;
 
             // Verify that the color was set correctly
-            string actualHex = shape.Line.LineColor.Value;
-            if (!string.Equals(actualHex, expectedHex, StringComparison.OrdinalIgnoreCase))
+            if (shape.Line.LineColor.Value != hexColor)
             {
-                throw new Exception($"Line color conversion failed. Expected: {expectedHex}, Actual: {actualHex}");
+                throw new Exception($"Line color conversion failed. Expected {hexColor}, but got {shape.Line.LineColor.Value}.");
             }
             else
             {
-                Console.WriteLine($"Line color successfully set to {actualHex}");
+                Console.WriteLine($"Line color successfully set to {hexColor}.");
             }
 
-            // Save the diagram as a PNG image to confirm the shape is rendered
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save("output.png", saveOptions);
-            Console.WriteLine("Diagram saved as output.png");
+            // Save the diagram to verify persistence (optional)
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (Aspose.Diagram.DiagramException ex)

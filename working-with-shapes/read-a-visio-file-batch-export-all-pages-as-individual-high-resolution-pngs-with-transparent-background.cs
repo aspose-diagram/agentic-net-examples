@@ -4,63 +4,58 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+            // Validate arguments
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: VisioBatchExport <inputVisioFile> <outputFolder>");
+                return;
+            }
 
-        // Directory where individual page PNGs will be saved
-        string outputDir = "output_pages";
-        // Ensure the output directory exists
-        if (!Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
+            string inputPath = args[0];
+            string outputFolder = args[1];
 
-        try
-        {
+            if (!File.Exists(inputPath))
+            {
+                Console.WriteLine($"Error: Input file not found: {inputPath}");
+                return;
+            }
+
+            // Ensure output directory exists
+            if (!Directory.Exists(outputFolder))
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure image export options (high‑resolution PNG)
+            // Configure high‑resolution PNG export options
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300; // DPI
+            saveOptions.Resolution = 300f;          // 300 DPI for high quality
+            saveOptions.PageCount = 1;              // Export one page at a time
 
-            // Export each page as a separate PNG file
-            int pageIndex = 0;
+            // Iterate through each page and export as a separate PNG file
             foreach (Page page in diagram.Pages)
             {
-                // Set the page index to render the current page
-                saveOptions.PageIndex = pageIndex;
+                // Set the page index for the current page (zero‑based)
+                saveOptions.PageIndex = (int)page.ID - 1;
 
-                // Build a safe file name using the page name (fallback to index if name is empty)
-                string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{pageIndex}" : page.Name;
-                foreach (char c in Path.GetInvalidFileNameChars())
+                // Build output file name using page name (fallback to page ID)
+                string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{page.ID}" : page.Name;
+                string outputPath = Path.Combine(outputFolder, $"{safePageName}.png");
+
+                try
                 {
-                    safePageName = safePageName.Replace(c, '_');
+                    diagram.Save(outputPath, saveOptions);
+                    Console.WriteLine($"Exported page '{safePageName}' to '{outputPath}'.");
                 }
-
-                string outputPath = Path.Combine(outputDir, $"{safePageName}.png");
-
-                // Save the current page as PNG
-                diagram.Save(outputPath, saveOptions);
-
-                pageIndex++;
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to export page '{safePageName}': {ex.Message}");
+                }
             }
-
-            Console.WriteLine("All pages have been exported as high‑resolution PNGs.");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
-}

@@ -1,60 +1,63 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Path to the Visio file
+        string inputPath = "input.vsdx";
+
+        // Guard: ensure the file exists before loading
+        if (!File.Exists(inputPath))
         {
-            // Expect two arguments: input Visio file path and output Visio file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramGroupPinCalculator <inputFilePath> <outputFilePath>");
-                return;
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-
+        try
+        {
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Iterate over each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
-                foreach (Aspose.Diagram.Shape groupShape in page.Shapes)
+                // Iterate over each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Identify group shapes
-                    if (groupShape.Type == TypeValue.Group)
+                    // Process only group shapes (containers of sub‑shapes)
+                    if (shape.Type == TypeValue.Group)
                     {
-                        // Retrieve group's transformation values
-                        double groupPinX = groupShape.XForm.PinX.Value;
-                        double groupPinY = groupShape.XForm.PinY.Value;
-                        double groupLocPinX = groupShape.XForm.LocPinX.Value;
-                        double groupLocPinY = groupShape.XForm.LocPinY.Value;
+                        // The group's own PinX/Y values (center of the group)
+                        double groupPinX = shape.XForm.PinX.Value;
+                        double groupPinY = shape.XForm.PinY.Value;
 
-                        // Iterate through sub‑shapes contained in the group
-                        foreach (Aspose.Diagram.Shape subShape in groupShape.Shapes)
+                        // Iterate through the sub‑shapes that belong to the group
+                        foreach (Shape subShape in shape.Shapes)
                         {
-                            // Sub‑shape's local PinX/PinY
-                            double subPinX = subShape.XForm.PinX.Value;
-                            double subPinY = subShape.XForm.PinY.Value;
+                            // Sub‑shape coordinates are stored relative to the group.
+                            // Approximate absolute coordinates by adding the group's PinX/Y.
+                            // For a precise calculation you would need to apply the group's
+                            // scaling and rotation matrix, but this simple addition works for
+                            // many typical Visio diagrams.
+                            double absolutePinX = groupPinX + subShape.XForm.PinX.Value;
+                            double absolutePinY = groupPinY + subShape.XForm.PinY.Value;
 
-                            // Simple absolute position calculation (ignores rotation/scaling)
-                            double absolutePinX = groupPinX + (subPinX - groupLocPinX);
-                            double absolutePinY = groupPinY + (subPinY - groupLocPinY);
-
-                            // Log the result
+                            // Log the page name, group ID, sub‑shape ID and the calculated absolute positions
                             Console.WriteLine(
-                                $"Group Shape ID {groupShape.ID}, Sub‑Shape ID {subShape.ID}: " +
-                                $"Absolute PinX = {absolutePinX}, Absolute PinY = {absolutePinY}");
+                                $"Page: {page.NameU}, Group ID: {shape.ID}, Sub‑Shape ID: {subShape.ID}, " +
+                                $"AbsPinX: {absolutePinX}, AbsPinY: {absolutePinY}");
                         }
                     }
                 }
             }
-
-            // Save the (potentially modified) diagram to the output file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose‑Diagram errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

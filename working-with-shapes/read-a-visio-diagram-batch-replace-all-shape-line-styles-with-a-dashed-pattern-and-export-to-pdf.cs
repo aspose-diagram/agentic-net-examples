@@ -5,45 +5,46 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path (first argument) or default.
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            // Output PDF file path (second argument) or default.
-            string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output PDF file path
+            string outputPath = "output.pdf";
 
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to set a dashed line pattern.
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted.
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Apply dashed line style.
+                    // Set the line pattern to dashed
                     shape.Line.LinePattern.Value = LinePatternValue.Dash;
                 }
             }
 
-            // Configure PDF save options.
+            // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             pdfOptions.DefaultFont = "Arial";
             pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Save the modified diagram as PDF.
+            // Save the modified diagram as PDF
             diagram.Save(outputPath, pdfOptions);
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

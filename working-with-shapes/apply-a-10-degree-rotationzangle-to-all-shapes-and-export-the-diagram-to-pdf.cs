@@ -1,37 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Determine output PDF file path (second argument or default).
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes
+            // Iterate over each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate over each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply a 10‑degree rotation around the Z‑axis
-                    // ThreeDFormat.RotationZAngle is a DoubleValue; set its Value property
-                    shape.ThreeDFormat.RotationZAngle.Value = 10.0;
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.False)
+                    {
+                        // Apply a 10‑degree rotation around the Z‑axis.
+                        shape.ThreeDFormat.RotationZAngle.Value = 10;
+                    }
                 }
             }
 
-            // Save the modified diagram as PDF
-            var pdfOptions = new PdfSaveOptions(); // default options
-            diagram.Save("output.pdf", pdfOptions);
+            // Configure PDF save options (default font ensures proper rendering).
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            // Explicitly set the save format to PDF (required for some versions).
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
+            // Save the modified diagram as a PDF using the configured options.
+            diagram.Save(outputPath, pdfOptions);
+
+            // Inform the user that the export succeeded.
+            Console.WriteLine($"Diagram exported to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors encountered during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

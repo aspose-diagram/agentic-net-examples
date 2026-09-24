@@ -3,61 +3,54 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ShapeBatchConverter
-{
-    static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input folder containing Visio files (e.g., .vsdx, .vsd)
+            // Input folder containing Visio files
             string inputFolder = @"C:\VisioFiles";
-            // Output folder where PNG images will be saved
-            string outputFolder = @"C:\ShapeImages";
+            // Output folder for PNG images
+            string outputFolder = @"C:\VisioShapePngs";
 
             // Ensure output directory exists
-            Directory.CreateDirectory(outputFolder);
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
 
-            // Get all Visio files in the input folder
+            // Get all Visio files (VSDX, VDX, VSD) in the input folder
             string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string visioPath in visioFiles)
+            foreach (string filePath in visioFiles)
             {
-                // Load the diagram using the Diagram(string) constructor (load rule)
-                using (Diagram diagram = new Diagram(visioPath))
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                if (extension != ".vsdx" && extension != ".vdx" && extension != ".vsd")
+                    continue; // Skip non‑Visio files
+
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate through each page
+                foreach (Page page in diagram.Pages)
                 {
-                    // Prepare high‑resolution image save options
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    // Set a high DPI (e.g., 300) for better quality
-                    imgOptions.Resolution = 300;
-
-                    // Iterate through all pages
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    // Iterate through each shape on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        var page = diagram.Pages[pageIndex];
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Iterate through all shapes on the page
-                        for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
-                        {
-                            Shape shape = page.Shapes[shapeIndex];
+                        // Build a unique file name for the shape image
+                        string shapeFileName = $"{Path.GetFileNameWithoutExtension(filePath)}_Page{page.ID}_Shape{shape.ID}.png";
+                        string outputPath = Path.Combine(outputFolder, shapeFileName);
 
-                            // Build a unique file name: DiagramName_PageIndex_ShapeID.png
-                            string diagramName = Path.GetFileNameWithoutExtension(visioPath);
-                            string fileName = $"{diagramName}_Page{pageIndex + 1}_Shape{shape.ID}.png";
-                            string outputPath = Path.Combine(outputFolder, fileName);
+                        // Configure high‑resolution PNG export
+                        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        pngOptions.Resolution = 300f; // 300 DPI
 
-                            // Export the shape to PNG using the ToImage method (export rule)
-                            shape.ToImage(outputPath, imgOptions);
-                        }
+                        // Export the shape to PNG
+                        shape.ToImage(outputPath, pngOptions);
                     }
                 }
             }
 
-            Console.WriteLine("All shapes have been exported as high‑resolution PNG files.");
-
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.WriteLine("Batch shape export completed.");
         }
     }
-}

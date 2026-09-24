@@ -2,51 +2,59 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class BatchThemeApplier
-{
-    static void Main()
+class Program
     {
-        try
+        static void Main(string[] args)
         {
+            // Input folder containing Visio files (VSDX). Use first argument if provided, otherwise default to "InputDiagrams".
+            string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
 
-            // Path to the diagram that contains the desired theme.
-            string themeDiagramPath = @"C:\Themes\ThemeDiagram.vsdx";
+            // Output folder where themed diagrams will be saved. Use second argument if provided, otherwise default to "OutputDiagrams".
+            string outputFolder = args.Length > 1 ? args[1] : "OutputDiagrams";
 
-            // Folder containing the diagrams to which the theme will be applied.
-            string inputFolder = @"C:\Diagrams\Input";
-
-            // Folder where the themed diagrams will be saved (can be the same as inputFolder to overwrite).
-            string outputFolder = @"C:\Diagrams\Output";
-
-            // Ensure the output folder exists.
-            Directory.CreateDirectory(outputFolder);
-
-            // Load the source diagram that holds the theme once.
-            using (Diagram sourceThemeDiagram = new Diagram(themeDiagramPath))
+            // Ensure the output directory exists.
+            if (!Directory.Exists(outputFolder))
             {
-                // Process each diagram file in the input folder.
-                foreach (string inputFilePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+                Directory.CreateDirectory(outputFolder);
+            }
+
+            // Process each VSDX file in the input folder.
+            foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+            {
+                try
                 {
-                    // Load the target diagram.
-                    using (Diagram targetDiagram = new Diagram(inputFilePath))
+                    // Load the diagram.
+                    Diagram diagram = new Diagram(filePath);
+
+                    // Apply the theme to every non-deleted shape on each page.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Copy the theme from the source diagram to the target diagram.
-                        targetDiagram.CopyTheme(sourceThemeDiagram);
-
-                        // Determine the output file path.
-                        string fileName = Path.GetFileName(inputFilePath);
-                        string outputFilePath = Path.Combine(outputFolder, fileName);
-
-                        // Save the themed diagram, preserving the original format.
-                        targetDiagram.Save(outputFilePath, SaveFileFormat.Vsdx);
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip shapes that are marked for deletion.
+                            if (shape.Del == BOOL.False)
+                            {
+                                // Apply a preset theme to the shape.
+                                shape.PresetTheme = PresetThemeValue.Bubble;
+                                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                            }
+                        }
                     }
+
+                    // Determine the output file path (same file name in the output folder).
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                    // Save the modified diagram in VSDX format.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+                catch (Exception ex)
+                {
+                    // Log any errors for the current file and continue processing the rest.
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            Console.WriteLine("Batch processing completed.");
         }
     }
-}

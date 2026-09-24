@@ -1,26 +1,45 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for SaveFileFormat
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Load an existing Visio diagram (replace with your file path)
-        Diagram diagram = new Diagram("input.vsdx");
+        // Path to a stencil that contains the "Rectangle" master.
+        string stencilPath = "Basic_U.vssx";
+        // Verify the stencil file exists before proceeding.
+        if (!File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"File not found: {stencilPath}");
+            return;
+        }
 
-        // Define rectangle parameters
-        double pinX = 2.0;      // X coordinate of the rectangle's center (in inches)
-        double pinY = 3.0;      // Y coordinate of the rectangle's center (in inches)
-        double width = 1.5;     // Width of the rectangle (in inches)
-        double height = 1.0;    // Height of the rectangle (in inches)
-        string masterName = "Rectangle"; // Master name for a rectangle shape
-        int pageNumber = 0;     // Index of the page (0 = first page)
+        try
+        {
+            // Create a new empty diagram.
+            Diagram diagram = new Diagram();
 
-        // Add the rectangle shape to the specified page using the master
-        long shapeId = diagram.AddShape(pinX, pinY, width, height, masterName, pageNumber);
+            // Import the "Rectangle" master from the stencil into the diagram.
+            diagram.AddMaster(stencilPath, "Rectangle");
 
-        // Save the modified diagram (replace with your desired output path)
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Add a rectangle shape to the first page (page index 0) at position (2.0, 2.0).
+            // Use the master name (string) as required by the AddShape overload.
+            long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+
+            // Retrieve the newly added shape for further modifications (e.g., adding text).
+            Shape rectShape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            rectShape.Text.Value.Clear(); // Clear any existing text.
+            rectShape.Text.Value.Add(new Txt("Rectangle")); // Add new text.
+
+            // Save the diagram to a VSDX file.
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Output any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

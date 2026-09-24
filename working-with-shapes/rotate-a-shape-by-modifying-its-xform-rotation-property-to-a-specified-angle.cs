@@ -2,37 +2,43 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class RotateShapeExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Input and output file paths
+            string inputPath = "input.vsdx";
+            string outputPath = "output_rotated.vsdx";
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Desired rotation angle in degrees
+            double rotationAngle = 45.0;
 
             // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Access a shape on the page.
-            // Shape index 1 is typically the first user‑drawn shape (index 0 is the page shape).
-            Shape shape = page.Shapes[1];
-
-            // Desired rotation angle in degrees
-            double angleInDegrees = 45.0;
-
-            // Convert degrees to radians because XForm.Angle expects radians
-            double angleInRadians = angleInDegrees * Math.PI / 180.0;
-
-            // Set the rotation using the XForm.Angle property
-            shape.XForm.Angle.Value = angleInRadians;
-
-            // Alternatively, you could use the helper method:
-            // shape.SetAngle(angleInRadians);
+            // Example: rotate the shape with ID 1
+            // Retrieve the shape; GetShape returns null if the ID does not exist
+            Shape shape = page.Shapes.GetShape(1);
+            if (shape != null)
+            {
+                // Set the rotation angle (degrees) via the XForm.Angle cell
+                shape.XForm.Angle.Value = rotationAngle;
+                Console.WriteLine($"Shape ID {shape.ID} rotated to {rotationAngle} degrees.");
+            }
+            else
+            {
+                Console.WriteLine("Shape with ID 1 not found.");
+            }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

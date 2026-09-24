@@ -1,61 +1,66 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramBatchProcessor <input.vsdx> <output.vsdx>");
-                return;
-            }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+            // Output Visio file path
+            string outputPath = "output.vsdx";
 
-            // Load the Visio diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram.
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Build a quick lookup of shape ID → Shape.
-                var shapeLookup = new Dictionary<long, Shape>();
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    shapeLookup[shape.ID] = shape;
-                }
-
-                // Examine each connection definition on the page.
-                foreach (Connect connect in page.Connects)
-                {
-                    // We are interested in the beginning point of a connector.
-                    // The BeginX/BeginY cells indicate the source shape.
-                    if (connect.FromCell != null && connect.FromCell.StartsWith("Begin"))
+                    // Identify connector shapes (1‑D shapes)
+                    if (shape.OneD)
                     {
-                        long connectorId = connect.FromSheet;   // The connector shape.
-                        long sourceShapeId = connect.ToSheet;   // Shape that the connector starts from.
+                        long connectorId = shape.ID;
+                        long sourceShapeId = -1;
 
-                        // Retrieve the connector and its source shape.
-                        if (shapeLookup.TryGetValue(connectorId, out Shape connector) &&
-                            shapeLookup.TryGetValue(sourceShapeId, out Shape sourceShape))
+                        // Find the connection that links the source shape to this connector
+                        foreach (Connect conn in page.Connects)
                         {
-                            // Identify decision nodes by their master name.
-                            if (sourceShape.Master != null && sourceShape.Master.Name == "Decision")
+                            if (conn.ToSheet == connectorId)
                             {
-                                // Set the line jump style of the connector to Arc.
-                                connector.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
+                                sourceShapeId = conn.FromSheet;
+                                break;
+                            }
+                        }
+
+                        // If a source shape was found, check if it is a decision node
+                        if (sourceShapeId != -1)
+                        {
+                            Shape sourceShape = page.Shapes.GetShape(sourceShapeId);
+                            if (sourceShape != null && sourceShape.Master != null && sourceShape.Master.Name == "Decision")
+                            {
+                                // Set the connector's line jump style to Arc
+                                shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
                             }
                         }
                     }
                 }
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram processed and saved to '{outputPath}'.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

@@ -1,96 +1,73 @@
+using System.IO;
 using System;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Paths to the two diagram versions to compare
+            string diagramPath1 = "DiagramVersion1.vsdx";
+            string diagramPath2 = "DiagramVersion2.vsdx";
+
+            // Load both diagrams
+            Diagram diagram1 = new Diagram(diagramPath1);
+            Diagram diagram2 = new Diagram(diagramPath2);
+
+            // Iterate through pages (assuming same page count and IDs)
+            foreach (Page page1 in diagram1.Pages)
             {
-
-                // Paths to the two diagram files to compare
-                string diagramPath1 = "DiagramVersion1.vsdx";
-                string diagramPath2 = "DiagramVersion2.vsdx";
-
-                // Load the diagrams
-                Diagram diagram1 = new Diagram(diagramPath1);
-                Diagram diagram2 = new Diagram(diagramPath2);
-
-                // Build dictionaries of connector ID -> line jump style for each diagram
-                var jumps1 = GetConnectorJumpStyles(diagram1);
-                var jumps2 = GetConnectorJumpStyles(diagram2);
-
-                bool differencesFound = false;
-
-                // Compare connectors present in both diagrams
-                foreach (var kvp in jumps1)
+                // Find the corresponding page in the second diagram by ID
+                Page page2 = diagram2.Pages.GetPage(page1.ID);
+                if (page2 == null)
                 {
-                    long shapeId = kvp.Key;
-                    ConLineJumpStyleValue style1 = kvp.Value;
-
-                    if (jumps2.TryGetValue(shapeId, out ConLineJumpStyleValue style2))
-                    {
-                        if (style1 != style2)
-                        {
-                            differencesFound = true;
-                            Console.WriteLine($"Connector ID {shapeId} has different line jump styles:");
-                            Console.WriteLine($"  Diagram 1: {style1}");
-                            Console.WriteLine($"  Diagram 2: {style2}");
-                        }
-                    }
-                    else
-                    {
-                        differencesFound = true;
-                        Console.WriteLine($"Connector ID {shapeId} exists in Diagram 1 but not in Diagram 2.");
-                    }
+                    Console.WriteLine($"Page with ID {page1.ID} not found in second diagram.");
+                    continue;
                 }
 
-                // Find connectors that exist only in Diagram 2
-                foreach (var kvp in jumps2)
+                // Iterate through shapes on the first page
+                foreach (Shape shape1 in page1.Shapes)
                 {
-                    long shapeId = kvp.Key;
-                    if (!jumps1.ContainsKey(shapeId))
+                    // Process only connector shapes (1‑D shapes)
+                    if (!shape1.OneD)
+                        continue;
+
+                    // Retrieve jump style and code from the first diagram
+                    var jumpStyle1 = shape1.Layout.ConLineJumpStyle.Value;
+                    var jumpCode1 = shape1.Layout.ConLineJumpCode.Value;
+
+                    // Find the matching connector in the second diagram by shape ID
+                    Shape shape2 = page2.Shapes.GetShape(shape1.ID);
+                    if (shape2 == null)
                     {
-                        differencesFound = true;
-                        Console.WriteLine($"Connector ID {shapeId} exists in Diagram 2 but not in Diagram 1.");
+                        Console.WriteLine($"Connector ID {shape1.ID} missing in second diagram (Page ID {page1.ID}).");
+                        continue;
+                    }
+
+                    // Retrieve jump style and code from the second diagram
+                    var jumpStyle2 = shape2.Layout.ConLineJumpStyle.Value;
+                    var jumpCode2 = shape2.Layout.ConLineJumpCode.Value;
+
+                    // Compare and report differences
+                    if (jumpStyle1 != jumpStyle2 || jumpCode1 != jumpCode2)
+                    {
+                        Console.WriteLine($"Connector ID {shape1.ID} on Page ID {page1.ID} differs:");
+                        Console.WriteLine($"  Jump Style - Diagram1: {jumpStyle1}, Diagram2: {jumpStyle2}");
+                        Console.WriteLine($"  Jump Code  - Diagram1: {jumpCode1}, Diagram2: {jumpCode2}");
                     }
                 }
-
-                if (!differencesFound)
-                {
-                    Console.WriteLine("No line jump style differences detected between the two diagrams.");
-                }
-
-                // Optionally, save a report or the diagrams (not required for comparison)
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        // Retrieves a mapping of connector shape IDs to their line jump style values
-        private static Dictionary<long, ConLineJumpStyleValue> GetConnectorJumpStyles(Diagram diagram)
+            // Optional: indicate completion
+            Console.WriteLine("Comparison completed.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
         {
-            var result = new Dictionary<long, ConLineJumpStyleValue>();
-
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Only consider 1-D shapes (connectors)
-                    if (shape.OneD)
-                    {
-                        // Access the line jump style via the Layout sub-object
-                        ConLineJumpStyleValue jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-                        result[shape.ID] = jumpStyle;
-                    }
-                }
-            }
-
-            return result;
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

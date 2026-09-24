@@ -14,41 +14,49 @@ class Program
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
-            // Load the diagram from the file
+            // Load the diagram using the standard constructor
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Work with the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Apply a preset theme to the page to change its visual style
+                page.PresetTheme = PresetThemeValue.Bubble;
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                // Retrieve the page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Locate a shape that needs geometry adjustment (example: first Rectangle master)
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Apply a preset theme to the shape (example theme)
-                        shape.PresetTheme = PresetThemeValue.Bubble;
-                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                        // Adjust the shape's horizontal position to keep it centered on the page
-                        // PinX represents the X coordinate of the shape's center
-                        shape.XForm.PinX.Value = pageWidth / 2.0;
-
-                        // Optionally, you could also adjust vertical alignment or other geometry here
-                        // For this example, we keep the original PinY value unchanged
+                        targetShape = shape;
+                        break;
                     }
                 }
 
-                // Save the modified diagram in VSDX format
+                if (targetShape != null)
+                {
+                    // Center the shape on the page after the theme change
+                    targetShape.XForm.PinX.Value = pageWidth / 2.0;
+                    targetShape.XForm.PinY.Value = pageHeight / 2.0;
+
+                    // Optionally, keep the original size (no changes needed for width/height)
+                }
+                else
+                {
+                    Console.WriteLine("Target shape not found.");
+                }
+
+                // Save the modified diagram using a valid overload
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Diagram processing completed and saved to: " + outputPath);
+            Console.WriteLine("Diagram processing completed.");
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -1,68 +1,56 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Determine the folder to process: use first argument or current directory
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-
-        if (!Directory.Exists(folderPath))
+        static void Main(string[] args)
         {
-            Console.WriteLine($"Folder not found: {folderPath}");
-            return;
-        }
+            // Folder containing Visio files to process
+            string folderPath = @"C:\VisioFiles";
 
-        // Visio file extensions to process
-        string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vssx", "*.vss", "*.vstx", "*.vst", "*.vtx", "*.vsdm", "*.vssm", "*.vstm" };
-        var files = new System.Collections.Generic.List<string>();
-
-        foreach (var ext in extensions)
-        {
-            files.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.TopDirectoryOnly));
-        }
-
-        if (files.Count == 0)
-        {
-            Console.WriteLine("No Visio files found in the specified folder.");
-            return;
-        }
-
-        foreach (var filePath in files)
-        {
-            try
+            // Validate folder existence
+            if (!Directory.Exists(folderPath))
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
+                Console.WriteLine($"Folder not found: {folderPath}");
+                return;
+            }
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+            // Process each Visio file in the folder (VSDX format)
+            string[] files = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
+            foreach (string filePath in files)
+            {
+                try
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Load the diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                        // Rotate shapes whose universal name is "Arrow"
-                        if (shape.NameU == "Arrow")
+                    // Iterate through all pages and shapes
+                    foreach (Page page in diagram.Pages)
+                    {
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Add 90 degrees (π/2 radians) to the current rotation
-                            shape.XForm.Angle.Value += Math.PI / 2;
+                            // Identify shapes named "Arrow"
+                            if (shape.NameU == "Arrow")
+                            {
+                                // Rotate shape by adding 90 degrees to its current angle
+                                double currentAngle = shape.XForm.Angle.Value;
+                                shape.XForm.Angle.Value = currentAngle + 90.0;
+                            }
                         }
                     }
-                }
 
-                // Save the modified diagram, overwriting the original file
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                    // Save the modified diagram, overwriting the original file
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-            }
+
+            Console.WriteLine("Batch processing completed.");
         }
     }
-}

@@ -1,42 +1,44 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Create a new empty diagram (contains a default page)
-                Diagram diagram = new Diagram();
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-                // Add a rectangle shape to the first page at position (2,2)
-                // The AddShape method returns the shape's unique ID (long)
-                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+            // Add a new page to the diagram
+            Page page = new Page();
+            diagram.Pages.Add(page);
 
-                // Retrieve the shape instance from the page's shape collection
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, master name, isCalculate (bool)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-                // Read the current width and height (values are in inches)
-                double currentWidth = shape.XForm.Width.Value;
-                double currentHeight = shape.XForm.Height.Value;
+            // Retrieve the shape object using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Define the scaling factor
-                double scaleFactor = 1.2;
+            // Get current width and height
+            double currentWidth = shape.XForm.Width.Value;
+            double currentHeight = shape.XForm.Height.Value;
 
-                // Apply the scaling factor using SetWidth and SetHeight
-                shape.SetWidth(currentWidth * scaleFactor);
-                shape.SetHeight(currentHeight * scaleFactor);
+            // Apply scaling factor of 1.2 using SetWidth and SetHeight
+            double scaleFactor = 1.2;
+            shape.SetWidth(currentWidth * scaleFactor);
+            shape.SetHeight(currentHeight * scaleFactor);
 
-                // Save the diagram to verify the changes (optional)
-                diagram.Save("ScaledShape.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram to a VSDX file
+            diagram.Save("scaled_shape.vsdx", SaveFileFormat.Vsdx);
 
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Aspose.Diagram.DiagramException ex)
+        {
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+        }
     }
-    }
+}

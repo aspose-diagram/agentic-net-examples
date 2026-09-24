@@ -1,33 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Ensure the required arguments are provided: input diagram path and output PNG path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputPngPath> [resolutionDPI]");
+            return;
+        }
+
+        // Assign input and output paths from command‑line arguments.
+        string inputPath = args[0];
+        // Guard: verify the input Visio file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = args[1];
+        // Ensure the output directory exists; create it if necessary.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        // Parse optional resolution argument; default to 300 DPI if not supplied or invalid.
+        float resolution = 300f;
+        if (args.Length > 2 && float.TryParse(args[2], out float parsedRes) && parsedRes > 0)
+        {
+            resolution = parsedRes;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Retrieve a shape to be exported (example: first shape on the first page)
-            Shape shape = diagram.Pages[0].Shapes[0];
-
-            // Create ImageSaveOptions for PNG format
+            // Create ImageSaveOptions for PNG output and set the desired resolution (DPI).
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set the desired resolution in DPI (e.g., 300 DPI)
-            saveOptions.Resolution = 300f;
+            saveOptions.Resolution = resolution; // Control image resolution.
 
-            // Export the shape to a PNG file using the custom save options
-            shape.ToImage("shape.png", saveOptions);
+            // Save the diagram (or the active page) as a PNG image using the custom options.
+            diagram.Save(outputPath, saveOptions);
 
+            // Inform the user of successful export.
+            Console.WriteLine($"Diagram saved to '{outputPath}' with resolution {resolution} DPI.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors encountered during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

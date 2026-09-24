@@ -4,60 +4,58 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = @"C:\Input\diagram.vsdx";
+        // Guard: ensure the source file exists
+        if (!File.Exists(inputPath))
         {
-            // Expect two arguments: input Visio file path and output directory.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioEpsExport <inputVisioPath> <outputDirectory>");
-                return;
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputDir = args[1];
+        // Output directory for EPS (vector) files
+        string outputDir = @"C:\Output\EpsPages";
+        // Guard: create the directory if it does not exist
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
 
-            // Verify input file exists.
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Input file not found: {inputPath}");
-                return;
-            }
-
-            // Ensure output directory exists.
-            if (!Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            // Load the Visio diagram.
+        try
+        {
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            int pageCount = diagram.Pages.Count;
-
-            // Aspose.Diagram does not provide a direct EPS export format.
-            // As a vector alternative, we use EMF (Enhanced Metafile) which is supported.
-            // Each page is saved as an EMF file; you may convert EMF to EPS with external tools if needed.
-            for (int i = 0; i < pageCount; i++)
+            // Aspose.Diagram does not provide a native EPS format.
+            // Use EMF (a vector format) and write files with an .eps extension.
+            ImageSaveOptions epsOptions = new ImageSaveOptions(SaveFileFormat.Emf)
             {
-                // Construct output file name for the current page.
-                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.emf");
+                // Export one page at a time
+                PageCount = 1
+            };
 
-                // Configure image save options for EMF format.
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf)
-                {
-                    // Export only the current page.
-                    PageIndex = i,
-                    // Do not export hidden pages.
-                    ExportHiddenPage = false
-                };
+            // Iterate through each page and save as a separate EPS (EMF) file
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Set the page index to export (zero‑based)
+                epsOptions.PageIndex = i;
 
-                // Save the specific page using the configured options.
-                diagram.Save(outputPath, saveOptions);
+                // Build the output file name (e.g., Page_1.eps)
+                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.eps");
 
-                Console.WriteLine($"Saved page {i + 1} to {outputPath}");
+                // Save the current page using the EMF vector data
+                diagram.Save(outputPath, epsOptions);
             }
 
-            Console.WriteLine("Export completed.");
+            Console.WriteLine("Export completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
+}

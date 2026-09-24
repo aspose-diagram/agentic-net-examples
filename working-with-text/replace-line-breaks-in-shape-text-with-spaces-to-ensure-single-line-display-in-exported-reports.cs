@@ -1,6 +1,7 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,40 +10,38 @@ class Program
         try
         {
 
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape contains text
-                    if (shape.Text != null && shape.Text.Value != null)
-                    {
-                        // Get the plain text (without formatting)
-                        string pureText = shape.GetPureText();
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // If the text contains line breaks, replace them with spaces
-                        if (!string.IsNullOrEmpty(pureText) && (pureText.Contains("\r") || pureText.Contains("\n")))
+                    // Process each text run within the shape
+                    foreach (object item in shape.Text.Value)
+                    {
+                        if (item is Txt txt)
                         {
-                            string singleLineText = pureText
+                            // Replace line breaks with spaces
+                            string updated = txt.Text
                                 .Replace("\r\n", " ")
                                 .Replace("\n", " ")
                                 .Replace("\r", " ");
-
-                            // Set the modified text back to the shape (without formatting)
-                            shape.Text.Value.SetWholeText(singleLineText);
-
-                            // Refresh shape data to reflect the text change
-                            shape.RefreshData();
+                            txt.Text = updated;
                         }
                     }
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

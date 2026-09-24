@@ -2,40 +2,39 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class ReplaceAmpersandInShapes
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
+            // Load the Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the current plain text of the shape
-                    string currentText = shape.GetPureText();
-
-                    // Check if the text contains the ampersand character
-                    if (currentText != null && currentText.Contains("&"))
+                    // Ensure the shape has a Text collection
+                    if (shape.Text != null && shape.Text.Value != null)
                     {
-                        // Replace '&' with the word 'and'
-                        string replacedText = currentText.Replace("&", "and");
-
-                        // Apply the replacement to the shape
-                        shape.ReplaceText(currentText, replacedText);
-
-                        // Refresh shape data to update its geometry after text change
-                        shape.RefreshData();
+                        // Iterate over each text run in the shape
+                        for (int i = 0; i < shape.Text.Value.Count; i++)
+                        {
+                            // The collection can contain Txt or Cp objects; process only Txt
+                            if (shape.Text.Value[i] is Txt txt)
+                            {
+                                // Replace '&' with "and"
+                                txt.Text = txt.Text.Replace("&", "and");
+                            }
+                        }
                     }
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
+            // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }

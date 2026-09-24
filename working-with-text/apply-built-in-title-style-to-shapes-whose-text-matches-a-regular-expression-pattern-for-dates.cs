@@ -1,32 +1,22 @@
-using System;
 using System.IO;
+using System;
 using System.Text.RegularExpressions;
+using System.Linq;
 using Aspose.Diagram;
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main()
     {
-        // Input Visio file path (first argument) and output file path (second argument)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // Regular expression to detect dates (e.g., 2023-08-27 or 2023/08/27)
-        Regex dateRegex = new Regex(@"\b\d{4}[-/]\d{2}[-/]\d{2}\b", RegexOptions.Compiled);
-
         try
         {
-            // Load the diagram from the input file
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the built‑in "Title" style sheet (if it exists)
-            StyleSheet? titleStyle = null;
+            // Find the built‑in "Title" style sheet
+            StyleSheet titleStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
                 if (ss.Name == "Title")
@@ -36,26 +26,26 @@ class Program
                 }
             }
 
-            // If the "Title" style is not present, report and exit
             if (titleStyle == null)
             {
-                Console.Error.WriteLine("The built‑in 'Title' style was not found in the document.");
+                Console.WriteLine("Title style not found in the document.");
                 return;
             }
 
-            // Iterate over all pages in the diagram
+            // Regular expression to match dates (e.g., 12/31/2023)
+            Regex dateRegex = new Regex(@"\b\d{2}/\d{2}/\d{4}\b", RegexOptions.Compiled);
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve plain text of the shape; empty text is ignored
-                    string shapeText = shape.Text.Value.Text ?? string.Empty;
+                    // Retrieve plain text of the shape
+                    string shapeText = shape.Text.Value.Text;
 
-                    // Apply the style only if the text matches the date pattern
-                    if (dateRegex.IsMatch(shapeText))
+                    // Apply the Title style if the text matches the date pattern
+                    if (!string.IsNullOrEmpty(shapeText) && dateRegex.IsMatch(shapeText))
                     {
-                        // Assign the Title style to text, fill, and line formatting
                         shape.TextStyle = titleStyle;
                         shape.FillStyle = titleStyle;
                         shape.LineStyle = titleStyle;
@@ -63,14 +53,15 @@ class Program
                 }
             }
 
-            // Save the modified diagram to the output path using VSDX format
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

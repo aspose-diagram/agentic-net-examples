@@ -1,41 +1,40 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
+            try
+            {
 
-            // Paths to the source and destination VDX files
-            string inputPath = "input.vdx";
-            string outputPath = "output.vdx";
+                // Path to the source VDX file
+                string inputPath = "input.vdx";
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
+                // Assume the shape is on the first page
+                Page page = diagram.Pages[0];
 
-            // Retrieve the shape with ID 5
-            Shape shape = page.Shapes.GetShape(5);
+                // Retrieve the shape with ID 5
+                Shape shape = page.Shapes.GetShape(5);
 
-            // Create a dynamic string (example: current timestamp)
-            string dynamicText = $"Generated on {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                // Prepare the new dynamic text
+                string newText = $"Current time: {DateTime.Now}";
 
-            // Replace the shape's existing text
-            shape.Text.Value.Clear();                     // Remove old text runs
-            shape.Text.Value.Add(new Txt(dynamicText));   // Add new text run
+                // Replace the existing text
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt(newText));
 
-            // Save the modified diagram back to VDX format
-            diagram.Save(outputPath, SaveFileFormat.Vdx);
+                // Optional: save the modified diagram to a new file
+                string outputPath = "output.vdx";
+                diagram.Save(outputPath, SaveFileFormat.Vdx);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

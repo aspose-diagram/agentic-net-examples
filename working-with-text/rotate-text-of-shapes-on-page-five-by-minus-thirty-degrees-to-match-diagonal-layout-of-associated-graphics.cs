@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,24 +10,41 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output_rotated.vsdx";
 
-            // Access page five (zero‑based index 4)
-            Page pageFive = diagram.Pages[4];
-
-            // Rotate text of every shape on this page by -30 degrees
-            foreach (Shape shape in pageFive.Shapes)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (shape.TextXForm != null)
+                // Verify that the diagram has at least five pages
+                if (diagram.Pages.Count < 5)
                 {
-                    shape.TextXForm.TxtAngle.Value = -30;   // set rotation angle
-                    shape.RefreshData();                    // apply changes
+                    Console.WriteLine("The diagram does not contain a fifth page.");
+                    return;
                 }
+
+                // Retrieve the fifth page (zero‑based index 4)
+                Page page = diagram.Pages[4];
+
+                // Rotation angle: -30 degrees converted to radians
+                double angleDeg = -30;
+                double angleRad = (Math.PI / 180) * angleDeg;
+
+                // Rotate the text of each non‑deleted shape on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.True)
+                        continue; // Skip shapes marked for deletion
+
+                    shape.TextXForm.TxtAngle.Value = angleRad;
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Text rotation applied and diagram saved successfully.");
 
         }
         catch (System.IO.FileNotFoundException ex)

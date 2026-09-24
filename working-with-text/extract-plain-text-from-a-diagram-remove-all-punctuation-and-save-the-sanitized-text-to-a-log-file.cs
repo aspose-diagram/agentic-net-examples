@@ -1,56 +1,53 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
-class DiagramTextExtractor
+class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output log file path
-            string logPath = "sanitized_text.log";
+            // Path to the source Visio diagram
+            string diagramPath = "input.vsdx";
 
-            // Load the diagram using the appropriate constructor (load from file)
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // List to hold sanitized text lines
-            List<string> sanitizedLines = new List<string>();
+            // Collect all plain text from the diagram
+            StringBuilder allTextBuilder = new StringBuilder();
 
-            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the raw text from the shape
-                    string rawText = shape.GetPureText();
+                    // Retrieve concatenated plain text of the shape
+                    string shapeText = shape.Text?.Value?.Text;
 
-                    if (!string.IsNullOrEmpty(rawText))
+                    if (!string.IsNullOrWhiteSpace(shapeText))
                     {
-                        // Remove all punctuation using a regular expression
-                        string sanitized = Regex.Replace(rawText, @"[\p{P}]", string.Empty);
-                        // Optionally trim whitespace
-                        sanitized = sanitized.Trim();
-
-                        if (sanitized.Length > 0)
-                        {
-                            sanitizedLines.Add(sanitized);
-                        }
+                        allTextBuilder.AppendLine(shapeText);
                     }
                 }
             }
 
-            // Write all sanitized lines to the log file
-            File.WriteAllLines(logPath, sanitizedLines, Encoding.UTF8);
+            // Combine collected text
+            string allText = allTextBuilder.ToString();
 
-            // Clean up resources
-            diagram.Dispose();
+            // Remove punctuation using a regular expression
+            string sanitizedText = Regex.Replace(allText, @"[^\w\s]", string.Empty);
+
+            // Path to the log file where sanitized text will be saved
+            string logPath = "sanitized_log.txt";
+
+            // Write the sanitized text to the log file
+            File.WriteAllText(logPath, sanitizedText);
+
+            // Optional: inform the user
+            Console.WriteLine($"Sanitized text has been written to '{logPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

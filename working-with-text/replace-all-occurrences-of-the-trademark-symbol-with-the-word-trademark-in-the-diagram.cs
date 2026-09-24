@@ -1,33 +1,44 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ReplaceTrademarkSymbol
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load the existing Visio diagram from a file
-            var diagram = new Diagram("input.vsdx");
+            // Paths to the source and destination Visio files
+            string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Iterate through all pages in the diagram
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Replace every occurrence of the trademark symbol (™) with the word "Trademark"
-                    shape.ReplaceText("™", "Trademark");
+                    // Iterate through each text run in the shape
+                    foreach (var item in shape.Text.Value)
+                    {
+                        if (item is Txt txt && txt.Text != null)
+                        {
+                            // Replace the trademark symbol (™) with the word 'Trademark'
+                            if (txt.Text.Contains("\u2122"))
+                            {
+                                txt.Text = txt.Text.Replace("\u2122", "Trademark");
+                            }
+                        }
+                    }
                 }
             }
 
-            // Save the modified diagram to a new file (preserving the original format)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Release resources
-            diagram.Dispose();
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

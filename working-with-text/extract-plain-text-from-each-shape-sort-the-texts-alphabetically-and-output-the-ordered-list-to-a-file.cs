@@ -1,52 +1,53 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
+            // Expect two arguments: input Visio file path and output text file path
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: TextExtractionExample <inputVisioFile> <outputTextFile>");
+                return;
+            }
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output text file path
-            string outputPath = "sorted_texts.txt";
+            string inputPath = args[0];
+            string outputPath = args[1];
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // List to hold all shape texts
-            List<string> allTexts = new List<string>();
+            // Collect plain text from each shape
+            List<string> extractedTexts = new List<string>();
 
-            // Iterate through each page and each shape
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Get the plain text of the shape
-                    string text = shape.GetPureText();
+                    // Skip shapes marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Skip empty or whitespace-only texts
-                    if (!string.IsNullOrWhiteSpace(text))
+                    // Retrieve concatenated plain text of the shape
+                    string shapeText = shape.Text.Value.Text;
+
+                    if (!string.IsNullOrWhiteSpace(shapeText))
                     {
-                        allTexts.Add(text.Trim());
+                        extractedTexts.Add(shapeText.Trim());
                     }
                 }
             }
 
-            // Sort the texts alphabetically (case‑insensitive)
-            allTexts.Sort(StringComparer.OrdinalIgnoreCase);
+            // Sort texts alphabetically (case‑insensitive)
+            extractedTexts.Sort(StringComparer.OrdinalIgnoreCase);
 
             // Write the sorted list to the output file
-            File.WriteAllLines(outputPath, allTexts);
+            File.WriteAllLines(outputPath, extractedTexts);
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.WriteLine($"Extracted {extractedTexts.Count} text items to '{outputPath}'.");
         }
     }
-}

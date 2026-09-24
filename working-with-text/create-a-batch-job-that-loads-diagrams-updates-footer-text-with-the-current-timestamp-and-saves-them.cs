@@ -1,79 +1,60 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
-public class Program
-{
-    public static void Main(string[] args)
+class Program
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Determine the folder to process: use first argument or current directory
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-
-            // Supported Visio extensions
-            string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx" };
-
-            // Get all files with supported extensions in the folder (non‑recursive)
-            var diagramFiles = Directory.GetFiles(folderPath)
-                .Where(f => supportedExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                .ToArray();
-
-            foreach (var filePath in diagramFiles)
+            try
             {
-                try
+
+                // Define input and output directories (adjust as needed)
+                string inputFolder = @"C:\Diagrams\Input";
+                string outputFolder = @"C:\Diagrams\Output";
+
+                // Ensure the output directory exists
+                if (!Directory.Exists(outputFolder))
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Build timestamp string
-                    string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-                    // Update the footer (center) with the timestamp
-                    diagram.HeaderFooter.FooterCenter = $"Generated on {timestamp}";
-
-                    // Choose the appropriate SaveFileFormat based on the original extension
-                    SaveFileFormat format = GetSaveFormat(Path.GetExtension(filePath));
-
-                    // Save the diagram, overwriting the original file
-                    diagram.Save(filePath, format);
-
-                    Console.WriteLine($"Successfully updated footer for: {Path.GetFileName(filePath)}");
+                    Directory.CreateDirectory(outputFolder);
                 }
-                catch (Exception ex)
+
+                // Get all files in the input folder (including subfolders if desired)
+                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+
+                foreach (string filePath in diagramFiles)
                 {
-                    // Report any errors but continue processing other files
-                    Console.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
+                    try
+                    {
+                        // Load the diagram
+                        Diagram diagram = new Diagram(filePath);
+
+                        // Update the footer with the current timestamp
+                        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        diagram.HeaderFooter.FooterRight = $"Generated on {timestamp}";
+
+                        // Prepare the output file path (preserve original file name)
+                        string fileName = Path.GetFileName(filePath);
+                        string outputPath = Path.Combine(outputFolder, fileName);
+
+                        // Save the diagram in its original format (using VSDX as a safe default)
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                        Console.WriteLine($"Processed and saved: {outputPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors for the current file and continue processing others
+                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    }
                 }
+
+                Console.WriteLine("Batch processing completed.");
+
             }
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-        }
+            catch (System.IO.DirectoryNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            }
     }
-
-    // Helper method to map file extensions to SaveFileFormat enum values
-    private static SaveFileFormat GetSaveFormat(string extension)
-    {
-        switch (extension.ToLowerInvariant())
-        {
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vsd":
-                return SaveFileFormat.Vsd;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
-            case ".vsx":
-                return SaveFileFormat.Vsx;
-            case ".vtx":
-                return SaveFileFormat.Vtx;
-            default:
-                // Default to Vsdx if the extension is unexpected
-                return SaveFileFormat.Vsdx;
-        }
     }
-}

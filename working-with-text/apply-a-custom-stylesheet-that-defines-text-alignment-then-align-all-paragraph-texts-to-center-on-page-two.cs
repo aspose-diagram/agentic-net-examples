@@ -10,38 +10,48 @@ class Program
         {
 
             // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a custom stylesheet (ID must be unique)
-            StyleSheet centerStyle = new StyleSheet();
-            centerStyle.ID = diagram.StyleSheets.Count + 1;
-            // Optional: give the style a name if the property exists
-            // centerStyle.Name = "CenterStyle";
+            // Create a custom stylesheet (can be empty; its ID will be used for applying)
+            StyleSheet customStyle = new StyleSheet();
+            customStyle.ID = diagram.StyleSheets.Count + 1;
+            diagram.StyleSheets.Add(customStyle);
 
-            // Add the stylesheet to the diagram
-            diagram.StyleSheets.Add(centerStyle);
-
-            // Access the second page (index 1)
-            Page pageTwo = diagram.Pages[1];
-
-            // Iterate over all shapes on page two
-            foreach (Shape shape in pageTwo.Shapes)
+            // Ensure the diagram has at least two pages
+            if (diagram.Pages.Count > 1)
             {
-                // Apply the custom stylesheet to the shape's text
-                shape.TextStyle = centerStyle;
+                // Get the second page (index 1)
+                Page pageTwo = diagram.Pages[1];
 
-                // Align each paragraph's text to center
-                foreach (Para para in shape.Paras)
+                // Apply the custom stylesheet to the page
+                pageTwo.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
+
+                // Align all paragraph texts to center on this page
+                foreach (Shape shape in pageTwo.Shapes)
                 {
-                    para.HorzAlign.Value = HorzAlignValue.Center;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.False)
+                    {
+                        // Set horizontal alignment for each paragraph
+                        for (int i = 0; i < shape.Paras.Count; i++)
+                        {
+                            shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
+                        }
+
+                        // Optionally set vertical alignment of the text block to middle
+                        shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+                    }
                 }
+            }
+            else
+            {
+                Console.WriteLine("The diagram does not contain a second page.");
             }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

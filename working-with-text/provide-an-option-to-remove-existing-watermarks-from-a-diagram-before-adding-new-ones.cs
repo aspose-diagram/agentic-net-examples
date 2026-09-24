@@ -1,7 +1,7 @@
 using System.IO;
 using System;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,35 +10,44 @@ class Program
         try
         {
 
-            // Load the existing Visio diagram
+            // Paths to the input and output Visio files
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
+
+            // Load the existing diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and remove shapes that are identified as watermarks
+            // ------------------------------------------------------------
+            // Remove existing watermarks
+            // ------------------------------------------------------------
+            // This example assumes watermarks are text shapes that contain the word "Watermark".
+            // Adjust the condition as needed for your specific watermark identification logic.
             foreach (Page page in diagram.Pages)
             {
-                // Collect shape IDs to delete (cannot modify collection while iterating)
-                var idsToDelete = new System.Collections.Generic.List<long>();
+                // Collect shape IDs to delete after the iteration to avoid modifying the collection while iterating
+                List<long> idsToDelete = new List<long>();
 
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify watermark by checking its text content (customize condition as needed)
                     string shapeText = shape.Text.Value.ToString();
-                    if (!string.IsNullOrWhiteSpace(shapeText) && shapeText.Contains("Watermark", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(shapeText) &&
+                        shapeText.Contains("Watermark", StringComparison.OrdinalIgnoreCase))
                     {
                         idsToDelete.Add(shape.ID);
                     }
                 }
 
-                // Mark identified shapes as deleted
-                foreach (long id in idsToDelete)
+                // Mark the identified shapes as deleted
+                foreach (long shapeId in idsToDelete)
                 {
-                    Shape shape = page.Shapes.GetShape(id);
-                    shape.Del = BOOL.True; // Mark shape for deletion
+                    Shape shapeToDelete = page.Shapes.GetShape(shapeId);
+                    shapeToDelete.Del = BOOL.True; // hide/delete the shape
                 }
             }
 
+            // ------------------------------------------------------------
             // Add a new watermark to each page
+            // ------------------------------------------------------------
             foreach (Page page in diagram.Pages)
             {
                 // Retrieve page dimensions (in inches)
@@ -46,31 +55,26 @@ class Program
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
                 // Center position for the watermark
-                double centerX = pageWidth / 2.0;
-                double centerY = pageHeight / 2.0;
+                double pinX = pageWidth / 2;
+                double pinY = pageHeight / 2;
 
-                // Watermark text and styling
-                string watermarkText = "CONFIDENTIAL";
-                string fontName = "Calibri";
-                string fontColor = "#A0A0A0"; // Light gray in hex
-                double fontSizeInPoints = 36; // 36 pt
-                double fontSizeInInches = fontSizeInPoints / 72.0; // Convert points to inches
+                // Use the full page size for the text shape so it spans the page
+                double width = pageWidth;
+                double height = pageHeight;
 
-                // Add the watermark as a full‑page text shape
+                // Add the watermark text shape
                 page.AddText(
-                    centerX,               // PinX (center X)
-                    centerY,               // PinY (center Y)
-                    pageWidth,             // Width (full page)
-                    pageHeight,            // Height (full page)
-                    watermarkText,         // Text
-                    fontName,              // Font name
-                    fontColor,             // Font color (hex)
-                    fontSizeInInches       // Font size (in inches)
-                );
+                    pinX,               // PinX (center X)
+                    pinY,               // PinY (center Y)
+                    width,              // Width of the shape
+                    height,             // Height of the shape
+                    "CONFIDENTIAL",     // Watermark text
+                    "Calibri",          // Font name
+                    "#a5a5a5",          // Font color (hex)
+                    0.25);              // Font size (in inches)
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }

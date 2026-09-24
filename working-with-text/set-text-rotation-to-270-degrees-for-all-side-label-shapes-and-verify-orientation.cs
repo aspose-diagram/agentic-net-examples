@@ -9,40 +9,39 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram from a file stream
+            using (FileStream stream = new FileStream("input.vsdx", FileMode.Open))
             {
-                foreach (Shape shape in page.Shapes)
+                Diagram diagram = new Diagram(stream);
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify side‑label shapes.
-                    // Adjust the condition according to how side‑labels are named in your diagram.
-                    // Here we assume the shape's NameU contains the word "SideLabel".
-                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("SideLabel"))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set the text rotation angle to 270 degrees.
-                        // TxtAngle is a DoubleValue; assign the numeric value to its Value property.
-                        shape.TextXForm.TxtAngle.Value = 270;
+                        // Identify side‑label shapes by their master name
+                        if (shape.Master != null && shape.Master.Name == "SideLabel")
+                        {
+                            // Set text rotation to 270 degrees (convert to radians)
+                            double radians = (Math.PI / 180.0) * 270.0;
+                            shape.TextXForm.TxtAngle.Value = radians;
+
+                            // Verify the rotation was applied correctly
+                            double actualDegrees = shape.TextXForm.TxtAngle.Value * 180.0 / Math.PI;
+                            if (Math.Abs(actualDegrees - 270.0) > 0.1)
+                            {
+                                throw new Exception($"Shape ID {shape.ID} rotation verification failed. Expected 270°, got {actualDegrees}°.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Shape ID {shape.ID} rotation set to 270° successfully.");
+                            }
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram (replace with your desired output path)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Verification: output the TxtAngle of each side‑label shape to the console
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("SideLabel"))
-                    {
-                        double angle = shape.TextXForm.TxtAngle.Value;
-                        Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) TxtAngle = {angle}");
-                    }
-                }
+                // Save the modified diagram
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
             }
 
         }

@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,51 +9,32 @@ class Program
         try
         {
 
-            // Load an existing Visio diagram (replace with your actual file path)
+            // Load an existing Visio diagram (replace the path with your file)
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (adjust index if needed)
+            // Access the first page
             Page page = diagram.Pages[0];
 
             // Retrieve the shape with ID 7
-            Shape shape = page.Shapes.GetShape(7);
+            Shape shape = page.Shapes.GetShape(7L);
             if (shape == null)
             {
-                throw new Exception("Shape with ID 7 not found.");
+                Console.WriteLine("Shape with ID 7 not found.");
+                return;
             }
 
-            // Get the plain text of the shape
-            string plainText = shape.Text.Value.Text;
-            if (string.IsNullOrEmpty(plainText))
-            {
-                throw new Exception("Shape with ID 7 contains no text.");
-            }
-
-            // Clear any existing character formatting runs
-            shape.Chars.Clear();
-
-            // Iterate through each character and apply bold to the first three
-            for (int i = 0; i < plainText.Length; i++)
+            // Apply bold formatting to the first three characters of the shape's text
+            for (int i = 0; i < 3; i++)
             {
                 Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
                 ch.IX = i; // character index
-
-                if (i < 3)
-                {
-                    // Apply bold style
-                    ch.Style.Value = StyleValue.Bold;
-                }
-                else
-                {
-                    // No special style (undefined)
-                    ch.Style.Value = StyleValue.Undefined;
-                }
-
+                ch.Style.Value = StyleValue.Bold; // set bold style
                 shape.Chars.Add(ch);
             }
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine("Bold formatting applied to the first three characters of shape ID 7.");
 
         }
         catch (System.IO.FileNotFoundException ex)

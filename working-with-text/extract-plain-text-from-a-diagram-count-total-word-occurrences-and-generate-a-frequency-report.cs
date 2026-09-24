@@ -1,105 +1,79 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Get the diagram file path from command line or prompt the user
-            string diagramPath;
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                diagramPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the Visio diagram file: ");
-                diagramPath = Console.ReadLine();
-            }
+            // Prompt user for the Visio diagram file path
+            Console.Write("Enter the path to the Visio diagram file: ");
+            string diagramPath = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(diagramPath))
             {
-                Console.WriteLine("No diagram path provided. Exiting.");
+                Console.WriteLine("Invalid file path.");
                 return;
             }
 
             // Load the diagram
-            using (Diagram diagram = new Diagram(diagramPath))
+            Diagram diagram;
+            try
             {
-                // Dictionary to hold word frequencies (case‑insensitive)
-                var wordFreq = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                long totalWordCount = 0;
+                diagram = new Diagram(diagramPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
 
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+            // Dictionary to hold word frequencies (case‑insensitive)
+            var wordCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            int totalWordCount = 0;
+
+            // Regular expression to match words (alphanumeric sequences)
+            Regex wordRegex = new Regex(@"\b\w+\b", RegexOptions.Compiled);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Retrieve plain text from the shape
+                    string text = shape.Text.Value.Text;
+
+                    if (string.IsNullOrWhiteSpace(text))
+                        continue; // Skip shapes without text
+
+                    // Find all word matches
+                    MatchCollection matches = wordRegex.Matches(text);
+                    foreach (Match match in matches)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        string word = match.Value;
+                        if (wordCounts.ContainsKey(word))
+                            wordCounts[word]++;
+                        else
+                            wordCounts[word] = 1;
 
-                        // Retrieve plain text from the shape
-                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
-
-                        // Remove any non‑letter/digit characters (keep spaces)
-                        string cleaned = Regex.Replace(shapeText, @"[^\w\s]", " ");
-
-                        // Split into words based on whitespace
-                        string[] words = cleaned.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-                        foreach (string word in words)
-                        {
-                            // Update total count
-                            totalWordCount++;
-
-                            // Update frequency dictionary
-                            if (wordFreq.ContainsKey(word))
-                                wordFreq[word]++;
-                            else
-                                wordFreq[word] = 1;
-                        }
+                        totalWordCount++;
                     }
-                }
-
-                // Output results
-                Console.WriteLine($"Total words found: {totalWordCount}");
-                Console.WriteLine();
-                Console.WriteLine("Word Frequency Report (descending order):");
-                Console.WriteLine("----------------------------------------");
-
-                // Sort by frequency descending, then alphabetically
-                foreach (var kvp in SortedByFrequency(wordFreq))
-                {
-                    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
                 }
             }
 
-        }
-        catch (Aspose.Diagram.DiagramException ex)
-        {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-        }
-    }
+            // Output total word count
+            Console.WriteLine($"\nTotal words found: {totalWordCount}\n");
 
-    // Helper method to sort the dictionary by frequency descending
-    private static IEnumerable<KeyValuePair<string, int>> SortedByFrequency(Dictionary<string, int> dict)
-    {
-        var list = new List<KeyValuePair<string, int>>(dict);
-        list.Sort((a, b) =>
-        {
-            int cmp = b.Value.CompareTo(a.Value); // descending frequency
-            if (cmp == 0)
-                cmp = string.Compare(a.Key, b.Key, StringComparison.OrdinalIgnoreCase); // alphabetical
-            return cmp;
-        });
-        return list;
+            // Generate frequency report sorted by descending count
+            var sortedWordCounts = wordCounts.OrderByDescending(kvp => kvp.Value)
+                                             .ThenBy(kvp => kvp.Key);
+
+            Console.WriteLine("Word Frequency Report:");
+            foreach (var kvp in sortedWordCounts)
+            {
+                Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+            }
+        }
     }
-}

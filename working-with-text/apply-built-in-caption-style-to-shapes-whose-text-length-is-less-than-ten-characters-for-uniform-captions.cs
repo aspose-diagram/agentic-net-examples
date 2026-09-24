@@ -24,36 +24,36 @@ class Program
                 }
             }
 
+            // If the style is not found, exit with an error
             if (captionStyle == null)
             {
-                Console.WriteLine("Caption style not found in the document. No changes will be applied.");
+                throw new Exception("Caption style not found in the diagram's style sheets.");
             }
-            else
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Get plain text of the shape
+                    string text = shape.Text.Value.ToString();
+
+                    // Apply the Caption style if text length is less than 10 characters
+                    if (text.Length < 10)
                     {
-                        // Skip logically deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve plain text of the shape
-                        string text = shape.Text.Value.Text ?? string.Empty;
-
-                        // Apply the Caption style to shapes with short text (< 10 characters)
-                        if (text.Length < 10)
-                        {
-                            shape.TextStyle = captionStyle;
-                        }
+                        shape.TextStyle = captionStyle;
+                        shape.FillStyle = captionStyle;
+                        shape.LineStyle = captionStyle;
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Caption style applied and diagram saved as output.vsdx.");
             }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

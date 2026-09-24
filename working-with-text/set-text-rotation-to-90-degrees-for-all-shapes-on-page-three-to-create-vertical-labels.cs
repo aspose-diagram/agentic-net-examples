@@ -1,7 +1,6 @@
 using System.IO;
 using System;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,30 +9,36 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file.
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-            // Verify that the diagram has at least three pages.
+            // Verify that the diagram has at least three pages
             if (diagram.Pages.Count < 3)
             {
                 Console.WriteLine("The diagram does not contain a third page.");
+                diagram.Dispose();
                 return;
             }
 
-            // Retrieve the third page (zero‑based index 2).
+            // Access page three (zero‑based index 2)
             Page page = diagram.Pages[2];
 
-            // Rotate the text of every shape on this page by 90 degrees.
-            // Text rotation is specified in radians; 90° = π/2.
-            foreach (Shape shape in page.Shapes)
+            // 90 degrees expressed in radians
+            double angleRadians = Math.PI / 2.0;
+
+            // Apply the rotation to every shape on the page
+            foreach (Aspose.Diagram.Shape shape in page.Shapes)
             {
-                shape.TextXForm.TxtAngle.Value = Math.PI / 2;
+                shape.TextXForm.TxtAngle.Value = angleRadians;
             }
 
-            // Save the modified diagram.
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+            // Clean up
+            diagram.Dispose();
+
+            Console.WriteLine("Text rotation set to 90° for all shapes on page three and saved to output.vsdx.");
 
         }
         catch (System.IO.FileNotFoundException ex)

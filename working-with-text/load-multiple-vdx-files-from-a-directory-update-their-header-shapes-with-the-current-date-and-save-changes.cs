@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
     {
@@ -10,10 +9,10 @@ class Program
             // Specify the directory containing VDX files
             string directoryPath = @"C:\VisioFiles";
 
-            // Validate that the directory exists
+            // Verify the directory exists
             if (!Directory.Exists(directoryPath))
             {
-                Console.WriteLine($"Directory does not exist: {directoryPath}");
+                Console.WriteLine($"Directory not found: {directoryPath}");
                 return;
             }
 
@@ -34,19 +33,20 @@ class Program
                     // Load the diagram
                     Diagram diagram = new Diagram(filePath);
 
-                    // Update header/footer with the current date (centered header)
-                    // Using a formatted date string; you could also use Visio wildcard "&d"
+                    // Update the header center with the current date (e.g., 2026-09-23)
                     diagram.HeaderFooter.HeaderCenter = DateTime.Now.ToString("yyyy-MM-dd");
 
                     // Save the changes back to the same file
                     diagram.Save(filePath, SaveFileFormat.Vdx);
 
-                    Console.WriteLine($"Successfully updated header for: {Path.GetFileName(filePath)}");
+                    Console.WriteLine($"Updated header for: {Path.GetFileName(filePath)}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
+
+            Console.WriteLine("Header update completed.");
         }
     }

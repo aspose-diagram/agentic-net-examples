@@ -21,36 +21,44 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Look for a user-defined cell named "CustomValue"
-                    bool found = false;
-                    foreach (User user in shape.Users)
+                    // Look for a user-defined cell named "MyCustomValue"
+                    bool cellFound = false;
+                    foreach (User userCell in shape.Users)
                     {
-                        if (user.Name == "CustomValue")
+                        if (userCell.Name == "MyCustomValue")
                         {
-                            // Update existing cell value
-                            user.Value.Val = "12345";
-                            found = true;
+                            // Update the existing cell value
+                            userCell.Value.Val = "1234";
+                            userCell.Prompt.Value = "Updated value";
+                            cellFound = true;
                             break;
                         }
                     }
 
                     // If the cell does not exist, create it
-                    if (!found)
+                    if (!cellFound)
                     {
                         User newUser = new User();
-                        newUser.Name = "CustomValue";
-                        newUser.Value.Val = "12345";
+                        newUser.Name = "MyCustomValue";
+                        newUser.Value.Val = "1234";
+                        newUser.Prompt.Value = "Initial value";
                         shape.Users.Add(newUser);
                     }
+
+                    // Apply changes to the shape
+                    shape.RefreshData();
                 }
             }
 
-            // Save a visual preview of the modified diagram as a PNG image
-            string outputPath = "preview.png";
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save(outputPath, saveOptions);
+            // Configure image export options (PNG format)
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            imgOptions.PageIndex = 0; // Export the first page
 
-            Console.WriteLine($"Preview image saved to: {outputPath}");
+            // Save the preview image
+            string outputPath = "preview.png";
+            diagram.Save(outputPath, imgOptions);
+
+            Console.WriteLine($"Preview image saved to {outputPath}");
 
         }
         catch (System.IO.FileNotFoundException ex)

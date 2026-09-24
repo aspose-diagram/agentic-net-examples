@@ -1,75 +1,66 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        static void Main(string[] args)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output PDF file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
-
-        try
-        {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Desired background color in HEX format (e.g., light blue)
-            const string backgroundHex = "#ADD8E6";
-
-            // Iterate over each page to apply the background shape
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Calculate the center point for the rectangle shape
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
+                // Input Visio file path
+                string inputPath = "input.vsdx";
+                // Output PDF file path
+                string outputPath = "output.pdf";
+                // Desired background color (hex string)
+                string backgroundColor = "#ADD8E6"; // Light blue
 
-                // Add a rectangle shape that spans the entire page
-                // Parameters: center X, center Y, width, height, master name, isCalculate flag
-                long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-                // Retrieve the newly added shape using its ID
-                Shape bgShape = page.Shapes.GetShape(shapeId);
+                // Apply background color to each page
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Set fill pattern to solid (1) and apply the background color
-                bgShape.Fill.FillPattern.Value = 1;
-                bgShape.Fill.FillForegnd.Value = backgroundHex;
+                    // Center point of the page
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                // Remove any outline by setting line pattern to none (0)
-                bgShape.Line.LinePattern.Value = 0;
+                    // Draw a rectangle that spans the entire page
+                    long rectId = page.DrawRectangle(pinX, pinY, pageWidth, pageHeight);
+                    Shape bgShape = page.Shapes.GetShape(rectId);
 
-                // Send the background shape to the back so other content appears above it
-                bgShape.SendToBack();
+                    // Set solid fill with the desired color
+                    bgShape.Fill.FillPattern.Value = 1;               // Solid fill
+                    bgShape.Fill.FillForegnd.Value = backgroundColor; // Hex color
 
-                // Lock the shape to prevent selection in the UI
-                bgShape.Protection.LockSelect.Value = BOOL.True;
+                    // Remove outline
+                    bgShape.Line.LinePattern.Value = 0; // No line
+
+                    // Send the shape to the back so it appears behind other content
+                    bgShape.SendToBack();
+
+                    // Make the background shape non‑selectable
+                    bgShape.Protection.LockSelect.Value = BOOL.True;
+                }
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";
+
+                // Save the diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine("Diagram exported to PDF with uniform background color.");
+
             }
-
-            // Configure PDF save options (optional: set default font)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the modified diagram as a PDF using the configured options
-            diagram.Save(outputPath, pdfOptions);
-        }
-        catch (Exception ex)
-        {
-            // Output any errors encountered during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

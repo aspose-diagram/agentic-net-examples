@@ -1,67 +1,45 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
+using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main(string[] args)
     {
-        // Determine input and output file paths from command‑line arguments or defaults
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // Guard: ensure the source Visio file exists before proceeding
-        if (!File.Exists(inputPath))
+        static void Main()
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through every page in the diagram
-            foreach (Page page in diagram.Pages)
+            try
             {
-                // Iterate through every shape on the current page
-                foreach (Shape shape in page.Shapes)
+
+                // Path to the input Visio file
+                string inputPath = "input.vsdx";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Determine whether the shape already has a fill color defined
-                    bool hasColor = false;
-
-                    // Check inherited fill color (theme matrix) – non‑empty string indicates a color
-                    if (shape.InheritFill != null && !string.IsNullOrWhiteSpace(shape.InheritFill.FillForegnd.Value))
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        hasColor = true;
-                    }
-                    // Fallback: check the shape's own fill color if inheritance is not set
-                    else if (shape.Fill != null && !string.IsNullOrWhiteSpace(shape.Fill.FillForegnd.Value))
-                    {
-                        hasColor = true;
-                    }
-
-                    // Apply a preset theme variant only when a color is present
-                    if (hasColor)
-                    {
-                        // Set the preset theme (write‑only property)
-                        shape.PresetTheme = PresetThemeValue.Bubble;
-                        // Set the preset theme variant (write‑only property)
-                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                        // Check if the shape has a fill foreground color defined (i.e., its theme matrix contains a color)
+                        string fillColor = shape.Fill.FillForegnd.Value;
+                        if (!string.IsNullOrWhiteSpace(fillColor))
+                        {
+                            // Apply a preset theme and a specific variant to the shape
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram to the output path using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
     }
-}
+    }

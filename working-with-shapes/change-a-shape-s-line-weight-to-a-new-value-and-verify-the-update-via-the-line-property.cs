@@ -1,55 +1,59 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Retrieve the first shape on the page
+            Shape shape = null;
+            foreach (Shape s in page.Shapes)
             {
-
-                // Load an existing Visio diagram (replace with actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the new line weight (in inches)
-                double newLineWeight = 0.05; // Example: 0.05 inches
-
-                // Retrieve the first shape on the first page
-                Page page = diagram.Pages[0];
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    targetShape = shape;
-                    break;
-                }
-
-                if (targetShape == null)
-                {
-                    throw new Exception("No shape found on the first page to modify.");
-                }
-
-                // Update the shape's line weight
-                targetShape.Line.LineWeight.Value = newLineWeight;
-
-                // Verify the update
-                if (Math.Abs(targetShape.Line.LineWeight.Value - newLineWeight) < 1e-9)
-                {
-                    Console.WriteLine($"Line weight successfully updated to {newLineWeight} inches.");
-                }
-                else
-                {
-                    throw new Exception("Line weight update verification failed.");
-                }
-
-                // Save the modified diagram (optional)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                shape = s;
+                break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (shape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception("No shape found on the first page.");
             }
+
+            // New line weight value (in inches)
+            double newLineWeight = 0.05;
+
+            // Set the line weight
+            shape.Line.LineWeight.Value = newLineWeight;
+
+            // Verify that the line weight was updated
+            if (Math.Abs(shape.Line.LineWeight.Value - newLineWeight) > 0.0001)
+            {
+                throw new Exception($"Line weight verification failed. Expected {newLineWeight}, but got {shape.Line.LineWeight.Value}.");
+            }
+            else
+            {
+                Console.WriteLine($"Line weight successfully set to {shape.Line.LineWeight.Value} inches.");
+            }
+
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

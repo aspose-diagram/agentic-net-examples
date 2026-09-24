@@ -3,58 +3,68 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioToPdfBatch
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Prompt user for the Visio file path
+        Console.Write("Enter the full path to the Visio file: ");
+        string visioPath = Console.ReadLine();
+
+        // Guard: ensure the file path is not empty and the file exists
+        if (string.IsNullOrWhiteSpace(visioPath) || !File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string visioPath = "input.vsdx";
-
-            // Folder where individual page PDFs will be saved
-            string outputFolder = "OutputPdfs";
-
             // Load the Visio diagram
             Diagram diagram = new Diagram(visioPath);
 
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
+            // Prepare output folder for the per‑page PDFs
+            string outputFolder = Path.Combine(Path.GetDirectoryName(visioPath) ?? "", "PdfPages");
+            Directory.CreateDirectory(outputFolder);
 
             // Iterate through each page in the diagram
-            int pageIndex = 0;
-            foreach (Page page in diagram.Pages)
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Define the output PDF file name for the current page
-                string pdfFile = Path.Combine(outputFolder, $"Page_{pageIndex + 1}.pdf");
+                // Retrieve the current page
+                Page page = diagram.Pages[i];
 
-                // Configure PDF save options to render only the current page
+                // Build a safe file name for the page PDF
+                string pageName = string.IsNullOrWhiteSpace(page.NameU) ? $"Page_{page.ID}" : page.NameU;
+                string safePageName = string.Concat(pageName.Split(Path.GetInvalidFileNameChars()));
+                string pdfPath = Path.Combine(outputFolder, $"{safePageName}.pdf");
+
+                // Configure PDF save options to export only the current page
                 PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    PageIndex = pageIndex,   // Zero‑based index of the page to render
-                    PageCount = 1,           // Render only one page
-                    SplitMultiPages = false // Keep the page as a single PDF document
+                    PageIndex = i,          // zero‑based index of the page to export
+                    PageCount = 1,          // export a single page
+                    ExportHiddenPage = false,
+                    DefaultFont = "Arial"
                 };
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the specific page as a PDF
-                diagram.Save(pdfFile, pdfOptions);
+                // Save the single page as PDF
+                diagram.Save(pdfPath, pdfOptions);
 
-                // Note: Aspose.Diagram does not provide a direct API to add bookmarks for each shape.
-                // If bookmarks are required, further processing with a PDF manipulation library
-                // would be needed after this step.
+                // NOTE: Adding bookmarks for each shape requires Aspose.Pdf's OutlineItem class.
+                // The current project does not reference Aspose.Pdf, so bookmark creation is omitted
+                // to keep the code compilable. If Aspose.Pdf is added, the bookmark logic can be
+                // re‑introduced here.
 
-                pageIndex++;
+                Console.WriteLine($"Exported page '{pageName}' to PDF: {pdfPath}");
             }
 
-            // Release resources
-            diagram.Dispose();
-
+            Console.WriteLine("Batch conversion completed.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

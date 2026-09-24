@@ -1,43 +1,59 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for shape operations per guidelines
 
-class ValidateDistanceFromGround
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine the input Visio file path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Flag to indicate whether any shape violates the rule
+            bool violationFound = false;
 
-            // Iterate through all pages and shapes
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has 3D format information
-                    if (shape.ThreeDFormat != null && shape.ThreeDFormat.DistanceFromGround != null)
-                    {
-                        // Retrieve the distance value (in points)
-                        double distance = shape.ThreeDFormat.DistanceFromGround.Value;
+                    // Retrieve the DistanceFromGround value (in points) from the shape's 3D format
+                    double distance = shape.ThreeDFormat.DistanceFromGround.Value;
 
-                        // Validate that the distance does not exceed 100 points
-                        if (distance > 100)
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' exceeds the limit: DistanceFromGround = {distance} points.");
-                        }
+                    // Validate that the distance does not exceed 100 points
+                    if (distance > 100.0)
+                    {
+                        // Report the violation with shape ID and page name
+                        Console.WriteLine($"Violation: Shape ID {shape.ID} on page \"{page.NameU}\" has DistanceFromGround = {distance} points (exceeds 100).");
+                        violationFound = true;
                     }
                 }
             }
 
-            Console.WriteLine("Validation completed.");
-
+            // Summarize the validation result
+            if (!violationFound)
+            {
+                Console.WriteLine("All shapes have DistanceFromGround ≤ 100 points.");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

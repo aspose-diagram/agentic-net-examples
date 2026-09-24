@@ -1,43 +1,34 @@
-using System;
+using System.IO;
 using Aspose.Diagram;
+using System;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
-            {
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Select the shape you want to modify (e.g., first shape on the first page)
+            Shape shape = diagram.Pages[0].Shapes[0];
 
-                // Choose the page (first page in this example)
-                Page page = diagram.Pages[0];
+            // Convert 2.5 centimeters to inches (Aspose.Diagram uses inches for size)
+            double heightCm = 2.5;
+            double heightInches = heightCm * 0.393701; // 1 cm = 0.393701 inches
 
-                // Identify the shape to modify.
-                // Replace the shape ID with the actual ID of the target shape.
-                long shapeId = 1; // example ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Set the height of the shape using the SetHeight method
+            shape.SetHeight(heightInches);
 
-                // Convert 2.5 centimeters to inches (1 cm = 0.393700787 inches)
-                double heightInInches = 2.5 * 0.393700787;
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
-                // Set the new height using the SetHeight method
-                shape.SetHeight(heightInInches);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Shape ID {shapeId} height set to 2.5 cm and saved to {outputPath}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

@@ -1,10 +1,11 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
@@ -12,15 +13,16 @@ class Program
             // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Reset the shape's preset theme to the default (NoTheme)
-                    shape.PresetTheme = PresetThemeValue.NoTheme;
-                }
-            }
+            // Access the first page (adjust index as needed)
+            Page page = diagram.Pages[0];
+
+            // Retrieve a shape by its ID (replace 1 with the actual shape ID)
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Reset the preset theme properties to their default (zero) values
+            shape.PresetTheme = (PresetThemeValue)0;
+            shape.PresetThemeVariant = (PresetThemeVariantValue)0;
+            shape.PresetThemeQuickStyle = (PresetQuickStyleValue)0;
 
             // Save the modified diagram
             diagram.Save("output.vsdx", SaveFileFormat.Vsdx);

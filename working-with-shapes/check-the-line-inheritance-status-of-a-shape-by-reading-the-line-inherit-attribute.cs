@@ -1,52 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving; // Required for shape operations as per guidelines
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file (adjust as needed)
-        string inputPath = "sample.vsdx";
-
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Input diagram file path
+        string diagramPath = "input.vsdx";
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Input shape ID to inspect (replace with actual ID as needed)
+        long shapeId = 1;
+        // Guard: shape ID must be positive
+        if (shapeId <= 0)
+        {
+            Console.Error.WriteLine("Invalid shape ID specified.");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Retrieve the first page (assuming the shape is on page 0)
+            Page page = diagram.Pages[0];
+
+            // Attempt to get the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure both the Line and InheritLine objects are available
-                    if (shape.Line != null && shape.InheritLine != null)
-                    {
-                        // Compare a representative line property (LineColor) with its inherited counterpart
-                        bool isInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
-
-                        // Output the inheritance status for the current shape
-                        Console.WriteLine($"Shape ID {shape.ID}: Line inheritance = {isInherited}");
-                    }
-                    else
-                    {
-                        // Inform that line inheritance information is not available for this shape
-                        Console.WriteLine($"Shape ID {shape.ID}: Line inheritance information not available.");
-                    }
-                }
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                return;
             }
+
+            // Compare a line property (e.g., LineColor) with its inherited counterpart
+            // Matching values indicate the line formatting is inherited
+            bool isLineColorInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+            bool isLineWeightInherited = shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value;
+            bool isLinePatternInherited = shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
+
+            // Determine overall inheritance status (all three must match)
+            bool isLineInherited = isLineColorInherited && isLineWeightInherited && isLinePatternInherited;
+
+            // Output the inheritance status
+            Console.WriteLine($"Shape ID: {shapeId}");
+            Console.WriteLine($"Line Color Inherited: {isLineColorInherited}");
+            Console.WriteLine($"Line Weight Inherited: {isLineWeightInherited}");
+            Console.WriteLine($"Line Pattern Inherited: {isLinePatternInherited}");
+            Console.WriteLine($"Overall Line Inheritance: {isLineInherited}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

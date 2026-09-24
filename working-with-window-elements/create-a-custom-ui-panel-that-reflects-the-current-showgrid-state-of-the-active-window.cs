@@ -1,59 +1,75 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        // Path to an existing diagram (if any)
+        string filePath = "sample.vsdx";
+
+        Diagram diagram;
+        if (File.Exists(filePath))
         {
-            // Create a new diagram instance
-            Diagram diagram = new Diagram();
+            // Load existing diagram
+            diagram = new Diagram(filePath);
+        }
+        else
+        {
+            // Create a new empty diagram
+            diagram = new Diagram();
 
-            // Ensure there is at least one window; if not, add a default drawing window
-            if (diagram.Windows.Count == 0)
-            {
-                Window defaultWindow = new Window
-                {
-                    WindowType = WindowTypeValue.Drawing,
-                    WindowState = WindowStateValue.Maximized,
-                    WindowWidth = 800,
-                    WindowHeight = 600,
-                    ShowGrid = BOOL.True // initial grid visibility
-                };
-                diagram.Windows.Add(defaultWindow);
-            }
+            // Ensure the diagram has at least one window
+            Window win = new Window();
+            win.WindowType = WindowTypeValue.Drawing;
+            win.WindowState = WindowStateValue.Maximized;
+            win.WindowWidth = 1100;
+            win.WindowHeight = 700;
+            diagram.Windows.Add(win);
+        }
 
-            // Use the first window as the active window
+        // If for some reason there are still no windows, add a default one
+        if (diagram.Windows.Count == 0)
+        {
+            Window win = new Window();
+            win.WindowType = WindowTypeValue.Drawing;
+            win.WindowState = WindowStateValue.Maximized;
+            win.WindowWidth = 1100;
+            win.WindowHeight = 700;
+            diagram.Windows.Add(win);
+        }
+
+        // Simple console UI loop to reflect and toggle ShowGrid state
+        while (true)
+        {
             Window activeWindow = diagram.Windows[0];
+            Console.WriteLine("Current ShowGrid state: " + (activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled"));
+            Console.WriteLine("Enter 't' to toggle ShowGrid, 's' to save and exit, or any other key to refresh.");
 
-            while (true)
+            string input = Console.ReadLine();
+            if (input == null) continue;
+
+            input = input.Trim().ToLower();
+
+            if (input == "t")
             {
-                // Display current ShowGrid state
-                Console.WriteLine($"Current ShowGrid state: {(activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled")}");
-                Console.WriteLine("Enter 't' to toggle grid visibility, or any other key to exit.");
-
-                string input = Console.ReadLine();
-                if (input == null || input.ToLower() != "t")
-                {
-                    break;
-                }
-
                 // Toggle the ShowGrid property
-                activeWindow.ShowGrid = activeWindow.ShowGrid == BOOL.True ? BOOL.False : BOOL.True;
-
-                // Optionally, save the diagram to reflect the change
-                try
-                {
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                    Console.WriteLine("Diagram saved successfully with updated grid state.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error saving diagram: {ex.Message}");
-                }
-
-                Console.WriteLine(); // Blank line for readability
+                activeWindow.ShowGrid = (activeWindow.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
+                Console.WriteLine("ShowGrid toggled.");
             }
-
-            Console.WriteLine("Exiting UI panel.");
+            else if (input == "s")
+            {
+                // Save the diagram and exit
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved to output.vsdx");
+                break;
+            }
+            else
+            {
+                // Refresh display
+                continue;
+            }
         }
     }
+}

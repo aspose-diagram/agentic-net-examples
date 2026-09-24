@@ -1,54 +1,71 @@
 using System;
 using System.IO;
-using System.Drawing.Drawing2D;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportShapesAsJpeg
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the source Visio file
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Directory where individual shape images will be saved
+        string outputDir = "ShapeImages";
+        if (!Directory.Exists(outputDir))
+            Directory.CreateDirectory(outputDir);
+
         try
         {
-
-            // Path to the source Visio file
-            string visioFilePath = "input.vsdx";
-
-            // Directory where individual shape images will be saved
-            string outputFolder = "ExportedShapes";
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(visioFilePath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure high‑quality JPEG export (anti‑aliasing not supported via property)
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+            imgOptions.JpegQuality = 100;   // Maximum quality
+            imgOptions.Resolution = 300f;   // 300 DPI for high resolution
+
+            int exportedCount = 0;
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Build a unique file name for each shape
+                    string fileName = $"Page{page.NameU}_Shape{shape.ID}_{exportedCount}.jpg";
+                    string outputPath = Path.Combine(outputDir, fileName);
+
+                    try
                     {
-                        // Configure image save options for high‑quality JPEG with anti‑aliasing
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                        imgOptions.SmoothingMode = SmoothingMode.AntiAlias; // enable anti‑aliasing
-                        imgOptions.JpegQuality = 100;                       // maximum JPEG quality
-                        imgOptions.Resolution = 300;                        // 300 DPI for high resolution
-
-                        // Build a unique file name for the shape image
-                        string shapeFileName = Path.Combine(
-                            outputFolder,
-                            $"Page_{page.ID}_Shape_{shape.ID}.jpg");
-
-                        // Export the shape to a JPEG file using the specified options
-                        shape.ToImage(shapeFileName, imgOptions);
+                        // Export the shape as a JPEG image
+                        shape.ToImage(outputPath, imgOptions);
+                        exportedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors that occur while exporting a shape
+                        Console.Error.WriteLine($"Error exporting shape ID {shape.ID}: {ex.Message}");
                     }
                 }
             }
 
+            Console.WriteLine($"Exported {exportedCount} shapes to folder: {outputDir}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during diagram loading or processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

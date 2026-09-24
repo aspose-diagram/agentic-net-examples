@@ -10,24 +10,34 @@ class Program
         try
         {
 
-            // Load the Visio diagram from a file
+            // Load an existing Visio diagram
             Diagram diagram = new Diagram("input.vsdx");
 
-            // Access the first page (index 0) and the first shape on that page
+            // Access the first page
             Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
 
-            // Configure HTML save options to preserve visual styling
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            // Find the first non‑deleted shape on the page
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                // Save the shape as a single HTML file (includes embedded resources)
-                SaveAsSingleFile = true,
-                // Set resolution (dots per inch) for rendered images within the HTML
-                Resolution = 96
-            };
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // Export the shape to an HTML file using the built‑in ToHTML method
-            shape.ToHTML("shape.html", htmlOptions);
+            if (targetShape == null)
+            {
+                Console.WriteLine("No visible shape found on the page.");
+                return;
+            }
+
+            // Export the shape to HTML while preserving its visual styling
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            targetShape.ToHTML("shape.html", htmlOptions);
+
+            Console.WriteLine("Shape successfully exported to HTML.");
 
         }
         catch (System.IO.FileNotFoundException ex)

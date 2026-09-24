@@ -1,48 +1,49 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one window; create one if none exist
+            if (diagram.Windows.Count == 0)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-
-                // Load the diagram from the file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there is at least one window; create one if none exist
-                if (diagram.Windows.Count == 0)
-                {
-                    Window newWindow = new Window();
-                    // Set the window type to a drawing window (required for visibility settings)
-                    newWindow.WindowType = WindowTypeValue.Drawing;
-                    diagram.Windows.Add(newWindow);
-                }
-
-                // Access the first window in the collection
-                Window window = diagram.Windows[0];
-
-                // Update visibility properties using BOOL enum values
-                window.ShowGrid = BOOL.True;                // Show grid
-                window.ShowGuides = BOOL.True;              // Show guides
-                window.ShowRulers = BOOL.True;              // Show rulers
-                window.ShowPageBreaks = BOOL.True;          // Show page breaks
-                window.ShowConnectionPoints = BOOL.True;    // Show connection points
-                window.DynamicGridEnabled = BOOL.True;      // Enable dynamic grid
-
-                // Save the modified diagram to a new file
-                string outputPath = "output_modified.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Window newWindow = new Window();
+                newWindow.WindowType = WindowTypeValue.Drawing;
+                newWindow.WindowState = WindowStateValue.Maximized;
+                newWindow.WindowWidth = 1100;
+                newWindow.WindowHeight = 700;
+                diagram.Windows.Add(newWindow);
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Update visibility-related properties for all windows in the diagram
+            foreach (Window win in diagram.Windows)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                win.ShowGrid = BOOL.True;                 // Show grid lines
+                win.ShowGuides = BOOL.True;               // Show alignment guides
+                win.ShowRulers = BOOL.True;               // Show rulers
+                win.ShowPageBreaks = BOOL.True;           // Show page break indicators
+                win.DynamicGridEnabled = BOOL.True;       // Enable dynamic grid
+                win.ShowConnectionPoints = BOOL.True;     // Show connection points
             }
+
+            // Save the modified diagram to a new file
+            string outputPath = "output_modified.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

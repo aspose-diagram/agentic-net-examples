@@ -1,71 +1,106 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class Program
+namespace DiagramBoundingBoxReport
 {
-    static void Main()
+    // DTO for JSON serialization
+    public class ShapeBoundingBox
     {
-        try
+        public long ShapeId { get; set; }
+        public double PinX { get; set; }
+        public double PinY { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double Angle { get; set; }
+        public double Left { get; set; }
+        public double Right { get; set; }
+        public double Top { get; set; }
+        public double Bottom { get; set; }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
         {
-
-            // Input Visio file and output JSON report paths
-            string diagramPath = "input.vsdx";
-            string jsonReportPath = "report.json";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Select the page and shape to rotate (example: first shape on the first page)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0]; // replace with specific shape selection as needed
-
-            // Desired rotation angle in degrees
-            double rotationAngle = 45.0;
-
-            // Apply rotation
-            shape.XForm.Angle.Value = rotationAngle;
-
-            // Refresh shape data so geometry reflects the new rotation
-            shape.RefreshData();
-
-            // Retrieve updated geometry values
-            double pinX = shape.XForm.PinX.Value;      // center X
-            double pinY = shape.XForm.PinY.Value;      // center Y
-            double width = shape.XForm.Width.Value;
-            double height = shape.XForm.Height.Value;
-
-            // Calculate bounding box coordinates (left, top, right, bottom)
-            double left = pinX - width / 2.0;
-            double top = pinY - height / 2.0;
-            double right = left + width;
-            double bottom = top + height;
-
-            // Build a report object
-            var report = new
+            try
             {
-                ShapeId = shape.ID,
-                RotationAngle = rotationAngle,
-                BoundingBox = new
+
+                // Input Visio file path (adjust as needed)
+                string inputPath = "input.vsdx";
+
+                // Output JSON report path
+                string jsonReportPath = "BoundingBoxReport.json";
+
+                // Load the diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Ensure there is at least one page and one shape
+                if (diagram.Pages.Count == 0)
                 {
-                    Left = left,
-                    Top = top,
-                    Right = right,
-                    Bottom = bottom
+                    throw new Exception("The diagram contains no pages.");
                 }
-            };
 
-            // Serialize the report to formatted JSON
-            string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+                Page page = diagram.Pages[0];
 
-            // Write the JSON report to a file
-            File.WriteAllText(jsonReportPath, json);
+                if (page.Shapes.Count == 0)
+                {
+                    throw new Exception("The first page contains no shapes.");
+                }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Retrieve the first shape on the page
+                Shape shape = page.Shapes[0];
+
+                // Rotate the shape to a new angle (degrees)
+                double newAngle = 45.0;
+                shape.XForm.Angle.Value = newAngle;
+
+                // Capture bounding box after rotation
+                double pinX = shape.XForm.PinX.Value;
+                double pinY = shape.XForm.PinY.Value;
+                double width = shape.XForm.Width.Value;
+                double height = shape.XForm.Height.Value;
+
+                // Calculate bounding box edges (Visio uses center coordinates)
+                double left = pinX - (width / 2.0);
+                double right = pinX + (width / 2.0);
+                double top = pinY + (height / 2.0);
+                double bottom = pinY - (height / 2.0);
+
+                // Prepare DTO
+                ShapeBoundingBox bbox = new ShapeBoundingBox
+                {
+                    ShapeId = shape.ID,
+                    PinX = pinX,
+                    PinY = pinY,
+                    Width = width,
+                    Height = height,
+                    Angle = newAngle,
+                    Left = left,
+                    Right = right,
+                    Top = top,
+                    Bottom = bottom
+                };
+
+                // Serialize to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(bbox, jsonOptions);
+
+                // Write JSON report to file
+                File.WriteAllText(jsonReportPath, json);
+
+                // Optionally, save the modified diagram (e.g., to a new file)
+                string outputDiagramPath = "output_modified.vsdx";
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }
 }

@@ -1,80 +1,56 @@
-using System;
 using System.IO;
+using System;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        // Determine input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output_modified.vsdx";
-
-        // Guard: ensure the input Visio file exists before proceeding
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over every page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load an existing Visio diagram
+            Diagram diagram = new Diagram("input.vsdx");
+
+            // Access the first page and a shape on that page (adjust IDs as needed)
+            Page page = diagram.Pages[0];
+            Shape shape = page.Shapes.GetShape(1); // replace 1 with the actual shape ID
+
+            // Ensure the shape contains text
+            if (shape != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
             {
-                // Iterate over every shape on the current page
-                foreach (Shape shape in page.Shapes)
+                string plainText = shape.Text.Value.Text;
+                double numericFontSizeInches = 14.0 / 72.0; // 14 pt in inches
+
+                // Iterate over each character in the plain text
+                for (int i = 0; i < plainText.Length; i++)
                 {
-                    // Verify the shape contains text (non‑null and not just whitespace)
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                    char currentChar = plainText[i];
+
+                    // Find the corresponding Char object by its index (IX)
+                    foreach (Aspose.Diagram.Char ch in shape.Chars)
                     {
-                        // Retrieve the plain text of the shape
-                        string plainText = shape.Text.Value.Text;
-
-                        // Clear any existing character‑level formatting to start fresh
-                        shape.Chars.Clear();
-
-                        // Process each character individually
-                        for (int i = 0; i < plainText.Length; i++)
+                        if (ch.IX == i)
                         {
-                            // Current character from the shape's text
-                            char currentChar = plainText[i];
-
-                            // Create a new Aspose.Diagram.Char object for this character
-                            Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-
-                            // Set the character index (IX) to match its position in the string
-                            charFormat.IX = i;
-
-                            // If the character is a digit, increase its font size (e.g., 14 pt)
+                            // If the character is a digit, change its font size
                             if (char.IsDigit(currentChar))
                             {
-                                // Font size is specified in inches (points ÷ 72)
-                                charFormat.Size.Value = 14.0 / 72.0;
+                                ch.Size.Value = numericFontSizeInches;
                             }
-                            else
-                            {
-                                // For non‑numeric characters, keep a standard size (e.g., 10 pt)
-                                charFormat.Size.Value = 10.0 / 72.0;
-                            }
-
-                            // Add the character formatting to the shape's Char collection
-                            shape.Chars.Add(charFormat);
+                            // Non‑numeric characters retain their existing size
+                            break;
                         }
                     }
                 }
             }
 
-            // Save the modified diagram to the output file using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+
         }
-        catch (Exception ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

@@ -1,55 +1,93 @@
-using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Xml;
 using Aspose.Diagram;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Load the Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Keyword to search for
-            string keyword = "YourKeyword";
-
-            // List to hold IDs of matching shapes
-            List<long> matchingShapeIds = new List<long>();
-
-            // Iterate through all pages and their shapes
-            foreach (Page page in diagram.Pages)
+            // Get diagram file path
+            string diagramPath;
+            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Retrieve the plain text of the shape
-                    string shapeText = shape.GetPureText();
+                diagramPath = args[0];
+            }
+            else
+            {
+                Console.Write("Enter the path to the Visio diagram file: ");
+                diagramPath = Console.ReadLine();
+            }
 
-                    // Check if the text contains the keyword (case‑insensitive)
-                    if (!string.IsNullOrEmpty(shapeText) &&
-                        shapeText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            // Get keyword to search for
+            string keyword;
+            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+            {
+                keyword = args[1];
+            }
+            else
+            {
+                Console.Write("Enter the keyword to search in SolutionXML: ");
+                keyword = Console.ReadLine();
+            }
+
+            if (string.IsNullOrWhiteSpace(diagramPath) || string.IsNullOrWhiteSpace(keyword))
+            {
+                Console.WriteLine("Diagram path and keyword are required.");
+                return;
+            }
+
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // List to hold found shape IDs
+            List<string> foundShapeIds = new List<string>();
+
+            // Iterate through all SolutionXML elements in the diagram
+            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+            {
+                if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
+                    continue;
+
+                XmlDocument xmlDoc = new XmlDocument();
+                try
+                {
+                    xmlDoc.LoadXml(solutionXml.XmlValue);
+                }
+                catch (XmlException)
+                {
+                    // Skip malformed XML
+                    continue;
+                }
+
+                // Search every node for the keyword in its inner text
+                XmlNodeList allNodes = xmlDoc.SelectNodes("//*");
+                foreach (XmlNode node in allNodes)
+                {
+                    if (node.InnerText != null && node.InnerText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
                     {
-                        matchingShapeIds.Add(shape.ID);
+                        // If the node has an attribute named "ID", capture its value
+                        XmlAttribute idAttr = node.Attributes?["ID"];
+                        if (idAttr != null && !string.IsNullOrWhiteSpace(idAttr.Value))
+                        {
+                            foundShapeIds.Add(idAttr.Value);
+                        }
                     }
                 }
             }
 
-            // Output the IDs of shapes that contain the keyword
-            Console.WriteLine($"Shapes containing keyword \"{keyword}\":");
-            foreach (long id in matchingShapeIds)
+            // Output the results
+            if (foundShapeIds.Count == 0)
             {
-                Console.WriteLine($"Shape ID: {id}");
+                Console.WriteLine($"No shape IDs found containing the keyword \"{keyword}\" in SolutionXML.");
             }
-
-            // Optional: save the diagram if modifications were made
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            else
+            {
+                Console.WriteLine($"Shape IDs containing the keyword \"{keyword}\":");
+                foreach (string id in foundShapeIds)
+                {
+                    Console.WriteLine(id);
+                }
+            }
         }
     }
-}

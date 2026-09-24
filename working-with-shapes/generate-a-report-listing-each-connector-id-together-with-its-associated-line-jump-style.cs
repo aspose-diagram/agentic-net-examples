@@ -8,26 +8,24 @@ class Program
             try
             {
 
-                // Path to the Visio file (adjust as needed)
+                // Path to the Visio file (replace with your actual file path)
                 string diagramPath = "input.vsdx";
 
                 // Load the diagram
                 Diagram diagram = new Diagram(diagramPath);
 
-                // Iterate through all pages
+                // Iterate through all pages and shapes to find connectors
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify connector shapes (1‑D shapes)
+                        // Connectors are 1‑D shapes (OneD == true)
                         if (shape.OneD)
                         {
-                            // Retrieve the line jump style from the connector's layout
+                            long connectorId = shape.ID;
+                            // Retrieve the line jump style from the layout sub‑object
                             var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-
-                            // Output connector ID and its line jump style
-                            Console.WriteLine($"Connector ID: {shape.ID}, Line Jump Style: {jumpStyle}");
+                            Console.WriteLine($"Connector ID: {connectorId}, Line Jump Style: {jumpStyle}");
                         }
                     }
                 }

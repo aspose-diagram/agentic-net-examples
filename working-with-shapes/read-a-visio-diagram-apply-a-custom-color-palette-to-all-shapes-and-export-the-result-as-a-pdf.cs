@@ -1,69 +1,71 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Input Visio file path
+            string inputPath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define a custom color palette (hex strings)
+            string[] palette = new string[]
             {
+                "#FF5733", // reddish
+                "#33FF57", // greenish
+                "#3357FF", // bluish
+                "#F1C40F", // yellow
+                "#9B59B6", // purple
+                "#E67E22"  // orange
+            };
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output PDF file path
-                string outputPath = "output.pdf";
+            int colorIndex = 0;
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define a custom color palette (hex color strings)
-                string[] palette = new string[]
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    "#FF5733", // reddish
-                    "#33FF57", // greenish
-                    "#3357FF", // bluish
-                    "#FF33A8", // pink
-                    "#A833FF", // purple
-                    "#33FFF5"  // cyan
-                };
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                // Apply colors to all shapes in all pages
-                int colorIndex = 0;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Apply fill color from the palette
+                    string fillColor = palette[colorIndex % palette.Length];
+                    shape.Fill.FillForegnd.Value = fillColor;
+                    shape.Fill.FillPattern.Value = 1; // solid fill
 
-                        // Ensure the shape has a Fill object
-                        if (shape.Fill != null)
-                        {
-                            // Set solid fill pattern
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid
-                            // Assign a color from the palette
-                            shape.Fill.FillForegnd.Value = palette[colorIndex % palette.Length];
-                            colorIndex++;
-                        }
-                    }
+                    // Optionally set line color and weight
+                    shape.Line.LineColor.Value = "#000000"; // black border
+                    shape.Line.LineWeight.Value = 0.02; // thickness in inches
+
+                    colorIndex++;
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Save the diagram as PDF
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Diagram exported to PDF successfully.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Prepare PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Export the diagram as PDF
+            string outputPath = "output.pdf";
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine("Diagram exported to PDF successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

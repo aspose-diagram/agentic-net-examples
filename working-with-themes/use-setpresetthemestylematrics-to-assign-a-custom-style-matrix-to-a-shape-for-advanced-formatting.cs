@@ -1,36 +1,48 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main()
         {
+            try
+            {
 
-            // Load an existing Visio file (create/load rule)
-            Diagram diagram = new Diagram("input.vsdx");
+                // Create a new blank diagram
+                Diagram diagram = new Diagram();
 
-            // Get the first page
-            Page page = diagram.Pages[0];
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Get a shape from the page (skip the background shape with ID 1)
-            Shape shape = page.Shapes[1];
+                // Add a rectangle shape to the page
+                // Parameters: pinX, pinY, master name, isCalculate (bool)
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Apply a preset theme style matrix:
-            //   - Style row: Style3
-            //   - Color column: Color4
-            shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style3, PresetColorMatricsValue.Color4);
+                // Retrieve the Shape object using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Save the modified diagram (save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Apply a preset theme and variant to the shape
+                shape.PresetTheme = PresetThemeValue.Bubble;
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+                // Assign a custom style matrix (style and color) for advanced formatting
+                shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color7);
+
+                // Optionally add some text to the shape
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Themed Shape"));
+
+                // Save the diagram to a VSDX file
+                string outputPath = "ThemedDiagram.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+
+            }
+            catch (Aspose.Diagram.DiagramException ex)
+            {
+                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            }
     }
-}
+    }

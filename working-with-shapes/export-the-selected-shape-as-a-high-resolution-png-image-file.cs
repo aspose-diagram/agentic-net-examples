@@ -1,58 +1,62 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main(string[] args)
+        try
         {
-            try
+
+            // Path to the source Visio file
+            string sourcePath = "input.vsdx";
+
+            // Load the diagram
+            Diagram diagram = new Diagram(sourcePath);
+
+            // Define the name of the shape to export
+            string targetShapeName = "MyShape";
+
+            // Find the shape with the specified universal name (NameU)
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string diagramPath = "input.vsdx";
-
-                // Output PNG file path
-                string outputPngPath = "selectedShape.png";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Choose the page (first page in this example)
-                Page page = diagram.Pages[0];
-
-                // Find the first non‑deleted shape on the page
-                Shape selectedShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Del == BOOL.False)
+                    if (shape.NameU == targetShapeName)
                     {
-                        selectedShape = shape;
+                        targetShape = shape;
                         break;
                     }
                 }
-
-                if (selectedShape == null)
-                {
-                    throw new Exception("No selectable shape found on the page.");
-                }
-
-                // Configure high‑resolution PNG export options
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                {
-                    // Set resolution in DPI (e.g., 300 DPI for high quality)
-                    Resolution = 300f
-                };
-
-                // Export the selected shape to PNG
-                selectedShape.ToImage(outputPngPath, pngOptions);
-
-                Console.WriteLine($"Shape ID {selectedShape.ID} exported to '{outputPngPath}' with {pngOptions.Resolution} DPI.");
-
+                if (targetShape != null)
+                    break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine($"Shape \"{targetShapeName}\" not found.");
+                return;
             }
+
+            // Configure high‑resolution PNG export options
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            pngOptions.Resolution = 300f; // DPI (higher value = higher resolution)
+
+            // Output file path
+            string outputPath = "exported_shape.png";
+
+            // Export the selected shape to PNG
+            targetShape.ToImage(outputPath, pngOptions);
+
+            Console.WriteLine($"Shape \"{targetShapeName}\" exported to \"{outputPath}\" with {pngOptions.Resolution} DPI.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

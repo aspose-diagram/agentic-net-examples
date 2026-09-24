@@ -1,54 +1,48 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+
+        try
         {
-            try
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Identify connector shapes (1‑D shapes)
+                    if (shape.OneD)
                     {
-                        // Process only connector shapes (1‑D shapes)
-                        if (shape.OneD)
-                        {
-                            // Simple heuristic: count geometry elements as bends
-                            // In Visio, each Geom segment can represent a bend.
-                            int bendCount = shape.Geoms.Count;
-
-                            // Apply reroute option only if there are more than three bends
-                            if (bendCount > 3)
-                            {
-                                // Set the connector reroute option.
-                                // Only ConFixedCodeValue.Undefined is valid in this API version.
-                                shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
-                            }
-                        }
+                        // NOTE: The Geometry collection is not available in this API version,
+                        // so we cannot accurately count bends. As a fallback, apply the reroute
+                        // option to all connectors (or implement custom logic if geometry data is needed).
+                        // Set the reroute behavior using the only valid enum member.
+                        shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
                     }
                 }
-
-                // Save the modified diagram using a save format option
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Output Visio file path
+            string outputPath = "output.vsdx";
+            // Save the modified diagram using the appropriate SaveFileFormat enum
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

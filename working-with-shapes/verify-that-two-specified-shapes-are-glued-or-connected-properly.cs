@@ -1,43 +1,80 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class VerifyShapeGlueAndConnection
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: diagram file path, first shape ID, second shape ID
+        if (args.Length != 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <diagramPath> <shapeId1> <shapeId2>");
+            return;
+        }
+
+        // Assign arguments to variables
+        string diagramPath = args[0];
+        string shapeId1Str = args[1];
+        string shapeId2Str = args[2];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: parse shape IDs to long
+        if (!long.TryParse(shapeId1Str, out long shapeId1))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeId1Str}");
+            return;
+        }
+        if (!long.TryParse(shapeId2Str, out long shapeId2))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeId2Str}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load an existing Visio diagram
-            // Replace "input.vsdx" with the path to your diagram file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Use the first page (index 0) for shape lookup
+            Page page = diagram.Pages[0];
 
-            // IDs of the two shapes to verify.
-            // Set these to the actual shape IDs you want to check.
-            long shapeId1 = 1;   // example ID for the first shape
-            long shapeId2 = 2;   // example ID for the second shape
+            // Retrieve the two shapes by their IDs
+            Shape shape1 = page.Shapes.GetShape(shapeId1);
+            Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-            // Retrieve the shapes from the diagram by their IDs
-            Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
-            Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
+            // Guard: ensure both shapes were found
+            if (shape1 == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId1} not found on page '{page.Name}'.");
+                return;
+            }
+            if (shape2 == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId2} not found on page '{page.Name}'.");
+                return;
+            }
 
-            // Verify whether the two shapes are glued
-            bool areGlued = shape1.IsGlued(shape2);
-            // Verify whether the two shapes are connected (e.g., a connector)
+            // Verify connection status using the built‑in API
             bool areConnected = shape1.IsConnected(shape2);
+            // Verify glue status using the built‑in API
+            bool areGlued = shape1.IsGlued(shape2);
 
             // Output the verification results
-            Console.WriteLine($"Shape {shapeId1} and Shape {shapeId2} glued: {areGlued}");
-            Console.WriteLine($"Shape {shapeId1} and Shape {shapeId2} connected: {areConnected}");
-
-            // Optionally, save the diagram if any changes were made
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Shape {shapeId1} (NameU: {shape1.NameU}) and Shape {shapeId2} (NameU: {shape2.NameU}) connection status:");
+            Console.WriteLine($"  Connected: {(areConnected ? "Yes" : "No")}");
+            Console.WriteLine($"  Glued    : {(areGlued ? "Yes" : "No")}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

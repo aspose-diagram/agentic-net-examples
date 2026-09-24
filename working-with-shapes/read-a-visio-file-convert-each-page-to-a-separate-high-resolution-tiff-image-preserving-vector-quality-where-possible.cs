@@ -3,49 +3,48 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VisioToTiffConverter
+class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
 
             // Input Visio file path
-            string visioPath = @"C:\Input\sample.vsdx";
+            string inputPath = @"C:\Input\diagram.vsdx";
 
-            // Output folder for TIFF images (must exist)
-            string outputFolder = @"C:\Output\TiffPages";
+            // Output folder for TIFF images
+            string outputFolder = @"C:\Output\PagesTiff";
 
-            // Load the Visio diagram from file
-            using (Diagram diagram = new Diagram(visioPath))
+            // Ensure the output directory exists
+            if (!Directory.Exists(outputFolder))
             {
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    // Configure image save options for high‑resolution TIFF
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Tiff)
-                    {
-                        // Set DPI (dots per inch) for high resolution
-                        Resolution = 300,
-
-                        // Render only the current page
-                        PageIndex = i,
-                        PageCount = 1,
-
-                        // Optional: set compression (none for lossless)
-                        // TiffCompression = TiffCompression.None,
-
-                        // Preserve vector quality by using EMF rendering internally (handled by Aspose)
-                        // No additional settings required here
-                    };
-
-                    // Build output file name (e.g., Page_1.tiff, Page_2.tiff, ...)
-                    string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.tiff");
-
-                    // Save the current page as a TIFF image
-                    diagram.Save(outputPath, options);
-                }
+                Directory.CreateDirectory(outputFolder);
             }
+
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                Page page = diagram.Pages[i];
+
+                // Prepare high‑resolution TIFF save options
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+                saveOptions.Resolution = 300f;          // 300 DPI for high quality
+                saveOptions.PageIndex = i;              // Export the current page
+                saveOptions.PageCount = 1;              // Export only this page
+
+                // Build a file name using page index and name
+                string safePageName = string.IsNullOrWhiteSpace(page.NameU) ? $"Page{i + 1}" : page.NameU;
+                string outputPath = Path.Combine(outputFolder, $"{safePageName}.tiff");
+
+                // Save the page as a TIFF image
+                diagram.Save(outputPath, saveOptions);
+            }
+
+            Console.WriteLine("All pages have been exported to TIFF images.");
 
         }
         catch (System.IO.DirectoryNotFoundException ex)

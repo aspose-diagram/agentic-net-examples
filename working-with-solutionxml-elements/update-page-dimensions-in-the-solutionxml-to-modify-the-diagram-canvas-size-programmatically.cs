@@ -2,10 +2,11 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using System.Xml;
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         try
         {
@@ -14,47 +15,52 @@ class Program
             string inputPath = "input.vsdx";
             string outputPath = "output.vsdx";
 
-            // Load the diagram from file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Desired canvas size in inches (example: A4 size)
-            double newWidth = 8.27;
-            double newHeight = 11.69;
+            // Variables to hold the extracted dimensions (in inches)
+            double widthInches = 0;
+            double heightInches = 0;
 
-            // Update the width and height of every page in the document
-            foreach (Page page in diagram.Pages)
+            // Search for a SolutionXML element that stores page dimensions
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                page.PageSheet.PageProps.PageHeight.Value = newHeight;
-            }
-
-            // Update (or add) a SolutionXML element that stores the page size
-            string solutionXmlName = "PageSize";
-            bool found = false;
-            foreach (SolutionXML sol in diagram.SolutionXMLs)
-            {
-                if (sol.Name == solutionXmlName)
+                if (solXml.Name == "PageDimensions")
                 {
-                    sol.XmlValue = $"<PageSize Width=\"{newWidth}\" Height=\"{newHeight}\"/>";
-                    found = true;
-                    break;
+                    // Parse the XML content of the SolutionXML element
+                    XmlDocument xmlDoc = new XmlDocument();
+                    xmlDoc.LoadXml(solXml.XmlValue);
+
+                    XmlNode widthNode = xmlDoc.SelectSingleNode("//Width");
+                    XmlNode heightNode = xmlDoc.SelectSingleNode("//Height");
+
+                    if (widthNode != null && double.TryParse(widthNode.InnerText, out double w))
+                        widthInches = w;
+
+                    if (heightNode != null && double.TryParse(heightNode.InnerText, out double h))
+                        heightInches = h;
+
+                    break; // Dimensions found, exit loop
                 }
             }
 
-            if (!found)
+            // If dimensions were successfully retrieved, apply them to each page
+            if (widthInches > 0 && heightInches > 0)
             {
-                SolutionXML newSol = new SolutionXML
+                foreach (Page page in diagram.Pages)
                 {
-                    Name = solutionXmlName,
-                    XmlValue = $"<PageSize Width=\"{newWidth}\" Height=\"{newHeight}\"/>"
-                };
-                diagram.SolutionXMLs.Add(newSol);
+                    page.PageSheet.PageProps.PageWidth.Value = widthInches;
+                    page.PageSheet.PageProps.PageHeight.Value = heightInches;
+                }
+
+                // Save the updated diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine("Diagram saved with updated page dimensions.");
             }
-
-            // Save the modified diagram back to a Visio file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Page dimensions updated and diagram saved successfully.");
+            else
+            {
+                Console.WriteLine("Page dimensions not found in SolutionXML. No changes applied.");
+            }
 
         }
         catch (System.IO.FileNotFoundException ex)

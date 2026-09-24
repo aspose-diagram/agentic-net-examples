@@ -1,61 +1,83 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path
+        string outputPath = "output.vsdx";
+
         try
         {
+            // Load the diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page in the document
+            // Use the first page in the document
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page to serve as the source for cloning
-            Shape originalShape = null;
-            foreach (Shape s in page.Shapes)
+            // Find a source shape to clone (skip connectors and deleted shapes)
+            Shape sourceShape = null;
+            foreach (Shape shp in page.Shapes)
             {
-                originalShape = s;
-                break;
+                if (shp.Del == BOOL.False && !shp.OneD) // ensure it's a visible 2‑D shape
+                {
+                    sourceShape = shp;
+                    break;
+                }
             }
 
-            if (originalShape == null)
-                throw new Exception("The page does not contain any shapes to clone.");
+            if (sourceShape == null)
+            {
+                Console.Error.WriteLine("No suitable shape found to clone.");
+                return;
+            }
 
-            // Determine the master name of the original shape (fallback to a basic master if null)
-            string masterName = originalShape.Master != null ? originalShape.Master.Name : "Rectangle";
+            // Retrieve the master name of the source shape (used for cloning)
+            string masterName = sourceShape.Master?.Name ?? "Rectangle";
 
-            // Position the cloned shape slightly offset from the original
-            double newPinX = originalShape.XForm.PinX.Value + 2.0; // shift 2 inches on X axis
-            double newPinY = originalShape.XForm.PinY.Value;      // same Y position
+            // Determine a position for the cloned shape (offset by 2 inches)
+            double newPinX = sourceShape.XForm.PinX.Value + 2.0;
+            double newPinY = sourceShape.XForm.PinY.Value + 2.0;
 
-            // Add a new shape on the page using the same master
-            long cloneShapeIdLong = page.AddShape(newPinX, newPinY, masterName);
-            Shape cloneShape = page.Shapes.GetShape((int)cloneShapeIdLong);
+            // Add a new shape using the same master; isCalculate = false
+            long cloneId = page.AddShape(newPinX, newPinY, masterName, false);
 
-            // Copy formatting and geometry from the original shape to the clone
-            cloneShape.Copy(originalShape);
+            // Retrieve the cloned shape instance
+            Shape cloneShape = page.Shapes.GetShape(cloneId);
 
-            // Ensure the clone inherits fill settings (clear any local fill overrides)
-            // Setting FillStyle to null forces inheritance from the master/style
-            cloneShape.FillStyle = null;
+            // -------------------- Inherit Fill Settings --------------------
+            // Copy fill pattern and colors from the source shape to the clone
+            cloneShape.Fill.FillPattern.Value = sourceShape.Fill.FillPattern.Value;
+            cloneShape.Fill.FillForegnd.Value = sourceShape.Fill.FillForegnd.Value;
+            cloneShape.Fill.FillBkgnd.Value = sourceShape.Fill.FillBkgnd.Value;
+            cloneShape.Fill.FillForegndTrans.Value = sourceShape.Fill.FillForegndTrans.Value;
+            cloneShape.Fill.FillBkgndTrans.Value = sourceShape.Fill.FillBkgndTrans.Value;
 
-            // Modify the clone's line inheritance flag by overriding the line color
-            // This breaks line inheritance and applies a custom line color (red)
-            cloneShape.Line.LineColor.Value = "#FF0000";
+            // -------------------- Modify Line Inheritance Flag --------------------
+            // Change the line color of the clone to demonstrate a different line setting
+            // (this effectively breaks line inheritance from the original)
+            cloneShape.Line.LineColor.Value = "#FF0000"; // red line
+            cloneShape.Line.LineWeight.Value = 0.03;     // thicker line
 
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the output file using VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

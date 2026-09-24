@@ -4,43 +4,39 @@ using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            try
+            {
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+                // Load an existing Visio diagram
+                Diagram diagram = new Diagram("input.vsdx");
 
-            // Define shape geometry (center at (5,5), size 2x1 inches)
-            double shapePinX = 5.0;
-            double shapePinY = 5.0;
-            double shapeWidth = 2.0;
-            double shapeHeight = 1.0;
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-            // Add a rectangle shape using DrawRectangle (returns a shape ID)
-            long rectShapeId = page.DrawRectangle(shapePinX, shapePinY, shapeWidth, shapeHeight);
+                        // Anchor the text block to the shape's geometric center
+                        // TxtPinX/Y represent the absolute position of the text block.
+                        // Setting them equal to the shape's PinX/Y places the text at the shape's center.
+                        shape.TextXForm.TxtPinX.Value = shape.XForm.PinX.Value;
+                        shape.TextXForm.TxtPinY.Value = shape.XForm.PinY.Value;
+                    }
+                }
 
-            // Retrieve the shape instance (GetShape expects an int)
-            Shape rectShape = page.Shapes.GetShape((int)rectShapeId);
+                // Save the modified diagram
+                diagram.Save("output_centered.vsdx", SaveFileFormat.Vsdx);
 
-            // Clear any existing text and add new text
-            rectShape.Text.Value.Clear();
-            rectShape.Text.Value.Add(new Txt("Centered Text"));
-
-            // Anchor the text to the exact center of the shape's geometry
-            // TxtPinX/Y are the absolute position of the text block; set them to the shape's PinX/Y
-            rectShape.TextXForm.TxtPinX.Value = rectShape.XForm.PinX.Value;
-            rectShape.TextXForm.TxtPinY.Value = rectShape.XForm.PinY.Value;
-
-            // Optionally, set the local pin of the text block to its center (0.5,0.5) for perfect centering
-            rectShape.TextXForm.TxtLocPinX.Value = 0.5;
-            rectShape.TextXForm.TxtLocPinY.Value = 0.5;
-
-            // Save the diagram to a VSDX file
-            string outputPath = "CenteredTextShape.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-        }
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            }
+    }
     }

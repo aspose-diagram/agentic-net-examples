@@ -2,48 +2,39 @@ using System.IO;
 using System;
 using Aspose.Diagram;
 
-class SetTextDirectionExample
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Load an existing Visio diagram.
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Desired text direction
-            TextDirection newDirection = new TextDirection(TextDirectionValue.Vertical);
-
-            // Iterate through all shapes in the diagram
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
             {
-                try
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape contains a TextBlock section
+                    // Verify that the shape contains a TextBlock section before setting direction.
                     if (shape.TextBlock != null)
                     {
-                        // Set the TextDirection property
-                        shape.TextBlock.TextDirection = newDirection;
-
-                        // Refresh shape data after modifying text properties
-                        shape.RefreshData();
+                        // Set the text direction to vertical.
+                        shape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
                     }
                     else
                     {
-                        // Handle shapes without a TextBlock (e.g., log or ignore)
-                        Console.WriteLine($"Shape ID {shape.ID} does not have a TextBlock. Skipping TextDirection assignment.");
+                        // Handle shapes without a TextBlock section.
+                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' does not have a TextBlock section.");
                     }
-                }
-                catch (Exception ex)
-                {
-                    // General error handling for unexpected issues
-                    Console.WriteLine($"Error processing shape ID {shape.ID}: {ex.Message}");
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram.
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

@@ -9,32 +9,38 @@ class Program
         try
         {
 
-            // Path to the Visio file to be processed
+            // Paths to the source and destination Visio files
             string inputPath = "input.vsdx";
+            string outputPath = "output.vsdx";
 
-            // Load the diagram from the file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (index 0)
+            // Access the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (example uses ID = 1)
-            // Adjust the ID as needed for your specific diagram
-            Shape shape = page.Shapes.GetShape(1);
-            if (shape == null)
+            // Retrieve the first shape on the page
+            Shape targetShape = null;
+            foreach (Shape shp in page.Shapes)
             {
-                Console.WriteLine("Shape with ID 1 was not found on the page.");
+                targetShape = shp;
+                break;
+            }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shape found on the page.");
                 return;
             }
 
-            // Set the text direction of the shape.
-            // The API provides Horizontal and Vertical options; using Vertical as a placeholder for right‑to‑left.
-            shape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
+            // Set the text direction to right‑to‑left.
+            // In Aspose.Diagram the TextDirection enum provides Horizontal and Vertical.
+            // Using Vertical here as the closest representation for right‑to‑left text flow.
+            targetShape.TextBlock.TextDirection.Value = TextDirectionValue.Vertical;
 
-            Console.WriteLine("Text direction has been set for the shape.");
-
-            // Save the modified diagram to a new file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("Text direction updated and diagram saved.");
 
         }
         catch (System.IO.FileNotFoundException ex)

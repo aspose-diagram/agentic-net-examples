@@ -1,58 +1,50 @@
+using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            try
+
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram from file
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Find the first non-deleted shape on the page
-                Shape targetShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Del == BOOL.False) // ensure the shape is not deleted
+                    // Ensure the shape has a TextXForm (text block) to modify
+                    if (shape.TextXForm != null)
                     {
-                        targetShape = shape;
-                        break;
+                        // Set text rotation to 90 degrees (in radians)
+                        shape.TextXForm.TxtAngle.Value = Math.PI / 2.0;
+
+                        // Position text on the left side of the shape
+                        // Align the right edge of the text block with the left edge of the shape
+                        shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value; // local pin at right edge of text block
+                        shape.TextXForm.TxtPinX.Value = 0.0; // place text block at shape's left border
+
+                        // Vertically center the text within the shape
+                        shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value / 2.0;
+                        shape.TextXForm.TxtPinY.Value = shape.XForm.Height.Value / 2.0;
                     }
                 }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No suitable shape found on the page.");
-                    return;
-                }
-
-                // Apply a 90‑degree rotation to the shape's text.
-                // TxtAngle is expressed in radians.
-                double angleRadians = Math.PI / 2; // 90 degrees
-                targetShape.TextXForm.TxtAngle.Value = angleRadians;
-
-                // Reposition the text to the left side of the shape.
-                // Left side: set local pin X to the text block width and pin X to 0.
-                targetShape.TextXForm.TxtLocPinX.Value = targetShape.TextXForm.TxtWidth.Value;
-                targetShape.TextXForm.TxtPinX.Value = 0;
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+        }
     }
-    }
+}

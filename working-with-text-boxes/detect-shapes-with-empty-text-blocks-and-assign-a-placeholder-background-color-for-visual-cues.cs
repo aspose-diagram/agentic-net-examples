@@ -1,18 +1,20 @@
 using System;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
     {
-        static void Main()
+        static void Main(string[] args)
         {
             try
             {
 
-                // Input and output file paths
+                // Path to the source Visio file
                 string inputPath = "input.vsdx";
+                // Path for the output Visio file
                 string outputPath = "output.vsdx";
 
-                // Load the Visio diagram
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes
@@ -20,21 +22,17 @@ class Program
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve the plain text of the shape
+                        // Retrieve plain text of the shape
                         string shapeText = shape.Text.Value.ToString();
 
-                        // If the text block is empty or whitespace, apply a placeholder background color
+                        // Check if the text block is empty or whitespace
                         if (string.IsNullOrWhiteSpace(shapeText))
                         {
-                            // Set a solid fill pattern
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid
-
-                            // Assign a light yellow background color as a visual cue
-                            shape.Fill.FillBkgnd.Value = "#FFFF99";
+                            // Assign a light gray placeholder background color to the text block
+                            // Using RGB() string format as required by the API
+                            shape.TextBlock.TextBkgnd.Ufe.F = "RGB(200,200,200)";
+                            // Ensure the background is fully opaque (0% transparency)
+                            shape.TextBlock.TextBkgndTrans.Value = 0;
                         }
                     }
                 }

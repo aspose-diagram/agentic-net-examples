@@ -3,16 +3,16 @@ using Aspose.Diagram;
 
 class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
 
-                // Input and output file paths
+                // Paths to the source and destination Visio files
                 string inputPath = "input.vsdx";
                 string outputPath = "output.vsdx";
 
-                // Load the diagram from file
+                // Load the diagram
                 Diagram diagram = new Diagram(inputPath);
 
                 // Iterate through all pages and shapes
@@ -21,18 +21,14 @@ class Program
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        if (shape.Del == BOOL.False)
+                        {
+                            // Get the fill foreground transparency (0‑100)
+                            double fillTransparency = shape.Fill.FillForegndTrans.Value;
 
-                        // Ensure the shape has Fill and TextBlock sections
-                        if (shape.Fill == null || shape.TextBlock == null)
-                            continue;
-
-                        // Retrieve fill foreground transparency (0‑100%)
-                        double fillTransparency = shape.Fill.FillForegndTrans.Value;
-
-                        // Apply the same transparency to the text background
-                        shape.TextBlock.TextBkgndTrans.Value = fillTransparency;
+                            // Apply the same transparency to the text background
+                            shape.TextBlock.TextBkgndTrans.Value = fillTransparency;
+                        }
                     }
                 }
 

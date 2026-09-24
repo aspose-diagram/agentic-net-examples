@@ -4,10 +4,10 @@ display_name: Working With Text Boxes
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.8.0
+version: 26.9.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-08-31
+generated: 2026-09-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.8.0 |
+| Aspose.Diagram Version | 26.9.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-08-31 |
+| Last Updated | 2026-09-24 |
 
 ## Persona
 
@@ -63,11 +63,10 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
-| `System.IO` | 21 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 16 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.IO` | 31 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 22 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Collections.Generic` | 2 | List, Dictionary, HashSet |
 | `System.Text.Json` | 1 | JSON serialization |
-| `System.Linq` | 1 | LINQ queries on collections |
 
 ## Common Code Pattern
 
@@ -119,12 +118,12 @@ Category-specific API rules and gotchas:
 | [align-shape-text-to-the-right-side-of-the-shape-by-configuring-orientation-and-right-hand-pin.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/align-shape-text-to-the-right-side-of-the-shape-by-configuring-orientation-and-right-hand-pin.cs) | `Diagram`, `Pages`, `Save` | Align shape text to the right side of the shape by configuring orientation and right hand pin |
 | [apply-a-90-degree-orientation-angle-to-shape-text-and-reposition-it-to-the-left-side-of-the-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/apply-a-90-degree-orientation-angle-to-shape-text-and-reposition-it-to-the-left-side-of-the-shape.cs) | `Diagram`, `Pages`, `Save` | Apply a 90 degree orientation angle to shape text and reposition it to the left side of the shape |
 | [apply-a-different-default-tab-stop-for-shapes-that-contain-multiline-text-to-improve-readability.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/apply-a-different-default-tab-stop-for-shapes-that-contain-multiline-text-to-improve-readability.cs) | `Diagram`, `Pages`, `Save` | Apply a different default tab stop for shapes that contain multiline text to improve readability |
-| [apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs) | `Diagram`, `Pages`, `Save` | Apply a solid background color to a shape s text block using the textbackgroundcolor property |
+| [apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs) | `AddShape`, `Diagram`, `Pages` | Apply a solid background color to a shape s text block using the textbackgroundcolor property |
 | [batch-process-multiple-visio-files-applying-a-30-degree-text-rotation-to-all-shape-texts.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/batch-process-multiple-visio-files-applying-a-30-degree-text-rotation-to-all-shape-texts.cs) | `Diagram`, `Pages`, `Save` | Batch process multiple visio files applying a 30 degree text rotation to all shape texts |
 | [calculate-the-bounding-box-of-a-shape-s-text-block-after-setting-custom-width-and-height-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/calculate-the-bounding-box-of-a-shape-s-text-block-after-setting-custom-width-and-height-values.cs) | `Diagram`, `Pages`, `Save` | Calculate the bounding box of a shape s text block after setting custom width and height values |
-| [combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs) | `AddShape`, `Diagram`, `Pages` | Combine text rotation and margin adjustments to create a diagonal text effect inside a shape |
+| [combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs) | `Diagram`, `Page`, `Pages` | Combine text rotation and margin adjustments to create a diagonal text effect inside a shape |
 | [copy-text-block-formatting-from-one-shape-to-another-using-the-shape-textblock-property-clone.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/copy-text-block-formatting-from-one-shape-to-another-using-the-shape-textblock-property-clone.cs) | `Diagram`, `Pages`, `Save` | Copy text block formatting from one shape to another using the shape textblock property clone |
-| [define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs) | `Diagram`, `Save`, `diagram` | Define a default tab stop of 0 5 inches to control spacing of tab characters in shape text |
+| [define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs) | `Diagram`, `Pages`, `Save` | Define a default tab stop of 0 5 inches to control spacing of tab characters in shape text |
 | [detect-shapes-with-empty-text-blocks-and-assign-a-placeholder-background-color-for-visual-cues.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/detect-shapes-with-empty-text-blocks-and-assign-a-placeholder-background-color-for-visual-cues.cs) | `Diagram`, `Pages`, `Save` | Detect shapes with empty text blocks and assign a placeholder background color for visual cues |
 | [export-the-text-block-content-of-a-shape-to-a-plain-text-file-for-external-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/export-the-text-block-content-of-a-shape-to-a-plain-text-file-for-external-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Export the text block content of a shape to a plain text file for external analysis |
 | [filter-shapes-by-type-and-apply-centered-text-alignment-only-to-rectangle-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/filter-shapes-by-type-and-apply-centered-text-alignment-only-to-rectangle-shapes.cs) | `Diagram`, `Pages`, `Save` | Filter shapes by type and apply centered text alignment only to rectangle shapes |
@@ -136,7 +135,7 @@ Category-specific API rules and gotchas:
 | [modify-the-top-bottom-left-and-right-text-margins-of-a-shape-to-specific-pixel-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/modify-the-top-bottom-left-and-right-text-margins-of-a-shape-to-specific-pixel-values.cs) | `Diagram`, `Pages`, `Save` | Modify the top bottom left and right text margins of a shape to specific pixel values |
 | [pin-the-text-to-a-custom-location-inside-a-shape-by-setting-the-txtpin-property-coordinates.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/pin-the-text-to-a-custom-location-inside-a-shape-by-setting-the-txtpin-property-coordinates.cs) | `AddShape`, `Diagram`, `Pages` | Pin the text to a custom location inside a shape by setting the txtpin property coordinates |
 | [position-shape-text-at-the-bottom-of-the-shape-using-orientation-angle-and-bottom-margin-adjustments.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/position-shape-text-at-the-bottom-of-the-shape-using-orientation-angle-and-bottom-margin-adjustments.cs) | `Diagram`, `Pages`, `Save` | Position shape text at the bottom of the shape using orientation angle and bottom margin adjustments |
-| [position-shape-text-at-the-top-of-the-shape-by-configuring-orientation-angle-and-vertical-offset.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/position-shape-text-at-the-top-of-the-shape-by-configuring-orientation-angle-and-vertical-offset.cs) | `Diagram`, `Pages`, `Save` | Position shape text at the top of the shape by configuring orientation angle and vertical offset |
+| [position-shape-text-at-the-top-of-the-shape-by-configuring-orientation-angle-and-vertical-offset.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/position-shape-text-at-the-top-of-the-shape-by-configuring-orientation-angle-and-vertical-offset.cs) | `AddShape`, `Diagram`, `Pages` | Position shape text at the top of the shape by configuring orientation angle and vertical offset |
 | [programmatically-increase-the-text-block-s-left-margin-by-10-points-for-all-shapes-in-a-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/programmatically-increase-the-text-block-s-left-margin-by-10-points-for-all-shapes-in-a-page.cs) | `Diagram`, `Pages`, `Save` | Programmatically increase the text block s left margin by 10 points for all shapes in a page |
 | [read-the-current-text-alignment-of-each-shape-and-log-mismatches-against-a-style-guide.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/read-the-current-text-alignment-of-each-shape-and-log-mismatches-against-a-style-guide.cs) | `Diagram`, `Pages`, `Shapes` | Read the current text alignment of each shape and log mismatches against a style guide |
 | [reset-a-shape-s-text-margins-to-default-values-after-custom-adjustments-have-been-applied.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/reset-a-shape-s-text-margins-to-default-values-after-custom-adjustments-have-been-applied.cs) | `Diagram`, `Pages`, `Save` | Reset a shape s text margins to default values after custom adjustments have been applied |
@@ -235,6 +234,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 - `AddShape`
 - `Diagram`
+- `Page`
 - `Pages`
 - `Save`
 - `Shapes`
@@ -254,7 +254,7 @@ Frequently asked questions about **Working With Text Boxes** in **Aspose.Diagram
 
 **Q: How do I get started with Working With Text Boxes in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.8.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -285,4 +285,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-08-31 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-09-24 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

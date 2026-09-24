@@ -1,16 +1,16 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // required for shape operations per global rule
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Path to the Visio file to be analyzed
+        string inputPath = "input.vsdx";
 
-        // Guard: ensure the file exists before proceeding
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
@@ -22,55 +22,49 @@ class Program
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the expected alignment values according to the style guide
-            HorzAlignValue expectedHorz = HorzAlignValue.LeftAlign;   // horizontal left alignment
-            VerticalAlignValue expectedVert = VerticalAlignValue.Middle; // vertical middle alignment
-
-            // Iterate through each page in the diagram
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Define the style guide: expected horizontal alignment per shape name (NameU)
+            var styleGuide = new Dictionary<string, HorzAlignValue>(StringComparer.OrdinalIgnoreCase)
             {
-                Page page = diagram.Pages[pageIndex];
+                { "Title", HorzAlignValue.Center },      // Center alignment
+                { "Subtitle", HorzAlignValue.Center },   // Center alignment
+                { "Header", HorzAlignValue.LeftAlign },  // Left alignment
+                { "Footer", HorzAlignValue.RightAlign }  // Right alignment
+                // Add more shape name → expected alignment mappings as needed
+            };
 
-                // Iterate through each shape on the current page
+            // Iterate through all pages and shapes in the diagram
+            foreach (Page page in diagram.Pages)
+            {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
+                    // Skip shapes without any paragraph (text) entries
+                    if (shape.Paras == null || shape.Paras.Count == 0)
                         continue;
 
-                    // Retrieve plain text of the shape; skip shapes without text
-                    string shapeText = shape.Text.Value.ToString();
-                    if (string.IsNullOrWhiteSpace(shapeText))
-                        continue;
+                    // Use the first paragraph's horizontal alignment as the shape's alignment
+                    HorzAlignValue currentAlignment = shape.Paras[0].HorzAlign.Value;
 
-                    // Determine horizontal alignment (from the first paragraph, if any)
-                    HorzAlignValue actualHorz = expectedHorz; // fallback to expected
-                    if (shape.Paras.Count > 0)
-                        actualHorz = shape.Paras[0].HorzAlign.Value;
-
-                    // Determine vertical alignment (from the TextBlock)
-                    VerticalAlignValue actualVert = shape.TextBlock.VerticalAlign.Value;
-
-                    // Check for mismatches against the style guide
-                    bool horzMismatch = actualHorz != expectedHorz;
-                    bool vertMismatch = actualVert != expectedVert;
-
-                    if (horzMismatch || vertMismatch)
+                    // Determine expected alignment from the style guide (if defined)
+                    if (styleGuide.TryGetValue(shape.NameU, out HorzAlignValue expectedAlignment))
                     {
-                        // Log detailed information about the mismatch
-                        Console.WriteLine($"Mismatch in Shape ID {shape.ID} on Page {pageIndex}:");
-                        if (horzMismatch)
-                            Console.WriteLine($"  Horizontal alignment - Expected: {expectedHorz}, Actual: {actualHorz}");
-                        if (vertMismatch)
-                            Console.WriteLine($"  Vertical alignment   - Expected: {expectedVert}, Actual: {actualVert}");
-                        Console.WriteLine($"  Shape Text: \"{shapeText}\"");
+                        // Log mismatch when current alignment differs from the expected one
+                        if (currentAlignment != expectedAlignment)
+                        {
+                            Console.WriteLine($"Mismatch on page '{page.NameU}', shape '{shape.NameU}' (ID: {shape.ID}): " +
+                                              $"Current alignment = {currentAlignment}, Expected = {expectedAlignment}");
+                        }
+                    }
+                    else
+                    {
+                        // No rule defined for this shape; optionally report or ignore
+                        Console.WriteLine($"No style guide entry for shape '{shape.NameU}' (ID: {shape.ID}).");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

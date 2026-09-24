@@ -1,44 +1,46 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class ExportShapeTexts
+class Program
 {
     static void Main()
     {
         try
         {
 
-            // Path to the Visio file
-            string visioPath = @"C:\Diagrams\sample.vsdx";
+            // Path to the Visio file to be processed
+            string visioPath = "input.vsdx";
 
-            // Load the Visio diagram (uses Aspose.Diagram's load rule)
+            // Load the diagram
             Diagram diagram = new Diagram(visioPath);
 
-            // Output text file path
-            string outputPath = @"C:\Diagrams\ShapeTexts.txt";
+            // Access the first page (adjust index if needed)
+            Page page = diagram.Pages[0];
 
-            // Use a StreamWriter to create/overwrite the output file
-            using (StreamWriter writer = new StreamWriter(outputPath, false))
+            // Identify the shape whose text block you want to export.
+            // Here we use a known shape ID; replace with the appropriate ID or lookup logic.
+            long shapeId = 1;
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            if (shape == null)
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Get the plain text of the shape
-                        string shapeText = shape.GetPureText();
-
-                        // Write shape identifier and its text to the file
-                        writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}");
-                        writer.WriteLine(shapeText);
-                        writer.WriteLine(new string('-', 40));
-                    }
-                }
+                Console.WriteLine($"Shape with ID {shapeId} was not found on the page.");
+                return;
             }
 
-            Console.WriteLine($"Shape texts exported to: {outputPath}");
+            // Retrieve the plain‑text content of the shape.
+            // shape.Text.Value.Text concatenates all text runs into a single string.
+            string plainText = shape.Text.Value.Text;
+
+            // Define the output file path for the exported text.
+            string outputPath = "shape_text.txt";
+
+            // Write the extracted text to the file.
+            File.WriteAllText(outputPath, plainText);
+
+            Console.WriteLine($"Shape text has been exported to '{outputPath}'.");
 
         }
         catch (System.IO.FileNotFoundException ex)

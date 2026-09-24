@@ -9,31 +9,42 @@ class Program
         try
         {
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // Get the first (default) page
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page at (2.0, 2.0)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle");
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the first shape on the page (ensure there is at least one shape)
+            if (page.Shapes.Count == 0)
+            {
+                Console.WriteLine("No shapes found on the page.");
+                return;
+            }
 
-            // Create a custom connection point at coordinates (1.2, 3.4)
+            // Get the shape by its ID
+            Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+
+            // Create a new custom connection point
             Connection customConn = new Connection();
+            // Set absolute X and Y coordinates for the connection point
             customConn.X.Ufe.F = "1.2";
             customConn.Y.Ufe.F = "3.4";
 
             // Add the connection point to the shape
             shape.Connections.Add(customConn);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Custom connection point added and diagram saved to '{outputPath}'.");
 
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (System.IO.FileNotFoundException ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

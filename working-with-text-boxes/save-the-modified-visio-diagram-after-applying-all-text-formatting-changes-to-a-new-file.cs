@@ -11,22 +11,37 @@ class Program
         {
 
             // Load the existing Visio diagram
-            string inputFile = "input.vsdx";
-            Diagram diagram = new Diagram(inputFile);
+            string inputPath = "input.vsdx";
+            Diagram diagram = new Diagram(inputPath);
 
-            // -------------------------------------------------
-            // Apply text formatting changes here.
-            // Example (placeholder):
-            // foreach (Shape shape in diagram.Pages[0].Shapes)
-            // {
-            //     // shape.Text = "New Text";
-            //     // shape.Characters.CharProps[...]=...;
-            // }
-            // -------------------------------------------------
+            // Apply text formatting to every shape on every page
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Replace existing text with new content
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt("Sample Text"));
+
+                    // Define character formatting for the new text
+                    shape.Chars.Clear();
+                    Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                    ch.IX = 0; // start index of the text run
+                    ch.FontName.Value = "Calibri";
+                    ch.Size.Value = 12.0 / 72.0; // 12 points expressed in inches
+                    ch.Color.Value = "#FF0000"; // red color
+                    ch.Style.Value = StyleValue.Bold | StyleValue.Italic; // bold and italic
+                    shape.Chars.Add(ch);
+                }
+            }
 
             // Save the modified diagram to a new file
-            string outputFile = "output.vsdx";
-            diagram.Save(outputFile, SaveFileFormat.Vsdx);
+            string outputPath = "output_modified.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
         catch (System.IO.FileNotFoundException ex)

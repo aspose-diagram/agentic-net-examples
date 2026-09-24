@@ -1,54 +1,55 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "diagram.vsdx";
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file (adjust as needed)
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Collect IDs of all shapes that participate in any connection.
+                HashSet<long> connectedShapeIds = new HashSet<long>();
+                // The Connects collection holds connector relationships between shapes.
+                foreach (Connect conn in page.Connects)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve IDs of shapes connected to this shape
-                        long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
-
-                        // If no connections found, flag the shape for review
-                        if (connectedIds == null || connectedIds.Length == 0)
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) is not connected to any other shape.");
-
-                            // Add a custom property to indicate review needed
-                            Prop reviewProp = new Prop();
-                            reviewProp.Name = "ReviewFlag";
-                            reviewProp.Label.Value = "Review Flag";
-                            reviewProp.Value.Val = "True";
-                            shape.Props.Add(reviewProp);
-                        }
-                    }
+                    // Add both source and target shape IDs to the set.
+                    connectedShapeIds.Add(conn.FromSheet);
+                    connectedShapeIds.Add(conn.ToSheet);
                 }
 
-                // Optionally, save the diagram with the added flags
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Examine each shape on the current page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // If the shape's ID is not present in the connection set, it is isolated.
+                    if (!connectedShapeIds.Contains(shape.ID))
+                    {
+                        // Output details of the unconnected shape for review.
+                        Console.WriteLine($"Unconnected shape detected - Page: '{page.NameU}', ID: {shape.ID}, NameU: {shape.NameU}");
+                    }
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during diagram processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,54 +1,66 @@
-using System.IO;
 using System;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
-{
-    static void Main()
     {
-        try
+        static void Main(string[] args)
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Increment value: 0.5 point = 0.5/72 inches
-            double incrementInInches = 0.5 / 72.0;
-
-            // Iterate over all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Expect two arguments: input Visio file path and output PDF file path
+            if (args.Length < 2)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Process only connector (1‑D) shapes that are not deleted
-                    if (shape.OneD && shape.Del == BOOL.False)
-                    {
-                        // Increase line weight
-                        shape.Line.LineWeight.Value += incrementInInches;
-                    }
-                }
+                Console.WriteLine("Usage: VisioConnectorLineWeightUpdater <inputVisioPath> <outputPdfPath>");
+                return;
             }
 
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Save the modified diagram as PDF
-            diagram.Save(outputPath, pdfOptions);
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
 
-            Console.WriteLine($"Diagram exported to PDF: {outputPath}");
+                // Increment value for 0.5 point in inches (1 point = 1/72 inch)
+                double incrementInInches = 0.5 / 72.0;
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD)
+                        {
+                            // Ensure the line weight cell exists
+                            if (shape.Line != null && shape.Line.LineWeight != null)
+                            {
+                                // Increase line weight by 0.5 pt
+                                shape.Line.LineWeight.Value += incrementInInches;
+                            }
+                        }
+                    }
+                }
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.DefaultFont = "Arial";               // Fallback font
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;     // Explicitly set format
+
+                // Save the modified diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine($"Successfully saved PDF to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred:");
+                Console.WriteLine(ex.Message);
+            }
         }
     }
-}

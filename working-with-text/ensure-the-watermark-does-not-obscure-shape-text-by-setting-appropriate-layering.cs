@@ -1,56 +1,77 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main()
     {
-        static void Main()
+        try
         {
-            // Create a new empty Visio diagram
-            Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            // Load an existing Visio diagram
+            string inputPath = "input.vsdx";
+            using (FileStream fs = new FileStream(inputPath, FileMode.Open))
+            {
+                Diagram diagram = new Diagram(fs);
 
-            // -------------------------------------------------
-            // Add a sample shape (rectangle) with some text
-            // -------------------------------------------------
-            // Draw a rectangle at (2,2) with width=4 inches and height=2 inches
-            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
-            // Retrieve the shape object
-            Shape rectShape = page.Shapes.GetShape(rectId);
-            // Add visible text to the rectangle
-            rectShape.Text.Value.Clear();
-            rectShape.Text.Value.Add(new Txt("Sample Shape Text"));
-            // Optionally bring the rectangle to front to ensure visibility
-            rectShape.BringToFront();
+                // Work with the first page
+                Page page = diagram.Pages[0];
 
-            // -------------------------------------------------
-            // Add a watermark that covers the whole page
-            // -------------------------------------------------
-            // Retrieve page dimensions (in inches)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-            // Center position for the watermark
-            double centerX = pageWidth / 2.0;
-            double centerY = pageHeight / 2.0;
-            // Add the watermark text shape (full page size)
-            Shape watermark = page.AddText(
-                centerX,               // pinX (center of rotation)
-                centerY,               // pinY
-                pageWidth,             // width (covers whole page)
-                pageHeight,            // height
-                "CONFIDENTIAL",        // watermark text
-                "Arial",               // font name
-                "#CCCCCC",             // light gray color
-                0.25);                 // font size in inches (≈18 pt)
+                // Create a layer for the watermark (background)
+                Layer watermarkLayer = new Layer();
+                watermarkLayer.Name.Value = "WatermarkLayer";
+                watermarkLayer.Visible.Value = BOOL.True;
+                page.PageSheet.Layers.Add(watermarkLayer);
+                int watermarkLayerIndex = watermarkLayer.IX;
 
-            // Send the watermark to the back so it does not obscure other shapes
-            watermark.SendToBack();
+                // Create a layer for regular content (foreground)
+                Layer contentLayer = new Layer();
+                contentLayer.Name.Value = "ContentLayer";
+                contentLayer.Visible.Value = BOOL.True;
+                page.PageSheet.Layers.Add(contentLayer);
+                int contentLayerIndex = contentLayer.IX;
 
-            // -------------------------------------------------
-            // Save the diagram to a VSDX file
-            // -------------------------------------------------
-            diagram.Save("WatermarkedDiagram.vsdx", SaveFileFormat.Vsdx);
+                // Determine page dimensions
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Add a full‑page text watermark
+                // Font size: 36 points => 36/72 inches
+                Shape watermark = page.AddText(
+                    pageWidth / 2,               // PinX (center)
+                    pageHeight / 2,              // PinY (center)
+                    pageWidth,                   // Width
+                    pageHeight,                  // Height
+                    "CONFIDENTIAL",              // Text
+                    "Arial",                     // Font name
+                    "#CCCCCC",                   // Font color (light gray)
+                    36.0 / 72.0);                // Font size in inches
+
+                // Assign the watermark shape to the background layer
+                watermark.LayerMem.LayerMember.Value = watermarkLayerIndex.ToString();
+
+                // Assign all other shapes to the foreground layer
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID != watermark.ID)
+                    {
+                        shape.LayerMem.LayerMember.Value = contentLayerIndex.ToString();
+                    }
+                }
+
+                // Save the modified diagram
+                string outputPath = "output.vsdx";
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Watermark applied and diagram saved successfully.");
+
+        }
+        catch (System.IO.FileNotFoundException ex)
+        {
+            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
+}

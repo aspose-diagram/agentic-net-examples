@@ -4,20 +4,20 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
 
             // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output_resized.vsdx";
+            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+            string outputPath = args.Length > 1 ? args[1] : "output_resized.vsdx";
 
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Maximum width in pixels and conversion to inches (assuming 96 DPI)
-            const double maxWidthPixels = 500;
+            // Define maximum width in pixels and convert to inches (assuming 96 DPI)
+            const double maxWidthPixels = 500.0;
             const double dpi = 96.0;
             double maxWidthInches = maxWidthPixels / dpi;
 
@@ -26,21 +26,16 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Process only picture (foreign) shapes
+                    // Identify picture (foreign) shapes
                     if (shape.Type == TypeValue.Foreign)
                     {
                         double currentWidth = shape.XForm.Width.Value;
-                        double currentHeight = shape.XForm.Height.Value;
-
-                        // Resize if width exceeds the maximum
-                        if (currentWidth > maxWidthInches)
+                        // Resize only if the current width exceeds the maximum
+                        if (currentWidth > maxWidthInches && currentWidth > 0)
                         {
                             double scale = maxWidthInches / currentWidth;
-                            double newWidth = maxWidthInches;
-                            double newHeight = currentHeight * scale;
-
-                            shape.XForm.Width.Value = newWidth;
-                            shape.XForm.Height.Value = newHeight;
+                            shape.XForm.Width.Value = maxWidthInches;
+                            shape.XForm.Height.Value = shape.XForm.Height.Value * scale;
                         }
                     }
                 }
@@ -50,9 +45,9 @@ class Program
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Aspose.Diagram.DiagramException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
         }
     }
 }

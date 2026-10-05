@@ -1,11 +1,11 @@
 {
   "category": "basic-operations",
   "display_name": "Basic Operations",
-  "version": "26.9.0",
+  "version": "26.7.0",
   "framework": "net8.0",
-  "total": 30,
+  "total": 20,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-05",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Add a second page to the diagram and set its size to a4 dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -32,16 +31,15 @@
       "task": "Add a text block to the shape and set its font to arial size twelve",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -51,7 +49,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -66,31 +65,16 @@
       "task": "Apply a custom fill color to the inserted shape using rgb values for teal shade",
       "namespaces": [
         "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "batch-convert-a-folder-of-vdx-files-to-pdf-using-a-loop-and-custom-pdf-options",
-      "file": "batch-convert-a-folder-of-vdx-files-to-pdf-using-a-loop-and-custom-pdf-options.cs",
-      "task": "Batch convert a folder of vdx files to pdf using a loop and custom pdf options",
-      "namespaces": [
-        "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "PdfSaveOptions",
-        "Save",
-        "diagram"
+        "Page",
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -106,21 +90,6 @@
       "key_apis": [
         "Diagram",
         "PdfSaveOptions",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "convert-a-visio-file-to-swf-format-and-confirm-playback-works-in-a-web-browser",
-      "file": "convert-a-visio-file-to-swf-format-and-confirm-playback-works-in-a-web-browser.cs",
-      "task": "Convert a visio file to swf format and confirm playback works in a web browser",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
         "Save",
         "diagram"
       ]
@@ -155,25 +124,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional",
-      "file": "create-an-svg-file-from-the-diagram-and-test-that-hyperlinks-on-shapes-remain-functional.cs",
-      "task": "Create an svg file from the diagram and test that hyperlinks on shapes remain functional",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "AddShape",
-        "Diagram",
-        "Pages",
-        "SVGSaveOptions",
-        "Save"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -194,58 +147,6 @@
       ]
     },
     {
-      "slug": "duplicate-an-existing-shape-change-its-position-and-connect-it-to-the-original-using-a-connector",
-      "file": "duplicate-an-existing-shape-change-its-position-and-connect-it-to-the-original-using-a-connector.cs",
-      "task": "Duplicate an existing shape change its position and connect it to the original using a connector",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "AddShape",
-        "ConnectShapesViaConnector",
-        "Diagram",
-        "Pages",
-        "Save"
-      ]
-    },
-    {
-      "slug": "export-the-diagram-as-a-pdf-document-and-ensure-all-shapes-retain-their-original-colors",
-      "file": "export-the-diagram-as-a-pdf-document-and-ensure-all-shapes-retain-their-original-colors.cs",
-      "task": "Export the diagram as a pdf document and ensure all shapes retain their original colors",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "generate-a-jpeg-image-of-the-diagram-with-150-dpi-and-embed-a-watermark-text-overlay",
-      "file": "generate-a-jpeg-image-of-the-diagram-with-150-dpi-and-embed-a-watermark-text-overlay.cs",
-      "task": "Generate a jpeg image of the diagram with 150 dpi and embed a watermark text overlay",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "ImageSaveOptions",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
       "slug": "import-a-stencil-collection-from-a-vsx-file-and-list-all-available-master-shapes",
       "file": "import-a-stencil-collection-from-a-vsx-file-and-list-all-available-master-shapes.cs",
       "task": "Import a stencil collection from a vsx file and list all available master shapes",
@@ -255,10 +156,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
-        "Diagram",
-        "Masters",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -267,29 +165,14 @@
       "task": "Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes"
-      ]
-    },
-    {
-      "slug": "iterate-through-multiple-vsdx-files-extract-page-counts-and-write-results-to-a-csv-report",
-      "file": "iterate-through-multiple-vsdx-files-extract-page-counts-and-write-results-to-a-csv-report.cs",
-      "task": "Iterate through multiple vsdx files extract page counts and write results to a csv report",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
+        "Shapes",
         "diagram"
       ]
     },
@@ -299,8 +182,8 @@
       "task": "Load a single stencil from a vss file and add a master shape to the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddMaster",
@@ -346,36 +229,16 @@
       "task": "Parse an mmd file into a diagram object and convert its flowchart to visio format",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
+        "Page",
         "Pages",
         "Save"
-      ]
-    },
-    {
-      "slug": "produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation",
-      "file": "produce-an-html-representation-of-the-diagram-with-embedded-css-for-interactive-navigation.cs",
-      "task": "Produce an html representation of the diagram with embedded css for interactive navigation",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "HTMLSaveOptions",
-        "Pages",
-        "Save",
-        "Shapes"
       ]
     },
     {
@@ -390,22 +253,6 @@
       ],
       "key_apis": [
         "Diagram"
-      ]
-    },
-    {
-      "slug": "remove-a-specific-shape-by-its-id-from-the-diagram-and-re-save-the-updated-file",
-      "file": "remove-a-specific-shape-by-its-id-from-the-diagram-and-re-save-the-updated-file.cs",
-      "task": "Remove a specific shape by its id from the diagram and re save the updated file",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram"
       ]
     },
     {
@@ -434,10 +281,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -491,24 +338,6 @@
         "Pages",
         "Save",
         "diagram"
-      ]
-    },
-    {
-      "slug": "validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing",
-      "file": "validate-that-each-loaded-diagram-contains-at-least-one-shape-before-proceeding-with-processing.cs",
-      "task": "Validate that each loaded diagram contains at least one shape before proceeding with processing",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
       ]
     }
   ]

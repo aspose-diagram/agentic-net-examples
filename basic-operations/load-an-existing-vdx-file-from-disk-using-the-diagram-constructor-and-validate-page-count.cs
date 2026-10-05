@@ -1,40 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Ensure a file path argument is provided
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <path-to-vdx-file>");
+            return;
+        }
+
+        string vdxPath = args[0];
+
+        // Guard: verify the file exists before attempting to load
+        if (!File.Exists(vdxPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {vdxPath}");
+            return;
+        }
+
+        Diagram diagram = null;
         try
         {
+            // Load the existing VDX file using the Diagram constructor
+            diagram = new Diagram(vdxPath);
 
-            // Path to the VDX file to load
-            string filePath = "input.vdx";
-
-            // Load the diagram using the Diagram constructor
-            Diagram diagram = new Diagram(filePath);
-
-            // Get the number of pages in the diagram
+            // Validate the page count
             int pageCount = diagram.Pages.Count;
 
-            // Output the page count for validation
-            Console.WriteLine($"Page count: {pageCount}");
+            Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
 
-            // Example validation: ensure the diagram has at least one page
-            if (pageCount < 1)
+            // Example validation: ensure there is at least one page
+            if (pageCount == 0)
             {
-                Console.WriteLine("Validation failed: The diagram contains no pages.");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                // Optionally, throw to indicate failure
+                // throw new Exception("Diagram contains no pages.");
             }
-            else
-            {
-                Console.WriteLine("Validation succeeded: The diagram contains pages.");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose the diagram if it implements IDisposable
+            if (diagram != null)
+            {
+                try
+                {
+                    diagram.Dispose();
+                }
+                catch
+                {
+                    // Ignored - disposal failure should not crash the program
+                }
+            }
         }
     }
 }

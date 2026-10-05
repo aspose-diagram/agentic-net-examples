@@ -1,37 +1,52 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
-            {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output SVG file path
+        string outputPath = "output.svg";
 
-                // Load an existing Visio diagram.
-                // Replace "input.vsdx" with the path to your source file.
-                Diagram diagram = new Diagram("input.vsdx");
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-                // Configure SVG save options.
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Preserve the original viewbox by fitting the SVG to the viewport.
-                // This ensures the exported SVG retains the same dimensions as the source diagram.
-                svgOptions.SVGFitToViewPort = true;
+            // Configure SVG save options
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Note: Aspose.Diagram does not provide a direct property to enable CSS styling
-                // for shapes in the exported SVG. The library exports shape styles inline.
-                // If CSS styling is required, post‑processing of the SVG file would be needed.
+            // Preserve the original viewbox by fitting SVG to viewport
+            svgOptions.SVGFitToViewPort = true;
 
-                // Export the diagram (first page) to SVG using the configured options.
-                // Adjust the output path as needed.
-                diagram.Save("output.svg", svgOptions);
+            // TODO: Enable CSS styling for shapes if supported by a future API version.
+            // Currently Aspose.Diagram does not expose a property to enable CSS styling.
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the diagram as SVG using the configured options
+            diagram.Save(outputPath, svgOptions);
+
+            Console.WriteLine($"Diagram successfully saved to SVG: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

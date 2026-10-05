@@ -1,122 +1,67 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input MMD file path (adjust as needed)
-        string mmdPath = "flowchart.mmd";
-        if (!File.Exists(mmdPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.WriteLine($"MMD file not found: {mmdPath}");
+            Console.Error.WriteLine("Usage: Program <input.mmd> <output.vsdx>");
             return;
         }
 
-        // Read all lines from the MMD file
-        string[] lines = File.ReadAllLines(mmdPath);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Simple parser for Mermaid flowchart syntax:
-        //   node1 --> node2
-        //   node2 --> node3
-        // Collect nodes and edges
-        var edges = new List<(string from, string to)>();
-        var nodes = new HashSet<string>();
-
-        foreach (string rawLine in lines)
+        // Guard: ensure the MMD file exists.
+        if (!File.Exists(inputPath))
         {
-            string line = rawLine.Trim();
-
-            // Skip empty lines and lines that are not connections
-            if (string.IsNullOrEmpty(line) || !line.Contains("-->"))
-                continue;
-
-            // Split on the connection operator
-            string[] parts = line.Split(new[] { "-->" }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length != 2)
-                continue;
-
-            string from = parts[0].Trim();
-            string to = parts[1].Trim();
-
-            nodes.Add(from);
-            nodes.Add(to);
-            edges.Add((from, to));
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
         }
 
-        // Create an empty diagram
-        Diagram diagram = new Diagram();
+        // Placeholder for the parsed flowchart data.
+        // TODO: Implement parsing of the MMD (Mermaid) file and translate it into
+        // a collection of shapes, connectors, and their properties.
+        // The parsing logic should populate structures that can be used to
+        // construct the Visio diagram below.
+        // Example (pseudo):
+        // var flowchart = MermaidParser.Parse(File.ReadAllText(inputPath));
+        // foreach (var node in flowchart.Nodes) { /* add shape */ }
+        // foreach (var edge in flowchart.Edges) { /* add connector */ }
 
-        // Use the first page (always exists in a new diagram)
-        Page page = diagram.Pages[0];
-
-        // Layout parameters
-        double startX = 1.0;      // inches from left
-        double startY = 1.0;      // inches from top
-        double shapeWidth = 1.5;  // inches
-        double shapeHeight = 0.8; // inches
-        double hSpacing = 2.0;    // horizontal spacing between nodes
-        double vSpacing = 1.5;    // vertical spacing (not used in this simple layout)
-
-        // Assign a position for each node (simple left‑to‑right layout)
-        var nodePositions = new Dictionary<string, (double x, double y)>();
-        int index = 0;
-        foreach (string node in nodes)
+        try
         {
-            double x = startX + index * hSpacing;
-            double y = startY;
-            nodePositions[node] = (x, y);
-            index++;
-        }
+            // Create a new empty diagram.
+            Diagram diagram = new Diagram();
 
-        // Create shapes for each node and store their IDs
-        var nodeShapeIds = new Dictionary<string, long>();
-        foreach (var kvp in nodePositions)
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                // Add a default page.
+                Page page = new Page();
+                page.Name = "Page-1";
+                diagram.Pages.Add(page);
+            }
+
+            // TODO: Using the parsed data, add shapes and connectors to the diagram.
+            // Example of adding a simple rectangle shape:
+            // long shapeId = diagram.AddShape(1, 1, 2, 2, "Rectangle");
+            // Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            // shape.Text.Value = "Sample";
+
+            // Save the diagram as Visio VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram successfully saved to \"{outputPath}\".");
+        }
+        catch (Exception ex)
         {
-            string nodeName = kvp.Key;
-            double pinX = kvp.Value.x;
-            double pinY = kvp.Value.y;
-
-            // Draw a rectangle representing the node
-            long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
-            Shape shape = page.Shapes.GetShape((int)shapeId);
-
-            // Add the node label
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt(nodeName));
-
-            nodeShapeIds[nodeName] = shapeId;
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
-
-        // Ensure the "Dynamic connector" master is available.
-        // Most Visio installations include it in the built‑in stencil.
-        // Add a connector shape for each edge and connect the nodes.
-        foreach (var edge in edges)
-        {
-            if (!nodeShapeIds.ContainsKey(edge.from) || !nodeShapeIds.ContainsKey(edge.to))
-                continue;
-
-            long fromId = nodeShapeIds[edge.from];
-            long toId = nodeShapeIds[edge.to];
-
-            // Add a connector shape (dynamic connector)
-            long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
-            // Connect the two shapes via the connector
-            page.ConnectShapesViaConnector(
-                fromId,
-                ConnectionPointPlace.Right,
-                toId,
-                ConnectionPointPlace.Left,
-                connectorId);
-        }
-
-        // Save the diagram as Visio VSDX
-        string outputPath = "flowchart.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"Diagram saved to {outputPath}");
     }
 }

@@ -4,32 +4,86 @@ using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
+            Console.Error.WriteLine("Usage: Program <input VSDX file path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Read the VSDX file into a memory stream.
+        MemoryStream memoryStream = new MemoryStream();
+        try
+        {
+            using (FileStream fileStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            {
+                fileStream.CopyTo(memoryStream);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading file into memory stream: {ex.Message}");
+            return;
+        }
+
+        // Aspose.Diagram cannot load directly from a stream, so write the stream to a temporary file.
+        string tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vsdx");
+        try
+        {
+            memoryStream.Position = 0;
+            using (FileStream tempFile = new FileStream(tempPath, FileMode.Create, FileAccess.Write))
+            {
+                memoryStream.CopyTo(tempFile);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error writing temporary file: {ex.Message}");
+            return;
+        }
+
+        // Load the diagram from the temporary file and extract the title property.
+        Diagram diagram = null;
+        try
+        {
+            diagram = new Diagram(tempPath);
+            string title = diagram.DocumentProps.Title ?? string.Empty;
+            Console.WriteLine($"Document Title: {title}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram or extracting title: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up resources.
+            diagram?.Dispose();
+
             try
             {
-
-                // Load the VSDX file into a byte array (replace with your source as needed)
-                byte[] vsdxBytes = File.ReadAllBytes("input.vsdx");
-
-                // Create a memory stream from the byte array
-                using (MemoryStream memoryStream = new MemoryStream(vsdxBytes))
+                if (File.Exists(tempPath))
                 {
-                    // Load the diagram from the memory stream
-                    Diagram diagram = new Diagram(memoryStream);
-
-                    // Extract the document title property
-                    string title = diagram.DocumentProps.Title;
-
-                    // Output the title
-                    Console.WriteLine($"Document Title: {title}");
+                    File.Delete(tempPath);
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Warning: Unable to delete temporary file: {ex.Message}");
             }
+
+            memoryStream.Dispose();
+        }
     }
-    }
+}

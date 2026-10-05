@@ -1,27 +1,38 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram. Aspose.Diagram automatically adds one blank page.
-        Diagram diagram = new Diagram();
-
-        // Verify that the diagram contains exactly one page.
-        bool hasSinglePage = diagram.Pages.Count == 1;
-
-        // Verify that the single page has no shapes (i.e., it is empty).
-        bool pageIsEmpty = hasSinglePage && diagram.Pages[0].Shapes.Count == 0;
-
-        if (hasSinglePage && pageIsEmpty)
+        try
         {
-            Console.WriteLine("Diagram contains a single empty page.");
+            // Create a new empty diagram. This constructor adds a default page automatically.
+            Diagram diagram = new Diagram();
+
+            // Verify that the diagram contains exactly one page.
+            if (diagram.Pages.Count != 1)
+            {
+                throw new Exception($"Expected 1 page, but found {diagram.Pages.Count}.");
+            }
+
+            // Retrieve the first (and only) page.
+            Page page = diagram.Pages[0];
+
+            // Verify that the page has no shapes (i.e., it is empty).
+            if (page.Shapes.Count != 0)
+            {
+                throw new Exception($"Expected the page to be empty, but found {page.Shapes.Count} shape(s).");
+            }
+
+            // If we reach this point, the verification succeeded.
+            Console.WriteLine("Diagram created successfully with a single empty page.");
         }
-        else
+        catch (Exception ex)
         {
-            Console.WriteLine("Diagram verification failed.");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -7,10 +7,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
+        // Path to the source Visio file (modify as needed)
         string inputPath = "input.vsdx";
-
-        // Verify the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
@@ -22,37 +20,52 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Insert automatic page number field in the footer (Visio field code &p)
+            // -----------------------------------------------------------------
+            // Add page numbers to the footer using Visio field codes.
+            // '&p' inserts the current page number.
+            // -----------------------------------------------------------------
             diagram.HeaderFooter.FooterRight = "Page: &p";
 
-            // Determine total page count for later use
-            int totalPages = diagram.Pages.Count;
-
-            // Loop through each page and save it as a separate HTML file
-            for (int i = 0; i < totalPages; i++)
+            // -----------------------------------------------------------------
+            // Configure HTML save options.
+            // ExportHiddenPage and IsExportComments are common settings.
+            // -----------------------------------------------------------------
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                // Configure HTML save options for the current page
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // Export hidden pages is disabled (optional)
-                    ExportHiddenPage = false,
-                    // Specify which page to render (0‑based index)
-                    PageIndex = i,
-                    // Indicate total number of pages (required for proper navigation links)
-                    PageCount = totalPages
-                };
+                ExportHiddenPage = false,
+                IsExportComments = false
+                // If the API supports page splitting, you could enable it here:
+                // SplitPages = true;
+            };
 
-                // Build output file name that includes the page number
-                string outputPath = $"output_page_{i + 1}.html";
+            // -----------------------------------------------------------------
+            // Define output directory for HTML files.
+            // -----------------------------------------------------------------
+            string outputDir = "HtmlOutput";
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
 
-                // Save the current page as HTML
+            // -----------------------------------------------------------------
+            // Save each page as a separate HTML file.
+            // -----------------------------------------------------------------
+            int pageCount = diagram.Pages.Count;
+            for (int i = 0; i < pageCount; i++)
+            {
+                // Set the page index to export only the current page.
+                htmlOptions.PageIndex = i;
+                htmlOptions.PageCount = 1;
+
+                string outputPath = Path.Combine(outputDir, $"output_page_{i + 1}.html");
                 diagram.Save(outputPath, htmlOptions);
+                Console.WriteLine($"Saved page {i + 1} to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

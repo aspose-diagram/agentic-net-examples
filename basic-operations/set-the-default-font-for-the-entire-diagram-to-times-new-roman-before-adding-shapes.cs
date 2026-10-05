@@ -1,35 +1,55 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Configure the global default font before any shapes are added
-        FontConfigs.DefaultFontName = "Times New Roman";
+        // Define the output file path
+        string outputPath = "output.vsdx";
 
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Guard: ensure the directory for the output file exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
-        // Access the first page (automatically created with a new diagram)
-        Page page = diagram.Pages[0];
+        try
+        {
+            // Configure the default font for all diagrams before any diagram is created
+            FontConfigs.DefaultFontName = "Times New Roman";
 
-        // Add a rectangle shape using the DrawRectangle method
-        double pinX = 2.0;   // X coordinate of the shape's center
-        double pinY = 2.0;   // Y coordinate of the shape's center
-        double width = 2.0; // Width of the rectangle
-        double height = 1.0; // Height of the rectangle
-        long shapeId = page.DrawRectangle(pinX, pinY, width, height);
+            // Optionally add the system font folder (non‑recursive)
+            FontConfigs.SetFontFolder(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), false);
 
-        // Retrieve the shape object to modify its properties
-        Shape shape = page.Shapes.GetShape(shapeId);
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Set the shape's text
-        shape.Text.Value.Clear();
-        shape.Text.Value.Add(new Txt("Sample Text"));
+            // Add a new blank page to the diagram
+            Page page = new Page();
+            diagram.Pages.Add(page);
 
-        // Save the diagram to a VSDX file
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Draw a rectangle shape at position (2,2) with width and height of 2 units
+            long shapeId = page.DrawRectangle(2.0, 2.0, 2.0, 2.0);
+
+            // Retrieve the shape object using the returned ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Clear any existing text (if any) and add new text to the shape
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Sample Shape"));
+
+            // Save the diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

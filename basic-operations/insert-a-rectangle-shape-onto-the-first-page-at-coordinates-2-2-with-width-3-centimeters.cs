@@ -1,43 +1,46 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define output file path
+        string outputPath = "output.vsdx";
+
+        try
         {
-            try
-            {
+            // Create a new blank diagram
+            Diagram diagram = new Diagram();
 
-                // Create a new blank diagram
-                Diagram diagram = new Diagram();
+            // Ensure there is at least one page (ActivePage is created by default)
+            Page page = diagram.ActivePage;
 
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
+            // Add a rectangle shape at (PinX=2, PinY=2)
+            // The fourth argument 'isCalculate' must be a bool (false means no automatic layout calculation)
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-                // Coordinates (PinX, PinY) in inches
-                double pinX = 2.0;
-                double pinY = 2.0;
+            // Retrieve the newly added shape using its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Width of 3 centimeters converted to inches (1 cm = 0.393701 inches)
-                double widthInches = 3.0 * 0.393701;
+            // Convert 3 centimeters to inches (1 cm = 0.393701 inches)
+            double widthInInches = 3.0 * 0.393701;
 
-                // Add a rectangle shape using the built‑in "Rectangle" master.
-                // The fourth parameter (isCalculate) must be a boolean.
-                long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
+            // Set the shape's width to 3 cm (height remains default)
+            shape.XForm.Width.Value = widthInInches;
 
-                // Retrieve the shape object to modify its dimensions
-                Shape rectangle = page.Shapes.GetShape(shapeId);
+            // Optionally, you could set the height as well if desired
+            // shape.XForm.Height.Value = widthInInches;
 
-                // Set the width to 3 cm (in inches). Height can remain default.
-                rectangle.XForm.Width.Value = widthInches;
-
-                // Optional: Save the diagram to a VSDX file to verify the result
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+            // Save the diagram to a VSDX file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,64 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the protected Visio diagram
+        string inputPath = "protected_diagram.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Path for the exported PDF
+        string outputPath = "protected_diagram.pdf";
+
         try
         {
-
-            // Paths to the source Visio diagram (protected) and the PDF output.
-            string diagramPath = "protected_diagram.vsdx";
-            string pdfPath = "protected_diagram.pdf";
-
-            // Load the protected Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Read global document protection settings.
-            BOOL protectBkgnds = diagram.DocumentSettings.ProtectBkgnds;
-            BOOL protectMasters = diagram.DocumentSettings.ProtectMasters;
-            BOOL protectShapes = diagram.DocumentSettings.ProtectShapes;
-            BOOL protectStyles = diagram.DocumentSettings.ProtectStyles;
-
-            // Output the protection metadata to the console.
-            Console.WriteLine($"ProtectBkgnds : {protectBkgnds}");
-            Console.WriteLine($"ProtectMasters: {protectMasters}");
-            Console.WriteLine($"ProtectShapes : {protectShapes}");
-            Console.WriteLine($"ProtectStyles : {protectStyles}");
-
-            // Verify that at least one protection flag is set (example validation).
-            if (protectBkgnds == BOOL.False &&
-                protectMasters == BOOL.False &&
-                protectShapes == BOOL.False &&
-                protectStyles == BOOL.False)
+            // Load the diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                throw new Exception("No protection metadata found in the diagram.");
+                // Read protection settings before export (properties are of type BOOL)
+                BOOL protectBkgnds = diagram.DocumentSettings.ProtectBkgnds;
+                BOOL protectMasters = diagram.DocumentSettings.ProtectMasters;
+                BOOL protectShapes = diagram.DocumentSettings.ProtectShapes;
+                BOOL protectStyles = diagram.DocumentSettings.ProtectStyles;
+
+                Console.WriteLine("Protection settings before export:");
+                Console.WriteLine($"  ProtectBkgnds: {protectBkgnds}");
+                Console.WriteLine($"  ProtectMasters: {protectMasters}");
+                Console.WriteLine($"  ProtectShapes: {protectShapes}");
+                Console.WriteLine($"  ProtectStyles: {protectStyles}");
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    ExportHiddenPage = false,               // Do not export hidden pages
+                    SaveFormat = SaveFileFormat.Pdf         // Explicitly set the format
+                };
+
+                // Export the diagram to PDF
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram exported to PDF: {outputPath}");
+
+                // Re‑read protection settings after export to verify they persisted
+                BOOL protectBkgndsAfter = diagram.DocumentSettings.ProtectBkgnds;
+                BOOL protectMastersAfter = diagram.DocumentSettings.ProtectMasters;
+                BOOL protectShapesAfter = diagram.DocumentSettings.ProtectShapes;
+                BOOL protectStylesAfter = diagram.DocumentSettings.ProtectStyles;
+
+                Console.WriteLine("Protection settings after export:");
+                Console.WriteLine($"  ProtectBkgnds: {protectBkgndsAfter}");
+                Console.WriteLine($"  ProtectMasters: {protectMastersAfter}");
+                Console.WriteLine($"  ProtectShapes: {protectShapesAfter}");
+                Console.WriteLine($"  ProtectStyles: {protectStylesAfter}");
+
+                // Verify that protection flags have not changed
+                if (protectBkgnds != protectBkgndsAfter ||
+                    protectMasters != protectMastersAfter ||
+                    protectShapes != protectShapesAfter ||
+                    protectStyles != protectStylesAfter)
+                {
+                    throw new Exception("Protection metadata changed after PDF export.");
+                }
+
+                Console.WriteLine("Verification succeeded: protection metadata persisted.");
             }
-
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Optional: set a default font to avoid missing font warnings.
-            pdfOptions.DefaultFont = "Arial";
-
-            // Export the diagram to PDF.
-            diagram.Save(pdfPath, pdfOptions);
-
-            // Confirm that the PDF file was created.
-            if (!System.IO.File.Exists(pdfPath))
-            {
-                throw new Exception("PDF export failed; output file not found.");
-            }
-
-            Console.WriteLine("Diagram exported to PDF successfully. Protection metadata persisted.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

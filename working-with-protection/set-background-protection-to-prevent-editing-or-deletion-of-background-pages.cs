@@ -1,41 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        // Input and output file paths (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // Determine the next available page ID
-            int maxPageId = 0;
-            foreach (Page p in diagram.Pages)
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_protected.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
+                // Set background protection to prevent editing or deletion of background pages
+                diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+
+                // Save the modified diagram (preserve VSDX format)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Create a background page
-            Page backgroundPage = new Page();
-            backgroundPage.ID = maxPageId + 1;
-            backgroundPage.Name = "BackgroundPage";
-            backgroundPage.Background = BOOL.True; // Mark as background
-
-            // Add the background page to the diagram
-            diagram.Pages.Add(backgroundPage);
-
-            // Apply global protection to prevent editing or deletion of background pages
-            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
-            // Optionally protect other aspects of the document as well
-            diagram.DocumentSettings.ProtectMasters = BOOL.True;
-            diagram.DocumentSettings.ProtectShapes = BOOL.True;
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;
-
-            // Save the protected diagram
-            diagram.Save("ProtectedDiagram.vsdx", SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with background protection to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

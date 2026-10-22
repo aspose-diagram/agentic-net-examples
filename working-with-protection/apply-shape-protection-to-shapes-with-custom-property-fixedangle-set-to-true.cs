@@ -1,56 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path (optional second argument or default suffix)
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_protected.vsdx");
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all shapes on the current page
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Ensure the shape has custom properties collection
-                    if (shape.Props != null)
+                    Shape shape = page.Shapes[i];
+
+                    // Check each custom property (Prop) of the shape
+                    bool hasFixedAngleTrue = false;
+                    for (int p = 0; p < shape.Props.Count; p++)
                     {
-                        // Look for a custom property named "FixedAngle"
-                        foreach (Prop prop in shape.Props)
+                        Prop prop = shape.Props[p];
+                        if (prop.Name == "FixedAngle" &&
+                            prop.Value != null &&
+                            prop.Value.Val != null &&
+                            string.Equals(prop.Value.Val, "true", StringComparison.OrdinalIgnoreCase))
                         {
-                            if (prop.Name == "FixedAngle" &&
-                                string.Equals(prop.Value.Val, "true", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Apply protection: lock rotation of the shape
-                                shape.Protection.LockRotate.Value = BOOL.True;
-
-                                // Additional locks can be added here if needed, e.g.:
-                                // shape.Protection.LockMoveX.Value = BOOL.True;
-                                // shape.Protection.LockMoveY.Value = BOOL.True;
-
-                                break; // Property found, no need to check further props for this shape
-                            }
+                            hasFixedAngleTrue = true;
+                            break;
                         }
+                    }
+
+                    // If the shape has FixedAngle set to true, apply protection
+                    if (hasFixedAngleTrue)
+                    {
+                        // Lock rotation to prevent angle changes
+                        shape.Protection.LockRotate.Value = BOOL.True;
+
+                        // Optionally, you can lock other aspects here if needed
+                        // e.g., shape.Protection.LockAspect.Value = BOOL.True;
                     }
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

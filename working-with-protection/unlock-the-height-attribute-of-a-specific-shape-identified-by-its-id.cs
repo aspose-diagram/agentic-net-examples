@@ -1,39 +1,87 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeId> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+        string outputPath = args[2];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
-
             // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            Diagram diagram = new Diagram(inputPath);
 
-            // ID of the shape whose height attribute should be unlocked
-            long shapeId = 5; // replace with the actual shape ID
+            Shape targetShape = null;
 
-            // Retrieve the shape from the first page (adjust page index if needed)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Search for the shape with the specified ID across all pages
+            foreach (Page page in diagram.Pages)
             {
-                throw new Exception($"Shape with ID {shapeId} not found.");
+                // Shapes.GetShape expects an int ID; cast safely
+                int intId = (int)shapeId;
+                try
+                {
+                    Shape shape = page.Shapes.GetShape(intId);
+                    if (shape != null && shape.ID == shapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                catch
+                {
+                    // GetShape throws if not found; ignore and continue
+                }
             }
 
-            // Unlock the height attribute by disabling the height lock protection
-            shape.Protection.LockHeight.Value = BOOL.False;
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                return;
+            }
+
+            // Ensure the shape is not logically deleted
+            if (targetShape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
+                return;
+            }
+
+            // Unlock the Height protection attribute
+            // Access the protection cell and set it to FALSE
+            targetShape.Protection.LockHeight.Value = BOOL.False;
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Shape height protection unlocked and diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

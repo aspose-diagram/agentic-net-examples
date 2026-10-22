@@ -1,28 +1,46 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Verify that the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Lock diagram styles from modification by setting the global protection flag.
+                diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Save the protected diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // Lock diagram styles from modification (global protection)
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;
-
-            // Save the diagram with the protection applied
-            diagram.Save("output_protected.vsdx", SaveFileFormat.Vsdx);
-
+            Console.WriteLine("Diagram protection applied and saved successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

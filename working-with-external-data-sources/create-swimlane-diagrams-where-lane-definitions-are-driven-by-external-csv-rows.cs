@@ -7,91 +7,86 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the CSV file containing lane definitions.
-        // Expected format per line: LaneName,HeightInInches
-        string csvPath = "lanes.csv";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <csvPath> <outputVsdxPath>");
+            return;
+        }
 
+        string csvPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing CSV file.
         if (!File.Exists(csvPath))
         {
-            Console.WriteLine($"CSV file not found: {csvPath}");
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
             return;
         }
 
-        // Read and parse CSV rows.
-        List<(string Name, double Height)> lanes = new List<(string, double)>();
-        foreach (string line in File.ReadAllLines(csvPath))
+        // Read lane definitions from the CSV file.
+        string[] lines = File.ReadAllLines(csvPath);
+        List<string> laneNames = new List<string>();
+        foreach (string line in lines)
         {
-            // Skip empty lines.
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
+            string trimmed = line.Trim();
+            if (trimmed.Length == 0)
+                continue; // Skip empty lines.
 
-            // Optional: skip header if it contains non-numeric second column.
-            string[] parts = line.Split(',');
-            if (parts.Length < 2)
-                continue;
-
-            string name = parts[0].Trim();
-            if (!double.TryParse(parts[1].Trim(), out double height))
-                continue; // Invalid height, skip this row.
-
-            lanes.Add((name, height));
+            // Use the first column as the lane name.
+            string[] parts = trimmed.Split(',');
+            laneNames.Add(parts[0]);
         }
 
-        if (lanes.Count == 0)
+        try
         {
-            Console.WriteLine("No valid lane definitions found in CSV.");
-            return;
+            // Create a new diagram inside a using block as required.
+            using (Diagram diagram = new Diagram())
+            {
+                // Add a window to avoid accessing an empty Windows collection.
+                Window window = new Window();
+                window.WindowType = WindowTypeValue.Drawing;
+                window.WindowState = WindowStateValue.Maximized;
+                window.WindowWidth = 1100;
+                window.WindowHeight = 700;
+                diagram.Windows.Add(window);
+
+                // Add a single page to host the swimlane shapes.
+                Page page = new Page();
+                diagram.Pages.Add(page);
+
+                // Layout parameters for the lanes.
+                double startX = 5.0;          // Left margin (in inches).
+                double startY = 5.0;          // Top margin (in inches).
+                double laneWidth = 8.0;       // Width of each lane (in inches).
+                double laneHeight = 2.0;      // Height of each lane (in inches).
+                double currentY = startY + laneHeight / 2.0; // Center Y of the first lane.
+
+                // Create a rectangle shape for each lane and assign its name.
+                foreach (string laneName in laneNames)
+                {
+                    // Draw a rectangle representing the lane.
+                    long shapeId = page.DrawRectangle(startX, currentY, laneWidth, laneHeight);
+
+                    // Retrieve the shape object using the returned ID.
+                    Shape shape = page.Shapes.GetShape((int)shapeId);
+
+                    // Replace any existing text with the lane name.
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt(laneName));
+
+                    // Move to the next vertical position.
+                    currentY += laneHeight;
+                }
+
+                // Save the diagram as VSDX.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-
-        // Create a new empty diagram.
-        Diagram diagram = new Diagram();
-
-        // Retrieve the first (and only) page.
-        Page page = diagram.Pages[0];
-
-        // Define page dimensions (in inches). Adjust as needed.
-        double pageWidth = 11.0;   // e.g., Letter width
-        double pageHeight = 8.5;   // e.g., Letter height
-        page.PageSheet.PageProps.PageWidth.Value = pageWidth;
-        page.PageSheet.PageProps.PageHeight.Value = pageHeight;
-
-        // Margin from top edge (in inches).
-        double topMargin = 0.5;
-        double currentTop = pageHeight - topMargin;
-
-        // Width of each lane (full page width minus side margins).
-        double sideMargin = 0.5;
-        double laneWidth = pageWidth - 2 * sideMargin;
-        double laneCenterX = pageWidth / 2.0;
-
-        // Create a rectangle for each lane and add its label.
-        foreach (var lane in lanes)
+        catch (Exception ex)
         {
-            double laneHeight = lane.Height;
-
-            // Calculate the center Y coordinate for the rectangle.
-            double centerY = currentTop - laneHeight / 2.0;
-
-            // Draw the lane rectangle.
-            long shapeId = page.DrawRectangle(laneCenterX, centerY, laneWidth, laneHeight);
-
-            // Retrieve the shape object.
-            Shape laneShape = page.Shapes.GetShape(shapeId);
-
-            // Clear any existing text and add the lane name.
-            laneShape.Text.Value.Clear();
-            laneShape.Text.Value.Add(new Txt(lane.Name));
-
-            // Optional: set a light fill color for visual distinction.
-            laneShape.Fill.FillForegnd.Value = "#E0F7FA";
-
-            // Update the current top position for the next lane.
-            currentTop -= laneHeight;
+            // Report any errors that occur during diagram creation or saving.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        // Save the diagram to VSDX format.
-        string outputPath = "SwimlaneDiagram.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Csv);
-        Console.WriteLine($"Swimlane diagram saved to: {outputPath}");
     }
 }

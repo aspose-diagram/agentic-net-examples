@@ -1,48 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input and output file paths
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths to the source and destination diagram files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Find the highest existing page ID
-            int maxPageId = 0;
-            foreach (Page page in diagram.Pages)
+            // Load the existing diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (page.ID > maxPageId)
-                    maxPageId = page.ID;
+                // Determine the maximum existing page ID (as int) to assign a unique ID to the new page
+                int maxPageId = 0;
+                foreach (Page existingPage in diagram.Pages)
+                {
+                    // Page.ID is a long; cast to int for comparison
+                    int pageId = (int)existingPage.ID;
+                    if (pageId > maxPageId)
+                        maxPageId = pageId;
+                }
+
+                // Create a new blank page and set its ID and name
+                Page newPage = new Page();
+                newPage.ID = maxPageId + 1;
+                newPage.Name = $"Page-{newPage.ID}";
+
+                // Set the page size to A4 dimensions (in inches)
+                // Width = 8.27 inches, Height = 11.69 inches
+                newPage.PageSheet.PageProps.PageWidth.Value = 8.27;
+                newPage.PageSheet.PageProps.PageHeight.Value = 11.69;
+
+                // Add the new page to the diagram
+                diagram.Pages.Add(newPage);
+
+                // Save the modified diagram to the output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Create a new blank page
-            Page newPage = new Page();
-            newPage.ID = maxPageId + 1;          // Assign a unique ID
-            newPage.Name = "BlankPage";          // Optional name
-
-            // Set the page size to A4 dimensions (in inches)
-            newPage.PageSheet.PageProps.PageWidth.Value = 8.27;
-            newPage.PageSheet.PageProps.PageHeight.Value = 11.69;
-
-            // Add the new page to the diagram
-            diagram.Pages.Add(newPage);
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during Aspose operations to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

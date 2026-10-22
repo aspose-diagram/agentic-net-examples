@@ -1,52 +1,50 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Vba; // Required for VbaModuleType enum
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
+        // Expect two arguments: input Visio file and output Visio file.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // VBA macro that makes every page square (height = width)
-            string macroCode = @"
-Public Sub MakePagesSquare()
-    Dim pg As Page
-    For Each pg In ThisDocument.Pages
-        Dim pageWidth As Double
-        pageWidth = pg.PageSheet.PageProps.PageWidth.Value
-        pg.PageSheet.PageProps.PageHeight.Value = pageWidth
-    Next pg
-End Sub
-";
+            // Iterate over each page in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve the current page width.
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Add a new procedural VBA module and insert the macro code
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "PageMacro");
-            var vbaModule = diagram.VbaProject.Modules[moduleIndex];
-            vbaModule.Codes = macroCode; // Assign the macro source to the module
+                // Set the page height to match the width, making the page square.
+                page.PageSheet.PageProps.PageHeight.Value = pageWidth;
+            }
 
-            // Save the diagram in a macro‑enabled format to preserve VBA code
-            string outputPath = "output.vsdm";
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -7,50 +7,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard: ensure the file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate arguments: input file, keyword, optional output file
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <keyword> [output.vsdx]");
             return;
         }
 
-        // Keyword to search for (case‑insensitive)
-        string keyword = "Important";
-        Regex regex = new Regex(keyword, RegexOptions.IgnoreCase);
+        string inputPath = args[0];
+        string keyword = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : null;
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes in the diagram
+            // Prepare the regular expression (case‑insensitive)
+            Regex regex = new Regex(keyword, RegexOptions.IgnoreCase);
+
+            Console.WriteLine($"Shapes with EventComment containing \"{keyword}\":");
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Access the Comment cell in the Miscellaneous section (if it exists)
-                    // The formula is stored in the Ufe.F property
-                    string commentFormula = shape.Misc.Comment?.Ufe?.F;
+                    // Access the closest available event cell (EventDrop) as a substitute for EventComment
+                    string eventFormula = shape.Event.EventDrop.Ufe.F;
 
-                    if (!string.IsNullOrEmpty(commentFormula))
+                    // If the formula is null, skip this shape
+                    if (string.IsNullOrEmpty(eventFormula))
+                        continue;
+
+                    // Apply the regular expression
+                    if (regex.IsMatch(eventFormula))
                     {
-                        // Remove surrounding quotes that Visio may add to string literals
-                        string commentText = commentFormula.Trim('\"');
-
-                        // Apply the regular expression to the comment text
-                        if (regex.IsMatch(commentText))
-                        {
-                            Console.WriteLine($"Shape ID {shape.ID} on page \"{page.NameU}\" matches the keyword.");
-                        }
+                        // Output the shape ID and the matching formula
+                        Console.WriteLine($"Page {page.ID}, Shape ID {shape.ID}: {eventFormula}");
                     }
                 }
+            }
+
+            // If an output path is provided, save the (unchanged) diagram
+            if (!string.IsNullOrEmpty(outputPath))
+            {
+                // Guard: ensure the directory for the output file exists
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+                    return;
+                }
+
+                // Save the diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

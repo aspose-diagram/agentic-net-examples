@@ -1,60 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: inputPath, outputPath, propertyName, propertyValue
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputPath> <outputPath> <propertyName> <propertyValue>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string propName = args[2];
+        string propValue = args[3];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the custom property to add
-            string newPropName = "MyCustomProperty";
-            string newPropValue = "SampleValue";
+            // Access the custom properties collection
+            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
 
             // Check if a custom property with the same name already exists
             bool exists = false;
-            foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
+            for (int i = 0; i < customProps.Count; i++)
             {
-                if (prop.Name == newPropName)
+                CustomProp existingProp = customProps[i];
+                if (string.Equals(existingProp.Name, propName, StringComparison.OrdinalIgnoreCase))
                 {
                     exists = true;
                     break;
                 }
             }
 
-            if (!exists)
+            if (exists)
             {
-                // Create and configure the new custom property
-                CustomProp customProp = new CustomProp();
-                customProp.Name = newPropName;
-                customProp.PropType = PropType.String;
-                customProp.CustomValue.ValueString = newPropValue;
-
-                // Add the custom property to the diagram
-                diagram.DocumentProps.CustomProps.Add(customProp);
-                Console.WriteLine($"Custom property '{newPropName}' added.");
+                Console.WriteLine($"A custom property named \"{propName}\" already exists. No new property was added.");
             }
             else
             {
-                Console.WriteLine($"Custom property '{newPropName}' already exists. No action taken.");
+                // Create and configure a new custom property
+                CustomProp newProp = new CustomProp
+                {
+                    Name = propName,
+                    PropType = PropType.String
+                };
+                // Set the value of the custom property
+                newProp.CustomValue.ValueString = propValue;
+
+                // Add the new property to the collection
+                customProps.Add(newProp);
+                Console.WriteLine($"Custom property \"{propName}\" added successfully.");
             }
 
-            // Save the diagram with the changes
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

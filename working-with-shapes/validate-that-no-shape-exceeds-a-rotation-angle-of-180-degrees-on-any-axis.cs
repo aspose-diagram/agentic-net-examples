@@ -6,85 +6,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure a file path argument is provided.
+        // Expect the first argument to be the path to the Visio file.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: <program> <VisioFilePath>");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
-        // Assign the first argument to a variable.
-        string visioPath = args[0];
+        string diagramPath = args[0];
+
         // Guard: verify the file exists.
-        if (!File.Exists(visioPath))
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            bool violationFound = false;
-            int pageIndex = 0; // Zero‑based page index for reporting.
+            bool validationFailed = false;
 
             // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page.
+                // Iterate through each shape on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted.
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Check Z‑axis rotation (shape's own angle).
-                    double angleZ = shape.XForm.Angle.Value;
-                    if (Math.Abs(angleZ) > 180)
+                    // Check 2D rotation angle (shape.XForm.Angle).
+                    double angle2D = shape.XForm.Angle.Value;
+                    if (Math.Abs(angle2D) > 180.0)
                     {
-                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis Z, Angle {angleZ}");
-                        violationFound = true;
+                        Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.Name} exceeds 2D rotation limit: {angle2D} degrees.");
+                        validationFailed = true;
                     }
 
-                    // Check 3‑D X‑axis rotation if present.
-                    double angleX = shape.ThreeDFormat.RotationXAngle.Value;
-                    if (Math.Abs(angleX) > 180)
+                    // Check 3D rotation angles if the ThreeDFormat is available.
+                    if (shape.ThreeDFormat != null)
                     {
-                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis X, Angle {angleX}");
-                        violationFound = true;
-                    }
+                        double rotX = shape.ThreeDFormat.RotationXAngle.Value;
+                        double rotY = shape.ThreeDFormat.RotationYAngle.Value;
+                        double rotZ = shape.ThreeDFormat.RotationZAngle.Value;
 
-                    // Check 3‑D Y‑axis rotation if present.
-                    double angleY = shape.ThreeDFormat.RotationYAngle.Value;
-                    if (Math.Abs(angleY) > 180)
-                    {
-                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis Y, Angle {angleY}");
-                        violationFound = true;
-                    }
-
-                    // Check 3‑D Z‑axis rotation if present.
-                    double angleZ3D = shape.ThreeDFormat.RotationZAngle.Value;
-                    if (Math.Abs(angleZ3D) > 180)
-                    {
-                        Console.WriteLine($"Violation: Page {pageIndex}, Shape ID {shape.ID}, Name '{shape.NameU}', Axis Z (3D), Angle {angleZ3D}");
-                        violationFound = true;
+                        if (Math.Abs(rotX) > 180.0)
+                        {
+                            Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.Name} exceeds X-axis rotation limit: {rotX} degrees.");
+                            validationFailed = true;
+                        }
+                        if (Math.Abs(rotY) > 180.0)
+                        {
+                            Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.Name} exceeds Y-axis rotation limit: {rotY} degrees.");
+                            validationFailed = true;
+                        }
+                        if (Math.Abs(rotZ) > 180.0)
+                        {
+                            Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.Name} exceeds Z-axis rotation limit: {rotZ} degrees.");
+                            validationFailed = true;
+                        }
                     }
                 }
-
-                pageIndex++; // Move to the next page index.
             }
 
-            // Report overall result if no violations were detected.
-            if (!violationFound)
+            if (!validationFailed)
             {
-                Console.WriteLine("No shape exceeds a rotation angle of 180 degrees on any axis.");
+                Console.WriteLine("Validation passed: No shape exceeds a rotation angle of 180 degrees on any axis.");
             }
         }
         catch (Exception ex)
         {
-            // Output any unexpected errors to the error stream.
+            // Capture any Aspose or I/O errors.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

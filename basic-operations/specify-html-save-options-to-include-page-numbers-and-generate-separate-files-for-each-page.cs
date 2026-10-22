@@ -7,14 +7,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
+        // Input Visio file path
         string inputPath = "input.vsdx";
-
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        if (!System.IO.File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
+        }
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output directory for HTML pages
+        string outputDir = "HtmlPages";
+
+        // Ensure output directory exists
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
         }
 
         try
@@ -22,37 +36,33 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Insert automatic page number field in the footer (Visio field code &p)
+            // Set footer to display the page number using Visio placeholder code
+            // The '&p' field inserts the current page number
             diagram.HeaderFooter.FooterRight = "Page: &p";
 
-            // Determine total page count for later use
-            int totalPages = diagram.Pages.Count;
-
-            // Loop through each page and save it as a separate HTML file
-            for (int i = 0; i < totalPages; i++)
+            // Iterate over each page and export it as a separate HTML file
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Configure HTML save options for the current page
+                // Configure HTML save options for a single page
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    // Export hidden pages is disabled (optional)
-                    ExportHiddenPage = false,
-                    // Specify which page to render (0‑based index)
-                    PageIndex = i,
-                    // Indicate total number of pages (required for proper navigation links)
-                    PageCount = totalPages
+                    PageIndex = i,   // zero‑based index of the page to export
+                    PageCount = 1    // export only this page
                 };
 
-                // Build output file name that includes the page number
-                string outputPath = $"output_page_{i + 1}.html";
+                // Build output file name (e.g., page_1.html, page_2.html, ...)
+                string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
 
-                // Save the current page as HTML
+                // Save the current page to HTML
                 diagram.Save(outputPath, htmlOptions);
             }
+
+            Console.WriteLine("HTML export completed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

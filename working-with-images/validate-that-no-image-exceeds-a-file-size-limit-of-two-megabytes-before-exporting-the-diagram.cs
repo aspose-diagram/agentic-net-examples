@@ -1,57 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        const long MaxImageSizeBytes = 2L * 1024 * 1024; // 2 MB limit
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Validate that no embedded image exceeds 2 MB
-            const long maxSizeBytes = 2L * 1024 * 1024; // 2 megabytes
-
+            // Iterate through all pages and shapes to find embedded images.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify foreign (image) shapes
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify foreign (image) shapes.
                     if (shape.Type == TypeValue.Foreign)
                     {
-                        // Ensure the foreign data (image bytes) is present
-                        if (shape.ForeignData != null && shape.ForeignData.Value != null)
+                        // The foreign data holds the raw image bytes.
+                        // It may be null if the shape does not contain image data.
+                        byte[] imageData = shape.ForeignData?.Value as byte[];
+                        if (imageData != null)
                         {
-                            long imageSize = shape.ForeignData.Value.Length;
-                            if (imageSize > maxSizeBytes)
+                            long size = imageData.Length;
+                            if (size > MaxImageSizeBytes)
                             {
-                                throw new Exception($"Image in shape ID {shape.ID} exceeds 2 MB (size: {imageSize} bytes).");
+                                Console.Error.WriteLine($"Image in shape ID {shape.ID} exceeds 2 MB limit (size: {size} bytes).");
+                                return;
                             }
                         }
                     }
                 }
             }
 
-            // Export the diagram to PDF after validation
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine("Diagram exported successfully.");
-
+            // All images are within the size limit; proceed to export the diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

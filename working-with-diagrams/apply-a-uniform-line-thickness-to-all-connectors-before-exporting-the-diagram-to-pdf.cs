@@ -1,45 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Expect two arguments: input Visio file path and output PDF file path.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramExport <inputVisioPath> <outputPdfPath>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply a uniform line thickness to all connector shapes (1‑D shapes).
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Connectors are 1‑D shapes; filter them.
-                    if (shape.OneD)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set line weight (thickness) in inches. Example: 0.02 inches (~0.5 mm).
-                        shape.Line.LineWeight.Value = 0.02;
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes (1‑D shapes).
+                        if (shape.OneD)
+                        {
+                            // Apply a uniform line thickness (e.g., 0.02 inches).
+                            shape.Line.LineWeight.Value = 0.02;
+                        }
                     }
                 }
+
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optional: set a default font to avoid missing‑font warnings.
+                pdfOptions.DefaultFont = "Arial";
+
+                // Save the modified diagram as PDF.
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as PDF.
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram exported to PDF successfully: {outputPath}");
+            Console.WriteLine($"Diagram exported successfully to PDF: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

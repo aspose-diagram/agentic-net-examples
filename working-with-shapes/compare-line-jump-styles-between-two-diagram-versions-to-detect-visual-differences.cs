@@ -1,73 +1,124 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expect two file paths as arguments: old version and new version.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <oldDiagramPath> <newDiagramPath>");
+            return;
+        }
+
+        string oldPath = args[0];
+        string newPath = args[1];
+
+        // Guard against missing files.
+        if (!File.Exists(oldPath))
+        {
+            Console.Error.WriteLine($"File not found: {oldPath}");
+            return;
+        }
+        if (!File.Exists(newPath))
+        {
+            Console.Error.WriteLine($"File not found: {newPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths to the two diagram versions to compare
-            string diagramPath1 = "DiagramVersion1.vsdx";
-            string diagramPath2 = "DiagramVersion2.vsdx";
-
-            // Load both diagrams
-            Diagram diagram1 = new Diagram(diagramPath1);
-            Diagram diagram2 = new Diagram(diagramPath2);
-
-            // Iterate through pages (assuming same page count and IDs)
-            foreach (Page page1 in diagram1.Pages)
+            // Load the old diagram inside a using block as required.
+            using (Diagram oldDiagram = new Diagram(oldPath))
             {
-                // Find the corresponding page in the second diagram by ID
-                Page page2 = diagram2.Pages.GetPage(page1.ID);
-                if (page2 == null)
+                // Load the new diagram inside a using block as required.
+                using (Diagram newDiagram = new Diagram(newPath))
                 {
-                    Console.WriteLine($"Page with ID {page1.ID} not found in second diagram.");
-                    continue;
-                }
-
-                // Iterate through shapes on the first page
-                foreach (Shape shape1 in page1.Shapes)
-                {
-                    // Process only connector shapes (1‑D shapes)
-                    if (!shape1.OneD)
-                        continue;
-
-                    // Retrieve jump style and code from the first diagram
-                    var jumpStyle1 = shape1.Layout.ConLineJumpStyle.Value;
-                    var jumpCode1 = shape1.Layout.ConLineJumpCode.Value;
-
-                    // Find the matching connector in the second diagram by shape ID
-                    Shape shape2 = page2.Shapes.GetShape(shape1.ID);
-                    if (shape2 == null)
+                    // Build a lookup of shapes from the new diagram by their ID.
+                    Dictionary<long, Shape> newShapesById = new Dictionary<long, Shape>();
+                    foreach (Page newPage in newDiagram.Pages)
                     {
-                        Console.WriteLine($"Connector ID {shape1.ID} missing in second diagram (Page ID {page1.ID}).");
-                        continue;
+                        foreach (Shape newShape in newPage.Shapes)
+                        {
+                            // Store each shape using its unique ID.
+                            newShapesById[newShape.ID] = newShape;
+                        }
                     }
 
-                    // Retrieve jump style and code from the second diagram
-                    var jumpStyle2 = shape2.Layout.ConLineJumpStyle.Value;
-                    var jumpCode2 = shape2.Layout.ConLineJumpCode.Value;
-
-                    // Compare and report differences
-                    if (jumpStyle1 != jumpStyle2 || jumpCode1 != jumpCode2)
+                    // Iterate over all pages and shapes in the old diagram.
+                    foreach (Page oldPage in oldDiagram.Pages)
                     {
-                        Console.WriteLine($"Connector ID {shape1.ID} on Page ID {page1.ID} differs:");
-                        Console.WriteLine($"  Jump Style - Diagram1: {jumpStyle1}, Diagram2: {jumpStyle2}");
-                        Console.WriteLine($"  Jump Code  - Diagram1: {jumpCode1}, Diagram2: {jumpCode2}");
+                        foreach (Shape oldShape in oldPage.Shapes)
+                        {
+                            // Process only 1-D connector shapes (OneD is a native bool).
+                            if (oldShape.OneD)
+                            {
+                                // Try to find the corresponding shape in the new diagram.
+                                if (newShapesById.TryGetValue(oldShape.ID, out Shape matchingNewShape))
+                                {
+                                    // Retrieve line jump style values from both shapes.
+                                    ConLineJumpStyleValue oldJumpStyle = oldShape.Layout.ConLineJumpStyle.Value;
+                                    ConLineJumpStyleValue newJumpStyle = matchingNewShape.Layout.ConLineJumpStyle.Value;
+
+                                    // Compare the styles and report differences.
+                                    if (oldJumpStyle != newJumpStyle)
+                                    {
+                                        Console.WriteLine($"Shape ID {oldShape.ID} on page {oldPage.ID} has different line jump style:");
+                                        Console.WriteLine($"  Old style: {oldJumpStyle}");
+                                        Console.WriteLine($"  New style: {newJumpStyle}");
+                                    }
+                                }
+                                else
+                                {
+                                    // Shape missing in the new diagram.
+                                    Console.WriteLine($"Shape ID {oldShape.ID} on page {oldPage.ID} is missing in the new diagram.");
+                                }
+                            }
+                        }
+                    }
+
+                    // Optionally, report shapes that exist only in the new diagram.
+                    foreach (KeyValuePair<long, Shape> kvp in newShapesById)
+                    {
+                        long shapeId = kvp.Key;
+                        Shape newShape = kvp.Value;
+
+                        // Process only 1-D connector shapes.
+                        if (newShape.OneD)
+                        {
+                            // Check if this shape was not present in the old diagram.
+                            bool existsInOld = false;
+                            foreach (Page oldPage in oldDiagram.Pages)
+                            {
+                                foreach (Shape oldShape in oldPage.Shapes)
+                                {
+                                    if (oldShape.ID == shapeId)
+                                    {
+                                        existsInOld = true;
+                                        break;
+                                    }
+                                }
+                                if (existsInOld) break;
+                            }
+
+                            if (!existsInOld)
+                            {
+                                // Page reference may be null for orphan shapes; use 0 as fallback.
+                                long pageId = newShape.Page?.ID ?? 0;
+                                Console.WriteLine($"New connector shape ID {shapeId} on page {pageId} appears only in the new diagram.");
+                            }
+                        }
                     }
                 }
             }
-
-            // Optional: indicate completion
-            Console.WriteLine("Comparison completed.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 }

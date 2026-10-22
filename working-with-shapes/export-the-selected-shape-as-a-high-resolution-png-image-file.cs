@@ -1,62 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expecting three arguments: input diagram path, shape ID, output PNG path.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagram.vsdx> <shapeId> <outputImage.png> [resolutionDPI]");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+        string outputPath = args[2];
+        float resolution = 300f; // default high resolution DPI
+
+        // Optional resolution argument
+        if (args.Length >= 4 && float.TryParse(args[3], out float parsedRes) && parsedRes > 0)
+        {
+            resolution = parsedRes;
+        }
+
+        // Guard against missing input file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {diagramPath}");
+            return;
+        }
+
+        // Guard against invalid shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Define the name of the shape to export
-            string targetShapeName = "MyShape";
-
-            // Find the shape with the specified universal name (NameU)
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            // Use the first page (index 0) for simplicity
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU == targetShapeName)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-                if (targetShape != null)
-                    break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine($"Shape \"{targetShapeName}\" not found.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Configure high‑resolution PNG export options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.Resolution = 300f; // DPI (higher value = higher resolution)
+            Page page = diagram.Pages[0];
 
-            // Output file path
-            string outputPath = "exported_shape.png";
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                return;
+            }
+
+            // Configure image save options for high‑resolution PNG
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.Resolution = resolution; // DPI
 
             // Export the selected shape to PNG
-            targetShape.ToImage(outputPath, pngOptions);
+            shape.ToImage(outputPath, saveOptions);
 
-            Console.WriteLine($"Shape \"{targetShapeName}\" exported to \"{outputPath}\" with {pngOptions.Resolution} DPI.");
-
+            Console.WriteLine($"Shape {shapeId} exported successfully to {outputPath} at {resolution} DPI.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

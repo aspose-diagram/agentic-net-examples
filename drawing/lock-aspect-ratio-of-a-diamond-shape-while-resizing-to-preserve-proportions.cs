@@ -1,43 +1,57 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
-
-        // Define points for a diamond shape (closed polyline)
-        // Points: top, right, bottom, left, back to top
-        double[] diamondPoints = new double[]
+        // Input Visio file path (must exist)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            5.0, 6.0,   // Top
-            6.0, 5.0,   // Right
-            5.0, 4.0,   // Bottom
-            4.0, 5.0,   // Left
-            5.0, 6.0    // Close back to Top
-        };
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Draw the diamond shape; returns the shape ID (long)
-        long diamondShapeId = page.DrawPolyline(diamondPoints);
+        // Output Visio file path
+        string outputPath = "output.vsdx";
 
-        // Retrieve the shape object using the ID
-        Shape diamondShape = page.Shapes.GetShape(diamondShapeId);
+        try
+        {
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Lock the aspect ratio so that width and height stay proportional when resized
-        diamondShape.Protection.LockAspect.Value = BOOL.True;
+            // Add a diamond shape to the active page at position (2,2)
+            // The fourth parameter 'isCalculate' is set to false
+            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Diamond", false);
 
-        // Example resize: change the width; height will follow the locked aspect ratio automatically
-        diamondShape.XForm.Width.Value = 3.0; // New width (in inches)
-        // Height is automatically adjusted by Visio when the diagram is edited in the UI.
-        // Programmatically, you could also set Height to maintain the same ratio if needed.
+            // Retrieve the newly added shape using its ID
+            Shape diamond = diagram.ActivePage.Shapes.GetShape(shapeId);
 
-        // Save the diagram to a VSDX file
-        diagram.Save("DiamondLockedAspect.vsdx", SaveFileFormat.Vsdx);
+            // Lock the aspect ratio of the diamond shape
+            diamond.Protection.LockAspect.Value = BOOL.True;
+
+            // Resize the shape while preserving the locked aspect ratio
+            // Setting one dimension will keep the other proportional due to the lock
+            // Here we set the width; height will follow the same proportion
+            diamond.XForm.Width.Value = 3.0;   // width in inches
+            // Height will automatically respect the aspect lock; however, we can also set it explicitly
+            diamond.XForm.Height.Value = 3.0;  // height in inches
+
+            // Save the modified diagram to a new file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

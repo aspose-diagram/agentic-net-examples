@@ -3,56 +3,72 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Determine the Visio file to process.
-            string diagramPath;
-            if (args.Length > 0 && File.Exists(args[0]))
-            {
-                diagramPath = args[0];
-            }
-            else
-            {
-                Console.WriteLine("Please enter the full path to the Visio file (.vsdx, .vsd, etc.):");
-                diagramPath = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(diagramPath) || !File.Exists(diagramPath))
-                {
-                    Console.WriteLine("Invalid file path. Exiting.");
-                    return;
-                }
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            return;
+        }
 
-            // Load the diagram.
-            Diagram diagram = new Diagram(diagramPath);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Prepare CSV output.
-            string csvPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "shapes_summary.csv");
-            using (StreamWriter writer = new StreamWriter(csvPath, false, System.Text.Encoding.UTF8))
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare the CSV writer.
+            using (StreamWriter writer = new StreamWriter(outputPath))
             {
-                // Write header.
-                writer.WriteLine("ShapeID,Width,Height,ConnectionPoints");
+                // Write CSV header.
+                writer.WriteLine("ShapeID,Width,Height,ConnectionCount");
 
-                // Iterate through all pages and shapes.
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
+                        // Retrieve shape identifier.
                         long shapeId = shape.ID;
+
+                        // Retrieve final width and height from the shape's XForm cell values.
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
-                        int connectionPoints = shape.Connections != null ? shape.Connections.Count : 0;
 
-                        // Write CSV line.
-                        writer.WriteLine($"{shapeId},{width},{height},{connectionPoints}");
+                        // Count how many connections involve this shape (as source or target).
+                        int connectionCount = 0;
+                        foreach (Connect conn in page.Connects)
+                        {
+                            if (conn.FromSheet == shapeId || conn.ToSheet == shapeId)
+                            {
+                                connectionCount++;
+                            }
+                        }
+
+                        // Write the shape information as a CSV line.
+                        writer.WriteLine($"{shapeId},{width},{height},{connectionCount}");
                     }
                 }
             }
 
-            Console.WriteLine($"Shape summary CSV created at: {csvPath}");
+            Console.WriteLine($"Summary CSV has been saved to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

@@ -1,58 +1,73 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Preserve existing paragraph and character formatting by NOT modifying shape.Paras or shape.Chars
 
-                        // Preserve existing paragraph formatting and text colors by NOT modifying shape.Paras or shape.Chars
+                    // Apply gradient fill
+                    // Set fill pattern to gradient (value 25)
+                    shape.Fill.FillPattern.Value = 25;
 
-                        // Apply gradient fill
-                        shape.Fill.FillPattern.Value = 25;                         // Set fill pattern to gradient
-                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Enable gradient
-                        shape.Fill.GradientFill.GradientDir.Value = 0;            // Direction (0 = left to right)
+                    // Enable gradient fill
+                    shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-                        // Clear any existing gradient stops
-                        shape.Fill.GradientFill.GradientStops.Clear();
+                    // Set gradient direction (0 = horizontal)
+                    shape.Fill.GradientFill.GradientDir.Value = 0;
 
-                        // Add gradient stops (blue to green)
-                        shape.Fill.GradientFill.GradientStops.Add(
-                            new DoubleValue(0, MeasureConst.NUM),
-                            new ColorValue("#0000FF", MeasureConst.Undefined));
+                    // Clear any existing gradient stops
+                    shape.Fill.GradientFill.GradientStops.Clear();
 
-                        shape.Fill.GradientFill.GradientStops.Add(
-                            new DoubleValue(1, MeasureConst.NUM),
-                            new ColorValue("#00FF00", MeasureConst.Undefined));
-                    }
+                    // Add new gradient stops (blue to green)
+                    shape.Fill.GradientFill.GradientStops.Add(
+                        new DoubleValue(0, MeasureConst.NUM),
+                        new ColorValue("#0000FF", MeasureConst.Undefined));
+
+                    shape.Fill.GradientFill.GradientStops.Add(
+                        new DoubleValue(1, MeasureConst.NUM),
+                        new ColorValue("#00FF00", MeasureConst.Undefined));
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

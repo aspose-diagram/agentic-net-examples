@@ -6,72 +6,67 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Paths to the source and the localized output diagram
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output_localized.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Prepare a simple resource dictionary for translation.
+        // Keys are original metadata strings; values are localized equivalents.
+        Dictionary<string, string> resourceDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Home", "Accueil" },
+            { "Report", "Rapport" },
+            { "Summary", "Résumé" }
+            // Add more translations as needed.
+        };
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Resource dictionary that maps original text to its localized version
-                var resourceDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                // Iterate over each page and translate its metadata if a translation exists.
+                foreach (Page page in diagram.Pages)
                 {
-                    { "Title", "Titre" },
-                    { "Company", "Entreprise" },
-                    // Add additional translations as needed
-                };
-
-                // Translate built‑in document properties (Title and Company are supported)
-                if (!string.IsNullOrEmpty(diagram.DocumentProps.Title) &&
-                    resourceDictionary.TryGetValue(diagram.DocumentProps.Title, out var localizedTitle))
-                {
-                    diagram.DocumentProps.Title = localizedTitle;
-                }
-
-                if (!string.IsNullOrEmpty(diagram.DocumentProps.Company) &&
-                    resourceDictionary.TryGetValue(diagram.DocumentProps.Company, out var localizedCompany))
-                {
-                    diagram.DocumentProps.Company = localizedCompany;
-                }
-
-                // Translate custom document properties
-                var customProps = diagram.DocumentProps.CustomProps;
-                for (int i = 0; i < customProps.Count; i++)
-                {
-                    var prop = customProps[i];
-
-                    // Translate the property name if a translation exists
-                    if (resourceDictionary.TryGetValue(prop.Name, out var localizedName))
+                    // Translate the page's Name property.
+                    if (!string.IsNullOrEmpty(page.Name) && resourceDictionary.TryGetValue(page.Name, out string localizedName))
                     {
-                        prop.Name = localizedName;
+                        page.Name = localizedName;
                     }
 
-                    // Translate the property value if a translation exists
-                    string currentValue = prop.CustomValue.ValueString;
-                    if (!string.IsNullOrEmpty(currentValue) &&
-                        resourceDictionary.TryGetValue(currentValue, out var localizedValue))
+                    // Translate the page's universal NameU property.
+                    if (!string.IsNullOrEmpty(page.NameU) && resourceDictionary.TryGetValue(page.NameU, out string localizedNameU))
                     {
-                        prop.CustomValue.ValueString = localizedValue;
+                        page.NameU = localizedNameU;
                     }
 
-                    // Ensure the property type is string
-                    prop.PropType = PropType.String;
+                    // Additional page metadata can be translated here if needed,
+                    // using other accessible properties such as page.BackPage, etc.
                 }
 
-                // Save the diagram with the localized metadata
+                // Save the modified diagram to the specified output path using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

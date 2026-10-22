@@ -1,41 +1,55 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path (replace with actual path)
-                string inputPath = "input.vsdx";
-
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Set each page's orientation to Landscape
+                // Iterate over all pages and set each page's orientation to Landscape.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the PrintProps of the page and set orientation
+                    // Set the print orientation for the page.
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
 
-                // Configure PDF save options (optional: set default font)
+                // Prepare PDF save options and explicitly set the format tracker.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as PDF
+                // Save the modified diagram as a PDF file.
                 diagram.Save(outputPath, pdfOptions);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Successfully saved PDF to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

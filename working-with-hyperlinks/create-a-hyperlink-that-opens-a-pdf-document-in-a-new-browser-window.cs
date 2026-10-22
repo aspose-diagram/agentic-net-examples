@@ -1,46 +1,101 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio diagram path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input Visio file not found at '{inputPath}'.");
+            return;
+        }
 
-            // Add a page to the diagram (the first page is created by default)
-            Page page = diagram.Pages[0];
+        // Output Visio diagram path
+        string outputPath = "output.vsdx";
 
-            // Draw a simple rectangle shape that will hold the hyperlink
-            // Parameters: pinX, pinY, width, height (all in inches)
-            double pinX = 5.0;
-            double pinY = 5.0;
-            double width = 2.0;
-            double height = 1.0;
-            long shapeId = page.DrawRectangle(pinX, pinY, width, height);
+        // Target PDF document to open via hyperlink
+        string pdfPath = "document.pdf";
+        if (!File.Exists(pdfPath))
+        {
+            Console.Error.WriteLine($"Error: Target PDF file not found at '{pdfPath}'.");
+            return;
+        }
 
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+        try
+        {
+            // Load the existing Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure at least one window exists
+                if (diagram.Windows.Count == 0)
+                {
+                    Window window = new Window();
+                    window.WindowState = WindowStateValue.Maximized;
+                    window.WindowHeight = 600;
+                    window.WindowWidth = 800;
+                    window.WindowType = WindowTypeValue.Drawing;
+                    diagram.Windows.Add(window);
+                }
 
-            // Add a hyperlink to the shape
-            Hyperlink link = new Hyperlink();
-            // URL of the PDF document to open
-            link.Address.Value = "https://example.com/sample.pdf";
-            // Optional description (tooltip)
-            link.Description.Value = "Open PDF in a new browser window";
-            // If the Hyperlink class supports opening in a new window, set it.
-            // The Visio cell is named "NewWindow". Use BOOL.True if available.
-            // Uncomment the following line if the property exists in your version:
-            // link.NewWindow.Value = BOOL.True;
+                // Access the first page (create one if none exist)
+                Page page;
+                if (diagram.Pages.Count > 0)
+                {
+                    page = diagram.Pages[0];
+                }
+                else
+                {
+                    page = new Page();
+                    diagram.Pages.Add(page);
+                }
 
-            // Attach the hyperlink to the shape
-            shape.Hyperlinks.Add(link);
+                // Add a rectangle shape to the page
+                long shapeId = page.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle");
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Save the diagram to a VSDX file
-            string outputPath = "HyperlinkDiagram.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Verify the shape is not marked as deleted
+                if (shape.Del == BOOL.True)
+                {
+                    Console.Error.WriteLine("Error: Created shape is marked as deleted.");
+                    return;
+                }
 
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                // Ensure the Hyperlinks collection is available
+                if (shape.Hyperlinks == null)
+                {
+                    Console.Error.WriteLine("Error: Shape's Hyperlinks collection is null.");
+                    return;
+                }
+
+                // Create a new hyperlink pointing to the PDF document
+                Hyperlink link = new Hyperlink();
+                link.Name = "OpenPDF";
+                link.Address.Value = pdfPath;               // Target PDF file path
+                // The NewWindow property is read‑only; default behavior opens in a new window for external files
+                link.Description.Value = "Open PDF in new window";
+
+                // Add the hyperlink to the shape
+                shape.Hyperlinks.Add(link);
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Hyperlink added and diagram saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose.Diagram errors to the error console
+            Console.Error.WriteLine($"Exception: {ex.Message}");
         }
     }
+}

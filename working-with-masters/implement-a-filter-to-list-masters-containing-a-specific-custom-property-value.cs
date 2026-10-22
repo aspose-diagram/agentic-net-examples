@@ -6,59 +6,72 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file to be processed
-        string diagramPath = "input.vsdx";
-
-        // Guard to ensure the file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Expect two arguments: diagram file path and the custom property value to filter by.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <customPropertyValue>");
             return;
         }
 
-        // The custom property value we are looking for
-        string targetValue = "DesiredValue";
+        string diagramPath = args[0];
+        string targetValue = args[1];
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            Console.WriteLine($"Masters containing a custom property with value \"{targetValue}\":");
+            bool anyMatch = false;
 
-            // Iterate through all masters in the diagram
+            // Iterate through all masters in the diagram.
             foreach (Master master in diagram.Masters)
             {
-                bool masterMatches = false; // flag to avoid duplicate output
+                bool masterMatches = false;
 
-                // Each master can contain multiple shapes; inspect each shape's custom properties
+                // Iterate through shapes that belong to the master.
                 foreach (Shape shape in master.Shapes)
                 {
-                    // Iterate over the shape's custom properties (Props)
+                    // Ensure the shape has a Props collection before iterating.
+                    if (shape.Props == null) continue;
+
+                    // Iterate through custom properties of the shape.
                     foreach (Prop prop in shape.Props)
                     {
-                        // Compare the property's value with the target value
-                        if (prop.Value != null && prop.Value.Val == targetValue)
+                        // Compare the property's value with the target value (case‑insensitive).
+                        if (string.Equals(prop.Value.Val, targetValue, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Output master information once a matching property is found
-                            Console.WriteLine($"- Master ID: {master.ID}, Name: {master.Name}");
                             masterMatches = true;
-                            break; // exit inner Prop loop
+                            break;
                         }
                     }
 
-                    if (masterMatches) break; // exit shape loop once a match is found
+                    if (masterMatches) break;
                 }
+
+                if (masterMatches)
+                {
+                    // Output matching master information.
+                    Console.WriteLine($"Master Name: {master.Name}, Master ID: {master.ID}");
+                    anyMatch = true;
+                }
+            }
+
+            if (!anyMatch)
+            {
+                Console.WriteLine("No masters found with the specified custom property value.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        // Optional: keep console window open when run outside IDE
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadKey();
     }
 }

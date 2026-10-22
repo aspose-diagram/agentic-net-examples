@@ -1,32 +1,34 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class MemoryStreamProvider : IStreamProvider
+class MemoryStreamProvider : IStreamProvider
 {
-    // Stores the generated streams keyed by the resource path (e.g., image file name)
+    // Stores the memory streams for each resource path.
     public Dictionary<string, MemoryStream> Streams { get; } = new Dictionary<string, MemoryStream>();
 
-    // Called by Aspose.Diagram before writing a resource (image, CSS, etc.)
+    // Called by Aspose.Diagram when a new resource stream is needed.
     public void InitStream(StreamProviderOptions options)
     {
-        // Create a fresh memory stream for the resource
+        // Create a fresh memory stream for the resource.
         var ms = new MemoryStream();
+
+        // Assign the stream to the options so Aspose can write into it.
         options.Stream = ms;
 
-        // Keep a reference using the default path as the key (if provided)
+        // Use the default path (read‑only) as a key to retrieve the stream later.
         if (!string.IsNullOrEmpty(options.DefaultPath))
         {
             Streams[options.DefaultPath] = ms;
         }
     }
 
-    // Called after the resource has been written
+    // Called when Aspose.Diagram finishes writing to the resource stream.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Ensure the stream is ready for reading later
+        // Reset position for potential downstream processing.
         if (options.Stream != null)
         {
             options.Stream.Position = 0;
@@ -34,44 +36,54 @@ public class MemoryStreamProvider : IStreamProvider
     }
 }
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            string diagramPath = "sample.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Configure HTML export options and assign the custom stream provider
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Create the custom stream provider.
             var streamProvider = new MemoryStreamProvider();
+
+            // Configure HTML save options and assign the provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             htmlOptions.StreamProvider = streamProvider;
 
-            // Export to HTML (the actual HTML file is written to disk, but images are captured in memory)
-            string htmlOutputPath = "output.html";
-            diagram.Save(htmlOutputPath, htmlOptions);
-
-            // After saving, process the captured image streams as needed
-            foreach (var kvp in streamProvider.Streams)
+            // Save the diagram to an in‑memory HTML stream.
+            using (MemoryStream htmlStream = new MemoryStream())
             {
-                string resourcePath = kvp.Key;          // e.g., "image1.png"
-                MemoryStream ms = kvp.Value;            // image data in memory
+                diagram.Save(htmlStream, htmlOptions);
 
-                // Example: display the size of each image resource
-                Console.WriteLine($"Resource: {resourcePath}, Size: {ms.Length} bytes");
-
-                // If further processing is required, the stream can be read here.
-                // For demonstration, we could save the image to disk:
-                // File.WriteAllBytes(resourcePath, ms.ToArray());
+                // Optionally write the generated HTML to a file for verification.
+                File.WriteAllBytes("output.html", htmlStream.ToArray());
             }
 
+            // After saving, the provider contains all image resources in memory.
+            Console.WriteLine("Image resources captured by MemoryStreamProvider:");
+            foreach (var kvp in streamProvider.Streams)
+            {
+                Console.WriteLine($"Resource Path: {kvp.Key}, Size: {kvp.Value.Length} bytes");
+                // Example of further processing: you could read the bytes here.
+                // byte[] imageData = kvp.Value.ToArray();
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

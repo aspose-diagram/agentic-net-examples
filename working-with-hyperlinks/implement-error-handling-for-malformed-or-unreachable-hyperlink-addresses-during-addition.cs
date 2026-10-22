@@ -1,129 +1,103 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Net.Http;
 using Aspose.Diagram;
 
 class Program
 {
-    // Validates that the address is a well‑formed absolute URI with http/https scheme
-    // and that the resource is reachable (HEAD request). Returns true if both checks pass.
-    static bool IsValidAndReachable(string address)
+    static void Main(string[] args)
     {
-        // Check URI format
-        if (!Uri.TryCreate(address, UriKind.Absolute, out Uri? uriResult) ||
-            (uriResult.Scheme != Uri.UriSchemeHttp && uriResult.Scheme != Uri.UriSchemeHttps))
+        // Expect three arguments: input diagram path, output diagram path, hyperlink address
+        if (args.Length < 3)
         {
-            Console.WriteLine($"Invalid URI format: {address}");
-            return false;
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <hyperlinkAddress>");
+            return;
         }
 
-        // Attempt to reach the resource
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string hyperlinkAddress = args[2];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Validate hyperlink format
+        if (!Uri.IsWellFormedUriString(hyperlinkAddress, UriKind.Absolute))
+        {
+            Console.Error.WriteLine($"Malformed hyperlink address: {hyperlinkAddress}");
+            return;
+        }
+
+        // Check reachability of the hyperlink (simple HTTP GET)
+        bool reachable = false;
         try
         {
-            using var httpClient = new HttpClient();
-            // Use a short timeout to avoid long waits on unreachable hosts
-            httpClient.Timeout = TimeSpan.FromSeconds(5);
-            // Send a HEAD request; if not supported, fall back to GET
-            var request = new HttpRequestMessage(HttpMethod.Head, uriResult);
-            var response = httpClient.SendAsync(request).Result;
-            if (!response.IsSuccessStatusCode)
+            using (HttpClient client = new HttpClient())
             {
-                // Some servers may reject HEAD; try GET as a fallback
-                response = httpClient.GetAsync(uriResult).Result;
-            }
-
-            if (response.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                Console.WriteLine($"Unreachable URL (status {response.StatusCode}): {address}");
-                return false;
+                // Set a short timeout to avoid long waits
+                client.Timeout = TimeSpan.FromSeconds(5);
+                HttpResponseMessage response = client.GetAsync(hyperlinkAddress).Result;
+                reachable = response.IsSuccessStatusCode;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reaching URL '{address}': {ex.Message}");
-            return false;
+            Console.Error.WriteLine($"Error while checking hyperlink reachability: {ex.Message}");
         }
-    }
 
-    static void Main()
-    {
-        // Path to the source Visio diagram
-        string inputPath = "input.vsdx";
-        // Path for the output diagram
-        string outputPath = "output.vsdx";
+        if (!reachable)
+        {
+            Console.Error.WriteLine($"Hyperlink address is unreachable: {hyperlinkAddress}");
+            return;
+        }
 
-        // Load the diagram
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Example: add a hyperlink to the first shape on the first page
-        if (diagram.Pages.Count == 0)
-        {
-            Console.WriteLine("Diagram contains no pages.");
-            return;
-        }
+            // Find the first non-deleted shape on the first page
+            Shape targetShape = null;
+            if (diagram.Pages.Count > 0)
+            {
+                Page firstPage = diagram.Pages[0];
+                foreach (Shape shape in firstPage.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-        var page = diagram.Pages[0];
-        if (page.Shapes.Count == 0)
-        {
-            Console.WriteLine("First page contains no shapes.");
-            return;
-        }
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-        // Retrieve the first shape
-        var shape = page.Shapes[0];
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No suitable shape found to add a hyperlink.");
+                return;
+            }
 
-        // Desired hyperlink address
-        string hyperlinkAddress = "https://example.com";
-
-        // Validate the address before adding
-        if (IsValidAndReachable(hyperlinkAddress))
-        {
             // Create and configure the hyperlink
             Hyperlink link = new Hyperlink();
             link.Name = "ExternalLink";
             link.Address.Value = hyperlinkAddress;
-            link.Description.Value = "Visit Example.com";
+            link.Description.Value = "Added via Aspose.Diagram";
 
-            // Ensure the Hyperlinks collection exists
-            if (shape.Hyperlinks == null)
-            {
-                // The collection is always instantiated by Aspose.Diagram,
-                // but guard against unexpected nulls.
-                Console.WriteLine("Shape's Hyperlinks collection is null; cannot add hyperlink.");
-            }
-            else
-            {
-                shape.Hyperlinks.Add(link);
-                Console.WriteLine($"Hyperlink added to shape ID {shape.ID}.");
-            }
-        }
-        else
-        {
-            Console.WriteLine("Hyperlink not added due to validation failure.");
-        }
+            // Add the hyperlink to the shape's collection
+            targetShape.Hyperlinks.Add(link);
 
-        // Save the modified diagram
-        try
-        {
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

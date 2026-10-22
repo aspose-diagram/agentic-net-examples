@@ -1,60 +1,94 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Folder containing Visio files to process
-            string inputFolder = @"C:\VisioFiles";
-            // Folder to save processed files
-            string outputFolder = @"C:\VisioFiles\Processed";
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
+            return;
+        }
 
-            // Ensure output folder exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
+        string inputFolder = args[0];
+        string outputFolder = args[1];
 
-            // Get all Visio files (VSDX, VDX, VSD) in the input folder
-            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in files)
+        // Verify input folder exists.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Ensure output folder exists (create if necessary).
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                // Process only supported Visio extensions
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (ext != ".vsdx" && ext != ".vdx" && ext != ".vsd")
-                    continue;
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
 
-                try
+        // Get all files in the input folder.
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in diagramFiles)
+        {
+            // Process only supported Visio extensions.
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (extension != ".vsdx" && extension != ".vsd")
+            {
+                continue;
+            }
+
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
+            string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+            try
+            {
+                // Load diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply auto‑spacing to each page
+                    // Iterate over each page and apply auto‑spacing.
                     foreach (Page page in diagram.Pages)
                     {
-                        AutoSpaceOptions options = new AutoSpaceOptions();
-                        options.DistanceInHorizontal = 2; // horizontal spacing in inches
-                        options.DistanceInVertical = 2;   // vertical spacing in inches
+                        // Create AutoSpaceOptions with desired horizontal and vertical distances.
+                        AutoSpaceOptions options = new AutoSpaceOptions
+                        {
+                            // Set spacing distances (in inches).
+                            DistanceInHorizontal = 0.5,
+                            DistanceInVertical = 0.5
+                        };
 
-                        // Auto‑space all shapes on the page
+                        // Apply auto‑spacing to all shapes on the current page.
                         page.AutoSpaceShapes(page.Shapes, options);
                     }
 
-                    // Build output file name (preserve original name, add suffix)
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                    string outputPath = Path.Combine(outputFolder, fileNameWithoutExt + "_spaced.vsdx");
-
-                    // Save the updated diagram in VSDX format
+                    // Save the modified diagram to the output folder in VSDX format.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
 
-            Console.WriteLine("Batch auto‑spacing completed.");
+                Console.WriteLine($"Processed and saved: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}

@@ -2,47 +2,56 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // If the shape contains an ActiveX control, remove it by clearing the control reference
-                    // Since Shape.ActiveXControl is read‑only, we cannot assign null directly.
-                    // Instead, we replace the shape with a plain shape of the same master (if needed) or simply ignore it.
-                    // Here we just skip any further processing for shapes that have an ActiveX control.
+                    // Check if the shape contains an ActiveX control.
                     if (shape.ActiveXControl != null)
                     {
-                        // No direct assignment possible; the control will be ignored on save.
-                        // Optionally, you could delete the shape or replace it, but the requirement is to remove the control.
+                        // Direct removal of the ActiveX control is not supported (property is read‑only).
+                        // As a practical alternative, delete the entire shape that hosts the control.
+                        shape.Del = BOOL.True;
+                        Console.WriteLine($"Deleted shape ID {shape.ID} containing an ActiveX control on page \"{page.NameU}\".");
                     }
                 }
             }
 
-            // Save the modified diagram to the output path using the VSDX format
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,57 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPdfPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the output PDF file
-            string outputPath = "output.pdf";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Generate a timestamp string
+            // Prepare timestamp string
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            // Iterate through all pages and shapes, updating text
+            // Iterate through all pages and shapes to prepend timestamp to existing text
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate over shapes collection
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Retrieve existing plain text (may be empty)
-                    string existingText = shape.Text.Value.Text;
+                    Shape shape = page.Shapes[i];
 
-                    // Build new text with timestamp prefix
-                    string newText = string.IsNullOrWhiteSpace(existingText)
-                        ? timestamp
-                        : $"{timestamp} {existingText}";
+                    // Retrieve existing text; handle possible nulls safely
+                    string existingText = shape.Text?.Value?.ToString() ?? string.Empty;
 
-                    // Clear current text runs and add the new text
+                    // Build new text with timestamp
+                    string newText = $"{timestamp} {existingText}";
+
+                    // Clear current text collection
                     shape.Text.Value.Clear();
+
+                    // Add the new text as a Txt object
                     shape.Text.Value.Add(new Txt(newText));
                 }
             }
 
             // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
+            // Explicitly set the save format (required by some versions)
             pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Save the diagram as PDF
-            diagram.Save(outputPath, pdfOptions);
-
+            // Save the updated diagram as PDF
+            diagram.Save(outputPdfPath, pdfOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,79 +1,99 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input and output file paths
+        string inputPath = "Themes1.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "Themes1_Updated.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the target preset theme to apply
+            PresetThemeValue targetTheme = PresetThemeValue.Bubble;
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the processed output file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the target theme to apply
-                PresetThemeValue targetTheme = PresetThemeValue.Bubble;
-                PresetThemeVariantValue targetVariant = PresetThemeVariantValue.Variant1;
-                PresetQuickStyleValue targetQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check if the shape already has the target theme applied
+                    bool alreadyHasTheme = false;
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Check if the shape already has the theme applied.
-                        // Since the PresetTheme property is write‑only, we use a custom
-                        // shape property ("ThemeApplied") as a marker.
-                        bool alreadyThemed = false;
-                        if (shape.Props != null)
+                        if (prop.Name == "AppliedTheme")
                         {
-                            foreach (Prop prop in shape.Props)
-                            {
-                                if (prop.Name == "ThemeApplied" && prop.Value.Val == "True")
-                                {
-                                    alreadyThemed = true;
-                                    break;
-                                }
-                            }
+                            // Compare stored theme name with the target theme
+                            if (prop.Value.Val == targetTheme.ToString())
+                                alreadyHasTheme = true;
+                            break;
                         }
-
-                        if (alreadyThemed)
-                        {
-                            // Shape already processed – skip further work
-                            continue;
-                        }
-
-                        // Apply the desired theme to the shape
-                        shape.PresetTheme = targetTheme;
-                        shape.PresetThemeVariant = targetVariant;
-                        shape.PresetThemeQuickStyle = targetQuickStyle;
-
-                        // Mark the shape as themed to avoid future redundant processing
-                        Prop themeMarker = new Prop();
-                        themeMarker.Name = "ThemeApplied";
-                        themeMarker.Value.Val = "True";
-                        shape.Props.Add(themeMarker);
                     }
+
+                    // Skip processing if the theme is already applied
+                    if (alreadyHasTheme)
+                        continue;
+
+                    // Apply the preset theme to the shape (write‑only property)
+                    shape.PresetTheme = targetTheme;
+
+                    // Record that the theme has been applied using a custom property
+                    Prop themeProp = null;
+                    foreach (Prop prop in shape.Props)
+                    {
+                        if (prop.Name == "AppliedTheme")
+                        {
+                            themeProp = prop;
+                            break;
+                        }
+                    }
+
+                    // If the custom property does not exist, create and add it
+                    if (themeProp == null)
+                    {
+                        themeProp = new Prop();
+                        shape.Props.Add(themeProp);
+                    }
+
+                    // Set property details
+                    themeProp.Name = "AppliedTheme";
+                    themeProp.Label.Value = "Applied Theme";
+                    themeProp.Prompt.Value = "";
+                    themeProp.Value.Val = targetTheme.ToString();
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -7,40 +7,43 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Configure a fallback font to avoid missing font issues during rendering
-        FontConfigs.DefaultFontName = "Arial";
-
-        // Path to the source Visio diagram
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputEmfFile>");
             return;
         }
 
-        // Path for the exported EMF file
-        string outputPath = "output.emf";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Set up EMF export options using PrintSaveOptions
-            PrintSaveOptions emfOptions = new PrintSaveOptions
-            {
-                SaveFormat = SaveFileFormat.Emf // Export as EMF
-                // Note: ExportHiddenPage is not supported by PrintSaveOptions; hidden pages are excluded by default
-            };
+            // Prepare image save options for EMF format.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf);
 
-            // Save the diagram as an EMF file with the configured options
-            diagram.Save(outputPath, emfOptions);
+            // EmfRenderSetting exists, but ConvertTextToOutlines is not supported.
+            // We instantiate it without setting unsupported properties.
+            saveOptions.EmfRenderSetting = new EmfRenderSetting();
+
+            // Save the diagram as EMF. Text will be rendered using available fonts;
+            // conversion to outlines is not available via the API.
+            diagram.Save(outputPath, saveOptions);
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

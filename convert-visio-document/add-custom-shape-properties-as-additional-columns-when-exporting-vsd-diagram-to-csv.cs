@@ -1,113 +1,75 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output CSV file
-            string outputPath = "output.csv";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Collect all unique custom property names across all shapes
-            HashSet<string> customPropNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Define the custom property name we want to add to every shape.
+            const string customPropName = "MyCustomProp";
+            const string customPropLabel = "My Custom Property";
+            const string customPropValue = "DefaultValue";
+
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Props != null)
+                    // Check if the shape already contains the custom property.
+                    bool hasProp = false;
+                    foreach (Prop existingProp in shape.Props)
                     {
-                        foreach (Prop prop in shape.Props)
+                        if (existingProp.Name == customPropName)
                         {
-                            if (!string.IsNullOrWhiteSpace(prop.Name))
-                            {
-                                customPropNames.Add(prop.Name);
-                            }
+                            hasProp = true;
+                            break;
                         }
+                    }
+
+                    // Add the custom property if it does not exist.
+                    if (!hasProp)
+                    {
+                        Prop prop = new Prop();
+                        prop.Name = customPropName;                     // Property internal name.
+                        prop.Label.Value = customPropLabel;             // Column header shown in CSV.
+                        prop.Value.Val = customPropValue;               // Default value for the shape.
+                        prop.Type.Value = TypePropValue.String;        // Property type.
+                        shape.Props.Add(prop);
                     }
                 }
             }
 
-            // Prepare CSV header
-            List<string> headerColumns = new List<string>
-            {
-                "ShapeID",
-                "ShapeNameU",
-                "MasterName"
-            };
-            headerColumns.AddRange(customPropNames);
-
-            // Write CSV
-            using (StreamWriter writer = new StreamWriter(outputPath))
-            {
-                // Write header line
-                writer.WriteLine(string.Join(",", headerColumns));
-
-                // Write data rows
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        List<string> row = new List<string>
-                        {
-                            shape.ID.ToString(),
-                            EscapeCsv(shape.NameU),
-                            shape.Master != null ? EscapeCsv(shape.Master.Name) : ""
-                        };
-
-                        // Add custom property values in the same order as headerColumns
-                        foreach (string propName in customPropNames)
-                        {
-                            string value = "";
-                            if (shape.Props != null)
-                            {
-                                foreach (Prop prop in shape.Props)
-                                {
-                                    if (string.Equals(prop.Name, propName, StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        value = prop.Value?.Val ?? "";
-                                        break;
-                                    }
-                                }
-                            }
-                            row.Add(EscapeCsv(value));
-                        }
-
-                        writer.WriteLine(string.Join(",", row));
-                    }
-                }
-            }
-
-            Console.WriteLine($"CSV export completed: {outputPath}");
-
+            // Export the diagram to CSV. Custom properties become additional columns.
+            diagram.Save(outputPath, SaveFileFormat.Csv);
+            Console.WriteLine($"Diagram exported successfully to CSV: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper to escape commas and quotes in CSV fields
-    private static string EscapeCsv(string field)
-    {
-        if (field == null)
-            return "";
-
-        if (field.Contains("\""))
-            field = field.Replace("\"", "\"\"");
-
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
-            field = $"\"{field}\"";
-
-        return field;
     }
 }

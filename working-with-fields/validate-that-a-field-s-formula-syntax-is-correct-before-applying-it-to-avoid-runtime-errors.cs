@@ -1,79 +1,86 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
 {
-    // Simple Visio formula validation using a regular expression.
-    // This checks for allowed characters, basic function names and balanced parentheses.
-    static bool IsFormulaValid(string formula)
+    static void Main(string[] args)
     {
-        if (string.IsNullOrWhiteSpace(formula))
-            return false;
-
-        // Allow letters, digits, underscores, operators, parentheses, commas, periods, and spaces.
-        const string pattern = @"^[A-Za-z0-9_\.\+\-\*/\^\(\),\s]+$";
-        if (!Regex.IsMatch(formula, pattern))
-            return false;
-
-        // Basic parentheses balance check.
-        int balance = 0;
-        foreach (char c in formula)
+        // Expect three arguments: input diagram path, output diagram path, new formula string
+        if (args.Length < 3)
         {
-            if (c == '(') balance++;
-            else if (c == ')') balance--;
-            if (balance < 0) return false;
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <newFormula>");
+            return;
         }
-        return balance == 0;
-    }
 
-    static void Main()
-    {
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string newFormula = args[2];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Simple formula validation using a regular expression.
+        // This is a placeholder; replace with Aspose.Diagram's native validation if available.
+        bool IsFormulaValid(string formula)
+        {
+            // Allow letters, digits, basic operators, parentheses, and asterisk for multiplication.
+            // Adjust the pattern as needed for more complex Visio formulas.
+            return Regex.IsMatch(formula, @"^[A-Za-z0-9\+\-\*/\(\)\s]+$");
+        }
+
+        if (!IsFormulaValid(newFormula))
+        {
+            Console.Error.WriteLine("The provided formula appears to be invalid.");
+            return;
+        }
+
         try
         {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram.
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages and shapes.
+            // Iterate through all pages and shapes to apply the formula to each field
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has at least one field.
-                    if (shape.Fields.Count == 0)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
                         continue;
 
-                    // Process each field in the shape.
-                    foreach (Field field in shape.Fields)
-                    {
-                        // Example: we want to set a new formula for the field.
-                        string newFormula = "Width*Height";
+                    // Ensure the shape has at least one field
+                    if (shape.Fields == null || shape.Fields.Count == 0)
+                        continue;
 
-                        // Validate the formula before applying.
-                        if (IsFormulaValid(newFormula))
-                        {
-                            // Assign the formula to the field's UFEV (universal formula expression value).
-                            field.Value.Ufev.F = newFormula;
-                            Console.WriteLine($"Applied formula to shape ID {shape.ID}, field IX {field.IX}.");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Invalid formula '{newFormula}' for shape ID {shape.ID}, field IX {field.IX}. Skipping assignment.");
-                        }
+                    // Iterate over all fields in the shape
+                    for (int i = 0; i < shape.Fields.Count; i++)
+                    {
+                        Field field = shape.Fields[i];
+
+                        // Example: only modify fields of type formula (TypeFieldValue.Undefined is a safe default)
+                        // Since specific type enums are not reliably known, we apply the formula to all fields.
+                        // Set the formula string
+                        field.Value.Ufev.F = newFormula;
+
+                        // Set unit to undefined to avoid unit-related errors
+                        field.Value.Ufev.Unit = MeasureConst.Undefined;
                     }
                 }
             }
 
-            // Save the modified diagram.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
-
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

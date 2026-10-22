@@ -1,66 +1,73 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Error: No diagram file path provided.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Dictionary to hold the total count of user-defined cells per shape category.
+            Dictionary<string, int> categoryUserCellCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Verify that a diagram file path is provided
-                if (args.Length == 0)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.WriteLine("Usage: UserDefinedCellReport <diagram-file-path>");
-                    return;
-                }
+                    // Determine the shape category.
+                    // Use the master shape's NameU if available; otherwise, label as "NoMaster".
+                    string category = shape.Master != null ? shape.Master.NameU : "NoMaster";
 
-                string diagramPath = args[0];
+                    // Ensure the Users collection is not null before accessing Count.
+                    int userCellCount = shape.Users != null ? shape.Users.Count : 0;
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Dictionary to hold the total count of user‑defined cells per shape category
-                Dictionary<string, int> categoryUserCellCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Accumulate the count for this category.
+                    if (categoryUserCellCounts.ContainsKey(category))
                     {
-                        // Skip logically deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Determine the shape category (master name). Use "Unknown" if master is missing.
-                        string category = shape.Master != null ? shape.Master.Name : "Unknown";
-
-                        // Count user‑defined cells for this shape
-                        int userCellCount = shape.Users != null ? shape.Users.Count : 0;
-
-                        if (userCellCount > 0)
-                        {
-                            if (categoryUserCellCounts.ContainsKey(category))
-                                categoryUserCellCounts[category] += userCellCount;
-                            else
-                                categoryUserCellCounts[category] = userCellCount;
-                        }
+                        categoryUserCellCounts[category] += userCellCount;
+                    }
+                    else
+                    {
+                        categoryUserCellCounts[category] = userCellCount;
                     }
                 }
-
-                // Output the report
-                Console.WriteLine("User‑Defined Cell Count per Shape Category:");
-                foreach (KeyValuePair<string, int> kvp in categoryUserCellCounts)
-                {
-                    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-                }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            // Output the report.
+            Console.WriteLine("User-Defined Cells Count per Shape Category:");
+            Console.WriteLine("------------------------------------------------");
+            foreach (var kvp in categoryUserCellCounts)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.WriteLine($"Category: {kvp.Key}, User-Defined Cells: {kvp.Value}");
             }
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

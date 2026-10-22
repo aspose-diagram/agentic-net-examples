@@ -1,83 +1,77 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the existing Visio diagram
-            string inputPath = "input.vsdx";
-            // Path where the updated diagram will be saved
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Choose the page that contains the comment thread (first page in this example)
-            Page page = diagram.Pages[0];
-
-            // Identifier of the comment to which we want to reply
-            // This should match the MarkerIndex of the existing annotation
-            long targetMarkerId = 1; // <-- replace with actual comment ID
-
-            // Locate the target annotation
-            Annotation targetAnnotation = null;
-            foreach (Annotation ann in page.PageSheet.Annotations)
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
             {
-                if (ann.MarkerIndex.Value == targetMarkerId)
-                {
-                    targetAnnotation = ann;
-                    break;
-                }
-            }
-
-            if (targetAnnotation == null)
-            {
-                Console.WriteLine($"Comment with MarkerIndex {targetMarkerId} not found.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Retrieve the shape associated with the original comment (if any)
-            // ShapeID is stored directly on the annotation
-            Shape associatedShape = null;
-            try
+            // Work with the first page (adjust as needed)
+            Page page = diagram.Pages[0];
+
+            // Locate the first existing comment (annotation) on the page
+            Annotation originalAnnotation = null;
+            foreach (Annotation ann in page.PageSheet.Annotations)
             {
-                associatedShape = page.Shapes.GetShape(targetAnnotation.ShapeID);
-            }
-            catch
-            {
-                // If the shape cannot be found, we will add a page‑level comment instead
+                originalAnnotation = ann;
+                break; // take the first comment found
             }
 
-            // Prepare the reply text
-            string replyText = $"Reply to comment #{targetMarkerId}: {targetAnnotation.Comment.Value}";
-
-            // Add the reply as a new comment
-            if (associatedShape != null)
+            if (originalAnnotation == null)
             {
-                // Shape‑level reply (preserves the shape association)
-                page.AddComment(associatedShape, replyText);
-            }
-            else
-            {
-                // Page‑level reply (no specific shape)
-                // Use arbitrary coordinates (e.g., 1,1) for the comment position
-                page.AddComment(1.0, 1.0, replyText);
+                Console.Error.WriteLine("No existing comments found on the page to reply to.");
+                return;
             }
 
-            // Save the updated diagram
+            // Determine reply position – offset slightly from the original comment
+            // Since Annotation does not expose X/Y directly, we use a fixed offset.
+            double replyX = 1.0; // arbitrary X coordinate
+            double replyY = 1.0; // arbitrary Y coordinate
+
+            // Construct reply text, preserving original comment's metadata (e.g., marker ID)
+            string replyText = $"Reply to comment #{originalAnnotation.MarkerIndex.Value}: Review needed.";
+
+            // Add the reply comment to the page at the calculated position
+            page.AddComment(replyX, replyY, replyText);
+
+            // Save the updated diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine("Reply added and diagram saved successfully.");
-
+            Console.WriteLine($"Reply added successfully. Diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any Aspose.Diagram related errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

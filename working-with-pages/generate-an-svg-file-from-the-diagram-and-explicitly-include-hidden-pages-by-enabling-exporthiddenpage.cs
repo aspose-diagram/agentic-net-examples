@@ -1,35 +1,50 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure SVG save options.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
+                // Enable export of hidden pages.
+                svgOptions.ExportHiddenPage = true;
 
-            // Output SVG file path
-            string outputPath = "output.svg";
+                // Save the diagram as SVG using the configured options.
+                diagram.Save(outputPath, svgOptions);
+            }
 
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Set up SVG save options to include hidden pages
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.ExportHiddenPage = true;
-
-            // Export the diagram to SVG using the configured options
-            diagram.Save(outputPath, svgOptions);
-
+            Console.WriteLine($"SVG file successfully saved to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

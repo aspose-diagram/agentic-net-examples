@@ -1,56 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputPdfPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path; if not provided, use same folder with .pdf extension
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".pdf");
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page
-            Page page = diagram.Pages[0];
-
-            // Find the first non‑deleted shape to attach a comment
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
+                // Create PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // Ensure the save format is explicitly set (required for PDF export)
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // By default, comments are exported as callout annotations.
+                // No additional property is needed; if you need to hide them, you would use ImageSaveOptions.IsExportComments = false.
+
+                // Save the diagram as PDF with comments rendered as callouts
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            if (targetShape == null)
-            {
-                Console.WriteLine("No suitable shape found to attach a comment.");
-                return;
-            }
-
-            // Add a comment (annotation) to the selected shape
-            page.AddComment(targetShape, "Review this shape");
-
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as PDF; comments appear as callout annotations
-            string outputPath = "output.pdf";
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram saved to PDF with comments at '{outputPath}'.");
-
+            Console.WriteLine($"PDF saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error during PDF export: {ex.Message}");
         }
     }
 }

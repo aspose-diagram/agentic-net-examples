@@ -1,80 +1,79 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Global flag controlling comment edit permission
-        private static bool _unlockComments = false;
-
-        static void Main(string[] args)
+        // Validate arguments: input diagram path, output diagram path, optional unlock flag.
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [--unlock]");
+            return;
+        }
 
-                // Path to the source Visio diagram (must exist)
-                string inputPath = "input.vsdx";
-                // Path for the output diagram
-                string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        bool unlockFlag = false;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Add a new comment at coordinates (2,2)
-                page.AddComment(2.0, 2.0, "Initial comment");
-
-                // Retrieve the newly added annotation (last in the collection)
-                Annotation addedAnnotation = null;
-                foreach (Annotation ann in page.PageSheet.Annotations)
-                {
-                    addedAnnotation = ann; // will end up as the last annotation
-                }
-
-                if (addedAnnotation == null)
-                {
-                    Console.WriteLine("Failed to add comment.");
-                    return;
-                }
-
-                Console.WriteLine($"Comment added with MarkerIndex: {addedAnnotation.MarkerIndex.Value}");
-                Console.WriteLine($"Current comment text: {addedAnnotation.Comment.Value}");
-
-                // Prompt user to unlock comments
-                Console.WriteLine("Type 'unlock' to allow editing the comment, or press Enter to keep it locked:");
-                string input = Console.ReadLine();
-                if (!string.IsNullOrEmpty(input) && input.Equals("unlock", StringComparison.OrdinalIgnoreCase))
-                {
-                    UnlockComments();
-                }
-
-                // Attempt to edit the comment
-                if (_unlockComments)
-                {
-                    addedAnnotation.Comment.Value = "Edited comment after unlock.";
-                    Console.WriteLine("Comment edited successfully.");
-                }
-                else
-                {
-                    Console.WriteLine("Comments are locked. Edit operation skipped.");
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Method to set the unlock flag
-        private static void UnlockComments()
+        // Detect unlock flag.
+        for (int i = 2; i < args.Length; i++)
         {
-            _unlockComments = true;
-            Console.WriteLine("Comments have been unlocked.");
+            if (args[i].Equals("--unlock", StringComparison.OrdinalIgnoreCase))
+            {
+                unlockFlag = true;
+                break;
+            }
+        }
+
+        // Guard: ensure input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // Access the annotations (comments) collection via the PageSheet.
+                foreach (Annotation annotation in page.PageSheet.Annotations)
+                {
+                    // If the unlock flag is set, allow editing of the comment text.
+                    if (unlockFlag)
+                    {
+                        // Example edit: append a suffix indicating the comment was unlocked.
+                        string originalText = annotation.Comment.Value;
+                        annotation.Comment.Value = $"{originalText} (unlocked)";
+                    }
+                    else
+                    {
+                        // Locking behavior: do not modify the comment.
+                        // Optionally, you could set a visual indicator that the comment is locked.
+                        // For demonstration, we prepend "[LOCKED]" if not already present.
+                        string currentText = annotation.Comment.Value;
+                        if (!currentText.StartsWith("[LOCKED] "))
+                        {
+                            annotation.Comment.Value = $"[LOCKED] {currentText}";
+                        }
+                    }
+                }
+            }
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram processed successfully. Output saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

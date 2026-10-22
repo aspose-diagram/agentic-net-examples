@@ -4,88 +4,92 @@ using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input diagram file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path (modify as needed)
-                string diagramPath = "input.vsdx";
-
-                // Output CSV file path
-                string csvPath = "comments.csv";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Build a map of reviewer IDs to reviewer names
-                Dictionary<int, string> reviewerMap = new Dictionary<int, string>();
-                for (int i = 0; i < diagram.DocumentSheet.Reviewers.Count; i++)
+                // Build a list of reviewer names in the order they appear.
+                List<string> reviewerNames = new List<string>();
+                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
                 {
-                    Reviewer reviewer = diagram.DocumentSheet.Reviewers[i];
-                    // Reviewer.Name is a Str2Value; use .Value to get the string
-                    reviewerMap[i] = reviewer.Name.Value;
+                    // Reviewer.Name is a Str2Value; safely retrieve its string value.
+                    string name = reviewer.Name?.Value ?? string.Empty;
+                    reviewerNames.Add(name);
                 }
 
-                // Write comments to CSV
-                using (StreamWriter writer = new StreamWriter(csvPath))
+                // Prepare to write CSV output.
+                using (var writer = new StreamWriter(outputPath))
                 {
-                    // CSV header
-                    writer.WriteLine("CommentId,Author,Text");
+                    // Write CSV header.
+                    writer.WriteLine("Comment,Author,Date");
 
-                    // Iterate through all pages
+                    // Iterate all pages in the diagram.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Annotations (comments) are stored in the page's PageSheet
+                        // Iterate annotations (comments) on the page's PageSheet.
                         foreach (Annotation annotation in page.PageSheet.Annotations)
                         {
-                            int commentId = annotation.MarkerIndex.Value;
-                            string commentText = annotation.Comment.Value ?? string.Empty;
+                            // Retrieve comment text.
+                            string commentText = annotation.Comment?.Value ?? string.Empty;
 
-                            // Retrieve author name using ReviewerID
-                            string author = string.Empty;
-                            int reviewerId = annotation.ReviewerID.Value;
-                            if (reviewerMap.TryGetValue(reviewerId, out string name))
+                            // Retrieve reviewer (author) index and map to name.
+                            int reviewerIndex = annotation.ReviewerID?.Value ?? -1;
+                            string author = "Unknown";
+                            if (reviewerIndex >= 0 && reviewerIndex < reviewerNames.Count)
                             {
-                                author = name;
+                                string possibleName = reviewerNames[reviewerIndex];
+                                if (!string.IsNullOrWhiteSpace(possibleName))
+                                    author = possibleName;
                             }
 
-                            // Escape fields for CSV compliance
-                            string escapedAuthor = EscapeCsv(author);
-                            string escapedText = EscapeCsv(commentText);
+                            // Retrieve comment creation date.
+                            DateTime date = annotation.Date?.Value ?? DateTime.MinValue;
+                            string dateString = date == DateTime.MinValue ? string.Empty : date.ToString("o");
 
-                            // Write the CSV line
-                            writer.WriteLine($"{commentId},{escapedAuthor},{escapedText}");
+                            // Escape CSV fields that contain commas, quotes, or newlines.
+                            string Escape(string s)
+                            {
+                                if (s.Contains("\""))
+                                    s = s.Replace("\"", "\"\"");
+                                if (s.Contains(",") || s.Contains("\"") || s.Contains("\n") || s.Contains("\r"))
+                                    s = $"\"{s}\"";
+                                return s;
+                            }
+
+                            // Write the CSV line.
+                            writer.WriteLine($"{Escape(commentText)},{Escape(author)},{Escape(dateString)}");
                         }
                     }
                 }
 
-                Console.WriteLine($"Comments exported to '{csvPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Helper method to escape CSV fields
-        private static string EscapeCsv(string field)
-        {
-            if (field == null)
-                return string.Empty;
-
-            bool containsSpecial = field.Contains("\"") || field.Contains(",") || field.Contains("\n") || field.Contains("\r");
-            if (containsSpecial)
-            {
-                // Escape double quotes by doubling them
-                string escaped = field.Replace("\"", "\"\"");
-                return $"\"{escaped}\"";
-            }
-            else
-            {
-                return field;
+                Console.WriteLine($"Comments exported successfully to \"{outputPath}\".");
             }
         }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
+}

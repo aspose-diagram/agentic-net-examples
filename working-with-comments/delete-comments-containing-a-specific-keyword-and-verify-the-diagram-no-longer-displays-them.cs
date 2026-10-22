@@ -1,67 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect at least two arguments: input diagram path and keyword to delete.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <keyword> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string keyword = args[1];
+        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path where the modified file will be saved
-            string outputPath = "output.vsdx";
-            // Keyword to search for inside comments
-            string keyword = "TODO";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the collection of annotations (comments) on the page
-                var annotations = page.PageSheet.Annotations;
-
-                // Remove annotations that contain the keyword.
-                // Iterate backwards to safely remove items while looping.
-                for (int i = annotations.Count - 1; i >= 0; i--)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    Annotation ann = annotations[i];
-                    string commentText = ann.Comment.Value ?? string.Empty;
-
-                    if (commentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    // Collect annotations that contain the keyword.
+                    List<Annotation> annotationsToRemove = new List<Annotation>();
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Delete the annotation
-                        annotations.RemoveAt(i);
+                        string commentText = annotation.Comment?.Value ?? string.Empty;
+                        if (commentText.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            annotationsToRemove.Add(annotation);
+                        }
+                    }
+
+                    // Remove the collected annotations from the page.
+                    foreach (Annotation annotation in annotationsToRemove)
+                    {
+                        page.PageSheet.Annotations.Remove(annotation);
+                    }
+
+                    // Verify that no remaining annotation contains the keyword.
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    {
+                        string commentText = annotation.Comment?.Value ?? string.Empty;
+                        if (commentText.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            throw new Exception($"Comment containing keyword '{keyword}' still present after deletion.");
+                        }
                     }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Comments containing '{keyword}' have been removed. Saved to: {outputPath}");
             }
-
-            // Verification: ensure no remaining comment contains the keyword
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Annotation ann in page.PageSheet.Annotations)
-                {
-                    string commentText = ann.Comment.Value ?? string.Empty;
-                    if (commentText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new Exception("Keyword still found in a comment after deletion.");
-                    }
-                }
-            }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Comments containing the keyword have been removed and the diagram saved.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

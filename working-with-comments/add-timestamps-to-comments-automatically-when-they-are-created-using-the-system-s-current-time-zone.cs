@@ -1,42 +1,65 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Retrieve the first page (index 0)
+            if (diagram.Pages.Count == 0)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page (you can adjust the index or use GetPage by name)
-                Page page = diagram.Pages[0];
-
-                // Get the first shape on the page (replace with your target shape as needed)
-                Shape shape = page.Shapes[0];
-
-                // Create a timestamp string using the system's current time zone
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-                // Build the comment text with the timestamp
-                string commentText = $"[{timestamp}] Review this shape";
-
-                // Add the comment (annotation) to the shape
-                page.AddComment(shape, commentText);
-
-                // Save the diagram with the new comment
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Page page = diagram.Pages[0];
+
+            // Define comment coordinates (example: 1.0, 1.0)
+            double commentX = 1.0;
+            double commentY = 1.0;
+
+            // Base comment text (could be customized)
+            string baseComment = "Automated comment";
+
+            // Append timestamp using the system's current time zone
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz");
+            string fullComment = $"{baseComment} (Created: {timestamp})";
+
+            // Add the comment to the page at the specified coordinates
+            page.AddComment(commentX, commentY, fullComment);
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Comment added and diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

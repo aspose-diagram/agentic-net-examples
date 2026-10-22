@@ -1,52 +1,103 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                Shape connectorShape = null;
+                Page targetPage = null;
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+                // Find the first connector (1‑D shape) in the document
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.OneD) // 1‑D shapes are connectors
+                        {
+                            connectorShape = shape;
+                            targetPage = page;
+                            break;
+                        }
+                    }
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+                    if (connectorShape != null)
+                        break;
+                }
 
-            // Add two rectangle shapes to serve as start and end points
-            long shapeId1 = page.AddShape(2.0, 5.0, "Rectangle", false);
-            long shapeId2 = page.AddShape(8.0, 5.0, "Rectangle", false);
+                if (connectorShape == null || targetPage == null)
+                {
+                    Console.Error.WriteLine("No connector shape found in the diagram.");
+                    return;
+                }
 
-            // Retrieve the shape objects (optional, for further modifications)
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
+                // Determine a point on the connector where the comment should appear.
+                // For demonstration we use the connector's central PinX/PinY.
+                double commentX = connectorShape.XForm.PinX.Value;
+                double commentY = connectorShape.XForm.PinY.Value;
 
-            // Add a dynamic connector shape
-            long connectorId = page.AddShape(5.0, 5.0, "Dynamic connector", false);
-            Shape connectorShape = page.Shapes.GetShape(connectorId);
+                // Add a page‑level comment at the calculated coordinates.
+                targetPage.AddComment(commentX, commentY, "Connector segment comment");
 
-            // Connect the two rectangles using the connector
-            page.ConnectShapesViaConnector(
-                shapeId1,
-                ConnectionPointPlace.Bottom,
-                shapeId2,
-                ConnectionPointPlace.Top,
-                connectorId);
+                // Retrieve the newly added annotation (assumed to be the last one).
+                Annotation newAnnotation = null;
+                int count = targetPage.PageSheet.Annotations.Count;
+                if (count > 0)
+                {
+                    int index = 0;
+                    foreach (Annotation ann in targetPage.PageSheet.Annotations)
+                    {
+                        if (index == count - 1)
+                        {
+                            newAnnotation = ann;
+                            break;
+                        }
+                        index++;
+                    }
+                }
 
-            // Attach a comment directly to the connector shape
-            page.AddComment(connectorShape, "Review this connector segment");
+                if (newAnnotation == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the newly added annotation.");
+                    return;
+                }
 
-            // Save the diagram to a VSDX file
-            diagram.Save("ConnectorWithComment.vsdx", SaveFileFormat.Vsdx);
+                // Associate the annotation with the connector shape.
+                // ShapeID is an int, so cast the long shape ID explicitly.
+                newAnnotation.ShapeID = (int)connectorShape.ID;
 
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            }
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

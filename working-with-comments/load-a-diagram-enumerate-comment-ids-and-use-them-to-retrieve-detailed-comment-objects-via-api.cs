@@ -1,82 +1,99 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio diagram file
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // List to store comment (annotation) IDs
-                List<long> commentIds = new List<long>();
-
-                // First pass: collect all comment IDs from every page
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Annotations are stored in the page's PageSheet
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Access the collection of annotations (comments) on the current page.
+                    AnnotationCollection annotations = page.PageSheet.Annotations;
+
+                    if (annotations == null || annotations.Count == 0)
                     {
-                        long id = annotation.MarkerIndex.Value;
-                        commentIds.Add(id);
+                        // No comments on this page; continue to the next page.
+                        continue;
                     }
-                }
 
-                // Output the collected IDs
-                Console.WriteLine("Collected Comment IDs:");
-                foreach (long id in commentIds)
-                {
-                    Console.WriteLine($"- {id}");
-                }
-
-                // Second pass: retrieve detailed comment objects using the IDs
-                Console.WriteLine("\nDetailed Comment Information:");
-                foreach (long targetId in commentIds)
-                {
-                    bool found = false;
-
-                    foreach (Page page in diagram.Pages)
+                    // First pass: collect all comment (annotation) IDs.
+                    List<int> commentIds = new List<int>();
+                    foreach (Annotation ann in annotations)
                     {
-                        foreach (Annotation annotation in page.PageSheet.Annotations)
+                        // MarkerIndex uniquely identifies a comment.
+                        if (ann.MarkerIndex != null)
                         {
-                            if (annotation.MarkerIndex.Value == targetId)
+                            commentIds.Add(ann.MarkerIndex.Value);
+                        }
+                    }
+
+                    // Second pass: retrieve each comment by its ID and display details.
+                    foreach (int commentId in commentIds)
+                    {
+                        Annotation found = null;
+
+                        // Search the annotations collection for the matching ID.
+                        foreach (Annotation ann in annotations)
+                        {
+                            if (ann.MarkerIndex != null && ann.MarkerIndex.Value == commentId)
                             {
-                                // Detailed information about the comment
-                                string commentText = annotation.Comment.Value;
-                                int reviewerId = annotation.ReviewerID.Value;
-                                int shapeId = annotation.ShapeID; // ShapeID is a primitive int
-
-                                Console.WriteLine($"Comment ID: {targetId}");
-                                Console.WriteLine($"  Text      : {commentText}");
-                                Console.WriteLine($"  ReviewerID: {reviewerId}");
-                                Console.WriteLine($"  ShapeID   : {shapeId}");
-                                Console.WriteLine();
-
-                                found = true;
+                                found = ann;
                                 break;
                             }
                         }
 
-                        if (found) break;
-                    }
+                        if (found != null)
+                        {
+                            // Extract comment details, handling possible null values.
+                            string commentText = (found.Comment != null) ? found.Comment.Value : string.Empty;
+                            int reviewerId = (found.ReviewerID != null) ? found.ReviewerID.Value : 0;
+                            int shapeId = found.ShapeID; // ShapeID is a primitive int.
+                            DateTime commentDate = DateTime.MinValue;
+                            if (found.Date != null)
+                            {
+                                commentDate = found.Date.Value;
+                            }
 
-                    if (!found)
-                    {
-                        Console.WriteLine($"Comment ID {targetId} not found in any page.");
+                            // Output the comment information to the console.
+                            Console.WriteLine($"Page {page.ID}, Comment ID: {commentId}");
+                            Console.WriteLine($"  Text      : {commentText}");
+                            Console.WriteLine($"  ReviewerID: {reviewerId}");
+                            Console.WriteLine($"  ShapeID   : {shapeId}");
+                            Console.WriteLine($"  Date      : {commentDate}");
+                            Console.WriteLine();
+                        }
                     }
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during loading or processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

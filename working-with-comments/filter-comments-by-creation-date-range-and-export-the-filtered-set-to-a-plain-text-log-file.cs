@@ -1,78 +1,98 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect four arguments: input diagram path, start date, end date, output log path
+        if (args.Length < 4)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <startDate> <endDate> <outputLogPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string startDateStr = args[1];
+        string endDateStr = args[2];
+        string outputPath = args[3];
+
+        // Guard: verify input diagram file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Parse start and end dates
+        if (!DateTime.TryParse(startDateStr, out DateTime startDate))
+        {
+            Console.Error.WriteLine($"Invalid start date: {startDateStr}");
+            return;
+        }
+
+        if (!DateTime.TryParse(endDateStr, out DateTime endDate))
+        {
+            Console.Error.WriteLine($"Invalid end date: {endDateStr}");
+            return;
+        }
+
+        // Ensure output directory exists
+        try
+        {
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
             {
+                Directory.CreateDirectory(outputDir);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to prepare output directory: {ex.Message}");
+            return;
+        }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Output plain‑text log file path
-                string outputPath = "FilteredComments.log";
-
-                // Define the date range for filtering (inclusive)
-                DateTime startDate = new DateTime(2023, 1, 1);
-                DateTime endDate   = new DateTime(2023, 12, 31);
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Collect filtered comment lines
-                List<string> filteredLines = new List<string>();
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+        // Load diagram and filter comments
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                using (StreamWriter writer = new StreamWriter(outputPath, false))
                 {
-                    // Access annotations (comments) on the page sheet
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve the comment creation date
-                        // The Date property is read‑only; its value is accessed via .Value
-                        DateTime commentDate = annotation.Date.Value;
-
-                        // Check if the comment falls within the specified range
-                        if (commentDate >= startDate && commentDate <= endDate)
+                        // Iterate through all annotations (comments) on the page
+                        foreach (Annotation annotation in page.PageSheet.Annotations)
                         {
-                            // Retrieve comment text
-                            string commentText = annotation.Comment.Value;
+                            // Retrieve the comment creation date; Annotation.Date is a DateValue
+                            DateTime commentDate = annotation.Date.Value;
 
-                            // Build a log line with page name, shape ID (if any), date, and text
-                            string line = $"Page: {page.Name}, ShapeID: {annotation.ShapeID}, Date: {commentDate:yyyy-MM-dd}, Comment: {commentText}";
-                            filteredLines.Add(line);
+                            // Check if the comment falls within the specified date range (inclusive)
+                            if (commentDate >= startDate && commentDate <= endDate)
+                            {
+                                // Retrieve comment text; Annotation.Comment is a Str2Value
+                                string commentText = annotation.Comment?.Value ?? string.Empty;
+
+                                // Retrieve reviewer ID; Annotation.ReviewerID is an IntValue
+                                string reviewerId = annotation.ReviewerID?.Value.ToString() ?? string.Empty;
+
+                                // Write a formatted line to the log file
+                                writer.WriteLine($"[{commentDate:yyyy-MM-dd HH:mm:ss}] ReviewerID: {reviewerId} - {commentText}");
+                            }
                         }
                     }
                 }
-
-                // Write the filtered comments to the plain‑text log file
-                try
-                {
-                    using (StreamWriter writer = new StreamWriter(outputPath, false))
-                    {
-                        foreach (string line in filteredLines)
-                        {
-                            writer.WriteLine(line);
-                        }
-                    }
-
-                    Console.WriteLine($"Filtered comments have been exported to '{outputPath}'.");
-                }
-                catch (Exception ex)
-                {
-                    // Report any I/O errors
-                    Console.WriteLine($"Error writing to log file: {ex.Message}");
-                    throw;
-                }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
+        }
+
+        // Indicate successful completion
+        Console.WriteLine($"Filtered comments have been exported to: {outputPath}");
     }
-    }
+}

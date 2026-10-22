@@ -1,69 +1,100 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Define a minimal distance (in inches) to consider comments overlapping
+                const double overlapThreshold = 0.5; // 0.5 inches
+                // Define offset to apply when moving a comment to resolve overlap
+                const double offset = 0.2; // 0.2 inches
 
-                // Path to the source Visio diagram
-                string inputPath = "input.vsdx";
-                // Path to save the adjusted diagram
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Threshold distance (in inches) to consider comments overlapping
-                const double overlapThreshold = 0.2;
-                // Offset to apply when moving a comment to avoid overlap
-                const double offsetY = 0.3;
-
-                // Process each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through all pages in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Collect all annotations (comments) on the page
+                    // Retrieve the current page
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Collect annotations (comments) from the page
                     List<Annotation> annotations = new List<Annotation>();
                     foreach (Annotation ann in page.PageSheet.Annotations)
                     {
                         annotations.Add(ann);
                     }
 
-                    // Compare each pair of annotations for overlap
+                    // Simple O(n^2) overlap detection and adjustment
                     for (int i = 0; i < annotations.Count; i++)
                     {
                         Annotation a1 = annotations[i];
-                        // Ensure the annotation has valid X and Y values
-                        if (a1.X == null || a1.Y == null) continue;
+
+                        // Ensure the annotation has X and Y coordinates; if not, skip adjustment
+                        if (a1.X == null || a1.Y == null)
+                            continue;
+
+                        double x1 = a1.X.Value;
+                        double y1 = a1.Y.Value;
 
                         for (int j = i + 1; j < annotations.Count; j++)
                         {
                             Annotation a2 = annotations[j];
-                            if (a2.X == null || a2.Y == null) continue;
 
-                            double deltaX = Math.Abs(a1.X.Value - a2.X.Value);
-                            double deltaY = Math.Abs(a1.Y.Value - a2.Y.Value);
+                            if (a2.X == null || a2.Y == null)
+                                continue;
 
-                            // If both X and Y are within the threshold, consider them overlapping
-                            if (deltaX < overlapThreshold && deltaY < overlapThreshold)
+                            double x2 = a2.X.Value;
+                            double y2 = a2.Y.Value;
+
+                            // Compute Euclidean distance between the two comment positions
+                            double distance = Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
+
+                            // If the distance is less than the threshold, adjust the second comment
+                            if (distance < overlapThreshold)
                             {
-                                // Move the second comment downwards to separate them
-                                a2.Y.Value += offsetY;
+                                // Apply offset to the second comment's coordinates
+                                a2.X.Value = x2 + offset;
+                                a2.Y.Value = y2 + offset;
+
+                                // Update local variables for further comparisons
+                                x2 = a2.X.Value;
+                                y2 = a2.Y.Value;
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the output path using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

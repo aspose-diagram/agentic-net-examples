@@ -1,59 +1,80 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments.
+        if (args.Length < 2)
         {
-            // Expect three arguments: input file path, output file path, number of days
-            if (args.Length != 3)
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <daysThreshold> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string daysArg = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : inputPath;
+
+        // Guard: check input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Parse days threshold.
+        if (!int.TryParse(daysArg, out int daysThreshold) || daysThreshold < 0)
+        {
+            Console.Error.WriteLine("Error: Days threshold must be a non‑negative integer.");
+            return;
+        }
+
+        // Compute cutoff date.
+        DateTime cutoffDate = DateTime.Now.AddDays(-daysThreshold);
+
+        try
+        {
+            // Load diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: DiagramCommentCleaner <input.vsdx> <output.vsdx> <days>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-            if (!int.TryParse(args[2], out int days) || days < 0)
-            {
-                Console.WriteLine("The days argument must be a non‑negative integer.");
-                return;
-            }
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Determine the cutoff date
-            DateTime cutoffDate = DateTime.Now.AddDays(-days);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
-            {
-                // Collect annotations that are older than the cutoff
-                List<Annotation> toRemove = new List<Annotation>();
-
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Annotation.Date is read‑only; its value can be accessed via .Value
-                    // If the date is not set, treat it as the minimum value
-                    DateTime commentDate = annotation.Date?.Value ?? DateTime.MinValue;
+                    // Access the page‑level annotations collection.
+                    AnnotationCollection annotations = page.PageSheet.Annotations;
 
-                    if (commentDate < cutoffDate)
+                    // Iterate backwards to safely remove items while iterating.
+                    for (int i = annotations.Count - 1; i >= 0; i--)
                     {
-                        toRemove.Add(annotation);
+                        Annotation ann = annotations[i];
+
+                        // Retrieve the comment creation date safely.
+                        DateTime commentDate = ann.Date?.Value ?? DateTime.MinValue;
+
+                        // If the comment is older than the cutoff, remove it.
+                        if (commentDate < cutoffDate)
+                        {
+                            // Remove the annotation from the collection.
+                            // If RemoveAt is not available, use Remove(ann) instead.
+                            annotations.RemoveAt(i);
+                        }
                     }
                 }
 
-                // Remove the collected annotations
-                foreach (Annotation oldAnnotation in toRemove)
-                {
-                    page.PageSheet.Annotations.Remove(oldAnnotation);
-                }
+                // Save the modified diagram. Overwrite input if no separate output path provided.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Comments older than {days} days have been removed and saved to '{outputPath}'.");
+            Console.WriteLine("Comments older than {0} days have been removed.", daysThreshold);
+            Console.WriteLine("Diagram saved to: " + outputPath);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine("An error occurred: " + ex.Message);
         }
     }
+}

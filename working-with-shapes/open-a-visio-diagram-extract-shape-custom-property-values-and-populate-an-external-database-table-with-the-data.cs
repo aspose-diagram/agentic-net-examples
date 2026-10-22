@@ -1,105 +1,133 @@
 using System;
+using System.IO;
 using System.Data;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument or default)
+        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(visioPath))
         {
-            try
+            Console.Error.WriteLine($"Error: Visio file not found at path '{visioPath}'.");
+            return;
+        }
+
+        // Load the Visio diagram inside a try/catch to handle any Aspose exceptions
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(visioPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading Visio diagram: {ex.Message}");
+            return;
+        }
+
+        // Prepare an in‑memory DataTable to simulate a database table
+        DataTable table = new DataTable("ShapeCustomProperties");
+        table.Columns.Add("ShapeId", typeof(long));
+        table.Columns.Add("ShapeName", typeof(string));
+        table.Columns.Add("PropertyName", typeof(string));
+        table.Columns.Add("PropertyValue", typeof(string));
+
+        // Iterate through all pages, shapes, and their custom properties
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
+                // Shape identifier and name (if available)
+                long shapeId = shape.ID;
+                string shapeName = shape.NameU ?? string.Empty;
 
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Prepare an in‑memory DataTable to simulate the external database table
-                DataTable customPropsTable = new DataTable("ShapeCustomProperties");
-                customPropsTable.Columns.Add("ShapeId", typeof(long));
-                customPropsTable.Columns.Add("ShapeName", typeof(string));
-                customPropsTable.Columns.Add("PropertyName", typeof(string));
-                customPropsTable.Columns.Add("PropertyValue", typeof(string));
-
-                // Iterate through all pages, shapes and their custom properties (Props)
-                foreach (Page page in diagram.Pages)
+                // Iterate over the shape's custom properties collection
+                foreach (Prop prop in shape.Props)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Property name (as defined by the user)
+                    string propName = prop.Name ?? string.Empty;
 
-                        foreach (Prop prop in shape.Props)
-                        {
-                            // Each Prop contains Name, Label, Value, etc.
-                            DataRow row = customPropsTable.NewRow();
-                            row["ShapeId"] = shape.ID;
-                            row["ShapeName"] = shape.NameU;
-                            row["PropertyName"] = prop.Name;
-                            row["PropertyValue"] = prop.Value.Val;
-                            customPropsTable.Rows.Add(row);
-                        }
-                    }
+                    // Property value stored in the Value cell (use .Val)
+                    string propValue = prop.Value?.Val ?? string.Empty;
+
+                    // Add a row to the simulated table
+                    DataRow row = table.NewRow();
+                    row["ShapeId"] = shapeId;
+                    row["ShapeName"] = shapeName;
+                    row["PropertyName"] = propName;
+                    row["PropertyValue"] = propValue;
+                    table.Rows.Add(row);
                 }
-
-                // Example: display extracted data on the console
-                Console.WriteLine("Extracted custom properties:");
-                foreach (DataRow dr in customPropsTable.Rows)
-                {
-                    Console.WriteLine($"ShapeId: {dr["ShapeId"]}, ShapeName: {dr["ShapeName"]}, " +
-                                      $"Property: {dr["PropertyName"]}, Value: {dr["PropertyValue"]}");
-                }
-
-                // -----------------------------------------------------------------
-                // The following commented block shows how you would insert the data
-                // into a real database using ADO.NET. Replace the placeholder connection
-                // string and table/column names with your actual schema.
-                // -----------------------------------------------------------------
-                /*
-                string connectionString = "your_connection_string_here";
-                using (IDbConnection connection = new System.Data.SqlClient.SqlConnection(connectionString))
-                {
-                    connection.Open();
-                    foreach (DataRow dr in customPropsTable.Rows)
-                    {
-                        using (IDbCommand command = connection.CreateCommand())
-                        {
-                            command.CommandText = @"
-                                INSERT INTO ShapeCustomProperties (ShapeId, ShapeName, PropertyName, PropertyValue)
-                                VALUES (@ShapeId, @ShapeName, @PropertyName, @PropertyValue)";
-
-                            var paramShapeId = command.CreateParameter();
-                            paramShapeId.ParameterName = "@ShapeId";
-                            paramShapeId.Value = dr["ShapeId"];
-                            command.Parameters.Add(paramShapeId);
-
-                            var paramShapeName = command.CreateParameter();
-                            paramShapeName.ParameterName = "@ShapeName";
-                            paramShapeName.Value = dr["ShapeName"];
-                            command.Parameters.Add(paramShapeName);
-
-                            var paramPropName = command.CreateParameter();
-                            paramPropName.ParameterName = "@PropertyName";
-                            paramPropName.Value = dr["PropertyName"];
-                            command.Parameters.Add(paramPropName);
-
-                            var paramPropValue = command.CreateParameter();
-                            paramPropValue.ParameterName = "@PropertyValue";
-                            paramPropValue.Value = dr["PropertyValue"];
-                            command.Parameters.Add(paramPropValue);
-
-                            command.ExecuteNonQuery();
-                        }
-                    }
-                }
-                */
-
             }
-            catch (System.IO.FileNotFoundException ex)
+        }
+
+        // Simulate inserting rows into an external database.
+        // In a real scenario you would use ADO.NET (e.g., SqlConnection, SqlCommand) like this:
+        /*
+        using (var connection = new SqlConnection("your-connection-string"))
+        {
+            connection.Open();
+            foreach (DataRow row in table.Rows)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                using (var command = new SqlCommand(
+                    "INSERT INTO ShapeCustomProperties (ShapeId, ShapeName, PropertyName, PropertyValue) VALUES (@ShapeId, @ShapeName, @PropertyName, @PropertyValue)", connection))
+                {
+                    command.Parameters.AddWithValue("@ShapeId", (long)row["ShapeId"]);
+                    command.Parameters.AddWithValue("@ShapeName", (string)row["ShapeName"]);
+                    command.Parameters.AddWithValue("@PropertyName", (string)row["PropertyName"]);
+                    command.Parameters.AddWithValue("@PropertyValue", (string)row["PropertyValue"]);
+                    command.ExecuteNonQuery();
+                }
             }
+        }
+        */
+
+        // For demonstration, output the extracted data to the console
+        Console.WriteLine("Extracted Shape Custom Properties:");
+        foreach (DataRow row in table.Rows)
+        {
+            Console.WriteLine($"ShapeId: {row["ShapeId"]}, ShapeName: {row["ShapeName"]}, Property: {row["PropertyName"]}, Value: {row["PropertyValue"]}");
+        }
+
+        // Optionally, save the DataTable to a CSV file for verification
+        string csvPath = "ExtractedProperties.csv";
+        try
+        {
+            using (var writer = new StreamWriter(csvPath))
+            {
+                // Write header
+                writer.WriteLine("ShapeId,ShapeName,PropertyName,PropertyValue");
+                // Write rows
+                foreach (DataRow row in table.Rows)
+                {
+                    string line = $"{row["ShapeId"]},{EscapeCsv((string)row["ShapeName"])},{EscapeCsv((string)row["PropertyName"])},{EscapeCsv((string)row["PropertyValue"])}";
+                    writer.WriteLine(line);
+                }
+            }
+            Console.WriteLine($"Data exported to CSV file: {csvPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error writing CSV file: {ex.Message}");
+        }
     }
+
+    // Helper method to escape CSV fields containing commas or quotes
+    private static string EscapeCsv(string field)
+    {
+        if (field == null)
+            return string.Empty;
+
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+        {
+            string escaped = field.Replace("\"", "\"\"");
+            return $"\"{escaped}\"";
+        }
+        return field;
     }
+}

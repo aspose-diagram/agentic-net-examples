@@ -1,43 +1,55 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        try
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_locked.vsdx";
 
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output_locked.vsdx";
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and lock the layer named "Architecture"
-            foreach (Page page in diagram.Pages)
+        // Load diagram inside a using block as required
+        using (Diagram diagram = new Diagram(inputPath))
+        {
+            try
             {
-                // Access the collection of layers on the current page
-                foreach (Layer layer in page.PageSheet.Layers)
+                // Iterate through all pages to access their layer collections
+                foreach (Page page in diagram.Pages)
                 {
-                    // Compare the layer name (case‑sensitive) with the target name
-                    if (layer.Name.Value == "Architecture")
+                    // Iterate through each layer on the current page
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Prevent edits by making the layer invisible (Visio treats invisible layers as locked)
-                        layer.Visible.Value = BOOL.False;
+                        // Identify the layer named "Architecture"
+                        if (layer.Name.Value == "Architecture")
+                        {
+                            // Lock the layer to prevent edits
+                            layer.Lock.Value = BOOL.True;
+                        }
                     }
                 }
+
+                // Save the modified diagram with the locked layer
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram preserving the VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            catch (Exception ex)
+            {
+                // Write any errors to the error console
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
         }
     }
 }

@@ -6,15 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure a file path argument is provided.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: <program> <diagram-file-path>");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        // Assign the diagram file path and verify its existence.
         string diagramPath = args[0];
+
+        // Guard against missing file
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
@@ -23,47 +24,57 @@ class Program
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Compute the number of descendant shapes using depth‑first recursion.
-                    int descendantCount = CountDescendants(shape);
+                int totalDescendants = 0;
 
-                    // Output the shape ID, its universal name, and the descendant count.
-                    Console.WriteLine($"Shape ID {shape.ID} (NameU: {shape.NameU}) has {descendantCount} descendant shape(s).");
+                // Iterate through each page in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                {
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through top‑level shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Count all descendant shapes of the current shape using depth‑first traversal
+                        int descendantCount = CountDescendants(shape);
+                        totalDescendants += descendantCount;
+                    }
                 }
+
+                // Output the result
+                Console.WriteLine($"Total number of descendant shapes (depth‑first): {totalDescendants}");
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
-    // Recursively counts all descendant shapes of the given shape.
+    /// <summary>
+    /// Recursively counts all descendant shapes of the given shape using depth‑first traversal.
+    /// </summary>
+    /// <param name="shape">The parent shape.</param>
+    /// <returns>The number of descendant shapes.</returns>
     private static int CountDescendants(Shape shape)
     {
-        // If the shape is not a group, it has no descendants.
-        if (shape.Type != TypeValue.Group)
-            return 0;
-
         int count = 0;
 
-        // Iterate through each child shape within the group.
-        foreach (Shape child in shape.Shapes)
+        // Group shapes contain child shapes in the Shapes collection.
+        // For non‑group shapes there are no descendants.
+        if (shape.Type == TypeValue.Group && shape.Shapes != null)
         {
-            // Count the child itself.
-            count += 1;
+            foreach (Shape child in shape.Shapes)
+            {
+                // Count the child itself
+                count += 1;
 
-            // Add the child's own descendants (depth‑first).
-            count += CountDescendants(child);
+                // Recursively count the child's descendants
+                count += CountDescendants(child);
+            }
         }
 
         return count;

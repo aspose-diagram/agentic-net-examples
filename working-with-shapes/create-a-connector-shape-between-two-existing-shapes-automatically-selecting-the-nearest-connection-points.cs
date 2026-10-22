@@ -1,58 +1,148 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-                // Input and output file paths (replace with actual paths)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Find the IDs of the two shapes to connect (by their universal names)
-                long shapeId1 = FindShapeIdByName(page, "Shape1");
-                long shapeId2 = FindShapeIdByName(page, "Shape2");
-
-                // Add a dynamic connector shape to the page
-                // PinX and PinY are set to 0; the connector will be repositioned automatically when connected
-                long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
-
-                // Connect the two shapes using the nearest connection points.
-                // Here we use Bottom of the first shape and Top of the second shape as examples.
-                page.ConnectShapesViaConnector(shapeId1, ConnectionPointPlace.Bottom, shapeId2, ConnectionPointPlace.Top, connectorId);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Helper method to locate a shape by its universal name and return its ID
-        static long FindShapeIdByName(Page page, string nameU)
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            foreach (Shape shape in page.Shapes)
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the existing Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                if (shape.NameU == nameU)
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Work with the first page.
+            Page page = diagram.Pages[0];
+
+            // ------------------------------------------------------------
+            // Locate the two shapes to be connected.
+            // Attempt to find shapes named "Shape1" and "Shape2".
+            // If not found, fall back to the first two shapes on the page.
+            // ------------------------------------------------------------
+            long shape1Id = -1;
+            long shape2Id = -1;
+
+            foreach (Shape s in page.Shapes)
+            {
+                if (s.NameU == "Shape1")
+                    shape1Id = s.ID;
+                else if (s.NameU == "Shape2")
+                    shape2Id = s.ID;
+            }
+
+            // Fallback: use the first two shapes if specific names were not found.
+            if (shape1Id == -1 || shape2Id == -1)
+            {
+                int found = 0;
+                foreach (Shape s in page.Shapes)
                 {
-                    return shape.ID;
+                    if (found == 0) { shape1Id = s.ID; found++; }
+                    else if (found == 1) { shape2Id = s.ID; found++; break; }
                 }
             }
 
-            throw new Exception($"Shape with NameU '{nameU}' not found on the page.");
+            // Validate that we have two distinct shape IDs.
+            if (shape1Id == -1 || shape2Id == -1 || shape1Id == shape2Id)
+            {
+                Console.Error.WriteLine("Unable to locate two distinct shapes to connect.");
+                return;
+            }
+
+            // Retrieve the shape objects for geometry calculations.
+            Shape shape1 = page.Shapes.GetShape(shape1Id);
+            Shape shape2 = page.Shapes.GetShape(shape2Id);
+
+            // ------------------------------------------------------------
+            // Determine the nearest connection points based on shape centers.
+            // Use ConnectionPointPlace enum values: Right, Left, Top, Bottom.
+            // ------------------------------------------------------------
+            double pinX1 = shape1.XForm.PinX.Value;
+            double pinY1 = shape1.XForm.PinY.Value;
+            double pinX2 = shape2.XForm.PinX.Value;
+            double pinY2 = shape2.XForm.PinY.Value;
+
+            double deltaX = pinX2 - pinX1;
+            double deltaY = pinY2 - pinY1;
+
+            ConnectionPointPlace fromPlace;
+            ConnectionPointPlace toPlace;
+
+            if (Math.Abs(deltaX) > Math.Abs(deltaY))
+            {
+                // Horizontal dominance.
+                if (deltaX > 0)
+                {
+                    fromPlace = ConnectionPointPlace.Right;
+                    toPlace = ConnectionPointPlace.Left;
+                }
+                else
+                {
+                    fromPlace = ConnectionPointPlace.Left;
+                    toPlace = ConnectionPointPlace.Right;
+                }
+            }
+            else
+            {
+                // Vertical dominance.
+                if (deltaY > 0)
+                {
+                    fromPlace = ConnectionPointPlace.Bottom;
+                    toPlace = ConnectionPointPlace.Top;
+                }
+                else
+                {
+                    fromPlace = ConnectionPointPlace.Top;
+                    toPlace = ConnectionPointPlace.Bottom;
+                }
+            }
+
+            // ------------------------------------------------------------
+            // Create a dynamic connector shape.
+            // The AddShape overload expects (pinX, pinY, width, height, masterName, isCalculate).
+            // For a connector, dimensions are not required; use zeros and set isCalculate to false.
+            // ------------------------------------------------------------
+            long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
+
+            // ------------------------------------------------------------
+            // Connect the two shapes via the newly created connector,
+            // using the automatically selected nearest connection points.
+            // ------------------------------------------------------------
+            page.ConnectShapesViaConnector(shape1Id, fromPlace, shape2Id, toPlace, connectorId);
+
+            // ------------------------------------------------------------
+            // Save the modified diagram to the specified output path.
+            // ------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

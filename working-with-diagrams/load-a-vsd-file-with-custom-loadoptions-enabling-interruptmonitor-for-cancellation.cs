@@ -1,46 +1,57 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Threading;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the Visio file to load
-        string inputPath = "input.vsdx";
+        // Determine the input file path (use first argument or a default placeholder)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsd";
 
-        // Create an InterruptMonitor to allow cancellation
-        InterruptMonitor monitor = new InterruptMonitor();
-
-        // Optional: start a background thread that will interrupt after a delay
-        Thread interrupter = new Thread(() =>
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            Thread.Sleep(2000); // wait 2 seconds before interrupting
-            monitor.Interrupt();
-            Console.WriteLine("Loading operation was interrupted.");
-        });
-        interrupter.Start();
+            Console.Error.WriteLine($"Error: The file \"{inputPath}\" does not exist.");
+            return;
+        }
 
-        // Configure LoadOptions with the interrupt monitor
-        LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
-        loadOptions.InterruptMonitor = monitor;
+        // Create an InterruptMonitor instance that can be used to cancel the load operation
+        InterruptMonitor interruptMonitor = new InterruptMonitor();
+
+        // Optionally start a background thread that will interrupt after a timeout (e.g., 5 seconds)
+        Thread monitorThread = new Thread(() =>
+        {
+            // Wait for 5 seconds before triggering interruption
+            Thread.Sleep(5000);
+            // Request cancellation
+            interruptMonitor.Interrupt();
+            Console.WriteLine("Interrupt requested by monitor thread.");
+        });
+        monitorThread.Start();
 
         try
         {
-            // Load the diagram using the custom LoadOptions
+            // Configure LoadOptions with the desired file format and attach the InterruptMonitor
+            LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsd);
+            loadOptions.InterruptMonitor = interruptMonitor;
+
+            // Load the Visio diagram using the custom LoadOptions
             Diagram diagram = new Diagram(inputPath, loadOptions);
+
+            // If loading succeeds, indicate success
             Console.WriteLine("Diagram loaded successfully.");
-            // Additional processing can be performed here
         }
         catch (Exception ex)
         {
-            // Handle exceptions, including those caused by interruption
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            // Capture and display any errors, including those caused by interruption
+            Console.Error.WriteLine($"An error occurred while loading the diagram: {ex.Message}");
         }
-
-        // Ensure the interrupter thread has finished
-        interrupter.Join();
+        finally
+        {
+            // Ensure the monitor thread finishes before exiting
+            monitorThread.Join();
+        }
     }
 }

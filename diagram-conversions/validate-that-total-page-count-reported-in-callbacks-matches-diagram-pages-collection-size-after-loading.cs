@@ -1,71 +1,86 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyPageSavingCallback : IPageSavingCallback
+class Program
 {
-    private readonly int _expectedPageCount;
-
-    public MyPageSavingCallback(int expectedPageCount)
+    static void Main(string[] args)
     {
-        _expectedPageCount = expectedPageCount;
-    }
-
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        // Validate that the total page count reported at the start of each page matches the diagram's page count.
-        if (args.PageCount != _expectedPageCount)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            throw new Exception($"PageStartSaving: Expected page count {_expectedPageCount}, but got {args.PageCount}.");
-        }
-    }
-
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        // Validate that the total page count reported at the end of each page matches the diagram's page count.
-        if (args.PageCount != _expectedPageCount)
-        {
-            throw new Exception($"PageEndSaving: Expected page count {_expectedPageCount}, but got {args.PageCount}.");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
         }
 
-        // Continue processing remaining pages.
-        args.HasMorePages = true;
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Define output PDF path (same folder, same name with .pdf extension)
+        string outputPath = Path.ChangeExtension(inputPath, ".pdf");
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create PDF save options and assign the custom page-saving callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            MyPageSavingCallback callback = new MyPageSavingCallback();
+            pdfOptions.PageSavingCallback = callback;
+
+            // Save the diagram to PDF using the options
+            diagram.Save(outputPath, pdfOptions);
+
+            // After saving, compare the page count reported by the callback with the diagram's page collection size
+            int reportedPageCount = callback.ReportedPageCount;
+            int actualPageCount = diagram.Pages.Count;
+
+            if (reportedPageCount != actualPageCount)
+            {
+                throw new Exception($"Page count mismatch: Callback reported {reportedPageCount}, but diagram contains {actualPageCount} pages.");
+            }
+            else
+            {
+                Console.WriteLine($"Page count validation succeeded. Total pages: {actualPageCount}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }
 
-class Program
+// Custom callback implementation to capture page count during PDF export
+class MyPageSavingCallback : IPageSavingCallback
 {
-    static void Main()
+    // Stores the total page count reported by the first callback invocation
+    public int ReportedPageCount { get; private set; } = -1;
+    private bool _isFirstCall = true;
+
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        try
+        // Capture the total page count only once (it is the same for all pages)
+        if (_isFirstCall)
         {
-
-            // Path to the source Visio diagram.
-            string inputPath = "input.vsdx";
-
-            // Load the diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Capture the page count after loading.
-            int diagramPageCount = diagram.Pages.Count;
-
-            // Prepare PDF save options and assign the custom callback.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new MyPageSavingCallback(diagramPageCount);
-
-            // Path for the exported PDF.
-            string outputPath = "output.pdf";
-
-            // Save the diagram to PDF using the options with the callback.
-            diagram.Save(outputPath, pdfOptions);
-
-            // If we reach this point without exception, the page counts matched.
-            Console.WriteLine($"Successfully saved PDF. Diagram page count: {diagramPageCount}");
-
+            ReportedPageCount = args.PageCount;
+            _isFirstCall = false;
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+        // Additional per-page logic can be added here if needed
+    }
+
+    // Called after a page has finished saving
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        // No additional actions required for this validation
     }
 }

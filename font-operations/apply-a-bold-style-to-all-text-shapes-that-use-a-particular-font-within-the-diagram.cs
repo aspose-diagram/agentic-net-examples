@@ -1,54 +1,70 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments: input diagram, target font name, output diagram
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <targetFontName> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string targetFontName = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over all pages in the diagram
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
-                // Font name to target (case-insensitive)
-                string targetFontName = "Calibri";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate over all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape contains a Text object
+                    if (shape.Text == null)
+                        continue;
+
+                    // Iterate over each character formatting entry in the shape
+                    foreach (Aspose.Diagram.Char ch in shape.Chars)
                     {
-                        // Ensure the shape contains text
-                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
+                        // Compare the character's font name with the target font (case‑insensitive)
+                        if (string.Equals(ch.FontName.Value, targetFontName, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Iterate through character formatting runs
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
-                            {
-                                // Check if the character run uses the target font
-                                if (string.Equals(ch.FontName.Value, targetFontName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    // Apply bold style while preserving existing styles
-                                    ch.Style.Value |= StyleValue.Bold;
-                                }
-                            }
+                            // Apply bold style while preserving existing styles
+                            ch.Style.Value |= StyleValue.Bold;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Bold style applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,44 +1,57 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Properties;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            return;
+        }
 
-                // Load an existing Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-                // Ensure a custom property exists (it will be retained in the PDF)
-                // Create a new custom property
-                CustomProp customProp = new CustomProp();
-                customProp.Name = "ExportedBy";
-                customProp.PropType = PropType.String;
-                customProp.CustomValue.ValueString = "Aspose.Diagram Exporter";
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-                // Add the custom property to the document's custom properties collection
-                diagram.DocumentProps.CustomProps.Add(customProp);
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";               // Fallback font
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;    // Explicitly set format
+            // OPTIONAL: Display custom document properties count (they will be retained on export).
+            int customPropCount = diagram.DocumentProps.CustomProps.Count;
+            Console.WriteLine($"Diagram loaded. Custom properties count: {customPropCount}");
 
-                // Export the diagram to PDF while preserving custom properties
-                string outputPath = "output.pdf";
-                diagram.Save(outputPath, pdfOptions);
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Explicitly set the format tracker.
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Example setting – do not export hidden pages.
+            pdfOptions.ExportHiddenPage = false;
 
-                Console.WriteLine($"Diagram exported to PDF successfully: {outputPath}");
+            // Export the diagram to PDF. Custom properties are preserved automatically.
+            diagram.Save(outputPath, pdfOptions);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Clean up resources.
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

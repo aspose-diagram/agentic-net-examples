@@ -1,65 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Example geometry update: add a new line segment to the first shape on the first page
-            if (diagram.Pages.Count > 0)
-            {
-                Page page = diagram.Pages[0];
-                if (page.Shapes.Count > 0)
-                {
-                    // Retrieve the first shape (cast long ID to int if needed)
-                    Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
+            // OPTIONAL: modify geometry here if needed.
+            // For this example we directly export to SVG.
 
-                    // Ensure the shape has at least one geometry section
-                    if (shape.Geoms.Count > 0)
-                    {
-                        // Get the first geometry
-                        Geom geom = (Geom)shape.Geoms[0];
-
-                        // Add a MoveTo at the current position (optional, ensures a start point)
-                        MoveTo move = new MoveTo();
-                        move.X.Value = shape.XForm.PinX.Value;
-                        move.Y.Value = shape.XForm.PinY.Value;
-                        geom.CoordinateCol.Add(move);
-
-                        // Append a new line segment (LineTo) to extend the shape
-                        LineTo line = new LineTo();
-                        line.X.Value = shape.XForm.PinX.Value + 1.0; // extend 1 inch to the right
-                        line.Y.Value = shape.XForm.PinY.Value;      // same vertical position
-                        geom.CoordinateCol.Add(line);
-                    }
-                }
-            }
-
-            // Configure SVG export options
+            // Configure SVG export options.
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.ExportHiddenPage = false; // do not export hidden pages
-            svgOptions.ExportGuideShapes = false; // optional: exclude guide shapes
-            svgOptions.SVGFitToViewPort = true;   // fit SVG to viewport
+            svgOptions.ExportHiddenPage = false;      // Do not export hidden pages.
+            svgOptions.ExportGuideShapes = false;    // Do not export guide shapes.
+            svgOptions.IsExportComments = false;     // Do not export comments.
+            svgOptions.SVGFitToViewPort = true;      // Fit SVG to viewport.
+            svgOptions.PageIndex = 0;                 // Export first page (zero‑based index).
+            // svgOptions.PageCount = 1; // Not supported in this version; omitted.
 
-            // Export the updated diagram to SVG
-            string outputPath = "output.svg";
+            // Save the diagram as SVG using the configured options.
             diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Diagram exported to SVG at: {outputPath}");
-
+            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during loading or saving.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

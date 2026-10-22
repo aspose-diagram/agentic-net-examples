@@ -1,45 +1,73 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Output file path (optional command‑line argument)
+        string outputPath = args.Length > 0 ? args[0] : "AddedRectangle.vsdx";
+
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            try
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Ensure there is at least one window (required for saving)
+            if (diagram.Windows.Count == 0)
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Access the first page (default page is created automatically)
-                Page page = diagram.Pages[0];
-
-                // Define rectangle dimensions (in inches) and position
-                double pinX = 2.0;      // X coordinate of the shape's center
-                double pinY = 2.0;      // Y coordinate of the shape's center
-                double width = 3.0;     // Width of the rectangle
-                double height = 2.0;    // Height of the rectangle
-
-                // Add a rectangle shape using the master name "Rectangle"
-                // The fourth parameter (isCalculate) must be a boolean
-                long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle", false);
-
-                // Retrieve the shape object from the Shapes collection
-                Shape rectangle = page.Shapes.GetShape(shapeId);
-
-                // (Optional) Verify that the shape was added with the correct size
-                if (rectangle.XForm.Width.Value != width || rectangle.XForm.Height.Value != height)
+                Window window = new Window
                 {
-                    throw new Exception("Rectangle dimensions were not set correctly.");
-                }
-
-                // Save the diagram to a VSDX file
-                diagram.Save("RectangleDiagram.vsdx", SaveFileFormat.Vsdx);
-
+                    WindowType = WindowTypeValue.Drawing,
+                    WindowState = WindowStateValue.Maximized,
+                    WindowWidth = 1100,
+                    WindowHeight = 700
+                };
+                diagram.Windows.Add(window);
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Use the active page for adding the shape
+            Page page = diagram.ActivePage;
+
+            // Define rectangle center position and desired size (in inches)
+            double pinX = 5.0;          // X coordinate of the shape's center
+            double pinY = 5.0;          // Y coordinate of the shape's center
+            double rectWidth = 2.0;     // Width in inches
+            double rectHeight = 1.0;    // Height in inches
+
+            // Add a rectangle shape using the built‑in "Rectangle" master.
+            // The fourth parameter (isCalculate) is a plain bool.
+            long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
+
+            // Retrieve the newly added shape by its ID
+            Shape rectangle = page.Shapes.GetShape(shapeId);
+
+            // Set the shape's width and height
+            rectangle.XForm.Width.Value = rectWidth;
+            rectangle.XForm.Height.Value = rectHeight;
+
+            // Optionally set a simple fill color (hex string) and solid fill pattern
+            rectangle.Fill.FillForegnd.Value = "#FFCC00"; // Light orange fill
+            rectangle.Fill.FillPattern.Value = 1;        // 1 = solid pattern
+
+            // Save the diagram to the specified file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

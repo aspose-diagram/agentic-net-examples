@@ -1,69 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputVisioPath = args[0];
+        string outputPdfPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputVisioPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputVisioPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for input Visio diagram and output PDF
-            string diagramPath = "input.vsdx";
-            string pdfPath = "output.pdf";
-
-            // Load the Visio diagram
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                // Configure PDF save options
+                // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                // Explicitly set the format tracker
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.ExportHiddenPage = false;               // Do not export hidden pages. (bool, not BOOL)
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;        // Explicitly set format tracker.
+                pdfOptions.DefaultFont = "Arial";                  // Fallback font if needed.
 
-                // Save the diagram as PDF
-                diagram.Save(pdfPath, pdfOptions);
+                // Save the diagram to PDF.
+                diagram.Save(outputPdfPath, pdfOptions);
             }
 
-            // Open the generated PDF with Aspose.Pdf
-            using (Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(pdfPath))
+            // Open the generated PDF with Aspose.Pdf (fully qualified types to avoid ambiguity).
+            using (Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(outputPdfPath))
             {
-                // Iterate through each page and add a watermark
+                // Iterate over each page to add a watermark.
                 for (int i = 1; i <= pdfDocument.Pages.Count; i++)
                 {
                     Aspose.Pdf.Page page = pdfDocument.Pages[i];
 
-                    // Create a text fragment that will serve as the watermark
+                    // Create a text fragment for the watermark.
                     Aspose.Pdf.Text.TextFragment watermark = new Aspose.Pdf.Text.TextFragment("CONFIDENTIAL");
-                    // Set font and style
-                    watermark.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("Arial");
-                    watermark.TextState.FontSize = 72; // points
-                    watermark.TextState.FontStyle = Aspose.Pdf.Text.FontStyles.Bold;
-                    // Set color (light gray) – values are 0.0 to 1.0
-                    watermark.TextState.ForegroundColor = Aspose.Pdf.Color.FromRgb(0.78, 0.78, 0.78);
-                    // Rotate the watermark 45 degrees
-                    watermark.TextState.Rotation = (float)45;
-                    // Position the watermark at the center of the page
+                    watermark.TextState.FontSize = 72;                                 // Large font size.
+                    // Font is optional; default font will be used.
+                    watermark.TextState.Rotation = (float)45;                         // Rotate 45 degrees.
+                    watermark.TextState.ForegroundColor = Aspose.Pdf.Color.FromRgb(0.78, 0.78, 0.78); // Light gray.
+
+                    // Position the watermark at the center of the page.
                     double centerX = page.PageInfo.Width / 2;
                     double centerY = page.PageInfo.Height / 2;
                     watermark.Position = new Aspose.Pdf.Text.Position(centerX, centerY);
 
-                    // Add the watermark to the page's paragraphs collection
+                    // Add the watermark to the page's paragraphs collection.
                     page.Paragraphs.Add(watermark);
                 }
 
-                // Save the PDF with watermarks (overwrites the original file)
-                pdfDocument.Save(pdfPath);
+                // Save the modified PDF (overwrites the original file).
+                pdfDocument.Save(outputPdfPath);
             }
 
-            Console.WriteLine("PDF generated with digital watermark on each page.");
-
+            Console.WriteLine("PDF conversion and watermarking completed successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

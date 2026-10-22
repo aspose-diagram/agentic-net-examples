@@ -1,71 +1,82 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define output file path
+        string outputPath = "output.vsdx";
+
         try
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // -------------------------------------------------
-            // Create the foreground page (the main drawing page)
-            // -------------------------------------------------
-            Page foregroundPage = new Page();
+            // Add a drawing window (required for a usable diagram)
+            Window window = new Window
+            {
+                WindowType = WindowTypeValue.Drawing,
+                WindowState = WindowStateValue.Maximized,
+                WindowWidth = 1100,
+                WindowHeight = 700
+            };
+            diagram.Windows.Add(window);
+
+            // Create the foreground page
+            Page foregroundPage = new Page
+            {
+                ID = 1,
+                Name = "Page-1"
+            };
             diagram.Pages.Add(foregroundPage);
 
-            // -------------------------------------------------
-            // Create a background page that will hold the background color
-            // -------------------------------------------------
-            Page backgroundPage = new Page();
-            backgroundPage.Background = BOOL.True; // Mark as a background page
+            // Create a background page that will hold the background color shape
+            Page backgroundPage = new Page
+            {
+                ID = 2,
+                Name = "Background-1",
+                Background = BOOL.True // Mark as background page
+            };
             diagram.Pages.Add(backgroundPage);
 
-            // Retrieve page dimensions from the foreground page
+            // Link the background page to the foreground page
+            foregroundPage.BackPage = backgroundPage;
+
+            // Retrieve page dimensions to size the background rectangle
             double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-            // -------------------------------------------------
             // Add a rectangle shape that spans the entire page on the background page
-            // -------------------------------------------------
-            long bgShapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, "Rectangle", false);
+            // DrawRectangle(pinX, pinY, width, height) where pinX/Y are the center of the shape
+            long bgShapeId = backgroundPage.DrawRectangle(pageWidth / 2, pageHeight / 2, pageWidth, pageHeight);
             Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
 
-            // Set the shape to a solid fill with light gray color (#ADD8E6)
-            bgShape.Fill.FillPattern.Value = 1;               // Solid fill
-            bgShape.Fill.FillBkgnd.Value = "#ADD8E6";         // Light gray background color
+            // Configure the shape to have a solid fill pattern
+            bgShape.Fill.FillPattern.Value = 1; // Solid fill
+            // Set the fill foreground color to light gray (#D3D3D3)
+            bgShape.Fill.FillForegnd.Value = "#D3D3D3";
 
-            // Remove any outline stroke
-            bgShape.Line.LinePattern.Value = 0;               // No line pattern (invisible)
+            // Remove the shape's line to keep the background clean
+            bgShape.Line.LinePattern.Value = 0; // No line
 
-            // Send the background shape to the back and lock it from selection
-            bgShape.SendToBack();
-            bgShape.Protection.LockSelect.Value = BOOL.True;
+            // Add a sample ellipse shape to the foreground page after setting the background
+            // DrawEllipse(pinX, pinY, width, height)
+            long sampleShapeId = foregroundPage.DrawEllipse(pageWidth / 2, pageHeight / 2, 2.0, 1.0);
+            Shape sampleShape = foregroundPage.Shapes.GetShape(sampleShapeId);
+            sampleShape.Fill.FillPattern.Value = 1; // Solid fill
+            sampleShape.Fill.FillForegnd.Value = "#FF0000"; // Red fill for demonstration
 
-            // Link the foreground page to the background page
-            foregroundPage.BackPage = backgroundPage;
-
-            // -------------------------------------------------
-            // Example: add a regular shape on the foreground page
-            // -------------------------------------------------
-            long shapeId = foregroundPage.AddShape(2, 2, 1, 1, "Rectangle", false);
-            Shape shape = foregroundPage.Shapes.GetShape(shapeId);
-            shape.Text.Value.Add(new Txt("Sample Shape"));
-
-            // -------------------------------------------------
-            // Save the diagram
-            // -------------------------------------------------
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

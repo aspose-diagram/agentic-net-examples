@@ -2,10 +2,10 @@
 product: Aspose.Diagram for .NET
 language: csharp
 framework: net8.0
-version: 26.9.0
+version: 26.10.0
 total_examples: 1840
 categories: 31
-generated: 2026-09-24
+generated: 2026-10-22
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -19,11 +19,11 @@ generated: 2026-09-24
 | Agent | agent-aspose-diagram-examples |
 | Repository | [aspose-diagram/agentic-net-examples](https://github.com/aspose-diagram/agentic-net-examples) |
 | Product | Aspose.Diagram for .NET |
-| Version | 26.9.0 |
+| Version | 26.10.0 |
 | Framework | net8.0 |
 | Total Examples | 1840 |
 | Categories | 31 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -150,7 +150,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ### What This Agent Does
 
-The Aspose.Diagram Examples Generator Agent produces compiler-validated C# console application examples for **Aspose.Diagram for .NET**. It accepts natural-language task descriptions and returns ready-to-run C# code that has passed both `dotnet build` and `dotnet run` validation.
+The Aspose Diagram .NET MCP Agent produces compiler-validated C# console application examples for **Aspose.Diagram for .NET**. It accepts natural-language task descriptions and returns ready-to-run C# code that has passed both `dotnet build` and `dotnet run` validation.
 
 ### Accepted Inputs
 
@@ -187,4 +187,4 @@ Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes,
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-09-24*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-10-22*

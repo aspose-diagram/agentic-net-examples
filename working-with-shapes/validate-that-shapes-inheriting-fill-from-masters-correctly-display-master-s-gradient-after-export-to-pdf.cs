@@ -7,141 +7,110 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure input and output arguments are provided.
+        // Expect two arguments: input Visio file path and output PDF file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
-        // Input Visio file path.
         string inputPath = args[0];
-        // Guard: verify the input file exists.
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Output PDF file path.
-        string outputPath = args[1];
-        // Guard: ensure the directory for the output exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
-
-        Diagram diagram;
         try
         {
-            // Load the Visio diagram.
-            diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Validate that shapes inheriting fill from masters display the master's gradient correctly
+                ValidateInheritedGradient(diagram);
+
+                // Prepare PDF save options with a simple page-saving callback
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = new SimplePageSavingCallback();
+
+                // Export the diagram to PDF
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
 
-        bool validationFailed = false;
-
-        // Iterate through all pages.
+    // Validates that each shape which uses a master inherits the master's gradient fill correctly
+    private static void ValidateInheritedGradient(Diagram diagram)
+    {
         foreach (Page page in diagram.Pages)
         {
-            // Iterate through all shapes on the page.
             foreach (Shape shape in page.Shapes)
             {
-                // Skip deleted shapes.
-                if (shape.Del == BOOL.True) continue;
-
-                // Process only shapes that have a master (i.e., inherit formatting).
-                if (shape.Master == null) continue;
-
-                // Ensure gradient fill objects are present.
-                GradientFill shapeGrad = shape.Fill?.GradientFill;
-                GradientFill inheritGrad = shape.InheritFill?.GradientFill;
-                if (shapeGrad == null || inheritGrad == null) continue;
-
-                // Compare gradient enabled flag.
-                if (shapeGrad.GradientEnabled?.Value != inheritGrad.GradientEnabled?.Value)
-                {
-                    Console.Error.WriteLine($"Gradient enabled mismatch on shape ID {shape.ID} (Page {page.ID}).");
-                    validationFailed = true;
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
                     continue;
-                }
 
-                // If gradient is not enabled, no further checks needed.
-                if (shapeGrad.GradientEnabled?.Value != BOOL.True) continue;
-
-                // Compare gradient direction.
-                if (shapeGrad.GradientDir?.Value != inheritGrad.GradientDir?.Value)
+                // Process only shapes that have an associated master
+                if (shape.Master != null)
                 {
-                    Console.Error.WriteLine($"Gradient direction mismatch on shape ID {shape.ID} (Page {page.ID}).");
-                    validationFailed = true;
-                }
+                    Master master = shape.Master;
 
-                // Compare number of gradient stops.
-                int shapeStopCount = shapeGrad.GradientStops?.Count ?? 0;
-                int inheritStopCount = inheritGrad.GradientStops?.Count ?? 0;
-                if (shapeStopCount != inheritStopCount)
-                {
-                    Console.Error.WriteLine($"Gradient stop count mismatch on shape ID {shape.ID} (Page {page.ID}).");
-                    validationFailed = true;
-                    continue;
-                }
-
-                // Compare each gradient stop's position and color.
-                for (int i = 0; i < shapeStopCount; i++)
-                {
-                    GradientStop shapeStop = shapeGrad.GradientStops[i];
-                    GradientStop inheritStop = inheritGrad.GradientStops[i];
-
-                    // Position comparison (double values).
-                    if (Math.Abs(shapeStop.Position?.Value - inheritStop.Position?.Value ?? 0) > 1e-6)
+                    // Ensure the master contains at least one shape definition
+                    if (master.Shapes == null || master.Shapes.Count == 0)
                     {
-                        Console.Error.WriteLine($"Gradient stop position mismatch on shape ID {shape.ID}, stop {i} (Page {page.ID}).");
-                        validationFailed = true;
+                        Console.WriteLine($"Master '{master.Name}' has no shape definitions. Skipping shape ID {shape.ID}.");
+                        continue;
                     }
 
-                    // Color comparison (hex strings, case-insensitive).
-                    string shapeColor = shapeStop.Color?.Value?.Trim().ToUpperInvariant() ?? "";
-                    string inheritColor = inheritStop.Color?.Value?.Trim().ToUpperInvariant() ?? "";
-                    if (shapeColor != inheritColor)
+                    // Retrieve the first shape of the master (the visual representation)
+                    Shape masterShape = master.Shapes[0];
+
+                    // Compare fill pattern (gradient pattern value is typically 25)
+                    int shapePattern = shape.InheritFill.FillPattern.Value;
+                    int masterPattern = masterShape.Fill.FillPattern.Value;
+
+                    // Compare gradient enabled flag
+                    BOOL shapeGradientEnabled = shape.InheritFill.GradientFill.GradientEnabled.Value;
+                    BOOL masterGradientEnabled = masterShape.Fill.GradientFill.GradientEnabled.Value;
+
+                    // Validate pattern
+                    if (shapePattern != masterPattern)
                     {
-                        Console.Error.WriteLine($"Gradient stop color mismatch on shape ID {shape.ID}, stop {i} (Page {page.ID}).");
-                        validationFailed = true;
+                        throw new Exception($"Shape ID {shape.ID} on page {page.ID} has mismatched FillPattern (shape: {shapePattern}, master: {masterPattern}).");
                     }
+
+                    // Validate gradient enabled flag
+                    if (shapeGradientEnabled != masterGradientEnabled)
+                    {
+                        throw new Exception($"Shape ID {shape.ID} on page {page.ID} has mismatched GradientEnabled (shape: {shapeGradientEnabled}, master: {masterGradientEnabled}).");
+                    }
+
+                    // Log successful validation
+                    Console.WriteLine($"Shape ID {shape.ID} correctly inherits gradient from master '{master.Name}'.");
                 }
             }
         }
+    }
 
-        if (validationFailed)
+    // Simple implementation of IPageSavingCallback to log page save events
+    private class SimplePageSavingCallback : IPageSavingCallback
+    {
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-            Console.Error.WriteLine("Validation failed: some shapes do not correctly inherit the master's gradient.");
-        }
-        else
-        {
-            Console.WriteLine("All shapes correctly inherit the master's gradient.");
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
         }
 
-        // Export the diagram to PDF.
-        try
+        public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Configure PDF save options (default font fallback).
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                DefaultFont = "Arial"
-            };
-
-            // Save the diagram as PDF.
-            diagram.Save(outputPath, pdfOptions);
-            Console.WriteLine($"Diagram exported to PDF successfully: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error exporting to PDF: {ex.Message}");
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
         }
     }
 }

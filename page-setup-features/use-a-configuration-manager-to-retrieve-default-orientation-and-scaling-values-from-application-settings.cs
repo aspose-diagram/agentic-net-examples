@@ -1,88 +1,102 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to simple JSON configuration file
-        string configPath = "appsettings.json";
-        if (!File.Exists(configPath))
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"Configuration file not found: {configPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
-        // Load configuration JSON
-        JsonDocument configDoc;
-        try
-        {
-            configDoc = JsonDocument.Parse(File.ReadAllText(configPath));
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to parse configuration: {ex.Message}");
-            return;
-        }
-
-        // Helper to retrieve a setting with a fallback default
-        string GetSetting(string key, string defaultValue)
-        {
-            if (configDoc.RootElement.TryGetProperty(key, out JsonElement element) && element.ValueKind == JsonValueKind.String)
-                return element.GetString();
-            return defaultValue;
-        }
-
-        // Retrieve orientation and scaling settings from configuration
-        string orientationSetting = GetSetting("DefaultOrientation", "Portrait");
-        string scaleXSetting = GetSetting("DefaultScaleX", "1.0");
-        string scaleYSetting = GetSetting("DefaultScaleY", "1.0");
-
-        // Determine print orientation enum value
-        PrintPageOrientationValue orientation = orientationSetting.Equals("Landscape", StringComparison.OrdinalIgnoreCase)
-            ? PrintPageOrientationValue.Landscape
-            : PrintPageOrientationValue.Portrait;
-
-        // Parse scaling factors, falling back to 1.0 on failure
-        if (!double.TryParse(scaleXSetting, out double scaleX))
-            scaleX = 1.0;
-        if (!double.TryParse(scaleYSetting, out double scaleY))
-            scaleY = 1.0;
-
-        // Input diagram path
-        string inputPath = "input.vsdx";
+        string inputPath = args[0];
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output diagram path
-        string outputPath = "output.vsdx";
+        // Determine output path – if not supplied, append "_out.vsdx" to the input name.
+        string outputPath = args.Length >= 2
+            ? args[1]
+            : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + "_out.vsdx");
 
-        // Load, modify, and save diagram inside a try/catch block
+        // TODO: Replace the following placeholder code with a real configuration manager
+        // that reads "DefaultOrientation" and "DefaultScale" from application settings.
+        // Example (if System.Configuration.ConfigurationManager were available):
+        // string orientationSetting = ConfigurationManager.AppSettings["DefaultOrientation"];
+        // string scaleSetting = ConfigurationManager.AppSettings["DefaultScale"];
+        string orientationSetting = null; // placeholder
+        string scaleSetting = null;       // placeholder
+
+        // Fallback defaults if settings are missing or invalid.
+        PrintPageOrientationValue orientation = PrintPageOrientationValue.Portrait;
+        double scale = 1.0;
+
+        // Parse orientation setting.
+        if (!string.IsNullOrWhiteSpace(orientationSetting))
+        {
+            switch (orientationSetting.Trim().ToLowerInvariant())
+            {
+                case "landscape":
+                    orientation = PrintPageOrientationValue.Landscape;
+                    break;
+                case "portrait":
+                    orientation = PrintPageOrientationValue.Portrait;
+                    break;
+                case "sameasprinter":
+                    orientation = PrintPageOrientationValue.SameAsPrinter;
+                    break;
+                default:
+                    Console.Error.WriteLine($"Unrecognized orientation '{orientationSetting}'. Using default Portrait.");
+                    break;
+            }
+        }
+
+        // Parse scaling setting.
+        if (!string.IsNullOrWhiteSpace(scaleSetting) && double.TryParse(scaleSetting, out double parsedScale) && parsedScale > 0)
+        {
+            scale = parsedScale;
+        }
+        else if (!string.IsNullOrWhiteSpace(scaleSetting))
+        {
+            Console.Error.WriteLine($"Invalid scale '{scaleSetting}'. Using default 1.0.");
+        }
+
         try
         {
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Apply orientation and scaling to every page
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
-                    page.PageSheet.PrintProps.ScaleX.Value = scaleX;
-                    page.PageSheet.PrintProps.ScaleY.Value = scaleY;
-                }
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Apply orientation and scaling to each page.
+            foreach (Page page in diagram.Pages)
+            {
+                // Set page orientation.
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+
+                // Set scaling factors.
+                page.PageSheet.PrintProps.ScaleX.Value = scale;
+                page.PageSheet.PrintProps.ScaleY.Value = scale;
             }
 
-            Console.WriteLine("Diagram processing completed.");
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Dispose the diagram to free resources.
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

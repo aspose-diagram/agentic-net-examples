@@ -4,64 +4,90 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Load the diagram inside a using block as required.
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
-
-                // Temporary backup file to enable rollback
-                string backupPath = Path.Combine(Path.GetTempPath(), "diagram_backup.vsdx");
-
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Save a backup copy before making any changes
-                diagram.Save(backupPath, SaveFileFormat.Vsdx);
-
-                try
+                // Create a backup of the original diagram state in memory.
+                using (MemoryStream backupStream = new MemoryStream())
                 {
-                    // Example geometry update: move the first shape on the first page
-                    Page page = diagram.Pages[0];
-                    // Retrieve shape with ID 1 (adjust as needed)
-                    Shape shape = page.Shapes.GetShape(1);
-                    // Apply translation
-                    shape.XForm.PinX.Value += 1.0; // move right by 1 inch
-                    shape.XForm.PinY.Value += 1.0; // move up by 1 inch
+                    diagram.Save(backupStream, SaveFileFormat.Vsdx);
+                    backupStream.Position = 0; // Reset stream for later reading.
 
-                    // Additional geometry modifications can be placed here
-                    // ...
-
-                    Console.WriteLine("Geometry updates applied successfully.");
-                }
-                catch (Exception ex)
-                {
-                    // Rollback to the backup diagram if any error occurs
-                    diagram = new Diagram(backupPath);
-                    Console.WriteLine($"Error occurred: {ex.Message}");
-                    Console.WriteLine("Diagram has been rolled back to its original state.");
-                }
-                finally
-                {
-                    // Save the final diagram (whether updated or rolled back)
-                    diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-                    // Clean up the temporary backup file
-                    if (File.Exists(backupPath))
+                    try
                     {
-                        File.Delete(backupPath);
+                        // ----- Begin geometry update transaction -----
+                        // For demonstration, modify the first shape on the first page.
+                        if (diagram.Pages.Count > 0 && diagram.Pages[0].Shapes.Count > 0)
+                        {
+                            Page page = diagram.Pages[0];
+                            Shape shape = page.Shapes[0];
+
+                            // Update geometry: change width and height.
+                            shape.XForm.Width.Value = 5.0;   // 5 inches width
+                            shape.XForm.Height.Value = 3.0; // 3 inches height
+
+                            // Refresh shape data to apply changes.
+                            shape.RefreshData();
+
+                            // Simulate an error occurring during the transaction.
+                            // Comment out the line below to allow successful save.
+                            // throw new InvalidOperationException("Simulated geometry error");
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("Diagram does not contain any pages or shapes to modify.");
+                        }
+                        // ----- End geometry update transaction -----
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the exception.
+                        Console.Error.WriteLine($"Error during geometry update: {ex.Message}");
+                        Console.Error.WriteLine("Rolling back to original diagram state.");
+
+                        // Roll back by loading the diagram from the backup stream.
+                        // Note: we need a new Diagram instance for the rolled‑back state.
+                        using (Diagram rolledBackDiagram = new Diagram(backupStream))
+                        {
+                            // Save the rolled‑back diagram to the output path.
+                            rolledBackDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        }
+
+                        // Exit after rollback.
+                        return;
                     }
 
-                    Console.WriteLine("Diagram saved to output.vsdx.");
+                    // If no exception occurred, save the updated diagram.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Catch any unexpected errors (e.g., loading failures).
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+        }
     }
-    }
+}

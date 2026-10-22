@@ -4,66 +4,92 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Set the default font that the theme should use
-        FontConfigs.DefaultFontName = "Arial";
-
-        // Input diagram path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Expect the diagram file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Apply a global preset theme to each page
+            // Apply a preset theme to each page to simulate a global theme.
+            // The chosen theme (Bubble) and variant are arbitrary examples.
             foreach (Page page in diagram.Pages)
             {
-                // PresetTheme is a write‑only property; assign the desired theme
+                // Set the preset theme for the page.
                 page.PresetTheme = PresetThemeValue.Bubble;
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
             }
 
-            // Validate that each shape's first paragraph uses the default font
+            // Retrieve the default font name configured for the diagram.
+            // If not set explicitly, Aspose.Diagram uses its internal default.
+            string defaultFontName = FontConfigs.DefaultFontName;
+
+            // If the default font name is not set, inform the user.
+            if (string.IsNullOrEmpty(defaultFontName))
+            {
+                Console.WriteLine("Default font name is not set. Validation will use the system default.");
+                defaultFontName = "Arial"; // Fallback for validation purposes.
+            }
+
+            bool allValid = true;
+
+            // Iterate through all pages and shapes to validate the first paragraph's font.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes without paragraphs or characters
-                    if (shape.Paras.Count == 0 || shape.Chars.Count == 0)
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve the first character of the first paragraph
-                    Aspose.Diagram.Char firstChar = shape.Chars[0];
+                    // Ensure the shape has at least one paragraph.
+                    if (shape.Paras.Count == 0)
+                        continue; // No paragraph to validate.
 
-                    // Compare the character's font name with the configured default font
-                    if (firstChar.FontName.Value != FontConfigs.DefaultFontName)
+                    // Validate the font of the first character (as a proxy for the paragraph's font).
+                    if (shape.Chars.Count > 0)
                     {
-                        string message = $"Shape ID {shape.ID} on page '{page.Name}' does not use the default font. " +
-                                         $"Found '{firstChar.FontName.Value}', expected '{FontConfigs.DefaultFontName}'.";
-                        Console.WriteLine(message);
-                        throw new Exception(message);
+                        // Access the first character.
+                        Aspose.Diagram.Char firstChar = shape.Chars[0];
+
+                        // The Char class stores the font name in the FontName cell.
+                        // Compare it with the default font name.
+                        string charFontName = firstChar.FontName.Value;
+
+                        if (!string.Equals(charFontName, defaultFontName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            allValid = false;
+                            Console.WriteLine($"Shape ID {shape.ID} on Page {page.ID} uses font '{charFontName}' instead of default '{defaultFontName}'.");
+                        }
                     }
                 }
             }
 
-            Console.WriteLine("All shapes' first paragraphs use the default font.");
-
-            // Output diagram path
-            string outputPath = "output.vsdx";
-            // Save the diagram after validation
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            if (allValid)
+            {
+                Console.WriteLine("All shapes' first paragraphs use the default font.");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Log any exceptions that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

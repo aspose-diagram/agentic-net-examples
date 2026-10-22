@@ -5,60 +5,64 @@ using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputTextFile]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args.Length >= 2 ? args[1] : "extracted_text.txt";
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                var sb = new StringBuilder();
 
-                // Input Visio file path (VSDX, VDX, etc.)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                // Output text file path
-                string outputPath = args.Length > 1 ? args[1] : "cleaned_text.txt";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                StringBuilder cleanedText = new StringBuilder();
-
-                // Iterate through all pages and shapes
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve the plain text of the shape.
+                        string text = shape.Text?.Value?.Text ?? string.Empty;
 
-                        // Retrieve plain text from the shape
-                        string text = shape.Text.Value.Text;
-
+                        // Skip empty or whitespace‑only text.
                         if (string.IsNullOrWhiteSpace(text))
                             continue;
 
-                        // Split text into words and filter out numeric strings
-                        string[] words = text.Split(new char[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach (string word in words)
-                        {
-                            // Skip if the word consists only of digits
-                            if (Regex.IsMatch(word, @"^\d+$"))
-                                continue;
+                        // Filter out numeric strings (e.g., "12345").
+                        if (Regex.IsMatch(text.Trim(), @"^\d+$"))
+                            continue;
 
-                            cleanedText.Append(word);
-                            cleanedText.Append(' ');
-                        }
+                        // Append the cleaned text to the result.
+                        sb.AppendLine(text.Trim());
                     }
                 }
 
-                // Write the cleaned content to the output file
-                File.WriteAllText(outputPath, cleanedText.ToString().Trim());
-
+                // Write the aggregated text to the output file.
+                File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
                 Console.WriteLine($"Extracted text saved to: {outputPath}");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

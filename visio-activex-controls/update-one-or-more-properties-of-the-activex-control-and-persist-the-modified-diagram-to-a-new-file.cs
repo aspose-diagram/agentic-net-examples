@@ -1,63 +1,74 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine input and output file paths (use defaults if not supplied)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Verify that the input file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Iterate through every page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through each shape on the current page
+                    for (int i = 0; i < page.Shapes.Count; i++)
+                    {
+                        Shape shape = page.Shapes[i];
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
+                        // Process only shapes that contain an ActiveX control
+                        if (shape.ActiveXControl != null)
+                        {
+                            // Identify the type of ActiveX control
+                            ControlType ctrlType = shape.ActiveXControl.Type;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
+                            if (ctrlType == ControlType.TextBox)
+                            {
+                                // Update the text of a TextBox control
+                                TextBoxActiveXControl txtCtrl = (TextBoxActiveXControl)shape.ActiveXControl;
+                                txtCtrl.Text = "Updated text via Aspose.Diagram";
+                            }
+                            else if (ctrlType == ControlType.CommandButton)
+                            {
+                                // Update the caption of a CommandButton control
+                                CommandButtonActiveXControl btnCtrl = (CommandButtonActiveXControl)shape.ActiveXControl;
+                                btnCtrl.Caption = "New Caption";
+                            }
+                            else if (ctrlType == ControlType.CheckBox)
+                            {
+                                // Set the CheckBox to the checked state
+                                CheckBoxActiveXControl chkCtrl = (CheckBoxActiveXControl)shape.ActiveXControl;
+                                chkCtrl.Value = CheckValueType.Checked;
+                            }
+                            // Additional ActiveX control types can be handled here as needed
+                        }
+                    }
+                }
 
-                // Access the first page (ensure at least one page exists)
-                Page page = diagram.Pages[0];
-
-                // -------------------------------------------------
-                // Add a CommandButton ActiveX control to the page
-                // Parameters: ControlType, pinX, pinY, width, height
-                // -------------------------------------------------
-                long cmdButtonShapeId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
-                Shape cmdButtonShape = page.Shapes.GetShape(cmdButtonShapeId);
-
-                // Cast the generic ActiveXControl to the specific type
-                CommandButtonActiveXControl cmdButton = (CommandButtonActiveXControl)cmdButtonShape.ActiveXControl;
-
-                // Update properties of the command button
-                cmdButton.Caption = "Submit";
-                cmdButton.Width = 1.5;   // width in inches
-                cmdButton.Height = 0.5;  // height in inches
-
-                // -------------------------------------------------
-                // Add a TextBox ActiveX control to the page
-                // -------------------------------------------------
-                long textBoxShapeId = page.AddActiveXControl(ControlType.TextBox, 4.0, 2.0, 2.0, 0.5);
-                Shape textBoxShape = page.Shapes.GetShape(textBoxShapeId);
-
-                // Cast to TextBoxActiveXControl
-                TextBoxActiveXControl textBox = (TextBoxActiveXControl)textBoxShape.ActiveXControl;
-
-                // Update properties of the text box
-                textBox.Text = "Enter name here";
-
-                // -------------------------------------------------
-                // Save the modified diagram to a new file
-                // -------------------------------------------------
-                string outputPath = "output_modified.vsdx";
+                // Save the modified diagram to the specified output file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram saved successfully to: " + outputPath);
-
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

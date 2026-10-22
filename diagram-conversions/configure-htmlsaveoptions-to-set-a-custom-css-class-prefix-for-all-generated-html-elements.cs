@@ -3,63 +3,87 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExport
+class Program
 {
-    // Custom stream provider (required for HTML export scenarios)
-    public class CustomStreamProvider : IStreamProvider
+    static void Main(string[] args)
     {
-        public void InitStream(StreamProviderOptions options)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            // Example: set a custom base path for resources (e.g., images, CSS)
-            // The DefaultPath property is read‑only; you can use it to infer the target location.
-            // Here we simply ensure the directory exists.
-            string directory = Path.GetDirectoryName(options.DefaultPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
         }
 
-        public void CloseStream(StreamProviderOptions options)
+        // Output HTML file path
+        string outputHtmlPath = "output.html";
+
+        // Directory where HTML resources (images, CSS, etc.) will be written
+        string resourceDir = "html_resources";
+
+        // Ensure the resource directory exists
+        if (!Directory.Exists(resourceDir))
         {
-            // No special cleanup required for this example.
+            Directory.CreateDirectory(resourceDir);
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Export only visible pages (do not export hidden pages)
+                ExportHiddenPage = false,
+
+                // Assign a custom stream provider to control where resource files are saved
+                StreamProvider = new CustomStreamProvider(resourceDir)
+            };
+
+            // Save the diagram as HTML using the configured options
+            diagram.Save(outputHtmlPath, htmlOptions);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}
 
-    public class Program
+// Custom implementation of IStreamProvider to direct HTML resources to a specific folder
+class CustomStreamProvider : IStreamProvider
+{
+    private readonly string _basePath;
+
+    public CustomStreamProvider(string basePath)
     {
-        public static void Main()
-        {
-            try
-            {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure HTML save options
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // Export hidden pages are disabled by default; set explicitly for clarity
-                    ExportHiddenPage = false
-                    // NOTE: Aspose.Diagram does NOT provide a property to set a custom CSS class prefix.
-                    // The HTML output uses internal class names that cannot be overridden via the API.
-                };
-
-                // Assign the custom stream provider (optional, for resource handling)
-                htmlOptions.StreamProvider = new CustomStreamProvider();
-
-                // Save the diagram as HTML
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
-
-                Console.WriteLine($"Diagram exported to HTML at: {outputPath}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        _basePath = basePath;
     }
+
+    // Called by Aspose.Diagram when a resource stream is needed
+    public void InitStream(StreamProviderOptions options)
+    {
+        // Combine the base path with the default resource file name
+        string filePath = Path.Combine(_basePath, options.DefaultPath);
+
+        // Ensure the directory for the file exists
+        string dir = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        // Create a writable file stream for the resource
+        options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+    }
+
+    // Called by Aspose.Diagram after the resource has been written
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // Close and dispose the stream if it was created
+        options.Stream?.Close();
+        options.Stream?.Dispose();
     }
 }

@@ -1,113 +1,116 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace WatermarkExample
+class Program
 {
-    // Configuration model matching the JSON structure
-    public class WatermarkConfig
+    static void Main(string[] args)
     {
-        public string Text { get; set; } = string.Empty;   // Watermark text
-        public double Opacity { get; set; } = 0.5;          // 0.0 (transparent) to 1.0 (opaque)
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        // Expect three arguments: diagramPath, configPath, outputPath
+        if (args.Length < 3)
         {
-            // Expect two arguments: input diagram path and output diagram path
-            if (args.Length < 2)
+            Console.Error.WriteLine("Usage: Program <diagramPath> <configPath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string configPath = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing files
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(configPath))
+        {
+            Console.Error.WriteLine($"Configuration file not found: {configPath}");
+            return;
+        }
+
+        // Read configuration (simple key=value format)
+        Dictionary<string, string> config = ParseConfig(configPath);
+
+        // Retrieve watermark text; default if missing
+        string watermarkText = config.ContainsKey("WatermarkText")
+            ? config["WatermarkText"]
+            : "Sample Watermark";
+
+        // Retrieve opacity percentage; default 100 (fully opaque)
+        double opacityPercent = 100.0;
+        if (config.ContainsKey("Opacity"))
+        {
+            if (!double.TryParse(config["Opacity"], out opacityPercent))
             {
-                Console.WriteLine("Usage: WatermarkExample <inputDiagramPath> <outputDiagramPath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            // Guard to ensure the input diagram file exists
-            if (!File.Exists(inputPath))
-            {
-                Console.Error.WriteLine($"File not found: {inputPath}");
-                return;
-            }
-
-            string outputPath = args[1];
-            string configPath = "watermark.json"; // configuration file in the same folder as executable
-
-            // Guard to ensure the configuration file exists
-            if (!File.Exists(configPath))
-            {
-                Console.Error.WriteLine($"Configuration file not found: {configPath}");
-                return;
-            }
-
-            // Load watermark configuration
-            string json = File.ReadAllText(configPath);
-            WatermarkConfig config = JsonSerializer.Deserialize<WatermarkConfig>(json)
-                ?? throw new InvalidOperationException("Failed to deserialize watermark configuration.");
-
-            // Validate opacity range
-            if (config.Opacity < 0.0 || config.Opacity > 1.0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(config.Opacity), "Opacity must be between 0.0 and 1.0.");
-            }
-
-            Diagram diagram;
-            try
-            {
-                // Load the Visio diagram
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-                return;
-            }
-
-            try
-            {
-                // Iterate through all pages and add a watermark shape
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Define watermark size (full page)
-                    double watermarkWidth = pageWidth;
-                    double watermarkHeight = pageHeight;
-
-                    // Position the watermark at the page origin (0,0) so it covers the whole page
-                    double pinX = 0.0;
-                    double pinY = 0.0;
-
-                    // Font size is expressed in inches; 0.25 inches ≈ 18 points
-                    double fontSizeInInches = 0.25;
-                    string fontName = "Calibri";
-                    string fontColorHex = "#808080"; // light gray
-
-                    // AddText overload: AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSize)
-                    Shape watermarkShape = page.AddText(pinX, pinY, watermarkWidth, watermarkHeight,
-                                                        config.Text, fontName, fontColorHex, fontSizeInInches);
-
-                    // Apply transparency based on opacity (Aspose uses transparency percentage)
-                    // Transparency = (1 - Opacity) * 100
-                    double transparencyPercent = (1.0 - config.Opacity) * 100.0;
-                    watermarkShape.Fill.FillForegndTrans.Value = transparencyPercent;
-
-                    // Note: Aspose.Diagram does not expose a ZOrder property; the watermark will be added on top.
-                    // If needed, additional logic could reorder shapes via the ShapeSheet, but it's omitted here.
-                }
-
-                // Save the modified diagram (preserve original format)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+                Console.Error.WriteLine("Invalid Opacity value in configuration. Using default 100%.");
+                opacityPercent = 100.0;
             }
         }
+
+        // Convert opacity percentage to FillForegndTrans value (0 = opaque, 1 = fully transparent)
+        double transparency = 1.0 - (opacityPercent / 100.0);
+        if (transparency < 0.0) transparency = 0.0;
+        if (transparency > 1.0) transparency = 1.0;
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Apply watermark to each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Center position for the watermark
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Add watermark text covering the full page
+                // Font: Calibri, color: light gray, size: 0.25 (relative)
+                Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
+                    watermarkText, "Calibri", "#a5a5a5", 0.25);
+
+                // Set the transparency of the watermark shape's fill
+                // 0.0 = fully opaque, 1.0 = fully transparent
+                watermarkShape.Fill.FillForegndTrans.Value = transparency;
+            }
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Watermark applied and diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    // Simple parser for key=value configuration files
+    private static Dictionary<string, string> ParseConfig(string path)
+    {
+        var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string rawLine in File.ReadAllLines(path))
+        {
+            string line = rawLine.Trim();
+
+            // Skip empty lines and comments
+            if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                continue;
+
+            int idx = line.IndexOf('=');
+            if (idx <= 0)
+                continue; // Invalid line, ignore
+
+            string key = line.Substring(0, idx).Trim();
+            string value = line.Substring(idx + 1).Trim();
+            dict[key] = value;
+        }
+        return dict;
     }
 }

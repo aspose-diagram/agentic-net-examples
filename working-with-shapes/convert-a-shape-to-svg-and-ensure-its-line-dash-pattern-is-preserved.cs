@@ -7,70 +7,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, shape ID, output SVG file.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputSvgPath>");
-            return;
-        }
+        // Input Visio file path (can be passed as first argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output SVG file path
+        string outputPath = "shape.svg";
 
-        string inputPath = args[0];
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        string shapeIdArg = args[1];
-        // Guard: ensure the shape ID can be parsed to a long.
-        if (!long.TryParse(shapeIdArg, out long shapeId))
-        {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
-            return;
-        }
-
-        string outputPath = args[2];
-        // Guard: ensure the directory for the output SVG exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the first page (adjust if needed for multi‑page documents).
-            Page page = diagram.Pages[0];
-
-            // Locate the shape by its ID on the page.
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                return;
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
+
+                // Retrieve a shape by its ID (example uses ID = 1)
+                Shape shape = page.Shapes.GetShape(1);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine("Shape with ID 1 not found on the page.");
+                    return;
+                }
+
+                // Skip shapes that are logically deleted
+                if (shape.Del == BOOL.True)
+                {
+                    Console.Error.WriteLine("The specified shape is marked as deleted.");
+                    return;
+                }
+
+                // Set the line dash pattern using the strongly‑typed enum
+                // This preserves the dash style when exporting to SVG
+                shape.Line.LinePattern.Value = LinePatternValue.Dash;
+
+                // Prepare SVG save options (default configuration)
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                // Export the shape to an SVG file
+                shape.ToSvg(outputPath, svgOptions);
+
+                Console.WriteLine($"Shape successfully exported to SVG: {outputPath}");
             }
-
-            // Ensure the shape's line dash pattern is set to a dashed style.
-            // LinePatternValue.Dash corresponds to a standard dash pattern.
-            shape.Line.LinePattern.Value = LinePatternValue.Dash;
-
-            // Create SVG save options; default options preserve line styles.
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-            // Export the specific shape to an SVG file, preserving its dash pattern.
-            shape.ToSvg(outputPath, svgOptions);
-
-            Console.WriteLine($"Shape {shapeId} successfully exported to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

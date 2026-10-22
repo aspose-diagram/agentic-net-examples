@@ -5,30 +5,84 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    // Implementation of IStreamProvider to handle embedded resources during HTML export.
+    class SimpleStreamProvider : IStreamProvider
     {
-        // Create a new diagram (or load an existing one)
-        Diagram diagram = new Diagram();
-
-        // Example: add a simple rectangle shape so the HTML has content
-        // (optional, can be omitted if not needed)
-        // long shapeId = diagram.AddShape(2.0, 2.0, 4.0, 2.0, "Rectangle", 0);
-        // Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-        // shape.Text.Value.Add(new Txt("Sample Shape"));
-
-        // Configure HTML export options
-        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+        public void InitStream(StreamProviderOptions options)
         {
-            ExportHiddenPage = false
-        };
+            // Ensure the directory for the resource exists.
+            string directory = Path.GetDirectoryName(options.DefaultPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
-        // Pre‑create the output file stream
-        using (FileStream fileStream = new FileStream("output.html", FileMode.Create, FileAccess.Write))
-        {
-            // Save the diagram as HTML directly to the stream
-            diagram.Save(fileStream, htmlOptions);
+            // Create a file stream for the resource path.
+            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
         }
 
-        Console.WriteLine("Diagram has been saved to output.html");
+        public void CloseStream(StreamProviderOptions options)
+        {
+            // Close the stream if it was created.
+            options.Stream?.Close();
+        }
+    }
+
+    static void Main(string[] args)
+    {
+        // Expect two arguments: input Visio file path and output HTML file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        try
+        {
+            // Load the Visio diagram from the input file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare HTML save options.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Export hidden pages? No.
+                ExportHiddenPage = false,
+                // Export comments? No.
+                IsExportComments = false,
+                // Assign the custom stream provider for handling embedded resources.
+                StreamProvider = new SimpleStreamProvider()
+            };
+
+            // Open a FileStream for the output HTML file.
+            using (FileStream outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+            {
+                // Save the diagram as HTML directly to the FileStream using the options.
+                diagram.Save(outputStream, htmlOptions);
+            }
+
+            Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+        }
     }
 }

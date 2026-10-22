@@ -1,32 +1,55 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output PDF file path
+        string outputPath = "output.pdf";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Configure PDF save options:
-            // - Set PDF/A-1b compliance level.
-            // - Specify a default font to use when a required font is missing.
+            // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+            // Set PDF/A-1b conformance level
             pdfOptions.Compliance = PdfCompliance.PdfA1b;
+
+            // Specify the output format explicitly
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Set a default fallback font (embedding is handled automatically)
             pdfOptions.DefaultFont = "Arial";
 
-            // Save the diagram as PDF with the configured options.
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as PDF with the configured options
+            diagram.Save(outputPath, pdfOptions);
 
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

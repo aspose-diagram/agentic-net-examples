@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
@@ -7,119 +7,120 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments
-        if (args.Length < 2)
+        // Input diagram path (required)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            Console.WriteLine("Usage: DiagramActiveXAudit <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        // Output diagram path (optional)
+        string outputPath = args.Length > 1 ? args[1] : "output_audit.vsdx";
 
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through all pages and shapes to find ActiveX controls
-        foreach (Page page in diagram.Pages)
+        // Optional image file for ImageActiveXControl updates
+        string imagePath = args.Length > 2 ? args[2] : null;
+        byte[] newImageData = null;
+        if (!string.IsNullOrEmpty(imagePath))
         {
-            foreach (Shape shape in page.Shapes)
+            if (!File.Exists(imagePath))
             {
-                // Check if the shape contains an ActiveX control
-                if (shape.ActiveXControl == null)
-                    continue;
-
-                // Determine the control type and cast accordingly
-                switch (shape.ActiveXControl.Type)
-                {
-                    case ControlType.CommandButton:
-                        HandleCommandButton(shape);
-                        break;
-
-                    case ControlType.TextBox:
-                        HandleTextBox(shape);
-                        break;
-
-                    case ControlType.CheckBox:
-                        HandleCheckBox(shape);
-                        break;
-
-                    case ControlType.SpinButton:
-                        HandleSpinButton(shape);
-                        break;
-
-                    // Add handling for other control types as needed
-                    default:
-                        Console.WriteLine($"Unsupported ActiveX control type: {shape.ActiveXControl.Type}");
-                        break;
-                }
+                Console.Error.WriteLine($"Image file not found: {imagePath}");
+                return;
             }
+            newImageData = File.ReadAllBytes(imagePath);
         }
 
-        // Save the modified diagram
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine("Diagram saved with audited changes.");
-    }
+        // Audit log file path
+        string auditLogPath = "audit.log";
 
-    // Logs a property change with previous and new values
-    static void LogChange(string controlName, string propertyName, object oldValue, object newValue)
-    {
-        Console.WriteLine($"[{DateTime.Now}] {controlName} - Property '{propertyName}' changed from '{oldValue}' to '{newValue}'.");
-    }
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-    static void HandleCommandButton(Shape shape)
-    {
-        var button = (CommandButtonActiveXControl)shape.ActiveXControl;
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes without an ActiveX control
+                    if (shape.ActiveXControl == null)
+                        continue;
 
-        // Example: Change the Caption
-        string oldCaption = button.Caption;
-        string newCaption = oldCaption + " (Updated)";
-        button.Caption = newCaption;
-        LogChange("CommandButton", "Caption", oldCaption, newCaption);
+                    // Determine the control type
+                    ControlType ctrlType = shape.ActiveXControl.Type;
 
-        // Example: Change Width
-        double oldWidth = button.Width;
-        double newWidth = oldWidth + 0.5; // increase by 0.5 inches
-        button.Width = newWidth;
-        LogChange("CommandButton", "Width", oldWidth, newWidth);
+                    // Process CommandButtonActiveXControl
+                    if (ctrlType == ControlType.CommandButton)
+                    {
+                        var btn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                        string prevCaption = btn.Caption;
+                        string newCaption = "Updated Caption";
 
-        // Example: Change Height
-        double oldHeight = button.Height;
-        double newHeight = oldHeight + 0.2;
-        button.Height = newHeight;
-        LogChange("CommandButton", "Height", oldHeight, newHeight);
-    }
+                        // Apply change
+                        btn.Caption = newCaption;
 
-    static void HandleTextBox(Shape shape)
-    {
-        var textBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                        // Log the change
+                        string logEntry = $"Shape ID {shape.ID}: CommandButton Caption changed from '{prevCaption}' to '{newCaption}'.";
+                        Console.WriteLine(logEntry);
+                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
+                    }
+                    // Process CheckBoxActiveXControl
+                    else if (ctrlType == ControlType.CheckBox)
+                    {
+                        var chk = (CheckBoxActiveXControl)shape.ActiveXControl;
+                        CheckValueType prevValue = chk.Value;
 
-        // Example: Change the Text content
-        string oldText = textBox.Text;
-        string newText = oldText + " (Edited)";
-        textBox.Text = newText;
-        LogChange("TextBox", "Text", oldText, newText);
-    }
+                        // Toggle the checkbox state
+                        CheckValueType newValue = prevValue == CheckValueType.Checked ? (CheckValueType)0 : CheckValueType.Checked;
+                        chk.Value = newValue;
 
-    static void HandleCheckBox(Shape shape)
-    {
-        var checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+                        // Log the change
+                        string logEntry = $"Shape ID {shape.ID}: CheckBox Value changed from '{prevValue}' to '{newValue}'.";
+                        Console.WriteLine(logEntry);
+                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
+                    }
+                    // Process ImageActiveXControl (if new image data is provided)
+                    else if (ctrlType == ControlType.Image && newImageData != null)
+                    {
+                        var imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
+                        byte[] prevPicture = imgCtrl.Picture;
 
-        // Example: Toggle the check state
-        CheckValueType oldValue = checkBox.Value;
-        CheckValueType newValue = oldValue == CheckValueType.Checked ? (CheckValueType)0 : CheckValueType.Checked;
-        checkBox.Value = newValue;
-        LogChange("CheckBox", "Value", oldValue, newValue);
-    }
+                        // Update picture data
+                        imgCtrl.Picture = newImageData;
 
-    static void HandleSpinButton(Shape shape)
-    {
-        var spinButton = (SpinButtonActiveXControl)shape.ActiveXControl;
+                        // Log the change (show byte lengths)
+                        string logEntry = $"Shape ID {shape.ID}: Image picture data length changed from {prevPicture?.Length ?? 0} to {newImageData.Length}.";
+                        Console.WriteLine(logEntry);
+                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
+                    }
+                    // Process TextBoxActiveXControl
+                    else if (ctrlType == ControlType.TextBox)
+                    {
+                        var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                        string prevText = txtBox.Text;
+                        string newText = "Updated Text";
 
-        // Example: Change the Position (current numeric value)
-        int oldPosition = spinButton.Position;
-        int newPosition = oldPosition + 10;
-        spinButton.Position = newPosition;
-        LogChange("SpinButton", "Position", oldPosition, newPosition);
+                        // Apply change
+                        txtBox.Text = newText;
+
+                        // Log the change
+                        string logEntry = $"Shape ID {shape.ID}: TextBox Text changed from '{prevText}' to '{newText}'.";
+                        Console.WriteLine(logEntry);
+                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
+                    }
+                    // Additional control types can be handled here as needed
+                }
+            }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

@@ -1,37 +1,48 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
 
-                // Input Visio file path (replace with actual file location)
-                string inputPath = "input.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-                // Output PDF file path
-                string outputPath = "output.pdf";
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
-                // Load the diagram from file
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure PDF save options to include hidden pages
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.ExportHiddenPage = true;
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                    // Save the diagram as PDF with the specified options
-                    diagram.Save(outputPath, pdfOptions);
-                }
+            // Create PDF save options and enable export of hidden pages.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.ExportHiddenPage = true;               // Include hidden pages in the PDF.
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;       // Explicitly set the format tracker.
 
-                Console.WriteLine("Diagram saved to PDF with hidden pages included.");
+            // Save the diagram as PDF using the configured options.
+            diagram.Save(outputPath, pdfOptions);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\" with hidden pages included.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,91 +1,100 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate argument count
+        // Expected arguments: inputDiagramPath outputDiagramPath pageName shapeId1,shapeId2,shapeId3,...
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <inputVisio> <outputVisio> <pageIndex> <shapeId1,shapeId2,...>");
+            Console.Error.WriteLine("Usage: <inputDiagramPath> <outputDiagramPath> <pageName> <commaSeparatedShapeIds>");
             return;
         }
 
-        // Input Visio file path
         string inputPath = args[0];
+        string outputPath = args[1];
+        string pageName = args[2];
+        string shapeIdsArg = args[3];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = args[1];
-        // No existence check needed for output file
-
-        // Page index (zero‑based)
-        if (!int.TryParse(args[2], out int pageIndex))
+        // Parse shape IDs
+        List<long> shapeIds = new List<long>();
+        try
         {
-            Console.Error.WriteLine($"Invalid page index: {args[2]}");
-            return;
-        }
-
-        // Parse comma‑separated shape IDs into a long array
-        string[] idTokens = args[3].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-        long[] shapeIds = new long[idTokens.Length];
-        for (int i = 0; i < idTokens.Length; i++)
-        {
-            if (!long.TryParse(idTokens[i], out shapeIds[i]))
+            foreach (var part in shapeIdsArg.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                Console.Error.WriteLine($"Invalid shape ID: {idTokens[i]}");
-                return;
+                if (long.TryParse(part.Trim(), out long id))
+                {
+                    shapeIds.Add(id);
+                }
+                else
+                {
+                    Console.Error.WriteLine($"Invalid shape ID: '{part}'");
+                    return;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error parsing shape IDs: {ex.Message}");
+            return;
+        }
+
+        if (shapeIds.Count == 0)
+        {
+            Console.Error.WriteLine("No valid shape IDs provided.");
+            return;
         }
 
         try
         {
-            // Load the Visio diagram from the input file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the requested page index exists
-            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+            // Retrieve the specified page
+            Page page = diagram.Pages.GetPage(pageName);
+            if (page == null)
             {
-                Console.Error.WriteLine($"Page index out of range: {pageIndex}");
+                Console.Error.WriteLine($"Page not found: {pageName}");
                 return;
             }
 
-            // Retrieve the target page
-            Page page = diagram.Pages[pageIndex];
-
-            // Collect Shape objects for the provided IDs
-            Shape[] shapesToGroup = new Shape[shapeIds.Length];
-            for (int i = 0; i < shapeIds.Length; i++)
+            // Collect Shape objects for the given IDs
+            List<Shape> shapesToGroup = new List<Shape>();
+            foreach (long id in shapeIds)
             {
-                // GetShape returns null if the ID is not present on the page
-                Shape shp = page.Shapes.GetShape(shapeIds[i]);
-                if (shp == null)
+                // Shape IDs are long, but GetShape expects int; cast safely
+                Shape shape = page.Shapes.GetShape((int)id);
+                if (shape == null)
                 {
-                    Console.Error.WriteLine($"Shape ID not found on page {pageIndex}: {shapeIds[i]}");
+                    Console.Error.WriteLine($"Shape with ID {id} not found on page {pageName}.");
                     return;
                 }
-                shapesToGroup[i] = shp;
+                shapesToGroup.Add(shape);
             }
 
-            // Group the selected shapes; the method returns the new group shape
-            Shape groupShape = page.Shapes.Group(shapesToGroup);
+            // Perform grouping
+            Shape groupShape = page.Shapes.Group(shapesToGroup.ToArray());
 
-            // Output the ID of the created group for verification
-            Console.WriteLine($"Created group shape with ID: {groupShape.ID}");
+            // Optional: assign a name to the new group
+            groupShape.NameU = "GroupedShape";
 
-            // Save the modified diagram to the output file in VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

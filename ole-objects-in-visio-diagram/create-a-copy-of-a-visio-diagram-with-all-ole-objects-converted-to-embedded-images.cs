@@ -8,74 +8,90 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "source.vsdx";
-        // Guard: ensure the source file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "copy_with_images.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string sourcePath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the source file exists.
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            return;
+        }
 
         try
         {
-            // Load the source Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the source Visio diagram.
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Collect all OLE (foreign) shapes together with their containing pages
-            List<(Page page, Shape shape)> oleShapes = new List<(Page, Shape)>();
-
-            // Iterate through each page and shape to find OLE objects
-            foreach (Page page in diagram.Pages)
+            // Iterate through each page in the diagram.
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Collect OLE (foreign) shapes first to avoid modifying the collection while iterating.
+                List<Aspose.Diagram.Shape> oleShapes = new List<Aspose.Diagram.Shape>();
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Verify the shape is a foreign OLE object and has binary data
+                    // Identify OLE objects: foreign shapes with embedded object data.
                     if (shape.Type == TypeValue.Foreign &&
                         shape.ForeignData != null &&
-                        shape.ForeignData.ObjectData != null &&
-                        shape.ForeignData.ObjectData.Length > 0)
+                        shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
                     {
-                        // Store both the page reference and the shape for later processing
-                        oleShapes.Add((page, shape));
+                        oleShapes.Add(shape);
+                    }
+                }
+
+                // Process each identified OLE shape.
+                foreach (Aspose.Diagram.Shape oleShape in oleShapes)
+                {
+                    // Export the OLE shape to a PNG image stored in a temporary file.
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        // Convert the OLE shape to an image.
+                        oleShape.ToImage(ms, new ImageSaveOptions(SaveFileFormat.Png));
+                        ms.Position = 0;
+
+                        // Write the image bytes to a temporary file.
+                        string tempImagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
+                        File.WriteAllBytes(tempImagePath, ms.ToArray());
+
+                        // Preserve the original shape's position and size.
+                        double pinX = oleShape.XForm.PinX.Value;
+                        double pinY = oleShape.XForm.PinY.Value;
+                        double width = oleShape.XForm.Width.Value;
+                        double height = oleShape.XForm.Height.Value;
+
+                        // Insert the image as a picture shape using the temporary file.
+                        using (FileStream fs = new FileStream(tempImagePath, FileMode.Open, FileAccess.Read))
+                        {
+                            // AddShape with a FileStream inserts an image.
+                            long pictureShapeId = page.AddShape(pinX, pinY, width, height, fs);
+                            Aspose.Diagram.Shape pictureShape = page.Shapes.GetShape(pictureShapeId);
+
+                            // Send the new picture to the back so it does not obscure other content.
+                            pictureShape.SendToBack();
+                        }
+
+                        // Remove the original OLE shape from the page.
+                        page.Shapes.Remove(oleShape);
+
+                        // Clean up the temporary image file.
+                        try { File.Delete(tempImagePath); } catch { /* ignore cleanup errors */ }
                     }
                 }
             }
 
-            // Process each OLE shape: render to image, remove OLE shape, insert image shape
-            foreach (var entry in oleShapes)
-            {
-                Page page = entry.page;   // The page that contains the OLE shape
-                Shape oleShape = entry.shape;
-
-                // Capture shape geometry (position and size)
-                double pinX = oleShape.XForm.PinX.Value;
-                double pinY = oleShape.XForm.PinY.Value;
-                double width = oleShape.XForm.Width.Value;
-                double height = oleShape.XForm.Height.Value;
-
-                // Render OLE content to a PNG image in memory
-                using (MemoryStream imageStream = new MemoryStream())
-                {
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    // Convert the OLE shape to an image and write it to the stream
-                    oleShape.ToImage(imageStream, imgOptions);
-                    imageStream.Position = 0; // Reset stream position for reading
-
-                    // Remove the original OLE shape from the page
-                    page.Shapes.Remove(oleShape);
-
-                    // Insert the rendered image as a new shape on the same page
-                    long newShapeId = page.AddShape(pinX, pinY, width, height, imageStream);
-                    // Optional: retrieve the new shape if further processing is needed
-                    // Shape newShape = page.Shapes.GetShape(newShapeId);
-                }
-            }
-
-            // Save the modified diagram as a new file
+            // Save the modified diagram as a new file (creates a copy with images instead of OLE objects).
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram copied and OLE objects converted to images successfully.");
         }
         catch (Exception ex)
         {
-            // Log any Aspose or I/O errors to the error stream
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

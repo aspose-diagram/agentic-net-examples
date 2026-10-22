@@ -1,11 +1,11 @@
 {
   "category": "working-with-headers-and-footers",
   "display_name": "Working With Headers And Footers",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -46,7 +46,7 @@
       "task": "Apply identical header and footer font settings across all diagrams in a specified folder using batch processing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -78,7 +78,6 @@
       "task": "Assign a new string to the right footer text and save the diagram as a vdx file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -94,7 +93,6 @@
       "task": "Automate the process of adding a page number placeholder to the right footer of each diagram in a collection",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -123,25 +121,23 @@
       "task": "Configure the footer margin to 0 3 centimeters and verify the change using print preview",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
     },
     {
-      "slug": "create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi",
-      "file": "create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi.cs",
-      "task": "Create a command line tool that accepts a directory path and applies a predefined header footer template to all visio fi",
+      "slug": "create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-files",
+      "file": "create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-files.cs",
+      "task": "Create a command line tool that accepts a directory path and applies a predefined header footer template to all visio files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -174,7 +170,6 @@
       "task": "Create a utility method that accepts a diagram path and header settings applies them and saves the file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing",
         "System",
         "System.IO"
@@ -206,11 +201,16 @@
       "task": "Ensure that after modifying header text the diagram s print preview reflects the updated content accurately",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -236,8 +236,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -252,7 +251,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Globalization",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -265,9 +264,9 @@
       "task": "Implement a function to copy header and footer settings from one diagram to another without altering page content",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -350,7 +349,6 @@
       "task": "Retrieve the current header font style change it to italic and verify the change by reading back the property",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -366,7 +364,6 @@
       "task": "Set footer font to times new roman size 9 points italic style for the center footer text",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -397,7 +394,6 @@
       "task": "Set header margin based on page size 0 2 inches for a4 and 0 3 inches for letter formats",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

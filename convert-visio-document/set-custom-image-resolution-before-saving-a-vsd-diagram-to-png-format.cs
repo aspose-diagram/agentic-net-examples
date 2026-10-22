@@ -1,37 +1,42 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.png";
+
+        // Guard: ensure the source Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsd";
-            // Path for the exported PNG image
-            string outputPath = "output.png";
-
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure image export options
+            // Configure image save options with a custom resolution (e.g., 300 DPI)
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Set custom resolution (dots per inch)
-            saveOptions.Resolution = 300f; // 300 DPI
+            saveOptions.Resolution = 300f;               // Set resolution in DPI
+            saveOptions.ExportHiddenPage = false;        // Do not export hidden pages (bool, not BOOL)
 
-            // Save the diagram as a PNG image with the specified resolution
+            // Save the diagram as a PNG image using the configured options
             diagram.Save(outputPath, saveOptions);
 
-            Console.WriteLine($"Diagram saved to '{outputPath}' with resolution {saveOptions.Resolution} DPI.");
-
+            Console.WriteLine($"Diagram successfully saved to '{outputPath}' with resolution {saveOptions.Resolution} DPI.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

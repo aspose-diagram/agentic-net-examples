@@ -5,33 +5,39 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Determine input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.jpg";
 
-        // Path for the exported JPEG image
-        string outputPath = "output.jpg";
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure image save options for JPEG with desired quality (0-100)
+            // Create image save options for JPEG format
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            // Set JPEG quality using the correct property name
-            saveOptions.JpegQuality = 80; // Set image quality to 80%
+
+            // Set JPEG quality (0-100). Higher value means better quality.
+            saveOptions.JpegQuality = 90;
 
             // Export the diagram to JPEG using the configured options
             diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram successfully exported to JPEG with quality {saveOptions.JpegQuality}.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

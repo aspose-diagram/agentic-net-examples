@@ -1,34 +1,52 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Ensure at least one file path is provided.
+        if (args.Length == 0)
         {
-
-            // Example relative path to a VSD diagram
-            string relativePath = @"Diagrams\SampleDiagram.vsd";
-
-            // Resolve the relative path to an absolute path
-            string absolutePath = Path.GetFullPath(relativePath);
-
-            // Load the diagram using the absolute path
-            Diagram diagram = new Diagram(absolutePath);
-
-            // Perform any required operations on the diagram here
-            // ...
-
-            // Example: save the diagram to a new file (optional)
-            string outputPath = Path.Combine(Path.GetDirectoryName(absolutePath), "SampleDiagram_Processed.vsd");
-            diagram.Save(outputPath, SaveFileFormat.Vsd);
-
+            Console.Error.WriteLine("Usage: Program <relative-or-absolute-path-to-visio-file> [additional files...]");
+            return;
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+
+        foreach (string inputPath in args)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Resolve the path to an absolute path.
+            string absolutePath = Path.GetFullPath(inputPath);
+
+            // Guard: verify the file exists before proceeding.
+            if (!File.Exists(absolutePath))
+            {
+                Console.Error.WriteLine($"Error: File not found - '{absolutePath}'.");
+                return;
+            }
+
+            try
+            {
+                // Load the Visio diagram from the resolved absolute path.
+                Diagram diagram = new Diagram(absolutePath);
+
+                // Prepare the output file name (same folder, suffix "_converted.vsdx").
+                string directory = Path.GetDirectoryName(absolutePath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(absolutePath);
+                string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_converted.vsdx");
+
+                // Save the diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Successfully processed '{absolutePath}' and saved as '{outputPath}'.");
+            }
+            catch (Exception ex)
+            {
+                // Report any errors that occur during loading or saving.
+                Console.Error.WriteLine($"Error processing '{absolutePath}': {ex.Message}");
+                return;
+            }
         }
     }
 }

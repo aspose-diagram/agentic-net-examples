@@ -1,54 +1,100 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output CSV file path.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Export the diagram to CSV format.
+            diagram.Save(outputPath, SaveFileFormat.Csv);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram processing or CSV export: {ex.Message}");
+            return;
+        }
+
+        // Guard: verify CSV was created.
+        if (!File.Exists(outputPath))
+        {
+            Console.Error.WriteLine($"CSV export failed, file not found: {outputPath}");
+            return;
+        }
+
+        try
+        {
+            // Read all lines from the generated CSV.
+            string[] csvLines = File.ReadAllLines(outputPath);
+
+            // Flags to track required header presence.
+            bool hasApplicationHeader = false;
+            bool hasCsvProducerHeader = false;
+
+            // Scan each line for the required header fields.
+            foreach (string line in csvLines)
             {
+                // Trim leading/trailing whitespace for reliable comparison.
+                string trimmed = line.Trim();
 
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
-                // Output CSV file path
-                string csvPath = "output.csv";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Export the diagram to CSV format
-                diagram.Save(csvPath, SaveFileFormat.Csv);
-
-                // Expected header row as defined by Aspose.Diagram CSV specification
-                // (example header – adjust if the library defines a different set of columns)
-                string expectedHeader = "ShapeID,ShapeName,ShapeType";
-
-                // Read the first line of the generated CSV file
-                string actualHeader;
-                using (var reader = new StreamReader(csvPath))
+                // Check for Application field containing 'Aspose.Diagram'.
+                if (trimmed.StartsWith("Application", StringComparison.OrdinalIgnoreCase) &&
+                    trimmed.IndexOf("Aspose.Diagram", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    actualHeader = reader.ReadLine();
+                    hasApplicationHeader = true;
                 }
 
-                // Verify that the header matches the expected value
-                if (actualHeader == null)
+                // Check for CSV Producer field containing 'Aspose.Diagram'.
+                if (trimmed.StartsWith("CSV Producer", StringComparison.OrdinalIgnoreCase) &&
+                    trimmed.IndexOf("Aspose.Diagram", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    throw new Exception("CSV file is empty. Header row is missing.");
+                    hasCsvProducerHeader = true;
                 }
 
-                if (!actualHeader.Equals(expectedHeader, StringComparison.Ordinal))
-                {
-                    throw new Exception($"CSV header mismatch. Expected: \"{expectedHeader}\", Actual: \"{actualHeader}\"");
-                }
-
-                Console.WriteLine("CSV header verification succeeded.");
-
+                // If both headers are found, no need to continue scanning.
+                if (hasApplicationHeader && hasCsvProducerHeader)
+                    break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Report verification result.
+            if (hasApplicationHeader && hasCsvProducerHeader)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("CSV verification succeeded: required header rows are present.");
             }
+            else
+            {
+                Console.Error.WriteLine("CSV verification failed: required header rows are missing.");
+                if (!hasApplicationHeader)
+                    Console.Error.WriteLine("- Missing or incorrect 'Application' header.");
+                if (!hasCsvProducerHeader)
+                    Console.Error.WriteLine("- Missing or incorrect 'CSV Producer' header.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while reading or verifying CSV file: {ex.Message}");
+        }
     }
-    }
+}

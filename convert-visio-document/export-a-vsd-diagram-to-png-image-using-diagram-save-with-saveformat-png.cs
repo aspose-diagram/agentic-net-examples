@@ -1,24 +1,53 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input Visio file path as first argument and optional output PNG path as second argument.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputPngFilePath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path; if not provided, use same name with .png extension in the same folder.
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".png");
+
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the VSD diagram from file
-            Diagram diagram = new Diagram("input.vsd");
+            // Configure image save options for PNG format.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Example of setting additional options (optional):
+            // saveOptions.PageIndex = 0; // Export first page.
+            // saveOptions.PageCount = 1; // Export a single page.
 
-            // Export the diagram to PNG format
-            diagram.Save("output.png", SaveFileFormat.Png);
+            // Export the diagram to PNG using the configured options.
+            diagram.Save(outputPath, saveOptions);
 
+            // Dispose the diagram to release resources.
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram successfully exported to PNG: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during loading or saving to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

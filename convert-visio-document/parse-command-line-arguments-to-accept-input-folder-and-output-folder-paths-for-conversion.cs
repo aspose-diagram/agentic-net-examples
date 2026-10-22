@@ -3,66 +3,77 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command line arguments count.
+        if (args.Length != 2)
         {
-            // Expect exactly two arguments: input folder and output folder
-            if (args.Length != 2)
+            Console.Error.WriteLine("Usage: <program> <input_folder_path> <output_folder_path>");
+            return;
+        }
+
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+
+        // Guard: verify input folder exists.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Guard: ensure output folder exists (create if necessary).
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                Console.WriteLine("Usage: DiagramConverter <inputFolder> <outputFolder>");
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
                 return;
             }
+        }
 
-            // Parse command line arguments
-            string inputFolder = args[0];
-            string outputFolder = args[1];
-
-            // Validate input folder
-            if (!Directory.Exists(inputFolder))
+        // Get all Visio files in the input folder (common extensions).
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in visioFiles)
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext != ".vsd" && ext != ".vsdx" && ext != ".vdx" && ext != ".vss" && ext != ".vssx" && ext != ".vst" && ext != ".vstx")
             {
-                Console.WriteLine($"Error: Input folder \"{inputFolder}\" does not exist.");
-                return;
+                // Skip non-Visio files.
+                continue;
             }
 
-            // Ensure output folder exists; create if it does not
-            if (!Directory.Exists(outputFolder))
+            // Guard: verify the file still exists.
+            if (!File.Exists(filePath))
             {
-                try
-                {
-                    Directory.CreateDirectory(outputFolder);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error: Could not create output folder \"{outputFolder}\". {ex.Message}");
-                    return;
-                }
+                Console.Error.WriteLine($"File not found (skipped): {filePath}");
+                continue;
             }
 
-            // Example conversion loop (placeholder for actual conversion logic)
-            // This demonstrates loading each Visio file from the input folder and saving it to the output folder.
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-            foreach (string filePath in visioFiles)
+            try
             {
-                try
-                {
-                    // Load the Visio diagram using Aspose.Diagram
-                    Diagram diagram = new Diagram(filePath);
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
 
-                    // Determine output file path (same name with .pdf extension as an example)
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                    string outputFilePath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+                // Prepare output file path with .vsdx extension.
+                string outputFileName = Path.GetFileNameWithoutExtension(filePath) + ".vsdx";
+                string outputPath = Path.Combine(outputFolder, outputFileName);
 
-                    // Save the diagram to PDF (or any other supported format)
-                    diagram.Save(outputFilePath, SaveFileFormat.Pdf);
+                // Save the diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                    Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {Path.GetFileName(outputFilePath)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to convert \"{filePath}\": {ex.Message}");
-                }
+                Console.WriteLine($"Converted '{filePath}' to '{outputPath}'.");
             }
-
-            Console.WriteLine("Conversion process completed.");
+            catch (Exception ex)
+            {
+                // Log any errors that occur during loading or saving.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}

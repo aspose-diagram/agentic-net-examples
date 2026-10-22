@@ -4,10 +4,10 @@ display_name: Working With User Defined Cells
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.9.0
+version: 26.10.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-09-24
+generated: 2026-10-22
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -63,13 +63,12 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 20 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 18 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 11 | List, Dictionary, HashSet |
-| `System.Linq` | 2 | LINQ queries on collections |
+| `System.IO` | 30 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 16 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 10 | List, Dictionary, HashSet |
 | `System.Xml.Linq` | 2 | Supporting utilities |
-| `System.Text` | 1 | StringBuilder |
 | `System.Data` | 1 | Supporting utilities |
+| `Aspose.Cells` | 1 | Supporting utilities |
 | `System.Text.Json` | 1 | JSON serialization |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
 
@@ -98,21 +97,6 @@ class Program
 }
 ```
 
-## Domain Knowledge
-
-Category-specific API rules and gotchas:
-
-- USER-DEFINED CELLS — Accessed via shape.Users collection. Each element is an Aspose.Diagram.User object containing Name, NameU, Value, and Prompt properties.
-- READ USER-DEFINED CELLS — Iterate shape.Users: foreach (User user in shape.Users) { Console.WriteLine(user.Name + ": " + user.Value.Val); }
-- CREATE USER-DEFINED CELL — Create a User instance, set Name and Value.Val, then add to shape.Users: User user = new User(); user.Name = "UserDefineCell"; user.Value.Val = "800"; shape.Users.Add(user);
-- RETRIEVE USER-DEFINED CELLS FROM SHAPESHEET — Iterate all pages and shapes, then iterate shape.Users: foreach (Aspose.Diagram.Page objPage in diagram.Pages) { foreach (Aspose.Diagram.Shape objShape in objPage.Shapes) { foreach (Aspose.Diagram.User objUserField in objShape.Users) { Console.WriteLine(objUserField.NameU + " " + objUserField.Value.Val + " " + objUserField.Prompt.Value); } } }
-- User properties: Name (string) — row name; NameU (string) — universal row name; Value.Val (string) — the cell value; Prompt.Value (string) — the prompt/description text.
-- To get a specific user cell by name: iterate shape.Users and compare user.Name == "targetName" or user.NameU == "targetNameU".
-- shape.Users.Add(user) adds a new User-defined cell row to the shape's ShapeSheet Users section.
-- Protection properties that use BOOL.True/BOOL.False via .Value: LockCustProp, LockBegin, LockCalcWH, LockCrop, LockDelete, LockEnd, LockFormat, LockFromGroupFormat, LockGroup, LockHeight, LockMoveX, LockMoveY, LockRotate, LockSelect, LockTextEdit, LockThemeColors, LockThemeConnectors, LockThemeFonts, LockThemeIndex, LockVtxEdit, LockWidth.
-- The ONLY correct way to access user-defined cells is via shape.Users collection: foreach (User user in shape.Users). Access user.Name, user.NameU, user.Value.Val, user.Prompt.Value.
-- For user-defined cell data type validation, iterate shape.Users and use double.TryParse(), int.TryParse(), or DateTime.TryParse() on user.Value.Val to check data types programmatically.
-
 ## Examples
 
 | File | Key APIs | Task |
@@ -123,14 +107,14 @@ Category-specific API rules and gotchas:
 | [apply-localization-by-translating-user-defined-cell-text-values-based-on-the-target-language-settings.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/apply-localization-by-translating-user-defined-cell-text-values-based-on-the-target-language-settings.cs) | `Diagram`, `Pages`, `Save` | Apply localization by translating user defined cell text values based on the target language settings |
 | [clone-a-shape-copy-its-user-defined-cells-and-insert-the-clone-into-a-different-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/clone-a-shape-copy-its-user-defined-cells-and-insert-the-clone-into-a-different-page.cs) | `Diagram`, `Page`, `Pages` | Clone a shape copy its user defined cells and insert the clone into a different page |
 | [create-a-batch-process-that-updates-a-specific-user-defined-cell-across-multiple-visio-files-in-a-folder.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/create-a-batch-process-that-updates-a-specific-user-defined-cell-across-multiple-visio-files-in-a-folder.cs) | `Diagram`, `Pages`, `Save` | Create a batch process that updates a specific user defined cell across multiple visio files in a folder |
-| [create-a-diagnostic-tool-that-lists-shapes-with-missing-or-duplicate-user-defined-cell-names.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/create-a-diagnostic-tool-that-lists-shapes-with-missing-or-duplicate-user-defined-cell-names.cs) | `Diagram`, `Pages`, `Save` | Create a diagnostic tool that lists shapes with missing or duplicate user defined cell names |
-| [create-a-template-diagram-with-predefined-user-defined-cells-for-reuse-in-automated-document-generation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/create-a-template-diagram-with-predefined-user-defined-cells-for-reuse-in-automated-document-generation.cs) | `AddShape`, `Diagram`, `Pages` | Create a template diagram with predefined user defined cells for reuse in automated document generation |
+| [create-a-diagnostic-tool-that-lists-shapes-with-missing-or-duplicate-user-defined-cell-names.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/create-a-diagnostic-tool-that-lists-shapes-with-missing-or-duplicate-user-defined-cell-names.cs) | `Diagram`, `Pages`, `Shapes` | Create a diagnostic tool that lists shapes with missing or duplicate user defined cell names |
+| [create-a-template-diagram-with-predefined-user-defined-cells-for-reuse-in-automated-document-generation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/create-a-template-diagram-with-predefined-user-defined-cells-for-reuse-in-automated-document-generation.cs) | `Diagram`, `Page`, `Pages` | Create a template diagram with predefined user defined cells for reuse in automated document generation |
 | [create-a-ui-dialog-that-allows-users-to-edit-user-defined-cell-values-interactively.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/create-a-ui-dialog-that-allows-users-to-edit-user-defined-cell-values-interactively.cs) | `Diagram`, `Pages`, `Save` | Create a ui dialog that allows users to edit user defined cell values interactively |
 | [delete-all-user-defined-cells-that-contain-empty-values-across-all-pages-of-a-visio-document.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/delete-all-user-defined-cells-that-contain-empty-values-across-all-pages-of-a-visio-document.cs) | `Diagram`, `Pages`, `Save` | Delete all user defined cells that contain empty values across all pages of a visio document |
 | [export-diagram-with-user-defined-cells-to-svg-preserving-cell-metadata-as-custom-attributes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/export-diagram-with-user-defined-cells-to-svg-preserving-cell-metadata-as-custom-attributes.cs) | `Diagram`, `Pages`, `SVGSaveOptions` | Export diagram with user defined cells to svg preserving cell metadata as custom attributes |
 | [export-user-defined-cell-data-to-a-csv-file-including-shape-identifiers-and-cell-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/export-user-defined-cell-data-to-a-csv-file-including-shape-identifiers-and-cell-values.cs) | `Diagram`, `Pages`, `Shapes` | Export user defined cell data to a csv file including shape identifiers and cell values |
 | [extract-user-defined-cell-formulas-and-evaluate-them-using-the-built-in-expression-engine.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/extract-user-defined-cell-formulas-and-evaluate-them-using-the-built-in-expression-engine.cs) | `Diagram`, `Pages`, `Shapes` | Extract user defined cell formulas and evaluate them using the built in expression engine |
-| [filter-shapes-to-process-only-those-containing-a-specific-user-defined-cell-name-pattern.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/filter-shapes-to-process-only-those-containing-a-specific-user-defined-cell-name-pattern.cs) | `Diagram`, `Pages`, `Save` | Filter shapes to process only those containing a specific user defined cell name pattern |
+| [filter-shapes-to-process-only-those-containing-a-specific-user-defined-cell-name-pattern.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/filter-shapes-to-process-only-those-containing-a-specific-user-defined-cell-name-pattern.cs) | `Diagram`, `Pages`, `Shapes` | Filter shapes to process only those containing a specific user defined cell name pattern |
 | [generate-a-report-summarizing-the-count-of-user-defined-cells-per-shape-category-in-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/generate-a-report-summarizing-the-count-of-user-defined-cells-per-shape-category-in-the-diagram.cs) | `Diagram`, `Pages`, `Shapes` | Generate a report summarizing the count of user defined cells per shape category in the diagram |
 | [generate-a-visual-preview-of-shape-changes-after-modifying-user-defined-cell-values-programmatically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/generate-a-visual-preview-of-shape-changes-after-modifying-user-defined-cell-values-programmatically.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Generate a visual preview of shape changes after modifying user defined cell values programmatically |
 | [implement-a-rollback-mechanism-that-restores-previous-user-defined-cell-values-if-validation-fails.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/implement-a-rollback-mechanism-that-restores-previous-user-defined-cell-values-if-validation-fails.cs) | `Diagram`, `Pages`, `Save` | Implement a rollback mechanism that restores previous user defined cell values if validation fails |
@@ -140,12 +124,12 @@ Category-specific API rules and gotchas:
 | [import-user-defined-cell-values-from-a-json-file-and-assign-them-to-matching-shapes-in-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/import-user-defined-cell-values-from-a-json-file-and-assign-them-to-matching-shapes-in-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Import user defined cell values from a json file and assign them to matching shapes in the diagram |
 | [iterate-through-shapes-and-log-each-user-defined-cell-s-name-and-current-value-to-a-text-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/iterate-through-shapes-and-log-each-user-defined-cell-s-name-and-current-value-to-a-text-file.cs) | `Diagram`, `Pages`, `Shapes` | Iterate through shapes and log each user defined cell s name and current value to a text file |
 | [load-a-visio-file-and-retrieve-values-of-all-user-defined-cells-from-each-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/load-a-visio-file-and-retrieve-values-of-all-user-defined-cells-from-each-shape.cs) | `Diagram`, `Pages`, `Shapes` | Load a visio file and retrieve values of all user defined cells from each shape |
-| [set-a-user-defined-cell-to-read-only-mode-to-prevent-further-modifications-during-runtime.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/set-a-user-defined-cell-to-read-only-mode-to-prevent-further-modifications-during-runtime.cs) | `AddShape`, `Diagram`, `Pages` | Set a user defined cell to read only mode to prevent further modifications during runtime |
-| [synchronize-user-defined-cell-values-between-two-diagrams-to-maintain-consistent-metadata-across-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/synchronize-user-defined-cell-values-between-two-diagrams-to-maintain-consistent-metadata-across-files.cs) | `Diagram`, `Shapes`, `User` | Synchronize user defined cell values between two diagrams to maintain consistent metadata across files |
+| [set-a-user-defined-cell-to-read-only-mode-to-prevent-further-modifications-during-runtime.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/set-a-user-defined-cell-to-read-only-mode-to-prevent-further-modifications-during-runtime.cs) | `Diagram`, `Pages`, `Save` | Set a user defined cell to read only mode to prevent further modifications during runtime |
+| [synchronize-user-defined-cell-values-between-two-diagrams-to-maintain-consistent-metadata-across-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/synchronize-user-defined-cell-values-between-two-diagrams-to-maintain-consistent-metadata-across-files.cs) | `Diagram`, `User`, `user` | Synchronize user defined cell values between two diagrams to maintain consistent metadata across files |
 | [update-the-formula-of-a-specific-user-defined-cell-and-save-the-diagram-in-vdx-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/update-the-formula-of-a-specific-user-defined-cell-and-save-the-diagram-in-vdx-format.cs) | `Diagram`, `Pages`, `Save` | Update the formula of a specific user defined cell and save the diagram in vdx format |
 | [use-conditional-formatting-to-change-shape-colors-based-on-values-of-associated-user-defined-cells.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/use-conditional-formatting-to-change-shape-colors-based-on-values-of-associated-user-defined-cells.cs) | `Diagram`, `Pages`, `Save` | Use conditional formatting to change shape colors based on values of associated user defined cells |
 | [use-multithreading-to-concurrently-update-user-defined-cells-in-large-diagrams-for-performance-improvement.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/use-multithreading-to-concurrently-update-user-defined-cells-in-large-diagrams-for-performance-improvement.cs) | `Diagram`, `Pages`, `Save` | Use multithreading to concurrently update user defined cells in large diagrams for performance improvement |
-| [validate-that-required-user-defined-cells-exist-on-each-shape-before-exporting-the-diagram-to-pdf.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/validate-that-required-user-defined-cells-exist-on-each-shape-before-exporting-the-diagram-to-pdf.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Validate that required user defined cells exist on each shape before exporting the diagram to pdf |
+| [validate-that-required-user-defined-cells-exist-on-each-shape-before-exporting-the-diagram-to-pdf.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/validate-that-required-user-defined-cells-exist-on-each-shape-before-exporting-the-diagram-to-pdf.cs) | `Diagram`, `Pages`, `Save` | Validate that required user defined cells exist on each shape before exporting the diagram to pdf |
 | [validate-user-defined-cell-data-types-against-a-schema-before-saving-the-diagram-to-vsdx.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-user-defined-cells/validate-user-defined-cell-data-types-against-a-schema-before-saving-the-diagram-to-vsdx.cs) | `Diagram`, `Pages`, `Save` | Validate user defined cell data types against a schema before saving the diagram to vsdx |
 
 ## Command Reference
@@ -232,16 +216,16 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ## Key API Surface
 
-- `AddShape`
 - `Diagram`
 - `ImageSaveOptions`
 - `Page`
 - `Pages`
-- `PdfSaveOptions`
 - `SVGSaveOptions`
 - `Save`
 - `Shapes`
 - `User`
+- `Window`
+- `Windows`
 - `diagram`
 - `page`
 - `shape`
@@ -261,7 +245,7 @@ Frequently asked questions about **Working With User Defined Cells** in **Aspose
 
 **Q: How do I get started with Working With User Defined Cells in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -296,4 +280,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-24 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-22 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

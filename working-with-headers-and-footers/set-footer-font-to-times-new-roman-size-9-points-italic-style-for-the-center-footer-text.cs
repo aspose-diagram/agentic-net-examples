@@ -1,36 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Optional: set the center footer text
+                diagram.HeaderFooter.FooterCenter = "Sample Footer Center";
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Access the footer font settings
+                HeaderFooterFont footerFont = diagram.HeaderFooter.HeaderFooterFont;
 
-            // Set the center footer text
-            diagram.HeaderFooter.FooterCenter = "Center Footer Text";
+                // Set the font face to Times New Roman
+                footerFont.FaceName = "Times New Roman";
 
-            // Configure the footer font: Times New Roman, 9 pt, italic
-            // Height uses a negative mapping: (points * -1.333) rounded → -12 for 9 pt
-            diagram.HeaderFooter.HeaderFooterFont.FaceName = "Times New Roman";
-            diagram.HeaderFooter.HeaderFooterFont.Height = -12;
-            diagram.HeaderFooter.HeaderFooterFont.Italic = BOOL.True;
-            // Normal weight (regular) – optional
-            diagram.HeaderFooter.HeaderFooterFont.Weight = 400;
+                // Set the font size to 9 points.
+                // Height uses a negative mapping: Height = DesiredPointSize * -1.333 (rounded)
+                // 9 * -1.333 ≈ -12
+                footerFont.Height = -12;
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Apply italic style
+                footerFont.Italic = BOOL.True;
 
+                // Ensure underline is disabled
+                footerFont.Underline = BOOL.False;
+
+                // Set regular weight (400) for non‑bold text
+                footerFont.Weight = 400;
+
+                // Save the modified diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

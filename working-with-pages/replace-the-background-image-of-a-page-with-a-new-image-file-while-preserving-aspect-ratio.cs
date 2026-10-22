@@ -1,80 +1,115 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file, background image file and output Visio file paths.
+        // Input Visio file path
         string diagramPath = "input.vsdx";
-        if (!File.Exists(diagramPath)) { Console.Error.WriteLine($"File not found: {diagramPath}"); return; }
+        if (!System.IO.File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
 
+        // New background image file path
         string imagePath = "background.png";
-        if (!File.Exists(imagePath)) { Console.Error.WriteLine($"File not found: {imagePath}"); return; }
+        if (!File.Exists(imagePath))
+        {
+            Console.Error.WriteLine($"Image file not found: {imagePath}");
+            return;
+        }
 
+        // Output Visio file path
         string outputPath = "output.vsdx";
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Get the first page (you can change the index or retrieve by name if needed).
-            Page page = diagram.Pages[0];
-
-            // Hide any existing background image shapes (type Foreign) on the page.
-            foreach (Shape shape in page.Shapes)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                if (shape.Type == TypeValue.Foreign)
-                {
-                    // Mark shape as deleted (hidden) while preserving it in the document.
-                    shape.Del = BOOL.True;
-                }
-            }
+                // Work with the first page (index 0)
+                Page page = diagram.Pages[0];
 
-            // Load the image to obtain its pixel dimensions and DPI.
-            using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(imagePath))
-            {
-                double imgWidthInches = img.Width / img.HorizontalResolution;
-                double imgHeightInches = img.Height / img.VerticalResolution;
-
-                // Page dimensions (in inches).
+                // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Compute scaling factor to preserve aspect ratio and fit within the page.
-                double scale = Math.Min(pageWidth / imgWidthInches, pageHeight / imgHeightInches);
+                // Load image bytes
+                byte[] imageBytes = File.ReadAllBytes(imagePath);
 
-                double finalWidth = imgWidthInches * scale;
-                double finalHeight = imgHeightInches * scale;
-
-                // Center position for the background shape.
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Insert the image as a shape on the page.
-                using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                // Obtain image dimensions using Aspose.Drawing.Image (fully qualified to avoid ambiguity)
+                double imgWidth;
+                double imgHeight;
+                using (var ms = new MemoryStream(imageBytes))
+                using (var img = Aspose.Drawing.Image.FromStream(ms))
                 {
-                    long shapeId = page.AddShape(pinX, pinY, finalWidth, finalHeight, fs);
-                    Shape bgShape = page.Shapes.GetShape((int)shapeId);
-
-                    // Send the image to the back so other shapes appear above it.
-                    bgShape.SendToBack();
-
-                    // Make the background shape non‑selectable.
-                    bgShape.Protection.LockSelect.Value = BOOL.True;
+                    imgWidth = img.Width;
+                    imgHeight = img.Height;
                 }
-            }
 
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Compute scaling factor to fit image within page while preserving aspect ratio
+                double scale = Math.Min(pageWidth / imgWidth, pageHeight / imgHeight);
+                double newWidth = imgWidth * scale;
+                double newHeight = imgHeight * scale;
+
+                // Compute lower‑left corner (pinX, pinY) to center the image on the page
+                double pinX = (pageWidth - newWidth) / 2.0;
+                double pinY = (pageHeight - newHeight) / 2.0;
+
+                // Try to find an existing background image shape (foreign type)
+                Shape backgroundShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Type == TypeValue.Foreign)
+                    {
+                        backgroundShape = shape;
+                        break;
+                    }
+                }
+
+                if (backgroundShape != null)
+                {
+                    // Replace the existing shape's image data
+                    backgroundShape.ForeignData.Value = imageBytes;
+
+                    // Update shape size and position (PinX/Y are shape centers)
+                    backgroundShape.XForm.Width.Value = newWidth;
+                    backgroundShape.XForm.Height.Value = newHeight;
+                    backgroundShape.XForm.PinX.Value = pinX + newWidth / 2.0;
+                    backgroundShape.XForm.PinY.Value = pinY + newHeight / 2.0;
+
+                    // Send the shape to back and lock selection
+                    backgroundShape.SendToBack();
+                    backgroundShape.Protection.LockSelect.Value = BOOL.True;
+                }
+                else
+                {
+                    // No existing background shape; add a new one using the image stream
+                    using (var imgStream = new MemoryStream(imageBytes))
+                    {
+                        long shapeId = page.AddShape(pinX, pinY, newWidth, newHeight, imgStream);
+                        Shape newShape = page.Shapes.GetShape(shapeId);
+                        newShape.SendToBack();
+                        newShape.Protection.LockSelect.Value = BOOL.True;
+                    }
+                }
+
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

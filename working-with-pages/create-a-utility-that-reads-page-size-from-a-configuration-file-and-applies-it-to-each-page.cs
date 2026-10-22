@@ -4,58 +4,110 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: config file, input diagram, output diagram
+        if (args.Length != 3)
+        {
+            Console.Error.WriteLine("Usage: Program <configFilePath> <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string configPath = args[0];
+        string inputDiagramPath = args[1];
+        string outputDiagramPath = args[2];
+
+        // Guard: ensure configuration file exists
+        if (!File.Exists(configPath))
+        {
+            Console.Error.WriteLine($"Configuration file not found: {configPath}");
+            return;
+        }
+
+        // Guard: ensure input diagram file exists
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+            return;
+        }
+
+        // Read and parse page size from configuration file
+        double pageWidthInches = 0;
+        double pageHeightInches = 0;
         try
         {
-
-            // Path to the Visio file to modify
-            string diagramPath = "input.vsdx";
-
-            // Path to the configuration file (first line = width in inches, second line = height in inches)
-            string configPath = "pageSize.config";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Read page size from configuration
-            double pageWidth;
-            double pageHeight;
-            try
+            // Simple key=value pairs, separated by new lines or semicolons
+            string[] lines = File.ReadAllLines(configPath);
+            foreach (string rawLine in lines)
             {
-                string[] lines = File.ReadAllLines(configPath);
-                if (lines.Length < 2)
-                    throw new Exception("Configuration file must contain at least two lines: width and height.");
+                string line = rawLine.Trim();
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                    continue; // Skip empty lines or comments
 
-                if (!double.TryParse(lines[0], out pageWidth))
-                    throw new Exception("Invalid width value in configuration.");
+                // Support both "key=value" and "key=value;" formats
+                string[] parts = line.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string part in parts)
+                {
+                    string[] kv = part.Split(new[] { '=' }, 2);
+                    if (kv.Length != 2)
+                        continue;
 
-                if (!double.TryParse(lines[1], out pageHeight))
-                    throw new Exception("Invalid height value in configuration.");
+                    string key = kv[0].Trim().ToLowerInvariant();
+                    string value = kv[1].Trim();
+
+                    if (key == "width")
+                    {
+                        if (!double.TryParse(value, out pageWidthInches))
+                        {
+                            Console.Error.WriteLine($"Invalid width value in config: {value}");
+                            return;
+                        }
+                    }
+                    else if (key == "height")
+                    {
+                        if (!double.TryParse(value, out pageHeightInches))
+                        {
+                            Console.Error.WriteLine($"Invalid height value in config: {value}");
+                            return;
+                        }
+                    }
+                }
             }
-            catch (Exception ex)
+
+            // Validate that both dimensions were provided
+            if (pageWidthInches <= 0 || pageHeightInches <= 0)
             {
-                Console.WriteLine($"Error reading configuration: {ex.Message}");
+                Console.Error.WriteLine("Both width and height must be positive numbers in the configuration file.");
                 return;
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading configuration file: {ex.Message}");
+            return;
+        }
 
-            // Apply the page size to every page in the diagram
+        // Load the diagram and apply page size to each page
+        try
+        {
+            Diagram diagram = new Diagram(inputDiagramPath);
+
+            // Iterate over all pages and set the size (values are in inches)
             foreach (Page page in diagram.Pages)
             {
-                page.PageSheet.PageProps.PageWidth.Value = pageWidth;
-                page.PageSheet.PageProps.PageHeight.Value = pageHeight;
+                page.PageSheet.PageProps.PageWidth.Value = pageWidthInches;
+                page.PageSheet.PageProps.PageHeight.Value = pageHeightInches;
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved with new page size ({pageWidth}\" x {pageHeight}\") to '{outputPath}'.");
-
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
         }
+
+        Console.WriteLine("Page size applied successfully to all pages.");
     }
 }

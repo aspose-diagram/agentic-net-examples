@@ -7,31 +7,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder containing the source Visio files.
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-
-        // Get all .vsdx files in the folder.
-        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
-
-        if (diagramFiles.Length == 0)
+        // Validate command‑line arguments: first argument is output file, remaining are source diagrams.
+        if (args == null || args.Length < 2)
         {
-            Console.WriteLine("No Visio files found in the specified folder.");
+            Console.Error.WriteLine("Usage: MergeDiagrams <output.vsdx> <source1.vsdx> [<source2.vsdx> ...]");
             return;
         }
 
-        // Load the first diagram as the target diagram.
-        Diagram targetDiagram = new Diagram(diagramFiles[0]);
+        string outputPath = args[0];
 
-        // Iterate over the remaining diagrams and merge their pages into the target.
-        for (int i = 1; i < diagramFiles.Length; i++)
+        // Verify that each source file exists before proceeding.
+        for (int i = 1; i < args.Length; i++)
         {
-            Diagram sourceDiagram = new Diagram(diagramFiles[i]);
-            targetDiagram.Combine(sourceDiagram);
+            string srcPath = args[i];
+            if (!File.Exists(srcPath))
+            {
+                Console.Error.WriteLine($"Source file does not exist: {srcPath}");
+                return;
+            }
         }
 
-        // Save the merged diagram to a new file.
-        string outputPath = Path.Combine(folderPath, "MergedDiagram.vsdx");
-        targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"Merged diagram saved to: {outputPath}");
+        // Load the first diagram as the base target diagram.
+        string firstSource = args[1];
+        try
+        {
+            using (Diagram targetDiagram = new Diagram(firstSource))
+            {
+                // Append pages from each additional source diagram.
+                for (int i = 2; i < args.Length; i++)
+                {
+                    string srcPath = args[i];
+                    try
+                    {
+                        using (Diagram sourceDiagram = new Diagram(srcPath))
+                        {
+                            // Combine merges masters, styles, and all pages from source into target.
+                            targetDiagram.Combine(sourceDiagram);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Error combining '{srcPath}': {ex.Message}");
+                        // Continue with remaining files.
+                    }
+                }
+
+                // Save the merged diagram to the specified output path in VSDX format.
+                try
+                {
+                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Merged diagram saved to: {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error saving merged diagram: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading base diagram '{firstSource}': {ex.Message}");
+        }
     }
 }

@@ -1,37 +1,49 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate over all pages and set the print orientation to follow printer defaults.
+            foreach (Page page in diagram.Pages)
             {
-                // Set each page to use the printer's default orientation
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Access the print properties and assign SameAsPrinter.
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
             }
 
-            Console.WriteLine("Print orientation set to SameAsPrinter for all pages and saved to " + outputPath);
-
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

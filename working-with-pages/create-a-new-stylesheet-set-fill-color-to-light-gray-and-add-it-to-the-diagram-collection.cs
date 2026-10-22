@@ -1,31 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Create a new stylesheet
-        StyleSheet style = new StyleSheet();
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Assign a unique ID
-        style.ID = diagram.StyleSheets.Count + 1;
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Optional: give the stylesheet a name
-        style.Name = "LightGrayStyle";
+        try
+        {
+            // Load the existing Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Create a new stylesheet.
+                StyleSheet styleSheet = new StyleSheet();
 
-        // Set fill pattern to solid (1) and fill foreground color to light gray
-        style.Fill.FillPattern.Value = 1;          // solid fill
-        style.Fill.FillForegnd.Value = "#D3D3D3"; // light gray color
+                // Assign a unique ID for the stylesheet.
+                styleSheet.ID = diagram.StyleSheets.Count + 1;
 
-        // Add the stylesheet to the diagram's collection
-        diagram.StyleSheets.Add(style);
+                // Optional: give the stylesheet a name for easier identification.
+                styleSheet.Name = "LightGrayFill";
 
-        // Save the diagram (optional verification)
-        diagram.Save("StyledDiagram.vsdx", SaveFileFormat.Vsdx);
+                // Set the fill pattern to solid (value 1) and the foreground color to light gray.
+                // Light gray hex code: #D3D3D3
+                styleSheet.Fill.FillPattern.Value = 1;
+                styleSheet.Fill.FillForegnd.Value = "#D3D3D3";
+
+                // Add the stylesheet to the diagram's stylesheet collection.
+                diagram.StyleSheets.Add(styleSheet);
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Stylesheet added and diagram saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

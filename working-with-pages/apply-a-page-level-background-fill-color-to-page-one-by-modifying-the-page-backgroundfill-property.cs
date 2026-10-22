@@ -6,61 +6,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page (index 0) from the diagram
+            // Retrieve the first page (index 0)
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
             Page page = diagram.Pages[0];
 
-            // Determine page dimensions (in inches) to size the background shape
+            // Get page dimensions (in inches)
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Add a rectangle shape that spans the entire page.
-            // The AddShape method returns the shape ID (long).
-            long bgShapeId = page.AddShape(
-                pinX: pageWidth / 2,   // center X
-                pinY: pageHeight / 2,  // center Y
-                width: pageWidth,
-                height: pageHeight,
-                masterName: "Rectangle",
-                isCalculate: false);
+            // Calculate center coordinates for the background rectangle
+            double centerX = pageWidth / 2.0;
+            double centerY = pageHeight / 2.0;
 
-            // Retrieve the newly added shape using its ID
-            Shape bgShape = page.Shapes.GetShape(bgShapeId);
+            // Add a rectangle shape that spans the entire page
+            // Master name "Rectangle" is a built‑in Visio shape
+            long rectShapeId = page.AddShape(centerX, centerY, "Rectangle", false);
 
-            // Set the shape's fill to a solid color (light blue)
-            bgShape.Fill.FillPattern.Value = 1;          // 1 = solid fill
-            bgShape.Fill.FillForegnd.Value = "#ADD8E6"; // hexadecimal color
+            // Retrieve the newly added shape
+            Shape backgroundShape = page.Shapes.GetShape(rectShapeId);
 
-            // Remove the border by setting line pattern to 0 (no line)
-            bgShape.Line.LinePattern.Value = 0;
+            // Set solid fill pattern
+            backgroundShape.Fill.FillPattern.Value = 1; // Solid fill
 
-            // Send the shape to the back so it appears behind all other content
-            bgShape.SendToBack();
+            // Set the desired background color (hex string, e.g., light blue)
+            backgroundShape.Fill.FillForegnd.Value = "#ADD8E6";
 
-            // Optionally lock the shape to prevent accidental selection/editing
-            bgShape.Protection.LockSelect.Value = BOOL.True;
+            // Remove the outline by setting line pattern to none
+            backgroundShape.Line.LinePattern.Value = 0;
 
-            // Save the modified diagram to a new file
-            string outputPath = "output.vsdx";
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

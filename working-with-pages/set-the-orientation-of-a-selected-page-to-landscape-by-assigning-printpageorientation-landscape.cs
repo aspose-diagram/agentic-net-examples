@@ -1,36 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <pageIndex>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string pageIndexArg = args[1];
+
+        // Guard: check input file existence
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse page index
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
+        {
+            Console.Error.WriteLine($"Invalid page index: {pageIndexArg}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Validate page index range
+            if (pageIndex >= diagram.Pages.Count)
             {
-
-                // Paths to the input and output Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Select the first page (index 0). Adjust the index or use GetPage(name) as needed.
-                    Page page = diagram.Pages[0];
-
-                    // Set the page orientation to Landscape
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                Console.WriteLine("Page orientation set to Landscape and diagram saved successfully.");
-
+                Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Retrieve the selected page
+            Page page = diagram.Pages[pageIndex];
+
+            // Set the page orientation to Landscape
+            // PrintProps resides under PageSheet.PrintProps
+            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+            // Prepare output file path (adds "_landscape" suffix)
+            string directory = Path.GetDirectoryName(inputPath) ?? "";
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_landscape.vsdx");
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Page {pageIndex} orientation set to Landscape. Saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

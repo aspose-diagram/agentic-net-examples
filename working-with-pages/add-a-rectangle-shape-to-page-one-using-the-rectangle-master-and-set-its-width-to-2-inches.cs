@@ -1,43 +1,61 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the existing Visio diagram.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Create a new empty Visio diagram (contains a default page)
-            Diagram diagram = new Diagram();
+                // Get the first page (page index 0).
+                Page page = diagram.Pages[0];
 
-            // Access the first (default) page – page index 0
-            Page page = diagram.Pages[0];
+                // Add a rectangle shape using the built‑in "Rectangle" master.
+                // PinX and PinY are set to 1.0 inch; isCalculate is false.
+                long shapeId = page.AddShape(1.0, 1.0, "Rectangle", false);
 
-            // Define shape parameters
-            double pinX = 2.0;      // X coordinate of the shape's center (in inches)
-            double pinY = 2.0;      // Y coordinate of the shape's center (in inches)
-            double width = 2.0;     // Desired width of the rectangle (in inches)
-            double height = 1.0;    // Height can be any value; using 1 inch here
-            bool isCalculate = false; // Do not recalculate geometry automatically
+                // Retrieve the newly added shape object.
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Add a rectangle shape using the built‑in "Rectangle" master
-            long rectShapeId = page.AddShape(pinX, pinY, width, height, "Rectangle", isCalculate);
+                // Set the shape's width to 2 inches.
+                shape.XForm.Width.Value = 2.0;
 
-            // Retrieve the shape object to modify its properties if needed
-            Shape rectShape = page.Shapes.GetShape(rectShapeId);
-
-            // Ensure the width is exactly 2 inches (redundant because we passed it above)
-            rectShape.XForm.Width.Value = 2.0;
-
-            // Save the diagram to a VSDX file
-            diagram.Save("RectangleDiagram.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

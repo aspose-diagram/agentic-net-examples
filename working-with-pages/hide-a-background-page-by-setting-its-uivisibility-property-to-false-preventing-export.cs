@@ -7,45 +7,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard to ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Hide all background pages by setting UIVisibility to Hidden
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Identify background pages (Background == BOOL.True)
-                if (page.Background == BOOL.True)
+                // Locate the background page (Background == BOOL.True).
+                Page backgroundPage = null;
+                foreach (Page page in diagram.Pages)
                 {
-                    // UIVisibilityValue.Hidden marks the page as hidden and prevents export
-                    page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
+                    if (page.Background == BOOL.True)
+                    {
+                        backgroundPage = page;
+                        break;
+                    }
                 }
+
+                if (backgroundPage == null)
+                {
+                    Console.Error.WriteLine("Error: No background page found in the diagram.");
+                    return;
+                }
+
+                // Hide the background page by setting its UI visibility to hidden.
+                backgroundPage.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
+
+                // Configure save options to exclude hidden pages from export.
+                XPSSaveOptions saveOptions = new XPSSaveOptions();
+                saveOptions.ExportHiddenPage = false; // ExportHiddenPage expects a bool, not BOOL.
+
+                // Save the modified diagram using the specified options.
+                diagram.Save(outputPath, saveOptions);
             }
 
-            // Configure PDF save options to exclude hidden pages from export
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                ExportHiddenPage = false
-            };
-
-            // Save the modified diagram to PDF
-            diagram.Save("output.pdf", pdfOptions);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

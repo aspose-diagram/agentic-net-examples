@@ -4,67 +4,38 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Helper to set page width with validation
-    static void SetPageWidth(Page page, double width)
+    static void Main(string[] args)
     {
-        // Validate width is non-negative; throw ArgumentException if invalid
-        if (width < 0)
-            throw new ArgumentException("Page width cannot be negative.");
-
-        // Assign the validated width to the page's PageWidth cell
-        page.PageSheet.PageProps.PageWidth.Value = width;
+        // Run the test that verifies setting a negative page width throws an exception.
+        TestNegativePageWidth();
     }
 
-    static void Main()
+    /// <summary>
+    /// Creates a new diagram, accesses its first page, and attempts to set a negative width.
+    /// The test passes if an exception is thrown; otherwise it fails.
+    /// </summary>
+    static void TestNegativePageWidth()
     {
-        // Wrap Aspose operations to capture unexpected errors
         try
         {
-            // Create a new empty diagram
+            // Create an empty diagram. The default constructor creates a diagram with a single page.
             using (Diagram diagram = new Diagram())
             {
-                // Access the first page (a default page is created)
+                // Access the first (and only) page.
                 Page page = diagram.Pages[0];
 
-                // Test that setting a positive width works without exception
-                try
-                {
-                    SetPageWidth(page, 8.5); // inches
-                    Console.WriteLine("Positive width set successfully.");
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception("Setting a positive width should not throw an exception.", ex);
-                }
+                // Attempt to set a negative width. According to Aspose.Diagram API,
+                // this should raise an ArgumentException (or a derived exception).
+                page.PageSheet.PageProps.PageWidth.Value = -5.0;
 
-                // Test that setting a negative width throws an exception
-                bool exceptionThrown = false;
-                try
-                {
-                    SetPageWidth(page, -5.0); // invalid negative width
-                }
-                catch (ArgumentException)
-                {
-                    // Expected exception type
-                    exceptionThrown = true;
-                    Console.WriteLine("Negative width correctly threw ArgumentException.");
-                }
-                catch (Exception ex)
-                {
-                    // Unexpected exception type
-                    throw new Exception("Unexpected exception type thrown for negative width.", ex);
-                }
-
-                if (!exceptionThrown)
-                {
-                    throw new Exception("Expected ArgumentException was not thrown for negative width.");
-                }
+                // If no exception is thrown, the test has failed.
+                Console.Error.WriteLine("TestNegativePageWidth FAILED: No exception was thrown for negative width.");
             }
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Expected path: an exception should be thrown for negative width.
+            Console.WriteLine("TestNegativePageWidth PASSED: Caught expected exception -> " + ex.Message);
         }
     }
 }

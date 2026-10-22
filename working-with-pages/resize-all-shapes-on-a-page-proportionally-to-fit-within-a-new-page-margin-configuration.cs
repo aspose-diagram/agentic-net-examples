@@ -1,118 +1,134 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect arguments: inputPath outputPath newLeftMargin newRightMargin newTopMargin newBottomMargin
+        if (args.Length < 6)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <newLeft> <newRight> <newTop> <newBottom>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Parse new margin values (in inches)
+        if (!double.TryParse(args[2], out double newLeft) ||
+            !double.TryParse(args[3], out double newRight) ||
+            !double.TryParse(args[4], out double newTop) ||
+            !double.TryParse(args[5], out double newBottom))
+        {
+            Console.Error.WriteLine("Invalid margin values. Please provide numeric values for margins.");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define new page margins (in inches)
-                double marginLeft = 0.5;
-                double marginRight = 0.5;
-                double marginTop = 0.5;
-                double marginBottom = 0.5;
-
-                // Process each page in the diagram
+                // Process each page (you can change to a specific page if needed)
                 foreach (Page page in diagram.Pages)
                 {
-                    // Set the new margins on the page
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = marginLeft;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = marginRight;
-                    page.PageSheet.PrintProps.PageTopMargin.Value = marginTop;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = marginBottom;
-
-                    // Get page dimensions (in inches)
+                    // Retrieve original page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Compute the usable drawing area after applying margins
-                    double usableWidth = pageWidth - marginLeft - marginRight;
-                    double usableHeight = pageHeight - marginTop - marginBottom;
+                    // Retrieve original margins from PrintProps (in inches)
+                    double oldLeft = page.PageSheet.PrintProps.PageLeftMargin.Value;
+                    double oldRight = page.PageSheet.PrintProps.PageRightMargin.Value;
+                    double oldTop = page.PageSheet.PrintProps.PageTopMargin.Value;
+                    double oldBottom = page.PageSheet.PrintProps.PageBottomMargin.Value;
 
-                    // Determine the bounding box of all non‑deleted shapes on the page
-                    double minX = double.MaxValue;
-                    double maxX = double.MinValue;
-                    double minY = double.MaxValue;
-                    double maxY = double.MinValue;
+                    // Compute usable drawing area before and after margin change
+                    double oldUsableWidth = pageWidth - oldLeft - oldRight;
+                    double oldUsableHeight = pageHeight - oldTop - oldBottom;
 
-                    foreach (Shape shape in page.Shapes)
+                    double newUsableWidth = pageWidth - newLeft - newRight;
+                    double newUsableHeight = pageHeight - newTop - newBottom;
+
+                    // Validate usable areas
+                    if (oldUsableWidth <= 0 || oldUsableHeight <= 0)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        double halfWidth = shape.XForm.Width.Value / 2.0;
-                        double halfHeight = shape.XForm.Height.Value / 2.0;
-
-                        double left = shape.XForm.PinX.Value - halfWidth;
-                        double right = shape.XForm.PinX.Value + halfWidth;
-                        double bottom = shape.XForm.PinY.Value - halfHeight;
-                        double top = shape.XForm.PinY.Value + halfHeight;
-
-                        if (left < minX) minX = left;
-                        if (right > maxX) maxX = right;
-                        if (bottom < minY) minY = bottom;
-                        if (top > maxY) maxY = top;
+                        Console.Error.WriteLine("Original margins result in non-positive usable area.");
+                        return;
+                    }
+                    if (newUsableWidth <= 0 || newUsableHeight <= 0)
+                    {
+                        Console.Error.WriteLine("New margins result in non-positive usable area.");
+                        return;
                     }
 
-                    // If no shapes were found, skip scaling for this page
-                    if (minX == double.MaxValue)
-                        continue;
+                    // Determine uniform scaling factor to keep aspect ratio
+                    double scaleX = newUsableWidth / oldUsableWidth;
+                    double scaleY = newUsableHeight / oldUsableHeight;
+                    double uniformScale = Math.Min(scaleX, scaleY);
 
-                    double drawingWidth = maxX - minX;
-                    double drawingHeight = maxY - minY;
-
-                    // Compute uniform scale factor to fit within usable area
-                    double scaleX = usableWidth / drawingWidth;
-                    double scaleY = usableHeight / drawingHeight;
-                    double scale = Math.Min(scaleX, scaleY);
-
-                    // Apply scaling and reposition each shape
+                    // Iterate over all shapes on the page and resize/reposition them
                     foreach (Shape shape in page.Shapes)
                     {
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Original dimensions
-                        double origWidth = shape.XForm.Width.Value;
-                        double origHeight = shape.XForm.Height.Value;
-                        double origPinX = shape.XForm.PinX.Value;
-                        double origPinY = shape.XForm.PinY.Value;
+                        // Retrieve current geometry
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
 
-                        // Compute original extents
-                        double origLeft = origPinX - origWidth / 2.0;
-                        double origBottom = origPinY - origHeight / 2.0;
+                        // Compute offsets from the original left/top margins
+                        double offsetX = pinX - oldLeft;
+                        double offsetY = pinY - oldTop;
 
-                        // Scale dimensions
-                        double newWidth = origWidth * scale;
-                        double newHeight = origHeight * scale;
+                        // Apply scaling and new margins
+                        double newPinX = newLeft + offsetX * uniformScale;
+                        double newPinY = newTop + offsetY * uniformScale;
+                        double newWidth = width * uniformScale;
+                        double newHeight = height * uniformScale;
 
-                        // Scale position relative to the original bounding box
-                        double newLeft = marginLeft + (origLeft - minX) * scale;
-                        double newBottom = marginBottom + (origBottom - minY) * scale;
-
-                        // Set new transformed values
+                        // Update shape geometry
+                        shape.XForm.PinX.Value = newPinX;
+                        shape.XForm.PinY.Value = newPinY;
                         shape.XForm.Width.Value = newWidth;
                         shape.XForm.Height.Value = newHeight;
-                        shape.XForm.PinX.Value = newLeft + newWidth / 2.0;
-                        shape.XForm.PinY.Value = newBottom + newHeight / 2.0;
                     }
+
+                    // Update page margins to the new configuration
+                    page.PageSheet.PrintProps.PageLeftMargin.Value = newLeft;
+                    page.PageSheet.PrintProps.PageRightMargin.Value = newRight;
+                    page.PageSheet.PrintProps.PageTopMargin.Value = newTop;
+                    page.PageSheet.PrintProps.PageBottomMargin.Value = newBottom;
                 }
 
-                // Save the modified diagram
-                string outputPath = "output_resized.vsdx";
+                // Save the modified diagram preserving VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

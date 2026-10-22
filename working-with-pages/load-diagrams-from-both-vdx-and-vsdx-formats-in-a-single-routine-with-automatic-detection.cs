@@ -2,53 +2,81 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-namespace DiagramProcessing
+class Program
 {
-    public static class DiagramLoader
+    /// <summary>
+    /// Entry point of the console application.
+    /// Expects a single argument: the path to a Visio file (VDX or VSDX).
+    /// </summary>
+    static void Main(string[] args)
     {
-        /// <summary>
-        /// Loads a Visio diagram from a file. Supports both VDX (XML) and VSDX (Open Packaging) formats.
-        /// The method automatically detects the format based on the file content.
-        /// </summary>
-        /// <param name="filePath">Full path to the Visio file.</param>
-        /// <returns>An instance of <see cref="Diagram"/> representing the loaded diagram.</returns>
-        public static Diagram LoadDiagram(string filePath)
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            if (string.IsNullOrEmpty(filePath))
-                throw new ArgumentException("File path must be provided.", nameof(filePath));
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
 
-            if (!File.Exists(filePath))
-                throw new FileNotFoundException("The specified Visio file does not exist.", filePath);
+        string inputPath = args[0];
 
-            // Aspose.Diagram automatically detects the format (VDX, VSDX, VDX, VDX, etc.)
-            // when using the Diagram constructor that accepts a file name.
-            Diagram diagram = new Diagram(filePath);
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – '{inputPath}'.");
+            return;
+        }
 
-            // Optional: verify that the diagram was loaded successfully.
-            if (diagram == null)
-                throw new InvalidOperationException("Failed to load the Visio diagram.");
+        // Attempt to load the diagram with automatic format detection.
+        Diagram diagram = LoadDiagram(inputPath);
+        if (diagram == null)
+        {
+            // LoadDiagram already reported the error.
+            return;
+        }
+
+        // Example usage after loading: display basic information.
+        Console.WriteLine($"Successfully loaded diagram: {Path.GetFileName(inputPath)}");
+        Console.WriteLine($"Page count: {diagram.Pages.Count}");
+    }
+
+    /// <summary>
+    /// Loads a Visio diagram from the specified path.
+    /// Detects VDX or VSDX format based on file extension and uses the appropriate LoadFileFormat.
+    /// Returns the loaded Diagram instance, or null if loading fails.
+    /// </summary>
+    private static Diagram LoadDiagram(string path)
+    {
+        try
+        {
+            // Determine the file extension (case‑insensitive) to select the correct LoadFileFormat.
+            string extension = Path.GetExtension(path).ToLowerInvariant();
+
+            // Default to automatic detection by using the constructor without explicit format.
+            // For explicit control, map known extensions to LoadFileFormat values.
+            Diagram diagram;
+            if (extension == ".vdx")
+            {
+                // VDX (Visio 2003/2007) format.
+                diagram = new Diagram(path, LoadFileFormat.Vdx);
+            }
+            else if (extension == ".vsdx")
+            {
+                // VSDX (Visio 2013+) format.
+                diagram = new Diagram(path, LoadFileFormat.Vsdx);
+            }
+            else
+            {
+                // For other supported formats, rely on Aspose.Diagram's internal detection.
+                diagram = new Diagram(path);
+            }
 
             return diagram;
         }
-    }
-
-    // Example usage:
-    class Program
-    {
-        static void Main()
+        catch (Exception ex)
         {
-            try
-            {
-                string pathToVisio = @"C:\Diagrams\sample.vsdx"; // can be .vdx or .vsdx
-                Diagram diagram = DiagramLoader.LoadDiagram(pathToVisio);
-
-                // Perform further processing on the diagram here.
-                Console.WriteLine($"Diagram loaded. Pages count: {diagram.Pages.Count}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            // Report any errors that occur during loading.
+            Console.Error.WriteLine($"Error loading diagram '{path}': {ex.Message}");
+            return null;
         }
     }
 }

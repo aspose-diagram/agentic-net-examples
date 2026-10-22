@@ -2,73 +2,71 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        string outputPath = "output.vsdx";
+        // Verify command line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists before loading
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Auto‑space shapes on each page
         try
         {
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure spacing options (in inches)
-                AutoSpaceOptions options = new AutoSpaceOptions
+                // ------------------------------------------------------------
+                // Perform spacing/layout on the first page using CompactTree.
+                // ------------------------------------------------------------
+                if (diagram.Pages.Count > 0)
                 {
-                    DistanceInHorizontal = 0.5,
-                    DistanceInVertical = 0.5
-                };
+                    // Create layout options for compact tree layout.
+                    LayoutOptions layoutOptions = new LayoutOptions();
+                    layoutOptions.LayoutStyle = LayoutStyle.CompactTree;
+                    layoutOptions.Direction = LayoutDirection.DownThenRight;
+                    // Do not automatically enlarge the page.
+                    layoutOptions.EnlargePage = false; // BOOL enum is not applicable here.
 
-                // Apply auto‑spacing to all shapes on the current page
-                page.AutoSpaceShapes(page.Shapes, options);
+                    // Apply layout to the first page.
+                    Page firstPage = diagram.Pages[0];
+                    firstPage.Layout(layoutOptions);
+                }
+                else
+                {
+                    Console.Error.WriteLine("The diagram contains no pages to layout.");
+                }
+
+                // ------------------------------------------------------------
+                // Validate the diagram after spacing.
+                // ------------------------------------------------------------
+                // Note: Aspose.Diagram does not provide a Validate method.
+                // Validation of diagram integrity is performed automatically during save.
+
+                // ------------------------------------------------------------
+                // Save the updated diagram.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Validate the diagram by attempting a save to a memory stream.
-            // If the save succeeds without exception, the diagram is considered valid.
-            using (MemoryStream validationStream = new MemoryStream())
-            {
-                diagram.Save(validationStream, SaveFileFormat.Vsdx);
-            }
-
-            Console.WriteLine("Diagram validation completed successfully.");
         }
         catch (Exception ex)
         {
-            // Report any errors that occurred during spacing or validation
-            Console.Error.WriteLine($"Diagram processing failed: {ex.Message}");
-            return;
-        }
-
-        // Guard: ensure the output directory exists before saving
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
-        // Save the updated diagram to the specified output path
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

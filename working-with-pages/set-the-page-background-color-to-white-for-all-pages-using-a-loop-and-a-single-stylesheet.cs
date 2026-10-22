@@ -1,65 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a single stylesheet that defines a white fill
+                // Create a single stylesheet that defines a solid white fill.
                 StyleSheet whiteStyle = new StyleSheet();
+
+                // Assign a unique ID for the stylesheet.
                 whiteStyle.ID = diagram.StyleSheets.Count + 1;
-                whiteStyle.Fill.FillForegnd.Value = "#FFFFFF"; // white color
-                whiteStyle.Fill.FillPattern.Value = 1; // solid fill
+
+                // Set fill pattern to solid (value 1) and foreground color to white.
+                whiteStyle.Fill.FillPattern.Value = 1;
+                whiteStyle.Fill.FillForegnd.Value = "#FFFFFF";
+
+                // Add the stylesheet to the diagram's collection.
                 diagram.StyleSheets.Add(whiteStyle);
 
-                // Iterate through all pages and add a full‑page white background shape
+                // Loop through all pages and apply the stylesheet as background.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Center coordinates for the rectangle
-                    double centerX = pageWidth / 2.0;
-                    double centerY = pageHeight / 2.0;
-
-                    // Draw a rectangle that spans the entire page
-                    long bgShapeId = page.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
-                    Shape bgShape = page.Shapes.GetShape(bgShapeId);
-
-                    // Apply the white fill from the stylesheet
-                    bgShape.Fill.FillForegnd.Value = whiteStyle.Fill.FillForegnd.Value;
-                    bgShape.Fill.FillPattern.Value = whiteStyle.Fill.FillPattern.Value;
-
-                    // Remove any border
-                    bgShape.Line.LinePattern.Value = LinePatternValue.None;
-                    bgShape.Line.LineWeight.Value = 0.0;
-
-                    // Send the shape to the back so it appears as a background
-                    bgShape.SendToBack();
-
-                    // Make the background shape non‑selectable
-                    bgShape.Protection.LockSelect.Value = BOOL.True;
+                    // Apply the same style ID for fill, line, and character styles.
+                    page.ApplyStyle(whiteStyle.ID, whiteStyle.ID, whiteStyle.ID);
                 }
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

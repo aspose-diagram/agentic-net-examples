@@ -8,109 +8,101 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect a single argument: path to the source Visio file.
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
-            return;
-        }
+        // Input and output file paths (use arguments if provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string diagramPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(diagramPath))
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the provided file.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Access the first page (assumes at least one page exists).
-            Page page = diagram.Pages[0];
-
-            // Locate two non‑connector shapes to be linked.
-            long shapeId1 = -1, shapeId2 = -1;
-            foreach (Shape s in page.Shapes)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Skip connector shapes (OneD == true) and deleted shapes.
-                if (s.OneD || s.Del == BOOL.True) continue;
-
-                if (shapeId1 == -1)
-                    shapeId1 = s.ID;
-                else if (shapeId2 == -1)
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    shapeId2 = s.ID;
-                    break;
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
-            }
 
-            // Validate that two shapes were found.
-            if (shapeId1 == -1 || shapeId2 == -1)
-            {
-                Console.Error.WriteLine("Unable to locate two suitable shapes for connection.");
-                return;
-            }
+                // Access the first page
+                Page page = diagram.Pages[0];
 
-            // Locate an existing connector shape (OneD == true).
-            long connectorId = -1;
-            foreach (Shape s in page.Shapes)
-            {
-                if (s.OneD && s.Del == BOOL.False)
+                // Find two non‑connector shapes to connect
+                Shape shapeFrom = null;
+                Shape shapeTo = null;
+                foreach (Shape s in page.Shapes)
                 {
-                    connectorId = s.ID;
-                    break;
+                    // Skip connector shapes (OneD == true) and deleted shapes
+                    if (s.OneD || s.Del == BOOL.True)
+                        continue;
+
+                    if (shapeFrom == null)
+                        shapeFrom = s;
+                    else if (shapeTo == null)
+                    {
+                        shapeTo = s;
+                        break;
+                    }
                 }
+
+                if (shapeFrom == null || shapeTo == null)
+                {
+                    Console.Error.WriteLine("Unable to find two suitable shapes to connect.");
+                    return;
+                }
+
+                // Add a dynamic connector shape to the page
+                // Position (0,0) is arbitrary; the connector will be glued later
+                long connectorId = page.AddShape(0, 0, "Dynamic connector");
+                Shape connectorShape = page.Shapes.GetShape(connectorId);
+
+                // Record the initial routing style of the connector (if any)
+                var initialJumpStyle = connectorShape.Layout?.ConLineJumpStyle?.Value;
+
+                // First connection using connection point indexes 1 and 2
+                page.ConnectShapesViaConnectorIndex(shapeFrom.ID, 1, shapeTo.ID, 2, connectorId);
+
+                // Record the routing style after the first connection
+                var afterFirstJumpStyle = connectorShape.Layout?.ConLineJumpStyle?.Value;
+
+                // Re‑connect using different connection point indexes to observe routing change
+                page.ConnectShapesViaConnectorIndex(shapeFrom.ID, 3, shapeTo.ID, 4, connectorId);
+
+                // Record the routing style after the second connection
+                var afterSecondJumpStyle = connectorShape.Layout?.ConLineJumpStyle?.Value;
+
+                // Output comparison results
+                Console.WriteLine("Connector routing (ConLineJumpStyle) values:");
+                Console.WriteLine($"  Initial: {(initialJumpStyle.HasValue ? initialJumpStyle.Value.ToString() : "N/A")}");
+                Console.WriteLine($"  After first connect: {(afterFirstJumpStyle.HasValue ? afterFirstJumpStyle.Value.ToString() : "N/A")}");
+                Console.WriteLine($"  After second connect: {(afterSecondJumpStyle.HasValue ? afterSecondJumpStyle.Value.ToString() : "N/A")}");
+
+                // Simple comparison logic – report if the routing style changed
+                if (afterFirstJumpStyle != afterSecondJumpStyle)
+                {
+                    Console.WriteLine("Routing style changed after reconnection.");
+                }
+                else
+                {
+                    Console.WriteLine("Routing style remained the same after reconnection.");
+                }
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-
-            // If no connector exists, create one using the built‑in "Dynamic connector" master.
-            if (connectorId == -1)
-            {
-                // Attempt to add a connector; this requires the master to be available in the diagram.
-                // The master name "Dynamic connector" is standard in Visio stencil libraries.
-                connectorId = page.AddShape(1.0, 1.0, "Dynamic connector", false);
-            }
-
-            // Retrieve the connector shape instance for later property changes.
-            Shape connector = page.Shapes.GetShape(connectorId);
-
-            // Helper to perform connection, set routing, save files, and log results.
-            void ApplyRouting(ConnectorsTypeValue routing, string suffix)
-            {
-                // Re‑connect the shapes using the specified connector.
-                page.ConnectShapesViaConnector(shapeId1, ConnectionPointPlace.Right, shapeId2, ConnectionPointPlace.Bottom, connectorId);
-
-                // Apply the desired routing style to the connector.
-                connector.SetConnectorsType(routing);
-
-                // Log the routing style applied.
-                Console.WriteLine($"Routing set to {routing} (saved as *{suffix}*)");
-
-                // Save the diagram in VSDX format.
-                string vsdxPath = $"output_{suffix}.vsdx";
-                diagram.Save(vsdxPath, SaveFileFormat.Vsdx);
-
-                // Export a PNG image of the first page for visual comparison.
-                string pngPath = $"output_{suffix}.png";
-                ImageSaveOptions imgOpts = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save(pngPath, imgOpts);
-            }
-
-            // Apply StraightLines routing and save.
-            ApplyRouting(ConnectorsTypeValue.StraightLines, "straight");
-
-            // Apply RightAngle routing and save.
-            ApplyRouting(ConnectorsTypeValue.RightAngle, "rightangle");
-
-            // Apply CurvedLines routing and save.
-            ApplyRouting(ConnectorsTypeValue.CurvedLines, "curved");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or I/O errors and report them.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

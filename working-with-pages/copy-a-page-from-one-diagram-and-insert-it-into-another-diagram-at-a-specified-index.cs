@@ -1,73 +1,132 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input file paths
+        string sourcePath = "source.vsdx";
+        if (!System.IO.File.Exists(sourcePath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {sourcePath}");
+            return;
+        }
+        string targetPath = "target.vsdx";
+        string outputPath = "merged.vsdx";
+
+        // Guard clauses for input files
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            return;
+        }
+        if (!File.Exists(targetPath))
+        {
+            Console.Error.WriteLine($"Target file not found: {targetPath}");
+            return;
+        }
+
+        // Index of the page to copy from source diagram (0‑based)
+        int sourcePageIndex = 0; // adjust as needed
+
+        // Desired insertion index in the target diagram (0‑based)
+        int insertIndex = 1; // adjust as needed
+
+        try
+        {
+            // Load source diagram
+            using (Diagram sourceDiagram = new Diagram(sourcePath))
             {
-
-                // Paths to the source and target Visio files
-                string sourcePath = "source.vsdx";
-                string targetPath = "target.vsdx";
-                string outputPath = "merged.vsdx";
-
-                // Index of the page to copy from the source diagram (0‑based)
-                int sourcePageIndex = 0;
-
-                // Desired insertion index in the target diagram (0‑based)
-                int insertIndex = 1;
-
-                try
+                // Load target diagram
+                using (Diagram targetDiagram = new Diagram(targetPath))
                 {
-                    // Load the source and target diagrams
-                    Diagram srcDiagram = new Diagram(sourcePath);
-                    Diagram tgtDiagram = new Diagram(targetPath);
-
-                    // Retrieve the page to be copied from the source diagram
-                    Page srcPage = srcDiagram.Pages[sourcePageIndex];
-
-                    // Determine the maximum existing page ID in the target diagram
-                    int maxPageId = 0;
-                    foreach (Page p in tgtDiagram.Pages)
+                    // Validate source page index
+                    if (sourcePageIndex < 0 || sourcePageIndex >= sourceDiagram.Pages.Count)
                     {
-                        if (p.ID > maxPageId)
-                            maxPageId = p.ID;
+                        Console.Error.WriteLine("Invalid source page index.");
+                        return;
                     }
 
-                    // Create a new page instance and assign a unique ID
-                    Page newPage = new Page();
-                    newPage.ID = maxPageId + 1;
-                    newPage.Name = srcPage.Name; // Preserve the original page name (optional)
+                    // Validate insertion index (must be within current page count)
+                    if (insertIndex < 0 || insertIndex > targetDiagram.Pages.Count)
+                    {
+                        Console.Error.WriteLine("Invalid insertion index for target diagram.");
+                        return;
+                    }
 
-                    // Copy the contents of the source page into the new page
+                    // ------------------------------------------------------------
+                    // Copy masters from source to target (avoid duplicates)
+                    // ------------------------------------------------------------
+                    foreach (Master srcMaster in sourceDiagram.Masters)
+                    {
+                        bool exists = false;
+                        foreach (Master tgtMaster in targetDiagram.Masters)
+                        {
+                            if (tgtMaster.NameU == srcMaster.NameU)
+                            {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists)
+                        {
+                            targetDiagram.Masters.Add(srcMaster);
+                        }
+                    }
+
+                    // ------------------------------------------------------------
+                    // Retrieve the page to copy from the source diagram
+                    // ------------------------------------------------------------
+                    Page srcPage = sourceDiagram.Pages[sourcePageIndex];
+
+                    // ------------------------------------------------------------
+                    // Create a new page and copy contents from the source page
+                    // ------------------------------------------------------------
+                    Page newPage = new Page();
                     newPage.Copy(srcPage);
 
-                    // Add the new page to the target diagram (appended at the end)
-                    tgtDiagram.Pages.Add(newPage);
+                    // ------------------------------------------------------------
+                    // Assign a new unique ID to the copied page
+                    // ------------------------------------------------------------
+                    int maxId = 0; // ID is an int, so use int for maxId
+                    foreach (Page p in targetDiagram.Pages)
+                    {
+                        if (p.ID > maxId)
+                        {
+                            maxId = p.ID;
+                        }
+                    }
+                    newPage.ID = maxId + 1; // assign new unique int ID
 
+                    // ------------------------------------------------------------
+                    // Optionally rename the copied page
+                    // ------------------------------------------------------------
+                    newPage.Name = srcPage.Name + "_Copy";
+
+                    // ------------------------------------------------------------
+                    // Add the new page to the target diagram
+                    // ------------------------------------------------------------
+                    targetDiagram.Pages.Add(newPage);
+
+                    // ------------------------------------------------------------
                     // Move the newly added page to the desired insertion index
+                    // ------------------------------------------------------------
                     newPage.MoveTo(insertIndex);
 
+                    // ------------------------------------------------------------
                     // Save the modified target diagram
-                    tgtDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine("Page copied successfully.");
-                    Console.WriteLine($"Source page '{srcPage.Name}' (ID {srcPage.ID}) copied to '{outputPath}' at index {insertIndex}.");
+                    // ------------------------------------------------------------
+                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Page copied successfully. Output saved to: {outputPath}");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("An error occurred during the page copy operation:");
-                    Console.WriteLine(ex.Message);
-                    throw;
-                }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,122 +8,91 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Resolve input Visio file path (first argument or default)
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the Visio file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
-        // Resolve output PDF report path (second argument or default)
-        string reportPath = args.Length > 1 ? args[1] : "Report.pdf";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Create a temporary folder for page thumbnail images
-        string thumbFolder = Path.Combine(Path.GetTempPath(), "DiagramThumbnails");
-        Directory.CreateDirectory(thumbFolder);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram inside a using block for proper disposal
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Instantiate a new PDF document (fully qualified to avoid namespace clash)
-                var pdfDoc = new Aspose.Pdf.Document();
-
-                // Iterate over each page in the Visio diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Prepare a list of pages for indexed access.
+                List<Page> pages = new List<Page>();
+                foreach (Page p in diagram.Pages)
                 {
-                    // Retrieve the current page (typed as Aspose.Diagram.Page)
-                    Page page = diagram.Pages[i];
+                    pages.Add(p);
+                }
 
-                    // Add a corresponding page to the PDF document
-                    var pdfPage = pdfDoc.Pages.Add();
+                // Create a new PDF document (Aspose.Pdf) using fully qualified names.
+                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document();
 
-                    // Determine if the page is hidden by checking UIVisibility enum value
-                    bool isHidden = page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Visible ? false : true;
+                // Iterate over each page to collect metadata and, if hidden, add a thumbnail.
+                for (int i = 0; i < pages.Count; i++)
+                {
+                    Page page = pages[i];
 
-                    // Build a metadata string for the current page
-                    string metadata = $"Page ID: {page.ID}, Name: {page.Name}, Universal Name: {page.NameU}, " +
-                                      $"Width: {page.PageSheet.PageProps.PageWidth.Value} in, " +
-                                      $"Height: {page.PageSheet.PageProps.PageHeight.Value} in, " +
-                                      $"Hidden: {isHidden}";
+                    // Determine visibility using UIVisibilityValue.
+                    string visibility = page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Visible
+                        ? "Visible"
+                        : "Hidden";
 
-                    // Insert the metadata text into the PDF page
-                    var textFragment = new Aspose.Pdf.Text.TextFragment(metadata);
+                    // Add a new page to the PDF report.
+                    Aspose.Pdf.Page pdfPage = pdfDocument.Pages.Add();
+
+                    // Create a text fragment with page metadata.
+                    string metaText = $"Page {i + 1}\nName: {page.Name}\nID: {page.ID}\nVisibility: {visibility}";
+                    Aspose.Pdf.Text.TextFragment textFragment = new Aspose.Pdf.Text.TextFragment(metaText);
+                    textFragment.Margin = new Aspose.Pdf.MarginInfo { Top = 10, Bottom = 10, Left = 10, Right = 10 };
                     pdfPage.Paragraphs.Add(textFragment);
 
-                    // If the page is hidden, generate a PNG thumbnail and embed it
-                    if (isHidden)
+                    // If the page is hidden, generate a PNG thumbnail and embed it.
+                    if (visibility == "Hidden")
                     {
-                        string thumbPath = Path.Combine(thumbFolder, $"Page_{page.ID}.png");
+                        // Configure image save options for a single-page PNG export.
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        imgOptions.PageIndex = i;   // Export only this page.
+                        imgOptions.PageCount = 1;   // Single page per image.
+                        imgOptions.ExportHiddenPage = true; // Ensure hidden pages are rendered.
 
-                        try
+                        // Render the page to a memory stream.
+                        using (MemoryStream imgStream = new MemoryStream())
                         {
-                            // Configure image export options to include hidden pages
-                            var imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                            {
-                                PageIndex = i,          // zero‑based page index
-                                PageCount = 1,
-                                ExportHiddenPage = true // ensure hidden pages are rendered
-                            };
-                            // Export the hidden page as a PNG image
-                            diagram.Save(thumbPath, imgOptions);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.Error.WriteLine($"Failed to export thumbnail for page {page.ID}: {ex.Message}");
-                            continue; // Skip embedding if export fails
-                        }
+                            diagram.Save(imgStream, imgOptions);
+                            imgStream.Position = 0; // Reset stream for reading.
 
-                        // Embed the generated thumbnail image into the PDF page
-                        try
-                        {
-                            using (FileStream imgStream = new FileStream(thumbPath, FileMode.Open, FileAccess.Read))
-                            {
-                                var image = new Aspose.Pdf.Image
-                                {
-                                    ImageStream = imgStream
-                                };
-                                pdfPage.Paragraphs.Add(image);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.Error.WriteLine($"Failed to embed thumbnail for page {page.ID}: {ex.Message}");
+                            // Create an image object for the PDF page.
+                            Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
+                            pdfImage.ImageStream = imgStream;
+                            pdfImage.FixWidth = 300; // Scale thumbnail width; height adjusts proportionally.
+                            pdfImage.Margin = new Aspose.Pdf.MarginInfo { Top = 10, Bottom = 10, Left = 10, Right = 10 };
+                            pdfPage.Paragraphs.Add(pdfImage);
                         }
                     }
                 }
 
-                // Save the assembled PDF report
-                try
-                {
-                    pdfDoc.Save(reportPath);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to save PDF report: {ex.Message}");
-                }
+                // Save the assembled PDF report.
+                pdfDocument.Save(outputPath);
+                Console.WriteLine($"PDF report generated successfully at: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Catch any unexpected errors during diagram processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        // Attempt to clean up the temporary thumbnail folder
-        try
-        {
-            Directory.Delete(thumbFolder, true);
-        }
-        catch
-        {
-            // Ignored: cleanup failure does not affect the generated report
-        }
-
-        Console.WriteLine($"PDF report generated at: {Path.GetFullPath(reportPath)}");
     }
 }

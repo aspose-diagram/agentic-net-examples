@@ -1,66 +1,94 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input file path as first argument
+        if (args.Length == 0)
         {
-            try
-            {
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            return;
+        }
 
-                // Load an existing Visio diagram
-                // (Assuming the file path is provided; replace with actual path)
-                string diagramPath = @"C:\Diagrams\SampleDiagram.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
+        string inputPath = args[0];
 
-                // Example: Rename each page by appending its index
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    // Access the page
-                    Page page = diagram.Pages[i];
-
-                    // New name (you can apply any renaming logic here)
-                    string newName = $"Page_{i + 1}";
-
-                    // Assign the new name
-                    page.Name = newName;
-                }
-
-                // Validate that all page names are unique
-                ValidateUniquePageNames(diagram);
-
-                // (Optional) Save the diagram if needed
-                // diagram.Save(@"C:\Diagrams\SampleDiagram_Renamed.vsdx", SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Checks that each page in the diagram has a unique name.
-        /// Throws an exception if duplicate names are found.
-        /// </summary>
-        /// <param name="diagram">The Aspose.Diagram Diagram instance.</param>
-        private static void ValidateUniquePageNames(Diagram diagram)
+        // Guard: verify the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Use a HashSet to track encountered page names
-            HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            foreach (Page page in diagram.Pages)
+        // Optional output path (second argument); if not provided, create a default one
+        string outputPath;
+        if (args.Length > 1)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            string directory = Path.GetDirectoryName(inputPath);
+            string fileName = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(directory, $"{fileName}_Renamed.vsdx");
+        }
+
+        // Load diagram inside a using block as required
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // If the name already exists in the set, it's a duplicate
-                if (!pageNames.Add(page.Name))
+                try
                 {
-                    throw new InvalidOperationException(
-                        $"Duplicate page name detected: \"{page.Name}\". All page names must be unique.");
+                    // Rename each page to a unique name based on its order
+                    int index = 1;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        string newName = $"Page_{index}";
+                        page.Name = newName;
+                        index++;
+                    }
+
+                    // Validate that all page names are unique
+                    HashSet<string> nameSet = new HashSet<string>();
+                    bool duplicateFound = false;
+
+                    foreach (Page page in diagram.Pages)
+                    {
+                        if (!nameSet.Add(page.Name))
+                        {
+                            duplicateFound = true;
+                            Console.Error.WriteLine($"Duplicate page name detected: {page.Name}");
+                        }
+                    }
+
+                    if (!duplicateFound)
+                    {
+                        Console.WriteLine("All page names are unique after renaming.");
+                    }
+                    else
+                    {
+                        // If duplicates exist, abort further processing
+                        Console.Error.WriteLine("Validation failed due to duplicate page names.");
+                        return;
+                    }
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error during diagram manipulation: {ex.Message}");
                 }
             }
-
-            // If execution reaches here, all names are unique
-            Console.WriteLine("All page names are unique.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
         }
     }
+}

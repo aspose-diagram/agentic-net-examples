@@ -1,11 +1,11 @@
 {
   "category": "working-with-pages",
   "display_name": "Working With Pages",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 168,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,16 +14,15 @@
       "task": "Add a custom shape from a user defined master file to page five and set its text label",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddMaster",
-        "AddShape",
         "Diagram",
         "Page",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -32,7 +31,6 @@
       "task": "Add a dynamic connector shape to page zero using the connector master and name it linkconnector",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "System",
         "System.IO"
       ],
@@ -85,7 +83,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -102,7 +99,6 @@
       "task": "After changing page size refresh the diagram s page thumbnails to reflect new dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -110,8 +106,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -152,15 +147,16 @@
       "task": "After resizing recalculate connector routes to maintain diagram integrity throughout",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Layout",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -187,6 +183,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -203,7 +200,8 @@
       "task": "Apply a minimum page height constraint to ensure no page becomes shorter than 5 inches",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -235,6 +233,8 @@
       "task": "Apply a theme stylesheet that changes the font family across all pages to arial for consistency",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
         "System.IO"
       ],
@@ -242,8 +242,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "StyleSheet",
-        "StyleSheets"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -269,7 +269,6 @@
       "task": "Apply an existing stylesheet to page zero using the page applystyle method",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -326,7 +325,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -344,9 +342,9 @@
       "task": "Apply dependency injection to provide autospaceoptions to services handling diagram manipulation for testability",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
@@ -362,8 +360,8 @@
       "task": "Apply different page orientations based on page index rotating landscape pages to portrait dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -378,8 +376,8 @@
       "task": "Automate the creation of a table of contents page that lists all page titles with hyperlinks",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -395,6 +393,7 @@
       "task": "Batch process a folder of vdx files set each page orientation to portrait and save as pdfs",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -429,17 +428,16 @@
       "task": "Benchmark auto spacing performance on diagrams containing thousands of shapes to identify bottlenecks",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "AutoSpaceOptions",
         "AutoSpaceShapes",
         "Diagram",
-        "Page",
         "Pages"
       ]
     },
@@ -449,17 +447,16 @@
       "task": "Benchmark the time required to add 100 rectangle shapes to a single page and log the duration",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -468,23 +465,6 @@
       "task": "Cache autospaceoptions instances for reuse across multiple diagrams to improve performance significantly",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
-      ],
-      "key_apis": [
-        "AutoSpaceOptions",
-        "AutoSpaceShapes",
-        "Diagram",
-        "Shapes",
-        "page"
-      ]
-    },
-    {
-      "slug": "call-the-diagram-s-validate-method-after-spacing-to-confirm-diagram-integrity-and-consistency",
-      "file": "call-the-diagram-s-validate-method-after-spacing-to-confirm-diagram-integrity-and-consistency.cs",
-      "task": "Call the diagram s validate method after spacing to confirm diagram integrity and consistency",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -497,12 +477,32 @@
       ]
     },
     {
+      "slug": "call-the-diagram-s-validate-method-after-spacing-to-confirm-diagram-integrity-and-consistency",
+      "file": "call-the-diagram-s-validate-method-after-spacing-to-confirm-diagram-integrity-and-consistency.cs",
+      "task": "Call the diagram s validate method after spacing to confirm diagram integrity and consistency",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.AutoLayout",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "LayoutOptions",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
       "slug": "catch-exceptions-thrown-during-auto-spacing-and-log-error-messages-in-the-application-for-troubleshooting",
       "file": "catch-exceptions-thrown-during-auto-spacing-and-log-error-messages-in-the-application-for-troubleshooting.cs",
       "task": "Catch exceptions thrown during auto spacing and log error messages in the application for troubleshooting",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -554,7 +554,6 @@
       "task": "Clone page two into a new page rename it and apply a different stylesheet to the clone",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -572,7 +571,6 @@
       "task": "Compare performance of resizing pages individually versus applying a uniform size to all pages",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
@@ -580,7 +578,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -595,9 +592,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Pages",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -606,6 +601,7 @@
       "task": "Configure a page to follow printer defaults by setting printpageorientation sameasprinter",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -622,14 +618,14 @@
       "task": "Configure page margins to 0 5 inches on all sides for page zero before adding shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -660,17 +656,17 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "AutoSpaceOptions",
         "AutoSpaceShapes",
         "Diagram",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
-      "slug": "connect-the-two-rectangle-shapes-with-the-connector-using-page-connectshapesviaconnector-specifying-source-and-target-id",
-      "file": "connect-the-two-rectangle-shapes-with-the-connector-using-page-connectshapesviaconnector-specifying-source-and-target-id.cs",
-      "task": "Connect the two rectangle shapes with the connector using page connectshapesviaconnector specifying source and target id",
+      "slug": "connect-the-two-rectangle-shapes-with-the-connector-using-page-connectshapesviaconnector-specifying-source-and-target-ids",
+      "file": "connect-the-two-rectangle-shapes-with-the-connector-using-page-connectshapesviaconnector-specifying-source-and-target-ids.cs",
+      "task": "Connect the two rectangle shapes with the connector using page connectshapesviaconnector specifying source and target ids",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
@@ -678,11 +674,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -708,11 +704,14 @@
       "task": "Copy a page from a source diagram modify its background flag and add to destination diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Page",
+        "page"
       ]
     },
     {
@@ -722,7 +721,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -752,7 +752,6 @@
       "task": "Copy first pages from multiple diagrams into a master diagram while preserving original page ids",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -784,16 +783,15 @@
       "task": "Create a gradient fill stylesheet and apply it to page five for visual testing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "StyleSheet"
+        "StyleSheet",
+        "StyleSheets"
       ]
     },
     {
@@ -802,13 +800,12 @@
       "task": "Create a macro that iterates pages setting height to match width for square layout",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -819,6 +816,7 @@
       "task": "Create a new blank page instance and insert it at index two within the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -841,7 +839,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -871,6 +868,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -883,8 +881,9 @@
       "task": "Create a utility that duplicates every page renames copies with a copy suffix and saves diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -907,8 +906,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -918,7 +916,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
@@ -969,7 +969,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -991,7 +992,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -1017,7 +1017,8 @@
       "task": "Detect and list any orphan shapes on a page that are not connected to any other shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1033,7 +1034,6 @@
       "task": "Detect pages with auto expand enabled and log their original dimensions before resizing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1058,8 +1058,8 @@
         "AutoSpaceOptions",
         "AutoSpaceShapes",
         "Diagram",
-        "Pages",
-        "Save"
+        "Page",
+        "Pages"
       ]
     },
     {
@@ -1069,7 +1069,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1084,7 +1085,9 @@
       "task": "Enable page grid visibility on page two to assist with manual shape alignment",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1103,7 +1106,6 @@
         "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1111,7 +1113,7 @@
         "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "Save"
+        "Prop"
       ]
     },
     {
@@ -1140,7 +1142,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1163,6 +1166,7 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -1175,7 +1179,7 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
-        "System.Xml.Linq"
+        "System.Xml"
       ],
       "key_apis": [
         "Diagram",
@@ -1189,13 +1193,13 @@
       "task": "Export resized pages to separate vsdx files naming each file after its page index",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -1204,11 +1208,13 @@
       "task": "Export the auto spaced diagram to pdf format for sharing with non visio users",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1238,11 +1244,13 @@
       "task": "Export the diagram to png format ensuring hidden pages are omitted by default settings",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -1270,7 +1278,10 @@
       "task": "Filter shapes on a page by type and remove all connector shapes programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1304,6 +1315,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1321,6 +1333,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1336,7 +1349,8 @@
       "task": "Generate a summary report listing each page name shape count and connector count",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1395,8 +1409,8 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "PdfSaveOptions",
         "Save",
+        "XPSSaveOptions",
         "diagram"
       ]
     },
@@ -1406,7 +1420,8 @@
       "task": "Implement a function that returns true if any page in a diagram is hidden using uivisibility checks",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1422,6 +1437,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
         "System",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -1445,8 +1461,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -1455,7 +1470,6 @@
       "task": "Implement error handling to catch exceptions when applying a stylesheet to a non existent page index",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1488,7 +1502,6 @@
       "task": "Insert a header footer on each page containing page number and diagram title dynamically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -1512,7 +1525,7 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -1521,7 +1534,6 @@
       "task": "Insert three blank pages at the beginning of a diagram to serve as placeholders",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1578,7 +1590,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -1627,10 +1638,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1644,10 +1656,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -1656,7 +1669,8 @@
       "task": "Load a diagram set page height based on number of shapes then save changes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1672,7 +1686,8 @@
       "task": "Load a diagram temporarily disable page auto expand modify size then re enable auto expand",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1702,7 +1717,8 @@
       "task": "Load a visio diagram change the first page width to 8 5 inches and save",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1717,11 +1733,14 @@
       "task": "Load a visio diagram from a file and obtain its diagram object for further processing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Pages",
+        "diagram"
       ]
     },
     {
@@ -1751,6 +1770,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "diagram"
       ]
     },
@@ -1790,8 +1810,6 @@
       "task": "Load autospaceoptions settings from a json file before applying spacing to customize behavior",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Text.Json"
@@ -1826,7 +1844,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1844,6 +1861,7 @@
       "task": "Measure content bounding box then adjust page width to tightly fit all shapes on the page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1893,16 +1911,16 @@
       "task": "Mock diagram and page objects to isolate and test auto spacing logic without loading actual files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
         "AutoSpaceShapes",
-        "Diagram",
         "Page",
-        "Pages"
+        "Shapes",
+        "page"
       ]
     },
     {
@@ -1928,7 +1946,6 @@
       "task": "Move the third page to the first position using pages move to reorder layout",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1945,8 +1962,9 @@
       "task": "Optimize page content by flattening groups and simplifying complex shapes for faster rendering",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1982,7 +2000,6 @@
       "task": "Programmatically disable auto expand then assign a fixed page size to prevent automatic scaling",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2060,9 +2077,9 @@
         "System.IO"
       ],
       "key_apis": [
-        "AutoSpaceOptions",
-        "AutoSpaceShapes",
         "Diagram",
+        "Layout",
+        "LayoutOptions",
         "Pages",
         "Save"
       ]
@@ -2080,10 +2097,10 @@
       ],
       "key_apis": [
         "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
-        "ImageSaveOptions",
-        "Pages"
+        "Pages",
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -2125,8 +2142,6 @@
       "task": "Replace the background image of a page with a new image file while preserving aspect ratio",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -2144,7 +2159,9 @@
       "task": "Resize all shapes on a page proportionally to fit within a new page margin configuration",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2166,9 +2183,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -2194,7 +2211,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2249,6 +2265,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -2277,13 +2294,11 @@
       "task": "Save the modified diagram to a memory stream for further processing or transmission",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -2299,7 +2314,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -2330,14 +2344,16 @@
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
+        "AutoSpaceOptions",
+        "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -2346,16 +2362,13 @@
       "task": "Serialize autospaceoptions configuration to json for external configuration management and version control",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "System",
         "System.IO",
         "System.Text.Json"
       ],
       "key_apis": [
         "AutoSpaceOptions",
-        "Diagram",
-        "Pages",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -2383,7 +2396,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2401,7 +2413,6 @@
       "task": "Set page orientation to landscape for page four using the page orientation property",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2418,7 +2429,6 @@
       "task": "Set page protection to read only mode and assign a password for editing restrictions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2467,7 +2477,9 @@
       "task": "Set the orientation of a selected page to landscape by assigning printpageorientation landscape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Printing",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2508,8 +2520,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "StyleSheet"
+        "StyleSheet",
+        "StyleSheets"
       ]
     },
     {
@@ -2519,7 +2531,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2544,6 +2555,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -2561,6 +2573,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -2593,7 +2606,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -2609,7 +2623,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
@@ -2625,11 +2641,13 @@
       "task": "Use a try finally block to ensure the diagram object is disposed even if processing fails",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -2640,7 +2658,6 @@
       "task": "Use asynchronous loading of diagrams while preparing page size adjustments in parallel threads",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -2651,7 +2668,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -2662,14 +2680,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "AutoSpaceOptions",
         "AutoSpaceShapes",
         "Diagram",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -2678,9 +2697,8 @@
       "task": "Use pageprops to copy size from a template page to multiple target pages within a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2713,7 +2731,8 @@
         "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
@@ -2729,12 +2748,13 @@
       "task": "Validate that each page contains at least one shape after batch adding shapes to all pages",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "Shapes"
@@ -2763,7 +2783,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2785,7 +2806,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -2799,7 +2821,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -2812,16 +2833,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
         "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "Save"
+        "Shapes"
       ]
     },
     {
@@ -2839,7 +2860,7 @@
         "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -2849,14 +2870,17 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.AutoLayout",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "AutoSpaceOptions",
         "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "Shape"
+        "Save"
       ]
     }
   ]

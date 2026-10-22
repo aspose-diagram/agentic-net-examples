@@ -1,34 +1,49 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <input‑vsdx‑file>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the VSDX diagram using the Diagram constructor.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the VSDX diagram using the Diagram constructor
-            Diagram diagram = new Diagram("input.vsdx");
+            // Retrieve the total number of pages.
+            int pageCount = diagram.Pages.Count;
+            Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
 
-            // Ensure all pages are accessible by iterating through the Pages collection
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages to ensure they are accessible.
+            // Explicitly type the iterator as Aspose.Diagram.Page.
+            for (int i = 0; i < pageCount; i++)
             {
-                // Access page properties to confirm they are loaded
-                string pageName = page.Name;
-                int pageId = page.ID;
-
-                // Example operation: output page information
-                Console.WriteLine($"Page ID: {pageId}, Name: {pageName}");
+                Aspose.Diagram.Page page = diagram.Pages[i];
+                // Output basic page information.
+                Console.WriteLine($"Page {i + 1}: ID = {page.ID}, Name = {page.Name}");
             }
-
-            // Further processing can be done here
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

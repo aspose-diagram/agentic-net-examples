@@ -1,39 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure auto‑spacing options
-            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
-            autoSpaceOptions.DistanceInHorizontal = 2;
-            autoSpaceOptions.DistanceInVertical = 2;
-
-            // Apply auto‑spacing to each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Create auto‑spacing options and set desired distances (in inches).
+                    AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+                    autoSpaceOptions.DistanceInHorizontal = 0.5; // horizontal gap between shapes
+                    autoSpaceOptions.DistanceInVertical = 0.5;   // vertical gap between shapes
+
+                    // Apply auto‑spacing to the entire collection of shapes on the page.
+                    page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

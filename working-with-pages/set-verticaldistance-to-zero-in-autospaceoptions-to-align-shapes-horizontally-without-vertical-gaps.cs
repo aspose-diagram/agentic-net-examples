@@ -1,40 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Create AutoSpaceOptions and set vertical distance to zero.
+                    AutoSpaceOptions options = new AutoSpaceOptions();
+                    // Horizontal distance can remain default; set vertical distance to zero.
+                    options.DistanceInVertical = 0;
 
-            // Load an existing Visio diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+                    // Apply auto‑spacing to the entire shape collection of the page.
+                    page.AutoSpaceShapes(page.Shapes, options);
+                }
 
-            // Get the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Configure AutoSpaceOptions to remove vertical gaps
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInVertical = 0; // Set vertical distance to zero
-            // Optionally, you can also set horizontal distance if needed
-            // options.DistanceInHorizontal = 0.5;
-
-            // Apply auto-spacing to the shapes on the page
-            page.AutoSpaceShapes(page.Shapes, options);
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

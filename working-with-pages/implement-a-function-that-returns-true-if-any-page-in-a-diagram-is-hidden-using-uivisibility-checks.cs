@@ -1,61 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-namespace DiagramUtilities
+class Program
 {
-    public class PageVisibilityChecker
+    static void Main(string[] args)
     {
-        /// <summary>
-        /// Returns true if any page in the provided diagram is hidden (UIVisibility set to Hidden).
-        /// </summary>
-        /// <param name="diagram">The Aspose.Diagram.Diagram instance to inspect.</param>
-        /// <returns>True when at least one page is hidden; otherwise false.</returns>
-        public static bool AnyPageHidden(Diagram diagram)
+        // Expect the first argument to be the path to the Visio file.
+        if (args.Length == 0)
         {
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
-            {
-                // UIVisibility.Value indicates the visibility state of the page.
-                // UIVisibilityValue.Visible means the page is shown.
-                // Any other value (e.g., UIVisibilityValue.Hidden) means the page is hidden.
-                if (page.PageSheet.PageProps.UIVisibility.Value != UIVisibilityValue.Visible)
-                {
-                    return true;
-                }
-            }
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
+            return;
+        }
 
-            // No hidden pages were found.
-            return false;
+        string filePath = args[0];
+
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(filePath))
+            {
+                // Determine if any page is hidden.
+                bool hasHiddenPage = AnyPageHidden(diagram);
+
+                // Output the result.
+                Console.WriteLine($"Any hidden page: {hasHiddenPage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    class Program
+    /// <summary>
+    /// Checks all pages in the given diagram and returns true if any page is hidden.
+    /// A page is considered hidden when its UIVisibility cell value equals UIVisibilityValue.Hidden.
+    /// </summary>
+    /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
+    /// <returns>True if at least one page is hidden; otherwise, false.</returns>
+    static bool AnyPageHidden(Diagram diagram)
     {
-        static void Main(string[] args)
+        // Iterate over each page using an index to avoid var in foreach (per rules).
+        for (int i = 0; i < diagram.Pages.Count; i++)
         {
-            try
+            Page page = diagram.Pages[i];
+
+            // UIVisibility.Value returns a UIVisibilityValue enum.
+            if (page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden)
             {
-
-                // Example usage: load a diagram file and check for hidden pages.
-                // Replace "sample.vsdx" with the path to your Visio file.
-                string diagramPath = "sample.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Check if any page is hidden.
-                bool hasHiddenPage = PageVisibilityChecker.AnyPageHidden(diagram);
-
-                // Output the result.
-                Console.WriteLine(hasHiddenPage
-                    ? "The diagram contains at least one hidden page."
-                    : "All pages in the diagram are visible.");
-
+                return true;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+
+        // No hidden pages found.
+        return false;
     }
 }

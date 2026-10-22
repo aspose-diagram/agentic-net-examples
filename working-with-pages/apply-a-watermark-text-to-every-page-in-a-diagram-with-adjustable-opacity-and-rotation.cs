@@ -7,67 +7,76 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output_with_watermark.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Watermark configuration
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Watermark configuration – adjust as needed.
         string watermarkText = "CONFIDENTIAL";
-        double opacityPercent = 30.0;   // 0 (transparent) to 100 (opaque)
-        double rotationDegrees = 45.0;  // Rotation angle in degrees
-        string fontName = "Calibri";
-        string fontColorHex = "#A0A0A0"; // Light gray
-        double fontSizePoints = 72.0;    // Font size in points
+        double opacity = 0.3;               // 0.0 = fully opaque, 1.0 = fully transparent
+        double rotationDegrees = 45.0;      // Rotation angle in degrees
+        string fontName = "Arial";
+        string fontColor = "#C0C0C0";       // Light gray in hex
+        double fontSizePoints = 72.0;       // Font size in points
+        // Convert points to inches (Visio uses inches for font size)
+        double fontSizeInches = fontSizePoints / 72.0;
 
         try
         {
-            // Load the diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and add the watermark shape
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Iterate over every page in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve page dimensions (in inches).
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Center position for the watermark shape
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
+                    // Calculate the centre position for the watermark shape.
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                // Convert font size from points to inches (1 point = 1/72 inch)
-                double fontSizeInches = fontSizePoints / 72.0;
+                    // Add a full‑page text shape that will serve as the watermark.
+                    // This overload returns a Shape object directly.
+                    Shape watermarkShape = page.AddText(
+                        pinX,
+                        pinY,
+                        pageWidth,
+                        pageHeight,
+                        watermarkText,
+                        fontName,
+                        fontColor,
+                        fontSizeInches);
 
-                // Add a full‑page text shape containing the watermark text.
-                // AddText returns a Shape instance, not an ID.
-                Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                                    watermarkText, fontName, fontColorHex, fontSizeInches);
+                    // Apply rotation to the watermark shape.
+                    watermarkShape.XForm.Angle.Value = rotationDegrees;
 
-                // Apply rotation (degrees) to the shape.
-                watermarkShape.XForm.Angle.Value = rotationDegrees;
+                    // Apply fill foreground transparency to make the watermark semi‑transparent.
+                    // 0.0 = fully opaque, 1.0 = fully transparent.
+                    watermarkShape.Fill.FillForegndTrans.Value = opacity;
+                }
 
-                // Apply opacity by setting the foreground fill transparency (0 = opaque, 100 = fully transparent).
-                // This affects the shape's fill; the text inherits the same visual opacity.
-                watermarkShape.Fill.FillForegndTrans.Value = opacityPercent;
-
-                // Optional: remove any outline to keep the watermark clean.
-                watermarkShape.Line.LinePattern.Value = LinePatternValue.None;
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram with the watermark applied.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -1,38 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new diagram instance
-            Diagram diagram = new Diagram();
+            // Verify that the diagram contains at least one page (page zero)
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Get the first (zero‑based) page of the diagram
-            Page page = diagram.Pages[0];
+            // Add a rectangle shape on page zero at coordinates (2, 3)
+            // AddShape returns the newly created shape's unique ID (long)
+            long shapeId = diagram.AddShape(2.0, 3.0, "Rectangle", 0);
 
-            // Add a rectangle shape at coordinates (2, 3)
-            // Parameters: pinX, pinY, master name, isCalculate flag
-            long shapeId = page.AddShape(2.0, 3.0, "Rectangle", false);
+            // Retrieve the shape instance for any further modifications (optional)
+            Shape rectShape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Retrieve the shape object using its unique ID
-            Shape rectangle = page.Shapes.GetShape(shapeId);
+            // Output the assigned unique ID
+            Console.WriteLine($"Added rectangle shape with ID: {shapeId}");
 
-            // Ensure the shape is positioned at the desired coordinates
-            rectangle.XForm.PinX.Value = 2.0;
-            rectangle.XForm.PinY.Value = 3.0;
-
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

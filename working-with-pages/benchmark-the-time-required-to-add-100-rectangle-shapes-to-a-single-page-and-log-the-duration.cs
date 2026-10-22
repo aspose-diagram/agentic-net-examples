@@ -1,48 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Initialize a stopwatch to measure the duration of adding shapes.
+        Stopwatch stopwatch = new Stopwatch();
 
-        // Get the first (and only) page
-        Page page = diagram.Pages[0];
-
-        // Prepare a stopwatch for benchmarking
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
-
-        // Add 100 rectangle shapes
-        double startX = 1.0;
-        double startY = 1.0;
-        double width = 2.0;
-        double height = 1.0;
-        double offset = 0.5; // spacing between rectangles
-
-        for (int i = 0; i < 100; i++)
+        try
         {
-            // Position each rectangle slightly offset to avoid overlap
-            double pinX = startX + (i % 10) * (width + offset);
-            double pinY = startY + (i / 10) * (height + offset);
+            // Create a new empty diagram inside a using block as required.
+            using (Diagram diagram = new Diagram())
+            {
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    // Add a blank page if none exist.
+                    diagram.Pages.Add(new Page());
+                }
 
-            // DrawRectangle returns the shape ID (long)
-            long shapeId = page.DrawRectangle(pinX, pinY, width, height);
-            // Shape can be retrieved if needed:
-            // Shape shape = page.Shapes.GetShape(shapeId);
+                // Reference the first page where shapes will be added.
+                Page page = diagram.Pages[0];
+
+                // Start timing before adding shapes.
+                stopwatch.Start();
+
+                // Add 100 rectangle shapes to the page.
+                for (int i = 0; i < 100; i++)
+                {
+                    // Add a rectangle shape at arbitrary coordinates (e.g., i*1.0, i*1.0).
+                    // The AddShape method returns the shape ID (long).
+                    long shapeId = diagram.AddShape(i * 1.0, i * 1.0, "Rectangle", 0);
+
+                    // Retrieve the shape object using the returned ID.
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Optional: set shape properties here if needed.
+                    // Example: shape.Text.Value.Clear();
+                    // shape.Text.Value.Add(new Txt($"Rect {i + 1}"));
+                }
+
+                // Stop timing after all shapes have been added.
+                stopwatch.Stop();
+
+                // Log the elapsed time in milliseconds.
+                Console.WriteLine($"Time taken to add 100 rectangle shapes: {stopwatch.Elapsed.TotalMilliseconds} ms");
+
+                // (Optional) Save the diagram to verify the shapes were added.
+                // string outputPath = "output.vsdx";
+                // diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-
-        sw.Stop();
-
-        // Log the elapsed time in milliseconds
-        Console.WriteLine($"Time to add 100 rectangles: {sw.ElapsedMilliseconds} ms");
-
-        // Optionally save the diagram to verify the shapes were added
-        diagram.Save("BenchmarkResult.vsdx", SaveFileFormat.Vsdx);
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

@@ -1,39 +1,77 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Prompt user for input Visio file path
-            Console.Write("Enter the path of the Visio file to process: ");
-            string inputPath = Console.ReadLine();
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-            // Prompt user for output Visio file path
-            Console.Write("Enter the desired output file path (e.g., output.vsdx): ");
-            string outputPath = Console.ReadLine();
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify connector shapes: they are 1‑D shapes (OneD == true)
-                    if (shape.OneD)
+                    // Collect IDs of connector (1‑D) shapes on the current page.
+                    List<long> connectorIds = new List<long>();
+
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Mark the connector shape for deletion
-                        shape.Del = BOOL.True;
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes using the OneD boolean property.
+                        if (shape.OneD)
+                        {
+                            // Shape.ID is a long primitive; add it directly.
+                            connectorIds.Add(shape.ID);
+                        }
+                    }
+
+                    // Remove the identified connector shapes from the page.
+                    foreach (long id in connectorIds)
+                    {
+                        // Retrieve the shape object by its ID before removal.
+                        Shape connectorShape = page.Shapes.GetShape(id);
+                        if (connectorShape != null)
+                        {
+                            // The Remove method accepts a Shape instance.
+                            page.Shapes.Remove(connectorShape);
+                        }
                     }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("All connector shapes have been removed and the diagram saved.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

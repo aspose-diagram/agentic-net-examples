@@ -1,43 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the diagram from a file
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Verify the diagram has at least three pages
+                // Ensure there are at least three pages to reorder.
                 if (diagram.Pages.Count < 3)
                 {
-                    Console.WriteLine("The diagram must contain at least three pages.");
+                    Console.Error.WriteLine("The diagram must contain at least three pages.");
                     return;
                 }
 
-                // Retrieve the third page (zero‑based index 2)
+                // Retrieve the third page (index 2) and move it to the first position (index 0).
                 Page thirdPage = diagram.Pages[2];
-
-                // Move the third page to the first position (index 0)
                 thirdPage.MoveTo(0);
 
-                // Save the updated diagram
-                string outputPath = "output.vsdx";
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Third page moved to first position and diagram saved.");
-
+            Console.WriteLine($"Page reordering completed. Saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

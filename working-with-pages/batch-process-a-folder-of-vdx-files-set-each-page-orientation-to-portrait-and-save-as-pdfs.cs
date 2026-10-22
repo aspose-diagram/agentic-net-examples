@@ -2,62 +2,79 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the folder containing VDX files.
+        string folderPath;
+        if (args.Length > 0)
         {
-            // Folder containing VDX files. Change as needed or pass as first argument.
-            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the folder containing VDX files: ");
+            folderPath = Console.ReadLine();
+        }
 
-            if (!Directory.Exists(folderPath))
+        // Guard: ensure the folder exists.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Get all .vdx files in the folder.
+        string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx");
+        if (vdxFiles.Length == 0)
+        {
+            Console.WriteLine("No VDX files found in the specified folder.");
+            return;
+        }
+
+        // Process each VDX file.
+        foreach (string vdxPath in vdxFiles)
+        {
+            // Guard: ensure the file exists (redundant due to GetFiles, but required by rules).
+            if (!File.Exists(vdxPath))
             {
-                Console.WriteLine($"Folder not found: {folderPath}");
-                return;
+                Console.Error.WriteLine($"File not found: {vdxPath}");
+                continue;
             }
 
-            // Get all VDX files in the folder.
-            string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx", SearchOption.TopDirectoryOnly);
-            if (vdxFiles.Length == 0)
+            try
             {
-                Console.WriteLine("No VDX files found.");
-                return;
-            }
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(vdxPath);
 
-            foreach (string vdxPath in vdxFiles)
-            {
-                try
+                // Set each page's orientation to Portrait.
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Load the Visio diagram.
-                    using (Diagram diagram = new Diagram(vdxPath))
-                    {
-                        // Set each page's orientation to Portrait.
-                        foreach (Page page in diagram.Pages)
-                        {
-                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                        }
-
-                        // Prepare PDF save options.
-                        PdfSaveOptions pdfOptions = new PdfSaveOptions
-                        {
-                            DefaultFont = "Arial",
-                            SaveFormat = SaveFileFormat.Pdf
-                        };
-
-                        // Determine output PDF path.
-                        string pdfPath = Path.ChangeExtension(vdxPath, ".pdf");
-
-                        // Save the diagram as PDF.
-                        diagram.Save(pdfPath, pdfOptions);
-                        Console.WriteLine($"Converted: {Path.GetFileName(vdxPath)} -> {Path.GetFileName(pdfPath)}");
-                    }
+                    // PrintPageOrientationValue.Portrait sets portrait orientation.
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
-                }
+
+                // Prepare PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the save format (required by some versions).
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Determine output PDF path (same name, .pdf extension).
+                string pdfPath = Path.ChangeExtension(vdxPath, ".pdf");
+
+                // Save the diagram as PDF using the configured options.
+                diagram.Save(pdfPath, pdfOptions);
+
+                Console.WriteLine($"Successfully processed: {Path.GetFileName(vdxPath)} -> {Path.GetFileName(pdfPath)}");
             }
-
-            Console.WriteLine("Batch processing completed.");
+            catch (Exception ex)
+            {
+                // Write any errors to the error stream.
+                Console.Error.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
+            }
         }
     }
+}

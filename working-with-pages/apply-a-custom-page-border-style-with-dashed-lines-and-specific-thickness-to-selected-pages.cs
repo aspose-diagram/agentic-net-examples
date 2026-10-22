@@ -1,81 +1,106 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input file, output file, comma‑separated page indices
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <pageIndices>");
+            Console.Error.WriteLine("Example: Program diagram.vsdx diagram_modified.vsdx 0,2,3");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string pageIndicesArg = args[2];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Parse page indices
+        List<int> pageIndices = new List<int>();
         try
         {
+            foreach (var part in pageIndicesArg.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                pageIndices.Add(int.Parse(part.Trim()));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to parse page indices: {ex.Message}");
+            return;
+        }
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+        try
+        {
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define which pages to apply the border to (by name)
-            string[] targetPageNames = { "Page-1", "Page-2" };
-
-            // Border settings
-            string borderColor = "#000000";          // Black color
-            double borderThicknessInInches = 0.02;   // Approx. 0.5 mm
-            LinePatternValue dashPattern = LinePatternValue.Dash; // Dashed line
-
-            foreach (Page page in diagram.Pages)
+            // Iterate over each requested page
+            foreach (int pageIndex in pageIndices)
             {
-                // Check if the current page is one of the selected pages
-                bool isTarget = false;
-                foreach (string name in targetPageNames)
+                // Validate page index range
+                if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
                 {
-                    if (page.Name == name)
-                    {
-                        isTarget = true;
-                        break;
-                    }
+                    Console.Error.WriteLine($"Page index out of range: {pageIndex}");
+                    continue; // skip invalid index
                 }
 
-                if (!isTarget)
-                    continue;
+                // Retrieve the page
+                Page page = diagram.Pages[pageIndex];
 
-                // Retrieve page dimensions (in inches)
+                // Get page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Calculate the center point of the page (PinX, PinY)
-                double centerX = pageWidth / 2.0;
-                double centerY = pageHeight / 2.0;
+                // Define rectangle points for the border (closed polyline)
+                double[] borderPoints = new double[]
+                {
+                    0, 0,                     // Bottom‑left
+                    pageWidth, 0,             // Bottom‑right
+                    pageWidth, pageHeight,    // Top‑right
+                    0, pageHeight,            // Top‑left
+                    0, 0                      // Close the shape
+                };
 
-                // Draw a rectangle that matches the page size
-                long rectShapeId = page.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
+                // Draw the polyline on the page; returns the shape ID
+                long shapeId = page.DrawPolyline(borderPoints);
 
-                // Retrieve the shape object to set its line style
-                Shape borderShape = page.Shapes.GetShape(rectShapeId);
+                // Retrieve the created shape object
+                Shape borderShape = page.Shapes.GetShape(shapeId);
 
-                // Set line color, pattern (dashed), and thickness
-                borderShape.Line.LineColor.Value = borderColor;
-                borderShape.Line.LinePattern.Value = dashPattern;
-                borderShape.Line.LineWeight.Value = borderThicknessInInches;
+                // Apply dashed line pattern
+                borderShape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                // Optional: make the rectangle transparent (no fill)
-                borderShape.Fill.FillPattern.Value = 0; // No fill
+                // Set line thickness (weight) – value is in inches
+                borderShape.Line.LineWeight.Value = 0.02; // example thickness
+
+                // Optional: set line color (black)
+                borderShape.Line.LineColor.Value = "#000000";
+
+                // Ensure the shape has no fill
+                borderShape.Fill.FillPattern.Value = 0; // 0 = No fill
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine("Page borders applied and diagram saved to " + outputPath);
-
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose or runtime errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,27 +1,42 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the existing Visio diagram (preserves original format)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // TODO: Apply any required updates to the diagram here
-            // Example: diagram.Pages[0].Name = "UpdatedPage";
-
-            // Save the updated diagram to a new file, keeping the Visio format (VSDX)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Save the diagram to the new file preserving the original Visio format (VSDX).
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

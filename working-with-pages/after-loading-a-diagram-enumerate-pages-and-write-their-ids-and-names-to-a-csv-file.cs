@@ -1,45 +1,55 @@
-using Aspose.Diagram;
 using System;
 using System.IO;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input diagram path and output CSV path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputCsvPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string csvPath = args[1];
+
+        // Guard for input file existence
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the diagram (uses the provided load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Create CSV file and write header
-            using (StreamWriter writer = new StreamWriter("pages.csv"))
+            // Open a StreamWriter for CSV output
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
-                writer.WriteLine("PageId,PageName");
+                // Write CSV header
+                writer.WriteLine("PageID,PageName");
 
-                // Enumerate all pages in the diagram
+                // Enumerate pages explicitly typing the iterator
                 foreach (Page page in diagram.Pages)
                 {
-                    // Write each page's ID and Name to the CSV
-                    writer.WriteLine($"{page.ID},{EscapeCsv(page.Name)}");
+                    // Write page ID and name, escaping commas if needed
+                    string id = page.ID.ToString();
+                    string name = page.Name?.Replace(",", " "); // simple escape for commas
+                    writer.WriteLine($"{id},{name}");
                 }
             }
 
+            Console.WriteLine($"Page information successfully written to {csvPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper method to escape CSV fields that contain commas, quotes, or newlines
-    static string EscapeCsv(string field)
-    {
-        if (field.Contains("\"") || field.Contains(",") || field.Contains("\n"))
-        {
-            field = field.Replace("\"", "\"\"");
-            return $"\"{field}\"";
-        }
-        return field;
     }
 }

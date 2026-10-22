@@ -1,75 +1,96 @@
 using System;
 using System.IO;
-using System.Xml.Linq;
+using System.Xml;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output XML file path
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: DiagramCommentExport <inputVisioFile> <outputXmlFile>");
-            return;
-        }
+        // Determine input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Determine output XML file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "comments.xml";
 
-        string inputPath = args[0];
-        // Guard: ensure the input Visio file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string outputPath = args[1];
-
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare an XML document with a root element for comments
-                XDocument xmlDoc = new XDocument(new XElement("Comments"));
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Configure XML writer settings for pretty output
+                XmlWriterSettings settings = new XmlWriterSettings
                 {
-                    // Retrieve the page name directly (Page.Name is a string)
-                    string pageName = page.Name;
+                    Indent = true,
+                    IndentChars = "  ",
+                    NewLineOnAttributes = false
+                };
 
-                    // Iterate through annotations (comments) on the current page
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                // Create the XML writer
+                using (XmlWriter writer = XmlWriter.Create(outputPath, settings))
+                {
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("Comments"); // Root element
+
+                    // Iterate over each page in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Extract required fields from the annotation
-                        long markerId = annotation.MarkerIndex.Value;      // unique comment identifier
-                        string commentText = annotation.Comment.Value;    // comment text
-                        int reviewerId = annotation.ReviewerID.Value;     // reviewer index
-                        int shapeId = annotation.ShapeID;                 // associated shape ID (primitive int)
+                        // Use page name if available, otherwise a placeholder
+                        string pageName = page.Name ?? "Unnamed";
 
-                        // Build an XML element representing this comment
-                        XElement commentElement = new XElement("Comment",
-                            new XAttribute("Page", pageName),
-                            new XAttribute("MarkerId", markerId),
-                            new XAttribute("ReviewerId", reviewerId),
-                            new XAttribute("ShapeId", shapeId),
-                            new XElement("Text", commentText)
-                        );
+                        writer.WriteStartElement("Page");
+                        writer.WriteAttributeString("Name", pageName);
 
-                        // Add the comment element to the root of the XML document
-                        xmlDoc.Root.Add(commentElement);
+                        // Iterate over each annotation (comment) on the page
+                        foreach (Annotation annotation in page.PageSheet.Annotations)
+                        {
+                            writer.WriteStartElement("Annotation");
+
+                            // ShapeID (the shape the comment is attached to, if any)
+                            writer.WriteAttributeString("ShapeID", annotation.ShapeID.ToString());
+
+                            // ReviewerID (author identifier)
+                            int reviewerId = annotation.ReviewerID?.Value ?? 0;
+                            writer.WriteAttributeString("ReviewerID", reviewerId.ToString());
+
+                            // MarkerIndex (unique identifier for the comment)
+                            int markerIndex = annotation.MarkerIndex?.Value ?? 0;
+                            writer.WriteAttributeString("MarkerIndex", markerIndex.ToString());
+
+                            // Date of the comment, if present
+                            if (annotation.Date != null)
+                            {
+                                DateTime date = annotation.Date.Value;
+                                writer.WriteAttributeString("Date", date.ToString("o"));
+                            }
+
+                            // Comment text
+                            string commentText = annotation.Comment?.Value ?? string.Empty;
+                            writer.WriteElementString("Text", commentText);
+
+                            writer.WriteEndElement(); // Annotation
+                        }
+
+                        writer.WriteEndElement(); // Page
                     }
+
+                    writer.WriteEndElement(); // Comments
+                    writer.WriteEndDocument();
                 }
 
-                // Save the XML document to the specified output path
-                xmlDoc.Save(outputPath);
                 Console.WriteLine($"Comments exported successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error exporting comments: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,49 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // -----------------------------------------------------------------
+                // Configure Header: place the diagram title at the center.
+                // -----------------------------------------------------------------
+                string title = diagram.DocumentProps.Title;
+                diagram.HeaderFooter.HeaderCenter = title ?? string.Empty;
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+                // -----------------------------------------------------------------
+                // Configure Footer: show page number and total pages on the right.
+                // Visio field codes: &p = current page number, &P = total pages.
+                // -----------------------------------------------------------------
+                diagram.HeaderFooter.FooterRight = "Page &p of &P";
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
+                // -----------------------------------------------------------------
+                // Optional: adjust margins (in inches) for better layout.
+                // -----------------------------------------------------------------
+                diagram.HeaderFooter.HeaderMargin.Value = 0.25; // top margin
+                diagram.HeaderFooter.FooterMargin.Value = 0.25; // bottom margin
 
-            // Retrieve the diagram title (built‑in document property)
-            string title = diagram.DocumentProps.Title;
+                // -----------------------------------------------------------------
+                // Configure the font used for both header and footer.
+                // -----------------------------------------------------------------
+                HeaderFooterFont font = diagram.HeaderFooter.HeaderFooterFont;
+                font.FaceName = "Arial";
+                font.Height = 12;               // Font size (points)
+                font.Weight = 700;              // 700 = Bold, 400 = Regular
+                font.Italic = BOOL.False;
+                font.Underline = BOOL.False;
 
-            // Set header and footer text.
-            // Header center will display the diagram title.
-            diagram.HeaderFooter.HeaderCenter = title;
-
-            // Footer right will display the page number using Visio field code '&p'.
-            diagram.HeaderFooter.FooterRight = "Page: &p";
-
-            // Optional: customize the appearance of header/footer text.
-            // Set font face, weight (700 = bold), and size (negative value maps to points).
-            var headerFooterFont = diagram.HeaderFooter.HeaderFooterFont;
-            headerFooterFont.FaceName = "Arial";
-            headerFooterFont.Weight = 700;      // Bold
-            headerFooterFont.Height = -16;      // Approx. 12 pt (16 × ‑1.333 ≈ 12 pt)
-
-            // Set the text color to black.
-            diagram.HeaderFooter.HeaderFooterColor = Color.Black;
-
-            // Save the updated diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // -----------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

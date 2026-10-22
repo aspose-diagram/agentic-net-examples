@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,65 +8,101 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path
-        if (args.Length < 2)
+        // Validate arguments: expect input folder path, optional output folder path.
+        if (args.Length == 0)
         {
-            Console.WriteLine("Usage: BatchProcessReadOnlyShapes <inputPath> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <inputFolder> [outputFolder]");
             return;
         }
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        string inputFolder = args[0];
+        if (!Directory.Exists(inputFolder))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        string outputPath = args[1];
-
-        try
+        string outputFolder = args.Length > 1 ? args[1] : Path.Combine(inputFolder, "Modified");
+        if (!Directory.Exists(outputFolder))
         {
-            // Load the diagram from the specified input file
-            Diagram diagram = new Diagram(inputPath);
+            Directory.CreateDirectory(outputFolder);
+        }
 
-            // Iterate through all pages and shapes in the diagram
-            foreach (Page page in diagram.Pages)
+        // Define supported Visio file extensions (lowercase for case‑insensitive comparison).
+        var visioExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx",
+            ".vssx", ".vstx", ".vss", ".vst", ".vsdm",
+            ".vssm", ".vstm", ".vdw"
+        };
+
+        // Process each file in the input folder (non‑recursive).
+        foreach (string filePath in Directory.GetFiles(inputFolder))
+        {
+            // Guard: ensure the file exists (redundant after GetFiles, but required by rules).
+            if (!File.Exists(filePath))
             {
-                foreach (Shape shape in page.Shapes)
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
+            // Skip files that do not have a supported Visio extension.
+            string ext = Path.GetExtension(filePath);
+            if (!visioExtensions.Contains(ext))
+            {
+                continue;
+            }
+
+            try
+            {
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Determine if the shape is marked as read‑only via a custom property named "ReadOnly"
-                    bool isReadOnly = false;
-                    if (shape.Props != null)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Prop prop in shape.Props)
+                        bool isReadOnly = false;
+
+                        // Examine user‑defined cells for a "ReadOnly" flag.
+                        foreach (User userCell in shape.Users)
                         {
-                            if (prop.Name == "ReadOnly" &&
-                                string.Equals(prop.Value.Val, "True", StringComparison.OrdinalIgnoreCase))
+                            if (userCell.NameU != null &&
+                                userCell.NameU.Equals("ReadOnly", StringComparison.OrdinalIgnoreCase) &&
+                                userCell.Value != null &&
+                                userCell.Value.Val != null &&
+                                userCell.Value.Val.Equals("TRUE", StringComparison.OrdinalIgnoreCase))
                             {
                                 isReadOnly = true;
                                 break;
                             }
                         }
-                    }
 
-                    // If the shape is read‑only, disable a relevant event cell (EventDrop used as a representative)
-                    if (isReadOnly)
-                    {
-                        // Setting the formula to an empty string disables the event
-                        shape.Event.EventDrop.Ufe.F = "";
+                        if (isReadOnly)
+                        {
+                            // Disable the closest available event cells (EventMouseDown is not exposed).
+                            // Clear EventDrop formula.
+                            shape.Event.EventDrop.Ufe.F = string.Empty;
+                            // Clear EventXFMod formula as an additional safeguard.
+                            shape.Event.EventXFMod.Ufe.F = string.Empty;
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Processing complete. Saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+                // Prepare the output file path (same file name in the output folder).
+                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                // Save the modified diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Processed and saved: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Write any errors to the error stream.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
 }

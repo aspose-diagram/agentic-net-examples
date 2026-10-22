@@ -6,75 +6,79 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file path, first shape ID, second shape ID
-        if (args.Length != 3)
+        // Expecting three arguments: diagram file path, first shape ID, second shape ID
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <shapeId1> <shapeId2>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId1> <shapeId2>");
             return;
         }
 
-        // Assign arguments to variables
         string diagramPath = args[0];
-        string shapeId1Str = args[1];
-        string shapeId2Str = args[2];
-
         // Guard: ensure the diagram file exists
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
 
-        // Guard: parse shape IDs to long
-        if (!long.TryParse(shapeId1Str, out long shapeId1))
+        // Parse shape IDs
+        if (!long.TryParse(args[1], out long shapeIdOne))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeId1Str}");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{args[1]}'.");
             return;
         }
-        if (!long.TryParse(shapeId2Str, out long shapeId2))
+
+        if (!long.TryParse(args[2], out long shapeIdTwo))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeId2Str}");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{args[2]}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Use the first page (index 0) for shape lookup
+            // Use the first page in the document (or you could select by name)
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
+            }
+
             Page page = diagram.Pages[0];
 
             // Retrieve the two shapes by their IDs
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
+            Shape shapeOne = page.Shapes.GetShape(shapeIdOne);
+            Shape shapeTwo = page.Shapes.GetShape(shapeIdTwo);
 
-            // Guard: ensure both shapes were found
-            if (shape1 == null)
+            // Validate that both shapes were found
+            if (shapeOne == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId1} not found on page '{page.Name}'.");
-                return;
-            }
-            if (shape2 == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId2} not found on page '{page.Name}'.");
+                Console.Error.WriteLine($"Error: Shape with ID {shapeIdOne} not found on page '{page.Name}'.");
                 return;
             }
 
-            // Verify connection status using the built‑in API
-            bool areConnected = shape1.IsConnected(shape2);
-            // Verify glue status using the built‑in API
-            bool areGlued = shape1.IsGlued(shape2);
+            if (shapeTwo == null)
+            {
+                Console.Error.WriteLine($"Error: Shape with ID {shapeIdTwo} not found on page '{page.Name}'.");
+                return;
+            }
+
+            // Verify if the shapes are glued
+            bool areGlued = shapeOne.IsGlued(shapeTwo);
+            // Verify if the shapes are connected (e.g., via a connector)
+            bool areConnected = shapeOne.IsConnected(shapeTwo);
 
             // Output the verification results
-            Console.WriteLine($"Shape {shapeId1} (NameU: {shape1.NameU}) and Shape {shapeId2} (NameU: {shape2.NameU}) connection status:");
-            Console.WriteLine($"  Connected: {(areConnected ? "Yes" : "No")}");
-            Console.WriteLine($"  Glued    : {(areGlued ? "Yes" : "No")}");
+            Console.WriteLine($"Shape {shapeIdOne} (Name: {shapeOne.Name}) and Shape {shapeIdTwo} (Name: {shapeTwo.Name}) verification results:");
+            Console.WriteLine($"- Glued: {(areGlued ? "Yes" : "No")}");
+            Console.WriteLine($"- Connected: {(areConnected ? "Yes" : "No")}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose or runtime exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

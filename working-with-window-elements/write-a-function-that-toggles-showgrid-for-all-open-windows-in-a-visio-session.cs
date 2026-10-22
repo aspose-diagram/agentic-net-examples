@@ -1,61 +1,55 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            // Example usage: provide the path to a Visio file.
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Please provide the path to a Visio file as an argument.");
-                return;
-            }
-
-            string visioPath = args[0];
-
-            try
-            {
-                ToggleShowGrid(visioPath);
-                Console.WriteLine("ShowGrid property toggled for all windows.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-            }
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
         }
 
-        /// <summary>
-        /// Loads a Visio diagram, toggles the ShowGrid flag for every open window,
-        /// and saves the diagram back to the same file.
-        /// </summary>
-        /// <param name="filePath">Path to the Visio file.</param>
-        static void ToggleShowGrid(string filePath)
+        string filePath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(filePath))
         {
-            // Load the diagram from the specified file.
+            Console.Error.WriteLine($"Error: File not found – {filePath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(filePath);
 
-            // Ensure there is at least one window; if none, add a default drawing window.
+            // Check if any windows are present.
             if (diagram.Windows.Count == 0)
             {
-                Window defaultWindow = new Window
-                {
-                    WindowType = WindowTypeValue.Drawing,
-                    WindowState = WindowStateValue.Maximized,
-                    WindowWidth = 1100,
-                    WindowHeight = 700,
-                    ShowGrid = BOOL.True // initial value; will be toggled below
-                };
-                diagram.Windows.Add(defaultWindow);
+                Console.WriteLine("No windows found in the diagram.");
             }
-
-            // Iterate through all windows and toggle the ShowGrid property.
-            foreach (Window window in diagram.Windows)
+            else
             {
-                window.ShowGrid = (window.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
-            }
+                // Iterate over all windows and toggle the ShowGrid property.
+                foreach (Window window in diagram.Windows)
+                {
+                    // Toggle: if currently TRUE make it FALSE, otherwise make it TRUE.
+                    window.ShowGrid = (window.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
+                }
 
-            // Save the modified diagram back to the original file (VSDX format).
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
+                // Save the modified diagram back to the same file (overwrites original).
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                Console.WriteLine("ShowGrid toggled for all windows and diagram saved.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

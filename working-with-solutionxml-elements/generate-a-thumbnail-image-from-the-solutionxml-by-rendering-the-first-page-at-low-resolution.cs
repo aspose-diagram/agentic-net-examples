@@ -4,54 +4,67 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            // Validate arguments: input Visio file and output thumbnail path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramThumbnailGenerator <inputVisioFile> <outputThumbnailPath>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputThumbnailPath]");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
 
-            // Ensure the input file exists
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Error: Input file not found: {inputPath}");
-                return;
-            }
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
 
-            try
+        // Determine output path (optional argument or default)
+        string outputPath;
+        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Create a thumbnail file name based on the input file name
+            string directory = Path.GetDirectoryName(inputPath) ?? string.Empty;
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_thumb.png");
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Load the Visio diagram from the specified file
-                using (Diagram diagram = new Diagram(inputPath))
+                // Configure image save options for low‑resolution thumbnail
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
                 {
-                    // Configure image save options for a low‑resolution thumbnail
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        // Render only the first page (index 0)
-                        PageIndex = 0,
-                        PageCount = 1,
+                    // Export only the first page (zero‑based index)
+                    PageIndex = 0,
+                    // Render a single page
+                    PageCount = 1,
+                    // Low resolution (e.g., 72 DPI)
+                    Resolution = 72f,
+                    // Do not export hidden pages (property expects a bool)
+                    ExportHiddenPage = false
+                };
 
-                        // Set a low resolution (e.g., 72 DPI)
-                        Resolution = 72f,
-
-                        // Scale down the image to reduce size further (optional)
-                        Scale = 0.5f
-                    };
-
-                    // Save the rendered thumbnail image
-                    diagram.Save(outputPath, saveOptions);
-
-                    Console.WriteLine($"Thumbnail generated successfully: {outputPath}");
-                }
+                // Save the thumbnail image
+                diagram.Save(outputPath, saveOptions);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred while generating the thumbnail: {ex.Message}");
-            }
+
+            Console.WriteLine($"Thumbnail generated successfully: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

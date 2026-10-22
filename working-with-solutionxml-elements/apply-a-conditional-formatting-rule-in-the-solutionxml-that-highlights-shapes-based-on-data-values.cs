@@ -1,62 +1,61 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Create a new SolutionXML element that contains a conditional formatting rule.
+                // The XML defines a rule that highlights shapes where the custom property "Status" equals "Critical".
+                SolutionXML solXml = new SolutionXML
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    Name = "ConditionalFormatting",
+                    XmlValue = @"
+<ConditionalFormatting>
+    <Rule>
+        <Condition Property=""Status"" Operator=""Equals"" Value=""Critical"" />
+        <Highlight FillColor=""#FFCCCC"" LineColor=""#FF0000"" />
+    </Rule>
+</ConditionalFormatting>"
+                };
 
-                        // Check if the shape has a Data1 value that can be parsed as a number
-                        if (!string.IsNullOrWhiteSpace(shape.Data1) && double.TryParse(shape.Data1, out double dataValue))
-                        {
-                            // Example condition: highlight shapes where Data1 > 100
-                            if (dataValue > 100)
-                            {
-                                // Apply highlight color (red) to the shape's fill foreground
-                                shape.Fill.FillForegnd.Value = "#FF0000";
-                            }
-                        }
-                    }
-                }
+                // Add the SolutionXML element to the document's collection.
+                diagram.SolutionXMLs.Add(solXml);
 
-                // Create a SolutionXML element that describes the conditional formatting rule
-                SolutionXML conditionalXml = new SolutionXML();
-                conditionalXml.Name = "ConditionalFormatting";
-                conditionalXml.XmlValue =
-                    "<ConditionalFormatting>" +
-                    "  <Rule>" +
-                    "    <Condition>Data1 > 100</Condition>" +
-                    "    <HighlightColor>#FF0000</HighlightColor>" +
-                    "  </Rule>" +
-                    "</ConditionalFormatting>";
-
-                // Add the SolutionXML to the diagram
-                diagram.SolutionXMLs.Add(conditionalXml);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

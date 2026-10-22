@@ -1,69 +1,70 @@
 using System;
 using System.IO;
-using System.Linq; // Required for OfType<T>()
+using System.Linq;
 using System.Xml.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        string outputPath = "output.vsdx";
-
-        Diagram diagram;
-        try
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Load the Visio diagram
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Iterate through all SolutionXML elements and remove XML comments
-        foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            if (string.IsNullOrWhiteSpace(solXml.XmlValue))
-                continue; // Skip empty entries
-
-            XDocument xmlDoc;
-            try
-            {
-                // Parse the XML content stored in the SolutionXML element
-                xmlDoc = XDocument.Parse(solXml.XmlValue);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to parse SolutionXML '{solXml.Name}': {ex.Message}");
-                continue; // Move to the next SolutionXML
-            }
-
-            // Remove all comment nodes from the parsed XML document
-            foreach (var comment in xmlDoc.DescendantNodes().OfType<XComment>())
-            {
-                comment.Remove();
-            }
-
-            // Store the cleaned XML back into the SolutionXML element
-            solXml.XmlValue = xmlDoc.ToString();
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
         }
 
         try
         {
-            // Save the updated diagram with cleaned SolutionXML data
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over all SolutionXML elements in the document.
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            {
+                // Skip if the XML content is null or empty.
+                if (string.IsNullOrWhiteSpace(solXml.XmlValue))
+                    continue;
+
+                try
+                {
+                    // Parse the XML string into an XDocument.
+                    XDocument xDoc = XDocument.Parse(solXml.XmlValue);
+
+                    // Remove all XML comment nodes (<!-- comment -->).
+                    foreach (var comment in xDoc.DescendantNodes().OfType<XComment>().ToList())
+                    {
+                        comment.Remove();
+                    }
+
+                    // Write the cleaned XML back to the SolutionXML element.
+                    solXml.XmlValue = xDoc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
+                }
+                catch (Exception ex)
+                {
+                    // If parsing fails, write an error but continue processing other elements.
+                    Console.Error.WriteLine($"Failed to process SolutionXML '{solXml.Name}': {ex.Message}");
+                }
+            }
+
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("All SolutionXML comments have been removed and diagram saved.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+            // Catch any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

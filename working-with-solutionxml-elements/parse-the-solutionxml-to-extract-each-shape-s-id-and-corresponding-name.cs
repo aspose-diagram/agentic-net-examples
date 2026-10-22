@@ -1,57 +1,81 @@
 using System;
+using System.IO;
 using System.Xml.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Iterate through all SolutionXML entries in the document
+                // Iterate over all SolutionXML elements stored at the document level.
                 foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    // Parse the XML content stored in the SolutionXML element
-                    XDocument xDoc;
+                    // Ensure the XML content is not empty.
+                    if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
+                        continue;
+
+                    // Parse the XML string into an XDocument for querying.
+                    XDocument doc;
                     try
                     {
-                        xDoc = XDocument.Parse(solutionXml.XmlValue);
+                        doc = XDocument.Parse(solutionXml.XmlValue);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to parse SolutionXML '{solutionXml.Name}': {ex.Message}");
+                        Console.Error.WriteLine($"Warning: Unable to parse SolutionXML '{solutionXml.Name}'. {ex.Message}");
                         continue;
                     }
 
-                    // Find all shape elements (assumed to be named "Shape") and extract ID and Name attributes
-                    foreach (XElement shapeElem in xDoc.Descendants("Shape"))
+                    // Look for elements named "Shape" that contain ID and Name attributes.
+                    foreach (XElement shapeElement in doc.Descendants("Shape"))
                     {
-                        // Attempt to read the ID attribute as a long
-                        long id = 0;
-                        XAttribute idAttr = shapeElem.Attribute("ID");
-                        if (idAttr != null && long.TryParse(idAttr.Value, out long parsedId))
+                        XAttribute idAttr = shapeElement.Attribute("ID");
+                        XAttribute nameAttr = shapeElement.Attribute("Name");
+
+                        if (idAttr == null || nameAttr == null)
+                            continue; // Skip elements missing required attributes.
+
+                        // Parse the ID as a long (Visio shape IDs are long).
+                        if (!long.TryParse(idAttr.Value, out long shapeId))
                         {
-                            id = parsedId;
+                            Console.Error.WriteLine($"Warning: Invalid shape ID '{idAttr.Value}' in SolutionXML '{solutionXml.Name}'.");
+                            continue;
                         }
 
-                        // Read the Name attribute (if present)
-                        string name = shapeElem.Attribute("Name")?.Value ?? string.Empty;
+                        string shapeName = nameAttr.Value;
 
-                        Console.WriteLine($"Shape ID: {id}, Name: {name}");
+                        // Output the extracted shape information.
+                        Console.WriteLine($"Shape ID: {shapeId}, Name: {shapeName}");
                     }
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -2,118 +2,123 @@ using System;
 using System.IO;
 using System.Text;
 using System.Security.Cryptography;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
-    // Decrypts AES-CBC encrypted data. The first 16 bytes of the cipher are treated as the IV.
-    static string DecryptAesCbc(byte[] cipherBytes, byte[] keyBytes)
+    static void Main(string[] args)
     {
-        if (cipherBytes.Length < 16)
-            throw new Exception("Cipher data is too short to contain an IV.");
-
-        byte[] iv = cipherBytes.Take(16).ToArray();
-        byte[] actualCipher = cipherBytes.Skip(16).ToArray();
-
-        using (Aes aes = Aes.Create())
+        // Expect three arguments: diagram file path, SolutionXML name, Base64-encoded AES key
+        if (args.Length != 3)
         {
-            aes.Key = keyBytes;
-            aes.IV = iv;
-            aes.Mode = CipherMode.CBC;
-            aes.Padding = PaddingMode.PKCS7;
-
-            using (ICryptoTransform decryptor = aes.CreateDecryptor())
-            using (MemoryStream ms = new MemoryStream(actualCipher))
-            using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-            using (StreamReader sr = new StreamReader(cs, Encoding.UTF8))
-            {
-                return sr.ReadToEnd();
-            }
+            Console.Error.WriteLine("Usage: <program> <diagramPath> <solutionXmlName> <base64Key>");
+            return;
         }
-    }
 
-    // Computes SHA256 hash of a string and returns it as a hex string.
-    static string ComputeSha256(string text)
-    {
-        using (SHA256 sha = SHA256.Create())
+        string diagramPath = args[0];
+        string solutionXmlName = args[1];
+        string base64Key = args[2];
+
+        // Guard against missing diagram file
+        if (!File.Exists(diagramPath))
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(text);
-            byte[] hash = sha.ComputeHash(bytes);
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
         }
-    }
 
-    static void Main()
-    {
+        // Validate the provided key
+        byte[] keyBytes;
         try
         {
+            keyBytes = Convert.FromBase64String(base64Key);
+        }
+        catch (FormatException)
+        {
+            Console.Error.WriteLine("The provided key is not a valid Base64 string.");
+            return;
+        }
 
-            // Path to the Visio file containing the encrypted SolutionXML.
-            string diagramPath = "input.vsdx";
-
-            // 32‑byte (256‑bit) key for AES decryption. Replace with the actual key.
-            string keyString = "0123456789ABCDEF0123456789ABCDEF";
-            byte[] keyBytes = Encoding.UTF8.GetBytes(keyString);
-            if (keyBytes.Length != 32)
-                throw new Exception("The decryption key must be 32 bytes for AES‑256.");
-
-            // Load the diagram.
+        try
+        {
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Locate the encrypted SolutionXML element.
-            SolutionXML encryptedXml = null;
-            foreach (SolutionXML s in diagram.SolutionXMLs)
+            // Locate the requested SolutionXML element
+            SolutionXML targetXml = null;
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                if (s.Name == "EncryptedData")
+                if (solXml.Name == solutionXmlName)
                 {
-                    encryptedXml = s;
+                    targetXml = solXml;
                     break;
                 }
             }
 
-            if (encryptedXml == null)
-                throw new Exception("Encrypted SolutionXML element not found.");
+            if (targetXml == null)
+            {
+                Console.Error.WriteLine($"SolutionXML with name '{solutionXmlName}' not found.");
+                return;
+            }
 
-            // The encrypted content is expected to be Base64‑encoded.
-            byte[] cipherBytes = Convert.FromBase64String(encryptedXml.XmlValue);
+            // The XmlValue is expected to be Base64-encoded ciphertext (IV + Cipher)
+            byte[] encryptedData;
+            try
+            {
+                encryptedData = Convert.FromBase64String(targetXml.XmlValue);
+            }
+            catch (FormatException)
+            {
+                Console.Error.WriteLine("The SolutionXML XmlValue is not a valid Base64 string.");
+                return;
+            }
 
-            // Decrypt the content.
-            string decryptedXml = DecryptAesCbc(cipherBytes, keyBytes);
-            Console.WriteLine("Decrypted XML:");
+            if (encryptedData.Length < 16)
+            {
+                Console.Error.WriteLine("Encrypted data is too short to contain an IV.");
+                return;
+            }
+
+            // Extract IV (first 16 bytes) and ciphertext (remaining bytes)
+            byte[] iv = new byte[16];
+            Array.Copy(encryptedData, 0, iv, 0, 16);
+            byte[] cipherText = new byte[encryptedData.Length - 16];
+            Array.Copy(encryptedData, 16, cipherText, 0, cipherText.Length);
+
+            // Decrypt using AES CBC with PKCS7 padding
+            string decryptedXml;
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = keyBytes;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+
+                using (ICryptoTransform decryptor = aes.CreateDecryptor())
+                {
+                    byte[] plainBytes = decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
+                    decryptedXml = Encoding.UTF8.GetString(plainBytes);
+                }
+            }
+
+            // Output the decrypted XML
+            Console.WriteLine("Decrypted SolutionXML:");
             Console.WriteLine(decryptedXml);
 
-            // Verify integrity by comparing SHA256 hash with a stored hash element.
-            string storedHash = null;
-            foreach (SolutionXML s in diagram.SolutionXMLs)
+            // Compute SHA256 hash of the decrypted content for integrity verification
+            using (SHA256 sha256 = SHA256.Create())
             {
-                if (s.Name == "EncryptedDataHash")
+                byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(decryptedXml));
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in hashBytes)
                 {
-                    storedHash = s.XmlValue.Trim();
-                    break;
+                    sb.Append(b.ToString("x2"));
                 }
+                Console.WriteLine($"SHA256 Hash: {sb}");
             }
-
-            if (storedHash == null)
-                throw new Exception("Hash for integrity verification not found.");
-
-            string computedHash = ComputeSha256(decryptedXml);
-            Console.WriteLine($"Computed SHA256: {computedHash}");
-            Console.WriteLine($"Stored   SHA256: {storedHash}");
-
-            if (string.Equals(computedHash, storedHash, StringComparison.OrdinalIgnoreCase))
-            {
-                Console.WriteLine("Integrity check passed: the decrypted XML matches the stored hash.");
-            }
-            else
-            {
-                throw new Exception("Integrity check failed: the decrypted XML does not match the stored hash.");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

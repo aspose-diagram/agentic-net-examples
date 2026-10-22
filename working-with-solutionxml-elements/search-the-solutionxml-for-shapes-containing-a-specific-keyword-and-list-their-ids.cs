@@ -1,93 +1,114 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
-using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments: expect diagram file path and keyword.
+        if (args.Length < 2)
         {
-            // Get diagram file path
-            string diagramPath;
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                diagramPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the Visio diagram file: ");
-                diagramPath = Console.ReadLine();
-            }
+            Console.Error.WriteLine("Usage: Program <diagramPath> <keyword>");
+            return;
+        }
 
-            // Get keyword to search for
-            string keyword;
-            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
-            {
-                keyword = args[1];
-            }
-            else
-            {
-                Console.Write("Enter the keyword to search in SolutionXML: ");
-                keyword = Console.ReadLine();
-            }
+        string diagramPath = args[0];
+        string keyword = args[1];
 
-            if (string.IsNullOrWhiteSpace(diagramPath) || string.IsNullOrWhiteSpace(keyword))
-            {
-                Console.WriteLine("Diagram path and keyword are required.");
-                return;
-            }
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
 
-            // Load the diagram
+        try
+        {
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // List to hold found shape IDs
-            List<string> foundShapeIds = new List<string>();
+            // HashSet to store unique shape IDs found.
+            HashSet<long> shapeIds = new HashSet<long>();
 
-            // Iterate through all SolutionXML elements in the diagram
+            // Iterate over all SolutionXML elements in the document.
             foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
             {
-                if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
+                // The XML content is stored in the XmlValue property.
+                string xmlContent = solutionXml.XmlValue;
+                if (string.IsNullOrEmpty(xmlContent))
+                {
                     continue;
+                }
 
-                XmlDocument xmlDoc = new XmlDocument();
+                // Parse the XML content.
+                XDocument xDoc;
                 try
                 {
-                    xmlDoc.LoadXml(solutionXml.XmlValue);
+                    xDoc = XDocument.Parse(xmlContent);
                 }
-                catch (XmlException)
+                catch (Exception ex)
                 {
-                    // Skip malformed XML
+                    Console.Error.WriteLine($"Warning: Failed to parse SolutionXML '{solutionXml.Name}': {ex.Message}");
                     continue;
                 }
 
-                // Search every node for the keyword in its inner text
-                XmlNodeList allNodes = xmlDoc.SelectNodes("//*");
-                foreach (XmlNode node in allNodes)
+                // Search for elements or attributes that contain the keyword.
+                // If an element named "ShapeID" (or attribute containing "ID") is found,
+                // attempt to parse its value as a long and add to the result set.
+                foreach (XElement element in xDoc.Descendants())
                 {
-                    if (node.InnerText != null && node.InnerText.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+                    // Check element value for keyword.
+                    if (element.Value != null && element.Value.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // If the node has an attribute named "ID", capture its value
-                        XmlAttribute idAttr = node.Attributes?["ID"];
-                        if (idAttr != null && !string.IsNullOrWhiteSpace(idAttr.Value))
+                        // If the element name suggests it holds an ID, try to parse.
+                        if (element.Name.LocalName.Equals("ShapeID", StringComparison.OrdinalIgnoreCase))
                         {
-                            foundShapeIds.Add(idAttr.Value);
+                            if (long.TryParse(element.Value, out long id))
+                            {
+                                shapeIds.Add(id);
+                            }
+                        }
+                    }
+
+                    // Check each attribute of the element.
+                    foreach (XAttribute attr in element.Attributes())
+                    {
+                        if (attr.Value != null && attr.Value.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // If attribute name suggests it holds an ID, try to parse.
+                            if (attr.Name.LocalName.IndexOf("ID", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                if (long.TryParse(attr.Value, out long id))
+                                {
+                                    shapeIds.Add(id);
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Output the results
-            if (foundShapeIds.Count == 0)
+            // Output the collected shape IDs.
+            if (shapeIds.Count == 0)
             {
-                Console.WriteLine($"No shape IDs found containing the keyword \"{keyword}\" in SolutionXML.");
+                Console.WriteLine($"No shape IDs containing the keyword \"{keyword}\" were found in SolutionXML.");
             }
             else
             {
                 Console.WriteLine($"Shape IDs containing the keyword \"{keyword}\":");
-                foreach (string id in foundShapeIds)
+                foreach (long id in shapeIds)
                 {
                     Console.WriteLine(id);
                 }
             }
         }
+        catch (Exception ex)
+        {
+            // Catch any Aspose.Diagram related or general exceptions.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

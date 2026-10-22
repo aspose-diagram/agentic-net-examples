@@ -1,170 +1,144 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramSolutionXmlVersionControl
+class Program
 {
-    // Simple version control for Diagram SolutionXML elements.
-    class VersionControl
+    static void Main(string[] args)
     {
-        // Path to the file that stores the latest snapshot of SolutionXMLs.
-        private const string SnapshotFileName = "latest_snapshot.xml";
-
-        // Saves a new version and creates a diff file based on changes since the last snapshot.
-        public void SaveVersion(string diagramPath, string versionFolder)
+        // Validate arguments.
+        if (args.Length != 3)
         {
-            // Ensure the version folder exists.
-            Directory.CreateDirectory(versionFolder);
+            Console.Error.WriteLine("Usage: <save|apply> <diagramPath> <diffFolder>");
+            return;
+        }
 
-            // Load the diagram inside a try/catch to capture Aspose errors.
-            Diagram diagram;
+        string command = args[0];
+        string diagramPath = args[1];
+        string diffFolder = args[2];
+
+        // Guard: ensure diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: ensure diff folder exists (create if missing).
+        if (!Directory.Exists(diffFolder))
+        {
             try
             {
-                diagram = new Diagram(diagramPath);
+                Directory.CreateDirectory(diffFolder);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create diff folder: {ex.Message}");
                 return;
             }
-
-            // Build a dictionary of current SolutionXML entries (Name -> XmlValue).
-            Dictionary<string, string> current = diagram.SolutionXMLs
-                .Cast<SolutionXML>()
-                .ToDictionary(s => s.Name, s => s.XmlValue ?? string.Empty);
-
-            // Load previous snapshot if it exists.
-            string snapshotPath = Path.Combine(versionFolder, SnapshotFileName);
-            Dictionary<string, string> previous = File.Exists(snapshotPath)
-                ? LoadSnapshot(snapshotPath)
-                : new Dictionary<string, string>();
-
-            // Determine added entries.
-            var added = current.Keys.Except(previous.Keys)
-                .Select(name => new { Name = name, NewValue = current[name] })
-                .ToList();
-
-            // Determine removed entries.
-            var removed = previous.Keys.Except(current.Keys)
-                .Select(name => new { Name = name, OldValue = previous[name] })
-                .ToList();
-
-            // Determine modified entries.
-            var modified = current.Keys.Intersect(previous.Keys)
-                .Where(name => current[name] != previous[name])
-                .Select(name => new { Name = name, OldValue = previous[name], NewValue = current[name] })
-                .ToList();
-
-            // If there are changes, write a diff file.
-            if (added.Any() || removed.Any() || modified.Any())
-            {
-                string diffFileName = $"diff_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xml";
-                string diffFilePath = Path.Combine(versionFolder, diffFileName);
-                // Cast anonymous type lists to List<dynamic> to match method signature.
-                WriteDiffFile(
-                    diffFilePath,
-                    added.Cast<dynamic>().ToList(),
-                    removed.Cast<dynamic>().ToList(),
-                    modified.Cast<dynamic>().ToList());
-                Console.WriteLine($"Diff file created: {diffFilePath}");
-            }
-            else
-            {
-                Console.WriteLine("No changes detected; no diff file created.");
-            }
-
-            // Update the latest snapshot.
-            WriteSnapshotFile(snapshotPath, current);
         }
 
-        // Loads a snapshot XML file into a dictionary.
-        private Dictionary<string, string> LoadSnapshot(string path)
+        if (command.Equals("save", StringComparison.OrdinalIgnoreCase))
         {
-            XDocument doc = XDocument.Load(path);
-            return doc.Root
-                .Elements("SolutionXML")
-                .ToDictionary(
-                    e => (string)e.Attribute("Name"),
-                    e => (string)e.Attribute("XmlValue") ?? string.Empty);
+            SaveSolutionXmlDiff(diagramPath, diffFolder);
         }
-
-        // Writes the current state as a snapshot XML file.
-        private void WriteSnapshotFile(string path, Dictionary<string, string> data)
+        else if (command.Equals("apply", StringComparison.OrdinalIgnoreCase))
         {
-            XDocument doc = new XDocument(
-                new XElement("SolutionXMLs",
-                    data.Select(kv =>
-                        new XElement("SolutionXML",
-                            new XAttribute("Name", kv.Key),
-                            new XAttribute("XmlValue", kv.Value)))));
-
-            doc.Save(path);
+            ApplySolutionXmlDiffs(diagramPath, diffFolder);
         }
-
-        // Writes a diff XML file describing added, removed, and modified entries.
-        private void WriteDiffFile(string path,
-            List<dynamic> added,
-            List<dynamic> removed,
-            List<dynamic> modified)
+        else
         {
-            XDocument diffDoc = new XDocument(
-                new XElement("Diff",
-                    new XElement("Added",
-                        added.Select(a =>
-                            new XElement("SolutionXML",
-                                new XAttribute("Name", a.Name),
-                                new XAttribute("XmlValue", a.NewValue)))),
-                    new XElement("Removed",
-                        removed.Select(r =>
-                            new XElement("SolutionXML",
-                                new XAttribute("Name", r.Name),
-                                new XAttribute("XmlValue", r.OldValue)))),
-                    new XElement("Modified",
-                        modified.Select(m =>
-                            new XElement("SolutionXML",
-                                new XAttribute("Name", m.Name),
-                                new XAttribute("OldValue", m.OldValue),
-                                new XAttribute("NewValue", m.NewValue))))));
-
-            diffDoc.Save(path);
+            Console.Error.WriteLine("Invalid command. Use 'save' or 'apply'.");
         }
     }
 
-    class Program
+    // Saves the current SolutionXML collection as a diff file.
+    private static void SaveSolutionXmlDiff(string diagramPath, string diffFolder)
     {
-        static void Main(string[] args)
+        try
         {
-            // Expect two arguments: diagram file path and version folder path.
-            if (args.Length != 2)
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Build a simple line‑based representation: Name|XmlValue
+            var lines = new System.Text.StringBuilder();
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                Console.WriteLine("Usage: DiagramSolutionXmlVersionControl <diagramPath> <versionFolder>");
-                return;
+                // Escape any pipe characters in the XML value to avoid split issues.
+                string escapedXml = solXml.XmlValue?.Replace("|", "&#124;") ?? string.Empty;
+                lines.AppendLine($"{solXml.Name}|{escapedXml}");
             }
 
-            string diagramPath = args[0];
-            string versionFolder = args[1];
+            // Generate a timestamped diff file name.
+            string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            string diffFilePath = Path.Combine(diffFolder, $"diff_{timestamp}.txt");
 
-            // Guard against missing diagram file.
-            if (!File.Exists(diagramPath))
+            // Write the diff content to the file.
+            File.WriteAllText(diffFilePath, lines.ToString());
+            Console.WriteLine($"SolutionXML diff saved to: {diffFilePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while saving SolutionXML diff: {ex.Message}");
+        }
+    }
+
+    // Applies all diff files (in chronological order) to the diagram and saves a new copy.
+    private static void ApplySolutionXmlDiffs(string diagramPath, string diffFolder)
+    {
+        try
+        {
+            // Load the original diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Get all diff files sorted by name (timestamp order).
+            string[] diffFiles = Directory.GetFiles(diffFolder, "diff_*.txt");
+            Array.Sort(diffFiles);
+
+            // Clear existing SolutionXML collection.
+            diagram.SolutionXMLs.Clear();
+
+            // Apply each diff by adding its XML content.
+            foreach (string diffFile in diffFiles)
             {
-                Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
-                return;
+                string[] lines = File.ReadAllLines(diffFile);
+                foreach (string line in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    // Split at the first pipe character.
+                    int pipeIndex = line.IndexOf('|');
+                    if (pipeIndex <= 0)
+                        continue; // Invalid line format; skip.
+
+                    string name = line.Substring(0, pipeIndex);
+                    string xmlValueEscaped = line.Substring(pipeIndex + 1);
+                    // Restore any escaped pipe characters.
+                    string xmlValue = xmlValueEscaped.Replace("&#124;", "|");
+
+                    // Create a new SolutionXML instance and add it.
+                    SolutionXML solXml = new SolutionXML
+                    {
+                        Name = name,
+                        XmlValue = xmlValue
+                    };
+                    diagram.SolutionXMLs.Add(solXml);
+                }
             }
 
-            try
-            {
-                VersionControl vc = new VersionControl();
-                vc.SaveVersion(diagramPath, versionFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
+            // Save the updated diagram to a new file.
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(diagramPath) + "_updated.vsdx");
+
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Updated diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while applying SolutionXML diffs: {ex.Message}");
         }
     }
 }

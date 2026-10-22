@@ -1,37 +1,62 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to locate the circle (ellipse) shape.
+            foreach (Page page in diagram.Pages)
             {
+                // Ensure the Shapes collection is not null.
+                if (page.Shapes == null) continue;
 
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Assume the circle shape is on the first page
-                Page page = diagram.Pages[0];
-
-                // Find the first shape whose master name is "Ellipse" (a circle)
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Identify the circle shape by its master name.
+                    // In Visio, a circle is an ellipse with equal width/height.
+                    // The master name for an ellipse is typically "Ellipse".
                     if (shape.Master != null && shape.Master.Name == "Ellipse")
                     {
-                        // Bring this shape to the front of the Z‑order
-                        page.BringToFront(shape.ID);
-                        break; // Circle found and moved; exit loop
+                        // Bring the identified shape to the front of the Z‑order.
+                        // NOTE: Verify that BringToFront() exists in the Aspose.Diagram version used.
+                        shape.BringToFront();
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

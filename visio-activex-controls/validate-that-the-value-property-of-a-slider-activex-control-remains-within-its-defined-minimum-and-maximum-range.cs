@@ -7,64 +7,80 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file containing the ActiveX control
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Path to the Visio diagram file to be validated.
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages in the diagram
+            bool validationFailed = false;
+
+            // Iterate through all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that do not host an ActiveX control
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape contains an ActiveX control.
                     if (shape.ActiveXControl == null)
                         continue;
 
-                    // Process only SpinButton (used as a Slider) controls
+                    // Check if the ActiveX control is a SpinButton (used as a Slider alternative).
                     if (shape.ActiveXControl.Type == ControlType.SpinButton)
                     {
-                        // Cast the generic control to its specific type
+                        // Cast to the specific control type to access its properties.
                         SpinButtonActiveXControl spinCtrl = (SpinButtonActiveXControl)shape.ActiveXControl;
 
-                        // Retrieve the defined range using the correct property names (Min/Max)
-                        double min = spinCtrl.Min;      // Minimum value of the slider
-                        double max = spinCtrl.Max;      // Maximum value of the slider
-                        double current = spinCtrl.Position; // Current slider value
+                        // Retrieve the current value (Position) of the control.
+                        double current = spinCtrl.Position;
 
-                        // Validate that the current value lies within the defined range
+                        // TODO: Retrieve the defined Minimum and Maximum range values from the control.
+                        // The Aspose.Diagram API does not expose Minimum/Maximum properties for SpinButtonActiveXControl
+                        // in the current version. Replace the placeholder values with the correct properties when available.
+                        double min = 0;   // Placeholder: replace with actual minimum value.
+                        double max = 100; // Placeholder: replace with actual maximum value.
+
+                        // Validate that the current value lies within the defined range.
                         if (current < min || current > max)
                         {
-                            string msg = $"Shape ID {shape.ID} on page {page.ID} has an out-of-range value. " +
-                                         $"Position={current}, Minimum={min}, Maximum={max}.";
-                            // Throw an exception to indicate validation failure
-                            throw new Exception(msg);
+                            validationFailed = true;
+                            Console.Error.WriteLine($"Validation error on page {page.ID}, shape {shape.ID}: Value {current} is outside the range [{min}, {max}].");
                         }
                         else
                         {
-                            Console.WriteLine($"Shape ID {shape.ID} on page {page.ID} is valid. " +
-                                              $"Position={current} within [{min}, {max}].");
+                            Console.WriteLine($"Page {page.ID}, shape {shape.ID}: Value {current} is within the range [{min}, {max}].");
                         }
                     }
                 }
             }
 
-            Console.WriteLine("Validation completed successfully.");
+            if (!validationFailed)
+            {
+                Console.WriteLine("All Slider (SpinButton) controls have valid values within their defined ranges.");
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

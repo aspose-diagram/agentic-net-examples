@@ -7,42 +7,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define output file path
-        string outputPath = "AutoSpacedDiagram.vsdx";
+        // Expect at least two arguments: input diagram path and output diagram path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [verticalDistance]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Optional vertical distance argument; default to 2.0 if not provided.
+        double verticalDistance = 2.0;
+        if (args.Length >= 3 && double.TryParse(args[2], out double parsedDistance))
+        {
+            verticalDistance = parsedDistance;
+        }
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first (default) page
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Get the first page (you can modify this to target a specific page).
             Page page = diagram.Pages[0];
 
-            // Add three rectangle shapes to the page
-            // Parameters: pinX, pinY, master name, page index
-            long shapeId1 = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
-            long shapeId2 = diagram.AddShape(3.0, 1.0, "Rectangle", 0);
-            long shapeId3 = diagram.AddShape(5.0, 1.0, "Rectangle", 0);
-
-            // Configure AutoSpaceOptions with a custom vertical distance
+            // Create AutoSpaceOptions and set the custom vertical spacing.
             AutoSpaceOptions options = new AutoSpaceOptions();
-            // Set the vertical gap between shapes (units are inches)
-            options.DistanceInVertical = 2.0; // Custom vertical spacing
-            // Optionally set horizontal distance if needed
+            options.DistanceInVertical = verticalDistance; // Configure vertical gap.
+
+            // Optionally, you can also set horizontal spacing if needed:
             // options.DistanceInHorizontal = 1.0;
 
-            // Apply auto‑spacing to all shapes on the page using the configured options
+            // Apply auto-spacing to all shapes on the page.
             page.AutoSpaceShapes(page.Shapes, options);
 
-            // Save the diagram to a VSDX file
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}' with custom vertical spacing.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

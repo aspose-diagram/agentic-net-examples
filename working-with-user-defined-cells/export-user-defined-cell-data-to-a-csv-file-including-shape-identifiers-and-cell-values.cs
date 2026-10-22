@@ -1,73 +1,80 @@
 using System;
 using System.IO;
-using System.Text;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Open a StreamWriter for the CSV output.
+            using (StreamWriter writer = new StreamWriter(outputPath))
             {
+                // Write CSV header.
+                writer.WriteLine("ShapeID,ShapeNameU,UserNameU,UserValue,UserPrompt");
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
+                // Local function to escape CSV fields.
+                string Escape(string s)
+                {
+                    if (s == null) return "";
+                    if (s.Contains("\"") || s.Contains(",") || s.Contains("\n") || s.Contains("\r"))
+                    {
+                        s = s.Replace("\"", "\"\"");
+                        return $"\"{s}\"";
+                    }
+                    return s;
+                }
 
-                // Output CSV file path
-                string outputCsv = "UserDefinedCells.csv";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Prepare a StringBuilder for CSV content
-                StringBuilder csvBuilder = new StringBuilder();
-
-                // Write CSV header
-                csvBuilder.AppendLine("ShapeID,UserCellName,UserCellValue");
-
-                // Iterate through all pages and shapes
+                // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through user-defined cells (Users collection)
-                        foreach (User userCell in shape.Users)
-                        {
-                            // Escape commas in values if necessary
-                            string cellName = EscapeCsv(userCell.Name);
-                            string cellValue = EscapeCsv(userCell.Value.Val);
+                        // Retrieve shape identifier and name.
+                        long shapeId = shape.ID;
+                        string shapeNameU = shape.NameU ?? "";
 
-                            // Append a CSV line: ShapeID,UserCellName,UserCellValue
-                            csvBuilder.AppendLine($"{shape.ID},{cellName},{cellValue}");
+                        // Iterate over user‑defined cells.
+                        foreach (User user in shape.Users)
+                        {
+                            string userNameU = user.NameU ?? "";
+                            string userValue = user.Value?.Val ?? "";
+                            string userPrompt = user.Prompt?.Value ?? "";
+
+                            // Write a CSV line for each user‑defined cell.
+                            writer.WriteLine($"{shapeId},{Escape(shapeNameU)},{Escape(userNameU)},{Escape(userValue)},{Escape(userPrompt)}");
                         }
                     }
                 }
-
-                // Write the CSV content to file
-                File.WriteAllText(outputCsv, csvBuilder.ToString(), Encoding.UTF8);
-
-                Console.WriteLine($"Export completed. CSV saved to: {outputCsv}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        // Helper method to escape CSV fields containing commas or quotes
-        private static string EscapeCsv(string field)
+            Console.WriteLine($"Export completed successfully: {outputPath}");
+        }
+        catch (Exception ex)
         {
-            if (field == null)
-                return string.Empty;
-
-            if (field.Contains("\""))
-                field = field.Replace("\"", "\"\"");
-
-            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
-                field = $"\"{field}\"";
-
-            return field;
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

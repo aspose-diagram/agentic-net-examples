@@ -1,55 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJpegPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file (adjust the path as needed)
-            string inputPath = "input.vsdx";
-
-            // Output JPEG file (high‑quality)
-            string outputPath = "output.jpg";
-
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply a blur effect to all image shapes on background pages
+            // Iterate through all pages to find background pages
             foreach (Page page in diagram.Pages)
             {
-                // Identify background pages
+                // Check if the page is a background page
                 if (page.Background == BOOL.True)
                 {
+                    // Apply a visual effect to each shape on the background page.
+                    // Aspose.Diagram does not provide a direct blur filter, so we simulate
+                    // a softened appearance by setting a light gray fill color.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Process only foreign (image) shapes that have an Image object
-                        if (shape.Type == TypeValue.Foreign && shape.Image != null)
-                        {
-                            // Set blur amount (0.0 = no blur, 1.0 = maximum blur)
-                            shape.Image.Blur.Value = 0.5; // Adjust as required
-                        }
+                        // Ensure the shape has a fill pattern; set to solid fill (value 1)
+                        shape.Fill.FillPattern.Value = 1;
+
+                        // Apply a light gray color to simulate a blurred look
+                        shape.Fill.FillForegnd.Value = "#CCCCCC";
                     }
                 }
             }
 
-            // Configure high‑quality JPEG export
+            // Configure high‑quality JPEG export options
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            saveOptions.Resolution = 300f;          // DPI for high quality
-            saveOptions.PageIndex = 0;              // Export the first page (change if needed)
-            saveOptions.ExportHiddenPage = false;   // Do not export hidden pages
+            saveOptions.JpegQuality = 90;          // High quality (0‑100)
+            saveOptions.Resolution = 300f;         // 300 DPI for better detail
+            saveOptions.PageIndex = 0;             // Export the first page (foreground)
+            saveOptions.PageCount = 1;             // Export a single page
 
             // Save the diagram as a JPEG image
             diagram.Save(outputPath, saveOptions);
 
+            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

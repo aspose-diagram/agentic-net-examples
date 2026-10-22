@@ -1,45 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and set custom print layout
-            foreach (Page page in diagram.Pages)
+            // Apply custom print layout to each page: Landscape orientation and ScaleX = 0.9.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Access the print properties of the page
-                PrintProps printProps = page.PageSheet.PrintProps;
+                Page page = diagram.Pages[i];
 
-                // Set orientation to Landscape
-                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                // Set page orientation to Landscape.
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Set horizontal scaling factor to 90%
-                printProps.ScaleX.Value = 0.9;
+                // Set horizontal scaling factor to 0.9 (90%).
+                page.PageSheet.PrintProps.ScaleX.Value = 0.9;
             }
 
-            // Save the modified diagram
-            string outputPath = "output_custom_print.vsdx";
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Clean up
+            // Clean up resources.
             diagram.Dispose();
 
-            Console.WriteLine("Custom print layout applied and diagram saved.");
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

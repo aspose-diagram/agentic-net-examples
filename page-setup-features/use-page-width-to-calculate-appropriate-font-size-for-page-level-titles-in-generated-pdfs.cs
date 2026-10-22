@@ -1,56 +1,84 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
+            return;
+        }
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Retrieve page dimensions (in inches)
-        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Calculate font size based on page width.
-        // Example: 10 points per inch of page width.
-        double fontSizePoints = pageWidth * 10.0;
-        // Convert points to inches (Aspose.Diagram expects size in inches)
-        double fontSizeInches = fontSizePoints / 72.0;
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Define title shape dimensions
-        double titleWidth = pageWidth * 0.8;      // 80% of page width
-        double titleHeight = 0.5;                // half an inch tall
-        double titlePinX = pageWidth / 2.0;      // centered horizontally
-        double titlePinY = pageHeight - titleHeight / 2.0 - 0.2; // near top with margin
+            // Iterate through each page to add a title whose font size is based on page width.
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions (in inches).
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-        // Add a rectangle shape to serve as the title placeholder
-        long titleShapeId = page.DrawRectangle(titlePinX, titlePinY, titleWidth, titleHeight);
-        Shape titleShape = page.Shapes.GetShape(titleShapeId);
+                // Calculate a font size proportional to the page width (e.g., 5% of width).
+                // Font size for AddText is expressed in inches.
+                double fontSizeInches = pageWidth * 0.05;
 
-        // Clear any existing text and add the title text
-        titleShape.Text.Value.Clear();
-        titleShape.Text.Value.Add(new Txt("Page Title"));
+                // Define the title text.
+                string titleText = "Page Title";
 
-        // Create character formatting for the title text
-        Aspose.Diagram.Char titleChar = new Aspose.Diagram.Char();
-        titleChar.IX = 0;                         // first character run
-        titleChar.FontName.Value = "Arial";       // fallback font
-        titleChar.Size.Value = fontSizeInches;    // calculated size in inches
-        titleChar.Style.Value |= StyleValue.Bold; // make the title bold
-        titleShape.Chars.Add(titleChar);
+                // Position the title near the top‑center of the page.
+                double marginTop = pageHeight * 0.05;               // 5% top margin.
+                double pinX = pageWidth / 2.0;                      // Center horizontally.
+                double pinY = pageHeight - marginTop - (fontSizeInches / 2.0); // Slightly below top edge.
 
-        // Configure PDF save options
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-        pdfOptions.DefaultFont = "Arial";
-        pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Define the text box dimensions (full page width, height enough for the text).
+                double textBoxWidth = pageWidth;
+                double textBoxHeight = fontSizeInches * 1.2;        // Approximate height for the text.
 
-        // Save the diagram as a PDF
-        diagram.Save("output.pdf", pdfOptions);
+                // Add the title text shape to the page.
+                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches).
+                Shape titleShape = page.AddText(pinX, pinY, textBoxWidth, textBoxHeight,
+                                                titleText, "Arial", "#000000", fontSizeInches);
+
+                // Center‑align the paragraph within the shape, if a paragraph exists.
+                if (titleShape.Paras.Count > 0)
+                {
+                    // Horizontal alignment enum resides in Aspose.Diagram.
+                    titleShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+                }
+            }
+
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format.
+
+            // Save the diagram as a PDF file.
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

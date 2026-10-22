@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq; // Required for LINQ extension methods used below.
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,102 +7,92 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder to process (from args or user input).
+        // Determine the folder to process: use first argument or ask the user.
         string folderPath;
-        if (args.Length > 0)
+        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
         {
             folderPath = args[0];
         }
         else
         {
-            Console.Write("Enter the full path to the folder containing Visio files: ");
-            folderPath = Console.ReadLine()?.Trim() ?? string.Empty;
+            Console.Write("Enter the full path of the folder containing Visio files: ");
+            folderPath = Console.ReadLine();
         }
 
-        // Verify the folder exists before proceeding.
-        if (!Directory.Exists(folderPath))
+        // Guard: ensure the folder exists.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
             return;
         }
 
-        // Supported Visio file extensions.
-        string[] extensions = new[]
-        {
-            ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx",
-            ".vssx", ".vss", ".vstx", ".vst", ".vstm",
-            ".vssm", ".vsdm"
-        };
+        // Define supported Visio extensions.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx" };
 
-        // Gather all Visio files in the folder (non‑recursive) using LINQ.
-        var visioFiles = Directory.GetFiles(folderPath)
-                                  .Where(f => extensions.Contains(Path.GetExtension(f).ToLower()))
-                                  .ToArray();
-
-        // If no files were found, inform the user and exit.
-        if (visioFiles.Length == 0)
+        // Retrieve all files with supported extensions.
+        string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in files)
         {
-            Console.WriteLine("No Visio files found in the specified folder.");
-            return;
-        }
+            // Process only files with the supported extensions.
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (Array.IndexOf(extensions, ext) < 0)
+                continue;
 
-        // Process each Visio file individually.
-        foreach (var filePath in visioFiles)
-        {
-            // Guard to ensure the file actually exists before loading.
+            // Guard: ensure the file still exists.
             if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue; // Skip to the next file.
+                Console.Error.WriteLine("File not found (skipping): " + filePath);
+                continue;
             }
 
             try
             {
-                // Load the Visio diagram from the file.
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(filePath);
 
-                // Apply Landscape orientation to every page in the diagram.
+                // Iterate through all pages and set orientation to Landscape.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Set the print page orientation to Landscape.
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
 
-                // Determine the appropriate SaveFileFormat based on the file extension.
-                SaveFileFormat format = GetSaveFileFormat(Path.GetExtension(filePath));
+                // Determine the appropriate SaveFileFormat based on the original extension.
+                SaveFileFormat format;
+                switch (ext)
+                {
+                    case ".vsdx":
+                        format = SaveFileFormat.Vsdx;
+                        break;
+                    case ".vsd":
+                        format = SaveFileFormat.Vsd;
+                        break;
+                    case ".vdx":
+                        format = SaveFileFormat.Vdx;
+                        break;
+                    case ".vsx":
+                        format = SaveFileFormat.Vsx;
+                        break;
+                    case ".vtx":
+                        format = SaveFileFormat.Vtx;
+                        break;
+                    default:
+                        // Fallback to Vsdx if somehow an unexpected extension appears.
+                        format = SaveFileFormat.Vsdx;
+                        break;
+                }
 
-                // Save the modified diagram back to the original file using the same format.
+                // Save the modified diagram, overwriting the original file.
                 diagram.Save(filePath, format);
-
-                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+                Console.WriteLine("Processed and saved: " + filePath);
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during processing of the current file.
+                // Log any errors that occur during processing of this file.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
 
         Console.WriteLine("Batch processing completed.");
-    }
-
-    // Maps file extensions to the corresponding SaveFileFormat enum value.
-    private static SaveFileFormat GetSaveFileFormat(string extension)
-    {
-        switch (extension.ToLower())
-        {
-            case ".vsdx": return SaveFileFormat.Vsdx;
-            case ".vsd":  return SaveFileFormat.Vsd;
-            case ".vdx":  return SaveFileFormat.Vdx;
-            case ".vsx":  return SaveFileFormat.Vsx;
-            case ".vtx":  return SaveFileFormat.Vtx;
-            case ".vssx": return SaveFileFormat.Vssx;
-            case ".vss":  return SaveFileFormat.Vss;
-            case ".vstx": return SaveFileFormat.Vstx;
-            case ".vst":  return SaveFileFormat.Vst;
-            case ".vstm": return SaveFileFormat.Vstm;
-            case ".vssm": return SaveFileFormat.Vssm;
-            case ".vsdm": return SaveFileFormat.Vsdm;
-            default:      return SaveFileFormat.Vsdx; // Fallback to VSDX if unknown.
-        }
     }
 }

@@ -1,39 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // If output path is not provided, create one by appending "_modified" before the extension.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified" + Path.GetExtension(inputPath));
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths (can be passed as command‑line arguments)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-            // Load the existing Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Apply global print settings: Portrait orientation and ScaleX = 1.2
-            foreach (Page page in diagram.Pages)
+            // Iterate over all pages and apply the required print settings.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Set page orientation to Portrait
+                // Explicitly type the iterator as Page.
+                Page page = diagram.Pages[i];
+
+                // Set page orientation to Portrait.
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
-                // Set horizontal scaling factor
+                // Set horizontal scaling factor to 1.2 (120%).
                 page.PageSheet.PrintProps.ScaleX.Value = 1.2;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            // Clean up resources.
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

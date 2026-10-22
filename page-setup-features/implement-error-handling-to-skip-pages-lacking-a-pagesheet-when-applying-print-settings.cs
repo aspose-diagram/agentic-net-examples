@@ -1,73 +1,74 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Skip pages that do not have a PageSheet.
+                if (page.PageSheet == null)
                 {
-                    try
-                    {
-                        // Skip pages that do not have a PageSheet
-                        if (page.PageSheet == null)
-                        {
-                            Console.WriteLine($"Page ID {page.ID} has no PageSheet. Skipping.");
-                            continue;
-                        }
-
-                        // Apply print settings
-                        // Set orientation to Landscape
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-
-                        // Set scaling to 75%
-                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-                        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
-
-                        // Enable fit to sheet (one page per sheet)
-                        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                        page.PageSheet.PrintProps.PagesX.Value = 1;
-                        page.PageSheet.PrintProps.PagesY.Value = 1;
-
-                        // Set margins (0.5 inches on each side)
-                        page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-                        page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-                        page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-                        page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
-
-                        Console.WriteLine($"Print settings applied to page ID {page.ID}.");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the error and continue with the next page
-                        Console.WriteLine($"Error processing page ID {page.ID}: {ex.Message}");
-                    }
+                    Console.WriteLine($"Skipping page '{page.Name}' because it lacks a PageSheet.");
+                    continue;
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved successfully.");
+                // Access the print properties of the page.
+                PrintProps printProps = page.PageSheet.PrintProps;
+
+                // Set page orientation to Landscape.
+                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                // Set uniform margins (in inches).
+                printProps.PageLeftMargin.Value = 0.5;
+                printProps.PageRightMargin.Value = 0.5;
+                printProps.PageTopMargin.Value = 0.5;
+                printProps.PageBottomMargin.Value = 0.5;
+
+                // Set scaling factors.
+                printProps.ScaleX.Value = 1;
+                printProps.ScaleY.Value = 1;
+
+                // Enable Fit‑to‑Sheet and define sheet layout.
+                printProps.OnPage.Value = BOOL.True;
+                printProps.PagesX.Value = 1;
+                printProps.PagesY.Value = 1;
             }
 
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

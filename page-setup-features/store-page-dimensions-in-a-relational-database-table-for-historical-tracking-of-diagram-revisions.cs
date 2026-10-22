@@ -1,107 +1,79 @@
 using System;
-using Aspose.Diagram;
+using System.IO;
 using System.Data;
-using System.Data.Common;
+using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Create an in‑memory DataTable to simulate a relational database table
+        DataTable pageDimensionsTable = new DataTable("PageDimensions");
+        pageDimensionsTable.Columns.Add("RevisionId", typeof(int));
+        pageDimensionsTable.Columns.Add("PageName", typeof(string));
+        pageDimensionsTable.Columns.Add("WidthInches", typeof(double));
+        pageDimensionsTable.Columns.Add("HeightInches", typeof(double));
+        pageDimensionsTable.Columns.Add("Timestamp", typeof(DateTime));
+
+        // For demonstration, we use a simple revision identifier
+        int revisionId = 1; // In a real scenario this would come from your versioning system
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate over each page explicitly typing the iterator as Page
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve page dimensions (values are in inches)
+                double width = page.PageSheet.PageProps.PageWidth.Value;
+                double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Path to the Visio diagram file
-                string diagramPath = "example.vsdx";
+                // Create a new DataRow with the extracted information
+                DataRow row = pageDimensionsTable.NewRow();
+                row["RevisionId"] = revisionId;
+                // Page.Name is a string, not a cell with .Value
+                row["PageName"] = page.Name ?? $"Page_{page.ID}";
+                row["WidthInches"] = width;
+                row["HeightInches"] = height;
+                row["Timestamp"] = DateTime.UtcNow;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Simulated revision identifier (in a real scenario this could be a GUID or incrementing number)
-                int revisionId = 1;
-
-                // Create an in‑memory DataTable to represent the relational database table
-                DataTable pageDimensionsTable = new DataTable("PageDimensions");
-                pageDimensionsTable.Columns.Add("RevisionId", typeof(int));
-                pageDimensionsTable.Columns.Add("PageId", typeof(int));
-                pageDimensionsTable.Columns.Add("PageWidthInches", typeof(double));
-                pageDimensionsTable.Columns.Add("PageHeightInches", typeof(double));
-                pageDimensionsTable.Columns.Add("Timestamp", typeof(DateTime));
-
-                // Iterate through each page and capture its dimensions
-                foreach (Page page in diagram.Pages)
-                {
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                    DataRow row = pageDimensionsTable.NewRow();
-                    row["RevisionId"] = revisionId;
-                    row["PageId"] = page.ID;
-                    row["PageWidthInches"] = width;
-                    row["PageHeightInches"] = height;
-                    row["Timestamp"] = DateTime.UtcNow;
-                    pageDimensionsTable.Rows.Add(row);
-                }
-
-                // ----- Real database insertion example (commented out) -----
-                // The following illustrates how you would insert the captured data
-                // into an actual relational database using ADO.NET.
-                // Replace the connection string and provider as appropriate.
-                /*
-                string connectionString = "your_connection_string_here";
-                using (DbConnection connection = new System.Data.SqlClient.SqlConnection(connectionString))
-                {
-                    connection.Open();
-                    foreach (DataRow row in pageDimensionsTable.Rows)
-                    {
-                        using (DbCommand command = connection.CreateCommand())
-                        {
-                            command.CommandText = @"
-                                INSERT INTO PageDimensions (RevisionId, PageId, PageWidthInches, PageHeightInches, Timestamp)
-                                VALUES (@RevisionId, @PageId, @Width, @Height, @Timestamp)";
-                            var pRevision = command.CreateParameter();
-                            pRevision.ParameterName = "@RevisionId";
-                            pRevision.Value = row["RevisionId"];
-                            command.Parameters.Add(pRevision);
-
-                            var pPageId = command.CreateParameter();
-                            pPageId.ParameterName = "@PageId";
-                            pPageId.Value = row["PageId"];
-                            command.Parameters.Add(pPageId);
-
-                            var pWidth = command.CreateParameter();
-                            pWidth.ParameterName = "@Width";
-                            pWidth.Value = row["PageWidthInches"];
-                            command.Parameters.Add(pWidth);
-
-                            var pHeight = command.CreateParameter();
-                            pHeight.ParameterName = "@Height";
-                            pHeight.Value = row["PageHeightInches"];
-                            command.Parameters.Add(pHeight);
-
-                            var pTimestamp = command.CreateParameter();
-                            pTimestamp.ParameterName = "@Timestamp";
-                            pTimestamp.Value = row["Timestamp"];
-                            command.Parameters.Add(pTimestamp);
-
-                            command.ExecuteNonQuery();
-                        }
-                    }
-                }
-                */
-                // -----------------------------------------------------------
-
-                // For demonstration, output the captured data to the console
-                Console.WriteLine("Captured page dimensions for revision {0}:", revisionId);
-                foreach (DataRow row in pageDimensionsTable.Rows)
-                {
-                    Console.WriteLine("Page ID: {0}, Width: {1} in, Height: {2} in, Timestamp: {3}",
-                        row["PageId"], row["PageWidthInches"], row["PageHeightInches"], row["Timestamp"]);
-                }
-
+                pageDimensionsTable.Rows.Add(row);
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Simulated database insertion
+            // In a real implementation you would use ADO.NET with a proper DbConnection,
+            // e.g., SqlConnection, NpgsqlConnection, etc., and execute INSERT commands.
+            // The following loop demonstrates how rows would be processed.
+            foreach (DataRow dr in pageDimensionsTable.Rows)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // For this example we simply output the row to the console
+                Console.WriteLine($"Stored Revision {dr["RevisionId"]}, Page '{dr["PageName"]}': {dr["WidthInches"]}in x {dr["HeightInches"]}in at {dr["Timestamp"]}");
             }
+
+            // No need to dispose Diagram as it does not implement IDisposable
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

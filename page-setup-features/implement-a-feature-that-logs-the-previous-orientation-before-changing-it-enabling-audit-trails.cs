@@ -1,47 +1,81 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: input path, output path, desired orientation.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <orientation>");
+            Console.Error.WriteLine("Orientation values: Landscape, Portrait, SameAsPrinter");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string orientationArg = args[2];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse the desired orientation string into the corresponding enum value.
+        PrintPageOrientationValue newOrientation;
+        if (!Enum.TryParse(orientationArg, ignoreCase: true, out newOrientation) ||
+            (newOrientation != PrintPageOrientationValue.Landscape &&
+             newOrientation != PrintPageOrientationValue.Portrait &&
+             newOrientation != PrintPageOrientationValue.SameAsPrinter))
+        {
+            Console.Error.WriteLine($"Invalid orientation value: {orientationArg}");
+            Console.Error.WriteLine("Valid values are: Landscape, Portrait, SameAsPrinter");
+            return;
+        }
+
+        Diagram diagram = null;
         try
         {
+            // Load the Visio diagram from the specified file.
+            diagram = new Diagram(inputPath);
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate through all pages to log and change orientation.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve the current print orientation
-                    PrintPageOrientationValue previousOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                // Retrieve the current orientation.
+                PrintPageOrientationValue currentOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
-                    // Log the previous orientation for audit purposes
-                    Console.WriteLine($"Page ID {page.ID} (Name: {page.Name}) - Previous Orientation: {previousOrientation}");
+                // Log the previous orientation for audit purposes.
+                Console.WriteLine($"Page ID {page.ID} ('{page.Name}') current orientation: {currentOrientation}");
 
-                    // Change the orientation to Landscape (example change)
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                // Apply the new orientation.
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = newOrientation;
 
-                    // Confirm the change
-                    Console.WriteLine($"Page ID {page.ID} orientation set to Landscape.");
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Log the change.
+                Console.WriteLine($"Page ID {page.ID} orientation changed to: {newOrientation}");
             }
 
-            Console.WriteLine("Diagram processing completed and saved to " + outputPath);
-
+            // Save the modified diagram to the output path using VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose or I/O errors and report them.
+            Console.Error.WriteLine("An error occurred while processing the diagram:");
+            Console.Error.WriteLine(ex.Message);
+        }
+        finally
+        {
+            // Ensure resources are released.
+            if (diagram != null)
+            {
+                diagram.Dispose();
+            }
         }
     }
 }

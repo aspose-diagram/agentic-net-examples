@@ -1,69 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output file path.
+        if (args.Length != 2)
         {
-            // Example usage:
-            // args[0] = input Visio file path
-            // args[1] = output Visio file path
-            if (args.Length < 2)
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                Console.WriteLine("Usage: DiagramExportWithMetadata <inputPath> <outputPath>");
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
                 return;
             }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            try
-            {
-                ExportDiagramWithPageDimensions(inputPath, outputPath);
-                Console.WriteLine($"Diagram exported successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Loads a Visio diagram, embeds page dimension metadata into the document header,
-        /// and saves the diagram to the specified output path.
-        /// </summary>
-        /// <param name="inputPath">Path to the source Visio file.</param>
-        /// <param name="outputPath">Path where the modified file will be saved.</param>
-        static void ExportDiagramWithPageDimensions(string inputPath, string outputPath)
-        {
-            // Load the diagram from file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the first page to obtain its dimensions (in inches)
-            // If the document has multiple pages, you could iterate and build a composite header.
-            if (diagram.Pages.Count == 0)
-                throw new InvalidOperationException("The diagram contains no pages.");
-
+            // Retrieve dimensions of the first page (values are in inches).
             Page firstPage = diagram.Pages[0];
             double pageWidth = firstPage.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value;
 
-            // Build a header string that includes page number placeholder (&p) and dimensions
-            // The &p field will be replaced by the actual page number during rendering/printing.
-            string headerText = $"Page: &p   Size: {pageWidth:F2} x {pageHeight:F2} inches";
+            // Create a custom property for page width.
+            CustomProp widthProp = new CustomProp();
+            widthProp.Name = "PageWidthInches";
+            widthProp.PropType = PropType.String; // Store as string.
+            widthProp.CustomValue.ValueString = pageWidth.ToString();
 
-            // Assign the header text to the center part of the global header/footer
-            diagram.HeaderFooter.HeaderCenter = headerText;
+            // Create a custom property for page height.
+            CustomProp heightProp = new CustomProp();
+            heightProp.Name = "PageHeightInches";
+            heightProp.PropType = PropType.String; // Store as string.
+            heightProp.CustomValue.ValueString = pageHeight.ToString();
 
-            // Optional: style the header/footer text (font face, size, weight)
-            var headerFont = diagram.HeaderFooter.HeaderFooterFont;
-            headerFont.FaceName = "Calibri";
-            headerFont.Height = -16; // Approx. 12pt (negative value per API spec)
-            headerFont.Weight = 700; // Bold
+            // Add custom properties to the document's metadata collection.
+            diagram.DocumentProps.CustomProps.Add(widthProp);
+            diagram.DocumentProps.CustomProps.Add(heightProp);
 
-            // Save the diagram using the VSDX format
+            // Save the diagram to VSDX format. Custom properties become part of the file header/metadata.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram exported successfully with page dimension metadata to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose or IO exceptions and report them.
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
+}

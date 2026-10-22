@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,40 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first argument.
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.WriteLine("Please provide the path to the Visio file.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = System.IO.Path.Combine(
-            System.IO.Path.GetDirectoryName(inputPath) ?? string.Empty,
-            System.IO.Path.GetFileNameWithoutExtension(inputPath) + "_reset.vsdx");
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and reset orientation and ScaleX.
+            // Iterate over all pages and reset orientation and scaling.
             foreach (Page page in diagram.Pages)
             {
-                // Set orientation to Portrait.
+                // Set page orientation to Portrait.
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
-                // Set horizontal scaling factor to 1.0 (default).
+                // Reset horizontal scaling factor to 1.0.
                 page.PageSheet.PrintProps.ScaleX.Value = 1.0;
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram. Using VSDX format for broad compatibility.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with reset pages to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

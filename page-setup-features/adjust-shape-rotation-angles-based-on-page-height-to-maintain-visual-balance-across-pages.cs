@@ -3,57 +3,66 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input and output file paths (provided via command‑line arguments or defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the source Visio file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Reference page height (in inches) used to compute a scaling factor.
+            // Here we use 10 inches as a baseline; adjust as needed for your scenario.
+            const double referenceHeight = 10.0;
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve the page height (in inches)
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Compute a rotation scaling factor based on page height
+                double heightFactor = pageHeight / referenceHeight;
 
-                // Load the diagram from a file stream
-                using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+                // Adjust rotation angle for every shape on the current page
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    Diagram diagram = new Diagram(stream);
+                    Shape shape = page.Shapes[i];
 
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve the page height (in inches)
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    // Get the current rotation angle (degrees)
+                    double originalAngle = shape.XForm.Angle.Value;
 
-                        // Iterate through each shape on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip shapes that are marked as deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                    // Calculate the new angle using the height factor
+                    double newAngle = originalAngle * heightFactor;
 
-                            // Original rotation angle (in degrees)
-                            double originalAngle = shape.XForm.Angle.Value;
+                    // Normalize the angle to the range [0, 360)
+                    newAngle = newAngle % 360.0;
+                    if (newAngle < 0) newAngle += 360.0;
 
-                            // Example adjustment: add a factor based on page height
-                            // This keeps the rotation proportional to the page size
-                            double adjustedAngle = (originalAngle + (pageHeight * 5)) % 360;
-
-                            // Apply the new rotation angle
-                            shape.XForm.Angle.Value = adjustedAngle;
-                        }
-                    }
-
-                    // Save the modified diagram back to Visio format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    diagram.Dispose();
+                    // Apply the new rotation angle
+                    shape.XForm.Angle.Value = newAngle;
                 }
-
-                Console.WriteLine("Shape rotation angles have been adjusted and saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

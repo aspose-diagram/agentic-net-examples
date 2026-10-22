@@ -1,64 +1,99 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Initialize bounding box extremes
+                double minX = double.MaxValue;
+                double minY = double.MaxValue;
+                double maxX = double.MinValue;
+                double maxY = double.MinValue;
 
-                // Input and output file paths can be passed as command‑line arguments.
-                // If not provided, default paths are used.
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Analyze all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    bool shouldBeLandscape = false;
+                    // Retrieve shape geometry values
+                    double pinX = shape.XForm.PinX.Value;
+                    double pinY = shape.XForm.PinY.Value;
+                    double width = shape.XForm.Width.Value;
+                    double height = shape.XForm.Height.Value;
 
-                    // Examine each shape on the page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip connectors (1‑D shapes) – they have no meaningful width/height for orientation.
-                        if (shape.OneD)
-                            continue;
+                    // Calculate shape extents (Visio uses center coordinates)
+                    double left = pinX - width / 2.0;
+                    double right = pinX + width / 2.0;
+                    double top = pinY + height / 2.0;
+                    double bottom = pinY - height / 2.0;
 
-                        // Retrieve shape dimensions (in inches).
-                        double shapeWidth = shape.XForm.Width.Value;
-                        double shapeHeight = shape.XForm.Height.Value;
-
-                        // If any shape is wider than it is tall, mark the page for landscape orientation.
-                        if (shapeWidth > shapeHeight)
-                        {
-                            shouldBeLandscape = true;
-                            break; // No need to check further shapes on this page.
-                        }
-                    }
-
-                    // Set page orientation based on the analysis.
-                    if (shouldBeLandscape)
-                    {
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    }
-                    else
-                    {
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                    }
+                    // Update bounding box
+                    if (left < minX) minX = left;
+                    if (right > maxX) maxX = right;
+                    if (bottom < minY) minY = bottom;
+                    if (top > maxY) maxY = top;
                 }
 
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // If no shapes were found, skip orientation change for this page
+                if (minX == double.MaxValue || minY == double.MaxValue)
+                {
+                    Console.WriteLine($"Page '{page.Name}' contains no shapes; orientation unchanged.");
+                    continue;
+                }
 
+                // Determine content width and height
+                double contentWidth = maxX - minX;
+                double contentHeight = maxY - minY;
+
+                // Choose orientation based on content aspect ratio
+                if (contentWidth > contentHeight)
+                {
+                    // Set to Landscape
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    Console.WriteLine($"Page '{page.Name}' set to Landscape (content width {contentWidth:F2} > height {contentHeight:F2}).");
+                }
+                else
+                {
+                    // Set to Portrait
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                    Console.WriteLine($"Page '{page.Name}' set to Portrait (content height {contentHeight:F2} >= width {contentWidth:F2}).");
+                }
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

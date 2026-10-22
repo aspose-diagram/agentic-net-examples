@@ -1,87 +1,84 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
             {
-
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output_grid.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Work with the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Retrieve the page width (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-
-                // Define desired shape dimensions and spacing (in inches)
-                double shapeWidth = 1.0;      // Width of each shape
-                double shapeHeight = 0.6;     // Height of each shape
-                double horizontalSpacing = 0.2;
-                double verticalSpacing = 0.2;
-
-                // Compute how many columns can fit within the page width
-                int columns = (int)Math.Floor(pageWidth / (shapeWidth + horizontalSpacing));
-                if (columns < 1)
-                    columns = 1; // Ensure at least one column
-
-                Console.WriteLine($"Page width: {pageWidth} inches");
-                Console.WriteLine($"Calculated columns: {columns}");
-
-                // Starting position (center of first shape)
-                double startX = shapeWidth / 2 + horizontalSpacing;
-                double startY = shapeHeight / 2 + verticalSpacing;
-
-                // Index for positioning shapes
-                int shapeIndex = 0;
-
-                // Iterate over all shapes on the page and arrange them in a grid
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Process only regular shapes (skip connectors, groups, etc.)
-                    if (shape.Type != TypeValue.Shape)
-                        continue;
-
-                    // Compute row and column for the current shape
-                    int row = shapeIndex / columns;
-                    int col = shapeIndex % columns;
-
-                    // Calculate new PinX and PinY positions
-                    double pinX = startX + col * (shapeWidth + horizontalSpacing);
-                    double pinY = startY + row * (shapeHeight + verticalSpacing);
-
-                    // Apply new position
-                    shape.XForm.PinX.Value = pinX;
-                    shape.XForm.PinY.Value = pinY;
-
-                    // Optionally set uniform size for all shapes
-                    shape.XForm.Width.Value = shapeWidth;
-                    shape.XForm.Height.Value = shapeHeight;
-
-                    shapeIndex++;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Grid layout applied and diagram saved.");
-
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Work with the first page
+            Page page = diagram.Pages[0];
+
+            // Retrieve page dimensions (in inches)
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+            // Define desired column width (including spacing) in inches
+            const double columnWidth = 2.0; // Adjust as needed
+            const double rowHeight = 1.5;   // Adjust as needed
+
+            // Compute number of columns that fit into the page width
+            int columnCount = (int)Math.Floor(pageWidth / columnWidth);
+            if (columnCount < 1) columnCount = 1; // Ensure at least one column
+
+            // Position shapes in a simple left‑to‑right, top‑to‑bottom grid
+            int shapeIndex = 0;
+            for (int i = 0; i < page.Shapes.Count; i++)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Retrieve the shape
+                Shape shape = page.Shapes[i];
+
+                // Calculate row and column for this shape
+                int row = shapeIndex / columnCount;
+                int col = shapeIndex % columnCount;
+
+                // Compute PinX and PinY (center of the shape)
+                double pinX = (col + 0.5) * columnWidth;
+                double pinY = pageHeight - ((row + 0.5) * rowHeight); // Y origin is at bottom
+
+                // Apply new position
+                shape.XForm.PinX.Value = pinX;
+                shape.XForm.PinY.Value = pinY;
+
+                shapeIndex++;
             }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,43 +1,61 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string filePath = args[0];
+
+        // Guard against missing file
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            return;
+        }
+
+        Diagram diagram = null;
+        try
+        {
+            // Load the Visio diagram
+            diagram = new Diagram(filePath);
+
+            // Iterate through all pages
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
+                // Retrieve the page by index
+                Page page = diagram.Pages[i];
 
-                // TODO: replace with the actual path to your Visio file
-                const string diagramPath = "input.vsdx";
+                // Get orientation from PrintProps
+                var orientationValue = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
-                // Load the diagram
-                using (Diagram diagram = new Diagram(diagramPath))
-                {
-                    // Iterate through all pages
-                    for (int i = 0; i < diagram.Pages.Count; i++)
-                    {
-                        // Retrieve the page by index
-                        Page page = diagram.Pages[i];
+                // Get ScaleX from PrintProps
+                var scaleXValue = page.PageSheet.PrintProps.ScaleX.Value;
 
-                        // Page orientation (Landscape, Portrait, SameAsPrinter)
-                        PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-
-                        // ScaleX value (double)
-                        double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
-
-                        // Output the information to the console
-                        Console.WriteLine($"Page Index: {i}");
-                        Console.WriteLine($"Orientation: {orientation}");
-                        Console.WriteLine($"ScaleX: {scaleX}");
-                        Console.WriteLine(new string('-', 30));
-                    }
-                }
-
+                // Output page information
+                Console.WriteLine($"Page {i}: Orientation = {orientationValue}, ScaleX = {scaleXValue}");
             }
-            catch (System.IO.FileNotFoundException ex)
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            // Ensure resources are released
+            if (diagram != null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                diagram.Dispose();
             }
+        }
     }
-    }
+}

@@ -1,89 +1,143 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Define the values we will set on the first page's PrintProps.
+        const double topMargin = 0.5;      // inches
+        const double bottomMargin = 0.5;   // inches
+        const double leftMargin = 0.5;     // inches
+        const double rightMargin = 0.5;    // inches
+        const double scaleX = 0.75;        // 75%
+        const double scaleY = 0.75;        // 75%
+        const int pagesX = 2;
+        const int pagesY = 2;
+        const PrintPageOrientationValue orientation = PrintPageOrientationValue.Landscape;
+        const BOOL onPage = BOOL.True;
+
+        Diagram diagram = null;
+        Diagram reloadedDiagram = null;
+
         try
         {
+            // Load the original Visio diagram.
+            diagram = new Diagram(inputPath);
 
-            // Paths for the input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the original diagram
-            Diagram diagram = new Diagram(inputPath);
-
+            // Ensure the diagram has at least one page.
             if (diagram.Pages.Count == 0)
-                throw new Exception("The diagram contains no pages.");
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Modify PrintProps of the first page
+            // Access the first page.
             Page page = diagram.Pages[0];
-            PrintProps printProps = page.PageSheet.PrintProps;
 
-            // Set orientation to Landscape
-            printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+            // Modify PrintProps.
+            page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
+            page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
+            page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
+            page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
+            page.PageSheet.PrintProps.ScaleX.Value = scaleX;
+            page.PageSheet.PrintProps.ScaleY.Value = scaleY;
+            page.PageSheet.PrintProps.PagesX.Value = pagesX;
+            page.PageSheet.PrintProps.PagesY.Value = pagesY;
+            page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+            page.PageSheet.PrintProps.OnPage.Value = onPage;
 
-            // Set scaling to 80%
-            printProps.ScaleX.Value = 0.8;
-            printProps.ScaleY.Value = 0.8;
-
-            // Enable fit to sheet (OnPage) and set pages to 1x1
-            printProps.OnPage.Value = BOOL.True;
-            printProps.PagesX.Value = 1;
-            printProps.PagesY.Value = 1;
-
-            // Set margins (in inches)
-            printProps.PageTopMargin.Value = 0.5;
-            printProps.PageBottomMargin.Value = 0.5;
-            printProps.PageLeftMargin.Value = 0.5;
-            printProps.PageRightMargin.Value = 0.5;
-
-            // Save the modified diagram
+            // Save the modified diagram to the output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Reload the saved diagram
-            Diagram reloadedDiagram = new Diagram(outputPath);
-
-            if (reloadedDiagram.Pages.Count == 0)
-                throw new Exception("The reloaded diagram contains no pages.");
-
-            // Retrieve PrintProps from the reloaded diagram
-            Page reloadedPage = reloadedDiagram.Pages[0];
-            PrintProps reloadedPrintProps = reloadedPage.PageSheet.PrintProps;
-
-            // Validate that the properties were retained
-            const double tolerance = 0.0001;
-
-            if (reloadedPrintProps.PrintPageOrientation.Value != PrintPageOrientationValue.Landscape)
-                throw new Exception("PrintPageOrientation was not retained.");
-
-            if (Math.Abs(reloadedPrintProps.ScaleX.Value - 0.8) > tolerance ||
-                Math.Abs(reloadedPrintProps.ScaleY.Value - 0.8) > tolerance)
-                throw new Exception("Scale values were not retained.");
-
-            if (reloadedPrintProps.OnPage.Value != BOOL.True)
-                throw new Exception("OnPage flag was not retained.");
-
-            if (reloadedPrintProps.PagesX.Value != 1 || reloadedPrintProps.PagesY.Value != 1)
-                throw new Exception("PagesX/Y values were not retained.");
-
-            if (Math.Abs(reloadedPrintProps.PageTopMargin.Value - 0.5) > tolerance ||
-                Math.Abs(reloadedPrintProps.PageBottomMargin.Value - 0.5) > tolerance ||
-                Math.Abs(reloadedPrintProps.PageLeftMargin.Value - 0.5) > tolerance ||
-                Math.Abs(reloadedPrintProps.PageRightMargin.Value - 0.5) > tolerance)
-                throw new Exception("Margin values were not retained.");
-
-            Console.WriteLine("PrintProps retained successfully after saving and reloading.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error during modification or saving: {ex.Message}");
+            return;
+        }
+        finally
+        {
+            // Dispose the original diagram if it implements IDisposable.
+            diagram?.Dispose();
+        }
+
+        try
+        {
+            // Reload the saved diagram.
+            reloadedDiagram = new Diagram(outputPath);
+
+            // Ensure the reloaded diagram has at least one page.
+            if (reloadedDiagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Reloaded diagram contains no pages.");
+                return;
+            }
+
+            // Access the first page of the reloaded diagram.
+            Page reloadedPage = reloadedDiagram.Pages[0];
+            var props = reloadedPage.PageSheet.PrintProps;
+
+            // Validate each property. Throw if any mismatch is detected.
+            if (Math.Abs(props.PageTopMargin.Value - topMargin) > 0.0001)
+                throw new Exception("PageTopMargin was not preserved after saving.");
+
+            if (Math.Abs(props.PageBottomMargin.Value - bottomMargin) > 0.0001)
+                throw new Exception("PageBottomMargin was not preserved after saving.");
+
+            if (Math.Abs(props.PageLeftMargin.Value - leftMargin) > 0.0001)
+                throw new Exception("PageLeftMargin was not preserved after saving.");
+
+            if (Math.Abs(props.PageRightMargin.Value - rightMargin) > 0.0001)
+                throw new Exception("PageRightMargin was not preserved after saving.");
+
+            if (Math.Abs(props.ScaleX.Value - scaleX) > 0.0001)
+                throw new Exception("ScaleX was not preserved after saving.");
+
+            if (Math.Abs(props.ScaleY.Value - scaleY) > 0.0001)
+                throw new Exception("ScaleY was not preserved after saving.");
+
+            if (props.PagesX.Value != pagesX)
+                throw new Exception("PagesX was not preserved after saving.");
+
+            if (props.PagesY.Value != pagesY)
+                throw new Exception("PagesY was not preserved after saving.");
+
+            if (props.PrintPageOrientation.Value != orientation)
+                throw new Exception("PrintPageOrientation was not preserved after saving.");
+
+            if (props.OnPage.Value != onPage)
+                throw new Exception("OnPage flag was not preserved after saving.");
+
+            // All validations passed.
+            Console.WriteLine("PrintProps validation succeeded: all modified values were retained after saving and reloading.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Validation error: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose the reloaded diagram.
+            reloadedDiagram?.Dispose();
         }
     }
 }

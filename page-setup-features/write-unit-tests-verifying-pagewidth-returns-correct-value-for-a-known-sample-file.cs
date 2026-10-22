@@ -1,45 +1,64 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Path to the sample Visio file. Adjust as needed.
+        string samplePath = "sample.vsdx";
+        if (!System.IO.File.Exists(samplePath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {samplePath}");
+            return;
+        }
+
+        // Verify the file exists before proceeding.
+        if (!File.Exists(samplePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {samplePath}");
+            return;
+        }
+
+        // Expected page width in inches for the known sample file.
+        // This value should match the page setup of the sample diagram.
+        double expectedPageWidth = 8.5; // Example: Letter size width.
+
+        try
+        {
+            // Load the diagram from the file.
+            Diagram diagram = new Diagram(samplePath);
+
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-
-                // Path to the sample Visio file (ensure the file exists at this location)
-                const string filePath = "sample.vsdx";
-
-                // Expected page width in inches for the known sample file
-                const double expectedWidth = 8.5; // adjust to the actual expected value
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(filePath))
-                {
-                    // Retrieve the first page (index 0)
-                    Page page = diagram.Pages[0];
-
-                    // Access the page width value (in inches)
-                    double actualWidth = page.PageSheet.PageProps.PageWidth.Value;
-
-                    // Verify the width matches the expected value
-                    // Use a tolerance to account for floating‑point precision
-                    const double tolerance = 0.001;
-                    if (Math.Abs(actualWidth - expectedWidth) > tolerance)
-                    {
-                        throw new Exception($"Page width verification failed. Expected: {expectedWidth} inches, Actual: {actualWidth} inches.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Page width verification succeeded. Width: {actualWidth} inches.");
-                    }
-                }
-
+                throw new Exception("The diagram contains no pages.");
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Access the first page (index 0).
+            Page page = diagram.Pages[0];
+
+            // Retrieve the page width using the correct property path.
+            double actualPageWidth = page.PageSheet.PageProps.PageWidth.Value;
+
+            // Output the retrieved width for diagnostic purposes.
+            Console.WriteLine($"Actual Page Width: {actualPageWidth} inches");
+
+            // Compare the actual width with the expected value using a tolerance.
+            double tolerance = 0.001; // Allow minor floating‑point differences.
+            if (Math.Abs(actualPageWidth - expectedPageWidth) > tolerance)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                throw new Exception($"Page width mismatch. Expected: {expectedPageWidth}, Actual: {actualPageWidth}");
             }
+
+            // If we reach this point, the test passed.
+            Console.WriteLine("Test passed: Page width matches the expected value.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error during test execution: {ex.Message}");
+        }
     }
-    }
+}

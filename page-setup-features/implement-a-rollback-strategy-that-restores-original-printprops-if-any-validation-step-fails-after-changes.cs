@@ -1,137 +1,186 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Printing;
 
-namespace DiagramPrintPropsRollback
+class Program
 {
-    // Snapshot of the printable properties for a page
-    class PrintPropsSnapshot
+    // Helper class to store a snapshot of PrintProps for a page
+    class PrintPropsBackup
     {
-        public PrintPageOrientationValue? Orientation { get; set; }
-        public double? ScaleX { get; set; }
-        public double? ScaleY { get; set; }
-        public BOOL? OnPage { get; set; }
-        // PagesX/Y are integer cell values, so use int? instead of double?
-        public int? PagesX { get; set; }
-        public int? PagesY { get; set; }
-        public double? PageTopMargin { get; set; }
-        public double? PageBottomMargin { get; set; }
-        public double? PageLeftMargin { get; set; }
-        public double? PageRightMargin { get; set; }
+        public PrintPageOrientationValue Orientation;
+        public double ScaleX;
+        public double ScaleY;
+        public BOOL OnPage;
+        public int PagesX;
+        public int PagesY;
+        public double PageTopMargin;
+        public double PageBottomMargin;
+        public double PageLeftMargin;
+        public double PageRightMargin;
     }
 
-    class Program
+    static void Main(string[] args)
     {
-        // Capture current PrintProps of a page
-        static PrintPropsSnapshot CapturePrintProps(Page page)
+        // Expect at least input file path
+        if (args.Length < 1)
         {
-            var pp = page.PageSheet.PrintProps;
-            return new PrintPropsSnapshot
+            Console.Error.WriteLine("Usage: Program <input.vsdx> [output.vsdx]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        Diagram diagram = null;
+        try
+        {
+            // Load the diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Dictionary to hold original PrintProps per page ID
+        var originalPrintProps = new Dictionary<int, PrintPropsBackup>();
+
+        try
+        {
+            // Backup original PrintProps for each page
+            foreach (Page page in diagram.Pages)
             {
-                Orientation = pp.PrintPageOrientation.Value,
-                ScaleX = pp.ScaleX.Value,
-                ScaleY = pp.ScaleY.Value,
-                OnPage = pp.OnPage.Value,
-                PagesX = pp.PagesX.Value,          // integer value
-                PagesY = pp.PagesY.Value,          // integer value
-                PageTopMargin = pp.PageTopMargin.Value,
-                PageBottomMargin = pp.PageBottomMargin.Value,
-                PageLeftMargin = pp.PageLeftMargin.Value,
-                PageRightMargin = pp.PageRightMargin.Value
-            };
-        }
-
-        // Restore previously captured PrintProps to a page
-        static void RestorePrintProps(Page page, PrintPropsSnapshot snapshot)
-        {
-            var pp = page.PageSheet.PrintProps;
-            if (snapshot.Orientation.HasValue) pp.PrintPageOrientation.Value = snapshot.Orientation.Value;
-            if (snapshot.ScaleX.HasValue) pp.ScaleX.Value = snapshot.ScaleX.Value;
-            if (snapshot.ScaleY.HasValue) pp.ScaleY.Value = snapshot.ScaleY.Value;
-            if (snapshot.OnPage.HasValue) pp.OnPage.Value = snapshot.OnPage.Value;
-            if (snapshot.PagesX.HasValue) pp.PagesX.Value = snapshot.PagesX.Value; // integer assignment
-            if (snapshot.PagesY.HasValue) pp.PagesY.Value = snapshot.PagesY.Value; // integer assignment
-            if (snapshot.PageTopMargin.HasValue) pp.PageTopMargin.Value = snapshot.PageTopMargin.Value;
-            if (snapshot.PageBottomMargin.HasValue) pp.PageBottomMargin.Value = snapshot.PageBottomMargin.Value;
-            if (snapshot.PageLeftMargin.HasValue) pp.PageLeftMargin.Value = snapshot.PageLeftMargin.Value;
-            if (snapshot.PageRightMargin.HasValue) pp.PageRightMargin.Value = snapshot.PageRightMargin.Value;
-        }
-
-        // Example validation: ensure scaling factors are positive and margins are non‑negative
-        static bool ValidatePrintProps(Page page)
-        {
-            var pp = page.PageSheet.PrintProps;
-            if (pp.ScaleX.Value <= 0 || pp.ScaleY.Value <= 0)
-                return false;
-            if (pp.PageTopMargin.Value < 0 || pp.PageBottomMargin.Value < 0 ||
-                pp.PageLeftMargin.Value < 0 || pp.PageRightMargin.Value < 0)
-                return false;
-            return true;
-        }
-
-        static void Main(string[] args)
-        {
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Guard: ensure input file exists
-            if (!File.Exists(inputPath))
-            {
-                Console.Error.WriteLine($"File not found: {inputPath}");
-                return;
+                var backup = new PrintPropsBackup
+                {
+                    Orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value,
+                    ScaleX = page.PageSheet.PrintProps.ScaleX.Value,
+                    ScaleY = page.PageSheet.PrintProps.ScaleY.Value,
+                    OnPage = page.PageSheet.PrintProps.OnPage.Value,
+                    PagesX = (int)page.PageSheet.PrintProps.PagesX.Value,
+                    PagesY = (int)page.PageSheet.PrintProps.PagesY.Value,
+                    PageTopMargin = page.PageSheet.PrintProps.PageTopMargin.Value,
+                    PageBottomMargin = page.PageSheet.PrintProps.PageBottomMargin.Value,
+                    PageLeftMargin = page.PageSheet.PrintProps.PageLeftMargin.Value,
+                    PageRightMargin = page.PageSheet.PrintProps.PageRightMargin.Value
+                };
+                originalPrintProps[page.ID] = backup;
             }
 
-            // Path for the output Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Apply some modifications to PrintProps (example changes)
+            foreach (Page page in diagram.Pages)
             {
-                // Process each page
-                foreach (Page page in diagram.Pages)
+                // Set orientation to Landscape
+                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+
+                // Set scaling to 0.5 (50%)
+                page.PageSheet.PrintProps.ScaleX.Value = 0.5;
+                page.PageSheet.PrintProps.ScaleY.Value = 0.5;
+
+                // Enable Fit to Sheet across 2x2 pages
+                page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
+                page.PageSheet.PrintProps.PagesX.Value = 2;
+                page.PageSheet.PrintProps.PagesY.Value = 2;
+
+                // Set margins to 0.5 inches (Visio uses points; 1 inch = 72 points)
+                double marginInPoints = 0.5 * 72.0;
+                page.PageSheet.PrintProps.PageTopMargin.Value = marginInPoints;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = marginInPoints;
+                page.PageSheet.PrintProps.PageLeftMargin.Value = marginInPoints;
+                page.PageSheet.PrintProps.PageRightMargin.Value = marginInPoints;
+            }
+
+            // Validation step: ensure all modified values are within acceptable ranges
+            bool validationFailed = false;
+            foreach (Page page in diagram.Pages)
+            {
+                // Validate scaling (must be between 0.1 and 2.0)
+                if (page.PageSheet.PrintProps.ScaleX.Value < 0.1 || page.PageSheet.PrintProps.ScaleX.Value > 2.0 ||
+                    page.PageSheet.PrintProps.ScaleY.Value < 0.1 || page.PageSheet.PrintProps.ScaleY.Value > 2.0)
                 {
-                    // Capture original settings
-                    PrintPropsSnapshot original = CapturePrintProps(page);
-
-                    try
-                    {
-                        // Apply desired changes
-                        var pp = page.PageSheet.PrintProps;
-                        pp.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                        pp.ScaleX.Value = 0.75;
-                        pp.ScaleY.Value = 0.75;
-                        pp.OnPage.Value = BOOL.True;
-                        pp.PagesX.Value = 1;               // integer assignment
-                        pp.PagesY.Value = 1;               // integer assignment
-                        // Example margin change (convert points to inches)
-                        pp.PageTopMargin.Value = 0.5;      // 0.5 inches
-                        pp.PageBottomMargin.Value = 0.5;
-                        pp.PageLeftMargin.Value = 0.5;
-                        pp.PageRightMargin.Value = 0.5;
-
-                        // Validate the new settings
-                        if (!ValidatePrintProps(page))
-                        {
-                            // Validation failed – rollback
-                            RestorePrintProps(page, original);
-                            Console.WriteLine($"Validation failed on page '{page.Name}'. Changes rolled back.");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Page '{page.Name}' updated successfully.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // In case of unexpected errors, also rollback
-                        RestorePrintProps(page, original);
-                        Console.WriteLine($"Error processing page '{page.Name}': {ex.Message}. Changes rolled back.");
-                    }
+                    Console.Error.WriteLine($"Validation error on page {page.ID}: Scale out of range.");
+                    validationFailed = true;
+                    break;
                 }
 
-                // Save the diagram if needed
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                // Validate margins (must be non‑negative)
+                if (page.PageSheet.PrintProps.PageTopMargin.Value < 0 ||
+                    page.PageSheet.PrintProps.PageBottomMargin.Value < 0 ||
+                    page.PageSheet.PrintProps.PageLeftMargin.Value < 0 ||
+                    page.PageSheet.PrintProps.PageRightMargin.Value < 0)
+                {
+                    Console.Error.WriteLine($"Validation error on page {page.ID}: Negative margin.");
+                    validationFailed = true;
+                    break;
+                }
+
+                // Validate Fit‑to‑Sheet settings
+                if (page.PageSheet.PrintProps.OnPage.Value == BOOL.True)
+                {
+                    if (page.PageSheet.PrintProps.PagesX.Value <= 0 || page.PageSheet.PrintProps.PagesY.Value <= 0)
+                    {
+                        Console.Error.WriteLine($"Validation error on page {page.ID}: PagesX/PagesY must be > 0 when OnPage is True.");
+                        validationFailed = true;
+                        break;
+                    }
+                }
             }
+
+            // If any validation failed, rollback to original PrintProps
+            if (validationFailed)
+            {
+                Console.WriteLine("Validation failed. Rolling back to original PrintProps.");
+                foreach (Page page in diagram.Pages)
+                {
+                    if (originalPrintProps.TryGetValue(page.ID, out PrintPropsBackup backup))
+                    {
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = backup.Orientation;
+                        page.PageSheet.PrintProps.ScaleX.Value = backup.ScaleX;
+                        page.PageSheet.PrintProps.ScaleY.Value = backup.ScaleY;
+                        page.PageSheet.PrintProps.OnPage.Value = backup.OnPage;
+                        page.PageSheet.PrintProps.PagesX.Value = backup.PagesX;
+                        page.PageSheet.PrintProps.PagesY.Value = backup.PagesY;
+                        page.PageSheet.PrintProps.PageTopMargin.Value = backup.PageTopMargin;
+                        page.PageSheet.PrintProps.PageBottomMargin.Value = backup.PageBottomMargin;
+                        page.PageSheet.PrintProps.PageLeftMargin.Value = backup.PageLeftMargin;
+                        page.PageSheet.PrintProps.PageRightMargin.Value = backup.PageRightMargin;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("All validations passed. Changes will be saved.");
+            }
+
+            // Save the diagram (whether rolled back or not)
+            try
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Catch any unexpected errors during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose diagram to free resources
+            diagram?.Dispose();
         }
     }
 }

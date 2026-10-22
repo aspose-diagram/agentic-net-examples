@@ -1,35 +1,58 @@
 using System;
 using System.IO;
+using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Verify that an input file path was provided.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <input_diagram_path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Aspose.Diagram.Diagram diagram = new Aspose.Diagram.Diagram("input.vsdx");
-
-            // Iterate through each page in the diagram
+            // Iterate through each page in the diagram.
             foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                // Retrieve the PageSheet associated with the current page
+                // Retrieve the PageSheet associated with the current page.
                 Aspose.Diagram.PageSheet pageSheet = page.PageSheet;
 
-                // Example configuration: set the background color of the page sheet (optional)
-                // pageSheet.FillColor = System.Drawing.Color.LightGray;
+                // Example: output page information and size.
+                Console.WriteLine($"Page Name: {page.Name}");
+                double width = pageSheet.PageProps.PageWidth.Value;
+                double height = pageSheet.PageProps.PageHeight.Value;
+                Console.WriteLine($"Page Size (inches): Width = {width}, Height = {height}");
 
-                // Additional configuration can be performed here using pageSheet properties
+                // Additional configuration of the PageSheet can be performed here.
+                // For instance, you could modify pageSheet properties as needed.
             }
 
-            // Save the diagram after any modifications (if needed)
-            diagram.Save("output.vsdx", Aspose.Diagram.SaveFileFormat.Vsdx);
+            // Optionally, save the diagram after any modifications.
+            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
 
+            // Release resources.
+            diagram.Dispose();
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -5,75 +5,107 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [imagePathForImageControl]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string imagePath = args.Length >= 3 ? args[2] : null;
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard against missing image file when an ImageActiveXControl will be used.
+        if (imagePath != null && !File.Exists(imagePath))
+        {
+            Console.Error.WriteLine($"Image file not found: {imagePath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Assume we are working with the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve a shape by its Visio ID (example ID = 1)
-            Shape shape = page.Shapes.GetShape(1);
-
-            // Ensure the shape contains an ActiveX control
-            if (shape.ActiveXControl != null)
+            // Iterate through all pages and shapes to find ActiveX controls.
+            foreach (Page page in diagram.Pages)
             {
-                // Determine the specific control type and cast accordingly
-                switch (shape.ActiveXControl.Type)
+                // Use zero‑based index to access shapes collection.
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    case ControlType.CommandButton:
-                        // Cast to CommandButtonActiveXControl
-                        CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                        // Modify properties specific to command button
-                        cmdBtn.Caption = "Submit";
-                        // Width and Height are in inches; adjust as needed
-                        cmdBtn.Width = 2.0;
-                        cmdBtn.Height = 0.5;
-                        break;
+                    Shape shape = page.Shapes[i];
 
-                    case ControlType.Image:
-                        // Cast to ImageActiveXControl
-                        ImageActiveXControl imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
-                        // Load image bytes and assign to the control
-                        byte[] imageBytes = File.ReadAllBytes("logo.png");
-                        imgCtrl.Picture = imageBytes;
-                        // Optionally adjust size
-                        imgCtrl.Width = 1.5;
-                        imgCtrl.Height = 1.0;
-                        break;
+                    // Skip shapes without an ActiveX control.
+                    if (shape.ActiveXControl == null)
+                        continue;
 
-                    case ControlType.CheckBox:
-                        // Cast to CheckBoxActiveXControl
-                        CheckBoxActiveXControl chkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-                        // Set the checkbox state to Checked
-                        chkBox.Value = CheckValueType.Checked;
-                        // Unchecked state can be represented by casting 0
-                        // chkBox.Value = (CheckValueType)0;
-                        break;
+                    // Retrieve the generic ActiveXControl.
+                    ActiveXControl genericCtrl = shape.ActiveXControl;
 
-                    // Add handling for other control types as needed
-                    default:
-                        Console.WriteLine($"Control type {shape.ActiveXControl.Type} is not handled.");
-                        break;
+                    // Determine the specific control type and cast accordingly.
+                    switch (genericCtrl.Type)
+                    {
+                        case ControlType.CommandButton:
+                            // Cast to CommandButtonActiveXControl to access its properties.
+                            CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)genericCtrl;
+                            // Modify the caption of the command button.
+                            cmdBtn.Caption = "Clicked!";
+                            // Note: IsEnabled property is a bool; omitted per API constraints.
+                            break;
+
+                        case ControlType.CheckBox:
+                            // Cast to CheckBoxActiveXControl.
+                            CheckBoxActiveXControl chkBox = (CheckBoxActiveXControl)genericCtrl;
+                            // Set the checkbox state to Checked.
+                            chkBox.Value = CheckValueType.Checked;
+                            // Note: IsEnabled property is a bool; omitted per API constraints.
+                            break;
+
+                        case ControlType.Image:
+                            // Cast to ImageActiveXControl.
+                            ImageActiveXControl imgCtrl = (ImageActiveXControl)genericCtrl;
+                            if (imagePath != null)
+                            {
+                                // Load image bytes and assign to the Picture property.
+                                imgCtrl.Picture = File.ReadAllBytes(imagePath);
+                            }
+                            // Note: IsEnabled property is a bool; omitted per API constraints.
+                            break;
+
+                        case ControlType.SpinButton:
+                            // Cast to SpinButtonActiveXControl.
+                            SpinButtonActiveXControl spinCtrl = (SpinButtonActiveXControl)genericCtrl;
+                            // Set the numeric position (value) of the spin button.
+                            spinCtrl.Position = 42;
+                            // Note: IsEnabled property is a bool; omitted per API constraints.
+                            break;
+
+                        // Add handling for other control types as needed.
+                        default:
+                            // For unhandled types, no specific action required.
+                            break;
+                    }
                 }
             }
-            else
-            {
-                Console.WriteLine("The selected shape does not contain an ActiveX control.");
-            }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
-
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,76 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to an existing Visio file (replace with actual path)
-            string inputPath = "input.vsdx";
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one window; if not, create a default one
+            // Guard: ensure at least one window exists
             if (diagram.Windows.Count == 0)
             {
-                Window defaultWindow = new Window();
-                defaultWindow.WindowType = WindowTypeValue.Drawing;
-                defaultWindow.WindowState = WindowStateValue.Maximized;
-                defaultWindow.WindowWidth = 1100;
-                defaultWindow.WindowHeight = 700;
-                diagram.Windows.Add(defaultWindow);
+                Console.Error.WriteLine("The diagram does not contain any windows to evaluate.");
+                return;
             }
 
-            // Get the first (and only) window – window settings are global for the diagram
-            Window win = diagram.Windows[0];
+            // Capture the visibility settings from the first window (global reference)
+            Window referenceWindow = diagram.Windows[0];
+            BOOL refShowGrid = referenceWindow.ShowGrid;
+            BOOL refShowGuides = referenceWindow.ShowGuides;
+            BOOL refShowRulers = referenceWindow.ShowRulers;
+            BOOL refShowPageBreaks = referenceWindow.ShowPageBreaks;
+            BOOL refDynamicGridEnabled = referenceWindow.DynamicGridEnabled;
+            BOOL refShowConnectionPoints = referenceWindow.ShowConnectionPoints;
 
-            // Set visibility settings globally
-            win.ShowGrid = BOOL.True;
-            win.ShowGuides = BOOL.True;
-            win.ShowRulers = BOOL.True;
-            win.ShowPageBreaks = BOOL.True;
-            win.DynamicGridEnabled = BOOL.True;
-            win.ShowConnectionPoints = BOOL.True;
-
-            // Store the expected configuration
-            BOOL expectedShowGrid = win.ShowGrid;
-            BOOL expectedShowGuides = win.ShowGuides;
-            BOOL expectedShowRulers = win.ShowRulers;
-            BOOL expectedShowPageBreaks = win.ShowPageBreaks;
-            BOOL expectedDynamicGridEnabled = win.DynamicGridEnabled;
-            BOOL expectedShowConnectionPoints = win.ShowConnectionPoints;
-
-            // Validate that all pages see the same window configuration
-            foreach (Page page in diagram.Pages)
+            // Iterate over all windows and verify they share the same settings
+            for (int i = 1; i < diagram.Windows.Count; i++)
             {
-                // Since window settings are global, the same Window instance is used for every page.
-                // We simply compare the current values with the expected ones.
-                if (win.ShowGrid != expectedShowGrid ||
-                    win.ShowGuides != expectedShowGuides ||
-                    win.ShowRulers != expectedShowRulers ||
-                    win.ShowPageBreaks != expectedShowPageBreaks ||
-                    win.DynamicGridEnabled != expectedDynamicGridEnabled ||
-                    win.ShowConnectionPoints != expectedShowConnectionPoints)
+                Window win = diagram.Windows[i];
+
+                if (win.ShowGrid != refShowGrid ||
+                    win.ShowGuides != refShowGuides ||
+                    win.ShowRulers != refShowRulers ||
+                    win.ShowPageBreaks != refShowPageBreaks ||
+                    win.DynamicGridEnabled != refDynamicGridEnabled ||
+                    win.ShowConnectionPoints != refShowConnectionPoints)
                 {
-                    throw new Exception($"Window visibility settings mismatch on page '{page.Name}'.");
+                    Console.Error.WriteLine($"Window at index {i} has differing visibility settings.");
+                    throw new Exception("Window visibility settings are not consistent across all windows.");
                 }
             }
 
-            Console.WriteLine("All pages share identical window visibility settings.");
-
-            // Save the diagram (optional)
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            // If we reach this point, all windows share identical configurations
+            Console.WriteLine("Validation successful: All windows share identical visibility settings.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors encountered during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

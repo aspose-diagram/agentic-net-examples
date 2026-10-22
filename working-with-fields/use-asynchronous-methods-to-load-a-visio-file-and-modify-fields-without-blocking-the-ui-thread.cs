@@ -1,51 +1,79 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Entry point – async to allow awaiting I/O‑bound work.
-        static async Task Main(string[] args)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioAsyncExample <inputVisioPath> <outputVisioPath>");
-                return;
-            }
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Load the diagram on a background thread to keep the UI thread responsive.
-            Diagram diagram = await Task.Run(() => new Diagram(inputPath));
+        try
+        {
+            // Asynchronously load the Visio diagram
+            Diagram diagram = LoadDiagramAsync(inputPath).GetAwaiter().GetResult();
 
-            // Iterate through all pages and shapes to update text fields.
+            // Iterate through all pages and shapes to modify custom properties
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has at least one field before accessing.
-                    if (shape.Fields.Count > 0)
+                    // Ensure the shape has a Props collection
+                    if (shape.Props != null)
                     {
-                        // Example: update the first field's displayed value.
-                        Field field = shape.Fields[0];
-                        field.Value.Val = "Updated Value";
-
-                        // Clear any existing formatting strings.
-                        field.Format.Val = "";
-                        field.Format.Ufev.F = "";
-                        field.Format.Ufev.Unit = MeasureConst.Undefined;
-
-                        // Reset unit for the value part as well.
-                        field.Value.Ufev.Unit = MeasureConst.Undefined;
-                        field.Value.Ufev.F = "";
+                        // Iterate over each custom property
+                        foreach (Prop prop in shape.Props)
+                        {
+                            // Example: update a property named "Status"
+                            if (prop.Name == "Status")
+                            {
+                                prop.Value.Val = "Updated";
+                            }
+                        }
                     }
                 }
             }
 
-            // Save the modified diagram on a background thread.
-            await Task.Run(() => diagram.Save(outputPath, SaveFileFormat.Vsdx));
+            // Asynchronously save the modified diagram
+            SaveDiagramAsync(diagram, outputPath).GetAwaiter().GetResult();
 
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            Console.WriteLine("Diagram processing completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Loads a Visio diagram on a background thread to avoid blocking the UI thread.
+    /// </summary>
+    private static Task<Diagram> LoadDiagramAsync(string path)
+    {
+        return Task.Run(() => new Diagram(path));
+    }
+
+    /// <summary>
+    /// Saves a Visio diagram on a background thread to avoid blocking the UI thread.
+    /// </summary>
+    private static Task SaveDiagramAsync(Diagram diagram, string path)
+    {
+        return Task.Run(() => diagram.Save(path, SaveFileFormat.Vsdx));
+    }
+}

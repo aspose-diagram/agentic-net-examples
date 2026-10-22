@@ -1,84 +1,120 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Example mapping of old formulas to new formulas.
-        // In a real scenario this could be loaded from a config file.
-        private static readonly System.Collections.Generic.Dictionary<string, string> FormulaMappings = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            { "Width*Height", "Area()" },
-            { "Length+Width", "Perimeter()" }
-            // Add more mappings as needed.
-        };
+            Console.Error.WriteLine("Please provide the directory path containing diagram files.");
+            return;
+        }
 
-        static void Main(string[] args)
+        string inputDirectory = args[0];
+
+        // Verify the directory exists.
+        if (!Directory.Exists(inputDirectory))
         {
-            // Folder containing Visio files to process.
-            string inputFolder = @"C:\VisioFiles";
-            // Folder to save updated files.
-            string outputFolder = @"C:\VisioFiles\Updated";
+            Console.Error.WriteLine($"Directory does not exist: {inputDirectory}");
+            return;
+        }
 
-            if (!Directory.Exists(outputFolder))
+        // Get all Visio diagram files (VSDX) in the directory.
+        string[] diagramFiles = Directory.GetFiles(inputDirectory, "*.vsdx", SearchOption.TopDirectoryOnly);
+
+        if (diagramFiles.Length == 0)
+        {
+            Console.Error.WriteLine("No .vsdx files found in the specified directory.");
+            return;
+        }
+
+        // Process each diagram file.
+        foreach (string diagramPath in diagramFiles)
+        {
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(diagramPath))
             {
-                Directory.CreateDirectory(outputFolder);
+                Console.Error.WriteLine($"File not found: {diagramPath}");
+                continue;
             }
 
-            // Process all VSDX files in the input folder.
-            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in diagramFiles)
+            try
             {
-                try
+                // Load the diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    Console.WriteLine($"Loading diagram: {Path.GetFileName(filePath)}");
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through each page explicitly typed.
+                    // Iterate through all pages.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through each shape on the page.
+                        // Iterate through all shapes on the page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Ensure the shape has fields to update.
-                            if (shape.Fields != null && shape.Fields.Count > 0)
-                            {
-                                // Iterate through each field.
-                                foreach (Field field in shape.Fields)
-                                {
-                                    // The formula is stored in field.Value.Ufev.F.
-                                    string currentFormula = field.Value.Ufev.F ?? string.Empty;
+                            // Ensure the shape has fields before processing.
+                            if (shape.Fields == null || shape.Fields.Count == 0)
+                                continue;
 
-                                    // Check if the current formula matches any mapping.
-                                    foreach (var mapping in FormulaMappings)
-                                    {
-                                        if (currentFormula.Equals(mapping.Key, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            Console.WriteLine($"Updating field formula on shape ID {shape.ID} from '{currentFormula}' to '{mapping.Value}'");
-                                            field.Value.Ufev.F = mapping.Value;
-                                            // Optionally clear the displayed value if needed.
-                                            field.Value.Val = string.Empty;
-                                            break;
-                                        }
-                                    }
+                            // Iterate over each field in the shape.
+                            foreach (Field field in shape.Fields)
+                            {
+                                // Read the existing formula.
+                                string existingFormula = field.Value.Ufev.F ?? string.Empty;
+
+                                // Transform the formula according to new standards.
+                                // Example transformation: replace "OldCalc" with "NewCalc".
+                                // Adjust this logic to match actual calculation standards.
+                                string updatedFormula = TransformFormula(existingFormula);
+
+                                // If the formula has changed, apply the update.
+                                if (!string.Equals(existingFormula, updatedFormula, StringComparison.Ordinal))
+                                {
+                                    // Update the formula string.
+                                    field.Value.Ufev.F = updatedFormula;
+
+                                    // Optionally update the displayed value to match the new formula.
+                                    field.Value.Val = updatedFormula;
+
+                                    // Ensure the unit is set to undefined (standard practice).
+                                    field.Value.Ufev.Unit = MeasureConst.Undefined;
                                 }
                             }
                         }
                     }
 
-                    // Save the updated diagram to the output folder.
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                    // Prepare output path by appending "_updated" before the extension.
+                    string directory = Path.GetDirectoryName(diagramPath);
+                    string filenameWithoutExt = Path.GetFileNameWithoutExtension(diagramPath);
+                    string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_updated.vsdx");
+
+                    // Save the modified diagram.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Saved updated diagram to: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    Console.WriteLine($"Processed and saved: {outputPath}");
                 }
             }
-
-            Console.WriteLine("Bulk update operation completed.");
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of the current diagram.
+                Console.Error.WriteLine($"Error processing file '{diagramPath}': {ex.Message}");
+            }
         }
     }
+
+    /// <summary>
+    /// Transforms an existing formula string to the new calculation standard.
+    /// Replace this placeholder logic with the actual transformation rules.
+    /// </summary>
+    /// <param name="formula">The original formula.</param>
+    /// <returns>The updated formula.</returns>
+    private static string TransformFormula(string formula)
+    {
+        // Example rule: replace "OldCalc" with "NewCalc".
+        // Add more sophisticated parsing/replacement as needed.
+        if (string.IsNullOrEmpty(formula))
+            return formula;
+
+        return formula.Replace("OldCalc", "NewCalc");
+    }
+}

@@ -1,45 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+
+        // Guard: ensure the Visio file exists
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // Check if the diagram contains a VBA project
+            if (diagram.VbaProject == null)
             {
-
-                // Path to the Visio file (must be macro-enabled if it contains VBA)
-                string inputPath = "input.vsdm";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure the diagram has a VBA project
-                if (diagram.VbaProject == null || diagram.VbaProject.Modules == null)
-                {
-                    Console.WriteLine("No VBA project or modules found in the diagram.");
-                    return;
-                }
-
-                int totalLines = 0;
-
-                // Iterate through each VBA module and count lines
-                foreach (VbaModule module in diagram.VbaProject.Modules)
-                {
-                    // Split the code by line breaks to count lines
-                    int lineCount = module.Codes.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Length;
-                    Console.WriteLine($"Module \"{module.Name}\": {lineCount} lines");
-                    totalLines += lineCount;
-                }
-
-                // Summarize the total line count
-                Console.WriteLine($"Total lines of VBA code across all modules: {totalLines}");
-
+                Console.WriteLine("No VBA project found in the diagram.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Prepare summary variables
+            int totalLines = 0;
+            Console.WriteLine("VBA Modules Line Count Report");
+            Console.WriteLine("--------------------------------");
+
+            // Iterate through each VBA module
+            foreach (VbaModule module in diagram.VbaProject.Modules)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Retrieve the VBA code string; handle null safely
+                string code = module.Codes ?? string.Empty;
+
+                // Split the code into lines (handle both CRLF and LF)
+                string[] lines = code.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+                int lineCount = lines.Length;
+                totalLines += lineCount;
+
+                // Output module-specific line count
+                Console.WriteLine($"Module: {module.Name}");
+                Console.WriteLine($"Lines of Code: {lineCount}");
+                Console.WriteLine();
             }
+
+            // Output total summary
+            Console.WriteLine("--------------------------------");
+            Console.WriteLine($"Total VBA Modules: {diagram.VbaProject.Modules.Count}");
+            Console.WriteLine($"Total Lines of Code: {totalLines}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

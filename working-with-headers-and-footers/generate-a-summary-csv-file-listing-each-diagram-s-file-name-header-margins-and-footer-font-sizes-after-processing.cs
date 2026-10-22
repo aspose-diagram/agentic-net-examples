@@ -1,47 +1,95 @@
 using System;
 using System.IO;
-using System.Globalization;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine the folder containing diagram files.
+        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
         {
-            // Folder containing Visio files (adjust as needed)
-            string inputFolder = Directory.GetCurrentDirectory();
-            // Output CSV file path
-            string csvPath = Path.Combine(inputFolder, "summary.csv");
+            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            return;
+        }
 
-            // Prepare CSV header
-            using (var writer = new StreamWriter(csvPath, false))
+        // Prepare a list of supported Visio file extensions.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".vss", ".vst" };
+
+        // Collect all diagram files in the folder (non-recursive).
+        List<string> diagramFiles = new List<string>();
+        foreach (string ext in extensions)
+        {
+            diagramFiles.AddRange(Directory.GetFiles(folderPath, "*" + ext, SearchOption.TopDirectoryOnly));
+        }
+
+        // Define the output CSV file path.
+        string csvPath = Path.Combine(folderPath, "summary.csv");
+
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(csvPath))
             {
-                writer.WriteLine("FileName,HeaderMarginInches,FooterMarginInches,FooterFontSizePoints");
+                // Write CSV header.
+                writer.WriteLine("FileName,HeaderMargin,FooterMargin,FooterFontSize");
 
-                // Process each Visio file in the folder
-                string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-                foreach (string filePath in visioFiles)
+                // Process each diagram file.
+                foreach (string filePath in diagramFiles)
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
+                    // Guard: ensure the file still exists.
+                    if (!File.Exists(filePath))
+                    {
+                        Console.Error.WriteLine($"File not found (skipped): {filePath}");
+                        continue;
+                    }
 
-                    // Retrieve header and footer margins (in inches)
-                    double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
-                    double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
+                    try
+                    {
+                        // Load the diagram.
+                        Diagram diagram = new Diagram(filePath);
 
-                    // Retrieve footer font size (points). Height property stores point size as integer.
-                    int footerFontSize = diagram.HeaderFooter.HeaderFooterFont.Height;
+                        // Retrieve header margin (in inches).
+                        double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
 
-                    // Write CSV line
-                    string line = string.Format(CultureInfo.InvariantCulture,
-                        "\"{0}\",{1:F3},{2:F3},{3}",
-                        Path.GetFileName(filePath),
-                        headerMargin,
-                        footerMargin,
-                        footerFontSize);
-                    writer.WriteLine(line);
+                        // Retrieve footer margin (in inches).
+                        double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
+
+                        // Retrieve footer font size (height property, integer points).
+                        int footerFontSize = diagram.HeaderFooter.HeaderFooterFont.Height;
+
+                        // Write a CSV line for this diagram.
+                        string fileName = Path.GetFileName(filePath);
+                        writer.WriteLine($"{EscapeCsv(fileName)},{headerMargin},{footerMargin},{footerFontSize}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any errors that occur while processing this diagram.
+                        Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    }
                 }
             }
 
-            Console.WriteLine("Summary CSV generated at: " + csvPath);
+            Console.WriteLine($"Summary CSV generated at: {csvPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log errors related to CSV file creation/writing.
+            Console.Error.WriteLine($"Failed to create summary CSV: {ex.Message}");
         }
     }
+
+    // Helper method to escape CSV fields containing commas or quotes.
+    private static string EscapeCsv(string field)
+    {
+        if (field.Contains(",") || field.Contains("\""))
+        {
+            string escaped = field.Replace("\"", "\"\"");
+            return $"\"{escaped}\"";
+        }
+        return field;
+    }
+}

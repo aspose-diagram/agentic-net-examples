@@ -6,73 +6,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect a file path as the first argument.
+        // Validate input arguments.
         if (args.Length == 0)
         {
-            Console.WriteLine("Please provide the path to a Visio file (vsdx or vdx).");
+            Console.Error.WriteLine("Usage: Program <path-to-diagram>");
             return;
         }
 
-        // Assign the input path and verify the file exists.
         string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Determine the file extension (lowercase) to decide which font to apply.
+        // Determine file extension (lowercase) to apply conditional logic.
         string extension = Path.GetExtension(inputPath).ToLowerInvariant();
 
-        Diagram diagram;
-        try
-        {
-            // Load the diagram using the appropriate constructor.
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Access the global footer font configuration.
-        var footerFont = diagram.HeaderFooter.HeaderFooterFont;
-
-        // Apply font settings based on the file extension.
-        if (extension == ".vsdx")
-        {
-            // For VSDX files use Calibri, bold (weight 700), 12‑point size.
-            footerFont.FaceName = "Calibri";
-            footerFont.Weight = 700;               // Bold weight.
-            footerFont.Height = 12;                // Point size.
-            footerFont.Italic = BOOL.False;        // No italic.
-            footerFont.Underline = BOOL.False;     // No underline.
-        }
-        else if (extension == ".vdx")
-        {
-            // For VDX files use Arial, regular weight, 10‑point size.
-            footerFont.FaceName = "Arial";
-            footerFont.Weight = 400;               // Regular weight.
-            footerFont.Height = 10;                // Point size.
-            footerFont.Italic = BOOL.False;        // No italic.
-            footerFont.Underline = BOOL.False;     // No underline.
-        }
-        else
-        {
-            Console.WriteLine("Unsupported file extension. Only .vsdx and .vdx are handled.");
-            return;
-        }
-
-        // Prepare an output file name indicating the modification.
-        string directory = Path.GetDirectoryName(inputPath);
-        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-        string outputFileName = $"{fileNameWithoutExt}_modified{extension}";
-        string outputPath = Path.Combine(directory, outputFileName);
+        // Prepare output path by appending "_modified" before the extension.
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified" + extension);
 
         try
         {
-            // Save the diagram using the same format as the original.
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the HeaderFooter object.
+            HeaderFooter headerFooter = diagram.HeaderFooter;
+
+            // Configure footer font based on file extension.
+            if (extension == ".vsdx")
+            {
+                // For VSDX files: use Arial, size 12, bold.
+                headerFooter.HeaderFooterFont.FaceName = "Arial";
+                headerFooter.HeaderFooterFont.Height = 12;          // Font size in points.
+                headerFooter.HeaderFooterFont.Weight = 700;        // 700 = bold.
+                headerFooter.HeaderFooterFont.Underline = BOOL.False;
+            }
+            else if (extension == ".vdx")
+            {
+                // For VDX files: use Times New Roman, size 10, regular.
+                headerFooter.HeaderFooterFont.FaceName = "Times New Roman";
+                headerFooter.HeaderFooterFont.Height = 10;
+                headerFooter.HeaderFooterFont.Weight = 400;        // 400 = regular.
+                headerFooter.HeaderFooterFont.Underline = BOOL.False;
+            }
+            else
+            {
+                Console.Error.WriteLine($"Error: Unsupported file extension '{extension}'. Only .vsdx and .vdx are supported.");
+                return;
+            }
+
+            // Save the modified diagram using the appropriate format.
             if (extension == ".vsdx")
             {
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
@@ -81,13 +70,13 @@ class Program
             {
                 diagram.Save(outputPath, SaveFileFormat.Vdx);
             }
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-            return;
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        Console.WriteLine($"Diagram saved with updated footer font: {outputPath}");
     }
 }

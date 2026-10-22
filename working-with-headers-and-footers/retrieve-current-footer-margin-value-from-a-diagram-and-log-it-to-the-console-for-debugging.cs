@@ -1,28 +1,42 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args == null || args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the Visio diagram from a file
-            string filePath = "sample.vsdx";
-            Diagram diagram = new Diagram(filePath);
-
-            // Retrieve the current footer margin (in inches)
+            // Retrieve the current footer margin (in inches) from the diagram's HeaderFooter
             double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
 
-            // Output the margin value for debugging
+            // Log the retrieved footer margin value for debugging
             Console.WriteLine($"Footer margin: {footerMargin} inches");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during loading or processing to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

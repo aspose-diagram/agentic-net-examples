@@ -3,56 +3,71 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <DiagramPath1> <DiagramPath2> <LogFilePath>");
+            return;
+        }
+
+        string diagramPath1 = args[0];
+        string diagramPath2 = args[1];
+        string logFilePath = args[2];
+
+        // Guard: ensure both diagram files exist.
+        if (!File.Exists(diagramPath1))
+        {
+            Console.Error.WriteLine($"Error: File not found – {diagramPath1}");
+            return;
+        }
+        if (!File.Exists(diagramPath2))
+        {
+            Console.Error.WriteLine($"Error: File not found – {diagramPath2}");
+            return;
+        }
+
+        try
+        {
+            // Load the first diagram.
+            Diagram diagram1 = new Diagram(diagramPath1);
+            // Load the second diagram.
+            Diagram diagram2 = new Diagram(diagramPath2);
+
+            // Retrieve left header text from each diagram.
+            string leftHeader1 = diagram1.HeaderFooter?.HeaderLeft ?? string.Empty;
+            string leftHeader2 = diagram2.HeaderFooter?.HeaderLeft ?? string.Empty;
+
+            // Prepare log content.
+            string logContent;
+            if (leftHeader1 == leftHeader2)
             {
-
-                // Paths to the two Visio files to compare
-                string diagramPath1 = @"C:\Diagrams\Diagram1.vsdx";
-                string diagramPath2 = @"C:\Diagrams\Diagram2.vsdx";
-
-                // Path to the log file where differences will be recorded
-                string logFilePath = @"C:\Diagrams\HeaderComparisonLog.txt";
-
-                // Load the first diagram
-                Diagram diagram1 = new Diagram(diagramPath1);
-                // Load the second diagram
-                Diagram diagram2 = new Diagram(diagramPath2);
-
-                // Retrieve the left header text from each diagram (null‑safe)
-                string headerLeft1 = diagram1.HeaderFooter.HeaderLeft ?? string.Empty;
-                string headerLeft2 = diagram2.HeaderFooter.HeaderLeft ?? string.Empty;
-
-                // Compare the header texts and write the result to the log file
-                using (StreamWriter writer = new StreamWriter(logFilePath, true))
-                {
-                    writer.WriteLine($"Comparison performed at {DateTime.Now}");
-                    writer.WriteLine($"Diagram 1: {Path.GetFileName(diagramPath1)}");
-                    writer.WriteLine($"Diagram 2: {Path.GetFileName(diagramPath2)}");
-
-                    if (headerLeft1.Equals(headerLeft2, StringComparison.Ordinal))
-                    {
-                        writer.WriteLine("Result: Left header texts are identical.");
-                    }
-                    else
-                    {
-                        writer.WriteLine("Result: Left header texts differ.");
-                        writer.WriteLine($" - Diagram 1 HeaderLeft: \"{headerLeft1}\"");
-                        writer.WriteLine($" - Diagram 2 HeaderLeft: \"{headerLeft2}\"");
-                    }
-
-                    writer.WriteLine(new string('-', 50));
-                }
-
-                // Optional: inform the user via console
-                Console.WriteLine("Header comparison completed. See log file for details.");
-
+                logContent = $"No differences found. Both diagrams have identical left header text:\r\n\"{leftHeader1}\"";
             }
-            catch (System.IO.FileNotFoundException ex)
+            else
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                logContent = $"Differences detected in left header text:\r\n" +
+                             $"Diagram 1 ({Path.GetFileName(diagramPath1)}): \"{leftHeader1}\"\r\n" +
+                             $"Diagram 2 ({Path.GetFileName(diagramPath2)}): \"{leftHeader2}\"";
             }
+
+            // Ensure the directory for the log file exists.
+            string logDir = Path.GetDirectoryName(logFilePath);
+            if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
+            {
+                Directory.CreateDirectory(logDir);
+            }
+
+            // Write the comparison result to the log file.
+            File.WriteAllText(logFilePath, logContent);
+            Console.WriteLine($"Comparison completed. Results written to: {logFilePath}");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

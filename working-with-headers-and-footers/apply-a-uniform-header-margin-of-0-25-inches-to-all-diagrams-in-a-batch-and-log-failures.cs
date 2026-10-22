@@ -6,49 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input folder containing diagrams; default to "Diagrams" if not provided
-        string inputFolder = args.Length > 0 ? args[0] : "Diagrams";
-
-        // Output folder for processed diagrams; default to "Processed"
-        string outputFolder = args.Length > 1 ? args[1] : "Processed";
-
-        // Ensure the output directory exists
-        if (!Directory.Exists(outputFolder))
+        // Verify that a folder path argument was provided.
+        if (args.Length == 0)
         {
-            Directory.CreateDirectory(outputFolder);
+            Console.Error.WriteLine("Please provide the folder path containing Visio diagram files as the first argument.");
+            return;
         }
 
-        // Get all Visio files in the input folder (common extensions)
-        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        string folderPath = args[0];
+
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            return;
+        }
+
+        // Retrieve all Visio files with .vsdx extension in the folder.
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
+
+        // Process each diagram file.
         foreach (string filePath in diagramFiles)
         {
-            // Filter supported Visio extensions
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
+            // Guard: ensure the file still exists before processing.
+            if (!File.Exists(filePath))
             {
+                Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
             try
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
+                // Load the diagram inside a using block as required by the API.
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // Set a uniform header margin of 0.25 inches.
+                    diagram.HeaderFooter.HeaderMargin.Value = 0.25;
 
-                // Apply a uniform header margin of 0.25 inches
-                diagram.HeaderFooter.HeaderMargin.Value = 0.25;
+                    // Save the diagram back to the same file using VSDX format.
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                }
 
-                // Determine output path (same file name in the output folder)
-                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                // Save the diagram using VSDX format (works for all supported types)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Successfully processed: {Path.GetFileName(filePath)}");
+                // Log successful processing.
+                Console.WriteLine($"Successfully updated header margin: {Path.GetFileName(filePath)}");
             }
             catch (Exception ex)
             {
-                // Log any failures without stopping the batch
-                Console.WriteLine($"Failed to process '{Path.GetFileName(filePath)}': {ex.Message}");
+                // Log any failures to the error stream.
+                Console.Error.WriteLine($"Failed to process '{filePath}': {ex.Message}");
             }
         }
     }

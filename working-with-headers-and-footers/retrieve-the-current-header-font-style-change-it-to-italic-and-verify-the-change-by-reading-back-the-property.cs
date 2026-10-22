@@ -1,50 +1,62 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input diagram path
-        string inputPath = "sample.vsdx";
-        // Guard: ensure the input file exists
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the global header/footer font settings
+            // Retrieve the global header font object.
             HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
 
-            // Retrieve and display the current Italic setting (BOOL type)
-            BOOL originalItalic = headerFont.Italic;
-            Console.WriteLine($"Original Header Font Italic: {originalItalic == BOOL.True}");
+            // Output the current Italic flag (BOOL).
+            Console.WriteLine($"Current Header Font Italic: {headerFont.Italic}");
 
-            // Change the header font style to italic (set BOOL.True)
+            // Change the header font style to italic.
             headerFont.Italic = BOOL.True;
 
-            // Verify that the change was applied
-            BOOL updatedItalic = diagram.HeaderFooter.HeaderFooterFont.Italic;
-            if (updatedItalic != BOOL.True)
+            // Verify that the change was applied.
+            if (headerFont.Italic == BOOL.True)
             {
-                throw new Exception("Failed to set the header font to italic.");
+                Console.WriteLine("Header font italic flag set successfully.");
             }
-            Console.WriteLine("Header font italic property successfully set to true.");
+            else
+            {
+                throw new Exception("Failed to set header font to italic.");
+            }
 
-            // Save the diagram to persist the change (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Optional: save the modified diagram to a new file.
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
+
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

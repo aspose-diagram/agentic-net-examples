@@ -1,30 +1,42 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found at path '{inputPath}'.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the Visio file
-            string visioPath = "input.vsdx";
+            // Retrieve the left header text value from the diagram's HeaderFooter
+            string leftHeader = diagram.HeaderFooter.HeaderLeft ?? string.Empty;
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Retrieve the left header text
-            string leftHeader = diagram.HeaderFooter.HeaderLeft;
-
-            // Output the header text
-            Console.WriteLine($"Left Header: {leftHeader}");
-
+            // Output the retrieved header text
+            Console.WriteLine($"Left Header Text: {leftHeader}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during loading or processing to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

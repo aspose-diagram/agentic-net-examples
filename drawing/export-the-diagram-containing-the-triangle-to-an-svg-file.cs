@@ -1,27 +1,46 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Expect input Visio file path as first argument and optional output SVG path as second argument.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputSvgFilePath]");
+            return;
+        }
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
 
-        // Draw a triangle using a polyline.
-        // The points are: (2,2) -> (4,2) -> (3,4) -> back to (2,2) to close the shape.
-        long triangleId = page.DrawPolyline(new double[] { 2, 2, 4, 2, 3, 4, 2, 2 });
+        // Determine output path. If not provided, replace input extension with .svg in the same folder.
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".svg");
 
-        // Optionally retrieve the shape if further modifications are needed
-        // Shape triangle = page.Shapes.GetShape(triangleId);
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Export the diagram (including the triangle) to SVG format
-        SVGSaveOptions svgOptions = new SVGSaveOptions();
-        diagram.Save("triangle.svg", svgOptions);
+            // Export the diagram to SVG format.
+            diagram.Save(outputPath, SaveFileFormat.Svg);
+
+            // Clean up resources.
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
+        }
     }
 }

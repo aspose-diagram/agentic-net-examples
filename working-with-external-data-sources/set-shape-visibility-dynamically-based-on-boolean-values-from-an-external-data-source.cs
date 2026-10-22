@@ -1,78 +1,118 @@
 using System;
-using System.Data;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: 1) path to the Visio diagram, 2) path to the CSV data file.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <dataCsvPath> [outputPath]");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string dataCsvPath = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : "output.vsdx";
+
+        // Guard against missing files.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(dataCsvPath))
+        {
+            Console.Error.WriteLine($"Data CSV file not found: {dataCsvPath}");
+            return;
+        }
+
+        // Load visibility data from CSV (format: ShapeName,IsVisible)
+        var visibilityMap = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var line in File.ReadAllLines(dataCsvPath))
             {
+                // Skip empty lines.
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
+                var parts = line.Split(',');
+                if (parts.Length < 2)
+                    continue; // Invalid line, ignore.
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+                string shapeName = parts[0].Trim();
+                string boolText = parts[1].Trim();
 
-                // Simulate external data source: a DataTable with ShapeId and IsVisible columns
-                DataTable visibilityTable = CreateVisibilityDataTable();
-
-                // Iterate through each row and set shape visibility accordingly
-                foreach (DataRow row in visibilityTable.Rows)
+                bool isVisible = false;
+                // Accept true/false (case-insensitive) or 1/0.
+                if (bool.TryParse(boolText, out bool parsedBool))
                 {
-                    // Retrieve shape ID and visibility flag from the data row
-                    long shapeId = Convert.ToInt64(row["ShapeId"]);
-                    bool isVisible = Convert.ToBoolean(row["IsVisible"]);
-
-                    // Retrieve the shape from the first page (adjust if shapes are on other pages)
-                    Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                    if (shape == null)
-                    {
-                        Console.WriteLine($"Shape with ID {shapeId} not found.");
-                        continue;
-                    }
-
-                    // Hide shape by setting width and height to zero, show by restoring to a default size (e.g., 1 inch)
-                    if (isVisible)
-                    {
-                        shape.XForm.Width.Value = 1.0;   // default visible width
-                        shape.XForm.Height.Value = 1.0;  // default visible height
-                    }
-                    else
-                    {
-                        shape.XForm.Width.Value = 0.0;   // hide width
-                        shape.XForm.Height.Value = 0.0;  // hide height
-                    }
+                    isVisible = parsedBool;
+                }
+                else if (int.TryParse(boolText, out int intVal))
+                {
+                    isVisible = intVal != 0;
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                if (!string.IsNullOrEmpty(shapeName))
+                {
+                    visibilityMap[shapeName] = isVisible;
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Helper method to create a sample DataTable representing external visibility data
-        private static DataTable CreateVisibilityDataTable()
+        }
+        catch (Exception ex)
         {
-            DataTable table = new DataTable();
-            table.Columns.Add("ShapeId", typeof(long));
-            table.Columns.Add("IsVisible", typeof(bool));
+            Console.Error.WriteLine($"Error reading CSV data: {ex.Message}");
+            return;
+        }
 
-            // Sample data: adjust ShapeId values to match actual shape IDs in your diagram
-            table.Rows.Add(1L, true);
-            table.Rows.Add(2L, false);
-            table.Rows.Add(3L, true);
-            // Add more rows as needed
+        // Load the Visio diagram and apply visibility changes.
+        try
+        {
+            Diagram diagram = new Diagram(diagramPath);
 
-            return table;
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Use the shape's NameU as the identifier.
+                    string shapeName = shape.NameU;
+                    if (string.IsNullOrEmpty(shapeName))
+                        continue;
+
+                    if (visibilityMap.TryGetValue(shapeName, out bool shouldBeVisible))
+                    {
+                        if (shouldBeVisible)
+                        {
+                            // Ensure the shape has a reasonable size if it was previously hidden.
+                            // If width or height is zero, set them to a default of 1 inch.
+                            if (shape.XForm.Width.Value == 0)
+                                shape.XForm.Width.Value = 1.0;
+                            if (shape.XForm.Height.Value == 0)
+                                shape.XForm.Height.Value = 1.0;
+                        }
+                        else
+                        {
+                            // Hide the shape by setting its width and height to zero.
+                            shape.XForm.Width.Value = 0.0;
+                            shape.XForm.Height.Value = 0.0;
+                        }
+                    }
+                }
+            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

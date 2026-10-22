@@ -1,48 +1,108 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Prompt user for the input Visio file path.
+        Console.Write("Enter the path to the Visio file (e.g., diagram.vsdx): ");
+        string inputPath = Console.ReadLine();
+
+        // Guard: ensure the file exists.
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
+        {
+            Console.Error.WriteLine("Error: The specified Visio file does not exist.");
+            return;
+        }
+
+        // Prompt user for the shape name (NameU) to which the hyperlink will be added.
+        Console.Write("Enter the NameU of the shape to modify: ");
+        string targetShapeName = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(targetShapeName))
+        {
+            Console.Error.WriteLine("Error: Shape name cannot be empty.");
+            return;
+        }
+
+        // Prompt user for the hyperlink URL.
+        Console.Write("Enter the hyperlink URL (e.g., https://example.com): ");
+        string hyperlinkUrl = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(hyperlinkUrl))
+        {
+            Console.Error.WriteLine("Error: Hyperlink URL cannot be empty.");
+            return;
+        }
+
+        // Prompt user for a descriptive name for the hyperlink.
+        Console.Write("Enter a descriptive name for the hyperlink: ");
+        string hyperlinkName = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(hyperlinkName))
+        {
+            Console.Error.WriteLine("Error: Hyperlink name cannot be empty.");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape to modify (example: shape with ID 1)
-            Shape shape = page.Shapes.GetShape(1);
-            if (shape == null)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Shape with ID 1 not found.");
-                return;
+                Shape targetShape = null;
+
+                // Iterate through all pages and shapes to find the shape with the specified NameU.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // NameU holds the universal name of the shape.
+                        if (shape.NameU == targetShapeName)
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    if (targetShape != null)
+                        break;
+                }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Error: Shape with NameU '{targetShapeName}' not found.");
+                    return;
+                }
+
+                // Create a new Hyperlink instance.
+                Hyperlink link = new Hyperlink();
+
+                // Set the descriptive name of the hyperlink.
+                link.Name = hyperlinkName;
+
+                // Set the external address (URL) of the hyperlink.
+                link.Address.Value = hyperlinkUrl;
+
+                // Add the hyperlink to the shape's Hyperlinks collection.
+                targetShape.Hyperlinks.Add(link);
+
+                // Define output file path (original name with "_modified" suffix).
+                string directory = Path.GetDirectoryName(inputPath);
+                string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_modified.vsdx");
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Hyperlink added successfully. Modified file saved to: {outputPath}");
             }
-
-            // Create a new hyperlink
-            Hyperlink hyperlink = new Hyperlink();
-            hyperlink.Name = "ExampleLink";
-            hyperlink.Address.Value = "https://www.example.com";
-            hyperlink.Description.Value = "Example Website";
-
-            // Add the hyperlink to the shape
-            shape.Hyperlinks.Add(hyperlink);
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

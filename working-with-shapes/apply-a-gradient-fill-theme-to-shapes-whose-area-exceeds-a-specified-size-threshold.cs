@@ -1,34 +1,44 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: input file, output file, area threshold
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <areaThreshold>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        if (!double.TryParse(args[2], out double areaThreshold))
+        {
+            Console.Error.WriteLine("Invalid area threshold. Provide a numeric value.");
+            return;
+        }
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
-
-            // Area threshold in square inches (adjust as needed)
-            double areaThreshold = 4.0;
 
             // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked for deletion
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Compute shape area (width * height)
+                    // Calculate shape area (Width * Height)
                     double width = shape.XForm.Width.Value;
                     double height = shape.XForm.Height.Value;
                     double area = width * height;
@@ -36,33 +46,38 @@ class Program
                     // Apply gradient fill if area exceeds the threshold
                     if (area > areaThreshold)
                     {
-                        // Set fill pattern to gradient
-                        shape.Fill.FillPattern.Value = 25; // Gradient pattern identifier
-                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-                        shape.Fill.GradientFill.GradientDir.Value = 0; // 0 = left‑to‑right
+                        // Set fill pattern to gradient (value 25)
+                        shape.Fill.FillPattern.Value = 25;
 
-                        // Remove any existing gradient stops
+                        // Enable gradient fill
+                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+                        // Set gradient direction (0 = horizontal, adjust as needed)
+                        shape.Fill.GradientFill.GradientDir.Value = 0;
+
+                        // Clear any existing gradient stops
                         shape.Fill.GradientFill.GradientStops.Clear();
 
-                        // Add gradient stops (example: blue to green)
+                        // Add two gradient stops: red at start, blue at end
                         shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(0, MeasureConst.NUM),
-                            new ColorValue("#0000FF", MeasureConst.Undefined));
+                            new ColorValue("#FF0000", MeasureConst.Undefined));
 
                         shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(1, MeasureConst.NUM),
-                            new ColorValue("#00FF00", MeasureConst.Undefined));
+                            new ColorValue("#0000FF", MeasureConst.Undefined));
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

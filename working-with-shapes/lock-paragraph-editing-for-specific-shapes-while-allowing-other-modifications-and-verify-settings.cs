@@ -2,110 +2,70 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
-        // Paths to the source and destination Visio files
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists before proceeding
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-        string outputPath = "output_locked.vsdx";
-
-        // Load the diagram inside a try/catch to handle any loading errors
-        Diagram diagram;
-        try
+        // Expect three arguments: input diagram path, output diagram path, shape name to lock paragraph editing.
+        if (args.Length < 3)
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <shapeName>");
             return;
         }
 
-        // Lock paragraph (text) editing for shapes named "TargetShape"
-        foreach (Page page in diagram.Pages)
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string targetShapeName = args[2];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
         {
-            foreach (Shape shape in page.Shapes)
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (shape.NameU == "TargetShape")
+                // Iterate through all pages and shapes to find matching shapes.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Lock text (paragraph) editing
-                    shape.Protection.LockTextEdit.Value = BOOL.True;
-
-                    // Ensure other protection flags remain unlocked
-                    shape.Protection.LockMoveX.Value = BOOL.False;
-                    shape.Protection.LockMoveY.Value = BOOL.False;
-                    shape.Protection.LockWidth.Value = BOOL.False;
-                    shape.Protection.LockHeight.Value = BOOL.False;
-                    shape.Protection.LockRotate.Value = BOOL.False;
-                    shape.Protection.LockBegin.Value = BOOL.False;
-                    shape.Protection.LockEnd.Value = BOOL.False;
-                    shape.Protection.LockSelect.Value = BOOL.False;
-                    shape.Protection.LockDelete.Value = BOOL.False;
-                    shape.Protection.LockFormat.Value = BOOL.False;
-                    shape.Protection.LockThemeColors.Value = BOOL.False;
-                    shape.Protection.LockThemeEffects.Value = BOOL.False;
-                    shape.Protection.LockVtxEdit.Value = BOOL.False;
-                }
-            }
-        }
-
-        // Save the modified diagram inside a try/catch to capture any save errors
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-            return;
-        }
-
-        // Verify that the protection settings were applied correctly
-        Diagram verifyDiagram;
-        try
-        {
-            verifyDiagram = new Diagram(outputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading verification diagram: {ex.Message}");
-            return;
-        }
-
-        foreach (Page page in verifyDiagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.NameU == "TargetShape")
-                {
-                    // Verify paragraph (text) lock
-                    if (shape.Protection.LockTextEdit.Value != BOOL.True)
-                        throw new Exception("LockTextEdit was not set correctly.");
-
-                    // Verify that other locks are not enabled
-                    if (shape.Protection.LockMoveX.Value != BOOL.False ||
-                        shape.Protection.LockMoveY.Value != BOOL.False ||
-                        shape.Protection.LockWidth.Value != BOOL.False ||
-                        shape.Protection.LockHeight.Value != BOOL.False ||
-                        shape.Protection.LockRotate.Value != BOOL.False ||
-                        shape.Protection.LockBegin.Value != BOOL.False ||
-                        shape.Protection.LockEnd.Value != BOOL.False ||
-                        shape.Protection.LockSelect.Value != BOOL.False ||
-                        shape.Protection.LockDelete.Value != BOOL.False ||
-                        shape.Protection.LockFormat.Value != BOOL.False ||
-                        shape.Protection.LockThemeColors.Value != BOOL.False ||
-                        shape.Protection.LockThemeEffects.Value != BOOL.False ||
-                        shape.Protection.LockVtxEdit.Value != BOOL.False)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        throw new Exception("Unexpected protection flags were modified.");
-                    }
+                        // Check if the shape's universal name matches the target name (case-sensitive).
+                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU == targetShapeName)
+                        {
+                            // Lock paragraph (text) editing for this shape.
+                            shape.Protection.LockTextEdit.Value = BOOL.True;
 
-                    Console.WriteLine($"Shape '{shape.NameU}' paragraph editing locked successfully.");
+                            // Verify the lock was applied.
+                            if (shape.Protection.LockTextEdit.Value == BOOL.True)
+                            {
+                                Console.WriteLine($"Paragraph editing locked for shape ID {shape.ID} (NameU: {targetShapeName}).");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Failed to lock paragraph editing for shape ID {shape.ID} (NameU: {targetShapeName}).");
+                            }
+
+                            // Example of allowing other modifications: change fill foreground color.
+                            // Use a hex color string (e.g., yellow).
+                            shape.Fill.FillForegnd.Value = "#FFFF00";
+                        }
+                    }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,84 +1,88 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the modified output file
-            string outputPath = "ModifiedDiagram.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate over each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Capture original PrintProps values
-                    PrintPageOrientationValue originalOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-                    double originalScaleX = page.PageSheet.PrintProps.ScaleX.Value;
-                    double originalScaleY = page.PageSheet.PrintProps.ScaleY.Value;
-                    double originalTopMargin = page.PageSheet.PrintProps.PageTopMargin.Value;
-                    double originalBottomMargin = page.PageSheet.PrintProps.PageBottomMargin.Value;
-                    double originalLeftMargin = page.PageSheet.PrintProps.PageLeftMargin.Value;
-                    double originalRightMargin = page.PageSheet.PrintProps.PageRightMargin.Value;
+                // Access the PrintProps of the current page
+                PrintProps printProps = page.PageSheet.PrintProps;
 
-                    // Log original values
-                    Console.WriteLine($"Page ID {page.ID} - Original PrintProps:");
-                    Console.WriteLine($"  Orientation: {originalOrientation}");
-                    Console.WriteLine($"  ScaleX: {originalScaleX}");
-                    Console.WriteLine($"  ScaleY: {originalScaleY}");
-                    Console.WriteLine($"  TopMargin: {originalTopMargin}");
-                    Console.WriteLine($"  BottomMargin: {originalBottomMargin}");
-                    Console.WriteLine($"  LeftMargin: {originalLeftMargin}");
-                    Console.WriteLine($"  RightMargin: {originalRightMargin}");
+                // Log original PrintProps values
+                Console.WriteLine($"Page ID {page.ID} - Original PrintProps:");
+                Console.WriteLine($"  Left Margin   : {printProps.PageLeftMargin.Value}");
+                Console.WriteLine($"  Right Margin  : {printProps.PageRightMargin.Value}");
+                Console.WriteLine($"  Top Margin    : {printProps.PageTopMargin.Value}");
+                Console.WriteLine($"  Bottom Margin : {printProps.PageBottomMargin.Value}");
+                Console.WriteLine($"  Orientation   : {printProps.PrintPageOrientation.Value}");
+                Console.WriteLine($"  Fit To Sheet  : {printProps.OnPage.Value}");
+                Console.WriteLine($"  Pages Across  : {printProps.PagesX.Value}");
+                Console.WriteLine($"  Pages Down    : {printProps.PagesY.Value}");
+                Console.WriteLine($"  Scale X       : {printProps.ScaleX.Value}");
+                Console.WriteLine($"  Scale Y       : {printProps.ScaleY.Value}");
 
-                    // Modify PrintProps
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-                    page.PageSheet.PrintProps.ScaleY.Value = 0.75;
-                    page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-                    page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-                    page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-                    page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
-                    page.PageSheet.PrintProps.OnPage.Value = BOOL.True; // Ensure page is set to print
+                // Modify PrintProps values
+                printProps.PageLeftMargin.Value = 0.5;   // inches
+                printProps.PageRightMargin.Value = 0.5;  // inches
+                printProps.PageTopMargin.Value = 0.5;    // inches
+                printProps.PageBottomMargin.Value = 0.5; // inches
 
-                    // Capture updated PrintProps values
-                    PrintPageOrientationValue updatedOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-                    double updatedScaleX = page.PageSheet.PrintProps.ScaleX.Value;
-                    double updatedScaleY = page.PageSheet.PrintProps.ScaleY.Value;
-                    double updatedTopMargin = page.PageSheet.PrintProps.PageTopMargin.Value;
-                    double updatedBottomMargin = page.PageSheet.PrintProps.PageBottomMargin.Value;
-                    double updatedLeftMargin = page.PageSheet.PrintProps.PageLeftMargin.Value;
-                    double updatedRightMargin = page.PageSheet.PrintProps.PageRightMargin.Value;
+                // Set orientation to Landscape
+                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                    // Log updated values
-                    Console.WriteLine($"Page ID {page.ID} - Updated PrintProps:");
-                    Console.WriteLine($"  Orientation: {updatedOrientation}");
-                    Console.WriteLine($"  ScaleX: {updatedScaleX}");
-                    Console.WriteLine($"  ScaleY: {updatedScaleY}");
-                    Console.WriteLine($"  TopMargin: {updatedTopMargin}");
-                    Console.WriteLine($"  BottomMargin: {updatedBottomMargin}");
-                    Console.WriteLine($"  LeftMargin: {updatedLeftMargin}");
-                    Console.WriteLine($"  RightMargin: {updatedRightMargin}");
-                    Console.WriteLine(); // Blank line for readability
-                }
+                // Enable Fit to Sheet across 1 page and down 1 page
+                printProps.OnPage.Value = BOOL.True;
+                printProps.PagesX.Value = 1;
+                printProps.PagesY.Value = 1;
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Set scaling factors to 1 (100%)
+                printProps.ScaleX.Value = 1;
+                printProps.ScaleY.Value = 1;
+
+                // Log updated PrintProps values
+                Console.WriteLine($"Page ID {page.ID} - Updated PrintProps:");
+                Console.WriteLine($"  Left Margin   : {printProps.PageLeftMargin.Value}");
+                Console.WriteLine($"  Right Margin  : {printProps.PageRightMargin.Value}");
+                Console.WriteLine($"  Top Margin    : {printProps.PageTopMargin.Value}");
+                Console.WriteLine($"  Bottom Margin : {printProps.PageBottomMargin.Value}");
+                Console.WriteLine($"  Orientation   : {printProps.PrintPageOrientation.Value}");
+                Console.WriteLine($"  Fit To Sheet  : {printProps.OnPage.Value}");
+                Console.WriteLine($"  Pages Across  : {printProps.PagesX.Value}");
+                Console.WriteLine($"  Pages Down    : {printProps.PagesY.Value}");
+                Console.WriteLine($"  Scale X       : {printProps.ScaleX.Value}");
+                Console.WriteLine($"  Scale Y       : {printProps.ScaleY.Value}");
+                Console.WriteLine(); // Blank line for readability
             }
 
+            // Save the modified diagram to a new file
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output_modified.vsdx");
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

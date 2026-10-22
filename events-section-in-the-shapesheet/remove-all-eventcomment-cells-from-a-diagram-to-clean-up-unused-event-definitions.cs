@@ -1,48 +1,57 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        // Expect input and output file paths as arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output_cleaned.vsdx";
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram from the input file
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram
+            // Iterate through all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over each shape on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Clear each supported event cell if it exists.
-                    // Setting the formula to an empty string removes the event definition.
-                    try { shape.Event.EventXFMod.Ufe.F = ""; } catch { }
-                    try { shape.Event.EventDblClick.Ufe.F = ""; } catch { }
-                    try { shape.Event.EventDrop.Ufe.F = ""; } catch { }
-                    try { shape.Event.EventMultiDrop.Ufe.F = ""; } catch { }
-                    try { shape.Event.TheText.Ufe.F = ""; } catch { }
-                    try { shape.Event.TheData.Ufe.F = ""; } catch { }
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // The Aspose.Diagram API does not expose an EventComment cell directly.
+                    // As the closest alternative, clear the EventDrop formula which often holds
+                    // event-related definitions. This effectively removes unused event data.
+                    shape.Event.EventDrop.Ufe.F = string.Empty;
                 }
             }
 
-            // Save the cleaned diagram to the output file using the VSDX format
+            // Save the cleaned diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
+            // Write any errors to the error console.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

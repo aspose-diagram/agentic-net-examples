@@ -1,57 +1,81 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <customTextWidth> <customTextHeight> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Parse custom width and height for the text block.
+        if (!double.TryParse(args[1], out double customWidth) || !double.TryParse(args[2], out double customHeight))
+        {
+            Console.Error.WriteLine("Invalid width or height values. Provide numeric values.");
+            return;
+        }
+
+        // Determine output path (optional argument).
+        string outputPath = args.Length >= 4 ? args[3] : "output.vsdx";
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Access the first page
-                Page page = diagram.Pages[0];
-
-                // Retrieve the first shape on the page
-                Shape shape = null;
-                foreach (Shape s in page.Shapes)
+                // Ensure the diagram has at least one page and one shape.
+                if (diagram.Pages.Count == 0)
                 {
-                    shape = s;
-                    break;
-                }
-
-                if (shape == null)
-                {
-                    Console.WriteLine("No shape found on the page.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Custom width and height for the text block (in inches)
-                double customWidth = 2.0;   // example width
-                double customHeight = 1.0;  // example height
+                Page firstPage = diagram.Pages[0];
+                if (firstPage.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("The first page contains no shapes.");
+                    return;
+                }
 
-                // Set the text block dimensions
+                // Access the first shape on the first page.
+                Shape shape = firstPage.Shapes[0];
+
+                // Set custom width and height for the shape's text block.
                 shape.TextXForm.TxtWidth.Value = customWidth;
                 shape.TextXForm.TxtHeight.Value = customHeight;
 
-                // Calculate the bounding box of the text block
-                double bboxWidth = shape.TextXForm.TxtWidth.Value;
-                double bboxHeight = shape.TextXForm.TxtHeight.Value;
+                // Retrieve the resulting bounding box dimensions.
+                double textBlockWidth = shape.TextXForm.TxtWidth.Value;
+                double textBlockHeight = shape.TextXForm.TxtHeight.Value;
 
-                // Output the results
-                Console.WriteLine($"Text block bounding box width: {bboxWidth} inches");
-                Console.WriteLine($"Text block bounding box height: {bboxHeight} inches");
+                // Output the bounding box information.
+                Console.WriteLine($"Text Block Bounding Box:");
+                Console.WriteLine($"  Width : {textBlockWidth}");
+                Console.WriteLine($"  Height: {textBlockHeight}");
 
-                // Optionally save the diagram to verify changes
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Optionally, save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

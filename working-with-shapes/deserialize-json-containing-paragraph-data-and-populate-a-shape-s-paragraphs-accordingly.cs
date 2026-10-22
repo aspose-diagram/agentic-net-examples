@@ -1,130 +1,161 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramParagraphUpdater
+class Program
 {
-    // DTO representing a paragraph's formatting properties
-    public class ParagraphDto
+    // Model representing a paragraph's formatting and text as defined in the input JSON.
+    private class ParagraphData
     {
         public string HorzAlign { get; set; }
-        public double? IndLeft { get; set; }
-        public double? IndRight { get; set; }
-        public double? IndFirst { get; set; }
-        public double? SpBefore { get; set; }
-        public double? SpAfter { get; set; }
-        public double? SpLine { get; set; }
+        public double IndLeft { get; set; }
+        public double IndRight { get; set; }
+        public double IndFirst { get; set; }
+        public double SpBefore { get; set; }
+        public double SpAfter { get; set; }
+        public double SpLine { get; set; }
         public string Bullet { get; set; }
         public string BulletStr { get; set; }
+        public string Text { get; set; }
     }
 
-    // DTO representing the shape to update
-    public class ShapeUpdateDto
+    static void Main(string[] args)
     {
-        public long ShapeId { get; set; }
-        public int PageIndex { get; set; }
-        public List<ParagraphDto> Paragraphs { get; set; } = new();
-    }
-
-    class Program
-    {
-        static void Main()
+        // Expect three arguments: diagram file path, JSON file path, shape ID (numeric).
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <jsonPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string jsonPath = args[1];
+        string shapeIdArg = args[2];
+
+        // Guard against missing files.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(jsonPath))
+        {
+            Console.Error.WriteLine($"JSON file not found: {jsonPath}");
+            return;
+        }
+
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        // Load and deserialize the JSON containing paragraph definitions.
+        ParagraphData[] paragraphs;
+        try
+        {
+            string jsonContent = File.ReadAllText(jsonPath);
+            paragraphs = JsonSerializer.Deserialize<ParagraphData[]>(jsonContent);
+            if (paragraphs == null)
             {
+                Console.Error.WriteLine("Failed to deserialize JSON or JSON is empty.");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading or parsing JSON: {ex.Message}");
+            return;
+        }
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+        // Load the Visio diagram and apply paragraph data to the specified shape.
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Access the first page (adjust if needed).
+                Page page = diagram.Pages[0];
 
-                // Path to the JSON file containing paragraph data
-                string jsonPath = "paragraphs.json";
-
-                // Path for the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Read and deserialize JSON
-                string jsonContent = File.ReadAllText(jsonPath);
-                List<ShapeUpdateDto> updates = JsonSerializer.Deserialize<List<ShapeUpdateDto>>(jsonContent);
-
-                if (updates == null)
-                    throw new Exception("Failed to deserialize JSON.");
-
-                foreach (var update in updates)
+                // Retrieve the target shape by its ID.
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    // Validate page index
-                    if (update.PageIndex < 0 || update.PageIndex >= diagram.Pages.Count)
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    return;
+                }
+
+                // Clear existing paragraphs.
+                shape.Paras.Clear();
+
+                // Build combined text for the shape (each paragraph separated by a line break).
+                string combinedText = string.Empty;
+
+                for (int i = 0; i < paragraphs.Length; i++)
+                {
+                    ParagraphData pd = paragraphs[i];
+
+                    // Create a new paragraph object.
+                    Para para = new Para();
+
+                    // Horizontal alignment.
+                    if (!string.IsNullOrEmpty(pd.HorzAlign) &&
+                        Enum.TryParse(pd.HorzAlign, out HorzAlignValue horzAlignVal))
                     {
-                        Console.WriteLine($"Invalid page index {update.PageIndex} for shape ID {update.ShapeId}.");
-                        continue;
+                        para.HorzAlign.Value = horzAlignVal;
                     }
 
-                    Page page = diagram.Pages[update.PageIndex];
+                    // Indentation and spacing.
+                    para.IndLeft.Value = pd.IndLeft;
+                    para.IndRight.Value = pd.IndRight;
+                    para.IndFirst.Value = pd.IndFirst;
+                    para.SpBefore.Value = pd.SpBefore;
+                    para.SpAfter.Value = pd.SpAfter;
+                    para.SpLine.Value = pd.SpLine;
 
-                    // Retrieve the shape by ID (cast to int as required by GetShape)
-                    Shape shape = page.Shapes.GetShape((int)update.ShapeId);
-                    if (shape == null)
+                    // Bullet style.
+                    if (!string.IsNullOrEmpty(pd.Bullet) &&
+                        Enum.TryParse(pd.Bullet, out BulletValue bulletVal))
                     {
-                        Console.WriteLine($"Shape with ID {update.ShapeId} not found on page {update.PageIndex}.");
-                        continue;
+                        para.Bullet.Value = bulletVal;
                     }
 
-                    // Clear existing paragraphs
-                    shape.Paras.Clear();
+                    // Custom bullet string.
+                    para.BulletStr.Value = pd.BulletStr ?? string.Empty;
 
-                    // Add new paragraphs based on DTO
-                    foreach (var paraDto in update.Paragraphs)
+                    // Add the configured paragraph to the shape.
+                    shape.Paras.Add(para);
+
+                    // Append paragraph text.
+                    combinedText += pd.Text ?? string.Empty;
+                    if (i < paragraphs.Length - 1)
                     {
-                        Para para = new Para();
-
-                        // HorzAlign
-                        if (!string.IsNullOrEmpty(paraDto.HorzAlign))
-                        {
-                            // Map string to enum; default to LeftAlign if parsing fails
-                            if (Enum.TryParse<HorzAlignValue>(paraDto.HorzAlign, out var horzAlign))
-                                para.HorzAlign.Value = horzAlign;
-                            else
-                                para.HorzAlign.Value = HorzAlignValue.LeftAlign;
-                        }
-
-                        // Indentation and spacing values (in inches)
-                        if (paraDto.IndLeft.HasValue) para.IndLeft.Value = paraDto.IndLeft.Value;
-                        if (paraDto.IndRight.HasValue) para.IndRight.Value = paraDto.IndRight.Value;
-                        if (paraDto.IndFirst.HasValue) para.IndFirst.Value = paraDto.IndFirst.Value;
-                        if (paraDto.SpBefore.HasValue) para.SpBefore.Value = paraDto.SpBefore.Value;
-                        if (paraDto.SpAfter.HasValue) para.SpAfter.Value = paraDto.SpAfter.Value;
-                        if (paraDto.SpLine.HasValue) para.SpLine.Value = paraDto.SpLine.Value;
-
-                        // Bullet formatting
-                        if (!string.IsNullOrEmpty(paraDto.Bullet))
-                        {
-                            if (Enum.TryParse<BulletValue>(paraDto.Bullet, out var bulletVal))
-                                para.Bullet.Value = bulletVal;
-                            else
-                                para.Bullet.Value = BulletValue.Style1;
-                        }
-
-                        if (!string.IsNullOrEmpty(paraDto.BulletStr))
-                            para.BulletStr.Value = paraDto.BulletStr;
-
-                        // Add the configured paragraph to the shape
-                        shape.Paras.Add(para);
+                        combinedText += "\r\n";
                     }
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Replace existing text with the combined paragraph text.
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt(combinedText));
 
+                // Refresh shape data to ensure changes are applied.
+                shape.RefreshData();
+
+                // Save the modified diagram to a new file.
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(diagramPath) ?? "",
+                    Path.GetFileNameWithoutExtension(diagramPath) + "_updated.vsdx");
+
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

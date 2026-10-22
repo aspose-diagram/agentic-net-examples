@@ -1,54 +1,80 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output directory for exported PNGs (second argument or default)
+        string outputDir = args.Length > 1 ? args[1] : "ExportedShapes";
+
+        // Ensure the output directory exists
         try
         {
+            Directory.CreateDirectory(outputDir);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error creating output directory '{outputDir}': {ex.Message}");
+            return;
+        }
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-            // Folder where individual shape PNGs will be saved
-            string outputFolder = "ShapeImages";
+        // Prepare PNG save options (lossless by default)
+        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+        // PNG export is lossless; no additional compression settings are required.
 
-            // Create output folder if it does not exist
-            if (!System.IO.Directory.Exists(outputFolder))
+        int totalExported = 0;
+
+        // Iterate through each page
+        for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+        {
+            Page page = diagram.Pages[pageIndex];
+
+            // Iterate through each shape on the page
+            foreach (Shape shape in page.Shapes)
             {
-                System.IO.Directory.CreateDirectory(outputFolder);
-            }
+                // Build a unique file name for the shape PNG
+                string shapeFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page{pageIndex + 1}_Shape{shape.ID}.png";
+                string shapeFilePath = Path.Combine(outputDir, shapeFileName);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                try
                 {
-                    // Construct a unique file name for the shape image
-                    string fileName = $"Page{page.ID}_Shape{shape.ID}.png";
-                    string outputPath = System.IO.Path.Combine(outputFolder, fileName);
-
-                    // Configure PNG export options (PNG is inherently lossless)
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-
-                    // Export the shape to a PNG file
-                    shape.ToImage(outputPath, options);
+                    // Export the shape to PNG using the prepared options
+                    shape.ToImage(shapeFilePath, pngOptions);
+                    totalExported++;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error exporting shape ID {shape.ID} on page {pageIndex + 1}: {ex.Message}");
+                    // Continue with next shape
                 }
             }
-
-            Console.WriteLine("All shapes have been exported as PNG images.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
+
+        Console.WriteLine($"Export completed. Total shapes exported: {totalExported}");
     }
 }

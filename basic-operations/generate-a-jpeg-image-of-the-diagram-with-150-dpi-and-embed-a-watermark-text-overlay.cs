@@ -7,59 +7,72 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio diagram
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate arguments: input diagram, output JPEG, optional watermark text.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputJpegPath> [watermarkText]");
             return;
         }
 
-        // Path for the output JPEG image
-        string outputPath = "output.jpg";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string watermarkText = args.Length >= 3 ? args[2] : "Sample Watermark";
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (assumes at least one page exists)
+            // Ensure there is at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Work with the first page.
             Page page = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches) for full‑page watermark sizing
+            // Retrieve page dimensions (in inches).
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Add a full‑page text shape to act as a watermark
-            // Note: using positional arguments because named parameters are not supported for this overload
-            Shape watermark = page.AddText(
-                0,                 // pinX (left)
-                0,                 // pinY (bottom)
-                pageWidth,         // width (full page)
-                pageHeight,        // height (full page)
-                "CONFIDENTIAL",    // watermark text
-                "Arial",           // font name
-                "#CCCCCC",         // font color (hex)
-                36.0 / 72.0        // font size in inches (36 pt)
-            );
+            // Add a full‑page text shape as a watermark.
+            // Font size is specified in inches (points / 72).
+            double fontSizeInches = 36.0 / 72.0; // 36 points.
+            Shape watermarkShape = page.AddText(
+                0,                     // pinX (left)
+                0,                     // pinY (bottom)
+                pageWidth,             // width
+                pageHeight,            // height
+                watermarkText,         // text
+                "Calibri",             // font name
+                "#A0A0A0",             // font color (light gray)
+                fontSizeInches);       // font size in inches
 
-            // Send the watermark shape to the back so it doesn't obscure other content
-            watermark.SendToBack();
+            // Optionally send the watermark to back so it appears behind other shapes.
+            // watermarkShape.SendToBack();
 
-            // Configure image export options: JPEG format with 150 DPI resolution
+            // Configure image save options for JPEG with 150 DPI.
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            saveOptions.Resolution = 150f; // DPI
+            saveOptions.Resolution = 150f;          // DPI.
+            saveOptions.JpegQuality = 90;           // Quality (0‑100).
+            saveOptions.ExportHiddenPage = false;   // Do not export hidden pages. (Corrected: use bool, not BOOL)
 
-            // Export the diagram page as a JPEG image using the configured options
+            // Save the diagram as a JPEG image.
             diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Diagram exported to JPEG with watermark at '{outputPath}'.");
+            Console.WriteLine($"Diagram saved as JPEG with watermark to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

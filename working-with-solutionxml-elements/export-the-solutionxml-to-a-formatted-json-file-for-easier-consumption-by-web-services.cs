@@ -1,60 +1,63 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramSolutionXmlExport
+class Program
 {
-    // DTO for JSON serialization
-    public class SolutionXmlDto
+    static void Main(string[] args)
     {
-        public string Name { get; set; } = null!;
-        public string XmlValue { get; set; } = null!;
-    }
-
-    public class Program
-    {
-        public static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Collect SolutionXML elements into a simple serializable structure.
+                var solutionList = new List<object>();
 
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Collect SolutionXML entries
-                List<SolutionXmlDto> solutionXmlList = new List<SolutionXmlDto>();
                 foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    solutionXmlList.Add(new SolutionXmlDto
+                    solutionList.Add(new
                     {
                         Name = solutionXml.Name,
                         XmlValue = solutionXml.XmlValue
                     });
                 }
 
-                // Serialize to formatted JSON
-                JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+                // Serialize the collection to formatted JSON.
+                var jsonOptions = new JsonSerializerOptions
                 {
                     WriteIndented = true
                 };
-                string json = JsonSerializer.Serialize(solutionXmlList, jsonOptions);
+                string json = JsonSerializer.Serialize(solutionList, jsonOptions);
 
-                // Write JSON to file
-                string outputPath = "solutionxml.json";
+                // Write JSON to the specified output file.
                 File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"Exported {solutionXmlList.Count} SolutionXML entries to '{outputPath}'.");
-
+                Console.WriteLine($"SolutionXML exported successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

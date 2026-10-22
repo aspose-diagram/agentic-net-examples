@@ -1,102 +1,87 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Map layer indexes to preset themes (use only supported enum members)
+            var layerThemeMap = new Dictionary<int, PresetThemeValue>
             {
+                { 0, PresetThemeValue.Bubble },   // Layer 0 → Bubble theme
+                { 1, PresetThemeValue.Clouds }    // Layer 1 → Clouds theme
+                // Add more mappings here if additional themes are needed
+            };
 
-                // Path to the source Visio diagram
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Build a lookup of layer index to desired theme settings
-                    Dictionary<int, (PresetThemeValue theme, PresetThemeVariantValue variant, PresetQuickStyleValue quickStyle)> layerThemeMap
-                        = new Dictionary<int, (PresetThemeValue, PresetThemeVariantValue, PresetQuickStyleValue)>();
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Populate the map based on existing layers
-                    foreach (Layer layer in page.PageSheet.Layers)
+                    // Get the layer membership string (e.g., "0;1")
+                    string layerMember = shape.LayerMem.LayerMember.Value;
+
+                    if (string.IsNullOrEmpty(layerMember))
+                        continue; // Shape is not assigned to any layer
+
+                    // Split the layer indexes and process each one
+                    string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string part in parts)
                     {
-                        // Example mapping: assign different variants per layer index
-                        // You can customize this mapping as needed
-                        PresetThemeVariantValue variant = PresetThemeVariantValue.Variant1;
-                        PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
-
-                        switch (layer.IX)
+                        if (int.TryParse(part, out int layerIndex))
                         {
-                            case 0:
-                                variant = PresetThemeVariantValue.Variant1;
-                                quickStyle = PresetQuickStyleValue.VariantStyle1;
-                                break;
-                            case 1:
-                                variant = PresetThemeVariantValue.Variant2;
-                                quickStyle = PresetQuickStyleValue.VariantStyle2;
-                                break;
-                            case 2:
-                                variant = PresetThemeVariantValue.Variant3;
-                                quickStyle = PresetQuickStyleValue.VariantStyle3;
-                                break;
-                            default:
-                                variant = PresetThemeVariantValue.Variant4;
-                                quickStyle = PresetQuickStyleValue.VariantStyle4;
-                                break;
-                        }
-
-                        // All layers use the same base theme (Bubble) in this example
-                        layerThemeMap[layer.IX] = (PresetThemeValue.Bubble, variant, quickStyle);
-                    }
-
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve the layer membership string (e.g., "0;2")
-                        string layerMember = shape.LayerMem.LayerMember.Value;
-
-                        if (string.IsNullOrEmpty(layerMember))
-                        {
-                            // Shape is not assigned to any layer; skip or apply a default theme if desired
-                            continue;
-                        }
-
-                        // Split the membership string into individual layer indexes
-                        string[] layerIndexes = layerMember.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-
-                        // Apply the first matching layer's theme to the shape
-                        foreach (string idxStr in layerIndexes)
-                        {
-                            if (int.TryParse(idxStr, out int layerIdx) && layerThemeMap.ContainsKey(layerIdx))
+                            // If a theme is defined for this layer, apply it
+                            if (layerThemeMap.TryGetValue(layerIndex, out PresetThemeValue theme))
                             {
-                                var themeInfo = layerThemeMap[layerIdx];
-
-                                // Apply the theme to the shape
-                                shape.PresetTheme = themeInfo.theme;
-                                shape.PresetThemeVariant = themeInfo.variant;
-                                shape.PresetThemeQuickStyle = themeInfo.quickStyle;
-
-                                // Once a theme is applied based on a layer, stop checking further layers for this shape
+                                shape.PresetTheme = theme;
+                                // Optionally set a variant (write‑only)
+                                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                                // Theme applied; stop processing further layers for this shape
                                 break;
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

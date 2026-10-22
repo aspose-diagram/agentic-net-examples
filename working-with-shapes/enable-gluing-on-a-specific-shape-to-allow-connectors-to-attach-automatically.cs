@@ -1,55 +1,64 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expecting four arguments: input diagram path, output diagram path, source shape ID, target shape ID
+        if (args.Length != 4)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <sourceShapeId> <targetShapeId>");
+            return;
+        }
 
-                // Load an existing Visio diagram.
-                // Replace the path with the actual file location.
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string sourceIdStr = args[2];
+        string targetIdStr = args[3];
 
-                // The universal name of the shape to enable gluing on.
-                string targetShapeNameU = "MyShape";
+        // Validate input file existence
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-                bool shapeFound = false;
+        // Parse shape IDs
+        if (!long.TryParse(sourceIdStr, out long sourceShapeId))
+        {
+            Console.Error.WriteLine($"Invalid source shape ID: {sourceIdStr}");
+            return;
+        }
 
-                // Iterate through all pages and shapes to locate the target shape.
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.NameU == targetShapeNameU)
-                        {
-                            // Enable dynamic gluing for the shape.
-                            // This allows connectors to automatically attach to the shape.
-                            shape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
+        if (!long.TryParse(targetIdStr, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Invalid target shape ID: {targetIdStr}");
+            return;
+        }
 
-                            shapeFound = true;
-                            break;
-                        }
-                    }
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-                    if (shapeFound)
-                        break;
-                }
+            // Get the first page (or you could select by name if needed)
+            Page page = diagram.Pages[0];
 
-                if (!shapeFound)
-                    throw new Exception($"Shape with NameU '{targetShapeNameU}' was not found in the diagram.");
+            // Enable gluing by connecting the source shape to the target shape at the center point
+            // This will allow connectors to automatically attach to the source shape.
+            page.GlueShapes(sourceShapeId, ConnectionPointPlace.Center, targetShapeId);
 
-                // Save the modified diagram.
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,95 +1,98 @@
 using System;
+using System.IO;
 using System.Data;
-using System.Data.SqlClient;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to a Visio template that contains the required masters (e.g., "Rectangle")
-                string templatePath = "template.vsdx";
-
-                // Load the diagram from the template file
-                Diagram diagram = new Diagram(templatePath);
-
-                // Get the first page where shapes will be added
-                Page page = diagram.Pages[0];
-
-                // -----------------------------------------------------------------
-                // Real database connection (commented out for environments without SQL Server)
-                // -----------------------------------------------------------------
-                // string connectionString = "Data Source=SERVER_NAME;Initial Catalog=DATABASE_NAME;Integrated Security=True;";
-                // string query = "SELECT Id, Name, Value FROM SampleTable";
-                // DataTable dataTable = new DataTable();
-                // using (SqlConnection conn = new SqlConnection(connectionString))
-                // {
-                //     using (SqlCommand cmd = new SqlCommand(query, conn))
-                //     {
-                //         conn.Open();
-                //         using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
-                //         {
-                //             adapter.Fill(dataTable);
-                //         }
-                //     }
-                // }
-
-                // -----------------------------------------------------------------
-                // Simulated data for demonstration purposes
-                // -----------------------------------------------------------------
-                DataTable dataTable = new DataTable();
-                dataTable.Columns.Add("Id", typeof(int));
-                dataTable.Columns.Add("Name", typeof(string));
-                dataTable.Columns.Add("Value", typeof(string));
-
-                dataTable.Rows.Add(1, "Alpha", "100");
-                dataTable.Rows.Add(2, "Beta", "200");
-                dataTable.Rows.Add(3, "Gamma", "300");
-
-                // Starting coordinates for shape placement
-                double startX = 2.0;   // inches from left
-                double startY = 2.0;   // inches from top
-                double verticalSpacing = 1.5; // inches between shapes
-
-                // Iterate over each data row and create a rectangle shape with text
-                foreach (DataRow row in dataTable.Rows)
+                // ------------------------------------------------------------
+                // STEP 1: Update the first SQL Server data connection (if any)
+                // ------------------------------------------------------------
+                if (diagram.DataConnections.Count > 0)
                 {
-                    // Add a rectangle shape using the master name "Rectangle"
-                    // The fourth parameter (isCalculate) is set to false
-                    long shapeId = page.AddShape(startX, startY, "Rectangle", false);
+                    // Update connection string and command text.
+                    // In a real scenario replace the placeholder values with actual ones.
+                    diagram.DataConnections[0].ConnectionString = "Data Source=SERVER;Initial Catalog=Database;Integrated Security=True";
+                    diagram.DataConnections[0].Command = "SELECT Name, Value FROM SampleTable";
 
-                    // Retrieve the shape object for further modifications
-                    Shape shape = page.Shapes.GetShape(shapeId);
-
-                    // Build the display text from the row data
-                    string displayText = $"ID: {row["Id"]}\nName: {row["Name"]}\nValue: {row["Value"]}";
-
-                    // Clear any existing text and add the new text run
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(displayText));
-
-                    // Optionally adjust shape size (width and height in inches)
-                    shape.XForm.Width.Value = 2.5;
-                    shape.XForm.Height.Value = 1.0;
-
-                    // Move to the next vertical position for the following shape
-                    startY += verticalSpacing;
+                    // Refresh the diagram to pull data from the database.
+                    diagram.Refresh();
+                }
+                else
+                {
+                    Console.WriteLine("No data connections found in the diagram. Skipping data refresh.");
                 }
 
-                // Save the populated diagram to a new file
-                string outputPath = "output.vsdx";
+                // ------------------------------------------------------------
+                // STEP 2: Simulate query results using an in‑memory DataTable
+                // ------------------------------------------------------------
+                DataTable simulatedResult = new DataTable();
+                simulatedResult.Columns.Add("Name", typeof(string));
+                simulatedResult.Columns.Add("Value", typeof(string));
+
+                // Sample rows – replace with actual data retrieval logic as needed
+                simulatedResult.Rows.Add("Alpha", "100");
+                simulatedResult.Rows.Add("Beta", "200");
+                simulatedResult.Rows.Add("Gamma", "300");
+
+                // ------------------------------------------------------------
+                // STEP 3: Populate shapes with the simulated data
+                // ------------------------------------------------------------
+                // For demonstration, assign each row's data to a shape on the first page.
+                // If there are more shapes than rows, remaining shapes are left unchanged.
+                Page firstPage = diagram.Pages[0];
+                int rowIndex = 0;
+
+                foreach (Shape shape in firstPage.Shapes)
+                {
+                    if (rowIndex >= simulatedResult.Rows.Count)
+                        break; // No more data rows to assign
+
+                    DataRow row = simulatedResult.Rows[rowIndex];
+
+                    // Clear existing text and add new text in the required format
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt($"{row["Name"]}: {row["Value"]}"));
+
+                    rowIndex++;
+                }
+
+                // ------------------------------------------------------------
+                // STEP 4: Save the modified diagram
+                // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

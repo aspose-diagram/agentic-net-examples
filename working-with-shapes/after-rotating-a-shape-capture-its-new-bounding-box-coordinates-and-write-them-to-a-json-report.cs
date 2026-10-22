@@ -1,106 +1,104 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-namespace DiagramBoundingBoxReport
+class Program
 {
-    // DTO for JSON serialization
-    public class ShapeBoundingBox
+    static void Main(string[] args)
     {
-        public long ShapeId { get; set; }
-        public double PinX { get; set; }
-        public double PinY { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public double Angle { get; set; }
-        public double Left { get; set; }
-        public double Right { get; set; }
-        public double Top { get; set; }
-        public double Bottom { get; set; }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output JSON report path
+        string jsonReportPath = "bounding_box_report.json";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-
-                // Output JSON report path
-                string jsonReportPath = "BoundingBoxReport.json";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there is at least one page and one shape
+                // Ensure there is at least one page
                 if (diagram.Pages.Count == 0)
                 {
-                    throw new Exception("The diagram contains no pages.");
+                    Console.Error.WriteLine("Error: The diagram contains no pages.");
+                    return;
                 }
 
+                // Work with the first page
                 Page page = diagram.Pages[0];
 
+                // Ensure the page has at least one shape
                 if (page.Shapes.Count == 0)
                 {
-                    throw new Exception("The first page contains no shapes.");
+                    Console.Error.WriteLine("Error: The first page contains no shapes.");
+                    return;
                 }
 
                 // Retrieve the first shape on the page
                 Shape shape = page.Shapes[0];
 
-                // Rotate the shape to a new angle (degrees)
+                // Rotate the shape to a desired angle (e.g., 45 degrees)
                 double newAngle = 45.0;
                 shape.XForm.Angle.Value = newAngle;
 
-                // Capture bounding box after rotation
+                // After rotation, capture the bounding box coordinates
+                // PinX and PinY represent the center of the shape
                 double pinX = shape.XForm.PinX.Value;
                 double pinY = shape.XForm.PinY.Value;
                 double width = shape.XForm.Width.Value;
                 double height = shape.XForm.Height.Value;
 
-                // Calculate bounding box edges (Visio uses center coordinates)
+                // Calculate left, right, top, bottom (in inches)
                 double left = pinX - (width / 2.0);
                 double right = pinX + (width / 2.0);
                 double top = pinY + (height / 2.0);
                 double bottom = pinY - (height / 2.0);
 
-                // Prepare DTO
-                ShapeBoundingBox bbox = new ShapeBoundingBox
+                // Prepare a report object
+                var report = new
                 {
                     ShapeId = shape.ID,
-                    PinX = pinX,
-                    PinY = pinY,
-                    Width = width,
-                    Height = height,
-                    Angle = newAngle,
-                    Left = left,
-                    Right = right,
-                    Top = top,
-                    Bottom = bottom
+                    RotationAngle = newAngle,
+                    BoundingBox = new
+                    {
+                        Left = left,
+                        Top = top,
+                        Right = right,
+                        Bottom = bottom,
+                        Width = width,
+                        Height = height
+                    }
                 };
 
-                // Serialize to JSON with indentation
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(bbox, jsonOptions);
+                // Serialize the report to JSON with indentation
+                string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write JSON report to file
+                // Write the JSON report to the specified file
                 File.WriteAllText(jsonReportPath, json);
+                Console.WriteLine($"Bounding box report written to '{jsonReportPath}'.");
 
-                // Optionally, save the modified diagram (e.g., to a new file)
-                string outputDiagramPath = "output_modified.vsdx";
+                // Optional: save the modified diagram to a new file
+                string outputDiagramPath = "rotated_output.vsdx";
                 diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Rotated diagram saved to '{outputDiagramPath}'.");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (Exception ex)
+        {
+            // Capture any errors from Aspose.Diagram operations
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

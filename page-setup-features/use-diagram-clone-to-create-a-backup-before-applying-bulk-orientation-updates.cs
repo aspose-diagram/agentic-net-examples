@@ -1,57 +1,82 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string sourcePath = "input.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <backupVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Verify the source file exists before proceeding
+        string sourcePath = args[0];
+        string backupPath = args[1];
+        string outputPath = args[2];
+
+        // Guard: source file must exist.
         if (!File.Exists(sourcePath))
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
+            Console.Error.WriteLine($"Error: Source file not found: {sourcePath}");
+            return;
+        }
+
+        // Guard: backup directory must exist.
+        string backupDir = Path.GetDirectoryName(backupPath);
+        if (!string.IsNullOrEmpty(backupDir) && !Directory.Exists(backupDir))
+        {
+            Console.Error.WriteLine($"Error: Backup directory does not exist: {backupDir}");
+            return;
+        }
+
+        // Guard: output directory must exist.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Error: Output directory does not exist: {outputDir}");
             return;
         }
 
         try
         {
-            // Load the original diagram from the file
+            // Load the source Visio diagram.
             Diagram diagram = new Diagram(sourcePath);
 
-            // Create a backup copy by saving to a memory stream and reloading
-            using (MemoryStream backupStream = new MemoryStream())
+            // NOTE: Diagram.Clone is not available in the current Aspose.Diagram API.
+            // As an alternative, save the loaded diagram to the backup path before modifications.
+            diagram.Save(backupPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Backup saved to: {backupPath}");
+
+            // Bulk update: set all pages to Landscape orientation.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Save the original diagram into the stream in VSDX format
-                diagram.Save(backupStream, SaveFileFormat.Vsdx);
-                backupStream.Position = 0; // Reset stream position for reading
+                Page page = diagram.Pages[i];
 
-                // Load a new Diagram instance from the stream (this is the backup)
-                Diagram backupDiagram = new Diagram(backupStream);
-
-                // Apply bulk orientation update: set all pages to Landscape
-                foreach (Page page in diagram.Pages)
+                // Ensure the PrintProps hierarchy exists before setting orientation.
+                if (page.PageSheet != null &&
+                    page.PageSheet.PrintProps != null &&
+                    page.PageSheet.PrintProps.PrintPageOrientation != null)
                 {
-                    // Ensure the page has a PrintProps section before modifying
-                    if (page.PageSheet != null && page.PageSheet.PrintProps != null)
-                    {
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                    }
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
-
-                // Save the unchanged backup diagram
-                backupDiagram.Save("backup.vsdx", SaveFileFormat.Vsdx);
-
-                // Save the updated diagram with the new orientation
-                diagram.Save("updated.vsdx", SaveFileFormat.Vsdx);
+                else
+                {
+                    Console.Error.WriteLine($"Warning: Unable to set orientation for page index {i} (missing PrintProps).");
+                }
             }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

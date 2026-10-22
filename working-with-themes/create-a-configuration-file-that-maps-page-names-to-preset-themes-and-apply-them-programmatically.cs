@@ -1,82 +1,147 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramThemeApplier
+class Program
 {
-    // Represents a mapping between a page name and its desired theme.
-    public class PageThemeMapping
+    // Simple configuration entry representing a theme assignment for a page.
+    private class ThemeConfig
     {
-        public string PageName { get; set; }
-        public string Theme { get; set; }
-        public string Variant { get; set; }
+        public PresetThemeValue Theme { get; set; }
+        public PresetThemeVariantValue Variant { get; set; }
     }
 
-    class Program
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expected arguments: <diagramPath> <configPath> <outputPath>
+        if (args.Length != 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <configPath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string configPath = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing files.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(configPath))
+        {
+            Console.Error.WriteLine($"Configuration file not found: {configPath}");
+            return;
+        }
+
+        // Load configuration mapping page names to theme settings.
+        Dictionary<string, ThemeConfig> themeMap = LoadConfiguration(configPath);
+        if (themeMap == null)
+        {
+            // LoadConfiguration already reported the error.
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-
-                // Paths to the diagram file and the JSON configuration file.
-                string diagramPath = "input.vsdx";
-                string configPath = "pageThemes.json";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Read and deserialize the configuration file.
-                if (!File.Exists(configPath))
-                    throw new FileNotFoundException($"Configuration file not found: {configPath}");
-
-                string json = File.ReadAllText(configPath);
-                List<PageThemeMapping> mappings = JsonSerializer.Deserialize<List<PageThemeMapping>>(json);
-
-                // Apply the preset themes to the corresponding pages.
-                foreach (PageThemeMapping mapping in mappings)
+                // Iterate over all pages and apply themes based on the configuration.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the page by name; GetPage returns null if not found.
-                    Page page = diagram.Pages.GetPage(mapping.PageName);
-                    if (page == null)
-                    {
-                        Console.WriteLine($"Page \"{mapping.PageName}\" not found in diagram.");
-                        continue;
-                    }
+                    // Page names are stored directly in the Name property.
+                    string pageName = page.Name ?? string.Empty;
 
-                    // Parse the theme enum value.
-                    if (Enum.TryParse<PresetThemeValue>(mapping.Theme, out var themeEnum))
+                    if (themeMap.TryGetValue(pageName, out ThemeConfig config))
                     {
-                        page.PresetTheme = themeEnum;
+                        // Apply the preset theme and variant to the page.
+                        page.PresetTheme = config.Theme;
+                        page.PresetThemeVariant = config.Variant;
+                        Console.WriteLine($"Applied theme {config.Theme} (variant {config.Variant}) to page '{pageName}'.");
                     }
                     else
                     {
-                        Console.WriteLine($"Invalid theme \"{mapping.Theme}\" for page \"{mapping.PageName}\".");
-                        continue;
-                    }
-
-                    // Parse the variant enum value if provided.
-                    if (!string.IsNullOrWhiteSpace(mapping.Variant) &&
-                        Enum.TryParse<PresetThemeVariantValue>(mapping.Variant, out var variantEnum))
-                    {
-                        page.PresetThemeVariant = variantEnum;
+                        Console.WriteLine($"No theme mapping found for page '{pageName}'. Skipping.");
                     }
                 }
 
-                // Save the updated diagram.
-                string outputPath = "output.vsdx";
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved with applied themes to \"{outputPath}\".");
-
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+
+    // Loads a simple key=value configuration file.
+    // Expected format per line: PageName=ThemeName,VariantName
+    // Example: "Intro=Bubble,Variant2"
+    private static Dictionary<string, ThemeConfig> LoadConfiguration(string configPath)
+    {
+        var map = new Dictionary<string, ThemeConfig>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (string rawLine in File.ReadAllLines(configPath))
+            {
+                string line = rawLine.Trim();
+
+                // Skip empty lines and comments.
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                    continue;
+
+                // Split into key and value.
+                int eqIndex = line.IndexOf('=');
+                if (eqIndex <= 0 || eqIndex == line.Length - 1)
+                {
+                    Console.Error.WriteLine($"Invalid config line (missing '='): {line}");
+                    continue;
+                }
+
+                string pageName = line.Substring(0, eqIndex).Trim();
+                string valuePart = line.Substring(eqIndex + 1).Trim();
+
+                // Split value into theme and variant.
+                string[] parts = valuePart.Split(',');
+                if (parts.Length != 2)
+                {
+                    Console.Error.WriteLine($"Invalid config line (expected 'Theme,Variant'): {line}");
+                    continue;
+                }
+
+                string themeStr = parts[0].Trim();
+                string variantStr = parts[1].Trim();
+
+                // Parse enums safely.
+                if (!Enum.TryParse<PresetThemeValue>(themeStr, true, out PresetThemeValue theme))
+                {
+                    Console.Error.WriteLine($"Unknown theme '{themeStr}' in line: {line}");
+                    continue;
+                }
+
+                if (!Enum.TryParse<PresetThemeVariantValue>(variantStr, true, out PresetThemeVariantValue variant))
+                {
+                    Console.Error.WriteLine($"Unknown variant '{variantStr}' in line: {line}");
+                    continue;
+                }
+
+                map[pageName] = new ThemeConfig { Theme = theme, Variant = variant };
+            }
+
+            return map;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to read configuration file: {ex.Message}");
+            return null;
+        }
     }
 }

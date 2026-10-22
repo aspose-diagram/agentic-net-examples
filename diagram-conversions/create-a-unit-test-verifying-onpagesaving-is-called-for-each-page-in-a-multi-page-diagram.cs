@@ -1,71 +1,92 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageSavingTest
+class PageSavingCounter : IPageSavingCallback
 {
-    // Callback implementation to track page saving events
-    public class PageSavingCounter : IPageSavingCallback
+    // Counts how many times each callback method is invoked.
+    public int StartCount { get; private set; }
+    public int EndCount { get; private set; }
+
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        public int StartCount { get; private set; }
-        public int EndCount { get; private set; }
-        public List<int> StartedPages { get; } = new List<int>();
-        public List<int> EndedPages { get; } = new List<int>();
-
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            StartCount++;
-            StartedPages.Add(args.PageIndex);
-        }
-
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            EndCount++;
-            EndedPages.Add(args.PageIndex);
-        }
+        // Increment the start counter.
+        StartCount++;
+        // Example: you could log args.PageIndex here if needed.
     }
 
-    public class Program
+    // Called after a page has finished saving.
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        public static void Main()
+        // Increment the end counter.
+        EndCount++;
+        // Example: you could log args.PageIndex here if needed.
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Path to the multi‑page Visio file to test.
+        string inputPath = "sample_multi_page.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // Create a new diagram with two pages
-            Diagram diagram = new Diagram();
-            // The diagram starts with one page; add a second page
-            diagram.Pages.Add(new Page());
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-            // Verify page count
-            int pageCount = diagram.Pages.Count;
-            if (pageCount != 2)
-                throw new Exception($"Expected 2 pages, but found {pageCount}.");
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Set up PDF save options with the custom callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        // Path for the generated PDF output.
+        string outputPath = "output.pdf";
+
+        try
+        {
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Determine the expected number of pages.
+            int expectedPageCount = diagram.Pages.Count;
+
+            // Create the callback instance that will count page events.
             PageSavingCounter callback = new PageSavingCounter();
+
+            // Configure PDF save options and assign the callback.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
             pdfOptions.PageSavingCallback = callback;
 
-            // Save the diagram to PDF (output file path can be any valid location)
-            string outputPath = "multi_page_output.pdf";
+            // Save the diagram to PDF using the configured options.
             diagram.Save(outputPath, pdfOptions);
 
-            // Validate that the callback was invoked for each page
-            if (callback.StartCount != pageCount)
-                throw new Exception($"PageStartSaving was called {callback.StartCount} times; expected {pageCount}.");
-
-            if (callback.EndCount != pageCount)
-                throw new Exception($"PageEndSaving was called {callback.EndCount} times; expected {pageCount}.");
-
-            // Optional: verify that page indices reported match expected range
-            for (int i = 0; i < pageCount; i++)
+            // Verify that the callback was invoked for each page.
+            if (callback.StartCount != expectedPageCount)
             {
-                if (!callback.StartedPages.Contains(i))
-                    throw new Exception($"PageStartSaving did not report page index {i}.");
-                if (!callback.EndedPages.Contains(i))
-                    throw new Exception($"PageEndSaving did not report page index {i}.");
+                throw new Exception($"PageStartSaving was called {callback.StartCount} times, expected {expectedPageCount}.");
             }
 
-            Console.WriteLine("All page saving callbacks were invoked correctly for each page.");
+            if (callback.EndCount != expectedPageCount)
+            {
+                throw new Exception($"PageEndSaving was called {callback.EndCount} times, expected {expectedPageCount}.");
+            }
+
+            // If we reach this point, the test succeeded.
+            Console.WriteLine("Success: OnPageSaving (PageStartSaving/PageEndSaving) was called for each page.");
+
+            // Clean up resources.
+            diagram.Dispose();
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

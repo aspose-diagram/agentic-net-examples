@@ -1,86 +1,115 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the existing Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // ------------------------------------------------------------
+                // Create a new master shape from scratch.
+                // ------------------------------------------------------------
+                Master customMaster = new Master();
 
-            // Paths for the source and the resulting diagram
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
+                // Assign a unique numeric ID for the master.
+                customMaster.ID = diagram.Masters.Count + 1;
 
-            // Load the existing diagram
-            Diagram diagram = new Diagram(inputPath);
+                // Set master identifiers.
+                customMaster.NameU = "CustomRect";
+                customMaster.Name = "CustomRect";
 
-            // -------------------------------------------------
-            // Create a new master shape (template) programmatically
-            // -------------------------------------------------
-            Master customMaster = new Master();
+                // Assign GUIDs for uniqueness.
+                customMaster.UniqueID = Guid.NewGuid();
+                customMaster.BaseID = Guid.NewGuid();
 
-            // Assign a unique numeric ID and a name for the master
-            customMaster.ID = 1000;                     // must be unique within the diagram
-            customMaster.Name = "CustomMaster";
+                // Ensure the master is visible and name‑matching is enabled.
+                customMaster.Hidden = BOOL.False;
+                customMaster.MatchByName = BOOL.True;
+                customMaster.IconUpdate = BOOL.True;
 
-            // Assign GUIDs required by the API
-            customMaster.UniqueID = Guid.NewGuid();
-            customMaster.BaseID = Guid.NewGuid();
+                // ------------------------------------------------------------
+                // Define the visual geometry of the master by adding a shape.
+                // ------------------------------------------------------------
+                Shape masterShape = new Shape();
 
-            // Ensure the master is visible
-            customMaster.Hidden = BOOL.False;
+                // Set the shape type to a regular shape.
+                masterShape.Type = TypeValue.Shape;
 
-            // -------------------------------------------------
-            // Define the geometry of the master by adding a shape to it
-            // -------------------------------------------------
-            Shape masterShape = new Shape();
+                // Define geometry: width = 2 inches, height = 1 inch.
+                masterShape.XForm.Width.Value = 2.0;
+                masterShape.XForm.Height.Value = 1.0;
 
-            // Set the shape type to a regular 2‑D shape
-            masterShape.Type = TypeValue.Shape;
+                // Position the shape at the origin of the master.
+                masterShape.XForm.PinX.Value = 0.0;
+                masterShape.XForm.PinY.Value = 0.0;
 
-            // Define size (in inches) and position of the shape within the master
-            masterShape.XForm.Width.Value = 2.0;   // width
-            masterShape.XForm.Height.Value = 1.0;  // height
-            masterShape.XForm.PinX.Value = 1.0;    // horizontal center
-            masterShape.XForm.PinY.Value = 0.5;    // vertical center
+                // Add the shape to the master's shape collection.
+                customMaster.Shapes.Add(masterShape);
 
-            // Optional: give the shape a simple fill color
-            masterShape.Fill.FillForegnd.Value = "#FFCC00";
+                // ------------------------------------------------------------
+                // Add the new master to the diagram's master collection.
+                // ------------------------------------------------------------
+                diagram.Masters.Add(customMaster);
 
-            // Add the shape to the master's shape collection
-            customMaster.Shapes.Add(masterShape);
+                // ------------------------------------------------------------
+                // Add an instance of the newly created master to the first page.
+                // ------------------------------------------------------------
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // -------------------------------------------------
-            // Add the new master to the diagram's master collection
-            // -------------------------------------------------
-            diagram.Masters.Add(customMaster);
+                // Use the overload that specifies position, size, master name and page index.
+                long shapeId = diagram.AddShape(
+                    5.0,          // X position on the page
+                    5.0,          // Y position on the page
+                    2.0,          // Width of the shape instance
+                    1.0,          // Height of the shape instance
+                    customMaster.NameU,
+                    0);           // First page (index 0)
 
-            // -------------------------------------------------
-            // Place an instance of the master on the first page
-            // -------------------------------------------------
-            Page page = diagram.Pages[0];
+                // Retrieve the concrete Shape object.
+                Shape shapeInstance = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // AddShape returns the shape ID (long). The fourth argument is a bool.
-            long instanceId = page.AddShape(2.0, 2.0, customMaster.Name, false);
+                // Optional: set some text on the shape to verify it was added.
+                shapeInstance.Text.Value.Clear();
+                shapeInstance.Text.Value.Add(new Txt("Custom Master Shape"));
 
-            // Retrieve the created shape instance if further modifications are needed
-            Shape instanceShape = page.Shapes.GetShape(instanceId);
-
-            // Example: set some text on the placed shape
-            instanceShape.Text.Value.Clear();
-            instanceShape.Text.Value.Add(new Txt("Hello Master"));
-
-            // -------------------------------------------------
-            // Save the modified diagram
-            // -------------------------------------------------
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // ------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,44 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Create a simple rectangle shape on the page
-                // Parameters: pinX, pinY, width, height (all in inches)
-                long shapeId = page.DrawRectangle(2.0, 2.0, 2.0, 2.0);
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Add a hyperlink to the shape
-                Hyperlink link = new Hyperlink();
-                link.Name = "ExampleLink";
-                link.Address.Value = "https://example.com";
-                // Set the description which appears as a tooltip on mouse hover
-                link.Description.Value = "Open Example Website";
-
-                // Attach the hyperlink to the shape's Hyperlinks collection
-                shape.Hyperlinks.Add(link);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Get the first page.
+            Page page = diagram.Pages[0];
+
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
             }
+
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes[0];
+
+            // Create a new hyperlink.
+            Hyperlink link = new Hyperlink();
+
+            // Set the hyperlink address (URL) – adjust as needed.
+            link.Address.Value = "https://www.example.com";
+
+            // Set the description which appears as a tooltip on mouse hover.
+            link.Description.Value = "Visit Example.com";
+
+            // Add the hyperlink to the shape's Hyperlinks collection.
+            shape.Hyperlinks.Add(link);
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

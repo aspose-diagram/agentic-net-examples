@@ -1,32 +1,57 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class DiagramToPdf
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: DiagramToPdf <inputVisioFile> [outputPdfFile]");
+            return;
+        }
+
+        // Input Visio file path.
+        string inputPath = args[0];
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Determine output PDF file path.
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            outputPath = Path.ChangeExtension(inputPath, ".pdf");
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Create PDF save options and explicitly set the target format.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // preserve original orientation automatically
 
-            // Path to the source Visio diagram (any supported format)
-            string sourcePath = "input.vsdx";
+                // Save the diagram to PDF while keeping the original page orientation.
+                diagram.Save(outputPath, pdfOptions);
+            }
 
-            // Path for the resulting PDF file
-            string outputPath = "output.pdf";
-
-            // Load the existing diagram (uses the provided load rule)
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Save the diagram as PDF while preserving the original page orientation
-            // (uses the provided save rule with PDF format)
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
-
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

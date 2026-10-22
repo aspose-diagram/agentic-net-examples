@@ -1,58 +1,71 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <watermarkImagePath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputDiagramPath = args[0];
+        string watermarkImagePath = args[1];
+        string outputDiagramPath = args[2];
+
+        // Guard against missing files.
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+            return;
+        }
+        if (!File.Exists(watermarkImagePath))
+        {
+            Console.Error.WriteLine($"Watermark image file not found: {watermarkImagePath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputDiagramPath))
             {
-
-                // Input Visio file and watermark image paths
-                string inputVisioPath = "input.vsdx";
-                string watermarkImagePath = "watermark.png";
-                string outputVisioPath = "output_with_watermark.vsdx";
-
-                // Load the existing diagram
-                Diagram diagram = new Diagram(inputVisioPath);
-
-                // Iterate through each page in the diagram
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve page dimensions (in inches)
+                    // Retrieve page dimensions (in inches).
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Calculate the center position for the watermark shape
+                    // Calculate the center position for the watermark shape.
                     double pinX = pageWidth / 2.0;
                     double pinY = pageHeight / 2.0;
 
-                    // Add the image as a shape covering the whole page
-                    using (FileStream imgStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
+                    // Insert the image as a shape covering the whole page.
+                    long shapeId;
+                    using (FileStream imageStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
                     {
-                        // AddShape returns the shape ID (long)
-                        long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imgStream);
-
-                        // Retrieve the shape object to modify its properties
-                        Shape watermarkShape = page.Shapes.GetShape(shapeId);
-
-                        // Send the image shape to the back so it appears behind other shapes
-                        watermarkShape.SendToBack();
-
-                        // Make the watermark non‑selectable
-                        watermarkShape.Protection.LockSelect.Value = BOOL.True;
+                        shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, imageStream);
                     }
+
+                    // Retrieve the newly added shape and send it to the back so it appears behind existing content.
+                    Shape watermarkShape = page.Shapes.GetShape(shapeId);
+                    watermarkShape.SendToBack();
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Watermark added and diagram saved to: {outputDiagramPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

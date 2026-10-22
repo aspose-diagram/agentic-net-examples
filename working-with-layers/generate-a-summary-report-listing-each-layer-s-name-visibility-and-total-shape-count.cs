@@ -1,71 +1,117 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-
-                // Path to the Visio file (replace with actual file path)
-                string visioFilePath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioFilePath);
+                // Dictionary to aggregate layer information across all pages
+                // Key: layer name, Value: aggregated info (visibility and shape count)
+                Dictionary<string, LayerInfo> aggregatedLayers = new Dictionary<string, LayerInfo>(StringComparer.OrdinalIgnoreCase);
 
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the layers collection for the current page
-                    LayerCollection layers = page.PageSheet.Layers;
+                    // Map of layer index (IX) to layer name for the current page
+                    Dictionary<int, string> ixToName = new Dictionary<int, string>();
 
-                    // Prepare a dictionary to hold shape counts per layer index
-                    Dictionary<int, int> layerShapeCounts = new Dictionary<int, int>();
-
-                    // Initialize counts for all layers on this page
-                    foreach (Layer layer in layers)
+                    // Collect layers defined on this page
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        layerShapeCounts[layer.IX] = 0;
-                    }
+                        // Retrieve the layer's name and visibility using the correct .Value properties
+                        string layerName = layer.Name.Value;
+                        BOOL visibility = layer.Visible.Value;
 
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Get the layer membership string (e.g., "0;2")
-                        string member = shape.LayerMem.LayerMember.Value;
+                        // Store the index-to-name mapping for later shape processing
+                        ixToName[layer.IX] = layerName;
 
-                        if (string.IsNullOrEmpty(member))
-                            continue; // Shape does not belong to any layer
-
-                        // Split the membership string and count the shape for each layer
-                        string[] indices = member.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach (string idxStr in indices)
+                        // Ensure a unique entry in the aggregated dictionary
+                        if (!aggregatedLayers.ContainsKey(layerName))
                         {
-                            if (int.TryParse(idxStr, out int idx) && layerShapeCounts.ContainsKey(idx))
+                            aggregatedLayers[layerName] = new LayerInfo
                             {
-                                layerShapeCounts[idx]++;
-                            }
+                                Visible = visibility,
+                                Count = 0
+                            };
                         }
                     }
 
-                    // Output the summary for each layer on this page
-                    Console.WriteLine($"Page: {page.Name}");
-                    foreach (Layer layer in layers)
+                    // Iterate through each shape on the page to count its layer memberships
+                    foreach (Shape shape in page.Shapes)
                     {
-                        int count = layerShapeCounts.TryGetValue(layer.IX, out int c) ? c : 0;
-                        string visibility = layer.Visible.Value == BOOL.True ? "Visible" : "Hidden";
-                        Console.WriteLine($"Layer: {layer.Name.Value}, Visibility: {visibility}, Shape Count: {count}");
-                    }
+                        // Skip shapes without layer membership information
+                        if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
+                            continue;
 
-                    Console.WriteLine(); // Blank line between pages
+                        string memberValue = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrWhiteSpace(memberValue))
+                            continue;
+
+                        // LayerMember.Value may contain multiple layer indices separated by commas or semicolons
+                        string[] parts = memberValue.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string part in parts)
+                        {
+                            if (int.TryParse(part.Trim(), out int ix))
+                            {
+                                // Resolve the layer index to a layer name using the page-specific map
+                                if (ixToName.TryGetValue(ix, out string layerName))
+                                {
+                                    // Increment the shape count for the resolved layer
+                                    if (aggregatedLayers.TryGetValue(layerName, out LayerInfo info))
+                                    {
+                                        info.Count++;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
+                // Output the summary report
+                Console.WriteLine("Layer Summary Report");
+                Console.WriteLine("--------------------");
+                foreach (KeyValuePair<string, LayerInfo> kvp in aggregatedLayers)
+                {
+                    LayerInfo info = kvp.Value;
+                    string visibilityText = info.Visible == BOOL.True ? "True" : "False";
+                    Console.WriteLine($"Name: {kvp.Key}, Visible: {visibilityText}, Shape Count: {info.Count}");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+
+    // Helper class to store aggregated layer details
+    private class LayerInfo
+    {
+        public BOOL Visible { get; set; }
+        public int Count { get; set; }
     }
+}

@@ -1,41 +1,59 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input Visio file path and output PDF path as arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for input Visio file and output PDF
-            string inputPath = "input.vsdx";
-            string outputPath = "themed_output.pdf";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply a preset theme to every page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Choose a preset theme and its variant
-                page.PresetTheme = PresetThemeValue.Bubble;
-                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                // Batch apply a preset theme to every page in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Apply a preset theme (e.g., Bubble) and a variant.
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                }
+
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Enable text compression to reduce file size.
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Save the themed diagram as PDF.
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Configure PDF save options (e.g., default font)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Export the themed diagram to PDF
-            diagram.Save(outputPath, pdfOptions);
-
+            Console.WriteLine($"Successfully saved themed PDF to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,41 +1,51 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <stencil.vsx>");
+            return;
+        }
+
+        string stencilPath = args[0];
+
+        // Guard: ensure the VSX file exists.
+        if (!File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {stencilPath}");
+            return;
+        }
+
         try
         {
+            // Load the stencil (VSX) file into a Diagram object.
+            Diagram stencilDiagram = new Diagram(stencilPath, LoadFileFormat.Vsx);
 
-            // Path to the VSX stencil file
-            string stencilPath = @"C:\Stencils\MyStencil.vsx";
+            // Check if any masters are present.
+            if (stencilDiagram.Masters == null || stencilDiagram.Masters.Count == 0)
+            {
+                Console.WriteLine("No masters found in the stencil.");
+                return;
+            }
 
-            // Load the stencil as a diagram to access its masters
-            Diagram stencilDiagram = new Diagram(stencilPath);
-
-            // Create an empty diagram that will receive the masters
-            Diagram diagram = new Diagram();
-
-            // Import each master from the stencil into the new diagram
+            // List all master shapes available in the stencil.
+            Console.WriteLine($"Masters found in stencil \"{Path.GetFileName(stencilPath)}\":");
             foreach (Master master in stencilDiagram.Masters)
             {
-                // Add the master by specifying the stencil file path and the master name
-                diagram.AddMaster(stencilPath, master.Name);
+                // Output master ID and Name.
+                Console.WriteLine($"- ID: {master.ID}, Name: {master.Name}");
             }
-
-            // List all masters now available in the diagram
-            Console.WriteLine("Masters imported from the stencil:");
-            foreach (Master master in diagram.Masters)
-            {
-                Console.WriteLine($"- {master.Name}");
-            }
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"An error occurred while processing the stencil: {ex.Message}");
         }
     }
 }

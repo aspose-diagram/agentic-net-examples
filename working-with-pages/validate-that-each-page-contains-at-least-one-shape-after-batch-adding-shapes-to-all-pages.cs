@@ -1,46 +1,74 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Ensure there is at least one page; add a blank page if none exist
-        if (diagram.Pages.Count == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            diagram.Pages.Add(new Page());
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
         }
 
-        // Batch add a rectangle shape to every page
-        foreach (Page page in diagram.Pages)
-        {
-            // Draw a rectangle at (1,1) with width 2 and height 1 (in inches)
-            long shapeId = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Retrieve the shape to set its text (optional)
-            Shape shape = page.Shapes.GetShape(shapeId);
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Sample"));
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
         }
 
-        // Validate that each page contains at least one shape
-        foreach (Page page in diagram.Pages)
+        try
         {
-            if (page.Shapes.Count == 0)
+            // Load the Visio diagram inside a using block (mandatory disposal pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                throw new Exception($"Validation failed: Page '{page.Name}' contains no shapes.");
-            }
-            else
-            {
-                Console.WriteLine($"Page '{page.Name}' contains {page.Shapes.Count} shape(s).");
+                // Batch add a rectangle shape to every page.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Add a rectangle at position (1,1). The fourth argument isCalculate = false.
+                    long shapeId = page.AddShape(1.0, 1.0, "Rectangle", false);
+
+                    // Retrieve the newly added shape.
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Replace any existing text with new text.
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt("Added Shape"));
+                }
+
+                // Validate that each page now contains at least one shape.
+                bool allPagesValid = true;
+                foreach (Page page in diagram.Pages)
+                {
+                    if (page.Shapes.Count == 0)
+                    {
+                        Console.Error.WriteLine($"Validation failed: Page \"{page.Name}\" contains no shapes.");
+                        allPagesValid = false;
+                    }
+                }
+
+                if (!allPagesValid)
+                {
+                    Console.Error.WriteLine("One or more pages are empty after adding shapes. Aborting save.");
+                    return;
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
         }
-
-        // Save the diagram to a VSDX file
-        diagram.Save("BatchAddedDiagram.vsdx", SaveFileFormat.Vsdx);
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

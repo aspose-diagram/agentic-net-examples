@@ -1,46 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required by the API guidelines
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram (replace with actual file path)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve IDs of shapes connected to the current shape
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve all connected shape IDs for the current shape
                         long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
+                        // If there are no connections, continue to next shape
                         if (connectedIds == null || connectedIds.Length == 0)
-                            continue; // No connected shapes for this shape
+                            continue;
 
                         // Log each connected shape's ID and type
                         foreach (long connId in connectedIds)
                         {
-                            // Retrieve the connected shape by its ID
-                            Shape connectedShape = page.Shapes.GetShape(connId);
+                            // Retrieve the connected shape using its ID (cast to int as required by GetShape)
+                            Shape connectedShape = page.Shapes.GetShape((int)connId);
                             if (connectedShape == null)
                                 continue; // Safety check
 
-                            Console.WriteLine($"Shape ID: {connectedShape.ID}, Type: {connectedShape.Type}");
+                            Console.WriteLine($"Shape ID {shape.ID} is connected to Shape ID {connectedShape.ID}, Type: {connectedShape.Type}");
                         }
                     }
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

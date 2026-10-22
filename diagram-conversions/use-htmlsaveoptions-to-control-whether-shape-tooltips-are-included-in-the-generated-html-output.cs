@@ -7,36 +7,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file path
-        string inputPath = "sample.vsdx";
-        // Verify the input file exists before proceeding
+        // Determine input and output file paths.
+        string inputPath;
+        string outputPath;
+
+        if (args.Length >= 2)
+        {
+            inputPath = args[0];
+            outputPath = args[1];
+        }
+        else
+        {
+            // Default paths (adjust as needed).
+            inputPath = "sample.vsdx";
+            outputPath = "output.html";
+        }
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Define output HTML file path
-        string outputPath = "output.html";
-
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create HTML export options; tooltips are included by default
+            // Create HTML save options.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Save the diagram as HTML using the configured options
+            // NOTE: Aspose.Diagram does not provide a direct option to include or exclude
+            // shape tooltips in the generated HTML. As a closest alternative, we control
+            // whether hidden pages are exported.
+            htmlOptions.ExportHiddenPage = false; // Use native bool, not BOOL enum.
+
+            // Save the diagram as HTML using the configured options.
             diagram.Save(outputPath, htmlOptions);
 
-            // Inform the user that the export completed
-            Console.WriteLine($"Diagram saved to {outputPath} (tooltips are included by default).");
+            Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during loading or saving
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

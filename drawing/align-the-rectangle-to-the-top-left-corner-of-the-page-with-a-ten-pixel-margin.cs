@@ -1,47 +1,91 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new blank diagram
-            Diagram diagram = new Diagram();
-
-            // Access the first (default) page
-            Page page = diagram.Pages[0];
-
-            // Convert a 10‑pixel margin to inches (assuming 96 DPI)
+            // Define a 10‑pixel margin (assuming 96 DPI).
             double marginInches = 10.0 / 96.0;
 
-            // Desired rectangle size (in inches)
-            double rectWidth = 2.0;
-            double rectHeight = 1.0;
+            bool rectangleFound = false;
 
-            // Calculate the PinX and PinY so the rectangle's top‑left corner sits at the margin
-            double pinX = marginInches + rectWidth / 2.0;
-            double pinY = page.PageSheet.PageProps.PageHeight.Value - marginInches - rectHeight / 2.0;
+            // Iterate through all pages to locate a rectangle shape.
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions (in inches).
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Add a rectangle shape using the built‑in master "Rectangle"
-            long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-            // Retrieve the shape to adjust its dimensions if necessary
-            Shape rect = page.Shapes.GetShape(shapeId);
-            rect.XForm.Width.Value = rectWidth;
-            rect.XForm.Height.Value = rectHeight;
+                    // Identify rectangle shapes by master name.
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    {
+                        // Compute new PinX/Y so that the shape's left/top edges align with the margin.
+                        double halfWidth = shape.XForm.Width.Value / 2.0;
+                        double halfHeight = shape.XForm.Height.Value / 2.0;
 
-            // Save the diagram
-            diagram.Save("AlignedRectangle.vsdx", SaveFileFormat.Vsdx);
+                        // Left edge = margin => PinX = margin + halfWidth
+                        double newPinX = marginInches + halfWidth;
 
+                        // Top edge = pageHeight - margin => PinY = pageHeight - margin - halfHeight
+                        double newPinY = pageHeight - marginInches - halfHeight;
+
+                        // Apply the new position.
+                        shape.XForm.PinX.Value = newPinX;
+                        shape.XForm.PinY.Value = newPinY;
+
+                        rectangleFound = true;
+                        // If only the first rectangle should be aligned, break out of loops.
+                        break;
+                    }
+                }
+
+                if (rectangleFound)
+                    break;
+            }
+
+            if (!rectangleFound)
+            {
+                Console.Error.WriteLine("No rectangle shape with master name 'Rectangle' was found in the diagram.");
+            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,81 +1,79 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace DiagramLayerValidator
+class Program
 {
-    // Simple holder for layer location information
-    class LayerInfo
+    static void Main(string[] args)
     {
-        public string PageName { get; set; }
-        public int LayerIndex { get; set; }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
+        // Expect the diagram file path as the first argument.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Error: No diagram file path provided.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
+                // Dictionary to track layer names and the pages they appear on.
+                Dictionary<string, List<string>> layerOccurrences = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-                // Path to the Visio file to be validated
-                string diagramPath = "input.vsdx";
-                if (args.Length > 0)
-                {
-                    diagramPath = args[0];
-                }
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Dictionary to track layer names and where they appear
-                Dictionary<string, List<LayerInfo>> layerMap = new Dictionary<string, List<LayerInfo>>(StringComparer.OrdinalIgnoreCase);
-
-                // Iterate through all pages and their layers
+                // Iterate over each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate over each layer in the current page's PageSheet.
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        string name = layer.Name.Value ?? string.Empty;
+                        // Retrieve the layer name via the .Value property.
+                        string layerName = layer.Name.Value ?? string.Empty;
 
-                        if (!layerMap.ContainsKey(name))
+                        // Initialize the list for this name if it hasn't been seen before.
+                        if (!layerOccurrences.ContainsKey(layerName))
                         {
-                            layerMap[name] = new List<LayerInfo>();
+                            layerOccurrences[layerName] = new List<string>();
                         }
 
-                        layerMap[name].Add(new LayerInfo
-                        {
-                            PageName = page.Name,
-                            LayerIndex = layer.IX
-                        });
+                        // Record the page name where this layer appears.
+                        layerOccurrences[layerName].Add(page.Name);
                     }
                 }
 
-                // Report duplicate layer names
+                // Flag to indicate whether any duplicates were found.
                 bool duplicatesFound = false;
-                foreach (var kvp in layerMap)
+
+                // Examine the collected data for duplicate layer names.
+                foreach (KeyValuePair<string, List<string>> entry in layerOccurrences)
                 {
-                    if (kvp.Value.Count > 1)
+                    if (entry.Value.Count > 1)
                     {
                         duplicatesFound = true;
-                        Console.WriteLine($"Duplicate layer name '{kvp.Key}' found in {kvp.Value.Count} locations:");
-                        foreach (var info in kvp.Value)
-                        {
-                            Console.WriteLine($"  Page: {info.PageName}, Layer Index: {info.LayerIndex}");
-                        }
+                        Console.WriteLine($"Duplicate layer name: \"{entry.Key}\" found on pages: {string.Join(", ", entry.Value)}");
                     }
                 }
 
                 if (!duplicatesFound)
                 {
-                    Console.WriteLine("No duplicate layer names were found.");
+                    Console.WriteLine("All layer names are unique.");
                 }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

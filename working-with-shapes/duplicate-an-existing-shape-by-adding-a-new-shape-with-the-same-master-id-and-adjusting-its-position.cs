@@ -4,56 +4,88 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths (can be passed as command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the source Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Load the diagram inside a using block as required
         try
         {
-
-            // Load the existing Visio diagram (create/load rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Work with the first page (adjust as needed)
-            Page page = diagram.Pages[0];
-
-            // Locate the shape to duplicate (example: shape with NameU "Shape1")
-            Shape originalShape = null;
-            foreach (Shape s in page.Shapes)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (s.NameU == "Shape1")
+                // Ensure the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    originalShape = s;
-                    break;
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
+
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first non‑deleted shape to duplicate
+                Shape originalShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.False)
+                    {
+                        originalShape = shape;
+                        break;
+                    }
+                }
+
+                if (originalShape == null)
+                {
+                    Console.Error.WriteLine("No suitable shape found to duplicate.");
+                    return;
+                }
+
+                // Ensure the shape has an associated master (template)
+                if (originalShape.Master == null)
+                {
+                    Console.Error.WriteLine("The selected shape does not have a master and cannot be duplicated.");
+                    return;
+                }
+
+                // Retrieve the master name to use for the new shape
+                string masterName = originalShape.Master.Name;
+
+                // Get the original shape position
+                double originalPinX = originalShape.XForm.PinX.Value;
+                double originalPinY = originalShape.XForm.PinY.Value;
+
+                // Define an offset (in inches) for the duplicated shape's position
+                const double offset = 1.0;
+                double newPinX = originalPinX + offset;
+                double newPinY = originalPinY + offset;
+
+                // Add a new shape using the same master; isCalculate set to false
+                long newShapeId = page.AddShape(newPinX, newPinY, masterName, false);
+
+                // Retrieve the newly added shape (optional, for further adjustments)
+                Shape newShape = page.Shapes.GetShape((int)newShapeId);
+                if (newShape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                }
+
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            if (originalShape != null)
-            {
-                // Create a new shape (create rule)
-                Shape newShape = new Shape();
-
-                // Use the same master shape ID as the original
-                newShape.MasterShape = originalShape.MasterShape;
-
-                // Optionally copy the name and give it a distinct identifier
-                newShape.NameU = originalShape.NameU + "_Copy";
-
-                // Adjust position: offset the original shape by 1 inch (1440 twips)
-                double origPinX = originalShape.XForm.PinX.Value;
-                double origPinY = originalShape.XForm.PinY.Value;
-                newShape.XForm.PinX.Value = origPinX + 1440; // 1 inch to the right
-                newShape.XForm.PinY.Value = origPinY + 1440; // 1 inch down
-
-                // Add the new shape to the page (create rule)
-                page.Shapes.Add(newShape);
-            }
-
-            // Save the modified diagram (save rule)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

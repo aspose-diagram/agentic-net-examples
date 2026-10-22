@@ -1,34 +1,47 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Verify that an input file path was provided
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the VSDX file to be loaded
-            string filePath = "sample.vsdx";
-
-            // Load the Visio file into a Diagram object
-            Diagram diagram = new Diagram(filePath);
-
-            // Verify that the Diagram object was initialized successfully
-            if (diagram != null && diagram.Pages.Count > 0)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
-            }
-            else
-            {
-                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
-            }
+                // Verify that the diagram was initialized and contains at least one page
+                if (diagram.Pages == null || diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("Diagram loaded but contains no pages.");
+                    return;
+                }
 
+                // Output success information
+                Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occurred during loading
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

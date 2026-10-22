@@ -1,56 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputImagePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the exported high‑resolution image
-            string outputPath = "output.png";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply a simple shadow to every connector (1‑D shape) in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Connectors are 1‑D shapes
-                    if (shape.OneD)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Enable simple shadow
-                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                        // Shadow color (black)
-                        shape.Fill.ShdwForegnd.Value = "#000000";
-                        // Shadow transparency (30%)
-                        shape.Fill.ShdwForegndTrans.Value = 0.3;
-                        // Shadow offset (horizontal and vertical)
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes (1‑D shapes). OneD is a native bool.
+                        if (shape.OneD)
+                        {
+                            // Apply a simple drop shadow to the connector
+                            shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // Shadow type
+                            shape.Fill.ShdwForegnd.Value = "#000000";                    // Shadow color (black)
+                            shape.Fill.ShdwForegndTrans.Value = 0.3;                    // 30% transparency
+                            shape.Fill.ShapeShdwOffsetX.Value = 0.1;                    // Horizontal offset
+                            shape.Fill.ShapeShdwOffsetY.Value = 0.1;                    // Vertical offset
+
+                            // Send the connector to the back to keep visual order consistent
+                            shape.SendToBack();
+                        }
                     }
                 }
+
+                // Configure high‑resolution image export options
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                imgOptions.Resolution = 300; // DPI for high‑resolution output
+
+                // Save the diagram as a high‑resolution PNG image
+                diagram.Save(outputPath, imgOptions);
+                Console.WriteLine($"Image saved successfully to: {outputPath}");
             }
-
-            // Configure high‑resolution image export (300 DPI PNG)
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            imgOptions.Resolution = 300f;
-
-            // Save the diagram as a high‑resolution image
-            diagram.Save(outputPath, imgOptions);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

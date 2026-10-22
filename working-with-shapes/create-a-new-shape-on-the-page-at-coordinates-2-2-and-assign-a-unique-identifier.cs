@@ -1,39 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Create a new blank diagram
-            using (Diagram diagram = new Diagram())
+            // Load the existing diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first (default) page
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Get the first page (index 0).
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape at coordinates (2,2)
-                // The fourth parameter 'false' indicates that the shape's geometry should not be recalculated automatically
-                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+                // Add a new rectangle shape at coordinates (2,2).
+                // The fourth argument 'isCalculate' is a bool; false means no immediate recalculation.
+                long newShapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-                // Retrieve the shape object using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // Retrieve the newly added shape using its ID.
+                Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                // Output the unique identifier assigned by Aspose.Diagram
-                Console.WriteLine($"Created shape with ID: {shape.ID}");
+                // Assign a unique identifier to the shape.
+                // Using the NameU property (user-defined name) for uniqueness.
+                newShape.NameU = "UniqueShape_001";
+                newShape.Name = "UniqueShape_001";
 
-                // Save the diagram to a VSDX file
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine("Shape has been added and diagram saved successfully.");
             }
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

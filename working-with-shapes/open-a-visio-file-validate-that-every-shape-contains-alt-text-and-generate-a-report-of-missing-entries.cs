@@ -1,79 +1,78 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate command line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
-        // Output report file path
-        string reportPath = "AltTextReport.txt";
+        string visioPath = args[0];
 
-        // List to hold information about shapes missing Alt text
-        List<string> missingAltTextEntries = new List<string>();
+        // Guard: ensure the input file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
+        // Prepare a StringBuilder to collect the report lines.
+        StringBuilder reportBuilder = new StringBuilder();
+        reportBuilder.AppendLine("Alt Text Validation Report");
+        reportBuilder.AppendLine($"Source File: {visioPath}");
+        reportBuilder.AppendLine($"Generated On: {DateTime.Now}");
+        reportBuilder.AppendLine(new string('=', 50));
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve Alt text from shape.Misc.Comment.Value
-                    string altText = null;
-                    if (shape.Misc != null && shape.Misc.Comment != null)
-                    {
-                        altText = shape.Misc.Comment.Value;
-                    }
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // If Alt text is null or whitespace, record the shape
+                    // Retrieve Alt text (comment) from the shape's Misc.Comment.
+                    string altText = shape.Misc?.Comment?.Value ?? string.Empty;
+
+                    // If Alt text is missing or whitespace, record the shape.
                     if (string.IsNullOrWhiteSpace(altText))
                     {
-                        // Use page.Name (since Page.Index does not exist) to identify the page
-                        string entry = $"Page Name: {page.Name}, Shape ID: {shape.ID}, NameU: {shape.NameU}";
-                        missingAltTextEntries.Add(entry);
+                        string shapeName = shape.NameU ?? "(Unnamed)";
+                        string line = $"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shapeName} - Missing Alt Text";
+                        reportBuilder.AppendLine(line);
                     }
                 }
             }
+
+            // Determine the report file path (same folder as source, with suffix).
+            string reportFileName = Path.GetFileNameWithoutExtension(visioPath) + "_AltTextReport.txt";
+            string reportPath = Path.Combine(Path.GetDirectoryName(visioPath) ?? string.Empty, reportFileName);
+
+            // Write the report to the file.
+            File.WriteAllText(reportPath, reportBuilder.ToString());
+
+            // Output summary to console.
+            Console.WriteLine("Alt text validation completed.");
+            Console.WriteLine($"Report written to: {reportPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
+            // Log any exceptions that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        // Generate report
-        using (StreamWriter writer = new StreamWriter(reportPath))
-        {
-            writer.WriteLine("Visio Alt Text Validation Report");
-            writer.WriteLine($"Generated on: {DateTime.Now}");
-            writer.WriteLine($"Total shapes missing Alt text: {missingAltTextEntries.Count}");
-            writer.WriteLine();
-
-            foreach (string entry in missingAltTextEntries)
-            {
-                writer.WriteLine(entry);
-            }
-        }
-
-        // Output summary to console
-        Console.WriteLine("Alt text validation completed.");
-        Console.WriteLine($"Total shapes missing Alt text: {missingAltTextEntries.Count}");
-        Console.WriteLine($"Report saved to: {Path.GetFullPath(reportPath)}");
     }
 }

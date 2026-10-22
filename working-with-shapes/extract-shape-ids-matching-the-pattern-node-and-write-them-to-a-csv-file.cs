@@ -1,54 +1,72 @@
-using Aspose.Diagram;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
+using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output CSV file path
+        string outputPath = "shape_ids.csv";
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram (lifecycle rule)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // CSV output file
-            string outputCsv = "shape_ids.csv";
-
-            // Prepare CSV writer
-            using (StreamWriter writer = new StreamWriter(outputCsv, false))
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Write CSV header
-                writer.WriteLine("ShapeID");
+                // Prepare a list to hold matching shape IDs
+                var matchingIds = new System.Collections.Generic.List<long>();
 
-                // Pattern to match shape names like "Node_*"
-                Regex pattern = new Regex(@"^Node_.*$", RegexOptions.IgnoreCase);
+                // Regular expression for the pattern "Node_*"
+                var regex = new Regex(@"^Node_.*$", RegexOptions.Compiled);
 
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Use the universal name of the shape for matching
-                        string shapeName = shape.NameU;
-                        if (pattern.IsMatch(shapeName))
+                        // Ensure the shape has a NameU before matching
+                        if (!string.IsNullOrEmpty(shape.NameU) && regex.IsMatch(shape.NameU))
                         {
-                            // Write the shape's ID to CSV
-                            writer.WriteLine(shape.ID);
+                            matchingIds.Add(shape.ID);
                         }
                     }
                 }
+
+                // Write the IDs to a CSV file
+                using (var writer = new StreamWriter(outputPath, false))
+                {
+                    // Write CSV header
+                    writer.WriteLine("ShapeID");
+                    // Write each ID on a new line
+                    foreach (long id in matchingIds)
+                    {
+                        writer.WriteLine(id);
+                    }
+                }
+
+                Console.WriteLine($"Extracted {matchingIds.Count} shape IDs to '{outputPath}'.");
             }
-
-            // No modifications made, so saving the diagram is optional
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

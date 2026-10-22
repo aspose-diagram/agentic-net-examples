@@ -1,92 +1,86 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least two arguments: input diagram path and shape name.
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, shape name, output diagram path
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: ToggleFillInheritance <inputDiagramPath> <shapeNameU> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeName> <outputDiagramPath>");
             return;
         }
 
-        // Input diagram file path.
         string inputPath = args[0];
+        string shapeName = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
-
-        // Target shape name (NameU).
-        string targetName = args[1];
-
-        // Output path: optional third argument, otherwise overwrite input.
-        string outputPath = args.Length >= 3 ? args[2] : inputPath;
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape by NameU across all pages.
-            Shape? targetShape = null;
+            // Locate the shape by its NameU property (case‑sensitive)
+            Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Compare shape names case‑insensitively.
-                    if (string.Equals(shape.NameU, targetName, StringComparison.OrdinalIgnoreCase))
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    if (shape.NameU == shapeName)
                     {
                         targetShape = shape;
                         break;
                     }
                 }
-                if (targetShape != null) break;
+                if (targetShape != null)
+                    break;
             }
 
-            // If the shape was not found, report and exit.
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with NameU \"{targetName}\" not found.");
+                Console.Error.WriteLine($"Shape with name '{shapeName}' not found.");
                 return;
             }
 
-            // Determine whether the shape currently inherits its fill.
-            bool inheritsFill =
-                targetShape.Fill.FillForegnd.Value == targetShape.InheritFill.FillForegnd.Value &&
-                targetShape.Fill.FillBkgnd.Value == targetShape.InheritFill.FillBkgnd.Value &&
-                targetShape.Fill.FillPattern.Value == targetShape.InheritFill.FillPattern.Value;
+            // Toggle fill inheritance
+            // When inherited, the formula is "INHERITED()"
+            string currentFormula = targetShape.Fill.FillForegnd.Ufe.F;
 
-            if (inheritsFill)
+            if (!string.IsNullOrEmpty(currentFormula) &&
+                currentFormula.Equals("INHERITED()", StringComparison.OrdinalIgnoreCase))
             {
-                // Shape is inheriting fill – break inheritance by assigning explicit colors.
-                targetShape.Fill.FillForegnd.Value = "#FF0000"; // Red foreground.
-                targetShape.Fill.FillBkgnd.Value = "#00FF00"; // Green background.
-                targetShape.Fill.FillPattern.Value = 1;      // Solid fill pattern.
-                Console.WriteLine($"Fill inheritance disabled for shape \"{targetName}\".");
+                // Currently inherited – disable inheritance by assigning the effective fill color
+                string effectiveValue = targetShape.Fill.FillForegnd.Value; // resolved color (e.g., "#FF0000")
+                targetShape.Fill.FillForegnd.Ufe.F = effectiveValue;
+                Console.WriteLine($"Fill inheritance disabled for shape '{shapeName}'. New fill value: {effectiveValue}");
             }
             else
             {
-                // Shape has explicit fill – revert to inherited values.
-                targetShape.Fill.FillForegnd.Value = targetShape.InheritFill.FillForegnd.Value;
-                targetShape.Fill.FillBkgnd.Value = targetShape.InheritFill.FillBkgnd.Value;
-                targetShape.Fill.FillPattern.Value = targetShape.InheritFill.FillPattern.Value;
-                Console.WriteLine($"Fill inheritance enabled for shape \"{targetName}\".");
+                // Currently explicit – enable inheritance
+                targetShape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+                Console.WriteLine($"Fill inheritance enabled for shape '{shapeName}'.");
             }
 
-            // Save the modified diagram. Preserve the original format (Vsdx assumed).
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to \"{outputPath}\".");
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

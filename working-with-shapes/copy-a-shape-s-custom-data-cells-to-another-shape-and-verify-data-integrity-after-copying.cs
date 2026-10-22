@@ -1,86 +1,122 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
             {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+            // Get the first page
+            Page page = diagram.Pages[0];
 
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
+            // Ensure the page has at least one shape to copy from
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The page contains no shapes.");
+                return;
+            }
 
-                // Retrieve source and target shapes by their IDs (adjust IDs as needed)
-                Shape sourceShape = page.Shapes.GetShape(1);
-                Shape targetShape = page.Shapes.GetShape(2);
+            // Select the first shape as the source shape
+            Shape sourceShape = page.Shapes[0];
 
-                if (sourceShape == null || targetShape == null)
+            // Verify the source shape has a master (required for adding a new shape)
+            if (sourceShape.Master == null)
+            {
+                Console.Error.WriteLine("Source shape does not have an associated master.");
+                return;
+            }
+
+            // Add a new shape on the same page using the same master as the source shape
+            // Position it slightly offset from the source shape
+            double offsetX = 2.0; // inches
+            double newPinX = sourceShape.XForm.PinX.Value + offsetX;
+            double newPinY = sourceShape.XForm.PinY.Value;
+            long newShapeId = page.AddShape(newPinX, newPinY, sourceShape.Master.Name, false);
+
+            // Retrieve the newly added target shape
+            Shape targetShape = page.Shapes.GetShape(newShapeId);
+
+            // Copy custom properties (Props) from source to target
+            foreach (Prop srcProp in sourceShape.Props)
+            {
+                // Create a new property and copy all relevant fields
+                Prop newProp = new Prop();
+                newProp.Name = srcProp.Name;
+                newProp.Label.Value = srcProp.Label.Value;
+                newProp.Prompt.Value = srcProp.Prompt.Value;
+                newProp.Type.Value = srcProp.Type.Value;
+                newProp.Value.Val = srcProp.Value.Val;
+
+                // Add the new property to the target shape
+                targetShape.Props.Add(newProp);
+            }
+
+            // Verify that all custom properties were copied correctly
+            foreach (Prop srcProp in sourceShape.Props)
+            {
+                bool found = false;
+                foreach (Prop tgtProp in targetShape.Props)
                 {
-                    throw new Exception("Source or target shape not found.");
-                }
-
-                // Clear any existing custom data cells on the target shape
-                targetShape.Users.Clear();
-
-                // Copy custom data cells (User-defined cells) from source to target
-                foreach (User srcUser in sourceShape.Users)
-                {
-                    User newUser = new User
+                    if (tgtProp.Name == srcProp.Name)
                     {
-                        Name = srcUser.Name,
-                        NameU = srcUser.NameU
-                    };
-                    newUser.Value.Val = srcUser.Value.Val;
-                    newUser.Prompt.Value = srcUser.Prompt.Value;
-
-                    targetShape.Users.Add(newUser);
-                }
-
-                // Verify that the copied data matches the source data
-                bool allMatch = true;
-                foreach (User srcUser in sourceShape.Users)
-                {
-                    User matchingUser = null;
-                    foreach (User tgtUser in targetShape.Users)
-                    {
-                        if (tgtUser.Name == srcUser.Name)
+                        // Compare each field for equality
+                        if (tgtProp.Label.Value != srcProp.Label.Value ||
+                            tgtProp.Prompt.Value != srcProp.Prompt.Value ||
+                            tgtProp.Type.Value != srcProp.Type.Value ||
+                            tgtProp.Value.Val != srcProp.Value.Val)
                         {
-                            matchingUser = tgtUser;
-                            break;
+                            throw new Exception($"Property mismatch for '{srcProp.Name}'.");
                         }
-                    }
-
-                    if (matchingUser == null || matchingUser.Value.Val != srcUser.Value.Val)
-                    {
-                        allMatch = false;
-                        Console.WriteLine($"Data mismatch for user cell '{srcUser.Name}'.");
+                        found = true;
                         break;
                     }
                 }
 
-                if (allMatch)
+                if (!found)
                 {
-                    Console.WriteLine("Custom data cells copied successfully and verified.");
+                    throw new Exception($"Property '{srcProp.Name}' was not found in the target shape.");
                 }
-                else
-                {
-                    throw new Exception("Verification of copied custom data cells failed.");
-                }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("All custom properties were copied and verified successfully.");
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

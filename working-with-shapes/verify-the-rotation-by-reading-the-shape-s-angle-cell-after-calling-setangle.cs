@@ -1,52 +1,83 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to an existing Visio file (replace with a valid file path)
-            string inputPath = "input.vsdx";
-            // Path for the output file after modification
-            string outputPath = "output.vsdx";
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first page
+            // Work with the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape (assumes a shape with ID 1 exists)
-            Shape shape = page.Shapes.GetShape(1);
-
-            // Set the rotation angle to 45 degrees
-            double expectedAngle = 45.0;
-            shape.SetAngle(expectedAngle);
-
-            // Read back the angle from the shape's Angle cell
-            double actualAngle = shape.XForm.Angle.Value;
-
-            // Verify that the angle was set correctly
-            if (Math.Abs(actualAngle - expectedAngle) > 0.001)
+            // Find the first non-deleted shape on the page
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                throw new Exception($"Angle verification failed. Expected: {expectedAngle}, Actual: {actualAngle}");
-            }
-            else
-            {
-                Console.WriteLine($"Angle verification succeeded. Angle is {actualAngle} degrees.");
+                // Skip logically deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                targetShape = shape;
+                break;
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No non-deleted shapes were found on the first page.");
+                return;
+            }
 
+            // Desired rotation angle in degrees
+            double desiredAngle = 45.0;
+
+            // Rotate the shape using SetAngle
+            targetShape.SetAngle(desiredAngle);
+
+            // Read back the Angle cell value to verify
+            double actualAngle = targetShape.XForm.Angle.Value;
+
+            // Output verification result
+            Console.WriteLine($"Shape ID {targetShape.ID} rotated to {actualAngle} degrees (expected {desiredAngle}).");
+
+            // Simple validation with tolerance
+            const double tolerance = 0.0001;
+            if (Math.Abs(actualAngle - desiredAngle) > tolerance)
+            {
+                throw new Exception($"Angle verification failed. Expected {desiredAngle}, but got {actualAngle}.");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

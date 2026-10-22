@@ -2,75 +2,103 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: Visio file path and CSV file path
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <CsvFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+        string csvPath = args[1];
+
+        // Guard: ensure Visio file exists
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Visio file not found: {visioPath}");
+            return;
+        }
+
+        // Guard: ensure CSV file exists
+        if (!File.Exists(csvPath))
+        {
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
+            return;
+        }
+
+        // Load color mappings from CSV (expected format: ShapeId,FillColor)
+        var colorMap = new Dictionary<long, string>();
+        try
+        {
+            using (var reader = new StreamReader(csvPath))
             {
-
-                // Paths to the input Visio file, CSV file, and output Visio file.
-                string visioInputPath = "input.vsdx";
-                string csvPath = "colors.csv";
-                string visioOutputPath = "output.vsdx";
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(visioInputPath);
-
-                // Read CSV data into a dictionary: shape universal name -> fill color (hex string).
-                var colorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                using (var reader = new StreamReader(csvPath))
+                string line;
+                while ((line = reader.ReadLine()) != null)
                 {
-                    while (!reader.EndOfStream)
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    var parts = line.Split(',');
+                    if (parts.Length < 2)
+                        continue;
+
+                    if (long.TryParse(parts[0].Trim(), out long shapeId))
                     {
-                        string line = reader.ReadLine();
-                        if (string.IsNullOrWhiteSpace(line))
-                            continue;
-
-                        // Expecting format: ShapeName,FillColor (e.g., Process,#FF0000)
-                        string[] parts = line.Split(',');
-                        if (parts.Length < 2)
-                            continue;
-
-                        string shapeName = parts[0].Trim();
                         string color = parts[1].Trim();
-
-                        // Ensure the color is a hex string starting with '#'.
+                        // Basic validation: ensure color starts with '#'
                         if (!color.StartsWith("#"))
                             color = "#" + color;
-
-                        colorMap[shapeName] = color;
+                        colorMap[shapeId] = color;
                     }
                 }
-
-                // Iterate through all pages and shapes, applying fill colors where a match is found.
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Use the universal shape name (NameU) to look up the desired color.
-                        if (colorMap.TryGetValue(shape.NameU, out string fillColor))
-                        {
-                            // Set solid fill pattern.
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid fill.
-                            // Apply the new foreground fill color.
-                            shape.Fill.FillForegnd.Value = fillColor;
-                        }
-                    }
-                }
-
-                // Save the modified diagram.
-                diagram.Save(visioOutputPath, SaveFileFormat.Csv);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading CSV file: {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram and apply fill colors
+        try
+        {
+            Diagram diagram = new Diagram(visioPath);
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (colorMap.TryGetValue(shape.ID, out string newColor))
+                    {
+                        // Ensure the shape has a solid fill pattern
+                        shape.Fill.FillPattern.Value = 1; // Solid fill
+
+                        // Apply the new foreground fill color (hex string, e.g., "#FF0000")
+                        shape.Fill.FillForegnd.Value = newColor;
+                    }
+                }
             }
+
+            // Define output path (same directory, with suffix "_modified")
+            string outputDir = Path.GetDirectoryName(visioPath) ?? "";
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(visioPath);
+            string outputPath = Path.Combine(outputDir, $"{fileNameWithoutExt}_modified.vsdx");
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing Visio diagram: {ex.Message}");
+        }
     }
-    }
+}

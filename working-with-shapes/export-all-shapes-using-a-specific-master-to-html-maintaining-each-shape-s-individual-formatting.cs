@@ -1,57 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments: input Visio file, master name, output folder
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <masterName> <outputFolder>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string masterName = args[1];
+        string outputFolder = args[2];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output folder exists or create it
         try
         {
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
+            return;
+        }
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
-
-            // Name of the master whose shapes should be exported
-            string targetMasterName = "MyMaster";
-
-            // Folder where HTML files will be saved
-            string outputFolder = "ExportedHtml";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Ensure the output directory exists
-            if (!System.IO.Directory.Exists(outputFolder))
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                System.IO.Directory.CreateDirectory(outputFolder);
-            }
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Export only shapes that use the specified master
-                    if (shape.Master != null && shape.Master.Name == targetMasterName)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Create a unique file name for each shape
-                        string htmlPath = System.IO.Path.Combine(outputFolder, $"Shape_{shape.ID}.html");
+                        // Ensure the shape has a master and that its name matches the requested master
+                        if (shape.Master != null && shape.Master.Name == masterName)
+                        {
+                            // Prepare a unique file name for each shape export
+                            string htmlFileName = $"Shape_{shape.ID}_{Guid.NewGuid():N}.html";
+                            string htmlPath = Path.Combine(outputFolder, htmlFileName);
 
-                        // Export the shape to HTML while preserving its formatting
-                        HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                        shape.ToHTML(htmlPath, htmlOptions);
+                            // Create default HTML save options
+                            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+                            // Export the individual shape to HTML while preserving its formatting
+                            shape.ToHTML(htmlPath, htmlOptions);
+
+                            Console.WriteLine($"Exported shape ID {shape.ID} to {htmlPath}");
+                        }
                     }
                 }
             }
-
-            Console.WriteLine("HTML export of shapes using master '" + targetMasterName + "' completed.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

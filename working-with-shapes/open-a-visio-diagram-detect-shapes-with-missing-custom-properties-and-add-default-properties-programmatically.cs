@@ -1,86 +1,84 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define required custom properties and their default values
-                var requiredProperties = new Dictionary<string, string>
+                // Define required custom property names and their default values
+                var requiredProperties = new (string Name, string Label, string DefaultValue)[]
                 {
-                    { "PropA", "DefaultA" },
-                    { "PropB", "DefaultB" },
-                    { "PropC", "DefaultC" }
+                    ("Prop1", "Property 1", "Default1"),
+                    ("Prop2", "Property 2", "Default2")
                 };
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the Props collection is not null
-                        if (shape.Props == null)
-                            continue;
-
-                        // Track existing property names for quick lookup
-                        var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        foreach (Prop existingProp in shape.Props)
+                        // Skip group shapes without custom properties (optional)
+                        // Process each required property
+                        foreach (var reqProp in requiredProperties)
                         {
-                            if (!string.IsNullOrEmpty(existingProp.Name))
-                                existingNames.Add(existingProp.Name);
-                        }
-
-                        // Add missing properties with default values
-                        foreach (var kvp in requiredProperties)
-                        {
-                            string propName = kvp.Key;
-                            string defaultValue = kvp.Value;
-
-                            if (!existingNames.Contains(propName))
+                            bool hasProp = false;
+                            // Check if the shape already contains the property
+                            foreach (Prop existingProp in shape.Props)
                             {
-                                // Create a new custom property (Prop)
+                                if (existingProp.Name == reqProp.Name)
+                                {
+                                    hasProp = true;
+                                    break;
+                                }
+                            }
+
+                            // If the property is missing, add it with default values
+                            if (!hasProp)
+                            {
                                 Prop newProp = new Prop();
-
-                                // Set the property name (identifier)
-                                newProp.Name = propName;
-
-                                // Set a user-friendly label (optional)
-                                newProp.Label.Value = propName;
-
-                                // Set the default value
-                                newProp.Value.Val = defaultValue;
-
-                                // Define the property type as string
+                                newProp.Name = reqProp.Name;
+                                newProp.Label.Value = reqProp.Label;
+                                newProp.Value.Val = reqProp.DefaultValue;
+                                // Set the property type to string
                                 newProp.Type.Value = TypePropValue.String;
-
-                                // Add the new property to the shape's Props collection
                                 shape.Props.Add(newProp);
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the output file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram processing completed. Saved to: " + outputPath);
-
+                Console.WriteLine($"Diagram processed and saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

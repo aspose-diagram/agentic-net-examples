@@ -2,81 +2,110 @@ using System;
 using System.IO;
 using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Retry parameters for handling file lock issues
+        const int maxRetries = 3;
+        const int delayMilliseconds = 1000;
+        int attempt = 0;
+        Diagram diagram = null;
+
+        // Attempt to load the diagram with retry logic
+        while (attempt < maxRetries)
+        {
+            try
+            {
+                // Load the diagram (no using block because Diagram does not implement IDisposable)
+                diagram = new Diagram(inputPath);
+                // Successful load, exit the retry loop
+                break;
+            }
+            catch (IOException ex) when (ex.Message.Contains("being used by another process"))
+            {
+                attempt++;
+                Console.Error.WriteLine($"Attempt {attempt} failed due to file lock. Retrying in {delayMilliseconds} ms...");
+                Thread.Sleep(delayMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+                return;
+            }
+        }
+
+        // If diagram is still null after retries, abort
+        if (diagram == null)
+        {
+            Console.Error.WriteLine("Unable to load the diagram after multiple attempts.");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Retry configuration
-            int maxRetries = 3;
-            int delayMilliseconds = 1000;
-
-            Diagram diagram = null;
-
-            // Attempt to load the diagram with retry on file lock
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            // Verify that the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                try
-                {
-                    diagram = new Diagram(inputPath);
-                    break; // Success, exit the retry loop
-                }
-                catch (IOException ex)
-                {
-                    // If this was the last attempt, rethrow the exception
-                    if (attempt == maxRetries)
-                    {
-                        Console.WriteLine($"Failed to load diagram after {maxRetries} attempts: {ex.Message}");
-                        throw;
-                    }
-
-                    // Log and wait before retrying
-                    Console.WriteLine($"Attempt {attempt} failed (possible file lock). Retrying in {delayMilliseconds} ms...");
-                    Thread.Sleep(delayMilliseconds);
-                }
-            }
-
-            // Ensure the diagram was loaded
-            if (diagram == null)
-            {
-                Console.WriteLine("Diagram could not be loaded.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Locate the first shape on the first page
+            // Access the first page
             Page firstPage = diagram.Pages[0];
-            Shape targetShape = null;
-            foreach (Shape shape in firstPage.Shapes)
-            {
-                targetShape = shape;
-                break; // Take the first shape found
-            }
 
-            if (targetShape == null)
+            // Verify that the first page contains at least one shape
+            if (firstPage.Shapes.Count == 0)
             {
-                Console.WriteLine("No shape found on the first page.");
+                Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            // Clear existing text and set new paragraph text
-            targetShape.Text.Value.Clear();
-            targetShape.Text.Value.Add(new Txt("This is the new paragraph text."));
+            // Access the first shape on the page
+            Shape shape = firstPage.Shapes[0];
 
-            // Save the modified diagram
+            // Ensure the shape has at least one paragraph; add one if none exist
+            if (shape.Paras.Count == 0)
+            {
+                shape.Paras.Add(new Para());
+            }
+
+            // Example: set paragraph formatting (optional)
+            Para para = shape.Paras[0];
+            // Set horizontal alignment to left (requires HorzAlignValue enum)
+            // para.HorzAlign.Value = HorzAlignValue.LeftAlign; // Uncomment if needed and HorzAlignValue is available
+
+            // Clear existing text runs
+            shape.Text.Value.Clear();
+
+            // Add a new text run with the desired content
+            shape.Text.Value.Add(new Txt("Updated paragraph text"));
+
+            // Save the modified diagram to the output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

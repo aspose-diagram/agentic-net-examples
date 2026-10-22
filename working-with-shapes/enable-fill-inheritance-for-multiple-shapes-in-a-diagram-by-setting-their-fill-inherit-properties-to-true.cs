@@ -1,52 +1,82 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate that an input file path was provided.
-        string inputPath = args.Length > 0 ? args[0] : "";
-        if (!File.Exists(inputPath))
+        // Validate arguments: inputPath, outputPath, optional list of shape IDs
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [shapeId1 shapeId2 ...]");
             return;
         }
 
-        // Determine the output file path; default to the same folder with a suffix.
-        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output_inherit.vsdx");
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape IDs if provided
+        HashSet<long> targetShapeIds = new HashSet<long>();
+        for (int i = 2; i < args.Length; i++)
+        {
+            if (long.TryParse(args[i], out long id))
+            {
+                targetShapeIds.Add(id);
+            }
+            else
+            {
+                Console.Error.WriteLine($"Invalid shape ID ignored: {args[i]}");
+            }
+        }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over every page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over every shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // If no specific IDs were supplied, enable inheritance for all shapes
+                bool applyToAll = targetShapeIds.Count == 0;
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Copy the inherited fill pattern value to the shape's fill pattern.
-                    // This effectively applies the inherited fill settings to the shape.
-                    shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        long shapeId = shape.ID;
 
-                    // Optionally copy other inherited fill properties (foreground, background colors).
-                    shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                    shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
+                        if (applyToAll || targetShapeIds.Contains(shapeId))
+                        {
+                            // Enable fill inheritance by setting the user function to INHERITED()
+                            // This follows the documented approach for enabling inheritance.
+                            shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+
+                            // Optionally, also inherit background fill if needed:
+                            // shape.Fill.FillBkgnd.Ufe.F = "INHERITED()";
+
+                            Console.WriteLine($"Enabled fill inheritance for shape ID {shapeId} on page \"{page.NameU}\".");
+                        }
+                    }
                 }
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path using the VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Fill inheritance enabled and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

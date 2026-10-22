@@ -1,71 +1,77 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define output file path
+        string outputPath = "GluedDiagram.vsdx";
+
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            try
+            Directory.CreateDirectory(outputDir);
+        }
+
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Get the active page (creates one if none exists)
+            Page page = diagram.ActivePage;
+
+            // Add a rectangle shape (gluing-enabled) to the page
+            // Parameters: pinX, pinY, masterName, isCalculate
+            long rectangleId = page.AddShape(2.0, 2.0, "Rectangle", false);
+            Shape rectangleShape = page.Shapes.GetShape(rectangleId);
+
+            // Add a dynamic connector shape to the page
+            long connectorId = page.AddShape(3.0, 3.0, "Dynamic connector", false);
+            Shape connectorShape = page.Shapes.GetShape(connectorId);
+
+            // Glue the connector to the rectangle using the center connection point
+            // shape1_ID = rectangle, shape2_ID = connector
+            page.GlueShapes(rectangleId, ConnectionPointPlace.Center, connectorId);
+
+            // Verify that the connector is glued to the rectangle
+            // Retrieve all 1-D glued shapes (connectors) from the rectangle
+            long[] gluedShapeIds = rectangleShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+            bool isGlued = false;
+            if (gluedShapeIds != null)
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Get the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape (gluing-enabled by default)
-                // Parameters: pinX, pinY, master name, isCalculate flag
-                long rectShapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
-                Shape rectShape = page.Shapes.GetShape(rectShapeId);
-
-                // Add a second rectangle shape to serve as the target
-                long targetShapeId = page.AddShape(5.0, 5.0, "Rectangle", false);
-                Shape targetShape = page.Shapes.GetShape(targetShapeId);
-
-                // Add a dynamic connector shape
-                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
-
-                // Connect the two rectangles via the connector using glue points
-                // Use Bottom of the first rectangle and Top of the second rectangle
-                page.ConnectShapesViaConnector(
-                    rectShapeId,
-                    ConnectionPointPlace.Bottom,
-                    targetShapeId,
-                    ConnectionPointPlace.Top,
-                    connectorId);
-
-                // Verify that the connector is attached to both shapes
-                int attachmentCount = 0;
-                foreach (Connect conn in page.Connects)
+                foreach (long id in gluedShapeIds)
                 {
-                    // One end of the connector
-                    if (conn.FromSheet == rectShapeId && conn.ToSheet == connectorId)
-                        attachmentCount++;
-                    // The other end of the connector
-                    if (conn.FromSheet == targetShapeId && conn.ToSheet == connectorId)
-                        attachmentCount++;
+                    if (id == connectorId)
+                    {
+                        isGlued = true;
+                        break;
+                    }
                 }
-
-                if (attachmentCount == 2)
-                {
-                    Console.WriteLine("Connector successfully attached to both shapes.");
-                }
-                else
-                {
-                    throw new Exception("Connector attachment verification failed.");
-                }
-
-                // Save the diagram to a VSDX file
-                diagram.Save("ConnectorAttachment.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved as ConnectorAttachment.vsdx");
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            if (!isGlued)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                throw new Exception("Connector was not successfully glued to the rectangle shape.");
             }
+            else
+            {
+                Console.WriteLine("Connector successfully glued to the rectangle shape.");
+            }
+
+            // Save the diagram to a VSDX file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

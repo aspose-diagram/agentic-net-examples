@@ -1,34 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Input and output file paths (provide via command line or use defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        // Add a blank page (a new diagram has no pages by default)
-        Page page = new Page();
-        diagram.Pages.Add(page);
+        // Guard: ensure the source diagram exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Define circle parameters (radius in inches)
-        double radius = 1.5;          // radius of the circle
-        double centerX = 5.0;         // X coordinate of the circle center
-        double centerY = 5.0;         // Y coordinate of the circle center
+        try
+        {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Draw an ellipse with equal width and height to form a circle
-        long shapeId = page.DrawEllipse(centerX, centerY, radius * 2, radius * 2);
+            // Use the active page (first page) to add the circle
+            Page page = diagram.ActivePage;
 
-        // Retrieve the created shape for further modifications if needed
-        Shape circle = page.Shapes.GetShape(shapeId);
+            // Define the desired radius for the circle
+            double radius = 2.0; // example radius in diagram units
 
-        // Example: set the fill color of the circle
-        circle.Fill.FillForegnd.Value = "#ADD8E6"; // light blue
+            // Width and height of the ellipse must be twice the radius to form a circle
+            double width = radius * 2;
+            double height = radius * 2;
 
-        // Save the diagram to a VSDX file
-        diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Position of the circle's center (PinX, PinY). Adjust as needed.
+            double pinX = 5.0;
+            double pinY = 5.0;
+
+            // Add an ellipse master shape; setting isCalculate to false (no immediate layout)
+            long shapeId = page.AddShape(pinX, pinY, width, height, "Ellipse", false);
+
+            // Retrieve the newly added shape for any further customization (optional)
+            Shape circleShape = page.Shapes.GetShape(shapeId);
+
+            // Example: set the shape's line color to black (optional customization)
+            // Note: Fill and line properties use specific members; here we set line weight as an example.
+            circleShape.Line.LineWeight.Value = 0.03; // line weight in inches
+
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

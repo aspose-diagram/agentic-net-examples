@@ -3,96 +3,98 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for any Aspose.Diagram operations
 
 class Program
 {
+    // Model class to hold inheritance information for a shape
+    private class ShapeInheritanceInfo
+    {
+        public int PageIndex { get; set; }
+        public long ShapeId { get; set; }
+        public string NameU { get; set; }
+        public string MasterName { get; set; }
+        public bool InheritFill { get; set; }
+        public bool InheritLine { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Expect two arguments: input Visio file and output JSON file
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
             return;
         }
 
-        // Output JSON file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "inheritance.json";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // List to hold inheritance information for all shapes
-        List<ShapeInheritanceDto> inheritanceList = new();
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                var inheritanceList = new List<ShapeInheritanceInfo>();
+
+                // Iterate through all pages
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True) continue;
+                    Page page = diagram.Pages[pageIdx];
 
-                    // Capture fill inheritance values
-                    string fillForegnd = shape.InheritFill?.FillForegnd?.Value ?? string.Empty;
-                    string fillBkgnd = shape.InheritFill?.FillBkgnd?.Value ?? string.Empty;
-                    int fillPattern = shape.InheritFill?.FillPattern?.Value ?? 0;
-
-                    // Capture line inheritance values
-                    string lineColor = shape.InheritLine?.LineColor?.Value ?? string.Empty;
-                    double lineWeight = shape.InheritLine?.LineWeight?.Value ?? 0.0;
-                    // Convert enum LinePatternValue to its underlying int representation
-                    int linePattern = shape.InheritLine?.LinePattern?.Value != null
-                        ? (int)shape.InheritLine.LinePattern.Value
-                        : 0;
-
-                    // Populate DTO with captured data
-                    ShapeInheritanceDto dto = new ShapeInheritanceDto
+                    // Iterate through all shapes on the current page
+                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
                     {
-                        ShapeId = shape.ID,
-                        ShapeName = shape.NameU,
-                        FillForegnd = fillForegnd,
-                        FillBkgnd = fillBkgnd,
-                        FillPattern = fillPattern,
-                        LineColor = lineColor,
-                        LineWeight = lineWeight,
-                        LinePattern = linePattern
-                    };
+                        Shape shape = page.Shapes[shapeIdx];
 
-                    inheritanceList.Add(dto);
+                        // Determine fill inheritance by comparing current fill foregnd with inherited value
+                        bool inheritFill = false;
+                        if (shape.InheritFill != null && shape.Fill != null && shape.InheritFill.FillForegnd != null && shape.Fill.FillForegnd != null)
+                        {
+                            inheritFill = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+                        }
+
+                        // Determine line inheritance by comparing current line color with inherited value
+                        bool inheritLine = false;
+                        if (shape.InheritLine != null && shape.Line != null && shape.InheritLine.LineColor != null && shape.Line.LineColor != null)
+                        {
+                            inheritLine = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+                        }
+
+                        // Collect information into the model
+                        var info = new ShapeInheritanceInfo
+                        {
+                            PageIndex = pageIdx,
+                            ShapeId = shape.ID,
+                            NameU = shape.NameU,
+                            MasterName = shape.Master != null ? shape.Master.Name : string.Empty,
+                            InheritFill = inheritFill,
+                            InheritLine = inheritLine
+                        };
+
+                        inheritanceList.Add(info);
+                    }
                 }
+
+                // Serialize the list to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(inheritanceList, jsonOptions);
+
+                // Write JSON to the output file
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Inheritance settings have been serialized to: {outputPath}");
             }
-
-            // Serialize the list to JSON with indentation for readability
-            string json = JsonSerializer.Serialize(inheritanceList, new JsonSerializerOptions { WriteIndented = true });
-
-            // Write JSON to the output file
-            File.WriteAllText(outputPath, json);
-
-            Console.WriteLine($"Inheritance data exported to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
-}
-
-// DTO representing the inheritance settings of a shape
-class ShapeInheritanceDto
-{
-    public long ShapeId { get; set; }               // Unique identifier of the shape
-    public string ShapeName { get; set; } = "";     // Universal name of the shape
-    public string FillForegnd { get; set; } = "";   // Inherited foreground fill color (hex)
-    public string FillBkgnd { get; set; } = "";     // Inherited background fill color (hex)
-    public int FillPattern { get; set; }            // Inherited fill pattern index
-    public string LineColor { get; set; } = "";     // Inherited line color (hex)
-    public double LineWeight { get; set; }          // Inherited line weight (inches)
-    public int LinePattern { get; set; }            // Inherited line pattern index
 }

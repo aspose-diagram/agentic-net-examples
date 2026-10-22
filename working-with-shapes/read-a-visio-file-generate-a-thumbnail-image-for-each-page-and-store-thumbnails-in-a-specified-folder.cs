@@ -7,43 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output folder for thumbnails
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <exe> <inputVisioPath> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <OutputFolder>");
             return;
         }
 
-        string inputPath = args[0];
+        string visioPath = args[0];
         string outputFolder = args[1];
 
-        // Ensure the output directory exists
-        Directory.CreateDirectory(outputFolder);
-
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through each page and generate a thumbnail
-        int pageIndex = 0;
-        foreach (Page page in diagram.Pages)
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
         {
-            // Build the thumbnail file name (e.g., Page_1.png)
-            string fileName = $"Page_{pageIndex + 1}.png";
-            string outputPath = Path.Combine(outputFolder, fileName);
+            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
+            return;
+        }
 
-            // Configure image save options for PNG thumbnail
-            ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-            options.PageIndex = pageIndex;   // zero‑based page index
-            options.PageCount = 1;           // export only the current page
-            options.Resolution = 96;         // DPI for the thumbnail
-            options.Scale = 0.2f;            // scale down to 20% of original size
+        // Ensure the output directory exists (create if necessary).
+        if (!Directory.Exists(outputFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: Could not create output folder '{outputFolder}'. {ex.Message}");
+                return;
+            }
+        }
 
-            // Save the thumbnail image
-            diagram.Save(outputPath, options);
+        try
+        {
+            // Load the Visio diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(visioPath))
+            {
+                // Iterate over each page in the diagram.
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Configure image save options for a thumbnail.
+                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                    options.PageIndex = i;          // Export only the current page.
+                    options.PageCount = 1;          // Single page per image.
+                    options.Scale = 0.2f;           // Scale down to 20% (float literal).
 
-            Console.WriteLine($"Thumbnail saved: {outputPath}");
+                    // Build the output file name for the thumbnail.
+                    string thumbnailPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
 
-            pageIndex++;
+                    // Save the page as a PNG thumbnail.
+                    diagram.Save(thumbnailPath, options);
+                    Console.WriteLine($"Thumbnail for page {i + 1} saved to '{thumbnailPath}'.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

@@ -1,56 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-class ShapeToPdfConverter
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioFile> <shapeId>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Parse the shape ID.
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. It must be a numeric value.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string sourceFile = "input.vsdx";
-
-            // Path for the resulting PDF file
-            string outputFile = "output.pdf";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(sourceFile);
-
-            // OPTIONAL: If you need to export only a specific shape,
-            // you can isolate it by hiding other shapes.
-            // Example: keep only shape with ID = 1 on the first page.
-            // int targetShapeId = 1;
-            // Page firstPage = diagram.Pages[0];
-            // foreach (Shape shape in firstPage.Shapes)
-            // {
-            //     // Hide all shapes except the target one
-            //     shape.Line.LinePattern = LinePattern.None;
-            //     shape.Fill.FillPattern = FillPattern.None;
-            // }
-            // // Ensure the target shape is visible
-            // Shape targetShape = firstPage.Shapes.GetShape(targetShapeId);
-            // targetShape.Line.LinePattern = LinePattern.Solid;
-            // targetShape.Fill.FillPattern = FillPattern.Solid;
-
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                // You can set additional options here if needed
-                // For example, to embed fonts or set page size.
-            };
+                Console.Error.WriteLine("Error: The diagram does not contain any pages.");
+                return;
+            }
 
-            // Save the diagram (or the isolated shape) as PDF
-            diagram.Save(outputFile, pdfOptions);
+            // Get the first page (index 0). Adjust if a different page is required.
+            Page page = diagram.Pages[0];
 
-            Console.WriteLine("Shape has been exported to PDF successfully.");
+            // Retrieve the shape by its ID.
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Error: No shape with ID {shapeId} found on page 0.");
+                return;
+            }
 
+            // Build the output PDF file path.
+            string directory = Path.GetDirectoryName(inputPath) ?? "";
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_shape_{shapeId}.pdf");
+
+            // Convert the shape to PDF.
+            shape.ToPdf(outputPath);
+
+            Console.WriteLine($"Shape ID {shapeId} successfully exported to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

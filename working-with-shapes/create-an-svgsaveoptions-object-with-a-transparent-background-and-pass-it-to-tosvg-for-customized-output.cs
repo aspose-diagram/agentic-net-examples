@@ -1,54 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output SVG file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "shape.svg";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Prepare SVG save options with transparent background (default behavior)
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                // Fit the SVG to the viewport; background remains transparent
-                SVGFitToViewPort = true,
-                // Do not export guide shapes
-                ExportGuideShapes = false,
-                // Do not export comments
-                IsExportComments = false
-            };
-
-            // Export the first shape on the first page to SVG using the custom options
-            Page firstPage = diagram.Pages[0];
-            Shape firstShape = null;
-            foreach (Shape shape in firstPage.Shapes)
-            {
-                firstShape = shape;
-                break;
-            }
-
-            if (firstShape != null)
-            {
-                firstShape.ToSvg("shape_output.svg", svgOptions);
-            }
-            else
-            {
-                throw new Exception("No shapes found on the first page.");
-            }
-
-            // Optionally, export the entire diagram to SVG using the same options
-            diagram.Save("diagram_output.svg", svgOptions);
-
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Load the diagram inside a using block as required
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            try
+            {
+                // Ensure the document contains at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram does not contain any pages.");
+                    return;
+                }
+
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                // Ensure the page contains at least one shape
+                if (page.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("The first page does not contain any shapes.");
+                    return;
+                }
+
+                // Get the first shape on the page
+                Shape shape = page.Shapes[0];
+
+                // Create SVGSaveOptions with default (transparent) background
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                // Optional: fit the SVG to the viewport (preserves viewbox)
+                svgOptions.SVGFitToViewPort = true;
+
+                // Export the shape to SVG using the customized options
+                shape.ToSvg(outputPath, svgOptions);
+
+                Console.WriteLine($"Shape exported successfully to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Write any Aspose or runtime errors to the error console
+                Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            }
         }
     }
 }

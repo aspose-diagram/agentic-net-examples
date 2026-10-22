@@ -1,39 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <exe> <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Load the Visio diagram.
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through every page, shape, and paragraph to set line spacing.
-        foreach (Page page in diagram.Pages)
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            foreach (Shape shape in page.Shapes)
-            {
-                // Each shape can contain multiple paragraphs.
-                foreach (Para para in shape.Paras)
-                {
-                    // Set line spacing to 1.5 lines.
-                    para.SpLine.Value = 1.5;
-                }
-            }
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
         }
 
-        // Save the modified diagram (preserving the original format).
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Iterate over each paragraph in the shape.
+                        for (int i = 0; i < shape.Paras.Count; i++)
+                        {
+                            // Set line spacing to 1.5 lines.
+                            shape.Paras[i].SpLine.Value = 1.5;
+                        }
+                    }
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Paragraph line spacing set to 1.5 lines and diagram saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

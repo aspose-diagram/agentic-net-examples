@@ -1,80 +1,83 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-
-public class DiagramValidator
-{
-    /// <summary>
-    /// Validates that every shape in the diagram has a unique ID.
-    /// Prints duplicate IDs and the shapes that share them.
-    /// </summary>
-    /// <param name="filePath">Path to the Visio diagram file (e.g., .vsdx).</param>
-    public static void ValidateUniqueShapeIds(string filePath)
-    {
-        // Load the diagram using Aspose.Diagram
-        Diagram diagram = new Diagram(filePath);
-
-        // Dictionary to map shape ID to list of shapes that use it
-        var idMap = new Dictionary<long, List<Shape>>();
-
-        // Iterate through all pages and their shapes
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                long shapeId = shape.ID;
-
-                // Add shape to the map
-                if (!idMap.ContainsKey(shapeId))
-                {
-                    idMap[shapeId] = new List<Shape>();
-                }
-                idMap[shapeId].Add(shape);
-            }
-        }
-
-        // Find and report duplicate IDs
-        bool duplicatesFound = false;
-        foreach (var kvp in idMap)
-        {
-            if (kvp.Value.Count > 1)
-            {
-                duplicatesFound = true;
-                Console.WriteLine($"Duplicate Shape ID: {kvp.Key}");
-                foreach (Shape dupShape in kvp.Value)
-                {
-                    // Report page name and shape name for context
-                    string pageName = dupShape.Page != null ? dupShape.Page.NameU : "UnknownPage";
-                    string shapeName = dupShape.NameU ?? "UnnamedShape";
-                    Console.WriteLine($"\tPage: {pageName}, Shape Name: {shapeName}");
-                }
-            }
-        }
-
-        if (!duplicatesFound)
-        {
-            Console.WriteLine("All shape IDs are unique.");
-        }
-    }
-}
-
-// Example usage:
-// DiagramValidator.ValidateUniqueShapeIds("C:\\Diagrams\\sample.vsdx");
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Dictionary to count occurrences of each shape ID.
+                Dictionary<long, int> idCounts = new Dictionary<long, int>();
 
-            DiagramValidator.ValidateUniqueShapeIds("");
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
+                        long shapeId = shape.ID;
+
+                        // Increment count for this ID.
+                        if (idCounts.ContainsKey(shapeId))
+                            idCounts[shapeId]++;
+                        else
+                            idCounts[shapeId] = 1;
+                    }
+                }
+
+                // Collect duplicate IDs.
+                List<long> duplicateIds = new List<long>();
+                foreach (KeyValuePair<long, int> kvp in idCounts)
+                {
+                    if (kvp.Value > 1)
+                        duplicateIds.Add(kvp.Key);
+                }
+
+                // Report results.
+                if (duplicateIds.Count == 0)
+                {
+                    Console.WriteLine("No duplicate shape IDs found.");
+                }
+                else
+                {
+                    Console.WriteLine("Duplicate shape IDs detected:");
+                    foreach (long dupId in duplicateIds)
+                    {
+                        Console.WriteLine($"- Shape ID: {dupId} (occurs {idCounts[dupId]} times)");
+                    }
+                }
+            }
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

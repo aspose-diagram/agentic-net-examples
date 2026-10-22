@@ -6,61 +6,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure a file path argument is provided.
+        // Verify that a file path argument was provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Error: No input file path specified. Provide the Visio file path as the first argument.");
             return;
         }
 
-        // Assign the first argument to a variable.
-        string visioPath = args[0];
+        string inputPath = args[0];
 
-        // Guard: verify the file exists before proceeding.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: File not found at path '{inputPath}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(visioPath);
-
-            // Iterate over each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the shape's fill foreground color (as a string).
-                    string fillForegnd = shape.Fill.FillForegnd.Value;
+                    Console.WriteLine($"Page: {page.NameU} (ID: {page.ID})");
 
-                    // Retrieve the inherited fill foreground color from the parent style/master.
-                    string inheritFillForegnd = shape.InheritFill.FillForegnd.Value;
+                    // Iterate through each shape on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Determine if the fill color is inherited (values match).
-                    bool isFillInherited = string.Equals(fillForegnd, inheritFillForegnd, StringComparison.OrdinalIgnoreCase);
+                        // Retrieve inherited fill and line data
+                        Fill inheritFill = shape.InheritFill;
+                        Line inheritLine = shape.InheritLine;
 
-                    // Retrieve the shape's line color (as a string).
-                    string lineColor = shape.Line.LineColor.Value;
-
-                    // Retrieve the inherited line color from the parent style/master.
-                    string inheritLineColor = shape.InheritLine.LineColor.Value;
-
-                    // Determine if the line color is inherited (values match).
-                    bool isLineInherited = string.Equals(lineColor, inheritLineColor, StringComparison.OrdinalIgnoreCase);
-
-                    // Log the shape ID, universal name, and inheritance flags.
-                    Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}, FillInherited: {isFillInherited}, LineInherited: {isLineInherited}");
+                        // Log shape details along with inherited fill foreground color and line color
+                        Console.WriteLine(
+                            $"  Shape ID: {shape.ID}, Name: {shape.NameU}, " +
+                            $"InheritFill.Foregnd: {inheritFill.FillForegnd.Value}, " +
+                            $"InheritLine.Color: {inheritLine.LineColor.Value}");
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Output any exceptions that occur during processing.
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

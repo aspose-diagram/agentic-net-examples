@@ -1,52 +1,80 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Prompt for diagram file path
+        Console.Write("Enter the path to the Visio diagram file: ");
+        string diagramPath = Console.ReadLine();
+
+        // Guard: ensure the file exists
+        if (string.IsNullOrWhiteSpace(diagramPath) || !File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine("Error: Diagram file not found.");
+            return;
+        }
+
+        // Prompt for the shape ID to inspect
+        Console.Write("Enter the Shape ID (numeric) to read XForm data: ");
+        string shapeIdInput = Console.ReadLine();
+
+        if (!long.TryParse(shapeIdInput, out long targetShapeId))
+        {
+            Console.Error.WriteLine("Error: Invalid Shape ID.");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Search for the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the Visio file
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Select the page (first page in this example)
-                Page page = diagram.Pages[0];
-
-                // Specify the shape ID you want to inspect.
-                // Replace this with the actual ID of the shape you are interested in.
-                long shapeId = 1;
-
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                if (shape == null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.WriteLine($"Shape with ID {shapeId} not found.");
-                    return;
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    if (shape.ID == targetShapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
-
-                // Read XForm properties
-                double pinX = shape.XForm.PinX.Value;
-                double pinY = shape.XForm.PinY.Value;
-                double width = shape.XForm.Width.Value;
-                double height = shape.XForm.Height.Value;
-
-                // Output the values
-                Console.WriteLine($"Shape ID: {shapeId}");
-                Console.WriteLine($"PinX: {pinX}");
-                Console.WriteLine($"PinY: {pinY}");
-                Console.WriteLine($"Width: {width}");
-                Console.WriteLine($"Height: {height}");
-
+                if (targetShape != null)
+                    break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Error: Shape with ID {targetShapeId} not found.");
+                return;
             }
+
+            // Read XForm properties
+            double pinX = targetShape.XForm.PinX.Value;
+            double pinY = targetShape.XForm.PinY.Value;
+            double width = targetShape.XForm.Width.Value;
+            double height = targetShape.XForm.Height.Value;
+
+            // Output the retrieved values
+            Console.WriteLine("Shape XForm Data:");
+            Console.WriteLine($"  PinX   : {pinX}");
+            Console.WriteLine($"  PinY   : {pinY}");
+            Console.WriteLine($"  Width  : {width}");
+            Console.WriteLine($"  Height : {height}");
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose or runtime errors
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

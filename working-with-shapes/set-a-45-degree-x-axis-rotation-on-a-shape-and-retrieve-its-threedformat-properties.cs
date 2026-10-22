@@ -1,71 +1,82 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path – replace with your actual file location
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
             return;
         }
 
-        // Output Visio file path to store the modified diagram
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram (index 0)
-            Page page = diagram.Pages[0];
-
-            // Ensure the page contains at least one shape
-            if (page.Shapes.Count == 0)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("No shapes found on the first page.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Retrieve the first shape on the page
-            Shape shape = page.Shapes[0];
+            // Work with the first page.
+            Page page = diagram.Pages[0];
 
-            // Set a 45‑degree rotation around the X‑axis using the ThreeDFormat property
-            shape.ThreeDFormat.RotationXAngle.Value = 45.0;
+            // Find the first non‑deleted shape on the page.
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip logically deleted shapes.
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // Retrieve various ThreeDFormat properties for reporting
-            double rotX = shape.ThreeDFormat.RotationXAngle.Value;
-            double rotY = shape.ThreeDFormat.RotationYAngle.Value;
-            double rotZ = shape.ThreeDFormat.RotationZAngle.Value;
-            RotationTypeValue rotType = shape.ThreeDFormat.RotationType.Value;
-            double perspective = shape.ThreeDFormat.Perspective.Value;
-            double distanceFromGround = shape.ThreeDFormat.DistanceFromGround.Value;
-            BOOL keepTextFlat = shape.ThreeDFormat.KeepTextFlat.Value;
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No suitable shape found on the first page.");
+                return;
+            }
 
-            // Output the retrieved ThreeDFormat values to the console
-            Console.WriteLine($"Shape ID {shape.ID} ThreeDFormat properties:");
-            Console.WriteLine($"  RotationXAngle: {rotX}");
-            Console.WriteLine($"  RotationYAngle: {rotY}");
-            Console.WriteLine($"  RotationZAngle: {rotZ}");
-            Console.WriteLine($"  RotationType: {rotType}");
-            Console.WriteLine($"  Perspective: {perspective}");
-            Console.WriteLine($"  DistanceFromGround: {distanceFromGround}");
-            Console.WriteLine($"  KeepTextFlat: {keepTextFlat}");
+            // Set a 45‑degree rotation around the X‑axis.
+            targetShape.ThreeDFormat.RotationXAngle.Value = 45.0;
 
-            // Save the modified diagram to a new file using the Vsdx format
+            // Retrieve and display ThreeDFormat properties.
+            Console.WriteLine("ThreeDFormat properties of the selected shape:");
+            Console.WriteLine($"RotationXAngle: {targetShape.ThreeDFormat.RotationXAngle.Value}");
+            Console.WriteLine($"RotationYAngle: {targetShape.ThreeDFormat.RotationYAngle.Value}");
+            Console.WriteLine($"RotationZAngle: {targetShape.ThreeDFormat.RotationZAngle.Value}");
+            Console.WriteLine($"RotationType: {targetShape.ThreeDFormat.RotationType.Value}");
+            Console.WriteLine($"Perspective: {targetShape.ThreeDFormat.Perspective.Value}");
+            Console.WriteLine($"DistanceFromGround: {targetShape.ThreeDFormat.DistanceFromGround.Value}");
+            Console.WriteLine($"KeepTextFlat: {targetShape.ThreeDFormat.KeepTextFlat.Value}");
+
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any exception details to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

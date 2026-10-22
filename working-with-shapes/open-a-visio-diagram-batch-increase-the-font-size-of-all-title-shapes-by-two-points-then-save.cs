@@ -1,63 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the input Visio file path
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Define the output Visio file path
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Calculate the increment in inches (1 point = 1/72 inch)
-            double pointIncrement = 2.0 / 72.0;
-
-            // Iterate over each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Identify title shapes by checking the universal name (case‑insensitive)
-                    if (!string.IsNullOrEmpty(shape.NameU) &&
-                        shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Increase the font size for every character run within the shape
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify title shapes by checking the universal name.
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.IndexOf("Title", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            // Add the point increment to the existing size (size is stored in inches)
-                            ch.Size.Value += pointIncrement;
+                            // Increase the font size of each character run by 2 points.
+                            for (int i = 0; i < shape.Chars.Count; i++)
+                            {
+                                double currentSize = shape.Chars[i].Size.Value;
+                                shape.Chars[i].Size.Value = currentSize + 2.0;
+                            }
                         }
                     }
                 }
-            }
 
-            // Save the modified diagram to the output file using the VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

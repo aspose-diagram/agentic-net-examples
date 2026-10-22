@@ -8,113 +8,110 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input parameters: diagram file, shape ID, output HTML, output CSS.
-        string diagramPath = "input.vsdx";
-        long shapeId = 1; // ID of the shape to export.
-        string htmlPath = "shape.html";
-        string cssPath = "style.css";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
 
         // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Parse the shape identifier.
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Retrieve the first page (adjust if needed).
-            Page page = diagram.Pages[0];
-
-            // Guard: ensure the shape exists on the page.
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                return;
-            }
+                // Get the active page (or you could select a specific page).
+                Page page = diagram.ActivePage;
 
-            // Export the shape to HTML using default HTMLSaveOptions.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            shape.ToHTML(htmlPath, htmlOptions);
+                // Retrieve the shape by its ID.
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on the active page.");
+                    return;
+                }
+
+                // Prepare HTML export options.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.ExportHiddenPage = false;
+                htmlOptions.IsExportComments = false;
+
+                // Define output paths.
+                string outputDirectory = Path.GetDirectoryName(diagramPath) ?? Directory.GetCurrentDirectory();
+                string htmlOutputPath = Path.Combine(outputDirectory, $"shape_{shapeId}.html");
+                string cssOutputPath = Path.Combine(outputDirectory, $"shape_{shapeId}.css");
+
+                // Export the shape to HTML.
+                shape.ToHTML(htmlOutputPath, htmlOptions);
+                Console.WriteLine($"Shape exported to HTML: {htmlOutputPath}");
+
+                // Read the generated HTML content.
+                string htmlContent = File.ReadAllText(htmlOutputPath);
+
+                // Extract the <style>...</style> block using a regular expression.
+                string stylePattern = @"<style[^>]*>(.*?)</style>";
+                Match styleMatch = Regex.Match(htmlContent, stylePattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+                if (styleMatch.Success)
+                {
+                    // Write the extracted CSS to an external stylesheet file.
+                    string cssContent = styleMatch.Groups[1].Value.Trim();
+                    File.WriteAllText(cssOutputPath, cssContent);
+                    Console.WriteLine($"Extracted CSS written to: {cssOutputPath}");
+
+                    // Replace the <style> block with a <link> reference to the external CSS.
+                    string linkTag = $"<link rel=\"stylesheet\" type=\"text/css\" href=\"{Path.GetFileName(cssOutputPath)}\" />";
+                    htmlContent = Regex.Replace(htmlContent, stylePattern, linkTag, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+                }
+                else
+                {
+                    Console.WriteLine("No <style> block found in the exported HTML. No external CSS created.");
+                }
+
+                // Replace inline style attributes with a CSS class (basic example).
+                string inlineStylePattern = @"style\s*=\s*""([^""]*)""";
+                if (Regex.IsMatch(htmlContent, inlineStylePattern, RegexOptions.IgnoreCase))
+                {
+                    // Define a simple CSS class that contains the first encountered inline style.
+                    Match firstInline = Regex.Match(htmlContent, inlineStylePattern, RegexOptions.IgnoreCase);
+                    string firstStyle = firstInline.Groups[1].Value;
+                    string className = "shapeStyle";
+
+                    // Append the class definition to the external CSS file.
+                    string classDefinition = $".{className} {{{{ {Environment.NewLine}{firstStyle}{Environment.NewLine}}}}}";
+                    File.AppendAllText(cssOutputPath, Environment.NewLine + classDefinition);
+                    Console.WriteLine($"Added CSS class '{className}' to external stylesheet.");
+
+                    // Replace all inline style attributes with the class reference.
+                    htmlContent = Regex.Replace(htmlContent, inlineStylePattern, $"class=\"{className}\"", RegexOptions.IgnoreCase);
+                }
+
+                // Write the modified HTML back to the file.
+                File.WriteAllText(htmlOutputPath, htmlContent);
+                Console.WriteLine($"HTML updated to reference external stylesheet: {htmlOutputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
-            return;
-        }
-
-        // Guard: ensure the generated HTML file exists before processing.
-        if (!File.Exists(htmlPath))
-        {
-            Console.Error.WriteLine($"HTML export failed, file not found: {htmlPath}");
-            return;
-        }
-
-        try
-        {
-            // Read the generated HTML content.
-            string htmlContent = File.ReadAllText(htmlPath);
-
-            // Dictionary to map unique style strings to generated CSS class names.
-            var styleToClass = new System.Collections.Generic.Dictionary<string, string>();
-            int classCounter = 1;
-
-            // Regex to find style attributes (e.g., style="color:#FF0000;").
-            string pattern = @"style\s*=\s*""([^""]*)""";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-
-            // Replace each style attribute with a class attribute.
-            string updatedHtml = regex.Replace(htmlContent, match =>
-            {
-                string styleValue = match.Groups[1].Value.Trim();
-
-                // Reuse existing class if the style was already encountered.
-                if (!styleToClass.TryGetValue(styleValue, out string className))
-                {
-                    className = $"cls{classCounter++}";
-                    styleToClass[styleValue] = className;
-                }
-
-                // Return the new class attribute.
-                return $"class=\"{className}\"";
-            });
-
-            // Insert a <link> tag for the external stylesheet just after the opening <head> tag.
-            string linkTag = $"<link rel=\"stylesheet\" type=\"text/css\" href=\"{Path.GetFileName(cssPath)}\" />";
-            if (updatedHtml.Contains("<head>", StringComparison.OrdinalIgnoreCase))
-            {
-                updatedHtml = Regex.Replace(updatedHtml, @"<head\s*>", $"<head>{Environment.NewLine}{linkTag}{Environment.NewLine}", RegexOptions.IgnoreCase);
-            }
-            else
-            {
-                // If no <head> tag, prepend the link at the very start.
-                updatedHtml = linkTag + Environment.NewLine + updatedHtml;
-            }
-
-            // Write the modified HTML back to the file.
-            File.WriteAllText(htmlPath, updatedHtml);
-
-            // Build the CSS file content from the collected styles.
-            using (var cssWriter = new StreamWriter(cssPath, false))
-            {
-                foreach (var kvp in styleToClass)
-                {
-                    // Each entry becomes: .clsN { <style declarations> }
-                    cssWriter.WriteLine($".{kvp.Value} {{ {kvp.Key} }}");
-                }
-            }
-
-            Console.WriteLine("Export completed successfully.");
-            Console.WriteLine($"HTML file: {htmlPath}");
-            Console.WriteLine($"CSS file: {cssPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing HTML/CSS: {ex.Message}");
+            // Capture any Aspose or I/O errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

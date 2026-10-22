@@ -1,71 +1,83 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Load an existing Visio diagram
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists before proceeding
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
-
-        Diagram diagram;
-        try
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            // Attempt to load the diagram; catch any loading errors
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Get the first page (you can change the index as needed)
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Retrieve a shape by its ID (replace with the actual shape ID you want to modify)
-        long shapeId = 1; // example shape ID
-        Shape shape = page.Shapes.GetShape(shapeId);
-
-        if (shape == null)
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            throw new Exception($"Shape with ID {shapeId} not found on page {page.Name}.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
-        // -----------------------------------------------------------------
-        // Reset the shape's theme to default values.
-        // Since theme properties are write‑only, assigning the default
-        // (no theme) is achieved by setting the preset theme to a known
-        // baseline (Bubble) with the first variant and quick style.
-        // -----------------------------------------------------------------
-        shape.PresetTheme = PresetThemeValue.Bubble;
-        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-        // -----------------------------------------------------------------
-        // Apply a new custom theme to the same shape.
-        // Here we demonstrate applying a different variant and quick style.
-        // Replace these values with the desired custom theme settings.
-        // -----------------------------------------------------------------
-        shape.PresetTheme = PresetThemeValue.Bubble;
-        shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-        // Use a valid quick style enum member (VariantStyle2 is guaranteed to exist)
-        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
-
-        // Save the modified diagram to a new file
-        string outputPath = "output.vsdx";
         try
         {
-            // Save using the appropriate overload with a SaveFileFormat argument
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                // Ensure the page has at least one shape
+                if (page.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("The first page contains no shapes.");
+                    return;
+                }
+
+                // Get the first shape on the page
+                Shape shape = page.Shapes[0];
+
+                // ------------------------------
+                // Reset the shape's theme to default values
+                // ------------------------------
+                // Apply a known base theme (Bubble) with the first variant and quickstyle
+                shape.PresetTheme = PresetThemeValue.Bubble;
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+
+                // ------------------------------
+                // Apply a new custom theme to the shape
+                // ------------------------------
+                // Example: set a different variant and quickstyle
+                shape.PresetTheme = PresetThemeValue.Bubble; // Re-assign if needed
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+
+                // Additionally, use SetPresetThemeStyleMatrics to define style and color matrices
+                shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color7);
+
+                // ------------------------------
+                // Save the modified diagram
+                // ------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

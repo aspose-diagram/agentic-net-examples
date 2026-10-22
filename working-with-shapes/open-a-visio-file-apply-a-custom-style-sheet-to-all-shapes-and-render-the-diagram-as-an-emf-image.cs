@@ -1,71 +1,103 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputDir = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Ensure the output directory exists.
+        if (!Directory.Exists(outputDir))
         {
             try
             {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Create a custom style sheet
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // ------------------------------------------------------------
+                // Create a custom StyleSheet to be applied to all shapes.
+                // ------------------------------------------------------------
                 StyleSheet customStyle = new StyleSheet();
-                // Assign a unique ID (next available)
                 customStyle.ID = diagram.StyleSheets.Count + 1;
+                customStyle.Name = "CustomStyle";
 
-                // Example: set a character style (first character)
+                // Define character (text) style – red text color.
                 Aspose.Diagram.Char charStyle = new Aspose.Diagram.Char();
-                charStyle.IX = 0; // character index
-                charStyle.Color.Value = "#0066CC"; // text color
-                charStyle.Size.Value = 0.12; // font size in inches (~9pt)
-                charStyle.Style.Value = StyleValue.Bold; // bold text
+                charStyle.Color.Value = "#FF0000"; // Red
+                charStyle.IX = 0;
                 customStyle.Chars.Add(charStyle);
 
-                // Example: set line style
-                customStyle.Line.LineColor.Value = "#FF0000"; // red line
-                customStyle.Line.LineWeight.Value = 0.02; // line weight in inches
+                // Define fill style – green fill.
+                customStyle.Fill.FillForegnd.Value = "#00FF00"; // Green
 
-                // Example: set fill style
-                customStyle.Fill.FillForegnd.Value = "#FFFF99"; // light yellow fill
-                customStyle.Fill.FillPattern.Value = 1; // solid fill
+                // Define line style – blue line color.
+                customStyle.Line.LineColor.Value = "#0000FF"; // Blue
 
-                // Add the style sheet to the diagram
+                // Add the stylesheet to the diagram's collection.
                 diagram.StyleSheets.Add(customStyle);
 
-                // Apply the custom style to all shapes on each page
-                foreach (Page page in diagram.Pages)
+                // ------------------------------------------------------------
+                // Apply the custom stylesheet to every shape on every page.
+                // ------------------------------------------------------------
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Apply the style sheet to text, line, and fill of all shapes on the page
-                    page.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        shape.TextStyle = customStyle;
+                        shape.FillStyle = customStyle;
+                        shape.LineStyle = customStyle;
+                    }
                 }
 
-                // Configure image save options for EMF format
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf);
-                // Export only the first page (adjust as needed)
-                saveOptions.PageIndex = 0;
-                saveOptions.PageCount = 1;
-                // Do not export hidden pages
-                saveOptions.ExportHiddenPage = false;
+                // ------------------------------------------------------------
+                // Render each page of the diagram as an EMF image.
+                // ------------------------------------------------------------
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Emf);
+                    imgOptions.PageIndex = i;   // Zero‑based page index.
+                    imgOptions.PageCount = 1;   // Export a single page.
 
-                // Output EMF file path
-                string outputPath = "output.emf";
+                    string outputPath = Path.Combine(outputDir, $"page_{i + 1}.emf");
 
-                // Save the diagram as an EMF image
-                diagram.Save(outputPath, saveOptions);
-
-                Console.WriteLine("Diagram exported to EMF successfully.");
-
+                    // Save the page as EMF.
+                    diagram.Save(outputPath, imgOptions);
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,49 +1,80 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: input file, output file, shape ID, rotation angle.
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <shapeId> <angleInDegrees>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+        string angleArg = args[3];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID.
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        // Parse rotation angle (degrees).
+        if (!double.TryParse(angleArg, out double angleDeg))
+        {
+            Console.Error.WriteLine($"Invalid angle value: {angleArg}");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output_rotated.vsdx";
-
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Desired rotation angle in degrees
-            double rotationAngle = 45.0;
-
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Example: rotate the shape with ID 1
-            // Retrieve the shape; GetShape returns null if the ID does not exist
-            Shape shape = page.Shapes.GetShape(1);
-            if (shape != null)
+            // Locate the shape with the specified ID across all pages.
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                // Set the rotation angle (degrees) via the XForm.Angle cell
-                shape.XForm.Angle.Value = rotationAngle;
-                Console.WriteLine($"Shape ID {shape.ID} rotated to {rotationAngle} degrees.");
-            }
-            else
-            {
-                Console.WriteLine("Shape with ID 1 not found.");
+                // GetShape expects an integer ID.
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
+                {
+                    targetShape = shape;
+                    break;
+                }
             }
 
-            // Save the modified diagram
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                return;
+            }
+
+            // Apply the rotation angle (degrees) to the shape's XForm.
+            targetShape.XForm.Angle.Value = angleDeg;
+
+            // Save the modified diagram. Preserve the original format (VSDX assumed here).
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
+            Console.WriteLine($"Shape ID {shapeId} rotated to {angleDeg} degrees and saved to {outputPath}.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

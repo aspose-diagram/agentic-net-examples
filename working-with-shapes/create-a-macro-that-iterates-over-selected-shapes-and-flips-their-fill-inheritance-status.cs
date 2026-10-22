@@ -1,80 +1,67 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input Visio file and output Visio file.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: DiagramFillInheritanceToggle <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists before proceeding.
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string outputPath = args[1];
-
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through every page in the diagram.
+            // Iterate over all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through every shape on the current page.
+                // Iterate over all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes (Del == BOOL.True) to avoid processing hidden elements.
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve the current foreground fill color of the shape.
-                    string currentFill = shape.Fill.FillForegnd.Value;
-
-                    // Retrieve the inherited foreground fill color from the shape's parent style.
-                    string inheritedFill = shape.InheritFill.FillForegnd.Value;
-
-                    // Determine if the shape is currently using the inherited fill.
-                    bool isInherited = string.Equals(currentFill, inheritedFill, StringComparison.OrdinalIgnoreCase);
-
-                    if (isInherited)
+                    // Flip the fill inheritance status.
+                    // If the shape currently inherits its fill, disable inheritance by assigning the current value to itself.
+                    // Otherwise, enable inheritance by setting the UFE formula to INHERITED().
+                    if (shape.Fill.FillForegnd.Ufe.F == "INHERITED()")
                     {
-                        // Shape is inheriting fill – set an explicit fill color (red) to break inheritance.
-                        shape.Fill.FillForegnd.Value = "#FF0000";
-                        // Optionally set a solid fill pattern to ensure visibility.
-                        shape.Fill.FillPattern.Value = 1; // 1 = solid fill.
-                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}': inheritance removed (set to red).");
+                        // Disable inheritance – assign the current value back to the cell.
+                        shape.Fill.FillForegnd.Value = shape.Fill.FillForegnd.Value;
                     }
                     else
                     {
-                        // Shape has an explicit fill – revert to inherited fill by copying the inherited value.
-                        shape.Fill.FillForegnd.Value = inheritedFill;
-                        // Preserve the inherited fill pattern.
-                        shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
-                        Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}': inheritance restored.");
+                        // Enable inheritance – set the UFE formula.
+                        shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
                     }
                 }
             }
 
-            // Save the modified diagram to the output path using VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram to a macro‑enabled format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdm);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

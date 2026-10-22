@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,28 +7,46 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Add page number placeholder to the footer (will be replaced per page)
-        diagram.HeaderFooter.FooterRight = "Page: &p";
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Set a global footer that includes the page number wildcard (&p).
+                // This will render the correct page number on each page when exported.
+                diagram.HeaderFooter.FooterRight = "Page: &p";
 
-        // Set PDF save options (optional: specify default font)
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-        pdfOptions.DefaultFont = "Arial";
+                // Configure PDF save options and explicitly set the format tracker.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-        // Export the diagram to PDF
-        diagram.Save(outputPath, pdfOptions);
+                // Save the diagram as PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+            }
 
-        Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            Console.WriteLine($"Successfully exported PDF to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

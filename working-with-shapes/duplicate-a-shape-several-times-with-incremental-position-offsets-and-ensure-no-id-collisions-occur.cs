@@ -1,46 +1,108 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments: input file, output file, optional copy count and offset.
+        if (args.Length < 2)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> [copyCount] [offsetX] [offsetY]");
+            return;
+        }
 
-            // Add a single page to the diagram
-            diagram.Pages.Add(new Page());
-            Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Define the original shape dimensions and position
-            double startPinX = 2.0;   // X coordinate of the shape's center
-            double startPinY = 2.0;   // Y coordinate of the shape's center
-            double shapeWidth = 1.0;  // Width of the rectangle
-            double shapeHeight = 0.5; // Height of the rectangle
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Add the original rectangle shape
-            long originalShapeId = page.DrawRectangle(startPinX, startPinY, shapeWidth, shapeHeight);
-            Shape originalShape = page.Shapes.GetShape(originalShapeId);
-            originalShape.Text.Value.Add(new Txt("Original"));
+        // Parse optional parameters.
+        int copyCount = 5; // default number of duplicates
+        double offsetX = 1.0; // default X offset in inches
+        double offsetY = 0.0; // default Y offset in inches
 
-            // Parameters for duplication
-            int duplicateCount = 5;          // Number of copies to create
-            double offsetX = 1.0;            // Horizontal offset per copy
-            double offsetY = 0.5;            // Vertical offset per copy
+        if (args.Length >= 3 && int.TryParse(args[2], out int parsedCount) && parsedCount > 0)
+            copyCount = parsedCount;
 
-            // Create duplicates with incremental offsets
-            for (int i = 1; i <= duplicateCount; i++)
+        if (args.Length >= 4 && double.TryParse(args[3], out double parsedOffsetX))
+            offsetX = parsedOffsetX;
+
+        if (args.Length >= 5 && double.TryParse(args[4], out double parsedOffsetY))
+            offsetY = parsedOffsetY;
+
+        try
+        {
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                double newPinX = startPinX + i * offsetX;
-                double newPinY = startPinY + i * offsetY;
-
-                // Add a new rectangle at the calculated position
-                long dupShapeId = page.DrawRectangle(newPinX, newPinY, shapeWidth, shapeHeight);
-                Shape dupShape = page.Shapes.GetShape(dupShapeId);
-                dupShape.Text.Value.Add(new Txt($"Copy {i}"));
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Save the diagram to a VSDX file
-            diagram.Save("DuplicatedShapes.vsdx", SaveFileFormat.Vsdx);
+            // Work with the first page.
+            Page page = diagram.Pages[0];
+
+            // Find the first non-deleted shape to duplicate.
+            Shape sourceShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Del == BOOL.False)
+                {
+                    sourceShape = shape;
+                    break;
+                }
+            }
+
+            if (sourceShape == null)
+            {
+                Console.Error.WriteLine("No non-deleted shape found to duplicate.");
+                return;
+            }
+
+            // Store original geometry and master name.
+            double originalPinX = sourceShape.XForm.PinX.Value;
+            double originalPinY = sourceShape.XForm.PinY.Value;
+            double originalWidth = sourceShape.XForm.Width.Value;
+            double originalHeight = sourceShape.XForm.Height.Value;
+            string masterName = sourceShape.Master?.Name ?? "Rectangle"; // fallback to Rectangle if master is null
+
+            // Duplicate the shape multiple times with incremental offsets.
+            for (int i = 1; i <= copyCount; i++)
+            {
+                double newPinX = originalPinX + i * offsetX;
+                double newPinY = originalPinY + i * offsetY;
+
+                // Add a new shape based on the same master.
+                long newShapeId = page.AddShape(newPinX, newPinY, originalWidth, originalHeight, masterName, false);
+
+                // Retrieve the newly added shape.
+                Shape newShape = page.Shapes.GetShape(newShapeId);
+
+                // Copy visual properties from the source shape.
+                newShape.Copy(sourceShape);
+
+                // Ensure the position reflects the incremental offset (copy may have overwritten it).
+                newShape.XForm.PinX.Value = newPinX;
+                newShape.XForm.PinY.Value = newPinY;
+            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with duplicated shapes to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

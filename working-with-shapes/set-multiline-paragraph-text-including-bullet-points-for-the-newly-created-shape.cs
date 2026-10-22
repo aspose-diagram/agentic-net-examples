@@ -1,47 +1,77 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define the output file path
+        string outputPath = "output.vsdx";
+
+        try
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (a new diagram contains one default page)
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                // Add a default page if none exist
+                diagram.Pages.Add(new Page());
+            }
+
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page (pinX, pinY, width, height)
-            long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
-
-            // Retrieve the shape instance
+            // -----------------------------------------------------------------
+            // Create a new rectangle shape on the page
+            // DrawRectangle signature: (pinX, pinY, width, height)
+            // -----------------------------------------------------------------
+            long shapeId = page.DrawRectangle(2.0, 2.0, 2.0, 2.0);
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Clear any existing text
-            shape.Text.Value.Clear();
+            // -----------------------------------------------------------------
+            // Set multiline paragraph text with bullet points
+            // -----------------------------------------------------------------
+            // Clear any existing paragraphs
+            shape.Paras.Clear();
 
-            // ----- First paragraph (bullet) -----
-            // Create a paragraph and set bullet style
-            Aspose.Diagram.Para para1 = new Aspose.Diagram.Para();
+            // Paragraph 1 – bullet
+            Para para1 = new Para();
             para1.Bullet.Value = BulletValue.Style1; // standard bullet
-            // Add the paragraph to the shape
             shape.Paras.Add(para1);
-            // Add the text run for this paragraph
-            shape.Text.Value.Add(new Txt("First bullet point"));
 
-            // ----- Second paragraph (bullet) -----
-            Aspose.Diagram.Para para2 = new Aspose.Diagram.Para();
+            // Paragraph 2 – bullet
+            Para para2 = new Para();
             para2.Bullet.Value = BulletValue.Style1;
             shape.Paras.Add(para2);
-            shape.Text.Value.Add(new Txt("Second bullet point"));
 
-            // ----- Third paragraph (bullet) -----
-            Aspose.Diagram.Para para3 = new Aspose.Diagram.Para();
-            para3.Bullet.Value = BulletValue.Style1;
+            // Paragraph 3 – normal (no bullet)
+            Para para3 = new Para();
             shape.Paras.Add(para3);
-            shape.Text.Value.Add(new Txt("Third bullet point"));
 
+            // Clear existing text runs
+            shape.Text.Value.Clear();
+
+            // Add text runs corresponding to the paragraphs
+            shape.Text.Value.Add(new Txt("First bullet item"));
+            shape.Text.Value.Add(new Txt("\n"));
+            shape.Text.Value.Add(new Txt("Second bullet item"));
+            shape.Text.Value.Add(new Txt("\n"));
+            shape.Text.Value.Add(new Txt("A normal line without bullet"));
+
+            // -----------------------------------------------------------------
             // Save the diagram to VSDX format
-            diagram.Save("MultilineBulletShape.vsdx", SaveFileFormat.Vsdx);
+            // -----------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

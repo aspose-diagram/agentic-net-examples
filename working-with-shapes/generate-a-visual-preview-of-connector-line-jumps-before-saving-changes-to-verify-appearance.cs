@@ -1,57 +1,66 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Paths for preview image and final saved diagram
+        string previewPath = "preview.png";
+        string outputPath = "output.vsdx";
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Iterate through all pages and shapes to find connector shapes (1‑D shapes)
+            // Iterate through all pages and shapes to modify connector line jumps
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Loop over shapes collection using indexer (required by API)
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Filter only connector shapes
+                    Shape shape = page.Shapes[i];
+
+                    // Process only 1-D connector shapes
                     if (shape.OneD)
                     {
-                        // Display current jump style
-                        Console.WriteLine($"Connector ID {shape.ID} current jump style: {shape.Layout.ConLineJumpStyle.Value}");
-
-                        // Set a specific jump style (e.g., Arc) for preview
+                        // Set the line jump style to 'Arc' for visual preview
+                        // ConLineJumpStyleValue is the native enumeration for line jumps
                         shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
-
-                        // Optionally, set jump code to always apply jumps
-                        shape.Layout.ConLineJumpCode.Value = ConLineJumpCodeValue.Always;
                     }
                 }
             }
 
-            // Save a preview image (PNG) to verify the connector jumps visually
-            string previewImagePath = "preview.png";
-            ImageSaveOptions previewOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save(previewImagePath, previewOptions);
-            Console.WriteLine($"Preview image saved to: {previewImagePath}");
+            // ---------- Generate visual preview (PNG) ----------
+            // Create image save options for PNG format
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // After verification, save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the diagram as a PNG image to preview the connector jumps
+            diagram.Save(previewPath, imgOptions);
+            Console.WriteLine($"Preview image saved to: {previewPath}");
+
+            // ---------- Save the modified diagram ----------
+            // Save the updated diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Modified diagram saved to: {outputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

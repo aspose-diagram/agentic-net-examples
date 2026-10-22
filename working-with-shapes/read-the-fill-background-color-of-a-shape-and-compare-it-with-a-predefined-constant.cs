@@ -1,62 +1,77 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    // Predefined constant background color to compare against (hex string, case-insensitive)
+    private const string TargetBackgroundColor = "#FF0000";
+
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: expect diagram file path and shape ID
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be an integer.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the Visio file
-            string filePath = "input.vsdx";
+            // Get the first page (index 0). Adjust if a specific page is required.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                return;
+            }
 
-            // Universal name of the shape to inspect
-            string targetShapeNameU = "MyShape";
-
-            // Expected fill background color (hex string)
-            const string ExpectedFillColor = "#FF0000";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Get the first page (adjust index if needed)
             Page page = diagram.Pages[0];
 
-            // Locate the shape by its universal name
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-                if (shape.NameU == targetShapeNameU)
-                {
-                    targetShape = shape;
-                    break;
-                }
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on page '{page.Name}'.");
+                return;
             }
 
-            if (targetShape == null)
-            {
-                throw new Exception($"Shape with NameU '{targetShapeNameU}' not found.");
-            }
+            // Read the fill background color (hex string)
+            string backgroundColor = shape.Fill.FillBkgnd.Value ?? string.Empty;
 
-            // Read the fill background color
-            string actualFillColor = targetShape.Fill.FillBkgnd.Value;
-
-            // Compare with the predefined constant
-            if (string.Equals(actualFillColor, ExpectedFillColor, StringComparison.OrdinalIgnoreCase))
+            // Compare with the predefined constant (case‑insensitive)
+            if (string.Equals(backgroundColor, TargetBackgroundColor, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("Fill background color matches the expected value.");
+                Console.WriteLine($"Shape ID {shapeId} background color matches the target: {TargetBackgroundColor}");
             }
             else
             {
-                Console.WriteLine($"Fill background color '{actualFillColor}' does not match expected '{ExpectedFillColor}'.");
+                Console.WriteLine($"Shape ID {shapeId} background color '{backgroundColor}' does NOT match the target '{TargetBackgroundColor}'.");
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose or runtime exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,86 +1,105 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            // Input Visio file path (modify as needed or pass as first argument)
-            string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
 
-            if (!File.Exists(visioPath))
-            {
-                Console.WriteLine($"File not found: {visioPath}");
-                return;
-            }
+        string visioPath = args[0];
 
-            // Load the Visio diagram
+        // Guard: ensure the input file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
+        // List to hold details of invalid hyperlinks.
+        var invalidLinks = new List<string>();
+
+        try
+        {
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(visioPath);
 
-            // Prepare a list to collect invalid hyperlink information
-            List<string> invalidLinks = new List<string>();
-
-            // Regular expression for basic URL validation
-            Regex urlRegex = new Regex(@"^(https?|ftp)://[^\s/$.?#].[^\s]*$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages in the diagram.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                Page page = diagram.Pages[pageIndex];
+                string pageName = page.NameU ?? $"Page_{pageIndex + 1}";
+
+                // Iterate through all shapes on the current page.
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Shape shape = page.Shapes[shapeIndex];
+                    if (shape == null) continue;
 
-                    // Ensure the Hyperlinks collection exists
-                    if (shape.Hyperlinks == null)
-                        continue;
+                    string shapeName = shape.NameU ?? $"Shape_{shape.ID}";
 
-                    // Iterate through each hyperlink in the shape
-                    foreach (Hyperlink link in shape.Hyperlinks)
+                    // Ensure the Hyperlinks collection is not null.
+                    if (shape.Hyperlinks == null) continue;
+
+                    // Iterate through each hyperlink attached to the shape.
+                    foreach (Hyperlink hyperlink in shape.Hyperlinks)
                     {
-                        // Retrieve the address value
-                        string address = link.Address.Value;
+                        if (hyperlink == null) continue;
 
-                        // Validate the URL format
-                        if (string.IsNullOrWhiteSpace(address) || !urlRegex.IsMatch(address))
+                        // Retrieve the hyperlink address.
+                        string address = hyperlink.Address?.Value ?? string.Empty;
+
+                        // Validate the URL format.
+                        bool isValid = Uri.TryCreate(address, UriKind.Absolute, out Uri uriResult) &&
+                                       (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+                        if (!isValid && !string.IsNullOrWhiteSpace(address))
                         {
-                            // Record details of the invalid link
-                            string info = $"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}, Hyperlink Address: {address}";
-                            invalidLinks.Add(info);
+                            // Record details of the invalid hyperlink.
+                            string reportLine = $"Page: {pageName}, Shape: {shapeName}, Hyperlink Name: {hyperlink.Name}, URL: {address}";
+                            invalidLinks.Add(reportLine);
                         }
                     }
                 }
             }
 
-            // Output the report
-            Console.WriteLine("Invalid Hyperlinks Report:");
-            if (invalidLinks.Count == 0)
+            // Output the report of invalid hyperlinks.
+            if (invalidLinks.Count > 0)
             {
-                Console.WriteLine("No invalid hyperlinks found.");
-            }
-            else
-            {
+                Console.WriteLine("Invalid Hyperlinks Report:");
                 foreach (string line in invalidLinks)
                 {
                     Console.WriteLine(line);
                 }
 
-                // Optionally write the report to a text file
-                string reportPath = "InvalidHyperlinksReport.txt";
+                // Optionally write the report to a text file in the same directory as the input file.
+                string reportPath = Path.Combine(Path.GetDirectoryName(visioPath) ?? "", "InvalidHyperlinksReport.txt");
                 try
                 {
                     File.WriteAllLines(reportPath, invalidLinks);
-                    Console.WriteLine($"Report saved to: {Path.GetFullPath(reportPath)}");
+                    Console.WriteLine($"Report saved to: {reportPath}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to write report file: {ex.Message}");
+                    Console.Error.WriteLine($"Failed to write report file: {ex.Message}");
                 }
             }
+            else
+            {
+                Console.WriteLine("No invalid hyperlinks found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
+}

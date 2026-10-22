@@ -7,56 +7,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure the input file path argument is provided.
-        string inputPath = args.Length > 0 ? args[0] : string.Empty;
-        // Guard: verify the input file exists.
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
-        // Ensure the output file path argument is provided.
-        string outputPath = args.Length > 1 ? args[1] : string.Empty;
-        // Guard: output path must not be empty.
-        if (string.IsNullOrWhiteSpace(outputPath))
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Output path not specified.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
+        }
+
+        // Determine output path (optional second argument)
+        string outputPath;
+        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Insert "_modified" before the file extension
+            string dir = Path.GetDirectoryName(inputPath);
+            string name = Path.GetFileNameWithoutExtension(inputPath);
+            string ext = Path.GetExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{name}_modified{ext}");
         }
 
         try
         {
-            // Load the Visio diagram from the specified input file.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram.
+            // Iterate through all pages and shapes to apply a global line style
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply a red line color to the shape.
-                    shape.Line.LineColor.Value = "#FF0000";
+                    // Skip shapes that are marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Set the line weight (thickness) to 0.02 inches.
+                    // Set line dash pattern (cast integer to enum)
+                    shape.Line.LinePattern.Value = (LinePatternValue)4; // dash pattern index 4
+
+                    // Set line weight (thickness in inches)
                     shape.Line.LineWeight.Value = 0.02;
 
-                    // Use a dashed line pattern for the shape.
-                    shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                    // Set line color to red
+                    shape.Line.LineColor.Value = "#FF0000";
+
+                    // Enable line caps
+                    shape.Line.LineCap.Value = BOOL.True;
                 }
             }
 
-            // Save the modified diagram to the specified output file in VSDX format.
+            // Save the updated diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Inform the user that the operation completed successfully.
-            Console.WriteLine($"Diagram saved to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

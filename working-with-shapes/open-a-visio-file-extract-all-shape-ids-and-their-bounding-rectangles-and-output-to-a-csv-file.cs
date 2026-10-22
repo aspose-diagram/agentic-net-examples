@@ -6,56 +6,77 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output CSV file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file path (modify as needed)
-            string inputPath = "input.vsdx";
-
-            // Output CSV file path
-            string csvPath = "shapes.csv";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create CSV file and write header
-            using (StreamWriter writer = new StreamWriter(csvPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                writer.WriteLine("ShapeID,Left,Top,Right,Bottom");
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Ensure the output directory exists.
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Open a StreamWriter for the CSV output.
+                using (StreamWriter writer = new StreamWriter(outputPath))
+                {
+                    // Write CSV header.
+                    writer.WriteLine("ShapeId,Left,Top,Right,Bottom");
+
+                    // Iterate through each page in the diagram.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Iterate through each shape on the current page.
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                        // Retrieve position and size (in inches)
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
+                            // Retrieve shape identifier.
+                            long shapeId = shape.ID;
 
-                        // Calculate bounding rectangle coordinates
-                        double left = pinX - width / 2.0;
-                        double right = pinX + width / 2.0;
-                        double top = pinY + height / 2.0;
-                        double bottom = pinY - height / 2.0;
+                            // Extract geometric properties from the shape's XForm.
+                            double pinX = shape.XForm.PinX.Value;
+                            double pinY = shape.XForm.PinY.Value;
+                            double width = shape.XForm.Width.Value;
+                            double height = shape.XForm.Height.Value;
 
-                        // Write shape data to CSV
-                        writer.WriteLine($"{shape.ID},{left},{top},{right},{bottom}");
+                            // Calculate bounding rectangle coordinates.
+                            double left = pinX - width / 2.0;
+                            double right = pinX + width / 2.0;
+                            double top = pinY + height / 2.0;
+                            double bottom = pinY - height / 2.0;
+
+                            // Write the shape data as a CSV line.
+                            writer.WriteLine($"{shapeId},{left},{top},{right},{bottom}");
+                        }
                     }
                 }
             }
-
-            Console.WriteLine($"Shape data exported to '{csvPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

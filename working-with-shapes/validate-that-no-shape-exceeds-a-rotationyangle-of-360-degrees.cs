@@ -1,65 +1,67 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for shape operations per rules
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the Visio file path
-        string filePath = args.Length > 0 ? args[0] : string.Empty;
-        // Guard: ensure the file path is provided and the file exists
-        if (string.IsNullOrWhiteSpace(filePath))
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Error: No file path provided.");
+            Console.Error.WriteLine("Usage: Program <input-diagram-file>");
             return;
         }
-        if (!File.Exists(filePath))
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(filePath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            bool violationFound = false; // Track if any shape violates the rule
+            bool hasInvalidRotation = false;
 
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Determine the zero‑based index of the current page within the diagram
-                int pageIndex = diagram.Pages.IndexOf(page);
+                Page page = diagram.Pages[pageIndex];
 
-                // Iterate through each shape on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Access the Y‑axis rotation angle (in degrees) from the 3D format
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve the Y‑axis rotation angle.
                     double rotationY = shape.ThreeDFormat.RotationYAngle.Value;
 
-                    // Check if the rotation exceeds 360 degrees
+                    // Validate the rotation does not exceed 360 degrees.
                     if (rotationY > 360.0)
                     {
-                        // Report the offending shape with its ID, page index, and rotation value
-                        Console.Error.WriteLine($"Violation: Shape ID {shape.ID} on page index {pageIndex} has RotationYAngle = {rotationY}° (exceeds 360°).");
-                        violationFound = true;
+                        hasInvalidRotation = true;
+                        Console.WriteLine($"Warning: Shape ID {shape.ID} on page {pageIndex} has RotationYAngle = {rotationY}° (exceeds 360°).");
                     }
                 }
             }
 
-            // If no violations were detected, output a success message
-            if (!violationFound)
+            if (!hasInvalidRotation)
             {
                 Console.WriteLine("Validation passed: No shape exceeds a RotationYAngle of 360 degrees.");
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

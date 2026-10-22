@@ -6,66 +6,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        // Verify the input file exists
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output_rotated.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Use the first page for shape operations
-            Page page = diagram.Pages[0];
-
-            // Find the first non‑connector shape (OneD == false)
+            // Get the first shape on the active page (skip background shapes).
             Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            foreach (Shape shape in diagram.ActivePage.Shapes)
             {
-                if (!shape.OneD) // Exclude connector lines
+                // Ensure the shape is not a group placeholder and is not deleted.
+                if (shape.Del == BOOL.False)
                 {
                     targetShape = shape;
                     break;
                 }
             }
 
-            // If no suitable shape is found, report and exit
             if (targetShape == null)
             {
-                Console.Error.WriteLine("No suitable shape found to apply rotation.");
+                Console.Error.WriteLine("No suitable shape found to rotate.");
                 return;
             }
 
-            // Apply combined X, Y, and Z rotations of 30 degrees each
-            // RotationXAngle, RotationYAngle, and RotationZAngle are in degrees
+            // Apply 2D rotation (optional, demonstrates combined effect).
+            targetShape.XForm.Angle.Value = 30.0;
+
+            // Apply 3D rotations of 30 degrees on X, Y, and Z axes.
             targetShape.ThreeDFormat.RotationXAngle.Value = 30.0;
             targetShape.ThreeDFormat.RotationYAngle.Value = 30.0;
             targetShape.ThreeDFormat.RotationZAngle.Value = 30.0;
 
-            // Save the modified diagram to the output file in VSDX format
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Inform the user of successful completion
-            Console.WriteLine($"Shape rotated and diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

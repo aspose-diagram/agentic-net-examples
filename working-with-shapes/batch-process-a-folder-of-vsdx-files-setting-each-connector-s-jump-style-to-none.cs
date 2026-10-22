@@ -1,42 +1,64 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            // Specify the folder containing VSDX files.
-            // You can pass the folder path as a command‑line argument or edit the default value.
-            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+            Console.Error.WriteLine("Please provide the folder path containing VSDX files as the first argument.");
+            return;
+        }
 
-            if (!Directory.Exists(folderPath))
+        string folderPath = args[0];
+
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Get all VSDX files in the folder (non-recursive).
+        string[] files = Directory.GetFiles(folderPath, "*.vsdx");
+
+        if (files.Length == 0)
+        {
+            Console.WriteLine("No VSDX files found in the specified folder.");
+            return;
+        }
+
+        foreach (string filePath in files)
+        {
+            // Guard: ensure the file exists (should always be true here).
+            if (!File.Exists(filePath))
             {
-                Console.WriteLine($"Folder does not exist: {folderPath}");
-                return;
+                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                continue;
             }
 
-            // Get all VSDX files in the folder (non‑recursive).
-            string[] files = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in files)
+            try
             {
-                try
+                // Load the diagram inside a using block.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(filePath);
-
                     // Iterate through each page.
                     foreach (Page page in diagram.Pages)
                     {
                         // Iterate through each shape on the page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Identify connector shapes (1‑D shapes).
+                            // Skip deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Process only connector shapes (1‑D shapes).
                             if (shape.OneD)
                             {
-                                // Set the connector's jump style to "none" (default).
+                                // Set the connector's jump style to "none" (PageDefault).
                                 shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.PageDefault;
                             }
                         }
@@ -44,14 +66,15 @@ class Program
 
                     // Save the modified diagram, overwriting the original file.
                     diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
-            }
 
-            Console.WriteLine("Batch processing completed.");
+                Console.WriteLine($"Processed and saved: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of this file.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}

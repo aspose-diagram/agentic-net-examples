@@ -1,6 +1,5 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,81 +7,73 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputPdfPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Determine output PDF path
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            outputPath = Path.ChangeExtension(inputPath, ".pdf");
+        }
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Determine the current maximum page ID to assign unique IDs to new pages
-            int maxPageId = 0;
-            foreach (Page p in diagram.Pages)
+            // Create a stylesheet with a solid light gray fill
+            StyleSheet backgroundStyle = new StyleSheet();
+            // Set solid fill pattern (1 = solid)
+            backgroundStyle.Fill.FillPattern.Value = 1;
+            // Light gray color hex
+            backgroundStyle.Fill.FillForegnd.Value = "#D3D3D3";
+
+            // Add the stylesheet to the diagram
+            diagram.StyleSheets.Add(backgroundStyle);
+
+            // Retrieve the ID of the newly added stylesheet
+            int styleId = diagram.StyleSheets[diagram.StyleSheets.Count - 1].ID;
+
+            // Apply the stylesheet to every page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
+                // Apply the same style for line, fill, and character formatting
+                page.ApplyStyle(styleId, styleId, styleId);
             }
 
-            // Process each page to add a light gray background
-            List<Page> pages = new List<Page>();
-            foreach (Page p in diagram.Pages)
-                pages.Add(p); // copy to list to avoid modification during iteration
-
-            foreach (Page page in pages)
-            {
-                // Create a new background page
-                Page bgPage = new Page();
-                bgPage.ID = ++maxPageId;
-                bgPage.Name = $"Background_{page.ID}";
-                bgPage.Background = BOOL.True;
-
-                // Add the background page to the diagram
-                diagram.Pages.Add(bgPage);
-
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Center coordinates for the rectangle shape
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Add a rectangle shape that spans the entire page
-                long shapeId = bgPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
-                Shape bgShape = bgPage.Shapes.GetShape(shapeId);
-
-                // Set solid fill with light gray color (#D3D3D3)
-                bgShape.Fill.FillPattern.Value = 1;               // Solid fill
-                bgShape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray
-
-                // Remove any outline
-                bgShape.Line.LinePattern.Value = 0;               // No line
-
-                // Send the shape to the back so it appears behind other content
-                bgShape.SendToBack();
-
-                // Make the background shape non‑selectable
-                bgShape.Protection.LockSelect.Value = BOOL.True;
-
-                // Associate the background page with the foreground page
-                page.BackPage = bgPage;
-            }
-
-            // Configure PDF save options (optional: set default font)
+            // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
+            // Explicitly set the format tracker
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Do not export hidden pages (optional, can be omitted)
+            pdfOptions.ExportHiddenPage = false;
 
-            // Save the diagram as PDF
+            // Save the diagram as PDF using the configured options
             diagram.Save(outputPath, pdfOptions);
 
+            Console.WriteLine($"Successfully saved PDF to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

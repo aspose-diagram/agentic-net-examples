@@ -2,40 +2,49 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-public class DiagramSerializer
-{
-    /// <summary>
-    /// Loads a diagram, applies modifications, and returns the serialized diagram as a byte array.
-    /// </summary>
-    /// <param name="inputPath">Path to the source diagram file (e.g., .vsdx, .vdx).</param>
-    /// <returns>Byte array containing the diagram data ready for network transmission.</returns>
-    public byte[] SerializeDiagram(string inputPath)
-    {
-        // Load the diagram from the specified file.
-        Diagram diagram = new Diagram(inputPath);
-
-        // -------------------------------------------------
-        // Place any diagram modifications here.
-        // Example: change the background color of the first page.
-        // diagram.Pages[0].BackgroundColor = Color.White;
-        // -------------------------------------------------
-
-        // Save the diagram into a memory stream using the desired format.
-        using (MemoryStream memoryStream = new MemoryStream())
-        {
-            // Choose the appropriate SaveFileFormat (e.g., VDX, VSDX, PDF, etc.).
-            diagram.Save(memoryStream, SaveFileFormat.Vdx);
-
-            // Convert the stream contents to a byte array.
-            return memoryStream.ToArray();
-        }
-    }
-}
-
 class Program
 {
     static void Main(string[] args)
     {
-        // See classes above
+        // Determine the input diagram file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // TODO: Apply any modifications to the diagram here.
+            // Example: diagram.Pages[0].Name = "ModifiedPage";
+
+            // Serialize the diagram to a memory stream in VSDX format.
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                // Save the diagram into the stream using the VSDX format.
+                diagram.Save(memoryStream, SaveFileFormat.Vsdx);
+
+                // Convert the stream contents to a byte array for transmission.
+                byte[] diagramBytes = memoryStream.ToArray();
+
+                // Example usage: output the size of the serialized data.
+                Console.WriteLine($"Diagram serialized to byte array. Size: {diagramBytes.Length} bytes.");
+
+                // The byte array (diagramBytes) can now be sent over a network service.
+                // For demonstration, you could write it to a file:
+                // File.WriteAllBytes("output_bytes.bin", diagramBytes);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during loading or saving to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

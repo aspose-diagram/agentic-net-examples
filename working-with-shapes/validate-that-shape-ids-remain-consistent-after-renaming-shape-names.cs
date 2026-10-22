@@ -7,80 +7,84 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument.
-        if (args.Length == 0)
+        // Path to the input Visio file
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <visio-file>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string visioPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Dictionary to hold original shape IDs and their names.
-        var originalShapeInfo = new Dictionary<long, string>();
+        // Path for the output file (optional, to verify saving works)
+        string outputPath = "output_renamed.vsdx";
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to capture IDs.
-            foreach (Page page in diagram.Pages)
+            // Use the active page for this example
+            Page page = diagram.ActivePage;
+
+            // Store original shape IDs and names for validation
+            List<long> originalIds = new List<long>();
+            List<string> originalNames = new List<string>();
+
+            // Iterate over all shapes on the page, ignoring logically deleted ones
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Store the shape's ID and its original name.
-                    originalShapeInfo[shape.ID] = shape.NameU;
-                }
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Record the original ID and name
+                originalIds.Add(shape.ID);
+                originalNames.Add(shape.NameU);
             }
 
-            // Rename each shape (e.g., prefix with "Renamed_").
-            foreach (Page page in diagram.Pages)
+            // Rename each shape by appending "_Renamed" to its NameU
+            int index = 0;
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Preserve the original ID; only change the name.
-                    shape.NameU = "Renamed_" + shape.NameU;
-                }
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Perform the rename
+                shape.NameU = originalNames[index] + "_Renamed";
+                index++;
             }
 
-            // Validate that shape IDs are still the same after renaming.
-            bool idsConsistent = true;
-            foreach (Page page in diagram.Pages)
+            // Validate that each shape's ID remains unchanged after renaming
+            index = 0;
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                long expectedId = originalIds[index];
+                if (shape.ID != expectedId)
                 {
-                    // If a shape ID is missing from the original collection, flag inconsistency.
-                    if (!originalShapeInfo.ContainsKey(shape.ID))
-                    {
-                        Console.Error.WriteLine($"Inconsistent ID detected: {shape.ID}");
-                        idsConsistent = false;
-                    }
+                    // If an ID mismatch is detected, throw an exception
+                    throw new Exception($"Shape ID mismatch after rename. Expected: {expectedId}, Actual: {shape.ID}");
                 }
+                index++;
             }
 
-            // Report validation result.
-            if (idsConsistent)
-                Console.WriteLine("Validation successful: Shape IDs remain consistent after renaming.");
-            else
-                Console.WriteLine("Validation failed: Some shape IDs changed after renaming.");
-
-            // Optionally, save the modified diagram to a new file.
-            string outputPath = Path.Combine(Path.GetDirectoryName(visioPath) ?? "", 
-                                            Path.GetFileNameWithoutExtension(visioPath) + "_renamed.vsdx");
+            // If validation passes, optionally save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Renamed diagram saved to: {outputPath}");
+            Console.WriteLine("Shape renaming completed successfully. IDs are consistent.");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or IO errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

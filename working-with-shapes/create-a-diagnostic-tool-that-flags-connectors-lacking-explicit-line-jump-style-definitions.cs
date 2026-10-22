@@ -1,68 +1,71 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            // Determine the diagram file path
-            string diagramPath;
-            if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                diagramPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the path to the Visio diagram file: ");
-                diagramPath = Console.ReadLine();
-            }
+            Console.Error.WriteLine("Usage: DiagnosticTool <input‑visio‑file>");
+            return;
+        }
 
-            if (string.IsNullOrWhiteSpace(diagramPath))
-            {
-                Console.WriteLine("No diagram path provided. Exiting.");
-                return;
-            }
+        string inputPath = args[0];
 
-            // Load the diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(diagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
 
-            bool anyFlagged = false;
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate through all shapes on the page.
+                for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
                 {
-                    // Identify connector shapes (1-D shapes)
-                    if (shape.OneD)
-                    {
-                        // Retrieve the line jump style value
-                        var jumpStyle = shape.Layout?.ConLineJumpStyle?.Value ?? ConLineJumpStyleValue.Undefined;
+                    Shape shape = page.Shapes[shapeIdx];
 
-                        // Flag if the jump style is not explicitly set (PageDefault or Undefined)
-                        if (jumpStyle == ConLineJumpStyleValue.PageDefault || jumpStyle == ConLineJumpStyleValue.Undefined)
-                        {
-                            anyFlagged = true;
-                            Console.WriteLine($"Connector ID {shape.ID} on page '{page.Name}' lacks explicit line jump style (Current value: {jumpStyle}).");
-                        }
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify connector shapes (1‑D shapes).
+                    if (!shape.OneD)
+                        continue;
+
+                    // Ensure the layout cell collection is available.
+                    if (shape.Layout == null)
+                        continue;
+
+                    // Retrieve the line jump style value.
+                    var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+
+                    // Flag connectors that use the page default or undefined style
+                    // (i.e., no explicit jump style has been set).
+                    if (jumpStyle == ConLineJumpStyleValue.PageDefault ||
+                        jumpStyle == ConLineJumpStyleValue.Undefined)
+                    {
+                        Console.WriteLine($"Connector flagged: Page {pageIndex + 1}, Shape ID {shape.ID}");
                     }
                 }
             }
-
-            if (!anyFlagged)
-            {
-                Console.WriteLine("All connectors have explicit line jump style definitions.");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

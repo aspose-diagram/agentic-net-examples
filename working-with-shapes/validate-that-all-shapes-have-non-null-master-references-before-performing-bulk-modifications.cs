@@ -6,83 +6,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // ----- Determine input and output file paths -----
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the source Visio file exists
+        // Expect input and output file paths as arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // ----- Load the diagram inside a try/catch block -----
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        bool allMastersPresent = true; // flag to track validation result
-
-        // ----- Validate that every shape has a non‑null Master reference -----
-        try
-        {
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // If a shape's Master is null, report it and mark validation as failed
-                    if (shape.Master == null)
-                    {
-                        Console.Error.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" lacks a master reference.");
-                        allMastersPresent = false;
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during validation: {ex.Message}");
-            return;
-        }
+                bool allShapesHaveMaster = true;
 
-        // ----- If validation succeeded, perform bulk modifications -----
-        if (allMastersPresent)
-        {
-            try
-            {
+                // Validate that every shape has a non‑null Master reference.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Example bulk modification: set fill foreground color to red
-                        shape.Fill.FillForegnd.Value = "#FF0000";
-
-                        // Example bulk modification: replace existing text with a placeholder
-                        shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt("Modified"));
+                        if (shape.Master == null)
+                        {
+                            Console.Error.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" has a null Master reference.");
+                            allShapesHaveMaster = false;
+                        }
                     }
                 }
 
-                // ----- Save the modified diagram -----
+                if (!allShapesHaveMaster)
+                {
+                    Console.Error.WriteLine("Validation failed: one or more shapes lack a Master reference. Bulk modifications will not be performed.");
+                    return;
+                }
+
+                // All shapes have valid Master references – proceed with bulk modifications.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Set fill foreground color to red (hex string).
+                        shape.Fill.FillForegnd.Value = "#FF0000";
+
+                        // Set line weight to 0.03 inches.
+                        shape.Line.LineWeight.Value = 0.03;
+                    }
+                }
+
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error during bulk modification or saving: {ex.Message}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
-        else
+        catch (Exception ex)
         {
-            Console.Error.WriteLine("Bulk modifications aborted due to missing master references.");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

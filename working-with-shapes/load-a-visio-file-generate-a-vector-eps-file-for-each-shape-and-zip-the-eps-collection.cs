@@ -8,64 +8,100 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputZipPath>");
             return;
         }
 
-        // Folder to store individual EPS (EMF) files
-        string epsFolder = "ExportedEps";
-        Directory.CreateDirectory(epsFolder);
+        string inputPath = args[0];
+        string outputZipPath = args[1];
 
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Create a temporary folder for individual EPS (SVG used as substitute) files.
+        string tempFolder = Path.Combine(Path.GetTempPath(), "ShapeEps_" + Guid.NewGuid().ToString("N"));
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Prepare EPS (EMF) file name
-                    string epsFileName = $"Shape_Page{page.ID}_Shape{shape.ID}.eps";
-                    string epsFilePath = Path.Combine(epsFolder, epsFileName);
-
-                    // Export the shape to EMF (vector) using ImageSaveOptions
-                    // Note: Aspose.Diagram does not have native EPS support; EMF is used as a vector alternative.
-                    ImageSaveOptions epsOptions = new ImageSaveOptions(SaveFileFormat.Emf);
-                    shape.ToImage(epsFilePath, epsOptions);
-                }
-            }
+            Directory.CreateDirectory(tempFolder);
         }
         catch (Exception ex)
         {
-            // Log any Aspose or I/O errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to create temporary folder: {ex.Message}");
             return;
         }
 
-        // Create a ZIP archive containing all EPS (EMF) files
-        string zipPath = "ShapesEpsCollection.zip";
-        using (FileStream zipStream = new FileStream(zipPath, FileMode.Create))
-        using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Update))
+        try
         {
-            foreach (string epsFile in Directory.GetFiles(epsFolder, "*.eps"))
+            // Load the Visio diagram inside a using block (Diagram does not implement IDisposable, but this follows the required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                string entryName = Path.GetFileName(epsFile);
-                archive.CreateEntryFromFile(epsFile, entryName);
+                // Iterate over pages using an index because Page does not have an Index property.
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                {
+                    Page page = diagram.Pages[pageIdx];
+
+                    // Iterate over each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Build a unique file name for the exported shape.
+                        // EPS export is not directly supported by Aspose.Diagram; SVG is used as the closest vector alternative.
+                        string shapeFileName = $"page{pageIdx + 1}_shape{shape.ID}.svg";
+                        string shapeFilePath = Path.Combine(tempFolder, shapeFileName);
+
+                        // Export the shape to SVG (vector format) using ImageSaveOptions.
+                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Svg);
+                        shape.ToImage(shapeFilePath, saveOptions);
+                    }
+                }
+            }
+
+            // If the output ZIP already exists, delete it to avoid exceptions.
+            if (File.Exists(outputZipPath))
+            {
+                try
+                {
+                    File.Delete(outputZipPath);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Unable to delete existing ZIP file: {ex.Message}");
+                    return;
+                }
+            }
+
+            // Create a ZIP archive containing all exported shape files.
+            ZipFile.CreateFromDirectory(tempFolder, outputZipPath);
+            Console.WriteLine($"Successfully created ZIP archive: {outputZipPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up the temporary folder.
+            try
+            {
+                if (Directory.Exists(tempFolder))
+                {
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+            catch (Exception cleanupEx)
+            {
+                Console.Error.WriteLine($"Failed to clean up temporary files: {cleanupEx.Message}");
             }
         }
-
-        // Optional: clean up temporary EPS files
-        // Directory.Delete(epsFolder, true);
     }
 }

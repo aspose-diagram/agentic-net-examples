@@ -4,57 +4,91 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputHtmlPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string htmlOutputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Prepare the HTML output file.
+            using (StreamWriter htmlWriter = new StreamWriter(htmlOutputPath, false))
             {
+                // Write basic HTML header.
+                htmlWriter.WriteLine("<!DOCTYPE html>");
+                htmlWriter.WriteLine("<html>");
+                htmlWriter.WriteLine("<head>");
+                htmlWriter.WriteLine("<meta charset=\"UTF-8\">");
+                htmlWriter.WriteLine("<title>Combined SVG Shapes</title>");
+                htmlWriter.WriteLine("</head>");
+                htmlWriter.WriteLine("<body>");
 
-                // Load the Visio diagram
-                string diagramPath = "input.vsdx"; // replace with your diagram file path
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Prepare HTML output
-                string htmlHeader = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>Shapes SVG Export</title>\n</head>\n<body>\n";
-                string htmlFooter = "\n</body>\n</html>";
-                string htmlContent = string.Empty;
-
-                // Use the first page (adjust if needed)
-                Page page = diagram.Pages[0];
-
-                // Loop through each shape on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Generate a temporary SVG file path
-                    string tempSvgPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".svg");
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Export the shape to SVG
-                    SVGSaveOptions svgOptions = new SVGSaveOptions();
-                    shape.ToSvg(tempSvgPath, svgOptions);
+                    // Iterate through all shapes on the current page.
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                    {
+                        Shape shape = page.Shapes[shapeIndex];
 
-                    // Read the SVG content
-                    string svgData = File.ReadAllText(tempSvgPath);
+                        // Generate a temporary SVG file for the current shape.
+                        string tempSvgPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".svg");
+                        SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                    // Append the SVG markup to the HTML content
-                    htmlContent += $"<div style=\"margin:10px; display:inline-block;\">\n{svgData}\n</div>\n";
+                        // Export the shape to SVG.
+                        shape.ToSvg(tempSvgPath, svgOptions);
 
-                    // Clean up the temporary file
-                    File.Delete(tempSvgPath);
+                        // Read the SVG content.
+                        string svgContent = File.ReadAllText(tempSvgPath);
+
+                        // Embed the SVG into the HTML document.
+                        htmlWriter.WriteLine("<div class=\"shape-svg\">");
+                        htmlWriter.WriteLine(svgContent);
+                        htmlWriter.WriteLine("</div>");
+
+                        // Clean up the temporary SVG file.
+                        try
+                        {
+                            File.Delete(tempSvgPath);
+                        }
+                        catch (Exception deleteEx)
+                        {
+                            Console.Error.WriteLine($"Warning: Unable to delete temporary file '{tempSvgPath}'. {deleteEx.Message}");
+                        }
+                    }
                 }
 
-                // Combine header, content, and footer
-                string finalHtml = htmlHeader + htmlContent + htmlFooter;
-
-                // Save the HTML document
-                string outputHtmlPath = "ShapesExport.html";
-                File.WriteAllText(outputHtmlPath, finalHtml);
-
-                Console.WriteLine($"Export completed. HTML file saved to: {outputHtmlPath}");
-
+                // Write HTML footer.
+                htmlWriter.WriteLine("</body>");
+                htmlWriter.WriteLine("</html>");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine($"Successfully created HTML file with embedded SVGs: {htmlOutputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

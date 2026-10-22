@@ -1,66 +1,81 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for shape operations as per guidelines
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram file path
-        string diagramPath = "input.vsdx";
-        // Guard: ensure the diagram file exists
-        if (!File.Exists(diagramPath))
+        // Validate arguments: expect diagram path and shape NameU
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeNameU>");
             return;
         }
 
-        // Input shape ID to inspect (replace with actual ID as needed)
-        long shapeId = 1;
-        // Guard: shape ID must be positive
-        if (shapeId <= 0)
+        string diagramPath = args[0];
+        string targetShapeName = args[1];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Invalid shape ID specified.");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Retrieve the first page (assuming the shape is on page 0)
-            Page page = diagram.Pages[0];
-
-            // Attempt to get the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Load the Visio diagram inside a using block (required by API)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                return;
+                Shape foundShape = null;
+
+                // Iterate through all pages to locate the shape by its NameU
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Compare the universal name directly (no .Value property)
+                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU == targetShapeName)
+                        {
+                            foundShape = shape;
+                            break;
+                        }
+                    }
+
+                    if (foundShape != null)
+                        break;
+                }
+
+                if (foundShape == null)
+                {
+                    Console.Error.WriteLine($"Error: Shape with NameU '{targetShapeName}' not found.");
+                    return;
+                }
+
+                // Retrieve the current line color and the inherited line color
+                string lineColor = foundShape.Line.LineColor.Value ?? string.Empty;
+                string inheritedLineColor = foundShape.InheritLine.LineColor.Value ?? string.Empty;
+
+                // Determine inheritance status by comparing the two values (case‑insensitive)
+                bool isLineInherited = string.Equals(lineColor, inheritedLineColor, StringComparison.OrdinalIgnoreCase);
+
+                // Output the results
+                Console.WriteLine($"Shape NameU: {targetShapeName}");
+                Console.WriteLine($"Line Color: {lineColor}");
+                Console.WriteLine($"Inherited Line Color: {inheritedLineColor}");
+                Console.WriteLine($"Is line inherited? {(isLineInherited ? "Yes" : "No")}");
             }
-
-            // Compare a line property (e.g., LineColor) with its inherited counterpart
-            // Matching values indicate the line formatting is inherited
-            bool isLineColorInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
-            bool isLineWeightInherited = shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value;
-            bool isLinePatternInherited = shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
-
-            // Determine overall inheritance status (all three must match)
-            bool isLineInherited = isLineColorInherited && isLineWeightInherited && isLinePatternInherited;
-
-            // Output the inheritance status
-            Console.WriteLine($"Shape ID: {shapeId}");
-            Console.WriteLine($"Line Color Inherited: {isLineColorInherited}");
-            Console.WriteLine($"Line Weight Inherited: {isLineWeightInherited}");
-            Console.WriteLine($"Line Pattern Inherited: {isLinePatternInherited}");
-            Console.WriteLine($"Overall Line Inheritance: {isLineInherited}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

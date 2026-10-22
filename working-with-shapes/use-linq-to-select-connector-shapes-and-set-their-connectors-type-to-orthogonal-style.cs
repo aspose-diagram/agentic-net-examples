@@ -1,40 +1,58 @@
 using System;
+using System.IO;
 using System.Linq;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram.
-                // Replace the path with the actual file location.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Iterate through all pages in the diagram.
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Select connector shapes (1‑D shapes) using LINQ.
+                    // Use LINQ to select connector (1‑D) shapes.
                     var connectorShapes = page.Shapes
-                                              .Cast<Shape>()
-                                              .Where(s => s.OneD);
+                        .Cast<Shape>()
+                        .Where(s => s.OneD) // OneD is a native bool, not BOOL.
+                        .ToList();
 
                     // Set each connector's routing style to orthogonal (right‑angle).
                     foreach (Shape connector in connectorShapes)
                     {
-                        connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+                        connector.SetConnectorsType(ConnectorsTypeValue.RightAngle);
                     }
                 }
 
-                // Save the modified diagram.
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

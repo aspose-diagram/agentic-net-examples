@@ -5,75 +5,108 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input diagram path (must exist)
+        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output path for the modified diagram
+        string outputPath = "modified_output.vsdx";
+
+        // Variable to hold the connector shape ID for later verification
+        long connectorId = 0;
+
         try
         {
+            // Load the original diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Define temporary file path
-            string tempPath = Path.Combine(Path.GetTempPath(), "LineJumpStyleTest.vsdx");
-
-            try
+            // Locate the first connector (1‑D shape) that is not deleted
+            Shape connectorShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                // ---------- Create diagram ----------
-                Diagram diagram = new Diagram();
-
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Page IDs must be unique; start with 1
-                    diagram.Pages.Add(new Page(1));
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True) continue;
+
+                    // Identify connector shapes (OneD returns a native bool)
+                    if (shape.OneD)
+                    {
+                        connectorShape = shape;
+                        break;
+                    }
                 }
-
-                // Use the first page
-                Page page = diagram.Pages[0];
-
-                // Add a dynamic connector shape (master name must exist in the default stencil)
-                // The last parameter 'false' indicates that the shape size is not calculated automatically
-                long connectorId = page.AddShape(2.0, 2.0, "Dynamic connector", false);
-
-                // Retrieve the connector shape
-                Shape connector = page.Shapes.GetShape(connectorId);
-
-                // Set the line jump style to Arc
-                connector.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
-
-                // Save the diagram to a file (VSDX format)
-                diagram.Save(tempPath, SaveFileFormat.Vsdx);
-
-                // ---------- Load diagram ----------
-                Diagram loadedDiagram = new Diagram(tempPath);
-
-                // Retrieve the same page and shape by ID
-                Page loadedPage = loadedDiagram.Pages[0];
-                Shape loadedConnector = loadedPage.Shapes.GetShape(connectorId);
-
-                // Verify that the line jump style persisted
-                if (loadedConnector.Layout.ConLineJumpStyle.Value != ConLineJumpStyleValue.Arc)
-                {
-                    throw new Exception("Line jump style did not persist after serialization.");
-                }
-
-                Console.WriteLine("Line jump style persisted successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Test failed: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                // Clean up temporary file
-                if (File.Exists(tempPath))
-                {
-                    try { File.Delete(tempPath); } catch { /* ignore cleanup errors */ }
-                }
+                if (connectorShape != null) break;
             }
 
+            if (connectorShape == null)
+            {
+                Console.Error.WriteLine("No connector shape found in the diagram.");
+                return;
+            }
+
+            // Store the shape ID for later verification
+            connectorId = connectorShape.ID;
+
+            // Change the line jump style to Arc
+            connectorShape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
+
+            // Save the modified diagram (VSDX format)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"Error during modification: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Reload the saved diagram to verify persistence
+            Diagram reloadedDiagram = new Diagram(outputPath);
+
+            Shape reloadedConnector = null;
+            foreach (Page page in reloadedDiagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True) continue;
+
+                    // Match the shape by its original ID
+                    if (shape.ID == connectorId)
+                    {
+                        reloadedConnector = shape;
+                        break;
+                    }
+                }
+                if (reloadedConnector != null) break;
+            }
+
+            if (reloadedConnector == null)
+            {
+                Console.Error.WriteLine("Connector shape not found after reloading.");
+                return;
+            }
+
+            // Verify that the line jump style persisted as Arc
+            var persistedStyle = reloadedConnector.Layout.ConLineJumpStyle.Value;
+            if (persistedStyle != ConLineJumpStyleValue.Arc)
+            {
+                throw new Exception($"Line jump style did not persist. Expected: Arc, Actual: {persistedStyle}");
+            }
+
+            Console.WriteLine("Line jump style persisted successfully after serialization.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during verification: {ex.Message}");
         }
     }
 }

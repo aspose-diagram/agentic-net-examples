@@ -5,78 +5,104 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputCsvPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output CSV file path
-            string outputCsv = "shape_layers.csv";
-
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare CSV lines with header
-            List<string> csvLines = new List<string>();
-            csvLines.Add("ShapeID,ShapeName,LayerNames");
-
-            // Iterate through all pages in the diagram
+            // Build a lookup of layer index -> layer name for quick reference.
+            Dictionary<int, string> layerIndexToName = new Dictionary<int, string>();
             foreach (Page page in diagram.Pages)
             {
-                // Build a map of layer index to layer name for the current page
-                Dictionary<int, string> layerMap = new Dictionary<int, string>();
+                // Each page can have its own layer collection.
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // layer.IX is the zero‑based index of the layer
-                    layerMap[layer.IX] = layer.Name.Value;
-                }
-
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    long shapeId = shape.ID;
-                    string shapeName = shape.NameU ?? string.Empty;
-
-                    // Retrieve the layer membership string (semicolon‑separated indexes)
-                    string layerMember = shape.LayerMem.LayerMember.Value;
-                    string layerNames = string.Empty;
-
-                    if (!string.IsNullOrEmpty(layerMember))
+                    // Layer.IX is the integer index of the layer.
+                    // Layer.Name.Value holds the layer's display name.
+                    int ix = layer.IX;
+                    string name = layer.Name?.Value ?? $"Layer_{ix}";
+                    if (!layerIndexToName.ContainsKey(ix))
                     {
-                        string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                        List<string> names = new List<string>();
-                        foreach (string part in parts)
-                        {
-                            if (int.TryParse(part, out int idx) && layerMap.TryGetValue(idx, out string lname))
-                            {
-                                names.Add(lname);
-                            }
-                        }
-                        layerNames = string.Join(";", names);
+                        layerIndexToName.Add(ix, name);
                     }
-
-                    // Escape commas in CSV fields if necessary
-                    string escapedName = shapeName.Contains(",") ? $"\"{shapeName}\"" : shapeName;
-                    string escapedLayers = layerNames.Contains(",") ? $"\"{layerNames}\"" : layerNames;
-
-                    csvLines.Add($"{shapeId},{escapedName},{escapedLayers}");
                 }
             }
 
-            // Write all lines to the CSV file
-            File.WriteAllLines(outputCsv, csvLines);
-            Console.WriteLine($"CSV mapping saved to: {outputCsv}");
+            // Prepare the CSV output file.
+            using (StreamWriter writer = new StreamWriter(outputCsvPath))
+            {
+                // Write CSV header.
+                writer.WriteLine("PageIndex,ShapeID,ShapeName,MasterName,LayerNames");
 
+                // Iterate through pages and shapes.
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Retrieve basic shape information.
+                        long shapeId = shape.ID;
+                        string shapeName = shape.NameU ?? string.Empty;
+                        string masterName = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
+
+                        // Retrieve layer membership string (e.g., "1,3").
+                        string layerMemberValue = shape.LayerMem?.LayerMember?.Value ?? string.Empty;
+                        string layerNames = string.Empty;
+
+                        if (!string.IsNullOrWhiteSpace(layerMemberValue))
+                        {
+                            // Split the indices, map to names, and join with semicolon.
+                            string[] parts = layerMemberValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            List<string> names = new List<string>();
+                            foreach (string part in parts)
+                            {
+                                if (int.TryParse(part.Trim(), out int ix) && layerIndexToName.TryGetValue(ix, out string lname))
+                                {
+                                    names.Add(lname);
+                                }
+                                else
+                                {
+                                    // Fallback to the raw index if name not found.
+                                    names.Add($"Layer_{part.Trim()}");
+                                }
+                            }
+                            layerNames = string.Join(";", names);
+                        }
+
+                        // Write the CSV line for the current shape.
+                        // Escape commas in text fields by surrounding with double quotes.
+                        writer.WriteLine($"{pageIndex},{shapeId},\"{shapeName}\",\"{masterName}\",\"{layerNames}\"");
+                    }
+
+                    pageIndex++;
+                }
+            }
+
+            Console.WriteLine($"CSV mapping file created at \"{outputCsvPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

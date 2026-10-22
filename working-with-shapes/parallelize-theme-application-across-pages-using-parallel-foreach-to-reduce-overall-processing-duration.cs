@@ -1,48 +1,53 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine input and output file paths
+        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "Themes1_Themed.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Collect pages into a typed list for Parallel.ForEach (type inference issue)
+                List<Page> pages = new List<Page>();
+                foreach (Page p in diagram.Pages)
                 {
-                    // Collect pages into a typed list for Parallel.ForEach
-                    List<Page> pages = new List<Page>();
-                    foreach (Page page in diagram.Pages)
-                    {
-                        pages.Add(page);
-                    }
-
-                    // Apply a preset theme to each page in parallel
-                    Parallel.ForEach(pages, page =>
-                    {
-                        // Example: apply the "Bubble" theme with variant 1
-                        page.PresetTheme = PresetThemeValue.Bubble;
-                        page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                    });
-
-                    // Save the modified diagram
-                    string outputPath = "output.vsdx";
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    pages.Add(p);
                 }
 
-                Console.WriteLine("Theme applied to all pages and diagram saved.");
+                // Apply a preset theme to each page in parallel
+                Parallel.ForEach(pages, page =>
+                {
+                    // Set the preset theme; using a valid enum value
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                });
 
+                // Save the modified diagram to the output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with applied themes to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

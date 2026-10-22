@@ -1,39 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to a VSD file as the first argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the VSD file
-            string filePath = @"C:\Path\To\Your\Diagram.vsd";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through each page and its shapes
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Get the shape's name
-                    string shapeName = shape.Name;
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Retrieve the shape's name (fallback to empty string if null).
+                        string shapeName = shape.Name ?? string.Empty;
 
-                    // Get the master stencil name (if the shape is based on a master)
-                    string masterStencil = shape.Master != null ? shape.Master.NameU : "N/A";
+                        // Retrieve the master (stencil) name; handle shapes without a master.
+                        string masterName = shape.Master != null ? shape.Master.Name : "None";
 
-                    Console.WriteLine($"Shape Name: {shapeName}, Master Stencil: {masterStencil}");
+                        // Output shape information.
+                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shapeName}, Master: {masterName}");
+                    }
                 }
             }
-
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Report any errors that occur during loading or processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,37 +1,51 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the input Visio file (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file to load
-            string inputPath = "input.vsdx";
-
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the page named "Page-2"
-            Page page = diagram.Pages.GetPage("Page-2");
-
-            // Output information about the retrieved page
-            if (page != null)
+            // Load the diagram inside a using block as required by the guidelines
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine($"Page found: Name = {page.Name}, ID = {page.ID}");
-            }
-            else
-            {
-                Console.WriteLine("Page 'Page-2' not found.");
-            }
+                // Retrieve the page named "Page-2"
+                Page page = diagram.Pages.GetPage("Page-2");
 
+                // Check if the page was found
+                if (page == null)
+                {
+                    Console.Error.WriteLine("Error: Page named \"Page-2\" was not found in the diagram.");
+                    return;
+                }
+
+                // Output basic information about the retrieved page
+                Console.WriteLine($"Page Name: {page.NameU}");
+                Console.WriteLine($"Page ID: {page.ID}");
+                Console.WriteLine($"Is Background Page: {(page.Background == BOOL.True ? "Yes" : "No")}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

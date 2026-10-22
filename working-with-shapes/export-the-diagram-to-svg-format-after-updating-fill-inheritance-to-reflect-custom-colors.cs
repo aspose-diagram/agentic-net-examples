@@ -7,65 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path – change as needed.
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists.
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output SVG file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.svg";
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output SVG file path.
-        string outputPath = "output.svg";
-
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // If the shape's foreground fill color is empty, copy the inherited value.
-                    if (string.IsNullOrWhiteSpace(shape.Fill.FillForegnd.Value))
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                    }
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // If the shape's background fill color is empty, copy the inherited value.
-                    if (string.IsNullOrWhiteSpace(shape.Fill.FillBkgnd.Value))
-                    {
-                        shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
-                    }
-
-                    // If the shape's fill pattern is zero (default), copy the inherited pattern.
-                    if (shape.Fill.FillPattern.Value == 0)
-                    {
-                        shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                        // Ensure the shape has a FillForegnd cell before accessing it
+                        if (shape?.Fill?.FillForegnd != null)
+                        {
+                            // Disable fill inheritance by setting the formula to the explicit color value
+                            // This makes the custom fill color independent of any inherited value
+                            shape.Fill.FillForegnd.Ufe.F = shape.Fill.FillForegnd.Value;
+                        }
                     }
                 }
+
+                // Configure SVG save options (only properties that actually exist)
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    // Fit the SVG to the viewport (bool property)
+                    SVGFitToViewPort = true,
+                    // Do not export guide shapes (bool property)
+                    ExportGuideShapes = false,
+                    // Do not export comments (bool property)
+                    IsExportComments = false,
+                    // Export starting from the first page
+                    PageIndex = 0
+                    // PageCount property omitted because it is not available in this version
+                };
+
+                // Save the modified diagram as SVG using the configured options
+                diagram.Save(outputPath, svgOptions);
             }
-
-            // Configure SVG save options – hide hidden pages and export guide shapes.
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                ExportHiddenPage = false,
-                ExportGuideShapes = false,
-                SVGFitToViewPort = true
-            };
-
-            // Export the updated diagram to SVG using the configured options.
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,54 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Load an existing Visio diagram
-            string inputPath = "sample.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first page in the diagram
-            Page page = diagram.Pages[0];
-
-            // Find the first non‑deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                if (shape.Del == BOOL.False)
+                Page page = diagram.Pages[pageIndex];
+                Console.WriteLine($"Page {pageIndex + 1}/{diagram.Pages.Count}");
+
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = shape;
-                    break;
+                    Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+
+                    // Access the inherited fill information.
+                    Fill inheritFill = shape.InheritFill;
+                    if (inheritFill == null)
+                    {
+                        Console.WriteLine("  No inherited fill data available.");
+                        continue;
+                    }
+
+                    // Retrieve and display inherited fill properties.
+                    Console.WriteLine($"  Inherited FillForegnd: {inheritFill.FillForegnd?.Value}");
+                    Console.WriteLine($"  Inherited FillBkgnd: {inheritFill.FillBkgnd?.Value}");
+                    Console.WriteLine($"  Inherited FillPattern: {inheritFill.FillPattern?.Value}");
+                    Console.WriteLine($"  Inherited ShdwForegnd: {inheritFill.ShdwForegnd?.Value}");
+                    Console.WriteLine($"  Inherited ShdwBkgnd: {inheritFill.ShdwBkgnd?.Value}");
+                    Console.WriteLine($"  Inherited ShdwPattern: {inheritFill.ShdwPattern?.Value}");
+                    Console.WriteLine($"  Inherited ShapeShdwType: {inheritFill.ShapeShdwType?.Value}");
+                    Console.WriteLine($"  Inherited ShapeShdwObliqueAngle: {inheritFill.ShapeShdwObliqueAngle?.Value}");
+                    Console.WriteLine($"  Inherited ShapeShdwOffsetX: {inheritFill.ShapeShdwOffsetX?.Value}");
+                    Console.WriteLine($"  Inherited ShapeShdwOffsetY: {inheritFill.ShapeShdwOffsetY?.Value}");
+                    Console.WriteLine($"  Inherited ShapeShdwScaleFactor: {inheritFill.ShapeShdwScaleFactor?.Value}");
                 }
             }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shape found on the page.");
-                return;
-            }
-
-            // Access inherited fill settings
-            var inheritFill = targetShape.InheritFill;
-
-            Console.WriteLine("Inherited Fill Settings:");
-            Console.WriteLine($"Fill Foreground: {inheritFill.FillForegnd.Value}");
-            Console.WriteLine($"Fill Background: {inheritFill.FillBkgnd.Value}");
-            Console.WriteLine($"Fill Pattern: {inheritFill.FillPattern.Value}");
-            Console.WriteLine($"Shadow Foreground: {inheritFill.ShdwForegnd.Value}");
-            Console.WriteLine($"Shadow Background: {inheritFill.ShdwBkgnd.Value}");
-            Console.WriteLine($"Shadow Pattern: {inheritFill.ShdwPattern.Value}");
-            Console.WriteLine($"Shape Shadow Type: {inheritFill.ShapeShdwType.Value}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

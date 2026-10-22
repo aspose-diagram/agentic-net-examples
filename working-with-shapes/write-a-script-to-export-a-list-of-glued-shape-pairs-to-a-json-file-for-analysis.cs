@@ -1,90 +1,91 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace GluedShapeExporter
+class Program
 {
-    // DTO representing a pair of glued shapes
-    public class GluedPair
+    static void Main(string[] args)
     {
-        public long ShapeId1 { get; set; }
-        public long ShapeId2 { get; set; }
-    }
-
-    public class Program
-    {
-        public static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Collect all shapes from all pages.
+            var allShapes = new List<(Shape shape, long id, string name)>();
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
-
-                // Output JSON file path
-                string jsonOutputPath = "glued_pairs.json";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Collection to hold unique glued pairs
-                List<GluedPair> gluedPairs = new List<GluedPair>();
-                HashSet<string> seenPairs = new HashSet<string>();
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Store shape reference together with its ID and Name for later use.
+                    allShapes.Add((shape, shape.ID, shape.Name));
+                }
+            }
+
+            // Find all pairs of shapes that are glued together.
+            var gluedPairs = new List<GluedPair>();
+            for (int i = 0; i < allShapes.Count; i++)
+            {
+                for (int j = i + 1; j < allShapes.Count; j++)
+                {
+                    Shape shapeA = allShapes[i].shape;
+                    Shape shapeB = allShapes[j].shape;
+
+                    // Use the IsGlued method to determine if the two shapes are glued.
+                    bool areGlued = shapeA.IsGlued(shapeB);
+                    if (areGlued)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve IDs of shapes glued to the current shape (1‑D connectors)
-                        long[] gluedIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-                        if (gluedIds == null)
-                            continue;
-
-                        foreach (long targetId in gluedIds)
+                        gluedPairs.Add(new GluedPair
                         {
-                            // Retrieve the target shape
-                            Shape targetShape = page.Shapes.GetShape(targetId);
-                            if (targetShape == null || targetShape.Del == BOOL.True)
-                                continue;
-
-                            long id1 = shape.ID;
-                            long id2 = targetShape.ID;
-
-                            // Ensure each pair is stored only once (order‑independent)
-                            long minId = Math.Min(id1, id2);
-                            long maxId = Math.Max(id1, id2);
-                            string key = $"{minId}-{maxId}";
-
-                            if (!seenPairs.Contains(key))
-                            {
-                                seenPairs.Add(key);
-                                gluedPairs.Add(new GluedPair { ShapeId1 = minId, ShapeId2 = maxId });
-                            }
-                        }
+                            Shape1Id = allShapes[i].id,
+                            Shape1Name = allShapes[i].name,
+                            Shape2Id = allShapes[j].id,
+                            Shape2Name = allShapes[j].name
+                        });
                     }
                 }
-
-                // Serialize the list to JSON with indentation
-                string json = JsonSerializer.Serialize(gluedPairs, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write JSON to file
-                File.WriteAllText(jsonOutputPath, json);
-
-                Console.WriteLine($"Exported {gluedPairs.Count} glued shape pairs to '{jsonOutputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Serialize the list of glued pairs to JSON.
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(gluedPairs, jsonOptions);
+
+            // Write JSON to the specified output file.
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"Exported {gluedPairs.Count} glued shape pairs to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
+
+    // Simple DTO for JSON serialization of a glued shape pair.
+    private class GluedPair
+    {
+        public long Shape1Id { get; set; }
+        public string Shape1Name { get; set; }
+        public long Shape2Id { get; set; }
+        public string Shape2Name { get; set; }
     }
 }

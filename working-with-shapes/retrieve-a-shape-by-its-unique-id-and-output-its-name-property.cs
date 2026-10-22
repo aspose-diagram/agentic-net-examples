@@ -6,67 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: expect file path and shape ID.
+        // Validate command‑line arguments: expect diagram file path and shape ID.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <VisioFilePath> <ShapeID>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
-        // Assign input variables.
-        string visioPath = args[0];
+        string diagramPath = args[0];
         string shapeIdArg = args[1];
 
-        // Guard: ensure the Visio file exists.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Guard: parse shape ID to integer.
-        if (!int.TryParse(shapeIdArg, out int shapeId))
+        // Parse the shape ID (expected to be a numeric value).
+        if (!long.TryParse(shapeIdArg, out long shapeIdLong))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram using Aspose.Diagram.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Search for the shape with the specified unique ID across all pages.
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Compare the shape's ID with the requested ID.
-                    if (shape.ID == shapeId)
-                    {
-                        targetShape = shape;
-                        break; // Shape found; exit inner loop.
-                    }
-                }
-                if (targetShape != null)
-                    break; // Shape found; exit outer loop.
-            }
-
-            // If shape not found, report and exit.
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
                 return;
             }
 
-            // Output the Name property of the located shape.
-            Console.WriteLine($"Shape ID: {shapeId}, Name: {targetShape.Name}");
+            // Retrieve the first page (index 0). Adjust if a different page is required.
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape by its ID. GetShape expects an int, so cast safely.
+            Shape shape = page.Shapes.GetShape((int)shapeIdLong);
+
+            // Verify that the shape was found.
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Error: No shape with ID {shapeIdLong} was found on page 0.");
+                return;
+            }
+
+            // Output the shape's Name property.
+            Console.WriteLine($"Shape ID: {shapeIdLong}");
+            Console.WriteLine($"Shape Name: {shape.Name}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

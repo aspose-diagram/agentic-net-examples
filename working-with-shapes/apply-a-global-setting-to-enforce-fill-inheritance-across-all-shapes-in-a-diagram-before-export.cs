@@ -7,52 +7,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the source file exists
-        if (!File.Exists(inputPath))
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Path for the exported Visio file
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to enforce fill inheritance
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Copy foreground, background and pattern fill values from the inherited fill
-                    shape.Fill.FillForegnd.Value = shape.InheritFill.FillForegnd.Value;
-                    shape.Fill.FillBkgnd.Value = shape.InheritFill.FillBkgnd.Value;
-                    shape.Fill.FillPattern.Value = shape.InheritFill.FillPattern.Value;
+                    // Iterate through all shapes on the current page.
+                    for (int i = 0; i < page.Shapes.Count; i++)
+                    {
+                        Shape shape = page.Shapes[i];
 
-                    // Copy shadow (shade) fill values from the inherited fill
-                    shape.Fill.ShdwForegnd.Value = shape.InheritFill.ShdwForegnd.Value;
-                    shape.Fill.ShdwPattern.Value = shape.InheritFill.ShdwPattern.Value;
-
-                    // Copy transparency values from the inherited fill
-                    shape.Fill.FillForegndTrans.Value = shape.InheritFill.FillForegndTrans.Value;
-                    shape.Fill.FillBkgndTrans.Value = shape.InheritFill.FillBkgndTrans.Value;
-                    shape.Fill.ShdwForegndTrans.Value = shape.InheritFill.ShdwForegndTrans.Value;
-                    shape.Fill.ShdwBkgndTrans.Value = shape.InheritFill.ShdwBkgndTrans.Value;
+                        // Enforce fill inheritance for the shape.
+                        // According to Aspose.Diagram guidelines, setting the Ufe.F property to "INHERITED()"
+                        // enables fill inheritance.
+                        shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+                    }
                 }
-            }
 
-            // Save the updated diagram with the same format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

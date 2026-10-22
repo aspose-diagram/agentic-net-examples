@@ -1,80 +1,61 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
-public class DiagramConnectorAnalyzer
+class Program
 {
-    /// <summary>
-    /// Returns a dictionary where each key is the ID of a shape that has dynamic glue enabled,
-    /// and the value is the number of 1‑D connector shapes attached (glued) to it.
-    /// </summary>
-    /// <param name="filePath">Path to the Visio file to analyze.</param>
-    /// <returns>Dictionary mapping shape IDs to connector counts.</returns>
-    public static Dictionary<long, int> GetConnectorCounts(string filePath)
+    static void Main(string[] args)
     {
-        // Load the diagram from the specified file.
-        Diagram diagram = new Diagram(filePath);
-
-        // Prepare the result container.
-        Dictionary<long, int> shapeConnectorCounts = new Dictionary<long, int>();
-
-        // Iterate through all pages in the diagram.
-        foreach (Page page in diagram.Pages)
+        // Expect the Visio diagram file path as the first argument.
+        if (args.Length == 0)
         {
-            // Iterate through all shapes on the current page.
-            foreach (Shape shape in page.Shapes)
-            {
-                // Check if the shape allows dynamic glue.
-                // GlueTypeValue.AllowDynamicGlue indicates that the shape can be glued to connectors.
-                if (shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
-                {
-                    // Retrieve all 1‑D (connector) shapes glued to this shape.
-                    // The method returns an array of connector shape IDs.
-                    long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-
-                    // If the method returns null, treat it as zero connectors.
-                    int connectorCount = gluedConnectorIds != null ? gluedConnectorIds.Length : 0;
-
-                    // Store the count using the shape's unique ID.
-                    shapeConnectorCounts[shape.ID] = connectorCount;
-                }
-            }
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            return;
         }
 
-        return shapeConnectorCounts;
-    }
+        string diagramPath = args[0];
 
-    // Example entry point demonstrating usage.
-    public static void Main()
-    {
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Replace with the actual path to your Visio file.
-            string visioPath = "example.vsdx";
-
-            try
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Dictionary<long, int> result = GetConnectorCounts(visioPath);
-
-                Console.WriteLine("Connector counts for gluing‑enabled shapes:");
-                foreach (KeyValuePair<long, int> kvp in result)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine($"Shape ID {kvp.Key}: {kvp.Value} connector(s)");
+                    // Iterate through each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve IDs of all 1‑D shapes (connectors) glued to this shape.
+                        // The method returns null if there are no glued shapes.
+                        long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+                        // If the shape has any glued connectors, output the count.
+                        if (gluedConnectorIds != null && gluedConnectorIds.Length > 0)
+                        {
+                            Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) has {gluedConnectorIds.Length} attached connector(s).");
+                        }
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                // Propagate any errors (e.g., file not found, load failure).
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

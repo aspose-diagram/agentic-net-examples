@@ -1,48 +1,59 @@
 using System;
+using System.IO;
 using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // LINQ query to select shapes whose Name starts with "Connector"
+                var connectorShapes = page.Shapes
+                    .Cast<Shape>()
+                    .Where(s => !string.IsNullOrEmpty(s.Name) && s.Name.StartsWith("Connector"))
+                    .ToList();
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the new width (in inches) for the connector shapes
-                double newWidth = 2.0;
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Adjust the width of each selected shape
+                foreach (Shape shape in connectorShapes)
                 {
-                    // LINQ query to select shapes whose universal name starts with "Connector"
-                    var connectorShapes = page.Shapes
-                                              .Where(shape => !string.IsNullOrEmpty(shape.NameU) &&
-                                                              shape.NameU.StartsWith("Connector", StringComparison.Ordinal));
-
-                    // Adjust the width of each selected shape
-                    foreach (Shape shape in connectorShapes)
-                    {
-                        shape.XForm.Width.Value = newWidth;
-                    }
+                    // Set a new width value (example: 2.0 units)
+                    shape.XForm.Width.Value = 2.0;
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

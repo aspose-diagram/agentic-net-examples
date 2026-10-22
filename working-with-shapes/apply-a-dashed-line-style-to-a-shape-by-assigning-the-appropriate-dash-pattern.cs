@@ -1,39 +1,59 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio file path (required)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output Visio file path (required)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Shape ID to modify (optional, default = 1)
+        int shapeId = args.Length > 2 ? int.Parse(args[2]) : 1;
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Get the first page (or you could select by name)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-
-                // Create a new blank diagram
-                Diagram diagram = new Diagram();
-
-                // Access the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the page
-                // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
-                long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
-
-                // Retrieve the shape object using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Apply a dashed line style by setting the line pattern to Dash
-                shape.Line.LinePattern.Value = LinePatternValue.Dash;
-
-                // Optionally, set line weight for better visibility
-                shape.Line.LineWeight.Value = 0.02; // inches
-
-                // Save the diagram to a VSDX file
-                diagram.Save("DashedShape.vsdx", SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page.");
+                return;
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            // Skip logically deleted shapes
+            if (shape.Del == BOOL.True)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
+                return;
             }
+
+            // Apply a dashed line pattern using the LinePatternValue enumeration
+            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

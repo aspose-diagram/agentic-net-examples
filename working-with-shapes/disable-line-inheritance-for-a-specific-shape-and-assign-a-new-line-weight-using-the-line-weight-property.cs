@@ -6,58 +6,72 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path – change as needed.
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Output Visio file path – the modified diagram will be saved here.
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Shape identifier to modify – replace with the actual shape ID.
-        int targetShapeId = 1;
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the first page (index 0) – adjust if a different page is required.
-            Page page = diagram.Pages[0];
-
-            // Get the shape by its ID. The GetShape method accepts a long, so cast the int.
-            Shape shape = page.Shapes.GetShape((long)targetShapeId);
-
-            // Verify that the shape was found.
-            if (shape == null)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine($"Shape with ID {targetShapeId} not found.");
-                return;
+                // Get the first page (adjust as needed)
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                Page page = diagram.Pages[0];
+
+                // Specify the shape ID to modify (example uses ID = 1)
+                long shapeId = 1;
+
+                // Retrieve the shape; guard against missing shape
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page.");
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // Disable line inheritance by assigning current values to themselves
+                // This breaks the inheritance chain for line properties.
+                // ------------------------------------------------------------
+                shape.Line.LineColor.Value = shape.Line.LineColor.Value;
+                shape.Line.LinePattern.Value = shape.Line.LinePattern.Value;
+                shape.Line.BeginArrow.Value = shape.Line.BeginArrow.Value;
+                shape.Line.EndArrow.Value = shape.Line.EndArrow.Value;
+                shape.Line.LineWeight.Value = shape.Line.LineWeight.Value;
+
+                // ------------------------------------------------------------
+                // Assign a new line weight (thickness) in inches.
+                // ------------------------------------------------------------
+                shape.Line.LineWeight.Value = 0.05; // Example: 0.05 inches
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // ----- Disable line inheritance -----
-            // By explicitly setting a line color, the shape no longer inherits the line color
-            // from its master or style. Use the current color to keep the visual appearance.
-            string currentLineColor = shape.Line.LineColor.Value;
-            shape.Line.LineColor.Value = currentLineColor; // forces explicit value
-
-            // ----- Assign a new line weight -----
-            // LineWeight is a DoubleValue; assign the desired thickness in inches.
-            double newWeightInInches = 0.05; // example: 0.05 inches (~1.27 mm)
-            shape.Line.LineWeight.Value = newWeightInInches;
-
-            // Save the modified diagram to the output path using the Vsdx format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

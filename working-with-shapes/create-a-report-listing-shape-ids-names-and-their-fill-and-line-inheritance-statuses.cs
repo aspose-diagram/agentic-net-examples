@@ -1,63 +1,108 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the Visio file path.
-        string inputPath = args.Length > 0 ? args[0] : "";
-        // Guard: ensure the file path is provided.
-        if (string.IsNullOrWhiteSpace(inputPath))
+        // Validate arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Error: No input file path specified.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputReportFile]");
             return;
         }
-        // Guard: verify the file exists before proceeding.
+
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : null;
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Write a header line for the report.
-            Console.WriteLine("ShapeID\tShapeNameU\tFillInherited\tLineInherited");
+            // Prepare a StringBuilder for the report.
+            StringBuilder reportBuilder = new StringBuilder();
+            reportBuilder.AppendLine("Shape ID,Shape Name,Fill Inherited,Line Inherited");
 
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate through all shapes on the page.
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                 {
-                    // Skip shapes that are marked as deleted.
+                    Shape shape = page.Shapes[shapeIndex];
+
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Determine if the fill properties are inherited.
-                    bool fillInherited = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value &&
-                                         shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value &&
-                                         shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
+                    // Retrieve shape ID and name.
+                    long shapeId = shape.ID;
+                    string shapeName = shape.NameU ?? string.Empty;
 
-                    // Determine if the line properties are inherited.
-                    bool lineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value &&
-                                         shape.Line.LineWeight.Value == shape.InheritLine.LineWeight.Value &&
-                                         shape.Line.LinePattern.Value == shape.InheritLine.LinePattern.Value;
+                    // Determine fill inheritance status.
+                    bool isFillInherited = false;
+                    try
+                    {
+                        // Compare the foreground fill value with the inherited value.
+                        isFillInherited = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+                    }
+                    catch
+                    {
+                        // If any property is unavailable, treat as not inherited.
+                        isFillInherited = false;
+                    }
 
-                    // Output the shape information as a tab‑separated line.
-                    Console.WriteLine($"{shape.ID}\t{shape.NameU}\t{fillInherited}\t{lineInherited}");
+                    // Determine line inheritance status.
+                    bool isLineInherited = false;
+                    try
+                    {
+                        // Compare the line color value with the inherited line color.
+                        isLineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+                    }
+                    catch
+                    {
+                        // If any property is unavailable, treat as not inherited.
+                        isLineInherited = false;
+                    }
+
+                    // Append the information to the report.
+                    reportBuilder.AppendLine($"{shapeId},{shapeName},{(isFillInherited ? "Inherited" : "Not Inherited")},{(isLineInherited ? "Inherited" : "Not Inherited")}");
+                }
+            }
+
+            // Output the report to console.
+            Console.WriteLine(reportBuilder.ToString());
+
+            // If an output file path was provided, write the report to the file.
+            if (!string.IsNullOrEmpty(outputPath))
+            {
+                try
+                {
+                    File.WriteAllText(outputPath, reportBuilder.ToString());
+                    Console.WriteLine($"Report saved to \"{outputPath}\".");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error writing report to file: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose‑Diagram errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Catch any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

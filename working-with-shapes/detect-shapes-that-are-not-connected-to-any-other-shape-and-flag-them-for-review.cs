@@ -1,55 +1,80 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input Visio file path (first argument or default).
-        string inputPath = args.Length > 0 ? args[0] : "diagram.vsdx";
-        // Guard: ensure the file exists before proceeding.
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram.
+            bool foundIsolated = false;
+
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Collect IDs of all shapes that participate in any connection.
-                HashSet<long> connectedShapeIds = new HashSet<long>();
-                // The Connects collection holds connector relationships between shapes.
-                foreach (Connect conn in page.Connects)
-                {
-                    // Add both source and target shape IDs to the set.
-                    connectedShapeIds.Add(conn.FromSheet);
-                    connectedShapeIds.Add(conn.ToSheet);
-                }
-
-                // Examine each shape on the current page.
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // If the shape's ID is not present in the connection set, it is isolated.
-                    if (!connectedShapeIds.Contains(shape.ID))
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve IDs of shapes connected to the current shape
+                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+
+                    // If there are no connections, flag the shape
+                    if (connectedIds == null || connectedIds.Length == 0)
                     {
-                        // Output details of the unconnected shape for review.
-                        Console.WriteLine($"Unconnected shape detected - Page: '{page.NameU}', ID: {shape.ID}, NameU: {shape.NameU}");
+                        foundIsolated = true;
+
+                        // Add a comment to the shape for review (if the comment cell exists)
+                        if (shape.Misc != null && shape.Misc.Comment != null)
+                        {
+                            shape.Misc.Comment.Value = "Isolated shape - review";
+                        }
+
+                        Console.WriteLine($"Isolated shape ID {shape.ID} on page '{page.Name}' flagged for review.");
                     }
                 }
+            }
+
+            // Save the modified diagram with a new file name
+            string outputDir = Path.GetDirectoryName(inputPath) ?? "";
+            string outputFileName = Path.GetFileNameWithoutExtension(inputPath) + "_flagged.vsdx";
+            string outputPath = Path.Combine(outputDir, outputFileName);
+
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Processing complete. Modified diagram saved to: {outputPath}");
+
+            if (!foundIsolated)
+            {
+                Console.WriteLine("No isolated shapes were found.");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during diagram processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

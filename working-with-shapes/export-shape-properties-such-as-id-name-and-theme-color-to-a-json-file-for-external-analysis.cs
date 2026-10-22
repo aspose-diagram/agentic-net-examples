@@ -1,75 +1,98 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramShapeExport
+class Program
 {
-    // DTO for JSON serialization
-    public class ShapeInfo
+    // Simple DTO to hold shape information for JSON serialization
+    private class ShapeInfo
     {
         public long Id { get; set; }
         public string Name { get; set; }
         public string ThemeColor { get; set; }
     }
 
-    public class Program
+    static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                var shapesData = new List<ShapeInfo>();
 
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
-
-                // Output JSON file path
-                string jsonOutputPath = "shape_properties.json";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // List to hold shape information
-                List<ShapeInfo> shapesInfo = new List<ShapeInfo>();
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate through all pages in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve shape ID
+                        long shapeId = shape.ID;
 
-                        // Retrieve fill foreground color as theme color (hex string)
-                        string themeColor = shape.Fill.FillForegnd.Value;
+                        // Retrieve shape name (fallback to empty string if null)
+                        string shapeName = shape.Name ?? string.Empty;
 
-                        // Create DTO and add to list
-                        ShapeInfo info = new ShapeInfo
+                        // Retrieve a theme‑related color.
+                        // Using the foreground fill color as a representative theme color.
+                        // If the fill color is not set, default to empty string.
+                        string themeColor = string.Empty;
+                        if (shape.Fill != null && shape.Fill.FillForegnd != null && shape.Fill.FillForegnd.Value != null)
                         {
-                            Id = shape.ID,
-                            Name = shape.Name,
+                            themeColor = shape.Fill.FillForegnd.Value;
+                        }
+
+                        // Add collected information to the list
+                        shapesData.Add(new ShapeInfo
+                        {
+                            Id = shapeId,
+                            Name = shapeName,
                             ThemeColor = themeColor
-                        };
-                        shapesInfo.Add(info);
+                        });
                     }
                 }
 
-                // Serialize to JSON with indentation for readability
+                // Serialize the list to JSON with indentation for readability
                 var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(shapesInfo, jsonOptions);
+                string json = JsonSerializer.Serialize(shapesData, jsonOptions);
 
-                // Write JSON to file
-                File.WriteAllText(jsonOutputPath, json);
+                // Ensure the output directory exists
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
 
-                Console.WriteLine($"Exported {shapesInfo.Count} shape(s) to '{jsonOutputPath}'.");
-
+                // Write JSON to the specified file
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Shape information exported to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

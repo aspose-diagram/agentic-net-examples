@@ -7,56 +7,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure the required arguments are provided: input diagram path and output PNG path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputPngPath> [resolutionDPI]");
-            return;
-        }
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        // Assign input and output paths from command‑line arguments.
-        string inputPath = args[0];
-        // Guard: verify the input Visio file exists before proceeding.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string outputPath = args[1];
-        // Ensure the output directory exists; create it if necessary.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        // Output directory for PNG images (second argument or default)
+        string outputDir = args.Length > 1 ? args[1] : "output";
+
+        // Ensure the output directory exists
+        try
         {
             Directory.CreateDirectory(outputDir);
         }
-
-        // Parse optional resolution argument; default to 300 DPI if not supplied or invalid.
-        float resolution = 300f;
-        if (args.Length > 2 && float.TryParse(args[2], out float parsedRes) && parsedRes > 0)
+        catch (Exception ex)
         {
-            resolution = parsedRes;
+            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+            return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create ImageSaveOptions for PNG output and set the desired resolution (DPI).
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = resolution; // Control image resolution.
+            // Iterate through all pages
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            {
+                Page page = diagram.Pages[pageIndex];
 
-            // Save the diagram (or the active page) as a PNG image using the custom options.
-            diagram.Save(outputPath, saveOptions);
+                // Iterate through all shapes on the current page
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Shape shape = page.Shapes[i];
 
-            // Inform the user of successful export.
-            Console.WriteLine($"Diagram saved to '{outputPath}' with resolution {resolution} DPI.");
+                    // Prepare custom ImageSaveOptions with desired resolution (e.g., 300 DPI)
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    saveOptions.Resolution = 300f; // Set resolution in DPI
+
+                    // Build output file name using shape ID and page index for uniqueness
+                    string outputPath = Path.Combine(outputDir, $"page{pageIndex + 1}_shape{shape.ID}.png");
+
+                    // Export the shape to PNG using the custom save options
+                    shape.ToImage(outputPath, saveOptions);
+                }
+            }
+
+            Console.WriteLine("Shape export completed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors encountered during processing to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Log any Aspose.Diagram related errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

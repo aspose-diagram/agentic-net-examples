@@ -1,54 +1,97 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check if input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Access the first page (index 0)
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (example uses ID 1)
-            Shape shape = page.Shapes.GetShape(1);
+            // Ensure the page has at least one shape
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The page contains no shapes.");
+                return;
+            }
 
-            // Replace any existing text with new content
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Sample Text"));
+            // Get the first shape on the page
+            Shape shape = page.Shapes[0];
 
-            // Create a character formatting entry for the text run
-            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-            ch.IX = 0; // index of the first character run
-            ch.FontName.Value = "Calibri";
-            // Convert font size from points to inches (1 point = 1/72 inch)
-            double fontSizePoints = 24;
-            ch.Size.Value = fontSizePoints / 72.0;
-            // Set text color using a hex string
-            ch.Color.Value = "#FF0000"; // Red
-            // Apply bold style (preserves other styles if needed)
-            ch.Style.Value = StyleValue.Bold;
-            // Add the character formatting to the shape
-            shape.Chars.Add(ch);
+            // ------------------------------------------------------------
+            // Add sample text to the shape if it does not already contain text
+            // ------------------------------------------------------------
+            if (shape.Text == null || string.IsNullOrWhiteSpace(shape.Text.Value.ToString()))
+            {
+                // Add a simple text run
+                shape.Text.Value.Add(new Txt("Sample Text"));
+            }
 
-            // Apply a preset theme to the shape
-            shape.PresetTheme = PresetThemeValue.Bubble;
-            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+            // ------------------------------------------------------------
+            // Modify text formatting: set font size and color for the first character run
+            // ------------------------------------------------------------
+            if (shape.Chars.Count > 0)
+            {
+                // Font size in points (e.g., 12pt) converted to inches (1 point = 1/72 inch)
+                double fontSizeInPoints = 12.0;
+                shape.Chars[0].Size.Value = fontSizeInPoints / 72.0;
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Set font color using a hex string (e.g., red)
+                shape.Chars[0].Color.Value = "#FF0000";
+            }
+            else
+            {
+                Console.Error.WriteLine("The shape does not contain any character runs to format.");
+            }
 
+            // ------------------------------------------------------------
+            // Apply a preset theme style to the shape
+            // ------------------------------------------------------------
+            // TODO: Use the appropriate method (e.g., SetPresetThemeStyleMatrics) to apply a theme style to the shape.
+            // Example (method signature may vary):
+            // shape.SetPresetThemeStyleMatrics(PresetThemeStyleValue.SomeStyle);
+            // Ensure to reference the correct enum/value based on your requirements.
+
+            // ------------------------------------------------------------
+            // Save the modified diagram to the output path in VSDX format
+            // ------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

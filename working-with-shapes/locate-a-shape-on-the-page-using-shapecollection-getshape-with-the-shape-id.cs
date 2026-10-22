@@ -1,34 +1,80 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found -> {diagramPath}");
+            return;
+        }
+
+        // Parse the shape ID (expected to be a long).
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                bool shapeFound = false;
+                int pageIndex = 0; // Manual page counter because Page.Index does not exist.
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Iterate through all pages to locate the shape by its ID.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Attempt to retrieve the shape using ShapeCollection.GetShape(long id).
+                    Shape shape = null;
+                    try
+                    {
+                        shape = page.Shapes.GetShape(shapeId);
+                    }
+                    catch
+                    {
+                        // GetShape may throw if the ID is not present on this page; ignore and continue.
+                    }
 
-            // Specify the page index (0‑based) and the shape ID you want to locate
-            int pageIndex = 0;          // first page
-            long shapeId = 5;           // example shape ID
+                    if (shape != null)
+                    {
+                        shapeFound = true;
+                        Console.WriteLine($"Shape found on page #{pageIndex}");
+                        Console.WriteLine($"Shape ID   : {shape.ID}");
+                        Console.WriteLine($"Shape NameU: {shape.NameU}");
+                        // Additional shape details can be printed here if needed.
+                        break;
+                    }
 
-            // Retrieve the page from the diagram
-            Page page = diagram.Pages[pageIndex];
+                    pageIndex++;
+                }
 
-            // Locate the shape on the page using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Example: output some shape information
-            Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
-
+                if (!shapeFound)
+                {
+                    Console.WriteLine($"Shape with ID {shapeId} was not found in any page of the diagram.");
+                }
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during loading or processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

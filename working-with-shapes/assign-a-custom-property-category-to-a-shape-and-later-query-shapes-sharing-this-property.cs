@@ -1,60 +1,99 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Add a new page to the diagram
-        diagram.Pages.Add(new Page());
-        Page page = diagram.Pages[0];
-
-        // Add first rectangle shape using DrawRectangle (returns a shape ID)
-        long shapeId1 = page.DrawRectangle(2.0, 2.0, 2.0, 1.0);
-        Shape shape1 = page.Shapes.GetShape(shapeId1);
-
-        // Add custom property "Category" to the first shape
-        Prop categoryProp1 = new Prop();
-        categoryProp1.Name = "Category";
-        categoryProp1.Label.Value = "Category";
-        categoryProp1.Value.Val = "Finance";
-        categoryProp1.Type.Value = TypePropValue.String;
-        shape1.Props.Add(categoryProp1);
-
-        // Add second rectangle shape
-        long shapeId2 = page.DrawRectangle(5.0, 2.0, 2.0, 1.0);
-        Shape shape2 = page.Shapes.GetShape(shapeId2);
-
-        // Add the same custom property to the second shape
-        Prop categoryProp2 = new Prop();
-        categoryProp2.Name = "Category";
-        categoryProp2.Label.Value = "Category";
-        categoryProp2.Value.Val = "Finance";
-        categoryProp2.Type.Value = TypePropValue.String;
-        shape2.Props.Add(categoryProp2);
-
-        // Query and list all shapes that have the "Category" custom property
-        Console.WriteLine("Shapes with custom property \"Category\":");
-        foreach (Page pg in diagram.Pages)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            foreach (Shape shp in pg.Shapes)
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // ------------------------------------------------------------
+            // 1. Add a custom property named "Category" to the first shape.
+            // ------------------------------------------------------------
+            // Find the first non‑connector shape on the first page.
+            Shape targetShape = null;
+            if (diagram.Pages.Count > 0)
             {
-                foreach (Prop prop in shp.Props)
+                Page firstPage = diagram.Pages[0];
+                foreach (Shape shp in firstPage.Shapes)
                 {
-                    if (prop.Name == "Category")
+                    // Skip connector shapes (OneD == true).
+                    if (!shp.OneD)
                     {
-                        Console.WriteLine($"Shape ID: {shp.ID}, Category Value: {prop.Value.Val}");
-                        break; // property found, move to next shape
+                        targetShape = shp;
+                        break;
+                    }
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No suitable shape found to add the custom property.");
+                return;
+            }
+
+            // Create the custom property.
+            Prop categoryProp = new Prop();
+            categoryProp.Name = "Category";                     // Property internal name.
+            categoryProp.Label.Value = "Category";              // Display label.
+            categoryProp.Value.Val = "Finance";                 // Example value.
+            categoryProp.Type.Value = TypePropValue.String;    // Data type.
+
+            // Add the property to the shape.
+            targetShape.Props.Add(categoryProp);
+
+            // ------------------------------------------------------------
+            // 2. Save the modified diagram.
+            // ------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with custom property to: {outputPath}");
+
+            // ------------------------------------------------------------
+            // 3. Query all shapes that have a "Category" custom property.
+            // ------------------------------------------------------------
+            Console.WriteLine("Shapes containing the 'Category' custom property:");
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shp in page.Shapes)
+                {
+                    foreach (Prop prop in shp.Props)
+                    {
+                        if (prop.Name == "Category")
+                        {
+                            // Output shape ID and the property value.
+                            Console.WriteLine($"Page: {page.Name}, Shape ID: {shp.ID}, Category: {prop.Value.Val}");
+                            // Break inner loop as we found the property for this shape.
+                            break;
+                        }
                     }
                 }
             }
         }
-
-        // Save the diagram to a VSDX file
-        diagram.Save("CustomPropertyDemo.vsdx", SaveFileFormat.Vsdx);
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

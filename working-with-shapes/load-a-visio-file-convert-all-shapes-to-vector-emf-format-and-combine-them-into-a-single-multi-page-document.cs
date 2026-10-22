@@ -1,72 +1,100 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output combined PDF path
+        string outputPdfPath = "CombinedShapes.pdf";
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // List to hold temporary EMF file paths
+        List<string> tempEmfFiles = new List<string>();
+
+        try
+        {
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Output Visio file that will contain EMF images on separate pages
-                string outputPath = "combined.vsdx";
-
-                // Temporary folder to store individual EMF files
-                string tempFolder = Path.Combine(Path.GetTempPath(), "ShapeEmfExport");
-                Directory.CreateDirectory(tempFolder);
-
-                // Load the source diagram
-                Diagram sourceDiagram = new Diagram(inputPath);
-
-                // Create an empty target diagram
-                Diagram targetDiagram = new Diagram();
-
-                // Iterate through all pages and shapes in the source diagram
-                foreach (Page srcPage in sourceDiagram.Pages)
+                // Iterate through each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    foreach (Shape srcShape in srcPage.Shapes)
+                    // Create a temporary EMF file name for the current page
+                    string tempEmfPath = Path.Combine(Path.GetTempPath(), $"page_{i + 1}_{Guid.NewGuid()}.emf");
+                    tempEmfFiles.Add(tempEmfPath);
+
+                    // Save the current page as EMF (vector format)
+                    // Use ImageSaveOptions with the specific page index
+                    ImageSaveOptions emfOptions = new ImageSaveOptions(SaveFileFormat.Emf)
                     {
-                        // Export the current shape to an EMF file
-                        string emfFile = Path.Combine(tempFolder, $"shape_{srcShape.ID}.emf");
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Emf);
-                        srcShape.ToImage(emfFile, imgOptions);
-
-                        // Add a new page to the target diagram for this shape
-                        Page newPage = new Page();
-                        targetDiagram.Pages.Add(newPage);
-
-                        // Insert the EMF image into the new page
-                        // The AddShape overload that accepts a FileStream is used for image insertion
-                        using (FileStream fs = new FileStream(emfFile, FileMode.Open, FileAccess.Read))
-                        {
-                            // Position the image at the origin (0,0) with default size (0,0 means original size)
-                            // The fourth parameter 'isCalculate' is set to false as required by the API
-                            long imageShapeId = newPage.AddShape(0, 0, 0, 0, fs);
-                            // Retrieve the shape if further manipulation is needed (optional)
-                            Shape imageShape = newPage.Shapes.GetShape(imageShapeId);
-                            // Example: set the shape name to identify it later
-                            imageShape.Name = $"EMF_Shape_{srcShape.ID}";
-                        }
-                    }
+                        PageIndex = i,
+                        PageCount = 1
+                    };
+                    diagram.Save(tempEmfPath, emfOptions);
                 }
-
-                // Save the combined diagram containing EMF images on separate pages
-                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up temporary EMF files
-                Directory.Delete(tempFolder, true);
-
-                Console.WriteLine("Conversion completed. Combined diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Create a new PDF document (fully qualified to avoid namespace ambiguity)
+            Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document();
+
+            // Add each EMF as a separate page in the PDF
+            foreach (string emfPath in tempEmfFiles)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Add a new page to the PDF
+                Aspose.Pdf.Page pdfPage = pdfDocument.Pages.Add();
+
+                // Create an image object from the EMF file
+                Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
+                pdfImage.ImageStream = new FileStream(emfPath, FileMode.Open, FileAccess.Read);
+                // Fit the image to the page dimensions
+                pdfImage.FixWidth = pdfPage.PageInfo.Width;
+                pdfImage.FixHeight = pdfPage.PageInfo.Height;
+
+                // Add the image to the page's paragraphs collection
+                pdfPage.Paragraphs.Add(pdfImage);
             }
+
+            // Save the combined multi‑page PDF document
+            pdfDocument.Save(outputPdfPath);
+            Console.WriteLine($"Combined PDF saved to: {outputPdfPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up temporary EMF files
+            foreach (string tempFile in tempEmfFiles)
+            {
+                try
+                {
+                    if (File.Exists(tempFile))
+                        File.Delete(tempFile);
+                }
+                catch
+                {
+                    // Suppress any cleanup errors
+                }
+            }
+        }
     }
-    }
+}

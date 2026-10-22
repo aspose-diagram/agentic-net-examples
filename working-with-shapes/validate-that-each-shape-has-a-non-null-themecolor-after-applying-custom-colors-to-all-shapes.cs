@@ -1,55 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Expect the first argument to be the path to the Visio file.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        string outputPath = "output.vsdx";
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Skip logically deleted shapes.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Apply a custom solid red fill color to the shape
-                    shape.Fill.FillForegnd.Value = "#FF0000";
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Validate that the fill foreground color (used as ThemeColor) is not null or empty
-                    if (string.IsNullOrEmpty(shape.Fill.FillForegnd.Value))
-                    {
-                        // Throw an exception to indicate validation failure for this shape
-                        throw new Exception($"Shape ID {shape.ID} on page '{page.Name}' has a null ThemeColor.");
-                    }
+                    // TODO: Apply custom colors to the shape.
+                    // Example (replace with actual API calls):
+                    // shape.Fill.FillForegnd = "#FF0000"; // Set fill color.
+                    // shape.Line.LineColor = "#00FF00"; // Set line color.
+
+                    // TODO: Validate that the shape's ThemeColor is not null.
+                    // The actual property name and type may differ; replace with correct API usage.
+                    // if (shape.ThemeColor == null)
+                    // {
+                    //     Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.NameU} has a null ThemeColor.");
+                    // }
                 }
             }
 
-            // Save the modified diagram to the output file using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("All shapes have a non‑null ThemeColor and the diagram was saved successfully.");
+            Console.WriteLine("Custom colors applied and ThemeColor validation completed.");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -3,66 +3,63 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Verify that at least one diagram path is provided
+        if (args.Length == 0)
         {
-            // Validate arguments
-            if (args == null || args.Length == 0)
-            {
-                Console.WriteLine("Error: No diagram file path provided.");
-                Console.WriteLine("Usage: DiagramShapeModifier <inputDiagramPath> [outputDiagramPath]");
-                return;
-            }
+            Console.WriteLine("Usage: Program <diagramPath1> [<diagramPath2> ...]");
+            return;
+        }
 
-            string inputPath = args[0];
+        // Process each diagram path supplied as an argument
+        foreach (string inputPath in args)
+        {
+            // Guard against missing files
             if (!File.Exists(inputPath))
             {
-                Console.WriteLine($"Error: The file \"{inputPath}\" does not exist.");
-                return;
-            }
-
-            // Determine output path
-            string outputPath;
-            if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
-            {
-                outputPath = args[1];
-            }
-            else
-            {
-                string directory = Path.GetDirectoryName(inputPath);
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-                outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_modified.vsdx");
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                continue;
             }
 
             try
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-                Console.WriteLine($"Loaded diagram: \"{inputPath}\"");
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Load the diagram inside a using block as required by the API
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    Console.WriteLine($"Loaded diagram: {inputPath}");
+
+                    // Iterate through all pages and shapes to modify dimensions
+                    foreach (Aspose.Diagram.Page page in diagram.Pages)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                        {
+                            // Skip logically deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                        // Modify dimensions (example: set width to 2 inches, height to 1 inch)
-                        shape.XForm.Width.Value = 2.0;
-                        shape.XForm.Height.Value = 1.0;
+                            // Set new width and height values (example: 2.0 inches width, 1.0 inch height)
+                            shape.XForm.Width.Value = 2.0;
+                            shape.XForm.Height.Value = 1.0;
+                        }
                     }
-                }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved with modified shape dimensions to: \"{outputPath}\"");
+                    // Construct output file path with a "_modified" suffix
+                    string directory = Path.GetDirectoryName(inputPath);
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                    string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_modified.vsdx");
+
+                    // Save the modified diagram in VSDX format
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Saved modified diagram to: {outputPath}");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("An error occurred while processing the diagram:");
-                Console.WriteLine(ex.Message);
+                // Report any errors that occur during processing
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }
     }
+}

@@ -1,73 +1,111 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: diagram file path and CSV file path with intended angles.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <anglesCsvPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string csvPath = args[1];
+
+        // Guard against missing files.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(csvPath))
+        {
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
+            return;
+        }
+
+        // Load intended rotation values from CSV.
+        // CSV format: ShapeId,AngleInDegrees (e.g., 123,45.0)
+        var intendedAngles = new Dictionary<long, double>();
+        try
+        {
+            foreach (var line in File.ReadAllLines(csvPath))
             {
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
-                // Path to the Visio file to be verified
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Define intended rotation angles for shapes (shape ID -> angle in degrees)
-                // In a real scenario this could be loaded from a config file or database.
-                var intendedAngles = new Dictionary<long, double>
+                var parts = line.Split(',');
+                if (parts.Length != 2)
                 {
-                    // Example entries:
-                    // { 1, 45.0 },
-                    // { 2, 90.0 }
-                };
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Retrieve the current rotation angle (in degrees)
-                        double currentAngle = shape.XForm.Angle.Value;
-
-                        // Consider only shapes that have a non‑zero rotation (i.e., rotated)
-                        if (Math.Abs(currentAngle) > 0.0001)
-                        {
-                            // Check if we have an intended angle for this shape
-                            if (intendedAngles.TryGetValue(shape.ID, out double expectedAngle))
-                            {
-                                // Compare with a tolerance to account for floating‑point precision
-                                if (Math.Abs(currentAngle - expectedAngle) > 0.01)
-                                {
-                                    // Report mismatch
-                                    Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' has angle {currentAngle}°, expected {expectedAngle}°.");
-                                    // Optionally, throw to halt execution
-                                    // throw new Exception($"Angle mismatch for shape ID {shape.ID}");
-                                }
-                            }
-                            else
-                            {
-                                // No intended angle defined for this shape
-                                Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' is rotated to {currentAngle}° but no intended angle is defined.");
-                            }
-                        }
-                    }
+                    Console.Error.WriteLine($"Invalid CSV line (expected 2 columns): {line}");
+                    continue;
                 }
 
-                // Optionally, save the diagram after verification (no changes made here)
-                // diagram.Save("output_verified.vsdx", SaveFileFormat.Vsdx);
+                if (!long.TryParse(parts[0].Trim(), out long shapeId))
+                {
+                    Console.Error.WriteLine($"Invalid ShapeId in CSV line: {line}");
+                    continue;
+                }
 
+                if (!double.TryParse(parts[1].Trim(), out double angle))
+                {
+                    Console.Error.WriteLine($"Invalid Angle in CSV line: {line}");
+                    continue;
+                }
+
+                intendedAngles[shapeId] = angle;
             }
-            catch (System.IO.FileNotFoundException ex)
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading CSV file: {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram.
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages and shapes to verify angles.
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Skip logically deleted shapes.
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Check if we have an intended angle for this shape.
+                if (!intendedAngles.TryGetValue(shape.ID, out double expectedAngle))
+                    continue; // No expectation defined; skip verification.
+
+                // Retrieve the actual angle from the shape's XForm.
+                double actualAngle = shape.XForm.Angle.Value;
+
+                // Compare with a tolerance to account for floating‑point precision.
+                const double tolerance = 0.0001;
+                if (Math.Abs(actualAngle - expectedAngle) > tolerance)
+                {
+                    Console.Error.WriteLine($"Shape ID {shape.ID} angle mismatch. Expected: {expectedAngle}, Actual: {actualAngle}");
+                }
+                else
+                {
+                    Console.WriteLine($"Shape ID {shape.ID} angle verified: {actualAngle}°");
+                }
             }
+        }
     }
-    }
+}

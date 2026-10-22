@@ -4,53 +4,92 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments: input file, master name, output folder
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <masterName> <outputFolder>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string masterName = args[1];
+        string outputFolder = args[2];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output folder exists (create if necessary)
+        try
+        {
+            if (!Directory.Exists(outputFolder))
             {
+                Directory.CreateDirectory(outputFolder);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
+            return;
+        }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-                // Directory where individual SVG files will be saved
-                string outputDir = "ExportedSvgs";
+        // Iterate through all pages and shapes, filtering by master name
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip logically deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
 
-                // Master name to filter shapes (adjust as needed)
-                string targetMasterName = "Rectangle";
-
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputDir))
-                    Directory.CreateDirectory(outputDir);
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Ensure the shape has a master and that its name matches the requested master name
+                if (shape.Master != null && shape.Master.Name == masterName)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Build a safe file name for the SVG output
+                    string safeShapeName = string.IsNullOrWhiteSpace(shape.Name) ? "shape" : shape.Name;
+                    // Replace any invalid filename characters
+                    foreach (char c in Path.GetInvalidFileNameChars())
                     {
-                        // Skip deleted shapes and ensure the shape has a master
-                        if (shape.Del == BOOL.False && shape.Master != null && shape.Master.Name == targetMasterName)
-                        {
-                            // Build a unique file name for each shape
-                            string fileName = $"Shape_{shape.ID}_{Guid.NewGuid()}.svg";
-                            string outputPath = Path.Combine(outputDir, fileName);
+                        safeShapeName = safeShapeName.Replace(c, '_');
+                    }
 
-                            // Export the shape to SVG
-                            SVGSaveOptions svgOptions = new SVGSaveOptions();
-                            shape.ToSvg(outputPath, svgOptions);
-                        }
+                    string outputPath = Path.Combine(
+                        outputFolder,
+                        $"shape_{shape.ID}_{safeShapeName}.svg");
+
+                    // Configure SVG save options (default options are sufficient)
+                    SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                    // Export the individual shape to SVG
+                    try
+                    {
+                        shape.ToSvg(outputPath, svgOptions);
+                        Console.WriteLine($"Exported shape ID {shape.ID} to '{outputPath}'.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Failed to export shape ID {shape.ID}: {ex.Message}");
                     }
                 }
-
-                Console.WriteLine("Export completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
     }
-    }
+}

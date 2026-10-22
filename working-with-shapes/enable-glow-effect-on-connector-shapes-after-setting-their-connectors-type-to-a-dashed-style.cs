@@ -1,48 +1,56 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine input and output file paths.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output_glow.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the modified Visio file
-                string outputPath = "output_glow.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Process only connector shapes (1‑D shapes).
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
-                        {
-                            // Set the line pattern to dashed
-                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        // Set the connector line pattern to dashed.
+                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                            // Approximate a glow effect by using a bright color and a thicker line
-                            shape.Line.LineColor.Value = "#FFFF00"; // Bright yellow
-                            shape.Line.LineWeight.Value = 0.05; // Thicker line for visual emphasis
-                        }
+                        // Apply a glow-like effect using bright color, increased weight, and shadow.
+                        shape.Line.LineColor.Value = "#FFFF00";          // Bright yellow line color.
+                        shape.Line.LineWeight.Value = 0.05;             // Thicker line for visibility.
+                        shape.Fill.ShdwForegnd.Value = "#FFFF00";       // Shadow color matching the line.
+                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple; // Simple drop shadow.
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with glow effect to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

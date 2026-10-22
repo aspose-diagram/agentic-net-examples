@@ -6,56 +6,83 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the Visio file path.
-        string visioPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Verify the file exists before proceeding.
-        if (!File.Exists(visioPath))
+        // Validate arguments: expect diagram file path and shape ID.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: check if the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse shape ID.
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Assume we work with the active page.
+            Page page = diagram.ActivePage;
+
+            // Retrieve the shape by its ID.
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on the active page.");
+                return;
+            }
 
-                    // Ensure the InheritFill collection is available.
-                    if (shape.InheritFill == null)
-                    {
-                        Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) has no InheritFill data.");
-                        continue;
-                    }
+            // Ensure the shape has a master (otherwise inheritance from master is not applicable).
+            if (shape.Master == null)
+            {
+                Console.WriteLine("The shape does not have an associated master; inheritance from master is not applicable.");
+                return;
+            }
 
-                    // Compare a representative fill property (foreground color) with the inherited value.
-                    bool inheritsForeground = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+            // Determine if the shape inherits fill formatting from its master.
+            // Compare key fill properties with the inherited values.
+            bool inheritsFillForegnd = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+            bool inheritsFillBkgnd = shape.Fill.FillBkgnd.Value == shape.InheritFill.FillBkgnd.Value;
+            bool inheritsFillPattern = shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
+            bool inheritsShdwForegnd = shape.Fill.ShdwForegnd.Value == shape.InheritFill.ShdwForegnd.Value;
+            bool inheritsShdwPattern = shape.Fill.ShdwPattern.Value == shape.InheritFill.ShdwPattern.Value;
 
-                    // Compare the fill pattern as an additional check.
-                    bool inheritsPattern = shape.Fill.FillPattern.Value == shape.InheritFill.FillPattern.Value;
+            bool inheritsAll = inheritsFillForegnd && inheritsFillBkgnd && inheritsFillPattern && inheritsShdwForegnd && inheritsShdwPattern;
 
-                    // Determine overall inheritance based on both checks.
-                    bool inheritsFill = inheritsForeground && inheritsPattern;
-
-                    // Output the result for the current shape.
-                    Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) inherits fill: {inheritsFill}");
-                }
+            // Output the result.
+            if (inheritsAll)
+            {
+                Console.WriteLine($"Shape ID {shapeId} inherits its fill formatting from its master.");
+            }
+            else
+            {
+                Console.WriteLine($"Shape ID {shapeId} does NOT fully inherit its fill formatting from its master.");
+                Console.WriteLine("Detailed inheritance check:");
+                Console.WriteLine($"  FillForegnd inherited: {inheritsFillForegnd}");
+                Console.WriteLine($"  FillBkgnd inherited: {inheritsFillBkgnd}");
+                Console.WriteLine($"  FillPattern inherited: {inheritsFillPattern}");
+                Console.WriteLine($"  ShdwForegnd inherited: {inheritsShdwForegnd}");
+                Console.WriteLine($"  ShdwPattern inherited: {inheritsShdwPattern}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

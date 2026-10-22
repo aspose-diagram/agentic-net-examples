@@ -1,84 +1,126 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Load the diagram inside a using block as required.
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Add a blank page
-                diagram.Pages.Add(new Page());
-                Page page = diagram.Pages[0];
-
-                // ---------- Create shapes for three groups ----------
-                // Group 1 shapes
-                long g1ShapeId1 = page.AddShape(1.0, 1.0, "Rectangle", false);
-                long g1ShapeId2 = page.AddShape(2.0, 1.0, "Rectangle", false);
-                long g1ShapeId3 = page.AddShape(1.5, 2.0, "Rectangle", false);
-                Shape g1Shape1 = page.Shapes.GetShape(g1ShapeId1);
-                Shape g1Shape2 = page.Shapes.GetShape(g1ShapeId2);
-                Shape g1Shape3 = page.Shapes.GetShape(g1ShapeId3);
-                // Group them
-                Shape group1 = page.Shapes.Group(new Shape[] { g1Shape1, g1Shape2, g1Shape3 });
-
-                // Group 2 shapes
-                long g2ShapeId1 = page.AddShape(4.0, 1.0, "Rectangle", false);
-                long g2ShapeId2 = page.AddShape(5.0, 1.0, "Rectangle", false);
-                long g2ShapeId3 = page.AddShape(4.5, 2.0, "Rectangle", false);
-                Shape g2Shape1 = page.Shapes.GetShape(g2ShapeId1);
-                Shape g2Shape2 = page.Shapes.GetShape(g2ShapeId2);
-                Shape g2Shape3 = page.Shapes.GetShape(g2ShapeId3);
-                Shape group2 = page.Shapes.Group(new Shape[] { g2Shape1, g2Shape2, g2Shape3 });
-
-                // Group 3 shapes
-                long g3ShapeId1 = page.AddShape(7.0, 1.0, "Rectangle", false);
-                long g3ShapeId2 = page.AddShape(8.0, 1.0, "Rectangle", false);
-                long g3ShapeId3 = page.AddShape(7.5, 2.0, "Rectangle", false);
-                Shape g3Shape1 = page.Shapes.GetShape(g3ShapeId1);
-                Shape g3Shape2 = page.Shapes.GetShape(g3ShapeId2);
-                Shape g3Shape3 = page.Shapes.GetShape(g3ShapeId3);
-                Shape group3 = page.Shapes.Group(new Shape[] { g3Shape1, g3Shape2, g3Shape3 });
-
-                // ---------- Connect sub‑shapes from the three groups ----------
-                // We'll connect the first shape of each group to the first shape of the next group
-                List<long> connectorIds = new List<long>();
-
-                // Connector 1: Group1 -> Group2
-                long connectorId1 = page.AddShape(0, 0, "Dynamic connector", false);
-                page.ConnectShapesViaConnector(g1ShapeId1, ConnectionPointPlace.Bottom, g2ShapeId1, ConnectionPointPlace.Top, connectorId1);
-                connectorIds.Add(connectorId1);
-
-                // Connector 2: Group2 -> Group3
-                long connectorId2 = page.AddShape(0, 0, "Dynamic connector", false);
-                page.ConnectShapesViaConnector(g2ShapeId1, ConnectionPointPlace.Bottom, g3ShapeId1, ConnectionPointPlace.Top, connectorId2);
-                connectorIds.Add(connectorId2);
-
-                // Connector 3: Group3 -> Group1
-                long connectorId3 = page.AddShape(0, 0, "Dynamic connector", false);
-                page.ConnectShapesViaConnector(g3ShapeId1, ConnectionPointPlace.Bottom, g1ShapeId1, ConnectionPointPlace.Top, connectorId3);
-                connectorIds.Add(connectorId3);
-
-                // ---------- List resulting connector IDs ----------
-                Console.WriteLine("Connector shape IDs created:");
-                foreach (long id in connectorIds)
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
                 {
-                    Console.WriteLine($"Connector ID: {id}");
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                // Save the diagram (optional)
-                diagram.Save("ConnectedGroups.vsdx", SaveFileFormat.Vsdx);
+                Page page = diagram.Pages[0];
 
+                // Find the first three group shapes on the page.
+                List<Shape> groupShapes = new List<Shape>();
+                for (int i = 0; i < page.Shapes.Count && groupShapes.Count < 3; i++)
+                {
+                    Shape shp = page.Shapes[i];
+                    if (shp.Type == TypeValue.Group)
+                    {
+                        groupShapes.Add(shp);
+                    }
+                }
+
+                if (groupShapes.Count < 3)
+                {
+                    Console.Error.WriteLine("The diagram does not contain at least three group shapes.");
+                    return;
+                }
+
+                // Retrieve one sub‑shape from each group (the first child shape).
+                List<long> subShapeIds = new List<long>();
+                foreach (Shape group in groupShapes)
+                {
+                    if (group.Shapes.Count == 0)
+                    {
+                        Console.Error.WriteLine("A group shape has no child shapes.");
+                        return;
+                    }
+
+                    // Get the first child shape of the group.
+                    Shape child = group.Shapes[0];
+                    subShapeIds.Add(child.ID);
+                }
+
+                // Create three separate dynamic connector shapes.
+                List<long> connectorIds = new List<long>();
+                for (int i = 0; i < 3; i++)
+                {
+                    // Add a dynamic connector at (0,0). The last parameter isCalculate must be false.
+                    long connId = page.AddShape(0, 0, "Dynamic connector", false);
+                    connectorIds.Add(connId);
+                }
+
+                // Connect sub‑shapes using the connectors to form a triangle.
+                // Connection 1: Shape 0 -> Shape 1
+                page.ConnectShapesViaConnector(
+                    subShapeIds[0],
+                    ConnectionPointPlace.Bottom,
+                    subShapeIds[1],
+                    ConnectionPointPlace.Top,
+                    connectorIds[0]);
+
+                // Connection 2: Shape 1 -> Shape 2
+                page.ConnectShapesViaConnector(
+                    subShapeIds[1],
+                    ConnectionPointPlace.Bottom,
+                    subShapeIds[2],
+                    ConnectionPointPlace.Top,
+                    connectorIds[1]);
+
+                // Connection 3: Shape 2 -> Shape 0
+                page.ConnectShapesViaConnector(
+                    subShapeIds[2],
+                    ConnectionPointPlace.Bottom,
+                    subShapeIds[0],
+                    ConnectionPointPlace.Top,
+                    connectorIds[2]);
+
+                // List resulting connection IDs.
+                Console.WriteLine("Resulting connections:");
+                for (int i = 0; i < page.Connects.Count; i++)
+                {
+                    Connect conn = page.Connects[i];
+                    Console.WriteLine($"Connection {i + 1}: FromShapeId={conn.FromSheet}, ToShapeId={conn.ToSheet}");
+                }
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

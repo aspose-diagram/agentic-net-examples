@@ -6,103 +6,86 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and connector identifier (ID or NameU)
+        // Expect two arguments: diagram file path and connector identifier or name.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: ConnectorLocator <diagramPath> <connectorIdOrName>");
+            Console.Error.WriteLine("Usage: Program <diagramFilePath> <connectorIdOrName>");
             return;
         }
 
         string diagramPath = args[0];
-        // Guard: ensure the diagram file exists before proceeding
+        string searchTerm = args[1];
+
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        string identifier = args[1];
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Flag to indicate if the connector was found
-            bool found = false;
-
-            // Try to parse the identifier as a numeric ID
-            bool isNumeric = long.TryParse(identifier, out long targetId);
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Identify connector shapes: they are 1‑D and usually based on the "Dynamic connector" master
-                if (shape.OneD && shape.Master != null && shape.Master.Name == "Dynamic connector")
+                // Determine whether the search term is a numeric ID.
+                bool isIdSearch = long.TryParse(searchTerm, out long targetId);
+
+                bool found = false;
+
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Match by ID
-                    if (isNumeric && shape.ID == targetId)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        PrintConnectorInfo(page, shape);
-                        found = true;
-                        break;
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Consider only connector shapes (1‑D shapes).
+                        if (!shape.OneD)
+                            continue;
+
+                        // Search by ID.
+                        if (isIdSearch && shape.ID == targetId)
+                        {
+                            Console.WriteLine("Connector found by ID:");
+                            Console.WriteLine($"Page NameU: {page.NameU}");
+                            Console.WriteLine($"Shape ID: {shape.ID}");
+                            Console.WriteLine($"Shape NameU: {shape.NameU}");
+                            found = true;
+                            break;
+                        }
+
+                        // Search by NameU (case‑sensitive).
+                        if (!isIdSearch && shape.NameU == searchTerm)
+                        {
+                            Console.WriteLine("Connector found by Name:");
+                            Console.WriteLine($"Page NameU: {page.NameU}");
+                            Console.WriteLine($"Shape ID: {shape.ID}");
+                            Console.WriteLine($"Shape NameU: {shape.NameU}");
+                            found = true;
+                            break;
+                        }
                     }
 
-                    // Match by universal name (NameU)
-                    if (!isNumeric && string.Equals(shape.NameU, identifier, StringComparison.OrdinalIgnoreCase))
-                    {
-                        PrintConnectorInfo(page, shape);
-                        found = true;
+                    if (found)
                         break;
-                    }
                 }
-            }
 
-            if (!found)
-            {
-                Console.WriteLine($"Connector with identifier '{identifier}' was not found on page '{page.Name}'.");
+                if (!found)
+                {
+                    Console.WriteLine(isIdSearch
+                        ? $"No connector with ID {targetId} was found."
+                        : $"No connector with name \"{searchTerm}\" was found.");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Report any Aspose or I/O errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    // Helper method to output connector details, including source and target shape IDs
-    private static void PrintConnectorInfo(Page page, Shape connector)
-    {
-        Console.WriteLine("Connector found:");
-        Console.WriteLine($"  ID       : {connector.ID}");
-        Console.WriteLine($"  NameU    : {connector.NameU}");
-        Console.WriteLine($"  Master   : {connector.Master?.Name}");
-        Console.WriteLine($"  Position : PinX={connector.XForm.PinX.Value}, PinY={connector.XForm.PinY.Value}");
-
-        // Retrieve the two connection entries that reference this connector
-        long fromShapeId = 0;
-        long toShapeId = 0;
-        int foundCount = 0;
-
-        foreach (Connect conn in page.Connects)
-        {
-            // Each Connect where ToSheet equals the connector ID represents one end of the connector
-            if (conn.ToSheet == connector.ID)
-            {
-                if (foundCount == 0)
-                    fromShapeId = conn.FromSheet; // First end (source shape)
-                else if (foundCount == 1)
-                    toShapeId = conn.FromSheet;   // Second end (target shape)
-
-                foundCount++;
-                if (foundCount >= 2) break; // We only need the two ends
-            }
-        }
-
-        Console.WriteLine($"  FromShape ID: {fromShapeId}");
-        Console.WriteLine($"  ToShape ID  : {toShapeId}");
     }
 }

@@ -3,98 +3,119 @@ using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using AsposeImage = Aspose.Drawing.Image;
-using AsposeBitmap = Aspose.Drawing.Bitmap;
-using AsposeColor = Aspose.Drawing.Color;
-using AsposeImageFormat = Aspose.Drawing.Imaging.ImageFormat;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output ZIP file path
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: VisioImageExtractor <inputVisioPath> <outputZipPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputZipPath>");
             return;
         }
 
-        string inputVisioPath = args[0];
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputVisioPath))
+        string visioPath = args[0];
+        string zipPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"File not found: {inputVisioPath}");
+            Console.Error.WriteLine($"Input file not found: {visioPath}");
             return;
         }
 
-        string outputZipPath = args[1];
+        // Create a temporary directory for extracted images
+        string tempDir = Path.Combine(Path.GetTempPath(), "VisioImages_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputVisioPath);
-
-            // Create the ZIP archive for the extracted images
-            using (FileStream zipStream = new FileStream(outputZipPath, FileMode.Create))
-            using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Iterate through all pages and shapes
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify image (foreign) shapes
-                        if (shape.Type == TypeValue.Foreign)
-                        {
-                            byte[] imageData = shape.ForeignData.Value;
-                            if (imageData == null || imageData.Length == 0)
-                                continue;
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Load the image from the byte array using Aspose.Drawing
-                            using (MemoryStream imgStream = new MemoryStream(imageData))
-                            using (AsposeImage originalImage = AsposeImage.FromStream(imgStream))
-                            using (AsposeBitmap bitmap = new AsposeBitmap(originalImage))
+                        // Prepare a unique file name for the shape image
+                        string imageFileName = $"page_{page.ID}_shape_{shape.ID}.png";
+                        string imagePath = Path.Combine(tempDir, imageFileName);
+
+                        try
+                        {
+                            // Export the shape to PNG using Aspose.Diagram
+                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                            shape.ToImage(imagePath, imgOptions);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page {page.ID}: {ex.Message}");
+                            continue;
+                        }
+
+                        try
+                        {
+                            // Load the exported image using Aspose.Drawing and convert to grayscale
+                            using (Bitmap bitmap = new Bitmap(imagePath))
                             {
-                                // Convert each pixel to grayscale
                                 for (int y = 0; y < bitmap.Height; y++)
                                 {
                                     for (int x = 0; x < bitmap.Width; x++)
                                     {
-                                        AsposeColor pixel = bitmap.GetPixel(x, y);
-                                        int gray = (int)(pixel.R * 0.299 + pixel.G * 0.587 + pixel.B * 0.114);
-                                        AsposeColor grayColor = AsposeColor.FromArgb(pixel.A, gray, gray, gray);
+                                        // Get original pixel color
+                                        Color original = bitmap.GetPixel(x, y);
+                                        // Compute luminance using Rec. 601 formula
+                                        int gray = (int)(0.299 * original.R + 0.587 * original.G + 0.114 * original.B);
+                                        // Clamp to byte range
+                                        gray = Math.Max(0, Math.Min(255, gray));
+                                        // Create grayscale color preserving alpha
+                                        Color grayColor = Color.FromArgb(original.A, gray, gray, gray);
+                                        // Set the pixel back
                                         bitmap.SetPixel(x, y, grayColor);
                                     }
                                 }
-
-                                // Save the grayscale image to a memory stream (PNG format)
-                                using (MemoryStream outStream = new MemoryStream())
-                                {
-                                    bitmap.Save(outStream, AsposeImageFormat.Png);
-                                    outStream.Position = 0;
-
-                                    // Create a ZIP entry name that includes page and shape IDs
-                                    string entryName = $"Page_{page.ID}_Shape_{shape.ID}.png";
-                                    ZipArchiveEntry entry = archive.CreateEntry(entryName);
-
-                                    // Write the image data into the ZIP entry
-                                    using (Stream entryStream = entry.Open())
-                                    {
-                                        outStream.CopyTo(entryStream);
-                                    }
-                                }
+                                // Overwrite the original image with the grayscale version
+                                bitmap.Save(imagePath);
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Failed to convert image to grayscale for shape ID {shape.ID} on page {page.ID}: {ex.Message}");
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"Extraction complete. Images saved to: {outputZipPath}");
+            // Create ZIP archive from the temporary directory
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
+            ZipFile.CreateFromDirectory(tempDir, zipPath);
+            Console.WriteLine($"Images extracted and archived to: {zipPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up temporary directory
+            try
+            {
+                if (Directory.Exists(tempDir))
+                    Directory.Delete(tempDir, true);
+            }
+            catch
+            {
+                // Suppress any cleanup errors
+            }
         }
     }
 }

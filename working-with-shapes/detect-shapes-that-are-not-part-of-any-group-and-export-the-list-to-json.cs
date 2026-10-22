@@ -8,104 +8,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Expect two arguments: input Visio file path and output JSON file path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioFile> [outputJsonFile]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
             return;
         }
 
-        // Input Visio file path.
         string inputPath = args[0];
-        // Guard: ensure the file exists before proceeding.
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Output JSON file path (default if not supplied).
-        string outputPath = args.Length > 1 ? args[1] : "nonGroupedShapes.json";
-
-        // Guard: ensure the output directory exists.
-        string? outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
-        // Load the Visio diagram inside a try/catch to capture loading errors.
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // List to hold information about shapes that are not part of any group.
-        List<ShapeInfo> nonGroupedShapes = new List<ShapeInfo>();
-
-        // Iterate over each page in the diagram.
-        for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-        {
-            Page page = diagram.Pages[pageIndex];
-
-            // Iterate over each shape on the current page.
-            foreach (Shape shape in page.Shapes)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Skip shapes that belong to a group.
-                if (shape.IsInGroup())
+                // List to hold information about shapes that are not part of any group
+                List<SimpleShapeInfo> ungroupedShapes = new List<SimpleShapeInfo>();
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    continue;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip group shapes themselves
+                        if (shape.Type == TypeValue.Group)
+                            continue;
+
+                        // If the shape is not inside any group, record it
+                        if (!shape.IsInGroup())
+                        {
+                            ungroupedShapes.Add(new SimpleShapeInfo
+                            {
+                                Id = shape.ID,
+                                Name = shape.Name ?? string.Empty,
+                                Page = page.Name ?? string.Empty
+                            });
+                        }
+                    }
                 }
 
-                // Gather basic shape details.
-                ShapeInfo info = new ShapeInfo
-                {
-                    PageIndex = pageIndex,
-                    ShapeId = shape.ID,
-                    NameU = shape.NameU,
-                    MasterName = shape.Master?.Name
-                };
+                // Serialize the list to JSON with indentation for readability
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(ungroupedShapes, jsonOptions);
 
-                nonGroupedShapes.Add(info);
+                // Write JSON to the specified output file
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Exported {ungroupedShapes.Count} ungrouped shape(s) to {outputPath}");
             }
         }
-
-        // Serialize the collected shape information to JSON.
-        string json;
-        try
-        {
-            json = JsonSerializer.Serialize(nonGroupedShapes, new JsonSerializerOptions { WriteIndented = true });
-        }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during JSON serialization: {ex.Message}");
-            return;
-        }
-
-        // Write the JSON output to the specified file.
-        try
-        {
-            File.WriteAllText(outputPath, json);
-            Console.WriteLine($"Exported {nonGroupedShapes.Count} non‑grouped shapes to '{outputPath}'.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error writing JSON file: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
-}
 
-// DTO representing the minimal information for each non‑grouped shape.
-class ShapeInfo
-{
-    public int PageIndex { get; set; }          // Zero‑based index of the page containing the shape.
-    public long ShapeId { get; set; }           // Unique identifier of the shape.
-    public string? NameU { get; set; }          // Universal name of the shape (may be null).
-    public string? MasterName { get; set; }     // Name of the master shape, if any (may be null).
+    // Simple DTO for JSON serialization
+    private class SimpleShapeInfo
+    {
+        public long Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Page { get; set; } = string.Empty;
+    }
 }

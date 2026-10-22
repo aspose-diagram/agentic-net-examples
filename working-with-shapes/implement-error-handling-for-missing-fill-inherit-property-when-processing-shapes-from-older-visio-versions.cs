@@ -6,71 +6,69 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input file path (first argument or default).
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Verify that the input file exists before proceeding.
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Load the Visio diagram inside a try/catch to capture loading errors.
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Iterate through each page in the diagram.
-        foreach (Page page in diagram.Pages)
-        {
-            // Iterate through each shape on the current page.
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                // Attempt to access the inherited fill properties.
-                try
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Access the inherited foreground color (may not exist in older files).
-                    string inheritForegnd = shape.InheritFill.FillForegnd.Value;
+                    try
+                    {
+                        // Attempt to access the InheritFill property
+                        var inheritFill = shape.InheritFill;
 
-                    // Access the inherited background color (may not exist in older files).
-                    string inheritBkgnd = shape.InheritFill.FillBkgnd.Value;
+                        if (inheritFill == null)
+                        {
+                            // Property is missing or not applicable for this shape
+                            Console.WriteLine($"Shape ID {shape.ID} on page '{page.NameU}' does not have InheritFill data.");
+                            continue;
+                        }
 
-                    // Output the retrieved inherited fill values for diagnostic purposes.
-                    Console.WriteLine($"Shape ID {shape.ID}: Inherited Foreground = {inheritForegnd}, Background = {inheritBkgnd}");
-                }
-                catch (MissingMemberException mme)
-                {
-                    // Specific handling when the InheritFill property or its sub‑properties are missing.
-                    Console.Error.WriteLine($"Shape ID {shape.ID} missing InheritFill member: {mme.Message}");
-                }
-                catch (Exception ex)
-                {
-                    // General fallback for any other unexpected errors while accessing fill data.
-                    Console.Error.WriteLine($"Error processing shape ID {shape.ID}: {ex.Message}");
+                        // Example: read some fill values safely
+                        var foregnd = inheritFill.FillForegnd?.Value;
+                        var bkgnd = inheritFill.FillBkgnd?.Value;
+                        var pattern = inheritFill.FillPattern?.Value;
+
+                        Console.WriteLine($"Shape ID {shape.ID} InheritFill - Foregnd: {foregnd}, Bkgnd: {bkgnd}, Pattern: {pattern}");
+                    }
+                    catch (Exception shapeEx)
+                    {
+                        // Handle any unexpected errors while processing a shape
+                        Console.Error.WriteLine($"Error processing shape ID {shape.ID}: {shapeEx.Message}");
+                    }
                 }
             }
-        }
 
-        // Define output file path for the processed diagram.
-        string outputPath = "output.vsdx";
-
-        // Save the diagram (even if unchanged) with error handling.
-        try
-        {
+            // Save the (potentially unchanged) diagram to the output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+            // Handle errors related to loading or saving the diagram
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

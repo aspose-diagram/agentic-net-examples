@@ -1,83 +1,93 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Use the first page in the document
-            Page page = diagram.Pages[0];
-
-            // Find a source shape to clone (skip connectors and deleted shapes)
-            Shape sourceShape = null;
-            foreach (Shape shp in page.Shapes)
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (shp.Del == BOOL.False && !shp.OneD) // ensure it's a visible 2‑D shape
+                Shape originalShape = null;
+                Page sourcePage = null;
+
+                // Locate the first non‑deleted shape in the document.
+                foreach (Page page in diagram.Pages)
                 {
-                    sourceShape = shp;
-                    break;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.Del == BOOL.False)
+                        {
+                            originalShape = shape;
+                            sourcePage = page;
+                            break;
+                        }
+                    }
+                    if (originalShape != null)
+                        break;
                 }
+
+                if (originalShape == null || sourcePage == null)
+                {
+                    Console.Error.WriteLine("No suitable shape found to clone.");
+                    return;
+                }
+
+                // Ensure the original shape has an associated master (required for adding a similar shape).
+                if (originalShape.Master == null)
+                {
+                    Console.Error.WriteLine("The original shape does not have a master; cannot clone.");
+                    return;
+                }
+
+                // Determine a position for the cloned shape (offset slightly to avoid overlap).
+                double newPinX = originalShape.XForm.PinX.Value + 1.0;
+                double newPinY = originalShape.XForm.PinY.Value;
+
+                // Add a new shape on the same page using the same master as the original.
+                // AddShape returns the new shape's ID (long).
+                long clonedShapeId = sourcePage.AddShape(newPinX, newPinY, originalShape.Master.Name, false);
+
+                // Retrieve the Shape instance for the newly added shape.
+                Shape clonedShape = sourcePage.Shapes.GetShape(clonedShapeId);
+
+                // Inherit fill settings from the original shape by enabling fill inheritance.
+                // The Ufe.F formula "INHERITED()" tells Visio to use inherited fill values.
+                clonedShape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+
+                // Modify the clone's line inheritance flag.
+                // Assigning the current line color value to itself disables line inheritance.
+                clonedShape.Line.LineColor.Value = clonedShape.Line.LineColor.Value;
+
+                // Save the modified diagram to the specified output path using VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-
-            if (sourceShape == null)
-            {
-                Console.Error.WriteLine("No suitable shape found to clone.");
-                return;
-            }
-
-            // Retrieve the master name of the source shape (used for cloning)
-            string masterName = sourceShape.Master?.Name ?? "Rectangle";
-
-            // Determine a position for the cloned shape (offset by 2 inches)
-            double newPinX = sourceShape.XForm.PinX.Value + 2.0;
-            double newPinY = sourceShape.XForm.PinY.Value + 2.0;
-
-            // Add a new shape using the same master; isCalculate = false
-            long cloneId = page.AddShape(newPinX, newPinY, masterName, false);
-
-            // Retrieve the cloned shape instance
-            Shape cloneShape = page.Shapes.GetShape(cloneId);
-
-            // -------------------- Inherit Fill Settings --------------------
-            // Copy fill pattern and colors from the source shape to the clone
-            cloneShape.Fill.FillPattern.Value = sourceShape.Fill.FillPattern.Value;
-            cloneShape.Fill.FillForegnd.Value = sourceShape.Fill.FillForegnd.Value;
-            cloneShape.Fill.FillBkgnd.Value = sourceShape.Fill.FillBkgnd.Value;
-            cloneShape.Fill.FillForegndTrans.Value = sourceShape.Fill.FillForegndTrans.Value;
-            cloneShape.Fill.FillBkgndTrans.Value = sourceShape.Fill.FillBkgndTrans.Value;
-
-            // -------------------- Modify Line Inheritance Flag --------------------
-            // Change the line color of the clone to demonstrate a different line setting
-            // (this effectively breaks line inheritance from the original)
-            cloneShape.Line.LineColor.Value = "#FF0000"; // red line
-            cloneShape.Line.LineWeight.Value = 0.03;     // thicker line
-
-            // Save the modified diagram to the output file using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

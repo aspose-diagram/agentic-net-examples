@@ -4,70 +4,77 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Predefined width for the target shape (in inches)
-    private const double TargetWidth = 2.0;
+    // Predefined width (in inches) to set for target shapes.
+    private const double TargetWidthInches = 2.0;
+    // NameU of the shape to resize. Adjust as needed.
+    private const string TargetShapeNameU = "TargetShape";
 
     static void Main(string[] args)
     {
-        // Expect two arguments: input folder and output folder
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.WriteLine("Usage: BatchResize <inputFolder> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <directoryPath>");
             return;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args[1];
+        string directoryPath = args[0];
 
-        if (!Directory.Exists(inputFolder))
+        // Verify the directory exists.
+        if (!Directory.Exists(directoryPath))
         {
-            Console.WriteLine($"Input folder does not exist: {inputFolder}");
+            Console.Error.WriteLine($"Directory does not exist: {directoryPath}");
             return;
         }
 
-        // Create output folder if it does not exist
-        if (!Directory.Exists(outputFolder))
+        // Get all VSDX files in the directory.
+        string[] vsdxFiles = Directory.GetFiles(directoryPath, "*.vsdx");
+
+        if (vsdxFiles.Length == 0)
         {
-            Directory.CreateDirectory(outputFolder);
+            Console.WriteLine("No VSDX files found in the specified directory.");
+            return;
         }
 
-        // Process each VSDX file in the input folder
-        string[] files = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in files)
+        // Process each VSDX file.
+        foreach (string filePath in vsdxFiles)
         {
+            // Guard against missing files (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
             try
             {
-                // Load the diagram
+                // Load the diagram.
                 Diagram diagram = new Diagram(filePath);
 
-                // Iterate through all pages and shapes
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Identify the target shape by its universal name (adjust as needed)
-                        if (shape.NameU == "TargetShape")
+                        // Process only active (non‑deleted) shapes that match the target name.
+                        if (shape.Del == BOOL.False && shape.NameU == TargetShapeNameU)
                         {
-                            // Resize the shape width to the predefined value
-                            shape.XForm.Width.Value = TargetWidth;
+                            // Set the shape's width to the predefined value.
+                            shape.XForm.Width.Value = TargetWidthInches;
                         }
                     }
                 }
 
-                // Save the modified diagram to the output folder (overwrite if exists)
-                string fileName = Path.GetFileName(filePath);
-                string outputPath = Path.Combine(outputFolder, fileName);
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram, overwriting the original file.
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
 
-                Console.WriteLine($"Processed and saved: {outputPath}");
+                Console.WriteLine($"Processed and saved: {filePath}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                // Report any errors that occur during loading, processing, or saving.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
     }

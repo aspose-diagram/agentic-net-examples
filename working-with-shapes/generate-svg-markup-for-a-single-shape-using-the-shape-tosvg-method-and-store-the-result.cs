@@ -4,51 +4,63 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: input Visio file, shape ID, output SVG file
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <shapeId> <outputSvgFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string shapeIdStr = args[1];
+        string outputPath = args[2];
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: parse the shape ID as an integer
+        if (!int.TryParse(shapeIdStr, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdStr}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string visioPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Get the first page (index 0)
+                // Retrieve the first page (index 0). Adjust if a different page is needed.
                 Page page = diagram.Pages[0];
 
-                // Retrieve the first shape on the page
-                // Ensure there is at least one shape
-                if (page.Shapes.Count == 0)
+                // Get the shape by its ID from the page's shape collection
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    Console.WriteLine("No shapes found on the page.");
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
                     return;
                 }
 
-                Shape shape = page.Shapes[0];
-
-                // Define the output SVG file path
-                string svgPath = "shape_output.svg";
-
-                // Create SVG save options (default options are sufficient)
+                // Create default SVG save options
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Export the shape to SVG file
-                shape.ToSvg(svgPath, svgOptions);
+                // Export the selected shape to an SVG file
+                shape.ToSvg(outputPath, svgOptions);
 
-                // Read the generated SVG markup into a string
-                string svgMarkup = File.ReadAllText(svgPath);
-
-                // Store or use the SVG markup as needed (example: output to console)
-                Console.WriteLine("SVG markup for the shape:");
-                Console.WriteLine(svgMarkup);
-
+                Console.WriteLine($"Shape {shapeId} exported to SVG successfully: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error during SVG export: {ex.Message}");
+        }
     }
-    }
+}

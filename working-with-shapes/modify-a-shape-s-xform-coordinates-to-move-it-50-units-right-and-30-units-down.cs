@@ -6,64 +6,69 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate argument count.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
-        // Assign input file path and guard its existence.
         string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Parse shape ID and guard parsing errors.
-        if (!long.TryParse(args[1], out long shapeId))
-        {
-            Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (index 0) of the diagram.
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID (cast to int as required by GetShape).
-            Shape shape = page.Shapes.GetShape((int)shapeId);
-            if (shape == null)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                return;
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Get the first page.
+                Page page = diagram.Pages[0];
+
+                // Ensure the page has at least one shape.
+                if (page.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("The first page contains no shapes.");
+                    return;
+                }
+
+                // Retrieve the first shape on the page.
+                // Shapes are accessed via the GetShape method using the shape's ID.
+                long firstShapeId = page.Shapes[0].ID;
+                Shape shape = page.Shapes.GetShape(firstShapeId);
+
+                if (shape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the first shape.");
+                    return;
+                }
+
+                // Move the shape 50 units to the right (increase PinX) and
+                // 30 units down (increase PinY).
+                shape.XForm.PinX.Value += 50.0;
+                shape.XForm.PinY.Value += 30.0;
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Move the shape 50 units right by increasing PinX.
-            shape.XForm.PinX.Value += 50.0;
-
-            // Move the shape 30 units down by increasing PinY.
-            shape.XForm.PinY.Value += 30.0;
-
-            // Prepare output file path (original name with "_moved" suffix).
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(inputPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(inputPath) + "_moved.vsdx");
-
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Inform the user of successful operation.
-            Console.WriteLine($"Shape {shapeId} moved and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

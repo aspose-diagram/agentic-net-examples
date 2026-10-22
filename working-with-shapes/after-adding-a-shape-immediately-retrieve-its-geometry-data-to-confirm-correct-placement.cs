@@ -1,55 +1,97 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define the output Visio file path
+        string outputPath = "output.vsdx";
+
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            try
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Create a new blank diagram
+            using (Diagram diagram = new Diagram())
             {
+                // Get the active page where the shape will be added
+                Page page = diagram.ActivePage;
 
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
+                // Add a rectangle shape at position (2.0, 3.0) inches.
+                // The fourth parameter (isCalculate) must be a plain bool.
+                long shapeId = page.AddShape(2.0, 3.0, "Rectangle", false);
 
-                // Access the first (default) page
-                Page page = diagram.Pages[0];
-
-                // Define shape placement parameters
-                double pinX = 2.0;          // X coordinate (inches)
-                double pinY = 2.0;          // Y coordinate (inches)
-                string masterName = "Rectangle"; // Built‑in master name
-                bool isCalculate = false;  // Do not recalculate geometry automatically
-
-                // Add the shape to the page; AddShape returns the shape ID (long)
-                long shapeId = page.AddShape(pinX, pinY, masterName, isCalculate);
-
-                // Retrieve the concrete Shape object using the returned ID
+                // Retrieve the newly added shape using its ID (cast to int as required)
                 Shape shape = page.Shapes.GetShape((int)shapeId);
-
-                // Extract geometry data from the shape
-                double actualPinX = shape.XForm.PinX.Value;
-                double actualPinY = shape.XForm.PinY.Value;
-                double actualWidth = shape.XForm.Width.Value;
-                double actualHeight = shape.XForm.Height.Value;
-                double actualAngle = shape.XForm.Angle.Value; // rotation angle in degrees
-
-                // Verify that the geometry matches the expected placement
-                if (Math.Abs(actualPinX - pinX) > 0.001 ||
-                    Math.Abs(actualPinY - pinY) > 0.001)
+                if (shape == null)
                 {
-                    throw new Exception($"Shape position mismatch. Expected ({pinX}, {pinY}) but got ({actualPinX}, {actualPinY}).");
+                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                    return;
                 }
 
-                // Output the retrieved geometry for confirmation
-                Console.WriteLine($"Shape ID: {shapeId}");
-                Console.WriteLine($"Position: PinX = {actualPinX}, PinY = {actualPinY}");
-                Console.WriteLine($"Size: Width = {actualWidth}, Height = {actualHeight}");
-                Console.WriteLine($"Rotation Angle: {actualAngle} degrees");
+                // Output basic placement information
+                Console.WriteLine($"Shape ID: {shape.ID}");
+                Console.WriteLine($"PinX: {shape.XForm.PinX.Value}");
+                Console.WriteLine($"PinY: {shape.XForm.PinY.Value}");
+                Console.WriteLine($"Width: {shape.XForm.Width.Value}");
+                Console.WriteLine($"Height: {shape.XForm.Height.Value}");
 
+                // Retrieve geometry data to confirm correct placement
+                if (shape.Geoms.Count > 0)
+                {
+                    // The geometry objects are of type Geom; cast the first entry
+                    Geom geom = (Geom)shape.Geoms[0];
+                    var coordCol = geom.CoordinateCol;
+
+                    // Output the first MoveTo coordinate if present
+                    if (coordCol.MoveToCol.Count > 0)
+                    {
+                        MoveTo moveTo = coordCol.MoveToCol[0];
+                        Console.WriteLine("First MoveTo coordinate:");
+                        Console.WriteLine($"  X: {moveTo.X.Value}");
+                        Console.WriteLine($"  Y: {moveTo.Y.Value}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No MoveTo coordinates found in geometry.");
+                    }
+
+                    // Output the first LineTo coordinate if present
+                    if (coordCol.LineToCol.Count > 0)
+                    {
+                        LineTo lineTo = coordCol.LineToCol[0];
+                        Console.WriteLine("First LineTo coordinate:");
+                        Console.WriteLine($"  X: {lineTo.X.Value}");
+                        Console.WriteLine($"  Y: {lineTo.Y.Value}");
+                    }
+                    else
+                    {
+                        Console.WriteLine("No LineTo coordinates found in geometry.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Shape has no geometry sections.");
+                }
+
+                // Save the diagram to verify that the shape was added correctly
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

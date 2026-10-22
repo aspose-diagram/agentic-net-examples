@@ -4,67 +4,71 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Verify the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Expect two arguments: input Visio file path and output folder path.
-            if (args.Length < 2)
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output directory for PDF pages (second argument or current directory)
+        string outputDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
+
+        // Verify the output directory exists
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: VisioShadowExport <inputVisioPath> <outputFolder>");
-                return;
-            }
+                int pageIndex = 0;
 
-            string inputPath = args[0];
-            string outputFolder = args[1];
-
-            if (!File.Exists(inputPath))
-            {
-                Console.WriteLine($"Input file not found: {inputPath}");
-                return;
-            }
-
-            if (!Directory.Exists(outputFolder))
-            {
-                Console.WriteLine($"Output folder does not exist. Creating: {outputFolder}");
-                Directory.CreateDirectory(outputFolder);
-            }
-
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through all shapes on the page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify picture (foreign) shapes.
-                    if (shape.Type == TypeValue.Foreign)
+                    // Iterate over each shape on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply a simple drop shadow.
-                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                        shape.Fill.ShdwForegnd.Value = "#000000";          // Shadow color: black
-                        shape.Fill.ShdwForegndTrans.Value = 0.3;           // 30% transparency
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;           // Horizontal offset (in inches)
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;           // Vertical offset (in inches)
+                        // Identify picture shapes by checking for embedded foreign data (image bytes)
+                        if (shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
+                        {
+                            // Apply a simple drop shadow to the picture shape using cell-based APIs
+                            shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // Shadow type
+                            shape.Fill.ShdwForegnd.Value = "#000000";                     // Shadow color (black)
+                            shape.Fill.ShdwForegndTrans.Value = 0.3;                     // 30% transparency
+                        }
                     }
+
+                    // Build the output PDF file name for the current page
+                    string pdfPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.pdf");
+
+                    // Configure PDF save options to export only the current page
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.PageIndex = pageIndex;   // Zero‑based page index
+                    pdfOptions.PageCount = 1;           // Export a single page
+
+                    // Save the diagram page as a PDF using the configured options
+                    diagram.Save(pdfPath, pdfOptions);
+
+                    pageIndex++;
                 }
-
-                // Prepare PDF save options for the current page.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.ExportHiddenPage = false;
-                pdfOptions.PageIndex = page.ID - 1; // Zero‑based page index.
-                pdfOptions.PageCount = 1;           // Export only this page.
-
-                // Build output file name using the page name.
-                string safePageName = string.IsNullOrWhiteSpace(page.Name) ? $"Page_{page.ID}" : page.Name;
-                string outputPath = Path.Combine(outputFolder, $"{safePageName}.pdf");
-
-                // Save the single page as PDF.
-                diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"Exported page '{safePageName}' to PDF: {outputPath}");
             }
         }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

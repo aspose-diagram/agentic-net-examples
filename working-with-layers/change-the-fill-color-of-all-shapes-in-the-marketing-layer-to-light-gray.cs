@@ -1,79 +1,94 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path where the modified file will be saved
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the document
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Locate the 'Marketing' layer on the current page
+                    // Find the index of the layer named "Marketing" on the current page.
                     int marketingLayerIndex = -1;
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
+                        // Compare layer name using the .Value property of Str2Value.
                         if (layer.Name.Value == "Marketing")
                         {
-                            marketingLayerIndex = layer.IX; // zero‑based index of the layer
+                            // Layer.IX is an integer index (no .Value needed).
+                            marketingLayerIndex = layer.IX;
                             break;
                         }
                     }
 
-                    // If the layer does not exist on this page, skip to the next page
+                    // If the page does not contain a "Marketing" layer, skip it.
                     if (marketingLayerIndex == -1)
                         continue;
 
-                    string targetIndexString = marketingLayerIndex.ToString();
-
-                    // Process each shape on the page
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has layer membership information
-                        if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
-                        {
-                            string members = shape.LayerMem.LayerMember.Value;
-                            if (string.IsNullOrEmpty(members))
-                                continue;
+                        // Retrieve the layer membership string (semicolon‑separated indexes).
+                        string layerMember = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue;
 
-                            // The LayerMember string contains semicolon‑separated layer indexes
-                            string[] memberIndexes = members.Split(';');
-                            foreach (string idx in memberIndexes)
+                        // Determine whether the shape belongs to the Marketing layer.
+                        bool belongsToMarketing = false;
+                        string[] members = layerMember.Split(';');
+                        foreach (string member in members)
+                        {
+                            if (int.TryParse(member, out int idx) && idx == marketingLayerIndex)
                             {
-                                if (idx == targetIndexString)
-                                {
-                                    // Apply a solid light‑gray fill to the shape
-                                    shape.Fill.FillPattern.Value = 1;               // Solid fill
-                                    shape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray (hex)
-                                    break;
-                                }
+                                belongsToMarketing = true;
+                                break;
                             }
                         }
+
+                        if (!belongsToMarketing)
+                            continue;
+
+                        // Change the shape's fill to a solid light gray.
+                        shape.Fill.FillPattern.Value = 1;               // Solid fill pattern.
+                        shape.Fill.FillForegnd.Value = "#D3D3D3";        // Light gray color.
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

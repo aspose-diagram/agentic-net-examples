@@ -1,43 +1,86 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Coordinates and size in centimeters
-        double cmX = 5.0;      // center X position
-        double cmY = 3.0;      // center Y position
-        double cmWidth = 2.0;  // width of the circle
-        double cmHeight = 2.0; // height of the circle (same as width for a perfect circle)
-
-        // Conversion factor from centimeters to inches (Aspose.Diagram uses inches)
-        const double cmToInch = 0.393700787;
-
-        // Convert to inches for the API
-        double pinX = cmX * cmToInch;
-        double pinY = cmY * cmToInch;
-        double width = cmWidth * cmToInch;
-        double height = cmHeight * cmToInch;
-
-        // Create a new diagram (contains a default page)
-        using (Diagram diagram = new Diagram())
+        // Expect two arguments: input diagram path and output diagram path.
+        if (args.Length < 2)
         {
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-            // Draw an ellipse (circle) at the specified position and size
-            long shapeId = page.DrawEllipse(pinX, pinY, width, height);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Retrieve the shape if further modifications are needed
-            Shape circle = page.Shapes.GetShape((int)shapeId);
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Example: set a fill color (optional)
-            circle.Fill.FillForegnd.Value = "#FF0000"; // red fill
+        try
+        {
+            // Load the diagram (can be an empty Visio file).
+            Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("circle.vsdx", SaveFileFormat.Vsdx);
+            // Use the first page; if none exist, create a new one.
+            Page page;
+            if (diagram.Pages.Count > 0)
+            {
+                page = diagram.Pages[0];
+            }
+            else
+            {
+                page = new Page();
+                diagram.Pages.Add(page);
+            }
+
+            // -----------------------------------------------------------------
+            // Define circle position and size in centimeters.
+            // -----------------------------------------------------------------
+            double cmToInch = 0.393700787; // conversion factor from cm to inches
+            double centerXcm = 5.0;         // X coordinate of circle center (cm)
+            double centerYcm = 5.0;         // Y coordinate of circle center (cm)
+            double diameterCm = 2.0;        // Diameter of the circle (cm)
+
+            // Convert to inches because Aspose.Diagram works with inches.
+            double centerXinch = centerXcm * cmToInch;
+            double centerYinch = centerYcm * cmToInch;
+            double diameterInch = diameterCm * cmToInch;
+
+            // -----------------------------------------------------------------
+            // Draw the circle (ellipse with equal width and height).
+            // DrawEllipse returns the shape ID (long).
+            // -----------------------------------------------------------------
+            long circleShapeId = page.DrawEllipse(centerXinch, centerYinch, diameterInch, diameterInch);
+
+            // Retrieve the shape to set visual properties.
+            Shape circleShape = page.Shapes.GetShape(circleShapeId);
+            if (circleShape != null && circleShape.Del == BOOL.False)
+            {
+                // Set a light gray fill color.
+                circleShape.Fill.FillForegnd.Value = "#D3D3D3";
+
+                // Set the outline (line) color to black.
+                circleShape.Line.LineColor.Value = "#000000";
+            }
+
+            // -----------------------------------------------------------------
+            // Save the modified diagram.
+            // -----------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors to the error console.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

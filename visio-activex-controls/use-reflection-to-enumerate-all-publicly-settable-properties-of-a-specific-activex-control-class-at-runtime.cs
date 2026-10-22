@@ -1,60 +1,88 @@
 using System;
+using System.IO;
 using System.Reflection;
-using System.Collections.Generic;
+using Aspose.Diagram;
+using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // TODO: Replace MyActiveXControl with the actual ActiveX control class you want to inspect.
-        Type activeXType = typeof(MyActiveXControl);
-
-        // Retrieve all publicly settable properties.
-        IEnumerable<PropertyInfo> settableProperties = GetPublicSettableProperties(activeXType);
-
-        // Output the property names and their types.
-        foreach (PropertyInfo prop in settableProperties)
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            Console.WriteLine($"{prop.Name} ({prop.PropertyType.Name})");
+            Console.Error.WriteLine("Usage: Program <VisioDiagramPath>");
+            return;
         }
-    }
 
-    /// <summary>
-    /// Returns all instance properties of the specified type that have a public setter.
-    /// </summary>
-    /// <param name="type">The type to reflect over.</param>
-    /// <returns>An enumerable of PropertyInfo objects representing publicly settable properties.</returns>
-    static IEnumerable<PropertyInfo> GetPublicSettableProperties(Type type)
-    {
-        // Get all public instance properties.
-        PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+        string diagramPath = args[0];
 
-        foreach (PropertyInfo prop in properties)
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
         {
-            // GetSetMethod(false) returns the setter only if it is public.
-            MethodInfo setMethod = prop.GetSetMethod(false);
-            if (setMethod != null && setMethod.IsPublic)
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Locate the first shape that contains an ActiveX control.
+            Shape activeXShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                yield return prop;
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ActiveXControl != null)
+                    {
+                        activeXShape = shape;
+                        break;
+                    }
+                }
+                if (activeXShape != null) break;
+            }
+
+            if (activeXShape == null)
+            {
+                Console.WriteLine("No shape with an ActiveX control was found in the diagram.");
+                return;
+            }
+
+            // Retrieve the concrete ActiveX control instance.
+            ActiveXControl control = activeXShape.ActiveXControl;
+            Type controlType = control.GetType();
+
+            Console.WriteLine($"ActiveX Control Type: {controlType.FullName}");
+            Console.WriteLine("Publicly settable properties:");
+
+            // Use reflection to enumerate public instance properties that have a public setter.
+            PropertyInfo[] properties = controlType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            foreach (PropertyInfo prop in properties)
+            {
+                MethodInfo setMethod = prop.GetSetMethod();
+                if (setMethod != null && setMethod.IsPublic)
+                {
+                    // Retrieve current value safely (may throw for write‑only properties).
+                    object value;
+                    try
+                    {
+                        value = prop.GetValue(control);
+                    }
+                    catch
+                    {
+                        value = "<unreadable>";
+                    }
+
+                    Console.WriteLine($"- {prop.Name} ({prop.PropertyType.Name}) = {value}");
+                }
             }
         }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or reflection errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-}
-
-// ---------------------------------------------------------------------------
-// Example ActiveX control class for demonstration purposes.
-// Replace or remove this class when using a real ActiveX control.
-// ---------------------------------------------------------------------------
-public class MyActiveXControl
-{
-    // Publicly settable properties.
-    public int Width { get; set; }
-    public int Height { get; set; }
-    public bool IsEnabled { get; set; }
-
-    // Not publicly settable (private setter).
-    public string Name { get; private set; }
-
-    // Not public (private property).
-    private int Hidden { get; set; }
 }

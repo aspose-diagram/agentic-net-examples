@@ -1,55 +1,78 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputReportFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // StringBuilder to accumulate plain text from all pages.
+            StringBuilder reportBuilder = new StringBuilder();
+
+            // Iterate through each page in the diagram.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
+                Page page = diagram.Pages[pageIndex];
 
-                // Path to the source Visio diagram
-                string diagramPath = "input.vsdx";
+                // Header for the current page.
+                reportBuilder.AppendLine($"--- Page {pageIndex + 1} ---");
 
-                // Path for the generated summary report
-                string reportPath = "summary.txt";
-
-                // Load the diagram inside a using block to ensure proper disposal
-                using (Diagram diagram = new Diagram(diagramPath))
+                // Iterate through each shape on the current page.
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                 {
-                    // StringBuilder to accumulate plain text from all pages
-                    StringBuilder reportBuilder = new StringBuilder();
+                    Shape shape = page.Shapes[shapeIndex];
 
-                    // Iterate through each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through each shape on the current page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Retrieve the concatenated plain text of the shape
-                            string shapeText = shape.Text.Value.Text;
+                    // Retrieve the concatenated plain text of the shape.
+                    string rawText = shape.Text.Value.Text;
 
-                            // Append non‑empty text to the report
-                            if (!string.IsNullOrWhiteSpace(shapeText))
-                            {
-                                reportBuilder.AppendLine(shapeText);
-                            }
-                        }
-                    }
+                    // Skip shapes without text.
+                    if (string.IsNullOrWhiteSpace(rawText))
+                        continue;
 
-                    // Write the concatenated text to the summary report file
-                    File.WriteAllText(reportPath, reportBuilder.ToString());
+                    // Remove any HTML tags that might be present.
+                    string plainText = Regex.Replace(rawText, "<.*?>", string.Empty);
+
+                    // Append the cleaned text to the report.
+                    reportBuilder.AppendLine(plainText);
                 }
 
-                Console.WriteLine("Summary report generated at: " + Path.GetFullPath(reportPath));
+                // Add a blank line after each page's content.
+                reportBuilder.AppendLine();
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Write the concatenated text to the summary report file.
+            File.WriteAllText(outputPath, reportBuilder.ToString());
+
+            Console.WriteLine($"Summary report generated successfully at: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

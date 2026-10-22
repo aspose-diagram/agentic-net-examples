@@ -1,40 +1,57 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    Shape shape = page.Shapes[i];
+
+                    // Identify connector shapes (1‑D shapes) and set their line pattern to dashed.
+                    if (shape.OneD)
                     {
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
-                        {
-                            // Set the line pattern to dashed
-                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
-                        }
+                        // Set the line pattern to Dash using the strongly‑typed enum.
+                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
                     }
                 }
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

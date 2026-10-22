@@ -1,43 +1,92 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
 
-        // Access the first page of the diagram
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Define the vertices of the triangle (x1,y1, x2,y2, x3,y3, back to x1,y1)
-        double[] trianglePoints = new double[] { 2, 2, 5, 2, 3.5, 5, 2, 2 };
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Draw the triangle shape; returns the shape ID as a long
-        long shapeId = page.DrawPolyline(trianglePoints);
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Retrieve the shape object using the ID (cast to int as required by GetShape)
-        Shape triangle = page.Shapes.GetShape((int)shapeId);
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-        // Apply a linear gradient fill from red to yellow
-        triangle.Fill.FillPattern.Value = 25; // Gradient fill pattern
-        triangle.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Enable gradient
-        triangle.Fill.GradientFill.GradientDir.Value = 0; // Left‑to‑right direction
-        triangle.Fill.GradientFill.GradientStops.Clear(); // Remove any existing stops
+            // Get the first page.
+            Page page = diagram.Pages[0];
 
-        // Add gradient stop at position 0 (red)
-        triangle.Fill.GradientFill.GradientStops.Add(
-            new DoubleValue(0, MeasureConst.NUM),
-            new ColorValue("#FF0000", MeasureConst.Undefined));
+            // Find the first non-deleted shape on the page (assumed to be the triangle).
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip logically deleted shapes.
+                if (shape.Del == BOOL.True)
+                    continue;
 
-        // Add gradient stop at position 1 (yellow)
-        triangle.Fill.GradientFill.GradientStops.Add(
-            new DoubleValue(1, MeasureConst.NUM),
-            new ColorValue("#FFFF00", MeasureConst.Undefined));
+                targetShape = shape;
+                break;
+            }
 
-        // Save the diagram to a VSDX file
-        diagram.Save("TriangleGradient.vsdx", SaveFileFormat.Vsdx);
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No suitable shape found on the first page.");
+                return;
+            }
+
+            // Apply a linear gradient fill from red to yellow.
+            // Set fill pattern to gradient (value 25).
+            targetShape.Fill.FillPattern.Value = 25;
+
+            // Enable gradient fill.
+            targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+            // Set gradient direction (0 = left to right).
+            targetShape.Fill.GradientFill.GradientDir.Value = 0;
+
+            // Clear any existing gradient stops.
+            targetShape.Fill.GradientFill.GradientStops.Clear();
+
+            // Add gradient stop at position 0 (red).
+            targetShape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(0, MeasureConst.NUM),
+                new ColorValue("#FF0000", MeasureConst.Undefined));
+
+            // Add gradient stop at position 1 (yellow).
+            targetShape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(1, MeasureConst.NUM),
+                new ColorValue("#FFFF00", MeasureConst.Undefined));
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

@@ -1,68 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Output file path
+        string outputPath = "ConnectedDiagram.vsdx";
+
         try
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (and only) page
+            // Get the first page (created by default)
             Page page = diagram.Pages[0];
 
-            // -------------------------------------------------
-            // Add a pentagon using DrawPolyline (closed polygon)
-            // -------------------------------------------------
-            // Points: (2,2) -> (4,2) -> (5,4) -> (3,6) -> (1,4) -> back to (2,2)
-            long pentagonId = page.DrawPolyline(new double[]
+            // ---------- Create a pentagon shape ----------
+            // Define pentagon vertices (closed polygon)
+            double[] pentagonPoints = new double[]
             {
-                2, 2,   // Point 1
-                4, 2,   // Point 2
-                5, 4,   // Point 3
-                3, 6,   // Point 4
-                1, 4,   // Point 5
-                2, 2    // Close polygon
-            });
+                2, 0,   // Point 1
+                4, 0,   // Point 2
+                5, 2,   // Point 3
+                3, 4,   // Point 4
+                1, 2,   // Point 5
+                2, 0    // Close back to Point 1
+            };
+            // Add pentagon to the page and obtain its shape ID
+            long pentagonId = page.DrawPolyline(pentagonPoints);
 
-            // -------------------------------------------------
-            // Add a square using DrawRectangle
-            // -------------------------------------------------
-            // Center at (8,4), width 3, height 3
-            double squareCenterX = 8;
-            double squareCenterY = 4;
-            double squareSize = 3;
-            long squareId = page.DrawRectangle(squareCenterX, squareCenterY, squareSize, squareSize);
+            // ---------- Create a square shape ----------
+            double[] squarePoints = new double[]
+            {
+                8, 0,   // Point 1
+                12, 0,  // Point 2
+                12, 4,  // Point 3
+                8, 4,   // Point 4
+                8, 0    // Close back to Point 1
+            };
+            long squareId = page.DrawPolyline(squarePoints);
 
-            // -------------------------------------------------
-            // Add a dynamic connector shape
-            // -------------------------------------------------
-            // Place the connector roughly between the two shapes
-            double connectorPinX = (squareCenterX + 2) / 2; // approximate midpoint
-            double connectorPinY = (squareCenterY + 4) / 2;
-            long connectorId = page.AddShape(connectorPinX, connectorPinY, "Dynamic connector", false);
-
-            // Retrieve the connector shape to set its appearance
+            // ---------- Add a dynamic connector ----------
+            // Add the connector shape using the built‑in master name "Dynamic connector"
+            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
             Shape connector = page.Shapes.GetShape(connectorId);
-            // Set arrowheads at both ends
-            connector.Line.BeginArrow.Value = 4; // Arrow style (integer value)
+
+            // Set arrowheads at both ends (value 4 corresponds to a standard arrow)
+            connector.Line.BeginArrow.Value = 4;
             connector.Line.EndArrow.Value = 4;
-            // Optional: set line weight and color
-            connector.Line.LineWeight.Value = 0.02; // inches
-            connector.Line.LineColor.Value = "#000000"; // black
 
-            // Set routing style (right‑angle)
-            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+            // Set connector routing type to straight lines
+            connector.SetConnectorsType(ConnectorsTypeValue.StraightLines);
 
-            // -------------------------------------------------
-            // Connect the pentagon and square with the connector
-            // -------------------------------------------------
-            // Use Bottom of pentagon and Top of square as connection points
+            // ---------- Connect pentagon to square ----------
+            // Use connection points: bottom of pentagon to top of square
             page.ConnectShapesViaConnector(
                 pentagonId,
                 ConnectionPointPlace.Bottom,
@@ -70,15 +65,14 @@ class Program
                 ConnectionPointPlace.Top,
                 connectorId);
 
-            // -------------------------------------------------
-            // Save the diagram to a VSDX file
-            // -------------------------------------------------
-            diagram.Save("PentagonSquareConnector.vsdx", SaveFileFormat.Vsdx);
-
+            // ---------- Save the diagram ----------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,46 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Ensure there is at least one page in the diagram
-        if (diagram.Pages.Count == 0)
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            diagram.Pages.Add(new Page());
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
         }
 
-        // Work with the first page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Define rectangle parameters (center at 2,2 inches, size 1x1 inch)
-        double pinX = 2.0;
-        double pinY = 2.0;
-        double width = 1.0;
-        double height = 1.0;
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-        // Add a rectangle shape; DrawRectangle returns the shape ID (long)
-        long rectId = page.DrawRectangle(pinX, pinY, width, height);
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Retrieve the shape object using its ID
-        Shape rect = page.Shapes.GetShape(rectId);
+            // Define grid spacing (in the same units as shape coordinates)
+            double gridSpacing = 5.0;
 
-        // Define grid spacing: 5 pixels (assuming 96 DPI => 5/96 inches)
-        double gridSpacing = 5.0 / 96.0;
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-        // Snap the shape's center (PinX, PinY) to the nearest grid line
-        double snappedPinX = Math.Round(rect.XForm.PinX.Value / gridSpacing) * gridSpacing;
-        double snappedPinY = Math.Round(rect.XForm.PinY.Value / gridSpacing) * gridSpacing;
+                    // Snap the shape's PinX (horizontal position) to the nearest grid line
+                    double pinX = shape.XForm.PinX.Value;
+                    double snappedPinX = Math.Round(pinX / gridSpacing) * gridSpacing;
+                    shape.XForm.PinX.Value = snappedPinX;
 
-        rect.XForm.PinX.Value = snappedPinX;
-        rect.XForm.PinY.Value = snappedPinY;
+                    // Snap the shape's PinY (vertical position) to the nearest grid line
+                    double pinY = shape.XForm.PinY.Value;
+                    double snappedPinY = Math.Round(pinY / gridSpacing) * gridSpacing;
+                    shape.XForm.PinY.Value = snappedPinY;
+                }
+            }
 
-        // Save the diagram to a VSDX file
-        diagram.Save("SnappedRectangle.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

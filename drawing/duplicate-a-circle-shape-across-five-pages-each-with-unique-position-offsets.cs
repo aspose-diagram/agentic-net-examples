@@ -1,43 +1,77 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define the output file path
+        string outputPath = "output.vsdx";
 
-        // Parameters for the base circle
-        double basePinX = 2.0;      // X coordinate of the circle center
-        double basePinY = 2.0;      // Y coordinate of the circle center
-        double diameter = 1.0;      // Width and height (circle)
-        double offsetStep = 0.5;    // Incremental offset for each page
-
-        // Ensure the diagram has exactly five pages
-        while (diagram.Pages.Count < 5)
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            diagram.Pages.Add(new Page());
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
         }
 
-        // Create a circle on each page with a unique offset
-        for (int i = 0; i < 5; i++)
+        try
         {
-            Page page = diagram.Pages[i];
+            // Create a new empty diagram (contains a default page)
+            Diagram diagram = new Diagram();
 
-            double pinX = basePinX + i * offsetStep;
-            double pinY = basePinY + i * offsetStep;
+            // Add additional pages so we have a total of five pages
+            // The diagram already has page index 0, so add pages 1..4
+            for (int i = 1; i < 5; i++)
+            {
+                // Create a new blank page and add it to the diagram
+                Page newPage = new Page();
+                diagram.Pages.Add(newPage);
+            }
 
-            // Draw an ellipse with equal width and height (a circle)
-            long shapeId = page.DrawEllipse(pinX, pinY, diameter, diameter);
+            // Loop through each of the five pages and draw a circle with an offset
+            for (int i = 0; i < 5; i++)
+            {
+                // Retrieve the current page by index
+                Page page = diagram.Pages[i];
 
-            // Retrieve the shape to apply additional formatting (optional)
-            Shape circle = page.Shapes.GetShape(shapeId);
-            circle.Fill.FillForegnd.Value = "#FF0000"; // Red fill color
+                // Calculate unique position offsets for this page
+                double offsetX = i * 2.0; // 2 inches offset per page on X axis
+                double offsetY = i * 1.0; // 1 inch offset per page on Y axis
+
+                // Define the center of the circle (PinX, PinY) with offsets
+                double centerX = 5.0 + offsetX;
+                double centerY = 5.0 + offsetY;
+
+                // Define the diameter of the circle (width = height)
+                double diameter = 1.0; // 1 inch diameter
+
+                // Draw the circle (ellipse with equal width and height) on the page
+                long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
+
+                // Retrieve the newly created shape object
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+
+                // Set a label for the shape to identify the page
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt($"Circle {i + 1}"));
+
+                // Apply a simple fill color for visual distinction
+                shape.Fill.FillForegnd.Value = "#FFCCCC"; // light red fill
+                shape.Fill.FillPattern.Value = 1; // solid fill pattern
+            }
+
+            // Save the diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-
-        // Save the diagram to a VSDX file
-        diagram.Save("CircleDiagram.vsdx", SaveFileFormat.Vsdx);
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

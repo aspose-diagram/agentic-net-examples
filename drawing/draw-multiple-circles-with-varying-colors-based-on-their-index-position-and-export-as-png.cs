@@ -1,66 +1,75 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define the output PNG file path
+        string outputPath = "circles.png";
+
+        try
         {
-            // Create a new blank diagram (contains one default page)
+            // Create a new empty diagram (contains a default page)
             Diagram diagram = new Diagram();
 
-            // Access the first page (avoid using ActivePage)
+            // Access the first (and only) page in the diagram
             Page page = diagram.Pages[0];
 
-            // Define circle parameters
-            int circleCount = 6;
-            double radius = 1.0;               // inches
-            double startX = 2.0;                // starting X position (center)
-            double spacing = 3.0;               // horizontal spacing between circles
-            double pinY = 5.0;                  // Y position (center)
+            // Parameters for drawing circles
+            int circleCount = 5;          // total number of circles
+            double startX = 2.0;          // initial X coordinate (in inches)
+            double startY = 2.0;          // initial Y coordinate (in inches)
+            double radius = 1.0;          // radius of each circle (in inches)
+            double offset = 3.0;          // offset between successive circles (in inches)
 
-            // Define a set of colors (hex strings) to apply based on index
+            // Define a set of fill colors (hex strings)
             string[] colors = new string[]
             {
                 "#FF0000", // Red
                 "#00FF00", // Green
                 "#0000FF", // Blue
                 "#FFFF00", // Yellow
-                "#FF00FF", // Magenta
-                "#00FFFF"  // Cyan
+                "#FF00FF"  // Magenta
             };
 
-            // Draw circles and assign colors
+            // Loop to create circles with varying colors
             for (int i = 0; i < circleCount; i++)
             {
-                double pinX = startX + i * spacing;
+                // Calculate the center position for the current circle
+                double pinX = startX + i * offset;
+                double pinY = startY + i * offset;
 
-                // Draw an ellipse with equal width and height (a circle)
+                // Draw an ellipse where width == height => circle
+                // Parameters: pinX, pinY, width, height
                 long shapeId = page.DrawEllipse(pinX, pinY, radius * 2, radius * 2);
 
-                // Retrieve the shape object to modify its properties
+                // Retrieve the shape object using the returned ID
                 Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set a solid fill pattern
-                shape.Fill.FillPattern.Value = 1; // 1 = solid
+                // Ensure the shape has a solid fill pattern
+                shape.Fill.FillPattern.Value = 1; // 1 = solid fill
 
-                // Assign fill color based on the index
-                shape.Fill.FillForegnd.Value = colors[i % colors.Length];
-
-                // Optional: set line color to black
-                shape.Line.LineColor.Value = "#000000";
-                shape.Line.LineWeight.Value = 0.02; // thin line
+                // Apply fill color based on index (cycle if more circles than colors)
+                string fillColor = colors[i % colors.Length];
+                shape.Fill.FillForegnd.Value = fillColor;
             }
 
             // Configure PNG export options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Example: set resolution (dpi) if needed
-            pngOptions.Resolution = 300f;
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.PageIndex = 0;   // export the first page
+            saveOptions.PageCount = 1;   // only one page to export
 
             // Save the diagram as a PNG image
-            string outputPath = "Circles.png";
-            diagram.Save(outputPath, pngOptions);
+            diagram.Save(outputPath, saveOptions);
 
-            Console.WriteLine($"Diagram with {circleCount} circles saved to '{outputPath}'.");
+            Console.WriteLine($"Diagram with circles saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

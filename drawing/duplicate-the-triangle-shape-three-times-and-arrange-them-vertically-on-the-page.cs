@@ -1,60 +1,90 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new blank diagram
-        using (Diagram diagram = new Diagram())
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Get the first (default) page
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Work with the first page.
             Page page = diagram.Pages[0];
 
-            // Define triangle vertices (in inches)
-            double x1 = 2.0, y1 = 2.0;   // Bottom left
-            double x2 = 4.0, y2 = 2.0;   // Bottom right
-            double x3 = 3.0, y3 = 4.0;   // Top
-
-            // Helper to draw a triangle at a given vertical offset
-            void DrawTriangle(double offsetY)
+            // Find the first triangle shape by its master name.
+            Shape triangleShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                // Points are defined in a flat double array; repeat the first point to close the shape
-                double[] points = new double[]
+                if (shape.Master != null && shape.Master.Name == "Triangle")
                 {
-                    x1, y1 + offsetY,
-                    x2, y2 + offsetY,
-                    x3, y3 + offsetY,
-                    x1, y1 + offsetY
-                };
-
-                // Draw the polyline (triangle) and obtain its shape ID
-                long shapeId = page.DrawPolyline(points);
-
-                // Retrieve the shape object if further modifications are needed
-                Shape shape = page.Shapes.GetShape(shapeId);
-                // Example: set a fill color for visibility
-                shape.Fill.FillForegnd.Value = "#FFCC00"; // Light orange
-                shape.Line.LineColor.Value = "#000000";   // Black border
+                    triangleShape = shape;
+                    break;
+                }
             }
 
-            // Draw the original triangle
-            DrawTriangle(0);
+            if (triangleShape == null)
+            {
+                Console.Error.WriteLine("No triangle shape found in the diagram.");
+                return;
+            }
 
-            // Define vertical spacing between triangles (in inches)
-            double verticalSpacing = 3.0;
+            // Store original geometry and text.
+            double originalPinX = triangleShape.XForm.PinX.Value;
+            double originalPinY = triangleShape.XForm.PinY.Value;
+            double originalWidth = triangleShape.XForm.Width.Value;
+            double originalHeight = triangleShape.XForm.Height.Value;
+            string originalText = triangleShape.Text.Value.Text;
 
-            // Duplicate the triangle three times, arranging them vertically
+            // Define vertical spacing (shape height + a small gap).
+            double verticalSpacing = originalHeight + 0.5; // 0.5 inches gap.
+
+            // Duplicate the triangle three times and arrange vertically.
             for (int i = 1; i <= 3; i++)
             {
-                DrawTriangle(i * verticalSpacing);
+                // New Y position for the duplicate.
+                double newPinY = originalPinY + i * verticalSpacing;
+
+                // Add a new shape based on the same master.
+                long newShapeId = page.AddShape(originalPinX, newPinY, triangleShape.Master.Name, false);
+                Shape newShape = page.Shapes.GetShape(newShapeId);
+
+                // Copy size.
+                newShape.XForm.Width.Value = originalWidth;
+                newShape.XForm.Height.Value = originalHeight;
+
+                // Copy text.
+                newShape.Text.Value.Clear();
+                newShape.Text.Value.Add(new Txt(originalText));
             }
 
-            // Save the diagram to a VSDX file
-            string outputPath = "TriangleDiagram.vsdx";
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

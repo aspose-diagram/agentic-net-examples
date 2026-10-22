@@ -1,6 +1,5 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -8,54 +7,73 @@ using Aspose.Drawing.Text;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-
-            // Configure font folder (recursive) and default fallback font
-            string fontsPath = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
-            FontConfigs.SetFontFolder(fontsPath, true);
+            // Configure a fallback font before loading the diagram.
             FontConfigs.DefaultFontName = "Arial";
 
-            // Load the Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Enumerate fonts used in the diagram and check against installed system fonts
-            var installedFonts = new InstalledFontCollection();
-            var installedNames = installedFonts.Families
-                                                .Select(f => f.Name)
-                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
+            // Optional: enumerate fonts used in the diagram and warn about missing fonts.
+            InstalledFontCollection installedFonts = new InstalledFontCollection();
             foreach (Font diagramFont in diagram.Fonts)
             {
-                string fontName = diagramFont.Name;
-                if (!installedNames.Contains(fontName))
+                bool isInstalled = installedFonts.Families
+                    .Any(f => string.Equals(f.Name, diagramFont.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (!isInstalled)
                 {
-                    Console.WriteLine($"Missing font: {fontName}");
+                    Console.Error.WriteLine($"Warning: Font \"{diagramFont.Name}\" used in diagram is not installed. Fallback will be applied.");
                 }
             }
 
-            // Prepare SVG save options with font embedding (default font fallback)
+            // Prepare SVG save options with font embedding enabled where possible.
             SVGSaveOptions svgOptions = new SVGSaveOptions
             {
-                ExportHiddenPage = false,
-                ExportGuideShapes = false,
-                SVGFitToViewPort = true,
-                DefaultFont = "Arial"
+                ExportHiddenPage = false,          // Do not export hidden pages.
+                ExportGuideShapes = false,         // Do not export guide shapes.
+                IsExportComments = false,          // Do not export comments.
+                SVGFitToViewPort = true,           // Fit SVG to viewport.
+                ExportElementAsRectTag = true,     // Export elements as <rect> tags.
+                SaveFormat = SaveFileFormat.Svg   // Specify SVG format.
             };
 
-            // Export diagram to SVG
-            string outputPath = "output.svg";
+            // Save the diagram as SVG.
             diagram.Save(outputPath, svgOptions);
 
-            Console.WriteLine($"Diagram exported to SVG: {outputPath}");
-
+            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error during SVG export: {ex.Message}");
         }
     }
 }

@@ -5,83 +5,87 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input diagram path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "Drawing1.vsdx";
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Image file to insert (second argument or default)
+        string imagePath = args.Length > 1 ? args[1] : "image.png";
+        if (!File.Exists(imagePath))
+        {
+            Console.Error.WriteLine($"Image file not found: {imagePath}");
+            return;
+        }
+
+        // Output PNG path (third argument or default)
+        string outputPath = args.Length > 2 ? args[2] : "output.png";
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Create a new blank diagram
-            Diagram diagram = new Diagram();
-
-            // Get the first page (created by default)
+            // Get the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // -----------------------------------------------------------------
-            // Insert an image onto the page
-            // -----------------------------------------------------------------
-            // Image file path (adjust as needed)
-            string imagePath = "image.png";
+            // ------------------------------------------------------------
+            // Insert the image onto the page
+            // ------------------------------------------------------------
+            double imgPinX = 2.0;   // X coordinate of lower-left corner
+            double imgPinY = 2.0;   // Y coordinate of lower-left corner
+            double imgWidth = 4.0; // Width of the image
+            double imgHeight = 3.0; // Height of the image
 
-            // Position and size for the image (in inches)
-            double imgPinX = 2.0;   // center X
-            double imgPinY = 2.0;   // center Y
-            double imgWidth = 4.0;
-            double imgHeight = 3.0;
-
-            // Add the image shape using a FileStream
             long imgShapeId;
-            using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+            using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
             {
-                imgShapeId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, fs);
+                // AddShape returns the shape ID (long)
+                imgShapeId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
             }
 
-            // Retrieve the image shape (optional, e.g., to set protection)
+            // Retrieve the shape object to adjust Z-order
             Shape imgShape = page.Shapes.GetShape(imgShapeId);
-            // Make the background image non‑selectable
-            imgShape.Protection.LockSelect.Value = BOOL.True;
-            // Send the image to back so other shapes appear above it
-            imgShape.SendToBack();
+            imgShape.SendToBack(); // Ensure the image stays behind other shapes
 
-            // -----------------------------------------------------------------
-            // Draw a triangle positioned above the image
-            // -----------------------------------------------------------------
-            // Calculate triangle coordinates based on the image size
-            double imageTop = imgPinY + imgHeight / 2.0;          // top edge of the image
-            double gap = 0.2;                                    // small gap between image and triangle
-            double baseY = imageTop + gap;                       // Y coordinate of the triangle base
-            double triHeight = 2.0;                              // height of the triangle
-            double apexY = baseY + triHeight;                    // Y coordinate of the triangle apex
-            double leftX = imgPinX - imgWidth / 2.0;             // left X of the image (and triangle base)
-            double rightX = imgPinX + imgWidth / 2.0;            // right X of the image (and triangle base)
-            double centerX = imgPinX;                            // center X for the apex
+            // ------------------------------------------------------------
+            // Draw a triangle positioned above the inserted image
+            // ------------------------------------------------------------
+            // Calculate triangle points: base aligns with top of image, apex above it
+            double triBaseY = imgPinY + imgHeight;          // Y coordinate of image top
+            double triApexY = triBaseY + 2.0;               // Apex placed 2 inches above the base
+            double triLeftX = imgPinX;                      // Left base X
+            double triRightX = imgPinX + imgWidth;          // Right base X
 
-            // Points: left base, right base, apex, back to left base to close the shape
             double[] trianglePoints = new double[]
             {
-                leftX,  baseY,   // left base
-                rightX, baseY,   // right base
-                centerX, apexY,  // apex
-                leftX,  baseY    // close polygon
+                triLeftX,  triBaseY,                     // Left base point
+                triRightX, triBaseY,                     // Right base point
+                (triLeftX + triRightX) / 2.0, triApexY, // Apex point
+                triLeftX,  triBaseY                      // Closing point (repeat first)
             };
 
-            // Draw the triangle (returns the shape ID)
+            // DrawPolyline returns the shape ID of the created polyline
             long triShapeId = page.DrawPolyline(trianglePoints);
-
-            // Retrieve the triangle shape to apply formatting
             Shape triShape = page.Shapes.GetShape(triShapeId);
-            // Fill color (red) and line color (black)
-            triShape.Fill.FillForegnd.Value = "#FF0000";
-            triShape.Line.LineColor.Value = "#000000";
+            // No additional styling applied; triangle will appear above the image
 
-            // -----------------------------------------------------------------
-            // Save the diagram
-            // -----------------------------------------------------------------
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // ------------------------------------------------------------
+            // Save the modified diagram as a PNG image
+            // ------------------------------------------------------------
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save(outputPath, saveOptions);
 
+            Console.WriteLine($"Diagram successfully saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

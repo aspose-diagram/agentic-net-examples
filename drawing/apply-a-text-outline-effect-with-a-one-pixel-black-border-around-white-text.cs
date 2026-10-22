@@ -1,46 +1,87 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_with_outline.vsdx";
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Define position and size for the text shape (in inches)
-        double pinX = 5.0;
-        double pinY = 5.0;
-        double width = 2.0;
-        double height = 1.0;
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Add a text shape with the desired content
-        Shape textShape = page.AddText(pinX, pinY, width, height, "Outlined Text");
+            // Iterate through all pages in the diagram
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            {
+                Page page = diagram.Pages[pageIndex];
 
-        // Ensure character formatting collection is empty before adding new formatting
-        textShape.Chars.Clear();
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-        // Create a character formatting object for the text
-        Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-        ch.IX = 0;                         // Index of the first character
-        ch.Color.Value = "#FFFFFF";        // White inner text color
-        ch.Size.Value = 12.0 / 72.0;       // Font size: 12 pt converted to inches
+                    // Retrieve the plain text of the shape
+                    string shapeText = shape.Text.Value.ToString();
 
-        // Apply the character formatting to the shape
-        textShape.Chars.Add(ch);
+                    // Continue only if the shape contains text
+                    if (string.IsNullOrWhiteSpace(shapeText))
+                        continue;
 
-        // Simulate a one‑pixel black outline by setting a solid black background behind the text
-        // (Visio renders this as an outline effect for white text)
-        textShape.TextBlock.TextBkgnd.Ufe.F = "RGB(0,0,0)"; // Black background
-        textShape.TextBlock.TextBkgndTrans.Value = 0;      // Fully opaque
+                    // Clear existing text runs and add the original text back as a single run
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt(shapeText));
 
-        // Export the diagram to PNG to verify the result
-        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        diagram.Save("OutlinedText.png", saveOptions);
+                    // Clear any existing character formatting
+                    shape.Chars.Clear();
+
+                    // Create a new character formatting entry for the text
+                    Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
+                    shape.Chars.Add(charFormat);
+                    charFormat.IX = 0; // Apply to the first character run
+
+                    // Set the inner text color to white
+                    charFormat.Color.Value = "#FFFFFF";
+
+                    // Apply a black background to simulate an outline effect
+                    if (shape.TextBlock != null && shape.TextBlock.TextBkgnd != null && shape.TextBlock.TextBkgnd.Ufe != null)
+                    {
+                        // Set background color to black
+                        shape.TextBlock.TextBkgnd.Ufe.F = "#000000";
+
+                        // Make the background fully opaque (0% transparency)
+                        shape.TextBlock.TextBkgndTrans.Value = 0.0;
+                    }
+                }
+            }
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

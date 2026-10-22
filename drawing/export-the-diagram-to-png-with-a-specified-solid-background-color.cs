@@ -1,65 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, output PNG path, background color in hex (e.g., "#FF0000")
+        if (args.Length != 3)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.png> <backgroundColorHex>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string bgColorHex = args[2];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first (foreground) page
-            Page foregroundPage = diagram.Pages[0];
-
-            // Create a new background page
-            Page backgroundPage = new Page();
-            backgroundPage.Background = BOOL.True; // Mark as background page
-            diagram.Pages.Add(backgroundPage);
+            // Work with the first page (index 0)
+            Page page = diagram.Pages[0];
 
             // Retrieve page dimensions (in inches)
-            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Add a rectangle that spans the entire page on the background page
-            // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
-            long bgShapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, "Rectangle", false);
-            Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
+            // Add a rectangle shape that covers the entire page.
+            // Using the built‑in "Rectangle" master.
+            long shapeId = page.AddShape(0, 0, pageWidth, pageHeight, "Rectangle");
+            Shape backgroundShape = page.Shapes.GetShape(shapeId);
 
-            // Set solid fill pattern
-            bgShape.Fill.FillPattern.Value = 1; // Solid fill
-            // Set desired background color (hex string, e.g., light blue)
-            bgShape.Fill.FillForegnd.Value = "#ADD8E6";
+            // Set the shape's fill pattern to solid (value 1)
+            backgroundShape.Fill.FillPattern.Value = 1;
 
-            // Remove outline stroke
-            bgShape.Line.LinePattern.Value = 0; // No line
+            // Set the solid fill color to the specified background color
+            backgroundShape.Fill.FillForegnd.Value = bgColorHex;
 
-            // Send the shape to the back so other content appears above it
-            bgShape.SendToBack();
-
-            // Make the background shape non‑selectable
-            bgShape.Protection.LockSelect.Value = BOOL.True;
-
-            // Link the foreground page to the background page
-            foregroundPage.BackPage = backgroundPage;
+            // Send the shape to back so it appears behind all other content
+            backgroundShape.SendToBack();
 
             // Configure PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Export the first page (index 0)
-            pngOptions.PageIndex = 0;
+            // Optional: set resolution, page range, etc., if needed
+            // pngOptions.Resolution = 300f;
+            // pngOptions.PageIndex = 0;
+            // pngOptions.PageCount = 1;
 
-            // Save the diagram as a PNG image with the solid background color
-            diagram.Save("output.png", pngOptions);
+            // Export the diagram to PNG using the configured options
+            diagram.Save(outputPath, pngOptions);
 
+            // Clean up resources
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram exported successfully to '{outputPath}' with background color {bgColorHex}.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

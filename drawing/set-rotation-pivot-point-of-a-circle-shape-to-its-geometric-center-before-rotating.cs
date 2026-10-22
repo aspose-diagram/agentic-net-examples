@@ -1,46 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: input diagram path, output diagram path, rotation angle in degrees
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <angleDegrees>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string angleArg = args[2];
+
+        // Validate input file existence
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse rotation angle
+        if (!double.TryParse(angleArg, out double rotationAngle))
+        {
+            Console.Error.WriteLine($"Invalid rotation angle: {angleArg}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to find a circle (ellipse master)
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Iterate through all pages and shapes to find the circle shape
-                foreach (Page page in diagram.Pages)
+                // Use GetShape to retrieve each shape by its ID
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Ensure the shape has a master (i.e., not a group or foreign object)
+                    if (shape.Master != null && shape.Master.Name == "Ellipse")
                     {
-                        // Identify the circle shape (adjust the condition as needed)
-                        // Example: check the master name or a custom name
-                        if (shape.Master != null && shape.Master.Name == "Ellipse")
-                        {
-                            // Set the local pivot (LocPin) to the geometric center
-                            // Using formulas that calculate half of the width and height
-                            shape.XForm.LocPinX.Ufe.F = "Width*0.5";
-                            shape.XForm.LocPinY.Ufe.F = "Height*0.5";
+                        // Set the local pin (pivot) to the geometric center of the shape
+                        // LocPinX/Y formulas use the shape's Width and Height cells
+                        shape.XForm.LocPinX.Ufe.F = "Width*0.5";
+                        shape.XForm.LocPinY.Ufe.F = "Height*0.5";
 
-                            // Rotate the shape by the desired angle (degrees)
-                            shape.XForm.Angle.Value = 45; // rotate 45 degrees
+                        // Apply the desired rotation angle (degrees)
+                        shape.XForm.Angle.Value = rotationAngle;
 
-                            // Optionally break after processing the first matching shape
-                            // break;
-                        }
+                        // If multiple circles exist and only the first should be rotated, uncomment the line below
+                        // break;
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

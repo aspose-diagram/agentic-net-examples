@@ -1,32 +1,50 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define output file path
+        string outputPath = "triangle.vsdx";
+
+        try
         {
-            // Create a new empty diagram
+            // Create a new empty diagram (contains one default page)
             Diagram diagram = new Diagram();
 
-            // Access the first (default) page
+            // Add a window to the diagram (required for proper rendering/saving)
+            Window window = new Window();
+            window.WindowType = WindowTypeValue.Drawing;
+            window.WindowState = WindowStateValue.Maximized;
+            window.WindowWidth = 1100;
+            window.WindowHeight = 700;
+            diagram.Windows.Add(window);
+
+            // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Define the vertices of a triangle (X1,Y1, X2,Y2, X3,Y3) and close the shape by repeating the first point
-            double[] trianglePoints = new double[] { 2.0, 2.0, 4.0, 2.0, 3.0, 4.0, 2.0, 2.0 };
+            // Define triangle vertices (closed polygon: repeat first point at the end)
+            double[] trianglePoints = new double[]
+            {
+                1.0, 1.0,   // Point 1
+                5.0, 1.0,   // Point 2
+                3.0, 4.0,   // Point 3
+                1.0, 1.0    // Close back to Point 1
+            };
 
-            // Draw the triangle on the page; returns the shape ID (long)
-            long triangleId = page.DrawPolyline(trianglePoints);
-
-            // Retrieve the shape object using the returned ID
-            Shape triangle = page.Shapes.GetShape(triangleId);
-
-            // Set visual properties for the triangle
-            triangle.Fill.FillForegnd.Value = "#FF0000";      // Red fill
-            triangle.Line.LineColor.Value = "#000000";      // Black outline
-            triangle.Line.LineWeight.Value = 0.02;          // Line thickness (in inches)
+            // Draw the triangle on the page
+            page.DrawPolyline(trianglePoints);
 
             // Save the diagram to a VSDX file
-            diagram.Save("TriangleDiagram.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

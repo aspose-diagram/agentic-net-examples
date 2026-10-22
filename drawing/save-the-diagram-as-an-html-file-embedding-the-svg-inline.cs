@@ -1,45 +1,46 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class InlineSvgProvider : IStreamProvider
-{
-    public void InitStream(StreamProviderOptions options)
-    {
-        // No custom stream handling required for inline SVG export.
-    }
-
-    public void CloseStream(StreamProviderOptions options)
-    {
-        // No resources to release.
-    }
-}
-
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output HTML file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram.
-            string inputPath = "input.vsdx"; // replace with your diagram file path
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Set up HTML save options and assign the custom stream provider.
+            // Configure HTML save options (default options embed SVG inline)
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new InlineSvgProvider();
 
-            // Save the diagram as an HTML file with SVG content embedded inline.
-            string outputPath = "output.html";
+            // Save the diagram as HTML with embedded SVG
             diagram.Save(outputPath, htmlOptions);
 
-            Console.WriteLine($"Diagram successfully saved to {outputPath}");
-
+            Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

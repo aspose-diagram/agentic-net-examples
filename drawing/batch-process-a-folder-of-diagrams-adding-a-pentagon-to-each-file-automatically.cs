@@ -1,64 +1,119 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the folder containing diagram files.
+        string folderPath;
+        if (args.Length > 0)
         {
-            // Folder containing Visio diagram files (VSDX format)
-            string inputFolder = @"C:\Diagrams";
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the full path to the folder containing Visio diagrams: ");
+            folderPath = Console.ReadLine();
+        }
 
-            // Get all VSDX files in the folder
-            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
+        // Guard: folder must exist.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
+            return;
+        }
 
-            foreach (string filePath in diagramFiles)
+        // Supported Visio file extensions.
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
+
+        // Get all files with supported extensions.
+        string[] files = Directory.GetFiles(folderPath);
+        foreach (string filePath in files)
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (Array.IndexOf(supportedExtensions, ext) < 0)
             {
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Process each page in the diagram
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Define pentagon vertices (closed polygon, repeat first point at end)
-                        // Coordinates are in inches; adjust as needed.
-                        double[] pentagonPoints = new double[]
-                        {
-                            5.0, 3.0,   // Point 1
-                            7.0, 4.0,   // Point 2
-                            6.5, 6.0,   // Point 3
-                            3.5, 6.0,   // Point 4
-                            3.0, 4.0,   // Point 5
-                            5.0, 3.0    // Close back to Point 1
-                        };
-
-                        // Draw the pentagon shape on the current page
-                        long shapeId = page.DrawPolyline(pentagonPoints);
-
-                        // Retrieve the shape object (cast ID to int as required)
-                        Shape pentagonShape = page.Shapes.GetShape((int)shapeId);
-
-                        // Optional: set line color and fill color
-                        pentagonShape.Line.LineColor.Value = "#FF0000"; // Red outline
-                        pentagonShape.Fill.FillForegnd.Value = "#FFFF00"; // Yellow fill
-
-                        // Add a label to the pentagon
-                        pentagonShape.Text.Value.Clear();
-                        pentagonShape.Text.Value.Add(new Txt("Pentagon"));
-                    }
-
-                    // Save the modified diagram (overwrite original file)
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
+                // Skip unsupported files.
+                continue;
             }
 
-            Console.WriteLine("Batch processing completed.");
+            // Guard: ensure the file exists (should always be true here).
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine("File not found: " + filePath);
+                continue;
+            }
+
+            try
+            {
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate through each page and add a pentagon.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Define pentagon vertices (centered at (5,5) inches, radius 1 inch).
+                    // Points are defined in the order: top, top-right, bottom-right, bottom-left, top-left, and back to top to close the shape.
+                    double centerX = 5.0;
+                    double centerY = 5.0;
+                    double radius = 1.0;
+                    double angle = -Math.PI / 2; // start at top point
+                    double[] points = new double[12]; // 5 points + repeat first = 6 points * 2 coordinates
+                    for (int i = 0; i < 5; i++)
+                    {
+                        double x = centerX + radius * Math.Cos(angle + i * 2 * Math.PI / 5);
+                        double y = centerY + radius * Math.Sin(angle + i * 2 * Math.PI / 5);
+                        points[i * 2] = x;
+                        points[i * 2 + 1] = y;
+                    }
+                    // Repeat the first point to close the polygon.
+                    points[10] = points[0];
+                    points[11] = points[1];
+
+                    // Draw the pentagon as a closed polyline.
+                    page.DrawPolyline(points);
+                }
+
+                // Determine appropriate SaveFileFormat based on original extension.
+                SaveFileFormat format = GetSaveFileFormat(ext);
+                if (format == 0)
+                {
+                    Console.Error.WriteLine($"Unsupported file format for saving: {filePath}");
+                    diagram.Dispose();
+                    continue;
+                }
+
+                // Overwrite the original file with the modified diagram.
+                diagram.Save(filePath, format);
+                diagram.Dispose();
+
+                Console.WriteLine($"Processed and saved: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+
+    // Maps file extensions to the corresponding SaveFileFormat enum.
+    private static SaveFileFormat GetSaveFileFormat(string extension)
+    {
+        switch (extension)
+        {
+            case ".vsdx": return SaveFileFormat.Vsdx;
+            case ".vsd":  return SaveFileFormat.Vsd;
+            case ".vdx":  return SaveFileFormat.Vdx;
+            case ".vsx":  return SaveFileFormat.Vsx;
+            case ".vtx":  return SaveFileFormat.Vtx;
+            case ".vssx": return SaveFileFormat.Vssx;
+            case ".vstx": return SaveFileFormat.Vstx;
+            case ".vsdm": return SaveFileFormat.Vsdm;
+            case ".vssm": return SaveFileFormat.Vssm;
+            case ".vstm": return SaveFileFormat.Vstm;
+            default: return 0; // Unknown/unsupported
+        }
+    }
+}

@@ -1,49 +1,63 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new blank diagram
-        using (Diagram diagram = new Diagram())
+        // Input and output file paths (provide via command line or use defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output_centered.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            // Access the first (and only) page
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Access the first page (assumes at least one page exists)
             Page page = diagram.Pages[0];
 
-            // Define triangle vertices (in inches)
-            // Points: (0,0), (2,0), (1,1.732) and close back to (0,0)
-            double[] trianglePoints = new double[]
-            {
-                0, 0,
-                2, 0,
-                1, 1.732,
-                0, 0   // close the polygon
-            };
-
-            // Draw the triangle; returns the shape ID (long)
-            long triangleId = page.DrawPolyline(trianglePoints);
-
-            // Retrieve the shape object
-            Shape triangle = page.Shapes.GetShape(triangleId);
-
-            // Get page dimensions (in inches)
+            // Retrieve page dimensions (in inches)
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Get shape dimensions (in inches)
-            double shapeWidth = triangle.XForm.Width.Value;
-            double shapeHeight = triangle.XForm.Height.Value;
+            // Define triangle vertices (relative to origin) and close the shape
+            // Format: x1, y1, x2, y2, x3, y3, x1, y1
+            double[] trianglePoints = new double[]
+            {
+                0, 0,   // Vertex 1
+                2, 0,   // Vertex 2
+                1, 2,   // Vertex 3
+                0, 0    // Close the polygon
+            };
+
+            // Draw the triangle on the page; returns the shape ID
+            long triangleId = page.DrawPolyline(trianglePoints);
+
+            // Retrieve the shape object using the ID
+            Shape triangleShape = page.Shapes.GetShape(triangleId);
 
             // Center the triangle on the page by setting its PinX and PinY to page center
-            // For shapes drawn via DrawPolyline, PinX/Y represent the shape's center.
-            triangle.XForm.PinX.Value = pageWidth / 2.0;
-            triangle.XForm.PinY.Value = pageHeight / 2.0;
+            triangleShape.XForm.PinX.Value = pageWidth / 2.0;
+            triangleShape.XForm.PinY.Value = pageHeight / 2.0;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("CenteredTriangle.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

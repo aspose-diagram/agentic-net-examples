@@ -1,42 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Define output SVG file path
+        string outputPath = "diamond.svg";
+
+        // Ensure we can write to the output directory
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            // Create a new empty Visio diagram
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page
+            // Access the first (default) page
             Page page = diagram.Pages[0];
 
-            // Define points for a diamond shape (center at (5,5), width 4, height 6)
-            // Points are specified as a flat double array: x1, y1, x2, y2, ...
-            double[] diamondPoints = new double[]
+            // Define the four points of a diamond shape
+            // Points are defined in a clockwise order
+            PointF[] diamondPoints = new PointF[]
             {
-                5, 8,   // Top vertex
-                7, 5,   // Right vertex
-                5, 2,   // Bottom vertex
-                3, 5,   // Left vertex
-                5, 8    // Close the polygon by returning to the top vertex
+                new PointF(0, 0),   // Bottom point
+                new PointF(2, 2),   // Right point
+                new PointF(4, 0),   // Top point
+                new PointF(2, -2)   // Left point
             };
 
-            // Draw the diamond shape on the page
-            long shapeId = page.DrawPolyline(diamondPoints);
+            // Draw the diamond using DrawPolyline.
+            // The first four parameters (x1, y1, x2, y2) are not used for the shape geometry,
+            // so we pass zeros as placeholders.
+            long shapeId = page.DrawPolyline(0, 0, 0, 0, diamondPoints);
 
-            // Retrieve the shape object to modify its appearance
+            // Retrieve the created shape object
             Shape diamondShape = page.Shapes.GetShape(shapeId);
 
-            // Set a thick border (line weight) – value is in inches
-            diamondShape.Line.LineWeight.Value = 0.08; // Approx. 2 mm
+            // Set a thick border (line weight) for the diamond
+            // LineWeight.Value expects a double representing the thickness
+            diamondShape.Line.LineWeight.Value = 3.0;
 
-            // Optionally set the border color
-            diamondShape.Line.LineColor.Value = "#0000FF"; // Blue border
+            // Optionally ensure the line pattern is solid
+            // diamondShape.Line.LinePattern.Value = LinePatternValue.Solid;
 
-            // Export the diagram (containing the diamond) to SVG
+            // Prepare SVG save options
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            diagram.Save("diamond.svg", svgOptions);
+            svgOptions.ExportHiddenPage = false;      // Do not export hidden pages
+            svgOptions.ExportGuideShapes = false;    // Do not export guide shapes
+            svgOptions.SVGFitToViewPort = true;      // Fit the SVG to the viewport
+
+            // Save the diagram as an SVG file
+            diagram.Save(outputPath, svgOptions);
+
+            Console.WriteLine($"Diamond shape saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

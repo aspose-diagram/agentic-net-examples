@@ -1,41 +1,87 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputHtmlFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Export the entire diagram to HTML
+            diagram.Save(outputPath, SaveFileFormat.Html);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Read the generated HTML
+            string htmlContent = File.ReadAllText(outputPath);
+
+            // JavaScript to handle shape interactions (click, mouseover, mouseout)
+            string script = @"
+<script type=""text/javascript"">
+    document.addEventListener('DOMContentLoaded', function () {
+        // Attach event listeners to all shape elements (assumed to have class 'shape')
+        var shapes = document.querySelectorAll('.shape');
+        shapes.forEach(function (shape) {
+            shape.addEventListener('click', function () {
+                alert('Shape clicked: ' + (shape.id || 'unknown'));
+            });
+            shape.addEventListener('mouseover', function () {
+                shape.style.outline = '2px solid red';
+            });
+            shape.addEventListener('mouseout', function () {
+                shape.style.outline = '';
+            });
+        });
+    });
+</script>
+";
+
+            // Insert the script before the closing </body> tag
+            int bodyCloseIndex = htmlContent.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+            if (bodyCloseIndex >= 0)
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Ensure there is at least one page
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the page
-                // Parameters: pinX, pinY, width, height, master name, isCalculate
-                long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
-
-                // Retrieve the shape instance using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Set a double‑click event that triggers a JavaScript alert when the HTML is viewed
-                // The CALLTHIS function can invoke a JavaScript URL in the exported HTML
-                shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"javascript:alert('Shape double‑clicked')\")";
-
-                // Export the diagram to an HTML file
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                diagram.Save("output.html", htmlOptions);
-
-                Console.WriteLine("Diagram exported to output.html with JavaScript event handler.");
-
+                htmlContent = htmlContent.Insert(bodyCloseIndex, script);
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            else
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                // If </body> not found, append at the end
+                htmlContent += script;
             }
+
+            // Write the modified HTML back to the output file
+            File.WriteAllText(outputPath, htmlContent);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while injecting JavaScript: {ex.Message}");
+        }
     }
-    }
+}

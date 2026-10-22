@@ -1,71 +1,103 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
 
-        // Create a new page and set its size (in inches)
-        Page page = new Page();
-        page.PageSheet.PageProps.PageWidth.Value = 11.0;   // Width = 11 inches
-        page.PageSheet.PageProps.PageHeight.Value = 8.5;   // Height = 8.5 inches
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Add the page to the diagram
-        diagram.Pages.Add(page);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // -----------------------------------------------------------------
-        // 1. Create guide lines (using thin polyline shapes as guides)
-        // -----------------------------------------------------------------
-        // Example: vertical guide at X = 3 inches
-        double guideX = 3.0;
-        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-        long verticalGuideId = page.DrawPolyline(new double[] { guideX, 0.0, guideX, pageHeight });
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Example: horizontal guide at Y = 2 inches
-        double guideY = 2.0;
-        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-        long horizontalGuideId = page.DrawPolyline(new double[] { 0.0, guideY, pageWidth, guideY });
+            // Ensure there is at least one window; create one if necessary.
+            if (diagram.Windows.Count == 0)
+            {
+                Window newWindow = new Window();
+                newWindow.WindowType = WindowTypeValue.Drawing;
+                newWindow.WindowState = WindowStateValue.Maximized;
+                newWindow.WindowWidth = 1100;
+                newWindow.WindowHeight = 700;
+                diagram.Windows.Add(newWindow);
+            }
 
-        // Optionally, make the guides visually thin (line weight) and a light color
-        Shape verticalGuide = page.Shapes.GetShape(verticalGuideId);
-        verticalGuide.Line.LineWeight.Value = 0.01;               // Thin line
-        verticalGuide.Line.LineColor.Value = "#CCCCCC";           // Light gray
+            // Make guides visible on the page via the first window.
+            diagram.Windows[0].ShowGuides = BOOL.True;
 
-        Shape horizontalGuide = page.Shapes.GetShape(horizontalGuideId);
-        horizontalGuide.Line.LineWeight.Value = 0.01;
-        horizontalGuide.Line.LineColor.Value = "#CCCCCC";
+            // -----------------------------------------------------------------
+            // Define guide positions (in inches). These will be used to draw
+            // visual guide lines and to align shapes precisely.
+            // -----------------------------------------------------------------
+            double guideX = 5.0; // Vertical guide at X = 5 inches
+            double guideY = 3.0; // Horizontal guide at Y = 3 inches
 
-        // -----------------------------------------------------------------
-        // 2. Add a rectangle shape that will be aligned to the guides
-        // -----------------------------------------------------------------
-        // Draw a rectangle (centered at (0,0) initially)
-        double rectWidth = 2.0;   // 2 inches
-        double rectHeight = 1.0;  // 1 inch
-        long rectShapeId = page.DrawRectangle(0.0, 0.0, rectWidth, rectHeight);
-        Shape rectShape = page.Shapes.GetShape(rectShapeId);
+            // Access the first page.
+            Page page = diagram.Pages[0];
 
-        // Align the rectangle's left edge to the vertical guide
-        // PinX is the center X; to align left edge, subtract half the width
-        rectShape.XForm.PinX.Value = guideX + rectWidth / 2.0;
-        // Align the rectangle's top edge to the horizontal guide
-        // PinY is the center Y; to align top edge, add half the height
-        rectShape.XForm.PinY.Value = guideY - rectHeight / 2.0;
+            // Retrieve page dimensions (in inches) for full‑length guide lines.
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-        // Optionally, give the rectangle a fill color
-        rectShape.Fill.FillForegnd.Value = "#FFCC00"; // Orange fill
-        rectShape.Fill.FillPattern.Value = 1;        // Solid fill
+            // -----------------------------------------------------------------
+            // Add a vertical guide line (thin gray line) at guideX.
+            // DrawPolyline expects a flat double array: x1, y1, x2, y2, ...
+            // -----------------------------------------------------------------
+            long verticalGuideId = page.DrawPolyline(new double[] { guideX, 0.0, guideX, pageHeight });
+            Shape verticalGuide = page.Shapes.GetShape(verticalGuideId);
+            // Style the guide line: light gray, thin weight.
+            verticalGuide.Line.LineColor.Value = "#C0C0C0";
+            verticalGuide.Line.LineWeight.Value = 0.01; // thin line
 
-        // -----------------------------------------------------------------
-        // 3. Save the diagram to a VSDX file
-        // -----------------------------------------------------------------
-        string outputPath = "GuidesAlignedDiagram.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // -----------------------------------------------------------------
+            // Add a horizontal guide line at guideY.
+            // -----------------------------------------------------------------
+            long horizontalGuideId = page.DrawPolyline(new double[] { 0.0, guideY, pageWidth, guideY });
+            Shape horizontalGuide = page.Shapes.GetShape(horizontalGuideId);
+            horizontalGuide.Line.LineColor.Value = "#C0C0C0";
+            horizontalGuide.Line.LineWeight.Value = 0.01; // thin line
 
-        Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            // -----------------------------------------------------------------
+            // Add a rectangle shape that will be aligned to the intersection
+            // of the two guide lines.
+            // The AddShape overload: (pinX, pinY, masterName, isCalculate)
+            // -----------------------------------------------------------------
+            long rectShapeId = diagram.ActivePage.AddShape(guideX, guideY, "Rectangle", false);
+            Shape rectShape = page.Shapes.GetShape(rectShapeId);
+
+            // Align the rectangle precisely to the guide positions.
+            rectShape.XForm.PinX.Value = guideX;
+            rectShape.XForm.PinY.Value = guideY;
+
+            // Optionally set the rectangle size.
+            rectShape.XForm.Width.Value = 2.0;   // 2 inches width
+            rectShape.XForm.Height.Value = 1.0;  // 1 inch height
+
+            // Save the modified diagram to the output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

@@ -1,55 +1,77 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Iterate through all pages and shapes to add a hyperlink to each non-deleted shape.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            {
+                // Access the page.
+                Page page = diagram.Pages[pageIndex];
 
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
+                // Iterate over each shape on the page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-            // Define shape dimensions and position
-            double pinX = 5.0;   // X coordinate (inches)
-            double pinY = 5.0;   // Y coordinate (inches)
-            double width = 2.0;  // Width (inches)
-            double height = 1.0; // Height (inches)
+                    // Ensure the Hyperlinks collection is available.
+                    if (shape.Hyperlinks == null)
+                        continue;
 
-            // Add a rectangle shape to the page
-            // The last parameter 'false' indicates that the shape size is not calculated automatically
-            long shapeId = page.AddShape(pinX, pinY, width, height, "Rectangle", false);
+                    // Create a new hyperlink instance.
+                    Hyperlink link = new Hyperlink();
+                    link.Name = "ExternalLink";
+                    // Set the external URL. Adjust as needed.
+                    link.Address.Value = "https://example.com";
 
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+                    // Add the hyperlink to the shape's collection.
+                    shape.Hyperlinks.Add(link);
+                }
+            }
 
-            // Create a hyperlink that points to an external URL
-            Hyperlink link = new Hyperlink();
-            link.Address.Value = "https://example.com";
+            // Refresh the diagram to apply changes.
+            diagram.Refresh();
 
-            // Optionally set a description (tooltip) for the hyperlink
-            link.Description.Value = "Visit Example.com";
-
-            // Add the hyperlink to the shape's Hyperlinks collection
-            shape.Hyperlinks.Add(link);
-
-            // Prepare PDF save options (default options are sufficient for hyperlinks)
+            // Configure PDF save options (default options are sufficient for hyperlink preservation).
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Export the diagram to PDF; the hyperlink will be clickable in the resulting file
-            diagram.Save("output.pdf", pdfOptions);
+            // Save the diagram as PDF with the configured options.
+            diagram.Save(outputPath, pdfOptions);
 
+            Console.WriteLine($"PDF exported successfully with hyperlinks to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

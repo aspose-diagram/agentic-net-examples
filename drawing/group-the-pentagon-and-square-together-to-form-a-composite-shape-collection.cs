@@ -1,59 +1,82 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            // Lists to hold the shapes to be grouped and their originating page.
+            List<Shape> shapesToGroup = new List<Shape>();
+            Page targetPage = null;
 
-            // Define points for a pentagon (closed by repeating the first point)
-            double[] pentagonPoints = new double[]
+            // Iterate through all pages and shapes to find Pentagon and Square masters.
+            foreach (Page page in diagram.Pages)
             {
-                2.0, 2.0,   // Point 1
-                3.0, 1.0,   // Point 2
-                4.0, 2.0,   // Point 3
-                3.5, 3.0,   // Point 4
-                2.5, 3.0,   // Point 5
-                2.0, 2.0    // Close the polygon
-            };
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the shape has a master before accessing its name.
+                    if (shape.Master != null && shape.Master.Name != null)
+                    {
+                        string masterName = shape.Master.Name;
+                        if (masterName.Equals("Pentagon", StringComparison.OrdinalIgnoreCase) ||
+                            masterName.Equals("Square", StringComparison.OrdinalIgnoreCase))
+                        {
+                            shapesToGroup.Add(shape);
+                            // Remember the page of the first matching shape.
+                            if (targetPage == null)
+                                targetPage = page;
+                        }
+                    }
+                }
+            }
 
-            // Add the pentagon shape to the page
-            long pentagonId = page.DrawPolyline(pentagonPoints);
-            Shape pentagonShape = page.Shapes.GetShape(pentagonId);
-
-            // Add a square shape to the page (pinX, pinY, width, height)
-            long squareId = page.DrawRectangle(5.0, 5.0, 2.0, 2.0);
-            Shape squareShape = page.Shapes.GetShape(squareId);
-
-            // Group the pentagon and square together
-            Shape[] shapesToGroup = new Shape[] { pentagonShape, squareShape };
-            Shape groupShape = page.Shapes.Group(shapesToGroup);
-
-            // Set a name for the group (NameU is a string property, not a cell)
-            groupShape.NameU = "PentagonSquareGroup";
-
-            // Save the diagram to a VSDX file
-            string outputPath = "GroupedShapes.vsdx";
-            if (!Directory.Exists(Path.GetDirectoryName(outputPath) ?? ".")) // Guard for output directory
+            // Validate that we found both shapes on the same page.
+            if (shapesToGroup.Count < 2 || targetPage == null)
             {
-                Console.Error.WriteLine($"Output directory does not exist: {Path.GetDirectoryName(outputPath)}");
+                Console.Error.WriteLine("Could not find both a Pentagon and a Square shape on the same page.");
                 return;
             }
+
+            // Group the collected shapes into a composite shape.
+            Shape groupShape = targetPage.Shapes.Group(shapesToGroup.ToArray());
+
+            // Optional: you can set a name for the group for easier identification.
+            if (groupShape != null && groupShape.NameU != null)
+                groupShape.NameU = "PentagonSquareGroup";
+
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Successfully grouped shapes and saved diagram to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

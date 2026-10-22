@@ -1,32 +1,47 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty Visio diagram
-        Diagram diagram = new Diagram();
+        // Define output file path
+        string outputPath = "CircleDiagram.vsdx";
 
-        // Add a new page to the diagram
-        Page page = new Page();
-        diagram.Pages.Add(page);
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Retrieve the page dimensions (in inches)
-        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+            // The diagram already contains a default page; retrieve it
+            Page page = diagram.Pages[0];
 
-        // Define circle parameters
-        double radius = 1.0;               // radius in inches
-        double diameter = radius * 2;      // width and height for the circle
-        double centerX = pageWidth / 2;    // X coordinate of the circle center
-        double centerY = pageHeight / 2;   // Y coordinate of the circle center
+            // Draw a centered circle (ellipse with equal width and height)
+            // PinX and PinY define the center of the shape.
+            // Width and Height define the size of the circle.
+            double centerX = 5.0; // inches from the page origin
+            double centerY = 5.0;
+            double diameter = 2.0; // inches
+            long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
 
-        // Draw a centered circle (ellipse with equal width and height)
-        long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
+            // Optional: add a label to the circle
+            Shape circleShape = page.Shapes.GetShape(shapeId);
+            if (circleShape != null)
+            {
+                // Clear any existing text and add new text
+                circleShape.Text.Value.Clear();
+                circleShape.Text.Value.Add(new Txt("Circle"));
+            }
 
-        // Save the diagram to a VSDX file
-        diagram.Save("CenteredCircle.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

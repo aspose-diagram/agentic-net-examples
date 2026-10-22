@@ -1,46 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Scaling factor for the triangle
-            double scaleFactor = 0.5;
-
-            // Access the first page (adjust if needed)
+            // Get the first page (assumes the triangle is on this page).
             Page page = diagram.Pages[0];
 
-            // Find shapes that use the "Triangle" master and scale them
-            foreach (Shape shape in page.Shapes)
+            // Original triangle vertices (example coordinates).
+            // The triangle is defined by three points and closed by repeating the first point.
+            double[] originalPoints = new double[]
             {
-                if (shape.Master != null && shape.Master.Name == "Triangle")
-                {
-                    // Reduce width and height by the scaling factor
-                    shape.XForm.Width.Value *= scaleFactor;
-                    shape.XForm.Height.Value *= scaleFactor;
+                1.0, 1.0,   // Point 1 (PinX, PinY)
+                5.0, 1.0,   // Point 2
+                3.0, 4.0,   // Point 3
+                1.0, 1.0    // Close the polygon by returning to Point 1
+            };
 
-                    // PinX and PinY represent the shape's center; shrinking around the center requires no further adjustment
-                }
+            // Scale factor.
+            double scaleFactor = 0.5;
+
+            // Compute scaled points.
+            double[] scaledPoints = new double[originalPoints.Length];
+            for (int i = 0; i < originalPoints.Length; i++)
+            {
+                scaledPoints[i] = originalPoints[i] * scaleFactor;
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Draw the smaller triangle on the same page.
+            // The DrawPolyline method expects a flat array of coordinates.
+            long newShapeId = page.DrawPolyline(scaledPoints);
 
+            // Optionally, you could modify the new shape's properties here (e.g., fill color).
+
+            // Save the modified diagram to the output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

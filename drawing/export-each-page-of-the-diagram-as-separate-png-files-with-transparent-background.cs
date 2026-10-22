@@ -7,44 +7,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputDirectory]");
+            return;
+        }
 
-        // Verify the input file exists before proceeding
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Determine output directory (use current directory if not supplied).
+        string outputDir = args.Length >= 2 ? args[1] : Directory.GetCurrentDirectory();
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Error: Output directory \"{outputDir}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate over each page in the diagram.
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Configure PNG export options for the current page
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.PageIndex = i;      // zero‑based page index
-                pngOptions.PageCount = 1;      // export only the current page
+                // Configure image save options for PNG export.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export only the current page.
+                    PageIndex = i,
+                    PageCount = 1,
+                    // Enable anti‑aliasing for better visual quality.
+                    SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias
+                    // NOTE: Transparent background is not supported by ImageSaveOptions.
+                    // The exported PNG will have the default background color.
+                };
 
-                // NOTE: Transparent background is not directly configurable via ImageSaveOptions
-                // in the current Aspose.Diagram version. PNG export will retain any existing
-                // transparency in the diagram content.
+                // Build the output file name.
+                string outputFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page_{i + 1}.png";
+                string outputPath = Path.Combine(outputDir, outputFileName);
 
-                // Build output file name (e.g., Page_1.png, Page_2.png, ...)
-                string outputPath = $"Page_{i + 1}.png";
-
-                // Save the current page as a PNG file using the configured options
-                diagram.Save(outputPath, pngOptions);
+                // Save the current page as a PNG file.
+                diagram.Save(outputPath, saveOptions);
+                Console.WriteLine($"Page {i + 1} saved to \"{outputPath}\"");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

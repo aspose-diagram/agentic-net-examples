@@ -1,65 +1,85 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Output file path
+        string outputPath = "PentagonGrid.vsdx";
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
-
-        // Base pentagon points (relative to (0,0))
-        // The points define a simple pentagon shape
-        double[] basePoints = new double[]
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            0, 0,      // Point 1
-            2, 0,      // Point 2
-            2.5, 2,    // Point 3
-            1, 3,      // Point 4
-            -0.5, 2    // Point 5
-            // Closing point will be added later
-        };
-
-        // Grid configuration
-        int rows = 5;               // number of rows
-        int cols = 6;               // number of columns
-        double startX = 1.0;        // starting X coordinate
-        double startY = 1.0;        // starting Y coordinate
-        double hSpacing = 3.0;      // horizontal spacing between pentagons
-        double vSpacing = 4.0;      // vertical spacing between pentagons
-
-        // Loop to create a grid of pentagons
-        for (int row = 0; row < rows; row++)
-        {
-            for (int col = 0; col < cols; col++)
-            {
-                double offsetX = startX + col * hSpacing;
-                double offsetY = startY + row * vSpacing;
-
-                // Build the point array for this copy, applying the offset
-                double[] points = new double[basePoints.Length + 2]; // extra two for closing point
-                for (int i = 0; i < basePoints.Length; i += 2)
-                {
-                    points[i] = basePoints[i] + offsetX;       // X coordinate + offset
-                    points[i + 1] = basePoints[i + 1] + offsetY; // Y coordinate + offset
-                }
-                // Add closing point (same as first point) to close the polygon
-                points[points.Length - 2] = basePoints[0] + offsetX;
-                points[points.Length - 1] = basePoints[1] + offsetY;
-
-                // Draw the pentagon on the page
-                long shapeId = page.DrawPolyline(points);
-
-                // Optional: retrieve the shape if further modifications are needed
-                // Shape pentagon = page.Shapes.GetShape(shapeId);
-            }
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
         }
 
-        // Save the diagram to a VSDX file
-        diagram.Save("PentagonGrid.vsdx", SaveFileFormat.Vsdx);
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Add a single page to the diagram
+            diagram.Pages.Add(new Page());
+            Page page = diagram.Pages[0];
+
+            // Grid configuration
+            int rows = 5;               // number of rows
+            int cols = 5;               // number of columns
+            double shapeWidth = 1.0;    // width of each pentagon (in inches)
+            double shapeHeight = 1.0;   // height of each pentagon (in inches)
+            double spacingX = 0.5;      // horizontal spacing between shapes
+            double spacingY = 0.5;      // vertical spacing between shapes
+
+            // Radius for the pentagon (inscribed circle)
+            double radius = Math.Min(shapeWidth, shapeHeight) / 2.0;
+
+            // Loop through grid positions and draw a pentagon at each cell
+            for (int row = 0; row < rows; row++)
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    // Calculate the center point for the current pentagon
+                    double centerX = col * (shapeWidth + spacingX) + shapeWidth / 2.0;
+                    double centerY = row * (shapeHeight + spacingY) + shapeHeight / 2.0;
+
+                    // Generate the five vertices of the pentagon
+                    // The points are stored in a flat double array: x1, y1, x2, y2, ..., xn, yn
+                    double[] points = new double[12]; // 5 vertices + closing vertex = 6 points * 2 coordinates
+                    double startAngle = -Math.PI / 2; // start at the top vertex
+                    for (int i = 0; i < 5; i++)
+                    {
+                        double angle = startAngle + i * 2 * Math.PI / 5;
+                        double x = centerX + radius * Math.Cos(angle);
+                        double y = centerY + radius * Math.Sin(angle);
+                        points[i * 2] = x;
+                        points[i * 2 + 1] = y;
+                    }
+                    // Close the polygon by repeating the first vertex
+                    points[10] = points[0];
+                    points[11] = points[1];
+
+                    // Draw the pentagon shape on the page
+                    // DrawPolyline returns the shape ID (long)
+                    long shapeId = page.DrawPolyline(points);
+
+                    // Optional: retrieve the shape to set additional formatting (e.g., line color)
+                    // Shape pentagon = page.Shapes.GetShape(shapeId);
+                    // pentagon.Line.LineColor.Value = "#0000FF"; // blue line
+                }
+            }
+
+            // Save the diagram to VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

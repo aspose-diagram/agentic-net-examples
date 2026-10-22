@@ -1,67 +1,114 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expected arguments:
+        // args[0] - path to the source Visio diagram (e.g., Drawing1.vsdx)
+        // args[1] - path to the image file to insert (e.g., picture.png)
+        // args[2] - path to save the modified diagram (e.g., Modified.vsdx)
+        // args[3] - path to export the diagram as PNG (e.g., Output.png)
+
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <imagePath> <outputDiagramPath> <outputPngPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string imagePath = args[1];
+        string outputDiagramPath = args[2];
+        string outputPngPath = args[3];
+
+        // Guard against missing input files
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(imagePath))
+        {
+            Console.Error.WriteLine($"Image file not found: {imagePath}");
+            return;
+        }
+
         try
         {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Work with the first page (adjust index if needed)
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
-            Shape triangleShape = null;
-            Shape imageShape = null;
+            // ------------------------------------------------------------
+            // Insert the image as a shape on the page
+            // ------------------------------------------------------------
+            // Define position and size for the image (in inches)
+            double imgPinX = 1.0;   // X coordinate of the shape's pin
+            double imgPinY = 1.0;   // Y coordinate of the shape's pin
+            double imgWidth = 2.0; // Width of the image
+            double imgHeight = 2.0; // Height of the image
 
-            // Locate the triangle shape (by master name) and the inserted image (foreign type)
-            foreach (Shape shape in page.Shapes)
+            long imageShapeId;
+            using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
             {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Identify triangle shape
-                if (triangleShape == null && shape.Master != null && shape.Master.Name == "Triangle")
-                {
-                    triangleShape = shape;
-                    continue;
-                }
-
-                // Identify image shape (foreign type)
-                if (imageShape == null && shape.Type == TypeValue.Foreign)
-                {
-                    imageShape = shape;
-                    continue;
-                }
-
-                // Stop when both are found
-                if (triangleShape != null && imageShape != null)
-                    break;
+                // AddShape returns the shape's ID (long)
+                imageShapeId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
             }
 
-            if (triangleShape == null || imageShape == null)
+            // Retrieve the Shape object for further operations
+            Shape imageShape = page.Shapes.GetShape(imageShapeId);
+
+            // ------------------------------------------------------------
+            // Draw a triangle shape on the same page
+            // ------------------------------------------------------------
+            // Define triangle vertices (in inches) and close the polygon by repeating the first point
+            double[] trianglePoints = new double[]
             {
-                throw new Exception("Triangle shape or image shape not found in the diagram.");
-            }
+                3.0, 3.0,   // Vertex 1
+                5.0, 3.0,   // Vertex 2
+                4.0, 5.0,   // Vertex 3
+                3.0, 3.0    // Close the triangle
+            };
 
-            // Group the triangle and the image together
-            Shape groupShape = page.Shapes.Group(new Shape[] { triangleShape, imageShape });
+            // DrawPolyline returns the shape's ID (long)
+            long triangleShapeId = page.DrawPolyline(trianglePoints);
 
-            // Move the group (e.g., 2 inches right and 1 inch up)
-            groupShape.Move(2.0, -1.0);
+            // Retrieve the Shape object for the triangle
+            Shape triangleShape = page.Shapes.GetShape(triangleShapeId);
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // ------------------------------------------------------------
+            // Group the image shape and the triangle shape together
+            // ------------------------------------------------------------
+            Shape groupShape = page.Shapes.Group(new Shape[] { imageShape, triangleShape });
 
+            // ------------------------------------------------------------
+            // Move the group as a single entity (e.g., shift 1 inch right and 1 inch up)
+            // ------------------------------------------------------------
+            groupShape.Move(1.0, 1.0);
+
+            // ------------------------------------------------------------
+            // Save the modified diagram in VSDX format
+            // ------------------------------------------------------------
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
+            // ------------------------------------------------------------
+            // Export the diagram (first page) as a PNG image
+            // ------------------------------------------------------------
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save(outputPngPath, pngOptions);
+
+            Console.WriteLine("Diagram processing completed successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

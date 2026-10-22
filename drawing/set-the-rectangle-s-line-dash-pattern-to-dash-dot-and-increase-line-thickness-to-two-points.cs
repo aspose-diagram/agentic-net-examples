@@ -1,39 +1,77 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Add a rectangle shape to the page
-        // Parameters: pinX, pinY, width, height (all in inches)
-        double pinX = 5.0;   // horizontal position
-        double pinY = 5.0;   // vertical position
-        double width = 2.0;  // rectangle width
-        double height = 1.0; // rectangle height
-        long rectId = page.DrawRectangle(pinX, pinY, width, height);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Retrieve the shape object using the returned ID
-        Shape rectangle = page.Shapes.GetShape((int)rectId);
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Set line dash pattern to DashDot
-        rectangle.Line.LinePattern.Value = LinePatternValue.DashDot;
+            bool rectangleFound = false;
 
-        // Set line thickness to 2 points (2/72 inches)
-        rectangle.Line.LineWeight.Value = 2.0 / 72.0;
+            // Iterate through pages and shapes to locate a rectangle.
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-        // Save the diagram to a VSDX file
-        string outputPath = "RectangleStyled.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Check that the shape has a master named "Rectangle".
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    {
+                        // Set line dash pattern to dash‑dot.
+                        shape.Line.LinePattern.Value = LinePatternValue.DashDot;
 
-        Console.WriteLine($"Diagram saved to {outputPath}");
+                        // Set line thickness to two points (2/72 inches).
+                        shape.Line.LineWeight.Value = 2.0 / 72.0;
+
+                        rectangleFound = true;
+                        // Assuming only one rectangle needs modification.
+                        break;
+                    }
+                }
+
+                if (rectangleFound)
+                    break;
+            }
+
+            if (!rectangleFound)
+            {
+                Console.Error.WriteLine("No rectangle shape was found in the diagram.");
+                return;
+            }
+
+            // Save the modified diagram in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

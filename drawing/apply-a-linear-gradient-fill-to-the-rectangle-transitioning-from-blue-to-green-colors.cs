@@ -1,31 +1,50 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-            // Use the first page (a new diagram contains one default page)
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Get the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Draw a rectangle shape (pinX, pinY, width, height)
-            // This method returns the shape ID (long)
-            long rectId = page.DrawRectangle(2.0, 2.0, 4.0, 3.0);
+            // Draw a rectangle shape on the page
+            // Parameters: pinX, pinY, width, height (in inches)
+            long rectShapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
 
-            // Retrieve the shape object using the ID
-            Shape rectShape = page.Shapes.GetShape((int)rectId);
+            // Retrieve the shape object using the returned ID
+            Shape rectShape = page.Shapes.GetShape((int)rectShapeId);
 
-            // Apply a linear gradient fill (blue to green)
-            // Set fill pattern to gradient (value 25)
+            // Set the fill pattern to indicate a gradient (value 25 as per API)
             rectShape.Fill.FillPattern.Value = 25;
 
             // Enable gradient fill
             rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set gradient direction (0 = left to right)
+            // Set gradient direction (0 = horizontal, can be adjusted as needed)
             rectShape.Fill.GradientFill.GradientDir.Value = 0;
 
             // Clear any existing gradient stops
@@ -41,7 +60,13 @@ class Program
                 new DoubleValue(1, MeasureConst.NUM),
                 new ColorValue("#00FF00", MeasureConst.Undefined));
 
-            // Save the diagram to a VSDX file
-            diagram.Save("GradientRectangle.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

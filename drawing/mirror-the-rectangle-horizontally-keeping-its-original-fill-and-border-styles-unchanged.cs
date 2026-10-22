@@ -1,53 +1,56 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the output Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Find the first rectangle shape on the page
-            Shape rectangle = null;
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages and shapes to find rectangle shapes.
+            foreach (Page page in diagram.Pages)
             {
-                // Ensure the shape has a master and check its name
-                if (shape.Master != null && shape.Master.Name == "Rectangle")
+                // Use the Shapes collection to access each shape by its ID.
+                foreach (Shape shape in page.Shapes)
                 {
-                    rectangle = shape;
-                    break;
+                    // Ensure the shape has a master and that the master name is "Rectangle".
+                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    {
+                        // Mirror the rectangle horizontally by setting the FlipX cell to TRUE.
+                        // This operation does not affect fill or line styles.
+                        shape.XForm.FlipX.Value = BOOL.True;
+                    }
                 }
             }
 
-            if (rectangle == null)
-            {
-                throw new Exception("No rectangle shape found on the first page.");
-            }
-
-            // Mirror the rectangle horizontally by setting FlipX to True
-            // This operation does not affect fill or line styles
-            rectangle.XForm.FlipX.Value = BOOL.True;
-
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,51 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define output file path
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
         try
         {
-
-            // Create a new empty diagram
+            // Create a new empty diagram (contains a default page)
             Diagram diagram = new Diagram();
 
-            // Access the first page of the diagram
+            // Get the first (default) page
             Page page = diagram.Pages[0];
 
-            // Add two rectangle shapes to the page
-            long shape1Id = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-            long shape2Id = diagram.AddShape(5.0, 5.0, "Rectangle", 0);
+            // Add the first rectangle shape using the built‑in master "Rectangle"
+            long rect1Id = page.AddShape(
+                pinX: 2.0,
+                pinY: 5.0,
+                width: 2.0,
+                height: 1.0,
+                masterName: "Rectangle",
+                isCalculate: false);
 
-            // Retrieve the shape objects (optional, for further manipulation)
-            Shape shape1 = page.Shapes.GetShape(shape1Id);
-            Shape shape2 = page.Shapes.GetShape(shape2Id);
+            // Add the second rectangle shape
+            long rect2Id = page.AddShape(
+                pinX: 8.0,
+                pinY: 5.0,
+                width: 2.0,
+                height: 1.0,
+                masterName: "Rectangle",
+                isCalculate: false);
 
-            // Add a dynamic connector shape
-            long connectorId = diagram.AddShape(0.0, 0.0, "Dynamic connector", 0);
+            // Add a dynamic connector shape (initially zero size)
+            long connectorId = page.AddShape(
+                pinX: 0.0,
+                pinY: 0.0,
+                width: 0.0,
+                height: 0.0,
+                masterName: "Dynamic connector",
+                isCalculate: false);
+
+            // Retrieve the connector shape to configure its routing
             Shape connector = page.Shapes.GetShape(connectorId);
-
-            // Connect the two rectangles using the connector
-            page.ConnectShapesViaConnector(
-                shape1Id,
-                ConnectionPointPlace.Bottom,
-                shape2Id,
-                ConnectionPointPlace.Top,
-                connectorId);
-
-            // Set the connector to use a curved (smooth spline) line
+            // Set the connector to use a smooth spline (curved) line
             connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
 
-            // Save the diagram to a VSDX file
-            diagram.Save("CurvedConnector.vsdx", SaveFileFormat.Vsdx);
+            // Connect the two rectangles via the connector
+            page.ConnectShapesViaConnector(
+                shapeFromId: rect1Id,
+                placeFrom: ConnectionPointPlace.Right,
+                shapeToId: rect2Id,
+                placeTo: ConnectionPointPlace.Left,
+                connectorId: connectorId);
 
+            // Save the diagram as VSDX
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

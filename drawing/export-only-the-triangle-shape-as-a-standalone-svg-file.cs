@@ -1,60 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Variable to hold the triangle shape when found
-            Shape? triangleShape = null;
-
-            // Iterate through all pages and shapes to locate a shape whose master name is "Triangle"
+            // Search for the first shape whose master name indicates a triangle.
+            Shape triangleShape = null;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Ensure the shape has a master and compare its name
-                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    // Ensure the shape has an associated master.
+                    if (shape.Master != null && shape.Master.Name != null)
                     {
-                        triangleShape = shape;
-                        break;
+                        // Simple heuristic: master name contains the word "Triangle".
+                        if (shape.Master.Name.IndexOf("Triangle", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            triangleShape = shape;
+                            break;
+                        }
                     }
                 }
-
                 if (triangleShape != null)
                     break;
             }
 
-            // If the triangle shape was not found, abort with an error
             if (triangleShape == null)
-                throw new Exception("Triangle shape not found in the diagram.");
+            {
+                Console.Error.WriteLine("Error: No triangle shape found in the diagram.");
+                return;
+            }
 
-            // Export the found triangle shape to a standalone SVG file
-            string outputSvgPath = "triangle.svg";
+            // Prepare SVG save options (default options are sufficient).
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            triangleShape.ToSvg(outputSvgPath, svgOptions);
 
-            Console.WriteLine($"Triangle shape exported successfully to '{outputSvgPath}'.");
+            // Export the identified triangle shape to a standalone SVG file.
+            triangleShape.ToSvg(outputPath, svgOptions);
 
+            Console.WriteLine($"Triangle shape exported successfully to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

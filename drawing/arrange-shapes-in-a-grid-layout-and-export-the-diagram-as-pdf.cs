@@ -1,56 +1,99 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define the output PDF file path
+        string outputPdfPath = "GridDiagram.pdf";
 
-        // Access the first page (index 0)
-        Page page = diagram.Pages[0];
-
-        // Define grid layout parameters
-        int rows = 5;                     // number of rows
-        int cols = 4;                     // number of columns
-        double shapeWidth = 1.0;          // width of each rectangle (in inches)
-        double shapeHeight = 0.5;         // height of each rectangle (in inches)
-        double hSpacing = 0.5;            // horizontal spacing between shapes (in inches)
-        double vSpacing = 0.5;            // vertical spacing between shapes (in inches)
-
-        // Starting position (center of first shape)
-        double startX = shapeWidth / 2 + hSpacing;
-        double startY = shapeHeight / 2 + vSpacing;
-
-        // Add shapes in a grid
-        for (int r = 0; r < rows; r++)
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPdfPath));
+        if (!Directory.Exists(outputDir))
         {
-            for (int c = 0; c < cols; c++)
-            {
-                double pinX = startX + c * (shapeWidth + hSpacing);
-                double pinY = startY + r * (shapeHeight + vSpacing);
-
-                // Draw a rectangle and obtain its shape ID
-                long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
-
-                // Retrieve the shape object for further modifications
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Set the shape's text label (e.g., "R1C1")
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt($"R{r + 1}C{c + 1}"));
-            }
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
         }
 
-        // Configure PDF save options
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-        pdfOptions.DefaultFont = "Arial";
-        pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Export the diagram as a PDF file
-        diagram.Save("GridDiagram.pdf", pdfOptions);
+            // Ensure there is at least one page to work with
+            if (diagram.Pages.Count == 0)
+            {
+                diagram.Pages.Add(new Page());
+            }
+
+            // Use the first page for shape placement
+            Page page = diagram.Pages[0];
+
+            // Grid layout parameters
+            int rows = 3;
+            int columns = 3;
+            double startX = 2.0;      // Starting X coordinate (in inches)
+            double startY = 2.0;      // Starting Y coordinate (in inches)
+            double spacingX = 2.5;    // Horizontal spacing between shapes (in inches)
+            double spacingY = 2.5;    // Vertical spacing between shapes (in inches)
+            double shapeWidth = 1.5;  // Width of each rectangle (in inches)
+            double shapeHeight = 1.0; // Height of each rectangle (in inches)
+
+            // Add rectangle shapes in a grid pattern
+            for (int row = 0; row < rows; row++)
+            {
+                for (int col = 0; col < columns; col++)
+                {
+                    double pinX = startX + col * spacingX;
+                    double pinY = startY + row * spacingY;
+
+                    // Draw a rectangle; returns the shape ID
+                    long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
+
+                    // Retrieve the shape object to set its text
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
+                    {
+                        // Clear any existing text and add new text run
+                        shape.Text.Value.Clear();
+                        shape.Text.Value.Add(new Txt($"R{row + 1}C{col + 1}"));
+                    }
+                }
+            }
+
+            // Configure PDF save options with a page‑saving callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            pdfOptions.PageSavingCallback = new PdfPageCallback();
+
+            // Save the diagram as a PDF file
+            diagram.Save(outputPdfPath, pdfOptions);
+
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPdfPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+        }
+    }
+}
+
+// Custom callback to log page‑saving events
+class PdfPageCallback : IPageSavingCallback
+{
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
+    }
+
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}");
+        // Example: stop after the first page (not required here)
+        // args.HasMorePages = false;
     }
 }

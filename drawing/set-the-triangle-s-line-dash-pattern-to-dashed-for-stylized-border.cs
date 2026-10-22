@@ -1,30 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Define triangle vertices (X1,Y1, X2,Y2, X3,Y3, X1,Y1 to close)
-        double[] trianglePoints = new double[] { 2.0, 2.0, 4.0, 2.0, 3.0, 4.0, 2.0, 2.0 };
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Draw the triangle; returns the shape ID (long)
-        long triangleId = page.DrawPolyline(trianglePoints);
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Retrieve the shape object using the ID
-        Shape triangle = page.Shapes.GetShape(triangleId);
+            // Iterate through all pages to find a triangle shape.
+            Shape triangleShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-        // Set the line dash pattern to dashed
-        triangle.Line.LinePattern.Value = LinePatternValue.Dash;
+                    // Identify triangle by its master name (common master name is "Triangle").
+                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    {
+                        triangleShape = shape;
+                        break;
+                    }
+                }
+                if (triangleShape != null)
+                    break;
+            }
 
-        // Save the diagram to a VSDX file
-        diagram.Save("TriangleDashed.vsdx", SaveFileFormat.Vsdx);
+            if (triangleShape == null)
+            {
+                Console.Error.WriteLine("No triangle shape found in the diagram.");
+                return;
+            }
+
+            // Set the line dash pattern to dashed.
+            // Using the LinePatternValue enumeration for clarity.
+            triangleShape.Line.LinePattern.Value = LinePatternValue.Dash;
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

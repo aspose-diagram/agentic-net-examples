@@ -1,29 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ExportDiagram
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Load the diagram and export to a high‑resolution PNG.
         try
         {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Configure image export options.
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            {
+                // Set the desired DPI (resolution) to 300.
+                Resolution = 300f,
 
-            // Configure image save options for high‑resolution PNG (300 DPI)
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.Resolution = 300; // DPI
+                // Do not export hidden pages. Use native bool type.
+                ExportHiddenPage = false
+            };
 
-            // Export the diagram to PNG using the specified options
-            diagram.Save("output.png", pngOptions);
+            // Export the diagram to PNG using the configured options.
+            diagram.Save(outputPath, saveOptions);
 
+            Console.WriteLine($"Diagram successfully exported to PNG at: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any exception details to the error stream.
+            Console.Error.WriteLine($"An error occurred during export: {ex.Message}");
         }
     }
 }

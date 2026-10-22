@@ -1,53 +1,66 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through pages to find a circle (ellipse) shape
+            bool shapeFound = false;
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram (replace with your file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Check if the shape is based on the Ellipse master (commonly used for circles)
+                    if (shape.Master != null && shape.Master.Name == "Ellipse")
                     {
-                        // Identify a circle/ellipse shape.
-                        // In Visio, circles are typically created using the "Ellipse" master.
-                        // Adjust the condition as needed for your specific diagram.
-                        if (shape.Master != null && shape.Master.Name == "Ellipse")
-                        {
-                            // The Aspose.Diagram API does not expose a LineJoin property.
-                            // To achieve sharper corners on a shape's outline, we can set the rounding to zero.
-                            // This removes any corner rounding that might be applied.
-                            shape.Line.Rounding.Value = 0.0;
+                        // Aspose.Diagram does not expose a direct LineJoin property.
+                        // To achieve sharper corners similar to a bevel join, we set the line rounding to zero.
+                        // This removes any rounding applied to the shape's outline.
+                        shape.Line.Rounding.Value = 0.0;
 
-                            // Optionally, you can also set the line pattern or weight if desired.
-                            // shape.Line.LinePattern.Value = LinePatternValue.Solid;
-                            // shape.Line.LineWeight.Value = 0.02; // thickness in inches
-
-                            Console.WriteLine($"Adjusted line rounding for shape ID {shape.ID} on page '{page.Name}'.");
-                        }
+                        shapeFound = true;
+                        break;
                     }
                 }
-
-                // Save the modified diagram (replace with your desired output path)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram saved successfully.");
-
+                if (shapeFound) break;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (!shapeFound)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("No circle (ellipse) shape found in the diagram.");
+                return;
             }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

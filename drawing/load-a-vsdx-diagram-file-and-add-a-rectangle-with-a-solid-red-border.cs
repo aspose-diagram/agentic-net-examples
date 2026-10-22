@@ -1,47 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input VSDX path> <output VSDX path>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths (replace with actual paths or pass as arguments)
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-            // Load the existing VSDX diagram
+            // Load the existing Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page of the diagram
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Use the first page as the target page.
             Page page = diagram.Pages[0];
 
-            // Define rectangle position and size (in inches)
-            double pinX = 2.0;   // X coordinate of the rectangle's center
-            double pinY = 2.0;   // Y coordinate of the rectangle's center
-            double width = 3.0;  // Width of the rectangle
-            double height = 2.0; // Height of the rectangle
+            // Draw a rectangle on the page.
+            // Parameters: pinX, pinY (position), width, height.
+            long rectId = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
 
-            // Add a rectangle shape to the page; returns the shape ID
-            long rectShapeId = page.DrawRectangle(pinX, pinY, width, height);
+            // Retrieve the newly created rectangle shape.
+            Shape rectShape = page.Shapes.GetShape(rectId);
 
-            // Retrieve the newly added shape using its ID
-            Shape rectShape = page.Shapes.GetShape(rectShapeId);
+            // Set a solid red border for the rectangle.
+            rectShape.Line.LineColor.Value = "#FF0000";
 
-            // Set a solid red border for the rectangle
-            rectShape.Line.LineColor.Value = "#FF0000";   // Red color in hex
-            rectShape.Line.LineWeight.Value = 0.02;      // Optional: line thickness (in inches)
-
-            // Save the modified diagram back to VSDX format
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

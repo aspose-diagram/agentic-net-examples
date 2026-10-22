@@ -1,49 +1,66 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Determine output path
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to find the circle shape
-            foreach (Page page in diagram.Pages)
+            // Get the first page (you can adjust the page name or index as needed)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape by its ID (replace 1 with the actual ID of the circle shape)
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Ensure the shape is not deleted
+            if (shape.Del == BOOL.True)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Identify the circle shape (commonly named "Ellipse" master or contains "Circle" in its name)
-                    bool isCircleMaster = shape.Master != null && shape.Master.Name == "Ellipse";
-                    bool nameContainsCircle = !string.IsNullOrEmpty(shape.NameU) && shape.NameU.IndexOf("Circle", StringComparison.OrdinalIgnoreCase) >= 0;
-
-                    if (isCircleMaster || nameContainsCircle)
-                    {
-                        // Set fill color to blue (hex format)
-                        shape.Fill.FillForegnd.Value = "#0000FF";
-
-                        // Set line weight to 0.5 points (convert points to inches: 1 point = 1/72 inch)
-                        shape.Line.LineWeight.Value = 0.5 / 72.0;
-
-                        // If there are multiple circle shapes, continue updating each one
-                    }
-                }
+                Console.Error.WriteLine("The specified shape is marked as deleted.");
+                return;
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Set fill pattern to solid (value 1) and fill foreground color to blue
+            shape.Fill.FillPattern.Value = 1;               // Solid fill
+            shape.Fill.FillForegnd.Value = "#0000FF";       // Blue color in hex
+
+            // Set line weight to 0.5 points (Visio uses inches; 1 point = 1/72 inch)
+            double lineWeightInInches = 0.5 / 72.0;
+            shape.Line.LineWeight.Value = lineWeightInInches;
+
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

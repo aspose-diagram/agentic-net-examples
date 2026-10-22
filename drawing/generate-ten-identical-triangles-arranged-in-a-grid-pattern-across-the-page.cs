@@ -1,53 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define output file path
+        string outputPath = "output.vsdx";
 
-        // Access the first page
-        Page page = diagram.Pages[0];
-
-        // Optional: set page dimensions (in inches)
-        page.PageSheet.PageProps.PageWidth.Value = 11;
-        page.PageSheet.PageProps.PageHeight.Value = 8.5;
-
-        // Grid parameters
-        double startX = 1.5;      // X coordinate of first triangle center
-        double startY = 1.5;      // Y coordinate of first triangle center
-        double spacingX = 2.5;    // Horizontal distance between triangle centers
-        double spacingY = 2.5;    // Vertical distance between triangle centers
-        double shapeWidth = 1.0;  // Width of each triangle
-        double shapeHeight = 1.0; // Height of each triangle
-
-        // Points defining an equilateral triangle within the shape bounds (closed polygon)
-        double[] trianglePoints = new double[] { 0, 0, 1, 0, 0.5, 0.866, 0, 0 };
-
-        // Create 2 rows × 5 columns = 10 triangles
-        for (int row = 0; row < 2; row++)
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            for (int col = 0; col < 5; col++)
-            {
-                double pinX = startX + col * spacingX;
-                double pinY = startY + row * spacingY;
-
-                // Draw the triangle and obtain its shape ID
-                long shapeId = page.DrawPolyline(pinX, pinY, shapeWidth, shapeHeight, trianglePoints);
-
-                // Retrieve the shape to apply formatting
-                Shape shape = page.Shapes.GetShape(shapeId);
-                shape.Fill.FillForegnd.Value = "#FF0000"; // Red fill
-                shape.Fill.FillPattern.Value = 1;        // Solid fill
-                shape.Line.LineColor.Value = "#000000"; // Black border
-                shape.Line.LineWeight.Value = 0.02;     // Thin line
-            }
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
         }
 
-        // Save the diagram as VSDX
-        diagram.Save("Triangles.vsdx", SaveFileFormat.Vsdx);
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Add a new page to the diagram
+            Page page = new Page();
+            diagram.Pages.Add(page);
+
+            // Optional: set page size (in inches)
+            page.PageSheet.PageProps.PageWidth.Value = 11;   // width
+            page.PageSheet.PageProps.PageHeight.Value = 8.5; // height
+
+            // Parameters for the grid of triangles
+            int rows = 2;
+            int cols = 5;
+            double startX = 1.0;   // starting X coordinate
+            double startY = 1.0;   // starting Y coordinate
+            double spacingX = 2.0; // horizontal spacing between triangles
+            double spacingY = 2.0; // vertical spacing between triangles
+            double triangleSize = 1.0; // base width of each triangle
+
+            // Height of an equilateral triangle
+            double triangleHeight = Math.Sqrt(3) / 2 * triangleSize;
+
+            // Loop to create ten identical triangles in a grid
+            for (int row = 0; row < rows; row++)
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    // Calculate the lower‑left corner of the current triangle
+                    double baseX = startX + col * spacingX;
+                    double baseY = startY + row * spacingY;
+
+                    // Define the three vertices of the triangle and close the shape
+                    double[] points = new double[]
+                    {
+                        baseX,               baseY,                     // Vertex 1 (bottom left)
+                        baseX + triangleSize, baseY,                    // Vertex 2 (bottom right)
+                        baseX + triangleSize / 2, baseY + triangleHeight, // Vertex 3 (top)
+                        baseX,               baseY                      // Close back to Vertex 1
+                    };
+
+                    // Draw the triangle on the page
+                    long shapeId = page.DrawPolyline(points);
+                    // shapeId can be used later if needed (e.g., styling)
+                }
+            }
+
+            // Save the diagram to VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose.Diagram errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

@@ -1,98 +1,131 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths – replace with actual file locations as needed
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the source Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is a second page; create one if necessary
-            if (diagram.Pages.Count < 2)
+            // Ensure at least one page exists
+            if (diagram.Pages.Count == 0)
             {
-                // Determine the next page ID
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Get the first page (source)
+            Page sourcePage = diagram.Pages[0];
+
+            // Get or create the second page (target)
+            Page targetPage;
+            if (diagram.Pages.Count > 1)
+            {
+                targetPage = diagram.Pages[1];
+            }
+            else
+            {
+                // Create a new page with a unique ID
                 int maxId = 0;
                 foreach (Page p in diagram.Pages)
                 {
                     if (p.ID > maxId) maxId = p.ID;
                 }
-
-                Page newPage = new Page();
-                newPage.ID = maxId + 1;
-                diagram.Pages.Add(newPage);
+                targetPage = new Page(maxId + 1);
+                diagram.Pages.Add(targetPage);
             }
 
-            // References to the source (first) and target (second) pages
-            Page sourcePage = diagram.Pages[0];
-            Page targetPage = diagram.Pages[1];
-
-            // Find the first triangle shape on the source page
+            // Locate the triangle shape on the source page by its master name
             Shape triangleShape = null;
-            foreach (Shape shp in sourcePage.Shapes)
+            foreach (Shape shape in sourcePage.Shapes)
             {
-                // Identify by master name "Triangle" (adjust if your diagram uses a different master)
-                if (shp.Master != null && shp.Master.Name == "Triangle")
+                // Skip deleted shapes
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Ensure the shape has a master and compare its name
+                if (shape.Master != null && shape.Master.Name == "Triangle")
                 {
-                    triangleShape = shp;
+                    triangleShape = shape;
                     break;
                 }
             }
 
             if (triangleShape == null)
             {
-                throw new Exception("Triangle shape not found on the first page.");
+                Console.Error.WriteLine("Triangle shape not found on the first page.");
+                return;
             }
 
-            // Offset to apply for the cloned shape
-            double offsetX = 2.0; // inches
-            double offsetY = 2.0; // inches
+            // Original position of the triangle
+            double originalPinX = triangleShape.XForm.PinX.Value;
+            double originalPinY = triangleShape.XForm.PinY.Value;
 
-            // Compute new position based on original shape's PinX/PinY
-            double newPinX = triangleShape.XForm.PinX.Value + offsetX;
-            double newPinY = triangleShape.XForm.PinY.Value + offsetY;
+            // Define offset (in inches) for the cloned shape
+            double offsetX = 2.0;
+            double offsetY = 2.0;
 
-            // Preserve original size
-            double width = triangleShape.XForm.Width.Value;
-            double height = triangleShape.XForm.Height.Value;
+            double newPinX = originalPinX + offsetX;
+            double newPinY = originalPinY + offsetY;
 
-            // Add a new shape on the target page using the same master
-            long newShapeId = targetPage.AddShape(newPinX, newPinY, width, height, triangleShape.Master.Name, false);
-            Shape clonedShape = targetPage.Shapes.GetShape(newShapeId);
+            // Add a copy of the triangle to the target page using the same master name
+            // The fourth parameter (isCalculate) must be a bool, not BOOL
+            long newShapeId = targetPage.AddShape(newPinX, newPinY, triangleShape.Master.Name, false);
 
-            // Copy visual properties (fill, line)
-            clonedShape.Fill.FillForegnd.Value = triangleShape.Fill.FillForegnd.Value;
-            clonedShape.Fill.FillPattern.Value = triangleShape.Fill.FillPattern.Value;
-            clonedShape.Line.LineColor.Value = triangleShape.Line.LineColor.Value;
-            clonedShape.Line.LineWeight.Value = triangleShape.Line.LineWeight.Value;
-            clonedShape.Line.LinePattern.Value = triangleShape.Line.LinePattern.Value;
-
-            // Copy text (if any)
-            clonedShape.Text.Value.Clear();
-            foreach (var txtItem in triangleShape.Text.Value)
+            // Retrieve the newly added shape
+            Shape newShape = targetPage.Shapes.GetShape(newShapeId);
+            if (newShape != null)
             {
-                if (txtItem is Txt txt)
+                // Copy line color
+                newShape.Line.LineColor.Value = triangleShape.Line.LineColor.Value;
+
+                // Copy fill foreground color and pattern
+                newShape.Fill.FillForegnd.Value = triangleShape.Fill.FillForegnd.Value;
+                newShape.Fill.FillPattern.Value = triangleShape.Fill.FillPattern.Value;
+
+                // Copy text content
+                if (triangleShape.Text != null && triangleShape.Text.Value != null)
                 {
-                    clonedShape.Text.Value.Add(new Txt(txt.Text));
+                    newShape.Text.Value.Clear();
+                    foreach (var txt in triangleShape.Text.Value)
+                    {
+                        // Preserve each text run or character property
+                        newShape.Text.Value.Add(txt);
+                    }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

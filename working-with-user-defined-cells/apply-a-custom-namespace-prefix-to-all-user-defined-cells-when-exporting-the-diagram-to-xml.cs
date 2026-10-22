@@ -1,54 +1,102 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Xml.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Define a temporary VDX file path.
+        string tempVdxPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vdx");
+
         try
         {
-
-            // Load the diagram (replace with your actual file path)
-            Diagram diagram = new Diagram(@"C:\Diagrams\input.vsdx");
-
-            // Export the diagram to VDX (XML) into a memory stream
-            using (MemoryStream ms = new MemoryStream())
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                diagram.Save(ms, SaveFileFormat.Vdx);
-                ms.Position = 0; // Reset stream position for reading
+                // Save the diagram to VDX (XML) format.
+                diagram.Save(tempVdxPath, SaveFileFormat.Vdx);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram loading or saving: {ex.Message}");
+            return;
+        }
 
-                // Load the XML from the memory stream
-                XDocument xmlDoc = XDocument.Load(ms);
+        try
+        {
+            // Load the generated VDX XML.
+            XDocument doc = XDocument.Load(tempVdxPath);
 
-                // Define the custom namespace prefix to apply
-                const string customPrefix = "custom:";
+            // Define custom namespace prefix and URI.
+            const string prefix = "custom";
+            const string nsUri = "http://example.com/custom";
+            XNamespace customNs = nsUri;
 
-                // Find all <Cell> elements whose N attribute starts with "User."
-                var userCells = xmlDoc.Descendants("Cell")
-                                      .Where(c => (string)c.Attribute("N") != null &&
-                                                  ((string)c.Attribute("N")).StartsWith("User.", StringComparison.Ordinal));
-
-                // Apply the custom prefix to each matching cell's N attribute
-                foreach (var cell in userCells)
+            // Ensure the root element declares the custom namespace.
+            XElement root = doc.Root;
+            if (root != null)
+            {
+                XAttribute xmlnsAttr = root.Attribute(XNamespace.Xmlns + prefix);
+                if (xmlnsAttr == null)
                 {
-                    string originalName = (string)cell.Attribute("N");
-                    cell.SetAttributeValue("N", customPrefix + originalName);
+                    root.SetAttributeValue(XNamespace.Xmlns + prefix, nsUri);
                 }
-
-                // Save the modified XML to the desired output file
-                string outputPath = @"C:\Diagrams\output_custom_namespace.vdx";
-                xmlDoc.Save(outputPath);
             }
 
-            Console.WriteLine("Diagram exported with custom namespace prefix applied to user-defined cells.");
+            // Apply the custom namespace to all User-defined cell elements.
+            foreach (XElement userElem in doc.Descendants())
+            {
+                if (userElem.Name.LocalName.Equals("User", StringComparison.OrdinalIgnoreCase))
+                {
+                    userElem.Name = customNs + "User";
+                }
+            }
 
+            // Save the modified XML to the desired output path.
+            doc.Save(outputPath);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error during XML processing: {ex.Message}");
+            return;
         }
+        finally
+        {
+            // Clean up the temporary VDX file.
+            try
+            {
+                if (File.Exists(tempVdxPath))
+                {
+                    File.Delete(tempVdxPath);
+                }
+            }
+            catch
+            {
+                // Suppress any cleanup errors.
+            }
+        }
+
+        Console.WriteLine($"Diagram exported with custom namespace to: {outputPath}");
     }
 }

@@ -1,51 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Work with the first page.
+            Page page = diagram.Pages[0];
+
+            // Find the first rectangle shape (master name "Rectangle").
+            Shape rectangleShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.Master != null && shape.Master.Name == "Rectangle")
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Identify rectangle shapes by their master name
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        // Retrieve original dimensions
-                        double originalWidth = shape.XForm.Width.Value;
-                        double originalHeight = shape.XForm.Height.Value;
-
-                        // Scale width and height proportionally (double size)
-                        shape.XForm.Width.Value = originalWidth * 2;
-                        shape.XForm.Height.Value = originalHeight * 2;
-                    }
+                    rectangleShape = shape;
+                    break;
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            if (rectangleShape == null)
+            {
+                Console.Error.WriteLine("No rectangle shape found in the diagram.");
+                return;
+            }
 
+            // Double the width and height while preserving aspect ratio.
+            rectangleShape.XForm.Width.Value *= 2.0;
+            rectangleShape.XForm.Height.Value *= 2.0;
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

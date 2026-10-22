@@ -1,77 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for diagram save operations
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Verify that both input and output paths are provided
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
             return;
         }
 
-        // Assign input file path and guard its existence
         string inputPath = args[0];
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Assign output file path and ensure its directory exists
-        string outputPath = args[1];
-        string outDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outDir) && !Directory.Exists(outDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outDir}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the input file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page of the diagram
-            Page page = diagram.Pages[0];
-
-            // Locate the first shape that is not marked as deleted
-            Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                // Check the deletion flag using the BOOL enum
-                if (s.Del == BOOL.False)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = s;
-                    break;
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Determine if the shape has any rotation applied
+                    bool has2DRotation = shape.XForm.Angle.Value != 0.0;
+                    bool has3DRotation = shape.ThreeDFormat.RotationZAngle.Value != 0.0 ||
+                                         shape.ThreeDFormat.RotationXAngle.Value != 0.0 ||
+                                         shape.ThreeDFormat.RotationYAngle.Value != 0.0;
+
+                    if (has2DRotation || has3DRotation)
+                    {
+                        // Set KeepTextFlat to false to allow text rotation
+                        shape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
+                    }
                 }
             }
 
-            // If no suitable shape is found, report and exit
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No suitable shape found in the diagram.");
-                return;
-            }
-
-            // Rotate the shape by 45 degrees (value is in degrees)
-            targetShape.XForm.Angle.Value = 45;
-
-            // Disable KeepTextFlat to allow the text within the shape to rotate
-            targetShape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
-
-            // Save the modified diagram to the specified output path in VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

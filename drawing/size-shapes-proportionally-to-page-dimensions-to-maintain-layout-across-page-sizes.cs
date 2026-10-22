@@ -1,57 +1,91 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expecting: <inputVisioPath> <outputVisioPath> <targetPageWidthInInches> <targetPageHeightInInches>
+        if (args.Length < 4)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <targetPageWidthInInches> <targetPageHeightInInches>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string widthArg = args[2];
+        string heightArg = args[3];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse target page dimensions
+        if (!double.TryParse(widthArg, out double targetWidth) || targetWidth <= 0)
+        {
+            Console.Error.WriteLine("Invalid target page width.");
+            return;
+        }
+
+        if (!double.TryParse(heightArg, out double targetHeight) || targetHeight <= 0)
+        {
+            Console.Error.WriteLine("Invalid target page height.");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Retrieve original page dimensions (in inches)
+                double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path for the scaled output file
-                string outputPath = "output_scaled.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the base page size (in inches) that the original layout was designed for
-                const double basePageWidth = 8.5;   // e.g., Letter width
-                const double basePageHeight = 11.0; // e.g., Letter height
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Avoid division by zero
+                if (originalWidth == 0 || originalHeight == 0)
                 {
-                    // Current page dimensions
-                    double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double currentHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Compute scaling factors relative to the base size
-                    double scaleX = currentWidth / basePageWidth;
-                    double scaleY = currentHeight / basePageHeight;
-
-                    // Scale each shape on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Scale position
-                        shape.XForm.PinX.Value *= scaleX;
-                        shape.XForm.PinY.Value *= scaleY;
-
-                        // Scale size
-                        shape.XForm.Width.Value *= scaleX;
-                        shape.XForm.Height.Value *= scaleY;
-                    }
+                    Console.Error.WriteLine("Encountered a page with zero width or height; skipping scaling for this page.");
+                    continue;
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Compute scaling factors for X and Y dimensions
+                double scaleX = targetWidth / originalWidth;
+                double scaleY = targetHeight / originalHeight;
 
+                // Scale each shape on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Scale shape size
+                    shape.XForm.Width.Value *= scaleX;
+                    shape.XForm.Height.Value *= scaleY;
+
+                    // Scale shape position to keep relative layout
+                    shape.XForm.PinX.Value *= scaleX;
+                    shape.XForm.PinY.Value *= scaleY;
+                }
+
+                // Update the page size to the target dimensions
+                page.PageSheet.PageProps.PageWidth.Value = targetWidth;
+                page.PageSheet.PageProps.PageHeight.Value = targetHeight;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

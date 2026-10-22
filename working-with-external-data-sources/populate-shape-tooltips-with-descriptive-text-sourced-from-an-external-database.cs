@@ -1,61 +1,72 @@
 using System;
+using System.IO;
 using System.Data;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // ------------------------------------------------------------
+            // Simulated external database: a DataTable with shape IDs and tooltips
+            // In a real scenario this data would come from an actual database.
+            // ------------------------------------------------------------
+            DataTable tooltipTable = new DataTable();
+            tooltipTable.Columns.Add("ShapeId", typeof(long));
+            tooltipTable.Columns.Add("Tooltip", typeof(string));
+
+            // Sample data rows (populate as needed)
+            tooltipTable.Rows.Add(1L, "Start of the process");
+            tooltipTable.Rows.Add(2L, "Decision point");
+            tooltipTable.Rows.Add(3L, "End of the process");
+            // Add more rows corresponding to actual shape IDs in the diagram
+
+            // ------------------------------------------------------------
+            // Iterate through all pages and shapes, assigning tooltips
+            // ------------------------------------------------------------
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Simulated external database: a DataTable with ShapeId -> Tooltip mapping
-                DataTable tooltipTable = new DataTable();
-                tooltipTable.Columns.Add("ShapeId", typeof(int));
-                tooltipTable.Columns.Add("Tooltip", typeof(string));
-
-                // Sample data rows (in a real scenario, fill this table from a database)
-                tooltipTable.Rows.Add(1, "Start process");
-                tooltipTable.Rows.Add(2, "Decision point");
-                tooltipTable.Rows.Add(3, "End process");
-
-                // Iterate through all pages and shapes to assign tooltips
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Look up a tooltip for the current shape ID
+                    DataRow[] rows = tooltipTable.Select($"ShapeId = {shape.ID}");
+                    if (rows.Length > 0)
                     {
-                        // Convert shape ID to int for lookup
-                        int shapeId = (int)shape.ID;
+                        string tooltip = rows[0]["Tooltip"]?.ToString() ?? string.Empty;
 
-                        // Find matching tooltip text
-                        DataRow[] rows = tooltipTable.Select($"ShapeId = {shapeId}");
-                        if (rows.Length == 0)
-                            continue; // No tooltip defined for this shape
-
-                        string tooltipText = rows[0]["Tooltip"].ToString();
-
-                        // Create a new hyperlink to hold the tooltip (address can be empty)
-                        Hyperlink link = new Hyperlink();
-                        link.Name = $"Tooltip_{shapeId}";
-                        link.Address.Value = ""; // No navigation target
-                        link.Description.Value = tooltipText;
-
-                        // Add the hyperlink to the shape's collection
-                        shape.Hyperlinks.Add(link);
+                        // Ensure the Misc and Comment objects are available before setting
+                        if (shape.Misc != null && shape.Misc.Comment != null)
+                        {
+                            shape.Misc.Comment.Value = tooltip;
+                        }
                     }
                 }
-
-                // Save the updated diagram with tooltips
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with tooltips to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

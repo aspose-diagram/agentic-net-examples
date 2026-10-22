@@ -1,26 +1,37 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the source diagram inside a using block.
+            using (Diagram srcDiagram = new Diagram(inputPath))
             {
-
-                // Paths – adjust as needed
-                string inputPath = "input.vsdx";
-                string outputPath = "ExportLayerOnly.vsdx";
-
-                // Load the source diagram
-                Diagram srcDiagram = new Diagram(inputPath);
-
-                // Assume we work with the first page (modify if needed)
+                // Assume the first page contains the layers we need.
                 Page srcPage = srcDiagram.Pages[0];
 
-                // Locate the 'Export' layer
+                // Locate the layer named "Export".
                 Layer exportLayer = null;
                 foreach (Layer layer in srcPage.PageSheet.Layers)
                 {
@@ -33,83 +44,64 @@ class Program
 
                 if (exportLayer == null)
                 {
-                    Console.WriteLine("Layer named 'Export' not found.");
+                    Console.Error.WriteLine("Layer named 'Export' was not found in the source diagram.");
                     return;
                 }
 
-                // Create a new empty diagram
+                // Create a new empty diagram.
                 Diagram newDiagram = new Diagram();
 
-                // Ensure the new diagram has at least one page
-                Page newPage = newDiagram.Pages[0];
-
-                // Copy all masters from source to target (required for shape creation)
-                foreach (Master srcMaster in srcDiagram.Masters)
+                // Ensure the new diagram has at least one window.
+                if (newDiagram.Windows.Count == 0)
                 {
-                    newDiagram.Masters.Add(srcMaster);
+                    Window window = new Window();
+                    window.WindowType = WindowTypeValue.Drawing;
+                    window.WindowState = WindowStateValue.Maximized;
+                    window.WindowWidth = 1100;
+                    window.WindowHeight = 700;
+                    newDiagram.Windows.Add(window);
                 }
 
-                // Helper to check if a shape belongs to the Export layer
-                bool ShapeInExportLayer(Shape shape)
+                // Add a new page to the target diagram.
+                Page targetPage = new Page();
+                newDiagram.Pages.Add(targetPage);
+
+                // Iterate through all shapes on the source page.
+                foreach (Shape shape in srcPage.Shapes)
                 {
-                    string member = shape.LayerMem?.LayerMember?.Value;
-                    if (string.IsNullOrEmpty(member))
-                        return false;
+                    // Determine if the shape belongs to the Export layer.
+                    string layerMember = shape.LayerMem.LayerMember.Value;
+                    bool belongsToExport = false;
 
-                    string[] indices = member.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (string idx in indices)
+                    if (!string.IsNullOrEmpty(layerMember))
                     {
-                        if (int.TryParse(idx, out int layerIdx) && layerIdx == exportLayer.IX)
-                            return true;
-                    }
-                    return false;
-                }
-
-                // Iterate over shapes and copy those that belong to the Export layer
-                foreach (Shape srcShape in srcPage.Shapes)
-                {
-                    if (!ShapeInExportLayer(srcShape))
-                        continue;
-
-                    // Ensure the shape has a master (skip if missing)
-                    if (srcShape.Master == null)
-                        continue;
-
-                    string masterName = srcShape.Master.Name;
-
-                    // Retrieve geometry
-                    double pinX = srcShape.XForm.PinX.Value;
-                    double pinY = srcShape.XForm.PinY.Value;
-                    double width = srcShape.XForm.Width.Value;
-                    double height = srcShape.XForm.Height.Value;
-
-                    // Add shape to the new page
-                    long newShapeId = newPage.AddShape(pinX, pinY, width, height, masterName, false);
-                    Shape newShape = newPage.Shapes.GetShape(newShapeId);
-
-                    // Copy plain text (if any)
-                    newShape.Text.Value.Clear();
-                    foreach (var fmt in srcShape.Text.Value)
-                    {
-                        if (fmt is Txt txt)
+                        string[] members = layerMember.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string mem in members)
                         {
-                            newShape.Text.Value.Add(new Txt(txt.Text));
+                            if (mem.Trim() == exportLayer.IX.ToString())
+                            {
+                                belongsToExport = true;
+                                break;
+                            }
                         }
                     }
 
-                    // Assign the shape to the Export layer in the new diagram
-                    newShape.LayerMem.LayerMember.Value = exportLayer.IX.ToString();
+                    // If the shape is part of the Export layer, copy it to the new page.
+                    if (belongsToExport)
+                    {
+                        // Add the shape to the target page's shape collection.
+                        targetPage.Shapes.Add(shape);
+                    }
                 }
 
-                // Save the new diagram containing only Export-layer shapes
+                // Save the new diagram containing only the Export‑layer shapes.
                 newDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Export-layer diagram saved to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -5,77 +5,78 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments: first argument is the path to the Visio file,
+        // second optional argument is the zero‑based page index to modify.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> [PageIndex]");
+            return;
+        }
+
+        string filePath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            return;
+        }
+
+        // Parse page index; default to the first page (index 0).
+        int pageIndex = 0;
+        if (args.Length >= 2 && !int.TryParse(args[1], out pageIndex))
+        {
+            Console.Error.WriteLine("Error: Invalid page index argument.");
+            return;
+        }
+
         try
         {
-
-            // Simulate a network stream by loading a Visio file into a MemoryStream
-            string inputPath = "input.vsdx";
-            using (FileStream fileStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            // Open the file as a read/write stream.
+            using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite))
             {
-                using (MemoryStream networkStream = new MemoryStream())
+                // Load the diagram from the stream.
+                using (Diagram diagram = new Diagram(stream))
                 {
-                    fileStream.CopyTo(networkStream);
-                    networkStream.Position = 0; // Reset for processing
-
-                    // Modify the first page (index 0) of the diagram
-                    ProcessDiagram(networkStream, 0);
-
-                    // For demonstration, write the updated stream back to a file
-                    networkStream.Position = 0;
-                    using (FileStream outFile = new FileStream("output.vsdx", FileMode.Create, FileAccess.Write))
+                    // Validate requested page index.
+                    if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
                     {
-                        networkStream.CopyTo(outFile);
+                        Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                        return;
                     }
+
+                    // Retrieve the target page.
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Add a rectangle shape to the page.
+                    // Parameters: pinX, pinY, width, height, master name, isCalculate flag.
+                    long shapeId = page.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle", false); // BOOL.False replaced with false
+
+                    // Retrieve the newly added shape.
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Update the shape's text.
+                    // Clear existing text runs and add a new one.
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt("Modified by program"));
+
+                    // Reset stream position and truncate before saving.
+                    stream.Position = 0;
+                    stream.SetLength(0);
+
+                    // Save the modified diagram back to the same stream in VSDX format.
+                    diagram.Save(stream, SaveFileFormat.Vsdx);
                 }
             }
 
+            Console.WriteLine("Diagram loaded, modified, and saved successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    static void ProcessDiagram(Stream networkStream, int pageIndex)
-    {
-        // Aspose.Diagram cannot load directly from a stream, so use a temporary file
-        string tempFile = Path.GetTempFileName();
-        try
-        {
-            // Write the incoming stream content to the temporary file
-            using (FileStream tempFs = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
-            {
-                networkStream.CopyTo(tempFs);
-            }
-
-            // Load the diagram from the temporary file
-            Diagram diagram = new Diagram(tempFile);
-
-            // Validate the requested page index
-            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
-                throw new ArgumentOutOfRangeException(nameof(pageIndex), "Page index is out of range.");
-
-            // Retrieve the specific page
-            Page page = diagram.Pages[pageIndex];
-
-            // Example modification: set page size to A4 (8.27 x 11.69 inches)
-            page.PageSheet.PageProps.PageWidth.Value = 8.27;
-            page.PageSheet.PageProps.PageHeight.Value = 11.69;
-
-            // Prepare the original stream for writing the updated diagram
-            networkStream.SetLength(0);
-            networkStream.Position = 0;
-
-            // Save the modified diagram back into the same stream using VSDX format
-            diagram.Save(networkStream, SaveFileFormat.Vsdx);
-        }
-        finally
-        {
-            // Delete the temporary file
-            if (File.Exists(tempFile))
-                File.Delete(tempFile);
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

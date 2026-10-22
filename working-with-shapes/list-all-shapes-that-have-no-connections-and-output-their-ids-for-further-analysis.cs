@@ -1,56 +1,59 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expect the first argument to be the path to the Visio file.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
+
+        string filePath = args[0];
+
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file (adjust as needed)
-            string filePath = "input.vsdx";
-
-            // Load the diagram
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(filePath);
 
-            // Collect IDs of shapes that are part of any connection
-            HashSet<long> connectedShapeIds = new HashSet<long>();
-
+            // Iterate through all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate all connections on the page
-                foreach (Connect connection in page.Connects)
-                {
-                    // FromSheet and ToSheet hold the shape IDs involved in the connection
-                    connectedShapeIds.Add(connection.FromSheet);
-                    connectedShapeIds.Add(connection.ToSheet);
-                }
-            }
-
-            // List shapes with no connections
-            Console.WriteLine("Shapes with no connections (IDs):");
-            foreach (Page page in diagram.Pages)
-            {
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    if (!connectedShapeIds.Contains(shape.ID))
+                    // Retrieve IDs of shapes connected to the current shape.
+                    // Using ConnectedShapesAllNodes to consider all connection types.
+                    long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+
+                    // If there are no connections, output the shape's ID.
+                    bool hasNoConnections = connectedIds == null || connectedIds.Length == 0;
+                    if (hasNoConnections)
                     {
-                        Console.WriteLine(shape.ID);
+                        Console.WriteLine($"Shape ID with no connections: {shape.ID}");
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

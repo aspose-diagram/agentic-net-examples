@@ -3,71 +3,87 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class SvgEllipseVerifier
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (adjust as needed)
+        string inputPath = "Drawing1.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output SVG file path
+        string outputSvgPath = "output.svg";
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (lifecycle rule)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Draw a circle (ellipse with equal width and height) on the first page
+            // Parameters: pinX, pinY, width, height
+            diagram.Pages[0].DrawEllipse(1.0, 1.0, 2.0, 2.0);
 
-            // Export the diagram to SVG (lifecycle rule)
-            diagram.Save("output.svg", SaveFileFormat.Svg);
+            // Prepare SVG save options (default options are sufficient)
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // Read the generated SVG content
-            string svgContent = File.ReadAllText("output.svg");
+            // Save the diagram as SVG
+            diagram.Save(outputSvgPath, svgOptions);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            return;
+        }
 
-            // Parse SVG XML
-            XDocument svgDoc = XDocument.Parse(svgContent);
-
-            // Namespace handling (Visio may include default namespace)
-            XNamespace ns = svgDoc.Root.GetDefaultNamespace();
-
-            // Find all <ellipse> elements
-            var ellipses = svgDoc.Descendants(ns + "ellipse").ToList();
-
-            if (!ellipses.Any())
+        // Verify that the exported SVG contains an <ellipse> element
+        try
+        {
+            // Guard: ensure the SVG file was created
+            if (!File.Exists(outputSvgPath))
             {
-                Console.WriteLine("No <ellipse> elements found in the SVG.");
+                Console.Error.WriteLine($"SVG file not found after export: {outputSvgPath}");
                 return;
             }
 
-            // Verify each ellipse corresponds to a circle (rx == ry)
-            foreach (var ellipse in ellipses)
+            // Load the SVG XML
+            XDocument svgDoc = XDocument.Load(outputSvgPath);
+            XNamespace svgNs = "http://www.w3.org/2000/svg";
+
+            // Find the first <ellipse> element
+            XElement ellipseElement = svgDoc.Descendants(svgNs + "ellipse").FirstOrDefault();
+
+            if (ellipseElement == null)
             {
-                string rxStr = ellipse.Attribute("rx")?.Value;
-                string ryStr = ellipse.Attribute("ry")?.Value;
+                throw new Exception("No <ellipse> element found in the exported SVG.");
+            }
 
-                if (string.IsNullOrEmpty(rxStr) || string.IsNullOrEmpty(ryStr))
+            // Verify required attributes exist (cx, cy, rx, ry)
+            var requiredAttrs = new[] { "cx", "cy", "rx", "ry" };
+            foreach (var attr in requiredAttrs)
+            {
+                if (ellipseElement.Attribute(attr) == null)
                 {
-                    Console.WriteLine("<ellipse> missing 'rx' or 'ry' attributes.");
-                    continue;
-                }
-
-                if (double.TryParse(rxStr, out double rx) && double.TryParse(ryStr, out double ry))
-                {
-                    if (Math.Abs(rx - ry) < 0.001)
-                    {
-                        Console.WriteLine($"Valid circle found: cx={ellipse.Attribute("cx")?.Value}, cy={ellipse.Attribute("cy")?.Value}, r={rx}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Ellipse is not a circle (rx={rx}, ry={ry}).");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Unable to parse 'rx' or 'ry' as numbers.");
+                    throw new Exception($"<ellipse> element is missing required attribute '{attr}'.");
                 }
             }
 
+            Console.WriteLine("Verification succeeded: SVG contains a valid <ellipse> element.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Verification error: {ex.Message}");
         }
     }
 }

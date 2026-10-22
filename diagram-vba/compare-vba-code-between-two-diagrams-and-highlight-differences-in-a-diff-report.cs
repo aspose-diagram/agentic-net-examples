@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
@@ -8,97 +8,150 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two file paths: first diagram, second diagram
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: DiffVba <DiagramPath1> <DiagramPath2>");
+            Console.Error.WriteLine("Usage: Program <DiagramPath1> <DiagramPath2> [ReportOutputPath]");
             return;
         }
 
-        string path1 = args[0];
-        string path2 = args[1];
+        string diagramPath1 = args[0];
+        string diagramPath2 = args[1];
+        string reportPath = args.Length >= 3 ? args[2] : null;
 
-        Diagram diagram1;
-        Diagram diagram2;
+        // Guard against missing files
+        if (!File.Exists(diagramPath1))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath1}");
+            return;
+        }
+        if (!File.Exists(diagramPath2))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath2}");
+            return;
+        }
+
+        Diagram diagram1 = null;
+        Diagram diagram2 = null;
 
         try
         {
-            diagram1 = new Diagram(path1);
-            diagram2 = new Diagram(path2);
+            // Load first diagram
+            diagram1 = new Diagram(diagramPath1);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading diagrams: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram 1: {ex.Message}");
             return;
         }
 
-        // Ensure VBA projects exist
-        if (diagram1.VbaProject == null || diagram2.VbaProject == null)
+        try
         {
-            Console.WriteLine("One of the diagrams does not contain a VBA project.");
+            // Load second diagram
+            diagram2 = new Diagram(diagramPath2);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram 2: {ex.Message}");
             return;
         }
 
-        // Build dictionaries of module name -> code
-        var modules1 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (VbaModule mod in diagram1.VbaProject.Modules)
+        try
         {
-            modules1[mod.Name] = mod.Codes ?? string.Empty;
-        }
+            // Build a report of VBA differences
+            string report = GenerateVbaDiffReport(diagram1, diagram2, diagramPath1, diagramPath2);
 
-        var modules2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (VbaModule mod in diagram2.VbaProject.Modules)
-        {
-            modules2[mod.Name] = mod.Codes ?? string.Empty;
-        }
+            // Output to console
+            Console.WriteLine(report);
 
-        // Union of all module names
-        var allModuleNames = new HashSet<string>(modules1.Keys, StringComparer.OrdinalIgnoreCase);
-        allModuleNames.UnionWith(modules2.Keys);
-
-        bool anyDifferences = false;
-
-        foreach (string moduleName in allModuleNames)
-        {
-            modules1.TryGetValue(moduleName, out string code1);
-            modules2.TryGetValue(moduleName, out string code2);
-
-            // Normalize nulls
-            code1 ??= string.Empty;
-            code2 ??= string.Empty;
-
-            if (code1 == code2)
+            // Optionally write to a file
+            if (!string.IsNullOrEmpty(reportPath))
             {
-                // No difference for this module
-                continue;
-            }
-
-            anyDifferences = true;
-            Console.WriteLine($"--- Differences in module: {moduleName} ---");
-
-            string[] lines1 = code1.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-            string[] lines2 = code2.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-            int maxLines = Math.Max(lines1.Length, lines2.Length);
-
-            for (int i = 0; i < maxLines; i++)
-            {
-                string line1 = i < lines1.Length ? lines1[i] : string.Empty;
-                string line2 = i < lines2.Length ? lines2[i] : string.Empty;
-
-                if (line1 != line2)
+                try
                 {
-                    Console.WriteLine($"Line {i + 1}:");
-                    Console.WriteLine($"  Diagram 1: {line1}");
-                    Console.WriteLine($"  Diagram 2: {line2}");
+                    File.WriteAllText(reportPath, report);
+                    Console.WriteLine($"Diff report written to: {reportPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to write report file: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diff processing: {ex.Message}");
+        }
+    }
+
+    // Generates a textual diff report for VBA modules between two diagrams
+    private static string GenerateVbaDiffReport(Diagram diagramA, Diagram diagramB, string pathA, string pathB)
+    {
+        using (StringWriter writer = new StringWriter())
+        {
+            writer.WriteLine("VBA Diff Report");
+            writer.WriteLine($"Diagram A: {pathA}");
+            writer.WriteLine($"Diagram B: {pathB}");
+            writer.WriteLine(new string('=', 40));
+
+            // Create dictionaries for quick lookup by module name
+            Dictionary<string, string> modulesA = BuildModuleDictionary(diagramA);
+            Dictionary<string, string> modulesB = BuildModuleDictionary(diagramB);
+
+            // Check modules present in A
+            foreach (string moduleName in new List<string>(modulesA.Keys))
+            {
+                if (modulesB.ContainsKey(moduleName))
+                {
+                    string codeA = modulesA[moduleName];
+                    string codeB = modulesB[moduleName];
+
+                    if (!string.Equals(codeA, codeB, StringComparison.Ordinal))
+                    {
+                        writer.WriteLine($"[Changed] Module: {moduleName}");
+                        writer.WriteLine("--- Diagram A Code ---");
+                        writer.WriteLine(codeA);
+                        writer.WriteLine("--- Diagram B Code ---");
+                        writer.WriteLine(codeB);
+                        writer.WriteLine(new string('-', 30));
+                    }
+                    // Remove from B dictionary to handle remaining items later
+                    modulesB.Remove(moduleName);
+                }
+                else
+                {
+                    writer.WriteLine($"[Removed] Module: {moduleName} (present only in Diagram A)");
                 }
             }
 
-            Console.WriteLine(); // Blank line between modules
+            // Remaining modules in B are added modules
+            foreach (string moduleName in modulesB.Keys)
+            {
+                writer.WriteLine($"[Added] Module: {moduleName} (present only in Diagram B)");
+                writer.WriteLine("--- Diagram B Code ---");
+                writer.WriteLine(modulesB[moduleName]);
+                writer.WriteLine(new string('-', 30));
+            }
+
+            writer.WriteLine("End of Report");
+            return writer.ToString();
+        }
+    }
+
+    // Builds a dictionary of module name -> code for a given diagram
+    private static Dictionary<string, string> BuildModuleDictionary(Diagram diagram)
+    {
+        Dictionary<string, string> dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        VbaModuleCollection modules = diagram.VbaProject.Modules;
+
+        for (int i = 0; i < modules.Count; i++)
+        {
+            VbaModule module = modules[i];
+            string name = module.Name ?? $"UnnamedModule_{i}";
+            string code = module.Codes ?? string.Empty;
+            dict[name] = code;
         }
 
-        if (!anyDifferences)
-        {
-            Console.WriteLine("No differences found between the VBA modules of the two diagrams.");
-        }
+        return dict;
     }
 }

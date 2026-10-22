@@ -6,71 +6,72 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input file, output file, size limit in megabytes
+        // Validate command‑line arguments: input file, output file, size limit in MB
         if (args.Length < 3)
         {
-            Console.WriteLine("Usage: <program> <inputVisioFile> <outputVisioFile> <sizeLimitMB>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <sizeLimitInMB>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        if (!double.TryParse(args[2], out double sizeLimitMb) || sizeLimitMb <= 0)
+        double sizeLimitMb;
+
+        // Parse size limit argument
+        if (!double.TryParse(args[2], out sizeLimitMb) || sizeLimitMb < 0)
         {
-            Console.WriteLine("Invalid size limit. Provide a positive number for megabytes.");
+            Console.Error.WriteLine("Invalid size limit. Provide a positive numeric value representing megabytes.");
             return;
         }
 
-        // Convert megabytes to bytes for comparison
-        long sizeLimitBytes = (long)(sizeLimitMb * 1024 * 1024);
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Collect shapes to remove to avoid modifying collection during iteration
-                    var shapesToRemove = new System.Collections.Generic.List<Shape>();
+            Diagram diagram = new Diagram(inputPath);
 
-                    // Iterate through shapes on the page
-                    foreach (Shape shape in page.Shapes)
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate shapes backwards to allow safe removal
+                for (int i = page.Shapes.Count - 1; i >= 0; i--)
+                {
+                    Shape shape = page.Shapes[i];
+
+                    // Skip shapes that are already marked as deleted
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check if the shape contains foreign (OLE) data
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                     {
-                        // Ensure the shape is a foreign (OLE) shape and has foreign data
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                        long sizeBytes = shape.ForeignData.ObjectData.Length;
+                        double sizeMb = sizeBytes / (1024.0 * 1024.0);
+
+                        // If the OLE object exceeds the size threshold, remove the shape
+                        if (sizeMb > sizeLimitMb)
                         {
-                            // Verify the foreign type is an embedded object
-                            if (shape.ForeignData.ForeignType == ForeignType.Object)
-                            {
-                                byte[] oleData = shape.ForeignData.ObjectData;
-                                // Check that OLE data exists
-                                if (oleData != null && oleData.Length > sizeLimitBytes)
-                                {
-                                    // Mark this shape for removal
-                                    shapesToRemove.Add(shape);
-                                    Console.WriteLine($"Removing OLE shape ID {shape.ID} (size {oleData.Length / (1024.0 * 1024.0):F2} MB) from page {page.NameU}");
-                                }
-                            }
+                            page.Shapes.Remove(shape);
+                            Console.WriteLine($"Removed OLE shape ID {shape.ID} (size: {sizeMb:F2} MB).");
                         }
                     }
-
-                    // Remove the identified shapes
-                    foreach (Shape shapeToRemove in shapesToRemove)
-                    {
-                        page.Shapes.Remove(shapeToRemove);
-                    }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
             }
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,22 +1,93 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Security.Cryptography;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Simple AES decryption using a password-derived key.
-        // This is a placeholder; real Office file decryption may require
-        // specific libraries and formats.
-        private static byte[] DecryptOleData(byte[] encryptedData, string password)
+        // Expect three arguments: input diagram path, output diagram path, decryption key
+        if (args.Length != 3)
         {
-            // Derive a 256‑bit key from the password.
+            Console.Error.WriteLine("Usage: UnlockOleObjects <input.vsdx> <output.vsdx> <decryptionKey>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string decryptionKey = args[2];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to find OLE (foreign) objects
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            {
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                {
+                    // Check if the shape contains foreign (OLE) data
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
+                    {
+                        // Verify that the foreign data represents an embedded OLE object
+                        if (shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
+                        {
+                            Console.WriteLine($"Processing OLE object in shape ID {shape.ID} on page {page.ID}.");
+
+                            byte[] encryptedData = shape.ForeignData.ObjectData;
+
+                            // Attempt to decrypt the OLE data using the supplied key
+                            byte[] decryptedData = DecryptOleData(encryptedData, decryptionKey);
+
+                            if (decryptedData != null && decryptedData.Length > 0)
+                            {
+                                // Replace the encrypted data with the decrypted data
+                                shape.ForeignData.ObjectData = decryptedData;
+                                Console.WriteLine($"Successfully unlocked OLE object in shape ID {shape.ID}.");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Failed to decrypt OLE object in shape ID {shape.ID}. Leaving original data unchanged.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Decrypts OLE object data using AES-256-CBC with a key derived from the supplied password.
+    /// Returns the decrypted byte array, or null if decryption fails.
+    /// </summary>
+    static byte[] DecryptOleData(byte[] encryptedData, string password)
+    {
+        try
+        {
+            // Derive a 256-bit key from the password using SHA-256
             using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] key = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
 
-                // Use a zero IV for simplicity (replace with proper IV if known).
+                // Use a zero IV for simplicity (replace with proper IV if known)
                 byte[] iv = new byte[16];
 
                 using (Aes aes = Aes.Create())
@@ -26,76 +97,18 @@ class Program
                     aes.Mode = CipherMode.CBC;
                     aes.Padding = PaddingMode.PKCS7;
 
-                    using (MemoryStream msInput = new MemoryStream(encryptedData))
-                    using (CryptoStream cryptoStream = new CryptoStream(msInput, aes.CreateDecryptor(), CryptoStreamMode.Read))
-                    using (MemoryStream msOutput = new MemoryStream())
+                    using (ICryptoTransform decryptor = aes.CreateDecryptor())
                     {
-                        cryptoStream.CopyTo(msOutput);
-                        return msOutput.ToArray();
+                        return decryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
                     }
                 }
             }
         }
-
-        static void Main(string[] args)
+        catch (Exception ex)
         {
-            // Input Visio file path.
-            string inputPath = "input.vsdx";
-
-            // Output Visio file path after unlocking OLE objects.
-            string outputPath = "output_unlocked.vsdx";
-
-            // Password (decryption key) supplied by the user.
-            Console.Write("Enter OLE decryption password: ");
-            string password = Console.ReadLine();
-
-            // Load the diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes.
-            foreach (Page page in diagram.Pages)
-            {
-                // Collect shape IDs first to avoid modification during enumeration.
-                var shapeIds = new System.Collections.Generic.List<long>();
-                foreach (Shape shape in page.Shapes)
-                {
-                    shapeIds.Add(shape.ID);
-                }
-
-                foreach (long shapeId in shapeIds)
-                {
-                    Shape shape = page.Shapes.GetShape(shapeId);
-
-                    // Verify the shape is a foreign (OLE) shape.
-                    if (shape.Type != TypeValue.Foreign)
-                        continue;
-
-                    // Ensure ForeignData and ObjectData are present.
-                    if (shape.ForeignData == null || shape.ForeignData.ObjectData == null || shape.ForeignData.ObjectData.Length == 0)
-                        continue;
-
-                    // Decrypt the OLE binary data.
-                    byte[] encryptedOle = shape.ForeignData.ObjectData;
-                    byte[] decryptedOle;
-
-                    try
-                    {
-                        decryptedOle = DecryptOleData(encryptedOle, password);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to decrypt OLE object in shape ID {shapeId}: {ex.Message}");
-                        continue;
-                    }
-
-                    // Assign the decrypted data back to the shape.
-                    shape.ForeignData.ObjectData = decryptedOle;
-                    Console.WriteLine($"Successfully unlocked OLE object in shape ID {shapeId}.");
-                }
-            }
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            // Decryption failed; log the error and return null
+            Console.Error.WriteLine($"Decryption error: {ex.Message}");
+            return null;
         }
     }
+}

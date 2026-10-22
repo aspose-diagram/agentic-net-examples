@@ -7,74 +7,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string visioPath = "input.vsdx";
+        // Input Visio file path (first argument) and output ZIP file path (second argument)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string zipPath = args.Length > 1 ? args[1] : "OleObjects.zip";
 
-        // Guard: ensure the Visio file exists before proceeding
-        if (!File.Exists(visioPath))
+        // Guard against missing input file
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
-
-        // Output ZIP file path
-        string zipPath = "OleObjects.zip";
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Create or overwrite the ZIP archive
-            using (FileStream zipStream = new FileStream(zipPath, FileMode.Create))
-            using (ZipArchive zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+            // Create (or overwrite) the ZIP archive
+            using (FileStream zipFileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write))
+            using (ZipArchive zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Create, leaveOpen: false))
             {
-                // Iterate through all pages in the diagram
+                // Iterate through all pages and shapes to find OLE objects
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Verify the shape is a foreign OLE object with binary data
-                        if (shape.Type == TypeValue.Foreign &&
-                            shape.ForeignData != null &&
-                            shape.ForeignData.ForeignType == ForeignType.Object &&
-                            shape.ForeignData.ObjectData != null)
+                        // Check if the shape contains foreign (OLE) data
+                        if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                         {
-                            // Determine a name for the OLE object:
-                            // Use the shape's NameU if it is not empty; otherwise fallback to the shape ID
-                            string objectName = !string.IsNullOrWhiteSpace(shape.NameU)
-                                ? shape.NameU
-                                : $"Object_{shape.ID}";
+                            // Determine a file name based on the original source path of the OLE object
+                            string sourceFullName = shape.ForeignData.ObjectSourceFullName;
 
-                            // Normalize the name to use forward slashes for ZIP entry paths
-                            string entryPath = objectName.Replace('\\', '/').TrimStart('/');
-
-                            // Ensure the entry path is not empty
-                            if (string.IsNullOrEmpty(entryPath))
+                            // Fallback to shape name if source path is unavailable
+                            if (string.IsNullOrEmpty(sourceFullName))
                             {
-                                entryPath = $"Object_{shape.ID}";
+                                sourceFullName = $"{shape.NameU}_{shape.ID}";
+                            }
+
+                            // Normalize the path for ZIP entry (use forward slashes)
+                            string entryPath = sourceFullName.Replace('\\', '/').TrimStart('/');
+
+                            // Ensure the entry path does not contain invalid characters for ZIP entries
+                            foreach (char invalidChar in Path.GetInvalidPathChars())
+                            {
+                                entryPath = entryPath.Replace(invalidChar.ToString(), "_");
                             }
 
                             // Create a new entry in the ZIP archive
                             ZipArchiveEntry entry = zipArchive.CreateEntry(entryPath, CompressionLevel.Optimal);
 
-                            // Write the OLE binary data to the entry
+                            // Write the OLE binary data into the ZIP entry
                             using (Stream entryStream = entry.Open())
                             {
                                 entryStream.Write(shape.ForeignData.ObjectData, 0, shape.ForeignData.ObjectData.Length);
                             }
+
+                            Console.WriteLine($"Exported OLE object to '{entryPath}'.");
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"OLE objects have been exported to '{zipPath}'.");
+            Console.WriteLine($"All OLE objects have been exported to ZIP archive: {zipPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any errors from Aspose.Diagram operations or I/O
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,88 +1,97 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace OleInfoExport
+class Program
 {
-    // DTO for OLE object information
+    // Model class representing OLE object information for JSON serialization
     public class OleObjectInfo
     {
+        public int PageIndex { get; set; }
         public long ShapeId { get; set; }
         public string ShapeName { get; set; }
-        public string ObjectType { get; set; }
         public string ObjectSourceFullName { get; set; }
-        public bool ShowAsIcon { get; set; }
-        public double ObjectWidth { get; set; }
-        public double ObjectHeight { get; set; }
-        public string DataBase64 { get; set; }
+        public string ObjectDataBase64 { get; set; }
     }
 
-    public class Program
+    static void Main(string[] args)
     {
-        public static void Main()
+        // Expect two arguments: input Visio file path and output JSON file path
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
+            return;
+        }
+
+        string visioPath = args[0];
+        string jsonPath = args[1];
+
+        // Guard: verify input Visio file exists
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
+            return;
+        }
+
+        // Guard: ensure the directory for the JSON output exists
+        string jsonDir = Path.GetDirectoryName(jsonPath);
+        if (!string.IsNullOrEmpty(jsonDir) && !Directory.Exists(jsonDir))
+        {
+            Console.Error.WriteLine($"Error: Output directory does not exist: '{jsonDir}'.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
+
+            // List to hold extracted OLE object information
+            List<OleObjectInfo> oleObjects = new List<OleObjectInfo>();
+
+            // Iterate over pages with explicit index
+            for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
             {
+                Aspose.Diagram.Page page = diagram.Pages[pageIdx];
 
-                // Load the Visio diagram (replace with actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // List to hold OLE object information
-                List<OleObjectInfo> oleInfos = new List<OleObjectInfo>();
-
-                // Iterate through all pages
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                // Iterate over shapes on the page
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    // Check if the shape contains ForeignData (potential OLE object)
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                     {
-                        // Verify the shape is a foreign (OLE) shape
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                        // Verify the object type is an embedded OLE object
+                        if (shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
                         {
-                            // Verify the foreign data represents an OLE object
-                            if (shape.ForeignData.ForeignType == ForeignType.Object)
+                            OleObjectInfo info = new OleObjectInfo
                             {
-                                // Ensure there is binary data to process
-                                if (shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
-                                {
-                                    OleObjectInfo info = new OleObjectInfo();
+                                PageIndex = pageIdx,
+                                ShapeId = shape.ID,
+                                ShapeName = shape.NameU,
+                                ObjectSourceFullName = shape.ForeignData.ObjectSourceFullName,
+                                ObjectDataBase64 = Convert.ToBase64String(shape.ForeignData.ObjectData)
+                            };
 
-                                    // Basic shape identification
-                                    info.ShapeId = shape.ID;
-                                    info.ShapeName = shape.NameU;
-
-                                    // OLE specific properties
-                                    info.ObjectType = shape.ForeignData.ObjectType.ToString();
-                                    info.ObjectSourceFullName = shape.ForeignData.ObjectSourceFullName;
-                                    info.ShowAsIcon = shape.ForeignData.ShowAsIcon == BOOL.True;
-                                    info.ObjectWidth = shape.ForeignData.ObjectWidth;
-                                    info.ObjectHeight = shape.ForeignData.ObjectHeight;
-
-                                    // Convert binary data to Base64 for JSON transport
-                                    info.DataBase64 = Convert.ToBase64String(shape.ForeignData.ObjectData);
-
-                                    oleInfos.Add(info);
-                                }
-                            }
+                            oleObjects.Add(info);
                         }
                     }
                 }
-
-                // Serialize the list to JSON with indentation
-                string json = JsonSerializer.Serialize(oleInfos, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write JSON to file (replace with desired output path)
-                File.WriteAllText("oleInfo.json", json);
-
-                Console.WriteLine("OLE object information has been exported to oleInfo.json");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Serialize the list to JSON with indentation
+            string json = JsonSerializer.Serialize(oleObjects, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the specified output file
+            File.WriteAllText(jsonPath, json);
+
+            Console.WriteLine($"Successfully extracted {oleObjects.Count} OLE object(s) to '{jsonPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

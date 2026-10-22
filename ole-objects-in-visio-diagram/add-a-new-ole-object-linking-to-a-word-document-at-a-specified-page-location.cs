@@ -1,62 +1,87 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input Visio diagram path
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+        // Word document to embed as OLE object
+        string wordPath = "document.docx";
+        // Output Visio diagram path
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        // Guard: ensure the Word document exists
+        if (!File.Exists(wordPath))
+        {
+            Console.Error.WriteLine($"Error: Word document not found at '{wordPath}'.");
+            return;
+        }
+
+        try
+        {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Choose the target page (first page in this example)
+            int targetPageIndex = 0;
+            if (targetPageIndex < 0 || targetPageIndex >= diagram.Pages.Count)
             {
-
-                // Path to the Word document to be linked/embedded
-                string wordFilePath = @"C:\Docs\SampleDocument.docx";
-
-                // Verify the Word file exists
-                if (!File.Exists(wordFilePath))
-                    throw new FileNotFoundException("Word document not found.", wordFilePath);
-
-                // Create a new empty Visio diagram
-                Diagram diagram = new Diagram();
-
-                // Add a new blank page to the diagram
-                diagram.Pages.Add(new Page());
-                Page page = diagram.Pages[0];
-
-                // Define position and size for the OLE placeholder shape (in inches)
-                double pinX = 5.0;   // horizontal center
-                double pinY = 5.0;   // vertical center
-                double width = 4.0;  // shape width
-                double height = 3.0; // shape height
-
-                // Draw a rectangle that will host the OLE object
-                long shapeId = page.DrawRectangle(pinX, pinY, width, height);
-                Shape oleShape = page.Shapes.GetShape(shapeId);
-
-                // Mark the shape as a foreign (OLE) shape
-                oleShape.Type = TypeValue.Foreign;
-
-                // Ensure the foreign data is treated as an embedded object
-                oleShape.ForeignData.ForeignType = ForeignType.Object;
-
-                // Load the Word document binary data
-                byte[] wordData = File.ReadAllBytes(wordFilePath);
-
-                // Assign the binary data to the shape's OLE object data
-                oleShape.ForeignData.ObjectData = wordData;
-
-                // Optionally display the OLE object as an icon
-                oleShape.ForeignData.ShowAsIcon = BOOL.True;
-
-                // Save the diagram to VSDX format
-                string outputPath = @"C:\Output\DiagramWithOle.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine("Error: Specified page index is out of range.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Retrieve the target page
+            Page page = diagram.Pages[targetPageIndex];
+
+            // Define the location where the OLE object will be placed (in inches)
+            double pinX = 2.0; // X coordinate
+            double pinY = 2.0; // Y coordinate
+
+            // Add a shape based on the "OLE Object" master from the default stencil
+            // The AddShape method returns the shape ID (long)
+            long shapeId = page.AddShape(pinX, pinY, "OLE Object");
+
+            // Retrieve the newly added shape using its ID
+            Shape oleShape = page.Shapes.GetShape(shapeId);
+
+            // Load the Word document bytes
+            byte[] oleData = File.ReadAllBytes(wordPath);
+
+            // Assign the OLE data to the shape's ForeignData
+            oleShape.ForeignData.ObjectData = oleData;
+            // Set the source full name (optional, helps identify the embedded file)
+            oleShape.ForeignData.ObjectSourceFullName = wordPath;
+            // Mark the object type as an embedded object
+            oleShape.ForeignData.ObjectType = ObjectType.EmbeddedObject;
+
+            // Optionally set a caption for the OLE icon shape
+            oleShape.Text.Value.Clear();
+            oleShape.Text.Value.Add(new Txt("Embedded Word Document"));
+
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Successfully added OLE object and saved diagram to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

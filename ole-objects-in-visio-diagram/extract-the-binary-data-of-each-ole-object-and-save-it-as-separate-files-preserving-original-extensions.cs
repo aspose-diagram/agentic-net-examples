@@ -3,70 +3,85 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputDirectory]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Determine output directory (optional second argument or default "OleOutputs").
+        string outputDir = args.Length >= 2 ? args[1] : "OleOutputs";
+        if (!Directory.Exists(outputDir))
         {
             try
             {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+                return;
+            }
+        }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Output directory for extracted OLE objects
-                string outputDir = "OleObjects";
+            int oleCounter = 0; // Counter to generate unique file names when needed.
 
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputDir))
+            // Iterate through all pages.
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            {
+                // Iterate through all shapes on the current page.
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and shapes
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
-                {
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    // Check if the shape contains foreign (OLE) data.
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                     {
-                        // Check if the shape is a foreign OLE object
-                        if (shape.Type == TypeValue.Foreign &&
-                            shape.ForeignData != null &&
-                            shape.ForeignData.ForeignType == ForeignType.Object)
+                        byte[] oleData = shape.ForeignData.ObjectData;
+
+                        // Attempt to derive a file extension from the source full name.
+                        string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+                        string extension = Path.GetExtension(sourceName);
+                        if (string.IsNullOrEmpty(extension))
                         {
-                            // Get the binary data of the OLE object
-                            byte[] oleData = shape.ForeignData.ObjectData;
-
-                            // Ensure there is data to write
-                            if (oleData != null && oleData.Length > 0)
-                            {
-                                // Determine original file extension from the source name
-                                string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
-                                string extension = Path.GetExtension(sourceName);
-                                if (string.IsNullOrEmpty(extension))
-                                {
-                                    extension = ".bin";
-                                }
-
-                                // Build a unique file name using the shape ID
-                                string fileName = $"Ole_{shape.ID}{extension}";
-                                string outputPath = Path.Combine(outputDir, fileName);
-
-                                // Write the binary data to the file
-                                File.WriteAllBytes(outputPath, oleData);
-
-                                Console.WriteLine($"Saved OLE object from shape ID {shape.ID} to {outputPath}");
-                            }
+                            // Fallback to a generic binary extension if none is found.
+                            extension = ".bin";
                         }
+
+                        // Build a unique file name using shape ID and counter to avoid collisions.
+                        string fileName = $"Ole_{shape.ID}_{oleCounter}{extension}";
+                        string outputPath = Path.Combine(outputDir, fileName);
+
+                        // Write the binary OLE data to the file.
+                        File.WriteAllBytes(outputPath, oleData);
+                        Console.WriteLine($"Extracted OLE object from Shape ID {shape.ID} to '{outputPath}'.");
+
+                        oleCounter++;
                     }
                 }
-
-                Console.WriteLine("OLE extraction completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("OLE extraction completed.");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

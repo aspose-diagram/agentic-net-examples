@@ -6,51 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Expect the input Visio diagram path as the first argument
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
             return;
         }
 
-        // Path to the output Visio file
-        string outputPath = "output_lazy_loaded.vsdx";
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram with default options.
-            // Lazy loading of OLE objects is enabled by default in the library,
-            // so no explicit property needs to be set.
-            Diagram diagram = new Diagram(inputPath);
+            // TODO: Enable lazy loading of OLE objects if supported by Aspose.Diagram API.
+            // Currently, Aspose.Diagram does not expose a direct setting for lazy loading OLE data.
+            // As a workaround, load the diagram normally and defer accessing ForeignData.ObjectData
+            // until the OLE content is actually needed.
 
-            // Iterate through all pages and shapes to trigger lazy loading when needed.
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Check that the shape is a foreign (OLE) shape and contains embedded object data.
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
-                    {
-                        // Accessing ObjectData forces the lazy load of the OLE binary.
-                        byte[] oleData = shape.ForeignData.ObjectData;
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-                        // Output basic information about the loaded OLE object.
-                        Console.WriteLine($"Loaded OLE object from shape ID {shape.ID}, size {oleData?.Length ?? 0} bytes.");
-                    }
-                }
-            }
+            // Example of lazy OLE data access (commented out; uncomment when needed)
+            // foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // {
+            //     foreach (Aspose.Diagram.Shape shape in page.Shapes)
+            //     {
+            //         if (shape.ForeignData != null)
+            //         {
+            //             // OLE data is accessed only when required
+            //             byte[] oleData = shape.ForeignData.ObjectData;
+            //             // Process oleData here...
+            //         }
+            //     }
+            // }
 
-            // Save the diagram; no special save options are required.
+            // Optional: save the diagram after any modifications
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "output.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading, processing, or saving.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

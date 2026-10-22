@@ -1,79 +1,122 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments: input folder and output CSV path
+        if (args.Length < 2)
         {
-            // Folder containing Visio files (change as needed)
-            string inputFolder = @"C:\VisioFiles";
-            // Output CSV file path
-            string outputCsv = @"C:\VisioOleReport.csv";
+            Console.Error.WriteLine("Usage: Program <InputFolderPath> <OutputCsvPath> [OleOutputFolder]");
+            return;
+        }
 
-            // Prepare list to hold CSV rows
-            List<string> csvLines = new List<string>();
-            // Header
-            csvLines.Add("FileName,PageName,ShapeID,ObjectSourceFullName,DataSizeBytes");
+        string inputFolder = args[0];
+        string outputCsvPath = args[1];
+        string oleOutputFolder = args.Length >= 3 ? args[2] : Path.Combine(Path.GetDirectoryName(outputCsvPath) ?? "", "ExtractedOle");
 
-            // Get all Visio files in the folder (supports .vsdx, .vsd, .vdx, etc.)
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
+        // Guard input folder existence
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Ensure OLE output folder exists
+        try
+        {
+            Directory.CreateDirectory(oleOutputFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create OLE output folder '{oleOutputFolder}': {ex.Message}");
+            return;
+        }
+
+        // Prepare CSV writer
+        StreamWriter csvWriter;
+        try
+        {
+            csvWriter = new StreamWriter(outputCsvPath, false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create CSV file '{outputCsvPath}': {ex.Message}");
+            return;
+        }
+
+        using (csvWriter)
+        {
+            // Write CSV header
+            csvWriter.WriteLine("DiagramFile,PageId,ShapeId,OleSourceFullName,ExtractedFileName,ShowAsIcon");
+
+            // Get Visio files (common extensions)
+            string[] visioExtensions = new[] { ".vsdx", ".vsd", ".vsx", ".vtx", ".vdx", ".vssx", ".vss", ".vstx", ".vst", ".vstm", ".vsdm", ".vssm", ".vstm" };
+            string[] files = Directory.GetFiles(inputFolder);
+
+            foreach (string filePath in files)
             {
-                string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vsdm")
+                // Filter by Visio extensions
+                if (Array.IndexOf(visioExtensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
+                    continue;
+
+                // Guard file existence (redundant but per rules)
+                if (!File.Exists(filePath))
                 {
-                    // Skip non-Visio files
+                    Console.Error.WriteLine($"File not found: {filePath}");
                     continue;
                 }
 
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate pages
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    // Page name may be empty; use index as fallback
-                    string pageName = string.IsNullOrEmpty(page.Name) ? $"Page_{page.ID}" : page.Name;
+                    // Load diagram
+                    Diagram diagram = new Diagram(filePath);
 
-                    // Iterate shapes
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate pages
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Check if shape is a foreign (OLE) shape
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ForeignType == ForeignType.Object)
+                        // Iterate shapes on the page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Ensure OLE binary data exists
-                            byte[] oleData = shape.ForeignData.ObjectData;
-                            if (oleData == null || oleData.Length == 0)
-                                continue;
+                            // Detect OLE objects via ForeignData
+                            if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                            {
+                                // Extract OLE binary data
+                                string sourceFullName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+                                string extension = Path.GetExtension(sourceFullName);
+                                if (string.IsNullOrEmpty(extension))
+                                    extension = ".bin";
 
-                            // Gather information
-                            long shapeId = shape.ID;
-                            string objectSource = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
-                            long dataSize = oleData.Length;
+                                // Build unique file name for extracted OLE object
+                                string oleFileName = $"{Path.GetFileNameWithoutExtension(filePath)}_Page{page.ID}_Shape{shape.ID}{extension}";
+                                string oleFilePath = Path.Combine(oleOutputFolder, oleFileName);
 
-                            // Build CSV line (escape commas if needed)
-                            string csvLine = $"{Path.GetFileName(filePath)},{pageName},{shapeId},{objectSource},{dataSize}";
-                            csvLines.Add(csvLine);
+                                // Write OLE data to file using MemoryStream as required
+                                using (MemoryStream ms = new MemoryStream(shape.ForeignData.ObjectData))
+                                using (FileStream fs = new FileStream(oleFilePath, FileMode.Create, FileAccess.Write))
+                                {
+                                    ms.CopyTo(fs);
+                                }
+
+                                // Determine ShowAsIcon flag
+                                string showAsIcon = shape.ForeignData.ShowAsIcon == BOOL.True ? "True" : "False";
+
+                                // Write summary line to CSV
+                                csvWriter.WriteLine($"{Path.GetFileName(filePath)},{page.ID},{shape.ID},{sourceFullName},{oleFileName},{showAsIcon}");
+                            }
                         }
                     }
                 }
-            }
-
-            // Write all lines to the CSV file
-            using (StreamWriter writer = new StreamWriter(outputCsv, false))
-            {
-                foreach (string line in csvLines)
+                catch (Exception ex)
                 {
-                    writer.WriteLine(line);
+                    // Log any errors while processing a diagram
+                    Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
                 }
             }
-
-            Console.WriteLine($"OLE extraction completed. Report saved to: {outputCsv}");
         }
+
+        Console.WriteLine("Processing completed.");
     }
+}

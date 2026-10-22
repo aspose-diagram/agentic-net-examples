@@ -1,101 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define input and output file paths.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is a target page (second page). Create one if it does not exist.
-            Page targetPage;
-            if (diagram.Pages.Count >= 2)
+            // Load the diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                targetPage = diagram.Pages[1];
-            }
-            else
-            {
-                // Determine a new unique page ID
-                int maxId = 0;
-                foreach (Page p in diagram.Pages)
+                // Ensure there are at least two pages; add a new page if necessary.
+                if (diagram.Pages.Count < 2)
                 {
-                    if (p.ID > maxId) maxId = p.ID;
+                    // Create a new blank page and add it to the diagram.
+                    Page newPage = new Page();
+                    diagram.Pages.Add(newPage);
                 }
-                targetPage = new Page(maxId + 1);
-                diagram.Pages.Add(targetPage);
-            }
 
-            // Get a shape to clone from the first page (source page)
-            Page sourcePage = diagram.Pages[0];
-            Shape sourceShape = null;
-            foreach (Shape s in sourcePage.Shapes)
-            {
-                sourceShape = s;
-                break; // take the first shape found
-            }
-
-            if (sourceShape == null)
-            {
-                Console.WriteLine("No shape found on the source page to clone.");
-                return;
-            }
-
-            // Retrieve the master name of the source shape
-            string masterName = sourceShape.Master != null ? sourceShape.Master.Name : string.Empty;
-            if (string.IsNullOrEmpty(masterName))
-            {
-                Console.WriteLine("Source shape does not have an associated master.");
-                return;
-            }
-
-            // Add a new shape on the target page using the same master
-            long newShapeId = targetPage.AddShape(
-                sourceShape.XForm.PinX.Value,
-                sourceShape.XForm.PinY.Value,
-                masterName,
-                false);
-
-            // Retrieve the newly added shape instance
-            Shape clonedShape = targetPage.Shapes.GetShape(newShapeId);
-
-            // Copy size (width & height)
-            clonedShape.XForm.Width.Value = sourceShape.XForm.Width.Value;
-            clonedShape.XForm.Height.Value = sourceShape.XForm.Height.Value;
-
-            // Copy text content
-            clonedShape.Text.Value.Clear();
-            foreach (var item in sourceShape.Text.Value)
-            {
-                if (item is Txt txt)
+                // Get the source page (first page) and the first shape on that page.
+                Page sourcePage = diagram.Pages[0];
+                if (sourcePage.Shapes.Count == 0)
                 {
-                    // Preserve the text run
-                    clonedShape.Text.Value.Add(new Txt(txt.Text));
+                    Console.Error.WriteLine("No shapes found on the source page.");
+                    return;
                 }
+
+                Shape originalShape = sourcePage.Shapes[0];
+
+                // Create a new shape instance and copy the original shape's data.
+                Shape clonedShape = new Shape();
+                clonedShape.Copy(originalShape);
+
+                // Apply a different preset theme to the cloned shape.
+                clonedShape.PresetTheme = PresetThemeValue.Bubble;
+                clonedShape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+
+                // Optionally adjust the position of the cloned shape to avoid overlap.
+                clonedShape.XForm.PinX.Value += 2.0;
+                clonedShape.XForm.PinY.Value += 2.0;
+
+                // Place the cloned shape on the second page.
+                Page targetPage = diagram.Pages[1];
+                targetPage.Shapes.Add(clonedShape);
+
+                // Save the modified diagram to the output file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Apply a different preset theme to the cloned shape
-            clonedShape.PresetTheme = PresetThemeValue.Bubble;
-            clonedShape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
-            // Optionally set a quick style
-            clonedShape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Shape cloned, theme applied, and placed on another page successfully.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

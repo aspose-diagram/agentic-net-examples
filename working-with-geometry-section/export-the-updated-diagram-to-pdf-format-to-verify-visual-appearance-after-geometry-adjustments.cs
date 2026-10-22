@@ -1,24 +1,47 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output PDF file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-
-            // Load the existing Visio diagram (assumes geometry adjustments have already been applied)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Export the diagram to PDF to verify visual appearance after adjustments
-            diagram.Save("output.pdf", SaveFileFormat.Pdf);
-
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Load the diagram inside a using block as required
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            try
+            {
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Do not export hidden pages (property expects a bool, not BOOL)
+                pdfOptions.ExportHiddenPage = false; // corrected from BOOL.False
+                // Set a default font for any missing fonts
+                pdfOptions.DefaultFont = "Arial";
+                // Explicitly set the target format
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Save the diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Write any errors to the error stream
+                Console.Error.WriteLine($"Error during PDF export: {ex.Message}");
+            }
         }
     }
 }

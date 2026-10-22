@@ -7,40 +7,44 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the encrypted Visio file (password handling is not supported via API)
-        string inputPath = "encrypted.vsdx";
-        // Guard: ensure the input file exists before proceeding
+        // Input Visio file path (encrypted with a password). Password handling is not supported in this version.
+        string inputPath = args.Length > 0 ? args[0] : "encrypted_input.vsdx";
+        // Output file path (converted to PDF in this example).
+        string outputPath = args.Length > 1 ? args[1] : "converted_output.pdf";
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Desired output PDF file path
-        string outputPath = "converted.pdf";
-
         try
         {
-            // Load the Visio diagram from a file stream using the constructor (Diagram.Load does not exist)
+            // Load the Visio diagram from a FileStream.
             using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
+                // The Diagram constructor accepts a stream. Password-protected files cannot be opened with a password via Aspose.Diagram.
                 Diagram diagram = new Diagram(stream);
 
-                // Configure PDF save options
+                // Prepare PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // specify PDF format
-                pdfOptions.DefaultFont = "Arial"; // fallback font if diagram fonts are missing
+                // Explicitly set the target format (required for some save pipelines).
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as PDF using the options object
+                // Save the diagram to the desired output format.
                 diagram.Save(outputPath, pdfOptions);
+
+                // Dispose the diagram to release resources.
+                diagram.Dispose();
             }
 
-            Console.WriteLine("Conversion completed.");
+            Console.WriteLine($"Conversion completed successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

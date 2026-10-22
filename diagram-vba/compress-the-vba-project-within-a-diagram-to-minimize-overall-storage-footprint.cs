@@ -1,43 +1,51 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the compressed output file
-            string outputPath = "output_compressed.vsdx";
-
-            try
+            // Load the Visio diagram.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Remove the VBA project data to minimize storage size
+                // ------------------------------------------------------------
+                // Compress VBA project:
+                // Removing the VBA project data reduces the file size.
+                // This is achieved by setting the VbProjectData property to null.
+                // ------------------------------------------------------------
                 diagram.VbProjectData = null;
 
-                // Save the diagram (no VBA) in a non‑macro format
+                // Save the modified diagram. Use VSDX format (non‑macro) as VBA data is removed.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved with compressed VBA data.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-                throw;
             }
 
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

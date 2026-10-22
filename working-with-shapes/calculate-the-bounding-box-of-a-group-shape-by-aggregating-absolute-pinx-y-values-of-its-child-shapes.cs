@@ -1,88 +1,114 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <groupShapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string groupIdArg = args[1];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse the group shape ID
+        if (!long.TryParse(groupIdArg, out long groupShapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid group shape ID - {groupIdArg}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (required by the API)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
+                // Use the first page of the diagram (you can change this as needed)
+                Page page = diagram.Pages[0];
 
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
+                // Retrieve the shape that is supposed to be a group
+                Shape groupShape = page.Shapes.GetShape(groupShapeId);
 
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Assume the group shape is on the first page and we know its ID
-                // Replace this ID with the actual group shape ID you want to process
-                long groupShapeId = 1; // example ID
-
-                // Retrieve the group shape
-                Shape groupShape = diagram.Pages[0].Shapes.GetShape(groupShapeId);
-
-                if (groupShape == null)
+                // Verify that the retrieved shape is a group
+                // A shape is a group if its Type is Group or it contains child shapes
+                if (groupShape.Type != TypeValue.Group && groupShape.Shapes.Count == 0)
                 {
-                    Console.WriteLine($"Group shape with ID {groupShapeId} not found.");
+                    Console.Error.WriteLine($"Error: Shape with ID {groupShapeId} is not a group.");
                     return;
                 }
 
-                // Verify that the shape is a group
-                if (groupShape.Type != TypeValue.Group)
-                {
-                    Console.WriteLine($"Shape ID {groupShapeId} is not a group shape.");
-                    return;
-                }
-
-                // Get group's absolute center position
-                double groupPinX = groupShape.XForm.PinX.Value;
-                double groupPinY = groupShape.XForm.PinY.Value;
-
-                // Initialize bounding box extremes
+                // Initialize bounding‑box extremes
                 double minX = double.MaxValue;
                 double minY = double.MaxValue;
                 double maxX = double.MinValue;
                 double maxY = double.MinValue;
 
-                // Iterate over child shapes within the group
+                // Iterate through each child shape inside the group
                 foreach (Shape child in groupShape.Shapes)
                 {
-                    // Child's position is relative to the group's center
-                    double childPinX = child.XForm.PinX.Value;
-                    double childPinY = child.XForm.PinY.Value;
-                    double childWidth = child.XForm.Width.Value;
-                    double childHeight = child.XForm.Height.Value;
+                    // Skip logically deleted shapes
+                    if (child.Del == BOOL.True)
+                        continue;
 
-                    // Compute absolute center coordinates
-                    double absPinX = groupPinX + childPinX;
-                    double absPinY = groupPinY + childPinY;
+                    // Calculate the absolute PinX/Y of the child shape
+                    double absolutePinX = groupShape.XForm.PinX.Value
+                                          + child.XForm.PinX.Value
+                                          - groupShape.XForm.LocPinX.Value;
 
-                    // Compute child's bounding edges
-                    double left   = absPinX - (childWidth / 2.0);
-                    double right  = absPinX + (childWidth / 2.0);
-                    double top    = absPinY - (childHeight / 2.0);
-                    double bottom = absPinY + (childHeight / 2.0);
+                    double absolutePinY = groupShape.XForm.PinY.Value
+                                          + child.XForm.PinY.Value
+                                          - groupShape.XForm.LocPinY.Value;
 
-                    // Update overall bounding box
+                    // Retrieve child dimensions
+                    double width = child.XForm.Width.Value;
+                    double height = child.XForm.Height.Value;
+
+                    // Compute the child's extents
+                    double left   = absolutePinX - width / 2.0;
+                    double right  = absolutePinX + width / 2.0;
+                    double bottom = absolutePinY - height / 2.0;
+                    double top    = absolutePinY + height / 2.0;
+
+                    // Update the overall bounding box
                     if (left   < minX) minX = left;
                     if (right  > maxX) maxX = right;
-                    if (top    < minY) minY = top;
-                    if (bottom > maxY) maxY = bottom;
+                    if (bottom < minY) minY = bottom;
+                    if (top    > maxY) maxY = top;
+                }
+
+                // If no child shapes were processed, report and exit
+                if (minX == double.MaxValue)
+                {
+                    Console.WriteLine("The group contains no visible child shapes.");
+                    return;
                 }
 
                 // Output the calculated bounding box
                 Console.WriteLine("Bounding Box of Group Shape:");
                 Console.WriteLine($"Left   (Min X): {minX}");
+                Console.WriteLine($"Bottom (Min Y): {minY}");
                 Console.WriteLine($"Right  (Max X): {maxX}");
-                Console.WriteLine($"Top    (Min Y): {minY}");
-                Console.WriteLine($"Bottom (Max Y): {maxY}");
+                Console.WriteLine($"Top    (Max Y): {maxY}");
                 Console.WriteLine($"Width  : {maxX - minX}");
                 Console.WriteLine($"Height : {maxY - minY}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -6,21 +6,34 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Ensure a file path argument is provided
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the Visio file path as a command-line argument.");
+            return;
+        }
+
+        string filePath = args[0];
+
+        // Guard: verify the file exists before attempting to load
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file to be loaded
-            string filePath = @"C:\Path\To\YourDiagram.vsdx";
-
-            // Load the Visio diagram and initialize the Diagram object
+            // Load the Visio diagram from the specified file path
             Diagram diagram = new Diagram(filePath);
 
-            // The 'diagram' object is now ready for further processing.
-
+            // Optional: output basic information about the loaded diagram
+            Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Write any loading errors to the error console
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

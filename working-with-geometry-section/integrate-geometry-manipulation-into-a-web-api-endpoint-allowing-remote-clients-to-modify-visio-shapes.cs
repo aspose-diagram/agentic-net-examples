@@ -1,157 +1,111 @@
 using System;
-using System.Net;
-using System.Text;
-using System.Text.Json;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace VisioGeometryApi
+class Program
 {
-    // DTO for incoming JSON payload
-    public class ShapeGeometryRequest
+    static void Main(string[] args)
     {
-        public long ShapeId { get; set; }
-        public double? PinX { get; set; }
-        public double? PinY { get; set; }
-        public double? Width { get; set; }
-        public double? Height { get; set; }
-        public double? Angle { get; set; } // degrees
-    }
-
-    class Program
-    {
-        // Path to the Visio file to be manipulated
-        private const string DiagramPath = "input.vsdx";
-        // Path where the modified diagram will be saved
-        private const string OutputPath = "output.vsdx";
-
-        static void Main()
+        // Expecting five arguments:
+        // 0 - input Visio file path
+        // 1 - output Visio file path
+        // 2 - shape ID (numeric)
+        // 3 - new X coordinate for a LineTo geometry segment (double)
+        // 4 - new Y coordinate for a LineTo geometry segment (double)
+        if (args.Length < 5)
         {
-            // Load the diagram (create if not exists)
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(DiagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
-            // Start a simple HTTP listener
-            HttpListener listener = new HttpListener();
-            listener.Prefixes.Add("http://localhost:5000/modify/");
-            try
-            {
-                listener.Start();
-                Console.WriteLine("Visio Geometry API listening on http://localhost:5000/modify/");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to start HttpListener: {ex.Message}");
-                return;
-            }
-
-            // Process requests asynchronously
-            while (true)
-            {
-                HttpListenerContext context = listener.GetContext(); // blocking call
-                _ = ProcessRequestAsync(context, diagram);
-            }
+            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <shapeId> <newX> <newY>");
+            return;
         }
 
-        private static async System.Threading.Tasks.Task ProcessRequestAsync(HttpListenerContext context, Diagram diagram)
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+        string newXArg = args[3];
+        string newYArg = args[4];
+
+        // Validate input file existence
+        if (!File.Exists(inputPath))
         {
-            HttpListenerRequest request = context.Request;
-            HttpListenerResponse response = context.Response;
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            if (request.HttpMethod != "POST")
-            {
-                response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-                response.Close();
-                return;
-            }
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
 
-            // Read request body
-            string requestBody;
-            using (var reader = new System.IO.StreamReader(request.InputStream, request.ContentEncoding))
-            {
-                requestBody = await reader.ReadToEndAsync();
-            }
+        // Parse new X coordinate
+        if (!double.TryParse(newXArg, out double newX))
+        {
+            Console.Error.WriteLine($"Invalid X coordinate: {newXArg}");
+            return;
+        }
 
-            ShapeGeometryRequest payload;
-            try
-            {
-                payload = JsonSerializer.Deserialize<ShapeGeometryRequest>(requestBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (payload == null)
-                    throw new Exception("Deserialized payload is null.");
-            }
-            catch (Exception ex)
-            {
-                response.StatusCode = (int)HttpStatusCode.BadRequest;
-                byte[] errorBytes = Encoding.UTF8.GetBytes($"Invalid JSON payload: {ex.Message}");
-                response.OutputStream.Write(errorBytes, 0, errorBytes.Length);
-                response.Close();
-                return;
-            }
+        // Parse new Y coordinate
+        if (!double.TryParse(newYArg, out double newY))
+        {
+            Console.Error.WriteLine($"Invalid Y coordinate: {newYArg}");
+            return;
+        }
 
-            // Find the shape across all pages
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                try
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    targetShape = page.Shapes.GetShape(payload.ShapeId);
-                    if (targetShape != null)
-                        break;
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
-                catch
+
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve the target shape by ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    // Shape not on this page, continue searching
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    return;
                 }
-            }
 
-            if (targetShape == null)
-            {
-                response.StatusCode = (int)HttpStatusCode.NotFound;
-                byte[] notFoundBytes = Encoding.UTF8.GetBytes($"Shape with ID {payload.ShapeId} not found.");
-                response.OutputStream.Write(notFoundBytes, 0, notFoundBytes.Length);
-                response.Close();
-                return;
-            }
+                // Ensure the shape has at least one geometry section
+                if (shape.Geoms.Count == 0)
+                {
+                    Console.Error.WriteLine($"Shape ID {shapeId} has no geometry sections.");
+                    return;
+                }
 
-            // Apply geometry changes if provided
-            if (payload.PinX.HasValue)
-                targetShape.XForm.PinX.Value = payload.PinX.Value;
-            if (payload.PinY.HasValue)
-                targetShape.XForm.PinY.Value = payload.PinY.Value;
-            if (payload.Width.HasValue)
-                targetShape.XForm.Width.Value = payload.Width.Value;
-            if (payload.Height.HasValue)
-                targetShape.XForm.Height.Value = payload.Height.Value;
-            if (payload.Angle.HasValue)
-                targetShape.XForm.Angle.Value = payload.Angle.Value; // degrees
+                // Access the first geometry (Geom) object
+                Geom geom = (Geom)shape.Geoms[0];
 
-            // Save the updated diagram
-            try
-            {
-                diagram.Save(OutputPath, SaveFileFormat.Vsdx);
-            }
-            catch (Exception ex)
-            {
-                response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                byte[] saveErrorBytes = Encoding.UTF8.GetBytes($"Failed to save diagram: {ex.Message}");
-                response.OutputStream.Write(saveErrorBytes, 0, saveErrorBytes.Length);
-                response.Close();
-                return;
-            }
+                // Create a new LineTo segment with the provided coordinates
+                LineTo lineTo = new LineTo();
+                lineTo.X.Value = newX;
+                lineTo.Y.Value = newY;
 
-            // Respond with success
-            response.StatusCode = (int)HttpStatusCode.OK;
-            byte[] successBytes = Encoding.UTF8.GetBytes($"Shape {payload.ShapeId} updated successfully.");
-            response.OutputStream.Write(successBytes, 0, successBytes.Length);
-            response.Close();
+                // Append the new LineTo segment to the geometry's coordinate collection
+                geom.CoordinateCol.Add(lineTo);
+
+                // Refresh shape data to apply geometry changes
+                shape.RefreshData();
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

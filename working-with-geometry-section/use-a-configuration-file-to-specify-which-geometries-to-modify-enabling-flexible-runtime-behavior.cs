@@ -1,121 +1,168 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramGeometryModifier
+class Program
 {
-    // Represents a single geometry modification instruction read from the configuration file.
-    public class GeometryModification
+    // Model representing a geometry modification read from the configuration file
+    private class GeometryModification
     {
-        public long ShapeId { get; set; }          // ID of the shape to modify
-        public double? X { get; set; }             // New X coordinate (optional)
-        public double? Y { get; set; }             // New Y coordinate (optional)
-        public double? Width { get; set; }         // New width (optional)
-        public double? Height { get; set; }        // New height (optional)
+        public int ShapeId { get; set; }               // Visio shape ID to modify
+        public int GeometryIndex { get; set; }         // Index of the geometry within the shape
+        public string Action { get; set; }             // "DeleteSegment" or "AddLine"
+        public int? SegmentIndex { get; set; }         // Index of the segment to delete (required for DeleteSegment)
+        public double? NewX { get; set; }              // X coordinate for new line (required for AddLine)
+        public double? NewY { get; set; }              // Y coordinate for new line (required for AddLine)
     }
 
-    // Root object for the JSON configuration.
-    public class GeometryConfig
+    static void Main(string[] args)
     {
-        public List<GeometryModification> Modifications { get; set; } = new List<GeometryModification>();
-    }
+        // Expect three arguments: input diagram, configuration file, output diagram
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <configPath> <outputDiagramPath>");
+            return;
+        }
 
-    class Program
-    {
-        static void Main(string[] args)
+        string inputDiagramPath = args[0];
+        string configPath = args[1];
+        string outputDiagramPath = args[2];
+
+        // Guard against missing input files
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+            return;
+        }
+
+        if (!File.Exists(configPath))
+        {
+            Console.Error.WriteLine($"Configuration file not found: {configPath}");
+            return;
+        }
+
+        // Load configuration JSON
+        List<GeometryModification> modifications;
+        try
+        {
+            string json = File.ReadAllText(configPath);
+            modifications = JsonSerializer.Deserialize<List<GeometryModification>>(json);
+            if (modifications == null)
+            {
+                Console.Error.WriteLine("Configuration file is empty or malformed.");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to read or parse configuration file: {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputDiagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Process each modification
+        foreach (var mod in modifications)
         {
             try
             {
-
-                // Paths – adjust as needed or pass via command‑line arguments.
-                string diagramPath = @"C:\Diagrams\input.vsdx";
-                string configPath = @"C:\Diagrams\geometryConfig.json";
-                string outputPath = @"C:\Diagrams\output.vsdx";
-
-                // Load configuration.
-                GeometryConfig config = LoadConfiguration(configPath);
-
-                // Load the diagram using Aspose.Diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Apply each modification.
-                foreach (var mod in config.Modifications)
+                // Locate the shape with the specified ID on the first page
+                Shape targetShape = null;
+                foreach (Shape shp in diagram.Pages[0].Shapes)
                 {
-                    // Find the shape by its ID.
-                    Shape shape = FindShapeById(diagram, mod.ShapeId);
-                    if (shape == null)
+                    // Shape.ID is a long, compare directly
+                    if (shp.ID == mod.ShapeId)
                     {
-                        Console.WriteLine($"Shape with ID {mod.ShapeId} not found. Skipping.");
+                        targetShape = shp;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {mod.ShapeId} not found.");
+                    continue;
+                }
+
+                // Validate geometry index
+                if (mod.GeometryIndex < 0 || mod.GeometryIndex >= targetShape.Geoms.Count)
+                {
+                    Console.Error.WriteLine($"Geometry index {mod.GeometryIndex} out of range for shape ID {mod.ShapeId}.");
+                    continue;
+                }
+
+                // Retrieve the requested geometry (cast from object)
+                Geom geom = (Geom)targetShape.Geoms[mod.GeometryIndex];
+
+                // Perform the requested action
+                if (string.Equals(mod.Action, "DeleteSegment", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!mod.SegmentIndex.HasValue)
+                    {
+                        Console.Error.WriteLine("SegmentIndex is required for DeleteSegment action.");
                         continue;
                     }
 
-                    // The shape's geometry is stored in the XForm element.
-                    // XForm contains PinX, PinY (center point) and Width, Height.
-                    // Adjust values only if they are provided in the config.
-
-                    if (mod.X.HasValue)
+                    int segIdx = mod.SegmentIndex.Value;
+                    if (segIdx < 0 || segIdx >= geom.CoordinateCol.Count)
                     {
-                        // PinX is the X coordinate of the shape's center.
-                        shape.XForm.PinX.Value = mod.X.Value;
+                        Console.Error.WriteLine($"Segment index {segIdx} out of range in geometry {mod.GeometryIndex} of shape ID {mod.ShapeId}.");
+                        continue;
                     }
 
-                    if (mod.Y.HasValue)
-                    {
-                        // PinY is the Y coordinate of the shape's center.
-                        shape.XForm.PinY.Value = mod.Y.Value;
-                    }
-
-                    if (mod.Width.HasValue)
-                    {
-                        shape.XForm.Width.Value = mod.Width.Value;
-                    }
-
-                    if (mod.Height.HasValue)
-                    {
-                        shape.XForm.Height.Value = mod.Height.Value;
-                    }
+                    // Cast to LineTo (or MoveTo) – assuming LineTo for deletion
+                    LineTo segment = (LineTo)geom.CoordinateCol[segIdx];
+                    segment.Del = BOOL.True; // Mark segment as deleted
                 }
+                else if (string.Equals(mod.Action, "AddLine", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!mod.NewX.HasValue || !mod.NewY.HasValue)
+                    {
+                        Console.Error.WriteLine("NewX and NewY are required for AddLine action.");
+                        continue;
+                    }
 
-                // Save the modified diagram.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    // Create a new LineTo segment with the provided coordinates
+                    LineTo newLine = new LineTo();
+                    newLine.X.Value = mod.NewX.Value;
+                    newLine.Y.Value = mod.NewY.Value;
+                    newLine.Del = BOOL.False; // Ensure the segment is active
 
-                Console.WriteLine("Diagram processing completed.");
-
+                    // Append the new segment to the geometry's coordinate collection
+                    geom.CoordinateCol.Add(newLine);
+                }
+                else
+                {
+                    Console.Error.WriteLine($"Unsupported action '{mod.Action}' in configuration.");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Error processing modification for shape ID {mod.ShapeId}: {ex.Message}");
             }
-    }
-
-        // Loads the JSON configuration file into a GeometryConfig object.
-        private static GeometryConfig LoadConfiguration(string configPath)
-        {
-            if (!File.Exists(configPath))
-                throw new FileNotFoundException($"Configuration file not found: {configPath}");
-
-            string json = File.ReadAllText(configPath);
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-            return JsonSerializer.Deserialize<GeometryConfig>(json, options);
         }
 
-        // Finds a shape in the diagram by its unique ID.
-        private static Shape FindShapeById(Diagram diagram, long shapeId)
+        // Save the modified diagram
+        try
         {
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.ID == shapeId)
-                        return shape;
-                }
-            }
-            return null;
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputDiagramPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
 }

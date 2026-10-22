@@ -1,11 +1,11 @@
 {
   "category": "working-with-geometry-section",
   "display_name": "Working With Geometry Section",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 36,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,14 +14,15 @@
       "task": "Apply a gradient fill to geometry interiors by setting appropriate shapesheet fill properties programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -30,7 +31,6 @@
       "task": "Apply a scaling transformation to all vertices in a geometry to uniformly enlarge the shape",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -48,7 +48,6 @@
       "task": "Apply custom line caps to geometry edges to enhance visual representation of diagram connectors",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -84,7 +83,9 @@
       "task": "Calculate the total length of all line segments in a geometry to assess diagram complexity metrics",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -101,7 +102,6 @@
       "task": "Clone geometry from a source shape and apply it to a target shape to duplicate design elements",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -120,7 +120,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -136,7 +137,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -156,11 +158,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -171,6 +173,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -187,7 +190,6 @@
       "task": "Document geometry changes by adding comments to shapesheet cells describing the modification rationale",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -205,7 +207,9 @@
       "task": "Edit connector geometry entries directly in the shapesheet to improve diagram routing clarity",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Manipulation",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -227,10 +231,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "SVGSaveOptions",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -239,11 +242,13 @@
       "task": "Export the updated diagram to pdf format to verify visual appearance after geometry adjustments",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -255,7 +260,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -276,8 +282,8 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "Shapes"
@@ -289,7 +295,8 @@
       "task": "Handle out of range geometry index exceptions by logging detailed error information and skipping invalid entries",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -322,7 +329,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -340,9 +348,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Net",
-        "System.Text",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -358,14 +364,15 @@
       "task": "Iterate through each geometry object in the collection and log vertex coordinates for debugging",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -380,9 +387,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -409,7 +416,6 @@
       "task": "Offset geometry coordinates by a given delta to reposition the shape without changing its size",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -427,6 +433,7 @@
       "task": "Remove the first geometry entry from a connector shape using the linetocol method",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -480,7 +487,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -501,7 +509,9 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -529,7 +539,8 @@
       "task": "Set geometry fill color through shapesheet cells to highlight specific diagram regions programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -545,7 +556,8 @@
       "task": "Update geometry line type property to dashed style for visual distinction of connector paths",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -561,6 +573,7 @@
       "task": "Update vertex coordinates of an existing geometry to reshape the shape according to new dimensions",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -587,7 +600,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -602,11 +614,9 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -615,6 +625,7 @@
       "task": "Validate that the geometry section contains the expected number of geometries after modifications",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

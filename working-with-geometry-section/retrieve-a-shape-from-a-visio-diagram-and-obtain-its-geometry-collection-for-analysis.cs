@@ -7,72 +7,101 @@ class Program
     static void Main(string[] args)
     {
         // Path to the Visio file (adjust as needed)
-        string filePath = "input.vsdx";
-        // Guard to ensure the file exists before proceeding
-        if (!File.Exists(filePath)) { Console.Error.WriteLine($"File not found: {filePath}"); return; }
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(filePath);
-
-            // Access the first page (or use diagram.Pages.GetPage("Page-1") for a named page)
-            Page page = diagram.Pages[0];
-
-            // Retrieve a shape by its ID (replace with a valid ID from your diagram)
-            int shapeId = 1;
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Guard to ensure the shape was found
-            if (shape == null)
+            // Load the diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine($"Shape with ID {shapeId} not found.");
-                return;
-            }
-
-            // Output basic shape information
-            Console.WriteLine("Shape ID: " + shape.ID);
-            Console.WriteLine("Shape NameU: " + shape.NameU);
-            Console.WriteLine("Number of geometry sections: " + shape.Geoms.Count);
-
-            // Iterate through each geometry (Geom) section
-            foreach (Aspose.Diagram.Geom geom in shape.Geoms)
-            {
-                // Geom does not expose an Index property; output its hash code as an identifier
-                Console.WriteLine("Geom Identifier: " + geom.GetHashCode());
-                Console.WriteLine("Number of coordinate entries: " + geom.CoordinateCol.Count);
-
-                // Iterate through each coordinate entry within the geometry
-                foreach (object coord in geom.CoordinateCol)
+                // Verify that the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    if (coord is MoveTo move)
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Access the first page
+                Page page = diagram.Pages[0];
+
+                // Find the first non‑deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape s in page.Shapes)
+                {
+                    // Skip logically deleted shapes
+                    if (s.Del == BOOL.False)
                     {
-                        // Output MoveTo coordinates
-                        Console.WriteLine($"  MoveTo - X: {move.X.Value}, Y: {move.Y.Value}");
+                        targetShape = s;
+                        break;
                     }
-                    else if (coord is LineTo line)
+                }
+
+                if (targetShape == null)
+                {
+                    Console.WriteLine("No visible shape found on the first page.");
+                    return;
+                }
+
+                // Output basic shape information
+                Console.WriteLine($"Shape ID: {targetShape.ID}");
+                Console.WriteLine($"Shape NameU: {targetShape.NameU}");
+                Console.WriteLine($"Shape Master: {(targetShape.Master != null ? targetShape.Master.Name : "None")}");
+
+                // Retrieve the Geometry collection (Geoms) for analysis
+                if (targetShape.Geoms == null || targetShape.Geoms.Count == 0)
+                {
+                    Console.WriteLine("The selected shape has no geometry sections.");
+                }
+                else
+                {
+                    Console.WriteLine($"Geometry sections count: {targetShape.Geoms.Count}");
+
+                    // Enumerate each geometry section
+                    int geomIndex = 0;
+                    foreach (Geom geom in targetShape.Geoms)
                     {
-                        // Output LineTo coordinates
-                        Console.WriteLine($"  LineTo - X: {line.X.Value}, Y: {line.Y.Value}");
+                        Console.WriteLine($"  Geom #{geomIndex}");
+
+                        // Output the number of coordinate entries in this geometry (if available)
+                        if (geom.CoordinateCol != null)
+                        {
+                            Console.WriteLine($"    Coordinate entries count: {geom.CoordinateCol.Count}");
+
+                            // Example: list the type of each coordinate entry
+                            int coordIndex = 0;
+                            foreach (object coord in geom.CoordinateCol)
+                            {
+                                string typeName = coord.GetType().Name;
+                                Console.WriteLine($"      [{coordIndex}] {typeName}");
+                                coordIndex++;
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("    No coordinate collection found.");
+                        }
+
+                        geomIndex++;
                     }
-                    else if (coord is ArcTo arc)
-                    {
-                        // Output ArcTo coordinates
-                        Console.WriteLine($"  ArcTo - X: {arc.X.Value}, Y: {arc.Y.Value}");
-                    }
-                    else if (coord is SplineKnot spline)
-                    {
-                        // Output SplineKnot coordinates
-                        Console.WriteLine($"  SplineKnot - X: {spline.X.Value}, Y: {spline.Y.Value}");
-                    }
-                    // Additional coordinate types can be handled here if needed
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine("Error processing diagram: " + ex.Message);
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

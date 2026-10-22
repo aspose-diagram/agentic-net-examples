@@ -1,55 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_highlighted.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the fill color to use for highlighting (hex color string)
-                string highlightColor = "#FFFF00"; // Yellow
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through all pages.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    Aspose.Diagram.Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all shapes on the current page.
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        // Example condition: highlight shapes whose universal name is "Process"
-                        // Adjust the condition as needed (e.g., by shape ID, master name, etc.)
-                        if (shape.NameU != null && shape.NameU.Equals("Process", StringComparison.OrdinalIgnoreCase))
+                        Aspose.Diagram.Shape shape = page.Shapes[shapeIndex];
+
+                        // Example condition: highlight shapes with even IDs.
+                        if (shape.ID % 2 == 0)
                         {
-                            // Ensure the shape is not deleted
-                            if (shape.Del == BOOL.False)
-                            {
-                                // Set solid fill pattern
-                                shape.Fill.FillPattern.Value = 1; // 1 = solid fill
-                                // Set the foreground fill color to the highlight color
-                                shape.Fill.FillForegnd.Value = highlightColor;
-                                // Optionally set background fill color (here set to white)
-                                shape.Fill.FillBkgnd.Value = "#FFFFFF";
-                            }
+                            // Ensure the shape has a solid fill pattern.
+                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+
+                            // Set the foreground fill color to a bright yellow.
+                            shape.Fill.FillForegnd.Value = "#FFFF00";
+
+                            // Optionally set background fill color (not required for solid fill).
+                            shape.Fill.FillBkgnd.Value = "#FFFFFF";
+
+                            // Ensure the fill is fully opaque (0.0 = opaque, 1.0 = transparent).
+                            shape.Fill.FillForegndTrans.Value = 0.0;
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,53 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path (optional second argument)
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
+
         try
         {
-
-            // Load an existing Visio diagram.
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page of the diagram.
-            Page page = diagram.Pages[0];
-
-            // Find the first shape on the page to modify.
-            Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                targetShape = s;
-                break;
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Example geometry modification:
+                        // Increase the shape's width by 10% to demonstrate a change.
+                        // This modifies the XForm.Width cell in the ShapeSheet.
+                        double originalWidth = shape.XForm.Width.Value;
+                        double newWidth = originalWidth * 1.10;
+                        shape.XForm.Width.Value = newWidth;
+
+                        // Document the change by adding a comment to the shape's Misc.Comment cell.
+                        // This comment resides in the ShapeSheet and explains the rationale.
+                        string commentText = $"Width increased from {originalWidth:F2} to {newWidth:F2} (10% increase) to improve layout spacing.";
+                        // Ensure the Comment cell exists before assigning
+                        if (shape.Misc != null && shape.Misc.Comment != null)
+                        {
+                            shape.Misc.Comment.Value = commentText;
+                        }
+                    }
+                }
+
+                // Save the modified diagram to the specified output path using VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shapes found on the page.");
-                return;
-            }
-
-            // ----- Geometry modification -----
-            // Move the shape to a new position (PinX, PinY) and resize it (Width, Height).
-            targetShape.XForm.PinX.Value = 5.0;    // New X coordinate (in inches)
-            targetShape.XForm.PinY.Value = 7.0;    // New Y coordinate (in inches)
-            targetShape.XForm.Width.Value = 2.5;   // New width (in inches)
-            targetShape.XForm.Height.Value = 1.5;  // New height (in inches)
-
-            // ----- Add comment describing the change -----
-            string rationale = "Moved shape to (5,7) and resized to 2.5x1.5 inches for layout alignment.";
-            page.AddComment(targetShape, rationale);
-
-            // Save the modified diagram.
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

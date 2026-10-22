@@ -1,81 +1,168 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
-        // Create an empty diagram
-        Diagram diagram = new Diagram();
-
-        // Add a new page to the diagram
-        diagram.Pages.Add(new Page());
-        Page page = diagram.Pages[0];
-
-        // Draw a simple rectangle (pinX, pinY, width, height)
-        // This method returns the shape ID (long)
-        long rectShapeId = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
-        Shape rectShape = page.Shapes.GetShape(rectShapeId);
-
-        // Ensure the shape has at least one geometry section
-        if (rectShape.Geoms == null || rectShape.Geoms.Count == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            throw new Exception("Rectangle shape does not contain any geometry sections.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
         }
 
-        // Retrieve the first geometry (Geom) object
-        Geom geom = (Geom)rectShape.Geoms[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Record the initial number of coordinate entries
-        int initialCount = geom.CoordinateCol.Count;
-
-        // -------------------------------------------------
-        // 1. Add a new vertex (LineTo) to the geometry
-        // -------------------------------------------------
-        LineTo newVertex = new LineTo();
-        newVertex.X.Value = 3.0; // X coordinate
-        newVertex.Y.Value = 2.0; // Y coordinate
-        geom.CoordinateCol.Add(newVertex);
-
-        // Verify that the count increased by one
-        int afterAddCount = geom.CoordinateCol.Count;
-        if (afterAddCount != initialCount + 1)
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            throw new Exception($"Vertex addition failed. Expected count {initialCount + 1}, but got {afterAddCount}.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
         }
-        Console.WriteLine("Vertex addition verified.");
 
-        // -------------------------------------------------
-        // 2. Update the newly added vertex coordinates
-        // -------------------------------------------------
-        newVertex.X.Value = 4.5;
-        newVertex.Y.Value = 3.5;
-
-        // Verify that the coordinates were updated
-        if (Math.Abs(newVertex.X.Value - 4.5) > 0.0001 || Math.Abs(newVertex.Y.Value - 3.5) > 0.0001)
+        try
         {
-            throw new Exception("Vertex coordinate update failed.");
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure there is at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    throw new Exception("Diagram contains no pages.");
+                }
+
+                Page page = diagram.Pages[0];
+
+                // -------------------------------------------------------------
+                // 1. Add a new rectangle shape to the page.
+                // -------------------------------------------------------------
+                // The fourth parameter (isCalculate) is a plain bool, not BOOL.
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Verify that the shape has at least one geometry section.
+                if (shape.Geoms == null || shape.Geoms.Count == 0)
+                {
+                    throw new Exception("Added shape does not contain any geometry sections.");
+                }
+
+                // Retrieve the first geometry (explicit cast to Geom).
+                Geom geometry = (Geom)shape.Geoms[0];
+
+                // -------------------------------------------------------------
+                // 2. Verify initial vertex count.
+                // -------------------------------------------------------------
+                int initialVertexCount = geometry.CoordinateCol.Count;
+                Console.WriteLine($"Initial vertex count: {initialVertexCount}");
+
+                // -------------------------------------------------------------
+                // 3. Add a new vertex (LineTo) to the geometry.
+                // -------------------------------------------------------------
+                LineTo newVertex = new LineTo();
+                newVertex.X.Value = 5.0;
+                newVertex.Y.Value = 7.0;
+                geometry.CoordinateCol.Add(newVertex);
+
+                // Verify the vertex was added.
+                int afterAddCount = geometry.CoordinateCol.Count;
+                if (afterAddCount != initialVertexCount + 1)
+                {
+                    throw new Exception("Vertex addition failed: count mismatch.");
+                }
+
+                // Retrieve the last vertex and verify its coordinates.
+                object addedObj = geometry.CoordinateCol[afterAddCount - 1];
+                if (addedObj is LineTo addedLine)
+                {
+                    if (Math.Abs(addedLine.X.Value - 5.0) > 0.0001 ||
+                        Math.Abs(addedLine.Y.Value - 7.0) > 0.0001)
+                    {
+                        throw new Exception("Added vertex coordinates do not match expected values.");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Added geometry element is not a LineTo.");
+                }
+                Console.WriteLine("Vertex addition verified.");
+
+                // -------------------------------------------------------------
+                // 4. Update the first vertex's coordinates.
+                // -------------------------------------------------------------
+                if (geometry.CoordinateCol.Count == 0)
+                {
+                    throw new Exception("No vertices available to update.");
+                }
+
+                object firstObj = geometry.CoordinateCol[0];
+                if (firstObj is MoveTo firstMove)
+                {
+                    firstMove.X.Value = 1.5;
+                    firstMove.Y.Value = 2.5;
+                }
+                else if (firstObj is LineTo firstLine)
+                {
+                    firstLine.X.Value = 1.5;
+                    firstLine.Y.Value = 2.5;
+                }
+                else
+                {
+                    throw new Exception("First geometry element is neither MoveTo nor LineTo.");
+                }
+
+                // Verify the update.
+                object verifyObj = geometry.CoordinateCol[0];
+                double xVal, yVal;
+                if (verifyObj is MoveTo mv)
+                {
+                    xVal = mv.X.Value;
+                    yVal = mv.Y.Value;
+                }
+                else if (verifyObj is LineTo ln)
+                {
+                    xVal = ln.X.Value;
+                    yVal = ln.Y.Value;
+                }
+                else
+                {
+                    throw new Exception("Unexpected geometry element type during verification.");
+                }
+
+                if (Math.Abs(xVal - 1.5) > 0.0001 || Math.Abs(yVal - 2.5) > 0.0001)
+                {
+                    throw new Exception("Vertex update failed: coordinates not set correctly.");
+                }
+                Console.WriteLine("Vertex update verified.");
+
+                // -------------------------------------------------------------
+                // 5. Remove the vertex we added earlier (last vertex).
+                // -------------------------------------------------------------
+                int indexToRemove = geometry.CoordinateCol.Count - 1;
+                geometry.CoordinateCol.RemoveAt(indexToRemove);
+
+                // Verify removal.
+                int afterRemoveCount = geometry.CoordinateCol.Count;
+                if (afterRemoveCount != afterAddCount - 1)
+                {
+                    throw new Exception("Vertex removal failed: count mismatch.");
+                }
+                Console.WriteLine("Vertex removal verified.");
+
+                // -------------------------------------------------------------
+                // 6. Save the modified diagram.
+                // -------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
-        Console.WriteLine("Vertex coordinate update verified.");
-
-        // -------------------------------------------------
-        // 3. Mark the vertex as deleted
-        // -------------------------------------------------
-        newVertex.Del = BOOL.True;
-
-        // Verify the deletion flag
-        if (newVertex.Del != BOOL.True)
+        catch (Exception ex)
         {
-            throw new Exception("Vertex deletion flag was not set correctly.");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-        Console.WriteLine("Vertex deletion flag verified.");
-
-        // -------------------------------------------------
-        // Save the diagram (optional, demonstrates correct save usage)
-        // -------------------------------------------------
-        diagram.Save("GeometryTestOutput.vsdx", SaveFileFormat.Vsdx);
-        Console.WriteLine("Diagram saved successfully.");
     }
 }

@@ -1,63 +1,98 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        Diagram diagram = null;
+
+        try
+        {
+            // Load the Visio diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram '{inputPath}': {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages
+        for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+        {
+            Page page = diagram.Pages[pageIndex];
+
+            // Iterate through all shapes on the page
+            for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
             {
+                Shape shape = page.Shapes[shapeIndex];
+                long shapeId = shape.ID;
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate through all geometries of the shape
+                for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    // Cast the geometry object to Geom
+                    Geom geom = (Geom)shape.Geoms[geomIndex];
 
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Example operation: attempt to delete the segment at index 2
+                    int targetSegmentIndex = 2;
+
+                    try
                     {
-                        // Example index that may be out of range
-                        int targetGeomIndex = 5;
+                        // Access the segment; this may throw if the index is out of range
+                        object segmentObj = geom.CoordinateCol[targetSegmentIndex];
 
-                        try
+                        // The segment types (MoveTo, LineTo, etc.) share the Del property
+                        // Use dynamic to set the property without knowing the exact type
+                        // (Aspose.Diagram types expose Del as a BOOL field)
+                        var delProperty = segmentObj.GetType().GetProperty("Del");
+                        if (delProperty != null && delProperty.CanWrite)
                         {
-                            // Attempt to retrieve the geometry at the specified index
-                            Geom geom = (Geom)shape.Geoms[targetGeomIndex];
-
-                            // If successful, perform any required processing here
-                            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape.ID}: Geometry {targetGeomIndex} accessed successfully.");
+                            delProperty.SetValue(segmentObj, BOOL.True);
                         }
-                        catch (ArgumentOutOfRangeException ex)
+                        else
                         {
-                            // Log detailed error information and skip this geometry
-                            Console.WriteLine($"[Error] Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {targetGeomIndex} is out of range.");
-                            Console.WriteLine($"Message: {ex.Message}");
-                            Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                            // Continue with the next shape
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log any other unexpected errors
-                            Console.WriteLine($"[Unexpected Error] Page {pageIndex + 1}, Shape ID {shape.ID}, Geometry index {targetGeomIndex}.");
-                            Console.WriteLine($"Message: {ex.Message}");
+                            Console.Error.WriteLine($"Segment at page {pageIndex}, shape ID {shapeId}, geometry {geomIndex}, index {targetSegmentIndex} does not have a deletable 'Del' property.");
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        // Log detailed error information and continue processing
+                        Console.Error.WriteLine($"Error processing segment at page {pageIndex}, shape ID {shapeId}, geometry {geomIndex}, segment index {targetSegmentIndex}: {ex.Message}");
+                        // Skip this invalid entry and continue with the next geometry/segment
+                    }
                 }
-
-                // Save the diagram (no modifications made in this example)
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        try
+        {
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram to '{outputPath}': {ex.Message}");
+        }
     }
-    }
+}

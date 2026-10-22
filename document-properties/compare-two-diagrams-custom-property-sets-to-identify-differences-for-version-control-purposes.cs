@@ -1,112 +1,131 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Expect two file paths as command‑line arguments.
-            if (args.Length != 2)
+            Console.Error.WriteLine("Usage: Program <DiagramPath1> <DiagramPath2>");
+            return;
+        }
+
+        string path1 = args[0];
+        string path2 = args[1];
+
+        // Guard against missing files.
+        if (!File.Exists(path1))
+        {
+            Console.Error.WriteLine($"File not found: {path1}");
+            return;
+        }
+        if (!File.Exists(path2))
+        {
+            Console.Error.WriteLine($"File not found: {path2}");
+            return;
+        }
+
+        Diagram diagram1 = null;
+        Diagram diagram2 = null;
+
+        try
+        {
+            // Load the first diagram.
+            diagram1 = new Diagram(path1);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram '{path1}': {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Load the second diagram.
+            diagram2 = new Diagram(path2);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram '{path2}': {ex.Message}");
+            return;
+        }
+
+        // Extract custom properties from both diagrams.
+        var props1 = ExtractCustomProperties(diagram1);
+        var props2 = ExtractCustomProperties(diagram2);
+
+        // Identify removed properties (present in diagram1 but not in diagram2).
+        foreach (var kvp in props1)
+        {
+            if (!props2.ContainsKey(kvp.Key))
             {
-                Console.WriteLine("Usage: DiagramCustomPropertyComparer <DiagramPath1> <DiagramPath2>");
-                return;
-            }
-
-            string diagramPath1 = args[0];
-            string diagramPath2 = args[1];
-
-            // Load the two diagrams.
-            Diagram diagram1 = new Diagram(diagramPath1);
-            Diagram diagram2 = new Diagram(diagramPath2);
-
-            // Build dictionaries of custom property name -> value for each diagram.
-            var props1 = GetCustomProperties(diagram1);
-            var props2 = GetCustomProperties(diagram2);
-
-            // Identify added, removed, and changed properties.
-            var added = new List<string>();
-            var removed = new List<string>();
-            var changed = new List<string>();
-
-            foreach (var kvp in props1)
-            {
-                if (!props2.ContainsKey(kvp.Key))
-                {
-                    removed.Add(kvp.Key);
-                }
-                else if (!string.Equals(kvp.Value, props2[kvp.Key], StringComparison.Ordinal))
-                {
-                    changed.Add(kvp.Key);
-                }
-            }
-
-            foreach (var kvp in props2)
-            {
-                if (!props1.ContainsKey(kvp.Key))
-                {
-                    added.Add(kvp.Key);
-                }
-            }
-
-            // Output the differences.
-            Console.WriteLine("Custom Property Differences:");
-            Console.WriteLine();
-
-            if (added.Count > 0)
-            {
-                Console.WriteLine("Added:");
-                foreach (var name in added)
-                {
-                    Console.WriteLine($"  {name} = \"{props2[name]}\"");
-                }
-                Console.WriteLine();
-            }
-
-            if (removed.Count > 0)
-            {
-                Console.WriteLine("Removed:");
-                foreach (var name in removed)
-                {
-                    Console.WriteLine($"  {name} = \"{props1[name]}\"");
-                }
-                Console.WriteLine();
-            }
-
-            if (changed.Count > 0)
-            {
-                Console.WriteLine("Changed:");
-                foreach (var name in changed)
-                {
-                    Console.WriteLine($"  {name}: \"{props1[name]}\" => \"{props2[name]}\"");
-                }
-                Console.WriteLine();
-            }
-
-            if (added.Count == 0 && removed.Count == 0 && changed.Count == 0)
-            {
-                Console.WriteLine("No differences found in custom properties.");
+                Console.WriteLine($"Removed: {kvp.Key} = \"{kvp.Value}\"");
             }
         }
 
-        /// <summary>
-        /// Extracts custom properties from a diagram into a dictionary.
-        /// </summary>
-        /// <param name="diagram">The diagram to inspect.</param>
-        /// <returns>Dictionary where key = property name, value = property value as string.</returns>
-        private static Dictionary<string, string> GetCustomProperties(Diagram diagram)
+        // Identify added properties (present in diagram2 but not in diagram1).
+        foreach (var kvp in props2)
         {
-            var dict = new Dictionary<string, string>(StringComparer.Ordinal);
-            var customProps = diagram.DocumentProps.CustomProps;
-
-            for (int i = 0; i < customProps.Count; i++)
+            if (!props1.ContainsKey(kvp.Key))
             {
-                CustomProp prop = customProps[i];
-                string name = prop.Name;
-                string value = prop.CustomValue.ValueString ?? string.Empty;
-                dict[name] = value;
+                Console.WriteLine($"Added: {kvp.Key} = \"{kvp.Value}\"");
             }
+        }
 
-            return dict;
+        // Identify changed properties (same name, different value).
+        foreach (var kvp in props1)
+        {
+            if (props2.TryGetValue(kvp.Key, out string value2))
+            {
+                string value1 = kvp.Value;
+                if (!string.Equals(value1, value2, StringComparison.Ordinal))
+                {
+                    Console.WriteLine($"Changed: {kvp.Key} from \"{value1}\" to \"{value2}\"");
+                }
+            }
         }
     }
+
+    /// <summary>
+    /// Builds a dictionary of custom property name/value pairs from a diagram.
+    /// </summary>
+    /// <param name="diagram">The diagram to process.</param>
+    /// <returns>Dictionary where key = property name, value = property value.</returns>
+    private static Dictionary<string, string> ExtractCustomProperties(Diagram diagram)
+    {
+        var dict = new Dictionary<string, string>(StringComparer.Ordinal);
+        try
+        {
+            // Access the collection of custom document properties.
+            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
+
+            // Iterate through each custom property.
+            foreach (CustomProp prop in customProps)
+            {
+                // Property name (fallback to empty string if null).
+                string name = prop.Name ?? string.Empty;
+
+                // Property value (fallback to empty string if null).
+                string value = string.Empty;
+                if (prop.CustomValue != null && prop.CustomValue.ValueString != null)
+                {
+                    value = prop.CustomValue.ValueString;
+                }
+
+                // Store in dictionary; later entries overwrite earlier ones with the same name.
+                dict[name] = value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error extracting custom properties: {ex.Message}");
+        }
+
+        return dict;
+    }
+}

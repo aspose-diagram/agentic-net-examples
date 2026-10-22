@@ -1,74 +1,121 @@
 using System;
+using System.IO;
 using System.Data;
-using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input diagram path
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            // Expect two arguments: input Visio file path and output Visio file path
-            if (args.Length < 2)
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Input CSV data path (external data)
+        string csvPath = "data.csv";
+        if (!File.Exists(csvPath))
+        {
+            Console.Error.WriteLine($"CSV data file not found: {csvPath}");
+            return;
+        }
+
+        // Output diagram path
+        string outputPath = "output.vsdx";
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Load external data into a DataTable (simulated CSV)
+            DataTable table = new DataTable();
+            table.Columns.Add("ShapeId", typeof(long));
+            table.Columns.Add("NewText", typeof(string));
+
+            foreach (string line in File.ReadAllLines(csvPath))
             {
-                Console.WriteLine("Usage: DiagramDataTransformation <inputPath> <outputPath>");
-                return;
-            }
+                // Skip empty lines
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+                // Expected format: ShapeId,NewText
+                string[] parts = line.Split(',');
+                if (parts.Length < 2)
+                    continue; // malformed line
 
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Simulate importing external data (e.g., from a database)
-            DataTable externalData = new DataTable();
-            externalData.Columns.Add("Value", typeof(double));
-
-            // Sample data rows
-            externalData.Rows.Add(10.5);
-            externalData.Rows.Add(23.0);
-            externalData.Rows.Add(7.75);
-
-            // Transform the imported values (example: multiply by 2)
-            List<double> transformedValues = new List<double>();
-            foreach (DataRow row in externalData.Rows)
-            {
-                double original = Convert.ToDouble(row["Value"]);
-                double transformed = original * 2.0;
-                transformedValues.Add(transformed);
-            }
-
-            // Prepare the new text to be placed into the target shape
-            string newText = string.Join(", ", transformedValues);
-
-            // Locate the shape that should display the transformed data
-            // This example looks for a shape with the universal name "DataShape"
-            bool shapeFound = false;
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                if (long.TryParse(parts[0].Trim(), out long shapeId))
                 {
-                    if (shape.NameU != null && shape.NameU.Equals("DataShape", StringComparison.OrdinalIgnoreCase))
+                    string rawText = parts[1];
+                    // Apply transformation: trim and convert to upper case
+                    string transformedText = rawText.Trim().ToUpperInvariant();
+
+                    // Add to DataTable
+                    DataRow row = table.NewRow();
+                    row["ShapeId"] = shapeId;
+                    row["NewText"] = transformedText;
+                    table.Rows.Add(row);
+                }
+            }
+
+            // Iterate over each data row and update corresponding shape text
+            foreach (DataRow row in table.Rows)
+            {
+                long shapeId = (long)row["ShapeId"];
+                string newText = (string)row["NewText"];
+
+                Shape targetShape = null;
+
+                // Search for the shape across all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    try
                     {
-                        // Clear existing text
-                        shape.Text.Value.Clear();
-
-                        // Add the new transformed data as a single text run
-                        shape.Text.Value.Add(new Txt(newText));
-
-                        shapeFound = true;
-                        break;
+                        // GetShape throws if the ID does not exist on this page
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        if (shape != null)
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        // Shape not on this page – continue searching
                     }
                 }
-                if (shapeFound) break;
-            }
 
-            if (!shapeFound)
-            {
-                Console.WriteLine("Target shape with NameU 'DataShape' not found. No text was updated.");
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found in diagram.");
+                    continue;
+                }
+
+                // Clear existing text
+                targetShape.Text.Value.Clear();
+
+                // Add transformed text
+                targetShape.Text.Value.Add(new Txt(newText));
+
+                // Refresh shape data to apply changes
+                targetShape.RefreshData();
             }
 
             // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

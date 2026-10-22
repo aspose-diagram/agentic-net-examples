@@ -1,45 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new blank diagram
-        using (Diagram diagram = new Diagram())
+        // Define output file path
+        string outputPath = "pentagon.vsdx";
+
+        try
         {
-            // Get the first (default) page
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
+
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                // Add a new page if none exist
+                diagram.Pages.Add(new Page());
+            }
+
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Define pentagon vertices (in inches) and close the shape by repeating the first point
-            double[] pentagonPoints = new double[]
+            // Define pentagon vertices (custom size and position)
+            // Center at (5,5) inches, radius 2 inches
+            double centerX = 5.0;
+            double centerY = 5.0;
+            double radius = 2.0;
+            double angleStep = 72.0 * Math.PI / 180.0; // 72 degrees in radians
+
+            // Build a flat double array of points (x1, y1, x2, y2, ..., xn, yn, x1, y1)
+            double[] points = new double[12]; // 5 points + repeat first = 6 points * 2 coordinates
+            for (int i = 0; i < 5; i++)
             {
-                2.0, 2.0,   // Point 1
-                4.0, 2.0,   // Point 2
-                5.0, 4.0,   // Point 3
-                3.0, 6.0,   // Point 4
-                1.0, 4.0,   // Point 5
-                2.0, 2.0    // Close back to Point 1
-            };
+                double angle = -Math.PI / 2 + i * angleStep; // start at top
+                points[i * 2] = centerX + radius * Math.Cos(angle);
+                points[i * 2 + 1] = centerY + radius * Math.Sin(angle);
+            }
+            // Close the polygon by repeating the first point
+            points[10] = points[0];
+            points[11] = points[1];
 
             // Draw the pentagon shape on the page
-            long shapeId = page.DrawPolyline(pentagonPoints);
+            long shapeId = page.DrawPolyline(points);
 
-            // Retrieve the shape object to apply formatting
-            Shape pentagon = page.Shapes.GetShape(shapeId);
-
-            // Set fill color (red) and solid fill pattern
-            pentagon.Fill.FillForegnd.Value = "#FF0000";
-            pentagon.Fill.FillPattern.Value = 1; // Solid fill
-
-            // Set line color (blue) and line weight
-            pentagon.Line.LineColor.Value = "#0000FF";
-            pentagon.Line.LineWeight.Value = 0.02; // Thickness in inches
+            // Retrieve the shape to optionally set additional properties (e.g., text)
+            Shape pentagonShape = page.Shapes.GetShape(shapeId);
+            // Example: add a label inside the pentagon
+            pentagonShape.Text.Value.Clear();
+            pentagonShape.Text.Value.Add(new Txt("Pentagon"));
 
             // Save the diagram to a VSDX file
-            diagram.Save("Pentagon.vsdx", SaveFileFormat.Vsdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Pentagon diagram saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

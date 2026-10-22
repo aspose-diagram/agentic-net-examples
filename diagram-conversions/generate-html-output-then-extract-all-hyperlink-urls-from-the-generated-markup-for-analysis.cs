@@ -1,68 +1,120 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputDirectory]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output directory (optional second argument).
+        string outputDir = args.Length >= 2 ? args[1] : Directory.GetCurrentDirectory();
+        // Ensure the output directory exists.
+        if (!Directory.Exists(outputDir))
         {
             try
             {
-
-                // Path to the source Visio file
-                string visioPath = "input.vsdx";
-
-                // Path where the HTML representation will be saved
-                string htmlPath = "output.html";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Save the diagram as HTML
-                diagram.Save(htmlPath, SaveFileFormat.Html);
-
-                // Read the generated HTML markup
-                string htmlContent = File.ReadAllText(htmlPath);
-
-                // Extract all hyperlink URLs from the HTML using a regular expression
-                List<string> hyperlinks = ExtractHyperlinks(htmlContent);
-
-                // Output the extracted URLs for analysis
-                Console.WriteLine("Extracted Hyperlink URLs:");
-                foreach (string url in hyperlinks)
-                {
-                    Console.WriteLine(url);
-                }
-
+                Directory.CreateDirectory(outputDir);
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+                return;
             }
-    }
+        }
 
-        /// <summary>
-        /// Parses HTML content and returns a list of URLs found in href attributes.
-        /// </summary>
-        /// <param name="html">The HTML markup to analyze.</param>
-        /// <returns>List of hyperlink URLs.</returns>
-        private static List<string> ExtractHyperlinks(string html)
+        Diagram diagram;
+        try
         {
-            var urls = new List<string>();
+            // Load the Visio diagram.
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-            // Regex pattern to match href attributes (handles single or double quotes)
-            string pattern = @"href\s*=\s*[""'](?<url>[^""'>\s]+)[""']";
-            foreach (Match match in Regex.Matches(html, pattern, RegexOptions.IgnoreCase))
+        // List to collect all extracted hyperlink URLs.
+        List<string> allUrls = new List<string>();
+
+        // Iterate through each page and export to separate HTML files.
+        for (int i = 0; i < diagram.Pages.Count; i++)
+        {
+            // Configure HTML save options for a single page.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                string url = match.Groups["url"].Value;
-                if (!string.IsNullOrEmpty(url))
-                {
-                    urls.Add(url);
-                }
+                PageIndex = i,
+                PageCount = 1
+            };
+
+            string htmlFileName = $"page_{i + 1}.html";
+            string htmlPath = Path.Combine(outputDir, htmlFileName);
+
+            try
+            {
+                // Save the current page as HTML.
+                diagram.Save(htmlPath, htmlOptions);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error saving HTML for page {i + 1}: {ex.Message}");
+                continue;
             }
 
-            return urls;
+            // Read the generated HTML file.
+            string htmlContent;
+            try
+            {
+                htmlContent = File.ReadAllText(htmlPath);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error reading HTML file '{htmlPath}': {ex.Message}");
+                continue;
+            }
+
+            // Extract hyperlink URLs using a regular expression.
+            try
+            {
+                MatchCollection matches = Regex.Matches(htmlContent, @"href\s*=\s*[""']([^""']+)[""']", RegexOptions.IgnoreCase);
+                foreach (Match match in matches)
+                {
+                    if (match.Groups.Count > 1)
+                    {
+                        string url = match.Groups[1].Value;
+                        allUrls.Add(url);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error extracting hyperlinks from '{htmlPath}': {ex.Message}");
+            }
+        }
+
+        // Output the collected URLs for analysis.
+        Console.WriteLine("Extracted Hyperlink URLs:");
+        foreach (string url in allUrls)
+        {
+            Console.WriteLine(url);
         }
     }
+}

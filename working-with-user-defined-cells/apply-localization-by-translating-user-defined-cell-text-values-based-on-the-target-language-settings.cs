@@ -1,52 +1,126 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Simple translation stub – in real scenarios replace with actual translation service
-        static string Translate(string text, string targetLanguage)
+        // Validate input arguments.
+        if (args.Length < 2)
         {
-            // Example: append language code to simulate translation
-            return $"{text}_{targetLanguage}";
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <targetLanguageCode>");
+            return;
         }
 
-        static void Main(string[] args)
+        string inputPath = args[0];
+        string targetLanguage = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            if (args.Length < 3)
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        // Define a simple translation dictionary for demonstration.
+        // In a real scenario, replace this with a proper localization service.
+        var translations = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
             {
-                Console.WriteLine("Usage: DiagramLocalization <inputPath> <outputPath> <targetLanguageCode>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string targetLanguage = args[2];
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                "es", // Spanish
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
-                    // Process each user-defined cell (custom property)
-                    foreach (User userCell in shape.Users)
+                    { "Hello", "Hola" },
+                    { "World", "Mundo" },
+                    { "Name", "Nombre" }
+                }
+            },
+            {
+                "fr", // French
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Hello", "Bonjour" },
+                    { "World", "Monde" },
+                    { "Name", "Nom" }
+                }
+            }
+            // Add more language dictionaries as needed.
+        };
+
+        // Load the Visio diagram inside a try/catch block.
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages and shapes.
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip logically deleted shapes.
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Process each user-defined cell.
+                foreach (User userCell in shape.Users)
+                {
+                    // Retrieve the original text.
+                    string originalText = userCell.Value.Val ?? string.Empty;
+
+                    // Translate the text based on the target language.
+                    string translatedText = Translate(originalText, targetLanguage, translations);
+
+                    // Update the cell only if translation changed the text.
+                    if (!string.Equals(originalText, translatedText, StringComparison.Ordinal))
                     {
-                        string originalValue = userCell.Value.Val;
-                        if (!string.IsNullOrEmpty(originalValue))
-                        {
-                            string translatedValue = Translate(originalValue, targetLanguage);
-                            userCell.Value.Val = translatedValue;
-                        }
+                        userCell.Value.Val = translatedText;
                     }
                 }
             }
+        }
 
-            // Save the modified diagram
+        // Prepare output path.
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + $"_{targetLanguage}.vsdx");
+
+        // Save the modified diagram.
+        try
+        {
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}' with localized user-defined cells.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Translates a given text to the target language using the provided dictionary.
+    /// If no translation is found, the original text is returned.
+    /// </summary>
+    static string Translate(string text, string targetLang, Dictionary<string, Dictionary<string, string>> dict)
+    {
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(targetLang))
+            return text;
+
+        if (dict.TryGetValue(targetLang, out var langDict))
+        {
+            if (langDict.TryGetValue(text, out var translated))
+                return translated;
+        }
+
+        // Fallback: return original text.
+        return text;
+    }
+}

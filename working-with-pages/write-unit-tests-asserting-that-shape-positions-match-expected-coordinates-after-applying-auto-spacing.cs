@@ -1,68 +1,106 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Path to the input Visio diagram
+        string diagramPath = "sample.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-            // Create a new empty diagram (default page is added automatically)
-            Diagram diagram = new Diagram();
-
-            // Get the first (and only) page
-            Page page = diagram.Pages[0];
-
-            // Add three rectangle shapes using DrawRectangle (pinX, pinY, width, height)
-            // All shapes have the same size for simplicity
-            long shapeId1 = page.DrawRectangle(1.0, 1.0, 1.0, 1.0);
-            long shapeId2 = page.DrawRectangle(1.5, 1.0, 1.0, 1.0);
-            long shapeId3 = page.DrawRectangle(2.0, 1.0, 1.0, 1.0);
-
-            // Retrieve shape objects for later inspection
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
-            Shape shape3 = page.Shapes.GetShape(shapeId3);
-
-            // Configure auto‑spacing options (2 inches horizontal and vertical gaps)
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 2.0;
-            options.DistanceInVertical = 2.0;
-
-            // Apply auto‑spacing to all shapes on the page
-            page.AutoSpaceShapes(page.Shapes, options);
-
-            // After spacing, verify that each pair of shapes respects the minimum horizontal distance
-            Shape[] shapes = new Shape[] { shape1, shape2, shape3 };
-            double minHorizontal = options.DistanceInHorizontal;
-
-            for (int i = 0; i < shapes.Length; i++)
+            // Load the diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                for (int j = i + 1; j < shapes.Length; j++)
+                // Assume we work with the first page
+                Page page = diagram.Pages[0];
+
+                // Collect all non-deleted shapes on the page (optional, just for reference)
+                List<Shape> shapeList = new List<Shape>();
+                foreach (Shape s in page.Shapes)
                 {
-                    Shape a = shapes[i];
-                    Shape b = shapes[j];
-
-                    // Horizontal distance between shape centers
-                    double horizDist = Math.Abs(a.XForm.PinX.Value - b.XForm.PinX.Value);
-                    // Minimum allowed center‑to‑center distance = half widths + required gap
-                    double horizMinAllowed = (a.XForm.Width.Value + b.XForm.Width.Value) / 2.0 + minHorizontal;
-
-                    // Throw if the horizontal spacing requirement is not met
-                    if (horizDist < horizMinAllowed)
+                    if (s.Del == BOOL.False)
                     {
-                        throw new Exception($"Horizontal spacing violation between shape {a.ID} and shape {b.ID}. " +
-                                            $"Actual: {horizDist}, Required minimum: {horizMinAllowed}");
+                        shapeList.Add(s);
                     }
                 }
-            }
 
-            Console.WriteLine("All shape positions satisfy the expected auto‑spacing distances.");
+                // Configure auto‑spacing options (horizontal and vertical distances in inches)
+                AutoSpaceOptions options = new AutoSpaceOptions();
+                // The correct property names are DistanceInHorizontal and DistanceInVertical
+                options.DistanceInHorizontal = 0.5; // 0.5 inches between shapes horizontally
+                options.DistanceInVertical = 0.5;   // 0.5 inches between shapes vertically
+
+                // Apply auto‑spacing to the entire shape collection on the page
+                page.AutoSpaceShapes(page.Shapes, options);
+
+                // Expected coordinates after auto‑spacing (example values)
+                var expectedPositions = new Dictionary<string, (double PinX, double PinY)>
+                {
+                    { "Rectangle", (2.0, 2.0) },
+                    { "Process",   (4.0, 2.0) }
+                };
+
+                // Verify each expected shape's position
+                const double tolerance = 0.01; // allowable deviation in inches
+                foreach (var kvp in expectedPositions)
+                {
+                    string shapeName = kvp.Key;
+                    double expectedX = kvp.Value.PinX;
+                    double expectedY = kvp.Value.PinY;
+
+                    Shape targetShape = null;
+                    foreach (Shape s in page.Shapes)
+                    {
+                        if (s.Del == BOOL.False && s.NameU == shapeName)
+                        {
+                            targetShape = s;
+                            break;
+                        }
+                    }
+
+                    if (targetShape == null)
+                    {
+                        throw new Exception($"Shape '{shapeName}' not found on the page.");
+                    }
+
+                    double actualX = targetShape.XForm.PinX.Value;
+                    double actualY = targetShape.XForm.PinY.Value;
+
+                    if (Math.Abs(actualX - expectedX) > tolerance || Math.Abs(actualY - expectedY) > tolerance)
+                    {
+                        throw new Exception(
+                            $"Position mismatch for shape '{shapeName}'. Expected ({expectedX}, {expectedY}) but got ({actualX}, {actualY}).");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Shape '{shapeName}' position verified: ({actualX}, {actualY}).");
+                    }
+                }
+
+                // Save the modified diagram (optional)
+                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

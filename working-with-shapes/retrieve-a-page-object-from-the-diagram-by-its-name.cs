@@ -1,48 +1,51 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: diagram file path and page name
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <pageName>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string pageName = args[1];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram (lifecycle rule)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Name of the page to retrieve
-            string pageName = "Page-1";
-
-            // Retrieve the Page object by its name
-            Page targetPage = null;
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                if (page.Name == pageName)
+                // Retrieve the page by its name
+                Page page = diagram.Pages.GetPage(pageName);
+
+                if (page == null)
                 {
-                    targetPage = page;
-                    break;
+                    Console.WriteLine($"Page with name \"{pageName}\" was not found.");
+                }
+                else
+                {
+                    // Output basic information about the found page
+                    Console.WriteLine($"Page found: Name = {page.NameU}");
                 }
             }
-
-            // Output result
-            if (targetPage != null)
-            {
-                Console.WriteLine($"Found page: {targetPage.Name}, ID: {targetPage.ID}");
-            }
-            else
-            {
-                Console.WriteLine($"Page '{pageName}' not found.");
-            }
-
-            // Save the diagram if modifications were made (optional)
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

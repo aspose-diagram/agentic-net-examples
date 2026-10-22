@@ -1,60 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Assume we work with the first page.
+            Page page = diagram.Pages[0];
 
-            // Locate the first rectangle shape in the document
-            Shape rectangle = null;
-            foreach (Page page in diagram.Pages)
+            // Find the first rectangle shape on the page.
+            Shape rectangleShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                foreach (Shape shape in page.Shapes)
+                // Ensure the shape has a master and its name is "Rectangle".
+                if (shape.Master != null && shape.Master.Name == "Rectangle")
                 {
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        rectangle = shape;
-                        break;
-                    }
+                    rectangleShape = shape;
+                    break;
                 }
-                if (rectangle != null) break;
             }
 
-            if (rectangle == null)
+            if (rectangleShape == null)
             {
-                throw new Exception("Rectangle shape not found in the diagram.");
+                Console.Error.WriteLine("No rectangle shape found in the diagram.");
+                return;
             }
 
-            // Enable a simple drop shadow
-            rectangle.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+            // Apply drop shadow effect:
+            // 1. Set simple shadow type.
+            rectangleShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+            // 2. Set shadow color to black.
+            rectangleShape.Fill.ShdwForegnd.Value = "#000000";
+            // 3. Set shadow opacity to 30% (0.3 = 30% transparent).
+            rectangleShape.Fill.ShdwForegndTrans.Value = 0.3;
+            // 4. Set horizontal and vertical offset to 5 (Visio units, typically inches; adjust as needed).
+            rectangleShape.Fill.ShapeShdwOffsetX.Value = 5;
+            rectangleShape.Fill.ShapeShdwOffsetY.Value = 5;
 
-            // Set shadow color (black)
-            rectangle.Fill.ShdwForegnd.Value = "#000000";
-
-            // Set shadow transparency to 30% (0.3 = 30% transparent)
-            rectangle.Fill.ShdwForegndTrans.Value = 0.3;
-
-            // Set shadow offset to 5 pixels.
-            // Aspose.Diagram uses inches for measurements; assuming 96 DPI:
-            double offsetInches = 5.0 / 96.0;
-            rectangle.Fill.ShapeShdwOffsetX.Value = offsetInches;
-            rectangle.Fill.ShapeShdwOffsetY.Value = offsetInches;
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,11 +1,11 @@
 {
   "category": "working-with-themes",
   "display_name": "Working With Themes",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 40,
   "pass_rate": 100.0,
-  "generated": "2026-09-24",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "After applying a theme extract the theme s color palette and write it to a json configuration file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing",
         "System",
         "System.Collections.Generic",
@@ -25,8 +24,7 @@
         "Colors",
         "Diagram",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant"
+        "diagram"
       ]
     },
     {
@@ -35,9 +33,8 @@
       "task": "Apply a different preset theme variant to shapes on a page based on their layer membership",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -53,7 +50,8 @@
       "task": "Apply a preset theme quickstyle to all shapes on a page that use a particular master style",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -86,9 +84,9 @@
       "task": "Apply a preset theme quickstyle to shapes selected via a linq query based on their text content",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
@@ -113,8 +111,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -123,7 +121,6 @@
       "task": "Apply a preset theme to a shape only if its current theme does not match the desired preset",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -131,8 +128,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Prop"
+        "Prop",
+        "Save"
       ]
     },
     {
@@ -141,7 +138,6 @@
       "task": "Apply a preset theme to all shapes that share a specific custom property value",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -167,7 +163,7 @@
         "Pages",
         "PresetTheme",
         "PresetThemeVariant",
-        "Prop"
+        "Save"
       ]
     },
     {
@@ -176,8 +172,9 @@
       "task": "Apply a preset theme variant to a shape group by iterating through its child shapes and setting each",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -193,8 +190,8 @@
       "task": "Apply a preset theme variant to a shape only if the shape s existing theme matrix contains a color",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -210,7 +207,6 @@
       "task": "Batch process diagrams in parallel applying a common preset theme to each and saving results concurrently",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -236,10 +232,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -268,8 +263,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -309,11 +303,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -323,14 +317,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PdfSaveOptions",
         "PresetTheme",
-        "Save"
+        "PresetThemeVariant"
       ]
     },
     {
@@ -345,10 +340,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "PdfSaveOptions",
-        "PresetTheme",
-        "PresetThemeVariant"
+        "Save",
+        "XPSSaveOptions",
+        "diagram"
       ]
     },
     {
@@ -376,7 +371,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -392,8 +389,9 @@
       "task": "Implement a retry mechanism when setting a preset theme on a shape that may be locked",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO",
+        "System.Threading"
       ],
       "key_apis": [
         "Diagram",
@@ -409,8 +407,8 @@
       "task": "Implement error handling to catch exceptions when applying a theme to a shape lacking style data",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -426,14 +424,15 @@
       "task": "Implement logging to capture each theme application step including page name shape id and applied preset",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -442,8 +441,8 @@
       "task": "Iterate through all pages in a diagram and assign the same preset theme variant to each page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -459,7 +458,6 @@
       "task": "Load a diagram from a byte array apply a theme variant and return the modified byte array",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -477,7 +475,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -526,8 +525,10 @@
       "task": "Measure the execution time of applying a preset theme to a large diagram with thousands of shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Diagnostics"
+        "System.Diagnostics",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -543,7 +544,6 @@
       "task": "Reset the presettheme of a shape to the default value to remove previously applied styling",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -561,15 +561,15 @@
       "task": "Retrieve the current presetthemevariant from each shape and log it for diagnostic purposes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PresetThemeVariant",
-        "Save",
-        "Shape"
+        "Shape",
+        "Shapes"
       ]
     },
     {
@@ -601,9 +601,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -612,7 +612,6 @@
       "task": "Use a dictionary to map shape ids to specific preset themes and apply them accordingly",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -621,8 +620,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Save",
-        "diagram"
+        "PresetThemeVariant",
+        "Save"
       ]
     },
     {
@@ -668,15 +667,15 @@
       "task": "Use setpresetthemestylematrics to assign a custom style matrix to a shape for advanced formatting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant"
+        "PresetThemeVariant",
+        "Save"
       ]
     },
     {
@@ -685,8 +684,9 @@
       "task": "Validate that applying a preset theme does not alter shape geometry by comparing bounding boxes before and after",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -708,10 +708,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant"
+        "Save",
+        "diagram"
       ]
     }
   ]

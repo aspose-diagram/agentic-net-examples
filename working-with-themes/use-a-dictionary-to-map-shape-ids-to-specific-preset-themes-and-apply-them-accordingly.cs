@@ -2,79 +2,64 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for save options and enums
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        Diagram diagram;
-        try
-        {
-            // Load the existing Visio diagram
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            // Report any loading errors and exit
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Dictionary mapping shape IDs to preset themes
-        Dictionary<long, PresetThemeValue> themeMap = new Dictionary<long, PresetThemeValue>
-        {
-            { 1, PresetThemeValue.Bubble },
-            { 2, PresetThemeValue.Bubble }
-            // Add more mappings as needed
-        };
+        // Output Visio file path
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Apply the preset theme to each shape based on the dictionary
-            foreach (KeyValuePair<long, PresetThemeValue> kvp in themeMap)
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Dictionary mapping shape IDs (long) to desired preset themes
+            // Example entries – replace with actual IDs and themes as needed
+            var shapeThemeMap = new Dictionary<long, PresetThemeValue>
+            {
+                { 1, PresetThemeValue.Bubble },
+                { 2, PresetThemeValue.Bubble } // using the same theme for demo; adjust as required
+            };
+
+            // Iterate over the mapping and apply themes to corresponding shapes
+            foreach (var kvp in shapeThemeMap)
             {
                 long shapeId = kvp.Key;
                 PresetThemeValue theme = kvp.Value;
 
-                // Retrieve the shape from the first page (adjust page index if necessary)
+                // Retrieve the shape by ID from the first page
                 Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                if (shape != null)
+                if (shape == null)
                 {
-                    // Apply the preset theme (write‑only property)
-                    shape.PresetTheme = theme;
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    continue;
                 }
-                else
-                {
-                    Console.WriteLine($"Shape with ID {shapeId} not found.");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during theme application
-            Console.Error.WriteLine($"Error applying themes: {ex.Message}");
-            return;
-        }
 
-        try
-        {
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Apply the preset theme to the shape
+                shape.PresetTheme = theme;
+
+                // Optionally set a variant (using Variant1 as default)
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            }
+
+            // Save the modified diagram to the output file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during saving
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

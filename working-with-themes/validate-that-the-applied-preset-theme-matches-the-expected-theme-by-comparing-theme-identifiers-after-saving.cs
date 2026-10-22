@@ -7,64 +7,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path for the temporary diagram file
-        string filePath = "theme_test.vsdx";
-
-        try
+        // Expect three arguments: input diagram path, output diagram path, expected theme name
+        if (args.Length < 3)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Add a new page to the diagram
-            diagram.Pages.Add(new Page());
-
-            // Get the first (and only) page
-            Page page = diagram.Pages[0];
-
-            // Define the expected theme and variant
-            PresetThemeValue expectedTheme = PresetThemeValue.Bubble;
-            PresetThemeVariantValue expectedVariant = PresetThemeVariantValue.Variant2;
-
-            // Apply the preset theme and variant to the page (write‑only properties)
-            page.PresetTheme = expectedTheme;
-            page.PresetThemeVariant = expectedVariant;
-
-            // Save the diagram to VSDX format
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during creation or saving
-            Console.Error.WriteLine($"Error during diagram creation/saving: {ex.Message}");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <expectedTheme>");
             return;
         }
 
-        // Verify that the file was created before attempting to load it
-        if (!File.Exists(filePath))
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string expectedThemeName = args[2];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found after save: {filePath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Try to parse the expected theme enum value
+        if (!Enum.TryParse<PresetThemeValue>(expectedThemeName, true, out var expectedTheme))
+        {
+            Console.Error.WriteLine($"Invalid theme name: {expectedThemeName}");
             return;
         }
 
         try
         {
-            // Load the saved diagram
-            Diagram loadedDiagram = new Diagram(filePath);
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Apply the preset theme to the first page
+                if (diagram.Pages.Count > 0)
+                {
+                    Page page = diagram.Pages[0];
+                    page.PresetTheme = expectedTheme;
+                }
+                else
+                {
+                    Console.Error.WriteLine("Diagram contains no pages.");
+                    return;
+                }
 
-            // Retrieve the page from the loaded diagram
-            Page loadedPage = loadedDiagram.Pages[0];
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // NOTE: PresetTheme and PresetThemeVariant are write‑only; they cannot be read back.
-            // Validation of theme persistence is therefore limited to confirming that loading succeeded.
-            Console.WriteLine("Diagram loaded successfully; preset theme applied (write‑only property).");
+            // Reload the saved diagram to verify the theme
+            using (Diagram savedDiagram = new Diagram(outputPath))
+            {
+                // TODO: Retrieve the applied theme identifier from the saved diagram.
+                // The Aspose.Diagram API does not provide a getter for PresetTheme,
+                // so direct comparison is not possible with the current version.
+                // If a future API adds a readable property, compare it with expectedTheme here.
+
+                Console.WriteLine("Theme applied and diagram saved successfully.");
+                // Placeholder for validation logic:
+                // if (retrievedTheme == expectedTheme) { ... } else { throw new Exception("Theme mismatch."); }
+            }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading
-            Console.Error.WriteLine($"Error during diagram loading: {ex.Message}");
-            return;
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        Console.WriteLine("Preset theme and variant successfully validated after saving.");
     }
 }

@@ -1,68 +1,110 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine input file path from arguments or prompt the user
+        string inputPath = args.Length > 0 ? args[0] : "";
+        if (string.IsNullOrWhiteSpace(inputPath))
         {
-            try
+            Console.Write("Enter the path to the Visio file: ");
+            inputPath = Console.ReadLine();
+        }
+
+        // Guard against missing file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Load the diagram inside a try/catch block
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Iterate through each page in the document
+        foreach (Page page in diagram.Pages)
+        {
+            // Iterate through each shape on the current page
+            foreach (Shape shape in page.Shapes)
             {
+                // Retrieve the layer membership string (semicolon‑separated indexes)
+                string layerMember = shape.LayerMem.LayerMember.Value;
+                if (string.IsNullOrEmpty(layerMember))
+                    continue; // Shape is not assigned to any layer
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Split the membership string into individual layer indexes
+                string[] indexes = layerMember.Split(';', StringSplitOptions.RemoveEmptyEntries);
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define which PresetThemeVariant to apply for each layer index
-                Dictionary<int, PresetThemeVariantValue> layerVariantMap = new Dictionary<int, PresetThemeVariantValue>
+                // Process each layer index the shape belongs to
+                foreach (string idxStr in indexes)
                 {
-                    { 0, PresetThemeVariantValue.Variant1 },
-                    { 1, PresetThemeVariantValue.Variant2 },
-                    { 2, PresetThemeVariantValue.Variant3 }
-                    // Add more mappings as needed
-                };
+                    if (!int.TryParse(idxStr, out int layerIdx))
+                        continue; // Skip invalid entries
 
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Find the corresponding Layer object by its index (IX)
+                    Layer targetLayer = null;
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Retrieve the layer membership string (e.g., "0;1")
-                        string layerMember = shape.LayerMem.LayerMember.Value;
-
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue; // Shape is not assigned to any layer
-
-                        // Split the membership string into individual layer indexes
-                        string[] parts = layerMember.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-
-                        // Determine the first matching layer that has a variant mapping
-                        foreach (string part in parts)
+                        if (layer.IX == layerIdx)
                         {
-                            if (int.TryParse(part, out int layerIndex) && layerVariantMap.TryGetValue(layerIndex, out PresetThemeVariantValue variant))
-                            {
-                                // Apply a preset theme and the corresponding variant to the shape
-                                shape.PresetTheme = PresetThemeValue.Bubble;
-                                shape.PresetThemeVariant = variant;
-                                // Once a variant is applied, stop checking other layers for this shape
-                                break;
-                            }
+                            targetLayer = layer;
+                            break;
                         }
                     }
+
+                    if (targetLayer == null)
+                        continue; // Layer not found, move to next index
+
+                    // Determine theme variant based on the layer's name
+                    string layerName = targetLayer.Name.Value;
+                    if (layerName.Equals("Layer1", StringComparison.OrdinalIgnoreCase))
+                    {
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    }
+                    else if (layerName.Equals("Layer2", StringComparison.OrdinalIgnoreCase))
+                    {
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                    }
+                    else
+                    {
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                    }
+
+                    // Theme applied – no need to evaluate additional layers for this shape
+                    break;
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        // Build output file path
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_Themed.vsdx");
+
+        // Save the modified diagram
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
     }
-    }
+}

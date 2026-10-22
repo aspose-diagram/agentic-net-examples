@@ -1,101 +1,99 @@
 using System;
+using System.IO;
+using System.Threading;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-                // Assume we work with the first page and the first shape
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(1); // shape ID 1 for example
-
-                // Desired theme settings
-                PresetThemeValue theme = PresetThemeValue.Bubble;
-                PresetThemeVariantValue variant = PresetThemeVariantValue.Variant1;
-                PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
-
-                // Apply the theme with retry logic
-                ApplyPresetThemeWithRetry(shape, theme, variant, quickStyle, maxRetries: 3);
-
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Attempts to set a preset theme on a shape, retrying if the shape is locked.
-        /// The method temporarily clears protection locks, applies the theme, then restores original lock states.
-        /// </summary>
-        static void ApplyPresetThemeWithRetry(Shape shape,
-                                              PresetThemeValue theme,
-                                              PresetThemeVariantValue variant,
-                                              PresetQuickStyleValue quickStyle,
-                                              int maxRetries)
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            // Store original lock values
-            BOOL originalLockMoveX = shape.Protection.LockMoveX.Value;
-            BOOL originalLockMoveY = shape.Protection.LockMoveY.Value;
-            BOOL originalLockWidth = shape.Protection.LockWidth.Value;
-            BOOL originalLockHeight = shape.Protection.LockHeight.Value;
-            BOOL originalLockRotate = shape.Protection.LockRotate.Value;
-            BOOL originalLockVtxEdit = shape.Protection.LockVtxEdit.Value;
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page and one shape.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            Page firstPage = diagram.Pages[0];
+            if (firstPage.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
+
+            // Retrieve the first shape on the first page.
+            Shape shape = firstPage.Shapes[0];
+
+            // Define the preset theme and variant to apply.
+            PresetThemeValue theme = PresetThemeValue.Bubble;
+            PresetThemeVariantValue variant = PresetThemeVariantValue.Variant1;
+
+            // Retry mechanism: attempt to set the theme up to 3 times.
+            const int maxRetries = 3;
             int attempt = 0;
-            while (attempt < maxRetries)
+            bool applied = false;
+
+            while (attempt < maxRetries && !applied)
             {
                 try
                 {
-                    // Temporarily remove locks to allow theme change
-                    shape.Protection.LockMoveX.Value = BOOL.False;
-                    shape.Protection.LockMoveY.Value = BOOL.False;
-                    shape.Protection.LockWidth.Value = BOOL.False;
-                    shape.Protection.LockHeight.Value = BOOL.False;
-                    shape.Protection.LockRotate.Value = BOOL.False;
-                    shape.Protection.LockVtxEdit.Value = BOOL.False;
-
-                    // Apply the preset theme and related properties
+                    // Apply the preset theme and variant.
                     shape.PresetTheme = theme;
                     shape.PresetThemeVariant = variant;
-                    shape.PresetThemeQuickStyle = quickStyle;
 
-                    // If we reach this point, the operation succeeded
-                    break;
+                    // If no exception, mark as successful.
+                    applied = true;
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception and retry
-                    Console.WriteLine($"Attempt {attempt + 1} failed: {ex.Message}");
                     attempt++;
+                    Console.Error.WriteLine($"Attempt {attempt} to set theme failed: {ex.Message}");
 
-                    if (attempt >= maxRetries)
+                    // If we have more attempts left, wait briefly before retrying.
+                    if (attempt < maxRetries)
                     {
-                        Console.WriteLine("Maximum retry attempts reached. Theme not applied.");
+                        Thread.Sleep(500); // 0.5 second pause
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("All retry attempts exhausted. Theme was not applied.");
                     }
                 }
-                finally
-                {
-                    // Restore original lock states after each attempt
-                    shape.Protection.LockMoveX.Value = originalLockMoveX;
-                    shape.Protection.LockMoveY.Value = originalLockMoveY;
-                    shape.Protection.LockWidth.Value = originalLockWidth;
-                    shape.Protection.LockHeight.Value = originalLockHeight;
-                    shape.Protection.LockRotate.Value = originalLockRotate;
-                    shape.Protection.LockVtxEdit.Value = originalLockVtxEdit;
-                }
+            }
+
+            // Save the modified diagram if the theme was applied.
+            if (applied)
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
+        catch (Exception ex)
+        {
+            // Catch any unexpected errors from Aspose.Diagram operations.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+}

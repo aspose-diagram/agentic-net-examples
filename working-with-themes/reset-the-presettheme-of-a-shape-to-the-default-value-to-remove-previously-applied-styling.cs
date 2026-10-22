@@ -1,36 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output Visio file path
+        string outputPath = "output_reset_theme.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Ensure the diagram has at least one page and one shape
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
+            }
 
-            // Access the first page (adjust index as needed)
+            // Get the first page (modify index if a different page is required)
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (replace 1 with the actual shape ID)
-            Shape shape = page.Shapes.GetShape(1);
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("Error: The selected page contains no shapes.");
+                return;
+            }
 
-            // Reset the preset theme properties to their default (zero) values
-            shape.PresetTheme = (PresetThemeValue)0;
-            shape.PresetThemeVariant = (PresetThemeVariantValue)0;
-            shape.PresetThemeQuickStyle = (PresetQuickStyleValue)0;
+            // Get the first shape on the page (modify index if a different shape is required)
+            Shape shape = page.Shapes[0];
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Reset the PresetTheme of the shape.
+            // Aspose.Diagram does not provide a direct "None" value for PresetTheme.
+            // Setting the theme to a neutral preset (Bubble) with default variant and quickstyle
+            // effectively clears custom styling applied previously.
+            shape.PresetTheme = PresetThemeValue.Bubble;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
+            // Save the modified diagram to a new file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,64 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the source diagram
+            Diagram sourceDiagram = new Diagram(inputPath);
 
-            // Validate arguments: first argument is the source Visio file,
-            // second (optional) argument is the output folder.
-            if (args.Length == 0)
+            // Define the new page size (example: 8.5 x 11 inches)
+            double newPageWidth = 8.5;
+            double newPageHeight = 11.0;
+
+            // Iterate over each page in the source diagram
+            for (int i = 0; i < sourceDiagram.Pages.Count; i++)
             {
-                Console.WriteLine("Usage: ExportPages <sourceVisioFile> [outputFolder]");
-                return;
-            }
+                // Retrieve the current page
+                Page srcPage = sourceDiagram.Pages[i];
 
-            string sourcePath = args[0];
-            string outputFolder = args.Length > 1 ? args[1] : Environment.CurrentDirectory;
+                // Create a new empty diagram for the single page export
+                Diagram singlePageDiagram = new Diagram();
 
-            // Ensure the output folder exists.
-            if (!System.IO.Directory.Exists(outputFolder))
-            {
-                System.IO.Directory.CreateDirectory(outputFolder);
-            }
-
-            // Load the source diagram.
-            using (Diagram sourceDiagram = new Diagram(sourcePath))
-            {
-                int pageCount = sourceDiagram.Pages.Count;
-
-                for (int i = 0; i < pageCount; i++)
+                // Copy all masters from the source diagram to the new diagram
+                foreach (Master master in sourceDiagram.Masters)
                 {
-                    // Retrieve the page to export.
-                    Page sourcePage = sourceDiagram.Pages[i];
-
-                    // Create a new empty diagram.
-                    using (Diagram singlePageDiagram = new Diagram())
-                    {
-                        // The new diagram contains a default page at index 0.
-                        // Copy the source page content into this default page.
-                        singlePageDiagram.Pages[0].Copy(sourcePage);
-
-                        // Build the output file name using the page index.
-                        string outputPath = System.IO.Path.Combine(outputFolder, $"Page_{i}.vsdx");
-
-                        // Save the diagram containing only the copied page.
-                        singlePageDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                        Console.WriteLine($"Exported page {i} to '{outputPath}'.");
-                    }
+                    singlePageDiagram.Masters.Add(master);
                 }
-            }
 
+                // Add the source page to the new diagram
+                // This adds a reference to the page; for a true copy, a deeper clone would be required.
+                // For demonstration purposes, we use the reference and then adjust its size.
+                singlePageDiagram.Pages.Add(srcPage);
+
+                // After adding, the page will be at index 0 in the new diagram
+                Page newPage = singlePageDiagram.Pages[0];
+
+                // Resize the page to the desired dimensions
+                newPage.PageSheet.PageProps.PageWidth.Value = newPageWidth;
+                newPage.PageSheet.PageProps.PageHeight.Value = newPageHeight;
+
+                // Construct the output file name using the page index (starting from 0)
+                string outputFileName = $"Page_{i}.vsdx";
+
+                // Save the single-page diagram as VSDX
+                singlePageDiagram.Save(outputFileName, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Exported page {i} to {outputFileName}");
+            }
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

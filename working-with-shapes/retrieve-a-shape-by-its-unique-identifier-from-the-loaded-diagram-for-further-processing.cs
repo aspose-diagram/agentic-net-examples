@@ -1,38 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Parse the shape identifier (expected to be a long integer).
+        if (!long.TryParse(args[1], out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the Visio file to be loaded
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Unique identifier of the shape to retrieve (replace with actual ID)
-            long shapeId = 12345;
-
-            // Retrieve the first page (adjust if the shape resides on a different page)
+            // Assume the shape resides on the first page; adjust as needed.
             Page page = diagram.Pages[0];
 
-            // Get the shape by its ID
+            // Retrieve the shape by its unique identifier.
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Example processing: output shape name and master name
-            Console.WriteLine($"Shape ID: {shape.ID}");
-            Console.WriteLine($"Shape NameU: {shape.NameU}");
-            Console.WriteLine($"Master Name: {shape.Master?.Name ?? "No master"}");
+            if (shape == null)
+            {
+                Console.WriteLine($"Shape with ID {shapeId} was not found on page 0.");
+                return;
+            }
 
+            // Output basic shape information for verification.
+            Console.WriteLine($"Shape ID      : {shape.ID}");
+            Console.WriteLine($"Shape NameU   : {shape.NameU}");
+            Console.WriteLine($"Is Deleted    : {(shape.Del == BOOL.True ? "Yes" : "No")}");
+
+            // If the shape is based on a master, display the master name.
+            if (shape.Master != null)
+            {
+                Console.WriteLine($"Master NameU  : {shape.Master.NameU}");
+            }
+            else
+            {
+                Console.WriteLine("Shape has no associated master.");
+            }
+
+            // TODO: Add further processing of the retrieved shape here.
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during loading or processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

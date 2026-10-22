@@ -1,52 +1,66 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: stencil file path, master name, output diagram path
+        if (args.Length < 3)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <stencil.vss> <masterName> <output.vsdx>");
+            return;
+        }
 
-                // Path to the stencil file (.vss) that contains the master shape.
-                string stencilPath = @"C:\Stencils\Basic Shapes.vss";
+        string stencilPath = args[0];
+        string masterName = args[1];
+        string outputPath = args[2];
 
-                // Name of the master shape inside the stencil to be used.
-                // Adjust this to match an actual master name present in the stencil.
-                string masterName = "Rectangle";
+        // Guard: ensure the stencil file exists
+        if (!File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"Stencil file not found: {stencilPath}");
+            return;
+        }
 
-                // Create a new empty Visio diagram.
-                Diagram diagram = new Diagram();
+        try
+        {
+            // Create an empty diagram
+            Diagram diagram = new Diagram();
 
-                // Import the specified master from the stencil into the diagram.
-                // This makes the master available for shape creation.
-                diagram.AddMaster(stencilPath, masterName);
+            // Add a window so the diagram has an active page context
+            Window window = new Window();
+            window.WindowType = WindowTypeValue.Drawing;
+            window.WindowState = WindowStateValue.Maximized;
+            diagram.Windows.Add(window);
 
-                // Define the position where the new shape will be placed (in inches).
-                double pinX = 2.0;
-                double pinY = 2.0;
+            // Add a default page to host shapes
+            Page page = new Page();
+            diagram.Pages.Add(page);
 
-                // Add a shape based on the imported master to the first page (page index 0).
-                // The method returns the shape ID (long).
-                long shapeId = diagram.AddShape(pinX, pinY, masterName, 0);
+            // Import the specified master from the stencil file
+            diagram.AddMaster(stencilPath, masterName);
 
-                // Retrieve the shape instance for further modifications (if needed).
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(shapeId);
+            // Add a shape based on the imported master to the page
+            // Parameters: pinX, pinY, master name, isCalculate (set to false)
+            long shapeId = page.AddShape(2.0, 2.0, masterName, false);
 
-                // Example: set some text on the newly added shape.
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt("Hello Aspose.Diagram"));
+            // Retrieve the newly added shape (optional, for further manipulation)
+            Shape shape = page.Shapes.GetShape(shapeId);
+            // Example: set the shape's text to indicate it was added programmatically
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt("Added via Aspose.Diagram"));
 
-                // Save the diagram to a VSDX file.
-                string outputPath = @"C:\Output\DiagramWithMaster.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the resulting diagram to the specified output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

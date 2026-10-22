@@ -1,58 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the exported PDF
-            string outputPath = "output.pdf";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Conversion factor: points to inches (1 pt = 1/72 inch)
-            double pointToInch = 1.0 / 72.0;
-            // Increment of 0.2 pt expressed in inches
-            double increment = 0.2 * pointToInch;
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                // Increment for line thickness: 0.2 pt = 0.2 / 72 inches.
+                const double incrementInInches = 0.2 / 72.0;
 
-                    // Increase line thickness (LineWeight) by the increment
-                    // Ensure the shape has a line weight cell; default to 0 if null
-                    double currentWeight = shape.Line.LineWeight.Value;
-                    shape.Line.LineWeight.Value = currentWeight + increment;
+                // Iterate over all pages.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate over all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has a Line object and LineWeight before modifying.
+                        if (shape.Line != null && shape.Line.LineWeight != null)
+                        {
+                            // Increase the line weight by the calculated increment.
+                            shape.Line.LineWeight.Value += incrementInInches;
+                        }
+                    }
                 }
+
+                // Configure PDF save options for high‑resolution output.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.ExportHiddenPage = false; // Changed from BOOL.False to bool literal
+                pdfOptions.SplitMultiPages = false;  // Changed from BOOL.False to bool literal
+
+                // Save the modified diagram as a PDF.
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Configure PDF save options for high‑resolution output
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";               // Fallback font
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;     // Explicitly set format
-
-            // Save the modified diagram as a PDF
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine("Diagram processed and saved to PDF successfully.");
-
+            Console.WriteLine($"Successfully saved PDF to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

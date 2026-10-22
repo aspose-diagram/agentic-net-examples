@@ -1,73 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Expecting four arguments: input diagram path, output diagram path, tag to match, rotation angle in degrees
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <masterTag> <rotationAngle>");
             return;
         }
 
-        // Path to the output Visio file
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string targetTag = args[2];
+        double rotationAngle;
+        if (!double.TryParse(args[3], out rotationAngle))
+        {
+            Console.Error.WriteLine("Invalid rotation angle.");
+            return;
+        }
 
-        // Desired rotation angle in degrees
-        const double rotationAngle = 45.0;
-        // Tag name and value that identify masters to rotate
-        const string tagName = "RotateTag";
-        const string tagValue = "True";
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all masters in the diagram
-            foreach (Master master in diagram.Masters)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                bool shouldRotate = false;
-
-                // Check each shape within the master for the custom property tag
-                foreach (Shape shape in master.Shapes)
+                // Iterate over all masters in the diagram
+                foreach (Master master in diagram.Masters)
                 {
-                    // Guard: ensure the shape has custom properties collection
-                    if (shape.Props != null)
+                    // NOTE: Aspose.Diagram does not expose a Tag collection on Master.
+                    // As a practical substitute, we treat the master Name as the tag identifier.
+                    if (master != null && master.Name != null && master.Name.Equals(targetTag, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Retrieve the property by name
-                        Prop prop = shape.Props.GetProp(tagName);
-                        // If the property exists and matches the expected value, mark for rotation
-                        if (prop != null && string.Equals(prop.Value.Val, tagValue, StringComparison.OrdinalIgnoreCase))
+                        // Apply rotation to each shape contained in the master.
+                        // Masters themselves do not have an XForm; rotation is applied to their constituent shapes.
+                        foreach (Shape shape in master.Shapes)
                         {
-                            shouldRotate = true;
-                            break; // No need to check further shapes in this master
+                            // Set the 2D rotation angle (in degrees) for the shape.
+                            shape.XForm.Angle.Value = rotationAngle;
                         }
+
+                        Console.WriteLine($"Applied rotation of {rotationAngle}° to all shapes in master '{master.Name}'.");
                     }
                 }
 
-                // If the master matches the tag criteria, rotate all its shapes
-                if (shouldRotate)
-                {
-                    foreach (Shape shape in master.Shapes)
-                    {
-                        // Apply rotation by setting the Angle cell value
-                        shape.XForm.Angle.Value = rotationAngle;
-                    }
-                }
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or I/O errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

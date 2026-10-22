@@ -5,80 +5,123 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+        // Background image file path
+        string imagePath = "background.png";
+        // Output Visio file path
+        string outputPath = "output.vsdx";
+
+        // Guard against missing files
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(imagePath))
+        {
+            Console.Error.WriteLine($"Background image file not found: {imagePath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the background image file (PNG, JPG, etc.)
-            string imagePath = "background.png";
-            // Output Visio file
-            string outputPath = "result.vsdx";
-
-            // Create a new diagram instance
-            using (Diagram diagram = new Diagram())
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Ensure at least one foreground page exists
-                if (diagram.Pages.Count == 0)
+                // Load image bytes once – they will be stored in the master
+                byte[] imageBytes = File.ReadAllBytes(imagePath);
+
+                // -----------------------------------------------------------------
+                // Create a custom master that contains the background image
+                // -----------------------------------------------------------------
+                Master bgMaster = new Master();
+
+                // Assign a unique ID and name for the master
+                bgMaster.ID = diagram.Masters.Count + 1;
+                bgMaster.Name = "BackgroundMaster";
+                bgMaster.UniqueID = Guid.NewGuid();
+                bgMaster.BaseID = Guid.NewGuid();
+
+                // Create a shape that holds the image as a foreign bitmap
+                Shape masterShape = new Shape();
+
+                // Mark the shape as a foreign (image) shape
+                masterShape.Type = TypeValue.Foreign;
+
+                // Set foreign data to the loaded image bytes (PNG format)
+                masterShape.ForeignData.ForeignType = ForeignType.Bitmap;
+                masterShape.ForeignData.CompressionType = CompressionType.PNG;
+                masterShape.ForeignData.Value = imageBytes;
+
+                // Initialize size – will be resized per page later
+                masterShape.XForm.Width.Value = 1.0;
+                masterShape.XForm.Height.Value = 1.0;
+                masterShape.XForm.PinX.Value = 0.0;
+                masterShape.XForm.PinY.Value = 0.0;
+
+                // Add the shape to the master’s shape collection
+                bgMaster.Shapes.Add(masterShape);
+
+                // Add the master to the diagram
+                diagram.Masters.Add(bgMaster);
+
+                // -----------------------------------------------------------------
+                // Apply the background master to every page in the diagram
+                // -----------------------------------------------------------------
+                foreach (Page page in diagram.Pages)
                 {
-                    diagram.Pages.Add(new Page());
-                }
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Use the first page to obtain page dimensions (in inches)
-                Page referencePage = diagram.Pages[0];
-                double pageWidth = referencePage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = referencePage.PageSheet.PageProps.PageHeight.Value;
+                    // Center position for the background shape
+                    double centerX = pageWidth / 2.0;
+                    double centerY = pageHeight / 2.0;
 
-                // Find the highest existing page ID to generate a unique ID for the background page
-                int maxId = 0;
-                foreach (Page p in diagram.Pages)
-                {
-                    if (p.ID > maxId) maxId = p.ID;
-                }
+                    // Add a shape based on the custom master to the current page
+                    // The AddShape method returns the shape ID (long)
+                    long shapeId = diagram.AddShape(centerX, centerY, bgMaster.Name, page.ID);
 
-                // Create a new background page
-                Page backgroundPage = new Page(maxId + 1);
-                backgroundPage.Name = "Background";
-                backgroundPage.Background = BOOL.True;
-                // Apply the same dimensions as other pages
-                backgroundPage.PageSheet.PageProps.PageWidth.Value = pageWidth;
-                backgroundPage.PageSheet.PageProps.PageHeight.Value = pageHeight;
+                    // Retrieve the shape object from the page
+                    Shape bgShape = page.Shapes.GetShape(shapeId);
 
-                // Insert the background image covering the entire page area
-                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
-                {
-                    long shapeId = backgroundPage.AddShape(0, 0, pageWidth, pageHeight, imgStream);
-                    Shape bgShape = backgroundPage.Shapes.GetShape(shapeId);
-                    // Solid fill (pattern 1) and no outline (pattern 0)
-                    bgShape.Fill.FillPattern.Value = 1;
-                    bgShape.Line.LinePattern.Value = 0;
-                    // Ensure the image stays behind other content and cannot be selected
+                    // Resize the shape to cover the entire page
+                    bgShape.XForm.Width.Value = pageWidth;
+                    bgShape.XForm.Height.Value = pageHeight;
+                    bgShape.XForm.PinX.Value = centerX;
+                    bgShape.XForm.PinY.Value = centerY;
+
+                    // Send the shape to back so it appears behind other content
                     bgShape.SendToBack();
+
+                    // Make the background non‑selectable
                     bgShape.Protection.LockSelect.Value = BOOL.True;
+
+                    // Optional: remove outline by setting line pattern to none
+                    bgShape.Line.LinePattern.Value = 0;
+
+                    // Optional: ensure solid fill (pattern 1) – can be customized as needed
+                    bgShape.Fill.FillPattern.Value = 1;
                 }
 
-                // Add the background page to the diagram
-                diagram.Pages.Add(backgroundPage);
-
-                // Assign the background page to every foreground page
-                foreach (Page pg in diagram.Pages)
-                {
-                    if (pg.Background == BOOL.False)
-                    {
-                        pg.BackPage = backgroundPage;
-                    }
-                }
-
-                // Save the diagram with the background applied to all pages
+                // Save the modified diagram to the output file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Diagram saved successfully with background image applied to all pages.");
-
+            Console.WriteLine("Background master applied to all pages successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

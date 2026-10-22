@@ -1,56 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeName>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string targetShapeName = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file
-            string filePath = "sample.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // The shape name to search for (NameU is the universal name)
-            string targetShapeName = "MyShape";
-
-            // Variable to hold the found shape ID
-            long foundShapeId = -1;
-
-            // Iterate through all pages and shapes to locate the shape by name
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                foreach (Shape shape in page.Shapes)
+                bool shapeFound = false;
+                long foundShapeId = 0L;
+
+                // Iterate through all pages in the diagram.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    if (shape.NameU == targetShapeName)
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foundShapeId = shape.ID;
+                        // Compare the shape's NameU (universal name) with the target name.
+                        if (shape.NameU != null && shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            foundShapeId = shape.ID;
+                            shapeFound = true;
+                            break;
+                        }
+                    }
+
+                    if (shapeFound)
+                    {
                         break;
                     }
                 }
 
-                if (foundShapeId != -1)
-                    break;
+                if (shapeFound)
+                {
+                    Console.WriteLine($"Shape \"{targetShapeName}\" found with ID: {foundShapeId}");
+                }
+                else
+                {
+                    Console.WriteLine($"Shape \"{targetShapeName}\" was not found in the diagram.");
+                }
             }
-
-            // Output the result
-            if (foundShapeId != -1)
-            {
-                Console.WriteLine($"Shape '{targetShapeName}' found with ID: {foundShapeId}");
-            }
-            else
-            {
-                Console.WriteLine($"Shape '{targetShapeName}' not found in the diagram.");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

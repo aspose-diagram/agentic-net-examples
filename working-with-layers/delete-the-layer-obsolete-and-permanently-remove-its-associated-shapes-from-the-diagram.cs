@@ -7,61 +7,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (replace with actual path as needed)
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        Diagram diagram = null;
         try
         {
             // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Locate the layer named 'Obsolete' on the current page
-                Layer obsoleteLayer = null;
+                // Find the layer named 'Obsolete' in the current page's layer collection
+                Layer targetLayer = null;
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
                     if (layer.Name.Value == "Obsolete")
                     {
-                        obsoleteLayer = layer;
+                        targetLayer = layer;
                         break;
                     }
                 }
 
-                // If the layer was not found, continue to the next page
-                if (obsoleteLayer == null)
+                // If the layer was not found on this page, continue to next page
+                if (targetLayer == null)
                     continue;
 
-                // Determine the index of the obsolete layer (used in shape layer membership strings)
-                string layerIndex = obsoleteLayer.IX.ToString();
+                // Determine the string representation of the layer index
+                string layerIndexStr = targetLayer.IX.ToString();
 
-                // Collect IDs of shapes that belong to the obsolete layer
-                List<long> shapesToRemove = new List<long>();
+                // Collect shapes that belong to the 'Obsolete' layer
+                List<Shape> shapesToRemove = new List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
                     // Ensure the shape has layer membership information
                     if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
                     {
-                        string memberString = shape.LayerMem.LayerMember.Value;
-                        if (!string.IsNullOrEmpty(memberString))
+                        string memberValue = shape.LayerMem.LayerMember.Value;
+                        if (!string.IsNullOrEmpty(memberValue))
                         {
                             // Split the semicolon‑separated list of layer indexes
-                            string[] members = memberString.Split(';');
-                            foreach (string m in members)
+                            string[] indexes = memberValue.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (string idx in indexes)
                             {
-                                if (m == layerIndex)
+                                if (idx == layerIndexStr)
                                 {
-                                    shapesToRemove.Add(shape.ID);
+                                    shapesToRemove.Add(shape);
                                     break;
                                 }
                             }
@@ -70,26 +76,29 @@ class Program
                 }
 
                 // Remove the collected shapes from the page
-                foreach (long shapeId in shapesToRemove)
+                foreach (Shape shape in shapesToRemove)
                 {
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null)
-                    {
-                        page.Shapes.Remove(shape);
-                    }
+                    page.Shapes.Remove(shape);
                 }
 
-                // Hide the obsolete layer (Aspose.Diagram does not provide a direct removal method)
-                obsoleteLayer.Visible.Value = BOOL.False;
+                // Hide the layer by setting its visibility and print properties to FALSE
+                targetLayer.Visible.Value = BOOL.False;
+                targetLayer.Print.Value = BOOL.False;
             }
 
-            // Save the modified diagram to the output file
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+        finally
+        {
+            // Ensure resources are released
+            if (diagram != null)
+                diagram.Dispose();
         }
     }
 }

@@ -1,39 +1,52 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command line arguments.
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
+                // Access the page using explicit type (no var in foreach).
+                Aspose.Diagram.Page page = diagram.Pages[i];
 
-                // Path to the Visio file to be processed
-                string filePath = "input.vsdx";
+                // Retrieve the ScaleX value from the page's print properties.
+                double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
 
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                // List pages where ScaleX is not equal to 1.0.
+                if (scaleX != 1.0)
                 {
-                    // Retrieve the ScaleX value from the page's print properties
-                    double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
-
-                    // List pages where ScaleX is not equal to 1.0
-                    if (scaleX != 1.0)
-                    {
-                        Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}, ScaleX: {scaleX}");
-                    }
+                    Console.WriteLine($"Page index {i} (ID {page.ID}) has ScaleX = {scaleX}");
                 }
-
-                // Clean up resources
-                diagram.Dispose();
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

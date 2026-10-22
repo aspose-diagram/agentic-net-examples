@@ -1,53 +1,83 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <input-visio-file>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
+        // Define output path (original name with suffix).
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_resized.vsdx");
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-            string outputPath = args.Length > 1 ? args[1] : "output_resized.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define maximum width in pixels and convert to inches (assuming 96 DPI)
-            const double maxWidthPixels = 500.0;
-            const double dpi = 96.0;
-            double maxWidthInches = maxWidthPixels / dpi;
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Maximum width in pixels and conversion to inches (assuming 96 DPI).
+                const double maxWidthPixels = 500.0;
+                const double dpi = 96.0;
+                double maxWidthInches = maxWidthPixels / dpi;
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify picture (foreign) shapes
-                    if (shape.Type == TypeValue.Foreign)
+                    // Iterate through all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        double currentWidth = shape.XForm.Width.Value;
-                        // Resize only if the current width exceeds the maximum
-                        if (currentWidth > maxWidthInches && currentWidth > 0)
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify picture (foreign) shapes.
+                        if (shape.Type == TypeValue.Foreign)
                         {
+                            // Current dimensions (in inches).
+                            double currentWidth = shape.XForm.Width.Value;
+                            double currentHeight = shape.XForm.Height.Value;
+
+                            // If the shape already fits within the limit, skip.
+                            if (currentWidth <= maxWidthInches)
+                                continue;
+
+                            // Compute scaling factor to preserve aspect ratio.
                             double scale = maxWidthInches / currentWidth;
-                            shape.XForm.Width.Value = maxWidthInches;
-                            shape.XForm.Height.Value = shape.XForm.Height.Value * scale;
+                            double newWidth = maxWidthInches;
+                            double newHeight = currentHeight * scale;
+
+                            // Apply new dimensions.
+                            shape.SetWidth(newWidth);
+                            shape.SetHeight(newHeight);
                         }
                     }
                 }
+
+                // Save the modified diagram to the output file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Resized diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

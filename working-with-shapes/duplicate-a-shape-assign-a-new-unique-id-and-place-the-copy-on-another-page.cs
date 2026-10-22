@@ -6,115 +6,96 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate argument count.
-        if (args.Length < 5)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <input.vsdx> <sourceShapeId> <sourcePageIndex> <targetPageIndex> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Input Visio file path.
         string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Output Visio file path.
-        string outputPath = args[4];
-        // No existence check needed for output; it will be created.
-
-        // Parse numeric arguments with guards.
-        if (!long.TryParse(args[1], out long sourceShapeId))
-        {
-            Console.Error.WriteLine("Invalid sourceShapeId.");
-            return;
-        }
-
-        if (!int.TryParse(args[2], out int sourcePageIndex))
-        {
-            Console.Error.WriteLine("Invalid sourcePageIndex.");
-            return;
-        }
-
-        if (!int.TryParse(args[3], out int targetPageIndex))
-        {
-            Console.Error.WriteLine("Invalid targetPageIndex.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the input file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Guard source page index.
-            if (sourcePageIndex < 0 || sourcePageIndex >= diagram.Pages.Count)
+            // Load the source diagram inside a using block (required for proper disposal)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("Source page index out of range.");
-                return;
+                // Ensure there are at least two pages (source and target)
+                if (diagram.Pages.Count < 2)
+                {
+                    // Add a new blank page to serve as the target page
+                    Page newPage = new Page();
+                    diagram.Pages.Add(newPage);
+                }
+
+                // Retrieve source (first) and target (second) pages
+                Page sourcePage = diagram.Pages[0];
+                Page targetPage = diagram.Pages[1];
+
+                // Find the first shape on the source page to duplicate
+                Shape sourceShape = null;
+                foreach (Shape shp in sourcePage.Shapes)
+                {
+                    sourceShape = shp;
+                    break; // only need the first shape
+                }
+
+                if (sourceShape == null)
+                {
+                    Console.Error.WriteLine("No shapes found on the source page to duplicate.");
+                    return;
+                }
+
+                // Ensure the shape has an associated master (required for AddShape)
+                if (sourceShape.Master == null || string.IsNullOrEmpty(sourceShape.Master.Name))
+                {
+                    Console.Error.WriteLine("Source shape does not have an associated master.");
+                    return;
+                }
+
+                // Retrieve geometry from the source shape
+                double pinX = sourceShape.XForm.PinX.Value;
+                double pinY = sourceShape.XForm.PinY.Value;
+                double width = sourceShape.XForm.Width.Value;
+                double height = sourceShape.XForm.Height.Value;
+                string masterName = sourceShape.Master.Name;
+
+                // Add a new shape to the target page using the same master and geometry
+                // The AddShape method returns the new shape's ID (long)
+                long newShapeId = targetPage.AddShape(pinX, pinY, width, height, masterName, false);
+
+                // Retrieve the newly added shape object for further modifications
+                Shape newShape = targetPage.Shapes.GetShape(newShapeId);
+
+                // Copy text from the source shape to the new shape
+                // Clear any existing text first
+                newShape.Text.Value.Clear();
+                foreach (var txtObj in sourceShape.Text.Value)
+                {
+                    if (txtObj is Txt txt)
+                    {
+                        // Add a new Txt run with the same text content
+                        newShape.Text.Value.Add(new Txt(txt.Text));
+                    }
+                }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Shape duplicated successfully. Output saved to: {outputPath}");
             }
-
-            // Retrieve source page and shape.
-            Page sourcePage = diagram.Pages[sourcePageIndex];
-            Shape sourceShape = sourcePage.Shapes.GetShape(sourceShapeId);
-            if (sourceShape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {sourceShapeId} not found on source page.");
-                return;
-            }
-
-            // Ensure target page exists; add blank pages if necessary.
-            while (targetPageIndex >= diagram.Pages.Count)
-            {
-                diagram.Pages.Add(new Page());
-            }
-            Page targetPage = diagram.Pages[targetPageIndex];
-
-            // Determine master name (fallback to a basic rectangle if master missing).
-            string masterName = sourceShape.Master?.Name ?? "Rectangle";
-
-            // Extract geometry from the source shape.
-            double pinX = sourceShape.XForm.PinX.Value;
-            double pinY = sourceShape.XForm.PinY.Value;
-            double width = sourceShape.XForm.Width.Value;
-            double height = sourceShape.XForm.Height.Value;
-
-            // Add a new shape on the target page using the same master and geometry.
-            long newShapeId = targetPage.AddShape(pinX, pinY, width, height, masterName, false);
-            Shape newShape = targetPage.Shapes.GetShape(newShapeId);
-            if (newShape == null)
-            {
-                Console.Error.WriteLine("Failed to retrieve the newly added shape.");
-                return;
-            }
-
-            // Copy plain text from the source shape to the new shape.
-            string plainText = sourceShape.Text.Value.Text;
-            newShape.Text.Value.Clear();
-            newShape.Text.Value.Add(new Txt(plainText));
-
-            // Copy fill foreground color if present.
-            if (!string.IsNullOrEmpty(sourceShape.Fill.FillForegnd.Value))
-            {
-                newShape.Fill.FillForegnd.Value = sourceShape.Fill.FillForegnd.Value;
-            }
-
-            // Copy line color if present.
-            if (!string.IsNullOrEmpty(sourceShape.Line.LineColor.Value))
-            {
-                newShape.Line.LineColor.Value = sourceShape.Line.LineColor.Value;
-            }
-
-            // Save the modified diagram to the output file.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Shape duplicated (new ID: {newShapeId}) and saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

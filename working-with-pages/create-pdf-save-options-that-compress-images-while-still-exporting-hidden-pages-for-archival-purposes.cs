@@ -1,43 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Output PDF file path
+        string outputPath = "output.pdf";
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the exported PDF
-            string outputPath = "output.pdf";
-
-            // Load the Visio diagram
+            // Load the Visio diagram inside a using block (required pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Configure PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Export hidden pages so they are included in the PDF (archival purpose)
-                pdfOptions.ExportHiddenPage = true;
+                // Export hidden pages for archival purposes
+                pdfOptions.ExportHiddenPage = true; // BOOL replaced with native bool
 
-                // Ensure the options know they are for PDF format
+                // Apply Flate compression to reduce file size (text compression)
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Explicitly set the save format
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Apply text compression (Flate) to reduce file size
-                pdfOptions.TextCompression = PdfTextCompression.Flate;
+                // Optional: set a default font to avoid missing font warnings
+                pdfOptions.DefaultFont = "Arial";
 
                 // Save the diagram as PDF with the configured options
                 diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

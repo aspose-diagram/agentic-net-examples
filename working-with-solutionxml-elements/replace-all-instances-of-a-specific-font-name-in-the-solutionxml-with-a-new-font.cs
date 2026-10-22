@@ -1,42 +1,53 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Prompt for input Visio file path
-        Console.WriteLine("Enter the path to the Visio file to process:");
-        string inputPath = Console.ReadLine();
-
-        // Prompt for the font name to replace
-        Console.WriteLine("Enter the font name to replace (exact match):");
-        string oldFontName = Console.ReadLine();
-
-        // Prompt for the new font name
-        Console.WriteLine("Enter the new font name:");
-        string newFontName = Console.ReadLine();
-
-        // Prompt for the output file path
-        Console.WriteLine("Enter the path for the output Visio file:");
-        string outputPath = Console.ReadLine();
-
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate over all SolutionXML elements and replace the font name in the XML content
-        foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+        // Validate command‑line arguments.
+        if (args.Length < 4)
         {
-            if (!string.IsNullOrEmpty(solutionXml.XmlValue))
-            {
-                solutionXml.XmlValue = solutionXml.XmlValue.Replace(oldFontName, newFontName);
-            }
+            Console.Error.WriteLine("Usage: <inputVisioPath> <oldFontName> <newFontName> <outputVisioPath>");
+            return;
         }
 
-        // Save the modified diagram (using VSDX format as an example)
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        string inputPath = args[0];
+        string oldFontName = args[1];
+        string newFontName = args[2];
+        string outputPath = args[3];
 
-        Console.WriteLine("Font replacement completed and diagram saved to: " + outputPath);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over all SolutionXML elements and replace font names.
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            {
+                if (solXml.XmlValue != null && solXml.XmlValue.Contains(oldFontName))
+                {
+                    // Replace all occurrences of the old font name with the new one.
+                    solXml.XmlValue = solXml.XmlValue.Replace(oldFontName, newFontName);
+                }
+            }
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

@@ -1,29 +1,48 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class VsdxToJpegConverter
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Ensure the required arguments are provided: input VSDX path and output JPEG path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.jpg>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Verify that the input file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram using a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Set up image save options for JPEG format with 80% compression quality.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                saveOptions.JpegQuality = 80; // Quality range is 0-100.
 
-            // Load the VSDX diagram from file
-            Diagram diagram = new Diagram("input.vsdx");
+                // Save the diagram to the specified JPEG file.
+                diagram.Save(outputPath, saveOptions);
+            }
 
-            // Set JPEG save options with 80% compression quality
-            ImageSaveOptions jpegOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            jpegOptions.JpegQuality = 80; // Compression quality (0-100)
-
-            // Save the diagram as a JPEG image using the specified options
-            diagram.Save("output.jpg", jpegOptions);
-
+            Console.WriteLine($"Diagram successfully converted to JPEG: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

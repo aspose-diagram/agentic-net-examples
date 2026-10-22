@@ -1,64 +1,63 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Ensure the diagram contains at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                // Path to the source Visio file (must exist)
-                string inputPath = "input.vsdx";
-
-                // Path for the resulting Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Get the first page (index 0)
+                // Work with the first page.
                 Page page = diagram.Pages[0];
 
-                // Add a few sample shapes using the built‑in "Rectangle" master
-                // The fourth parameter (isCalculate) must be a boolean
-                long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle", false);
-                long shapeId2 = page.AddShape(4.0, 2.0, "Rectangle", false);
-                long shapeId3 = page.AddShape(6.0, 2.0, "Rectangle", false);
+                // Configure AutoSpaceOptions with negative distances to force overlap.
+                AutoSpaceOptions options = new AutoSpaceOptions();
+                // Negative horizontal and vertical distances (in inches) cause shapes to overlap.
+                options.DistanceInHorizontal = -0.5; // Overlap by half an inch horizontally.
+                options.DistanceInVertical = -0.5;   // Overlap by half an inch vertically.
 
-                // Retrieve the shapes (optional – shown for completeness)
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
-                Shape shape3 = page.Shapes.GetShape(shapeId3);
+                // Apply auto‑spacing to all shapes on the page.
+                page.AutoSpaceShapes(page.Shapes, options);
 
-                // Set some simple text on each shape
-                shape1.Text.Value.Clear();
-                shape1.Text.Value.Add(new Txt("Shape 1"));
-                shape2.Text.Value.Clear();
-                shape2.Text.Value.Add(new Txt("Shape 2"));
-                shape3.Text.Value.Clear();
-                shape3.Text.Value.Add(new Txt("Shape 3"));
-
-                // Configure AutoSpaceOptions with negative distances to force overlap
-                AutoSpaceOptions autoSpace = new AutoSpaceOptions
-                {
-                    // Negative values cause shapes to move closer together (overlap)
-                    DistanceInHorizontal = -0.5, // inches
-                    DistanceInVertical = -0.5    // inches
-                };
-
-                // Apply the auto‑spacing to all shapes on the page
-                page.AutoSpaceShapes(page.Shapes, autoSpace);
-
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

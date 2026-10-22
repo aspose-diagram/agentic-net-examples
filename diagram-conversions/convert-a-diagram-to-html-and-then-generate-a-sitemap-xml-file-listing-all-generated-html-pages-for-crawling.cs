@@ -1,67 +1,107 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Xml;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class DiagramToHtmlAndSitemap
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputDirectory]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Determine output directory (either supplied or a subfolder named \"HtmlOutput\").
+        string outputDir = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "HtmlOutput");
         try
         {
-
-            // Load the Visio diagram (replace with your actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Define output folder for HTML files
-            string outputFolder = "HtmlOutput";
-            Directory.CreateDirectory(outputFolder);
-
-            // Export diagram to HTML (creates an HTML file and associated resources)
-            string htmlFileName = Path.Combine(outputFolder, "diagram.html");
-            diagram.Save(htmlFileName, SaveFileFormat.Html);
-
-            // Generate sitemap XML listing the generated HTML page(s)
-            string sitemapPath = Path.Combine(outputFolder, "sitemap.xml");
-            GenerateSitemap(new[] { "diagram.html" }, sitemapPath, "http://example.com/HtmlOutput/");
-
-            Console.WriteLine("Conversion completed. HTML and sitemap generated in: " + outputFolder);
-
+            // Create the output directory if it does not exist.
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error creating output directory \"{outputDir}\": {ex.Message}");
+            return;
         }
-    }
 
-    // Creates a simple sitemap.xml file for the given HTML pages
-    static void GenerateSitemap(string[] htmlFiles, string sitemapFilePath, string baseUrl)
-    {
-        XmlDocument doc = new XmlDocument();
+        // List to hold generated HTML file names (relative to the output directory).
+        List<string> htmlFiles = new List<string>();
 
-        // Create the root <urlset> element with the required namespace
-        XmlElement urlset = doc.CreateElement("urlset");
-        urlset.SetAttribute("xmlns", "http://www.sitemaps.org/schemas/sitemap/0.9");
-        doc.AppendChild(urlset);
-
-        foreach (string htmlFile in htmlFiles)
+        try
         {
-            // <url>
-            XmlElement url = doc.CreateElement("url");
-            urlset.AppendChild(url);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // <loc>
-            XmlElement loc = doc.CreateElement("loc");
-            loc.InnerText = baseUrl + htmlFile;
-            url.AppendChild(loc);
+            // Export each page as a separate HTML file.
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Configure HTML save options for a single page.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    PageIndex = i,
+                    PageCount = 1
+                };
 
-            // Optional: <lastmod>
-            XmlElement lastmod = doc.CreateElement("lastmod");
-            lastmod.InnerText = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            url.AppendChild(lastmod);
+                string htmlFileName = $"page_{i + 1}.html";
+                string htmlFilePath = Path.Combine(outputDir, htmlFileName);
+
+                // Save the current page to HTML.
+                diagram.Save(htmlFilePath, htmlOptions);
+
+                // Store the relative path for sitemap generation.
+                htmlFiles.Add(htmlFileName);
+            }
+
+            // Dispose the diagram to free resources.
+            diagram.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
         }
 
-        // Save the sitemap.xml file
-        doc.Save(sitemapFilePath);
+        // Generate sitemap.xml listing all HTML pages.
+        string sitemapPath = Path.Combine(outputDir, "sitemap.xml");
+        try
+        {
+            using (XmlWriter writer = XmlWriter.Create(sitemapPath, new XmlWriterSettings { Indent = true, Encoding = System.Text.Encoding.UTF8 }))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("urlset", "http://www.sitemaps.org/schemas/sitemap/0.9");
+
+                foreach (string htmlFile in htmlFiles)
+                {
+                    writer.WriteStartElement("url");
+                    writer.WriteElementString("loc", htmlFile);
+                    writer.WriteEndElement(); // </url>
+                }
+
+                writer.WriteEndElement(); // </urlset>
+                writer.WriteEndDocument();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error writing sitemap file: {ex.Message}");
+            return;
+        }
+
+        Console.WriteLine($"HTML export completed. Files are located in: {outputDir}");
+        Console.WriteLine($"Sitemap generated at: {sitemapPath}");
     }
 }

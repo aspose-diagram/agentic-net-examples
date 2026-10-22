@@ -1,50 +1,65 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageSavingExample
+class Program
 {
-    // Custom callback to log the start of each page saving operation.
-    public class CustomPageSavingCallback : IPageSavingCallback
+    static void Main(string[] args)
     {
-        // Called before a page is saved.
-        public void PageStartSaving(PageStartSavingArgs args)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            // Log page index (zero‑based) and total page count.
-            Console.WriteLine($"Starting save for page {args.PageIndex + 1} of {args.PageCount}");
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            return;
         }
 
-        // Called after a page has been saved.
-        public void PageEndSaving(PageEndSavingArgs args)
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // No additional actions needed after page save.
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output PDF path (same folder, same name with .pdf extension)
+        string outputPath = Path.ChangeExtension(inputPath, ".pdf");
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure PDF save options and assign the custom page saving callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format tracker
+            pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
+
+            // Save the diagram as PDF using the configured options
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram successfully saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}
 
-    public class Program
+// Custom callback implementation to log page saving progress
+class CustomPageSavingCallback : IPageSavingCallback
+{
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        public static void Main()
-        {
-            try
-            {
-
-                // Load an existing Visio diagram.
-                // Replace "input.vsdx" with the actual path to your diagram file.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Configure PDF save options and assign the custom page‑saving callback.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
-
-                // Save the diagram as PDF.
-                // Replace "output.pdf" with the desired output file path.
-                diagram.Save("output.pdf", pdfOptions);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        Console.WriteLine($"Start saving page index {args.PageIndex} of pages {args.PageCount}");
     }
+
+    // Called after a page has finished saving
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"End saving page index {args.PageIndex} of pages {args.PageCount}");
     }
 }

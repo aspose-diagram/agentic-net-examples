@@ -1,56 +1,70 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageCallbackExample
+class PageSavingCallback : IPageSavingCallback
 {
-    // Custom callback to receive page‑level notifications during PDF export
-    public class MyPageSavingCallback : IPageSavingCallback
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Called before a page starts saving
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-        }
-
-        // Called after a page has been saved
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-
-            // Example: stop processing further pages (uncomment to use)
-            // args.HasMorePages = false;
-        }
+        // Log start of page saving.
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
     }
 
-    class Program
+    // Called after a page has been saved.
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        static void Main(string[] args)
-        {
-            try
-            {
+        // Log completion of page saving.
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
 
-                // Path to the source Visio diagram
-                string inputPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure PDF save options and assign the custom callback
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new MyPageSavingCallback();
-
-                // Export the diagram to PDF with page‑level notifications
-                string outputPath = "output.pdf";
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Diagram has been saved to PDF.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Example: stop further processing after the first page.
+        // Uncomment the following line to stop after the first page.
+        // args.HasMorePages = false;
     }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Input Visio file path.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output PDF file path.
+        string outputPath = "output.pdf";
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+            // Assign the custom page-saving callback.
+            pdfOptions.PageSavingCallback = new PageSavingCallback();
+
+            // Save the diagram to PDF using the options.
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

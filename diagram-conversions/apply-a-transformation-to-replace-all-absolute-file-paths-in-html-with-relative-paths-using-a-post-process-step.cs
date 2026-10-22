@@ -4,50 +4,132 @@ using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class CustomStreamProvider : IStreamProvider
+{
+    private readonly string _resourceFolder;
+
+    public CustomStreamProvider(string resourceFolder)
     {
-        static void Main(string[] args)
+        _resourceFolder = resourceFolder;
+        // Ensure the resource folder exists.
+        if (!Directory.Exists(_resourceFolder))
         {
-            try
+            Directory.CreateDirectory(_resourceFolder);
+        }
+    }
+
+    // Called by Aspose when a resource (e.g., image) needs to be saved.
+    public void InitStream(StreamProviderOptions options)
+    {
+        try
+        {
+            // options.DefaultPath contains the file name Aspose wants to use.
+            // Combine it with the target folder to create the full path.
+            string filePath = Path.Combine(_resourceFolder, options.DefaultPath);
+            // Ensure the directory for the file exists.
+            string dir = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(dir))
             {
+                Directory.CreateDirectory(dir);
+            }
+            // Provide the stream back to Aspose.
+            options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error initializing stream for resource '{options.DefaultPath}': {ex.Message}");
+            throw;
+        }
+    }
 
-                // Input Visio file path (absolute or relative)
-                string visioPath = @"C:\Diagrams\sample.vsdx";
+    // Called by Aspose after the resource has been written.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        try
+        {
+            options.Stream?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error closing stream for resource '{options.DefaultPath}': {ex.Message}");
+            throw;
+        }
+    }
+}
 
-                // Output HTML file path
-                string htmlPath = @"C:\Diagrams\output.html";
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Expect input Visio file path and output directory as arguments.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputDir = args.Length > 1 ? args[1] : "output";
 
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
+        // Guard: verify the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-                // Export diagram to HTML
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+        // Ensure the output directory exists.
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Folder where HTML resources (images, etc.) will be stored.
+            string resourcesFolder = Path.Combine(outputDir, "Resources");
+            var streamProvider = new CustomStreamProvider(resourcesFolder);
+
+            // Export each page to a separate HTML file.
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                string htmlPath = Path.Combine(outputDir, $"page_{i + 1}.html");
+
+                // Configure HTML export options for a single page.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    PageIndex = i,
+                    PageCount = 1,
+                    StreamProvider = streamProvider
+                };
+
+                // Save the page as HTML.
                 diagram.Save(htmlPath, htmlOptions);
 
-                // Post‑process the generated HTML to replace absolute file paths with relative paths
+                // Post‑process the generated HTML to replace absolute paths with relative ones.
                 string htmlContent = File.ReadAllText(htmlPath);
-
-                // Regex to match Windows absolute paths (e.g., C:\folder\file.png)
-                string pattern = @"[A-Za-z]:\\[^\s""']+";
-
-                // Replace each absolute path with just the file name (relative to the HTML file)
-                string processedContent = Regex.Replace(htmlContent, pattern, match =>
-                {
-                    // Extract the file name from the absolute path
-                    string fileName = Path.GetFileName(match.Value);
-                    // Return the relative path (just the file name)
-                    return fileName;
-                }, RegexOptions.IgnoreCase);
-
-                // Write the transformed HTML back to the file
+                string processedContent = ReplaceAbsolutePaths(htmlContent);
                 File.WriteAllText(htmlPath, processedContent);
-
-                Console.WriteLine("HTML export completed and absolute paths have been converted to relative paths.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine("HTML export and path conversion completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+
+    // Replaces Windows absolute file paths (e.g., C:\folder\file.png) with just the file name.
+    private static string ReplaceAbsolutePaths(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        // Regex matches patterns like C:\folder\subfolder\file.ext
+        string pattern = @"[A-Za-z]:\\[^\s\""]+";
+
+        return Regex.Replace(input, pattern, match =>
+        {
+            // Return only the file name part to make the path relative.
+            return Path.GetFileName(match.Value);
+        });
     }
+}

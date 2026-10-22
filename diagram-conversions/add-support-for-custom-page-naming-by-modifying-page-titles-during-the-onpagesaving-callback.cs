@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,62 +9,64 @@ class CustomPageNamingCallback : IPageSavingCallback
 
     public CustomPageNamingCallback(Diagram diagram)
     {
-        _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
+        _diagram = diagram;
     }
 
-    // Called before a page is saved
+    // Called before a page starts saving to PDF
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // args.PageIndex is zero‑based
-        int pageIndex = args.PageIndex;
-        if (pageIndex >= 0 && pageIndex < _diagram.Pages.Count)
+        // Ensure the page index is valid
+        if (args.PageIndex >= 0 && args.PageIndex < _diagram.Pages.Count)
         {
-            Page page = _diagram.Pages[pageIndex];
-            // Set a custom title for the page
-            page.Name = $"Custom Page {pageIndex + 1}";
-            page.NameU = $"Custom_Page_{pageIndex + 1}";
+            // Set a custom name for the page
+            _diagram.Pages[args.PageIndex].Name = $"Custom Page {args.PageIndex + 1}";
         }
     }
 
-    // Called after a page is saved
+    // Called after a page has been saved to PDF
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // No additional processing needed; keep the default behavior
+        // No additional actions needed after saving each page
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+            // Prepare PDF save options and assign the custom page‑saving callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
 
-            // Path for the resulting PDF file
-            string outputPath = "output.pdf";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Create PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-                // Assign the custom page‑saving callback
-                pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
-
-                // Save the diagram as PDF with the custom page titles
-                diagram.Save(outputPath, pdfOptions);
-            }
-
-            Console.WriteLine("Diagram saved with custom page names.");
-
+            // Save the diagram to PDF using the options
+            diagram.Save(outputPath, pdfOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

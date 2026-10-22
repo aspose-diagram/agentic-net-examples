@@ -1,119 +1,110 @@
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
 using System.IO;
+using System.Data;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExportWithDbStreamProvider
+class DatabaseStreamProvider : IStreamProvider
 {
-    // Custom IStreamProvider that stores streams (e.g., images) into a database BLOB field.
-    public class DatabaseStreamProvider : IStreamProvider
+    // Simulated database table to store resource BLOBs.
+    private readonly DataTable _resourceTable;
+    // Tracks active streams during the export process.
+    private readonly Dictionary<string, MemoryStream> _activeStreams = new Dictionary<string, MemoryStream>();
+
+    public DatabaseStreamProvider(DataTable resourceTable)
     {
-        // In-memory storage to keep streams between InitStream and CloseStream calls.
-        private readonly Dictionary<string, MemoryStream> _streamCache = new();
-
-        // Called by Aspose.Diagram when a new resource stream is needed.
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Create a memory stream to capture the resource data.
-            var memStream = new MemoryStream();
-
-            // Assign the stream to the options so Aspose.Diagram writes into it.
-            options.Stream = memStream;
-
-            // Use DefaultPath (the resource name) as the key for later retrieval.
-            string key = options.DefaultPath ?? Guid.NewGuid().ToString();
-            _streamCache[key] = memStream;
-        }
-
-        // Called by Aspose.Diagram after writing to the stream is finished.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Retrieve the memory stream that was previously stored.
-            string key = options.DefaultPath ?? string.Empty;
-            if (!_streamCache.TryGetValue(key, out var memStream))
-            {
-                // No stream found; nothing to store.
-                return;
-            }
-
-            // Ensure the stream position is at the beginning before reading.
-            memStream.Position = 0;
-            byte[] data = memStream.ToArray();
-
-            // -----------------------------------------------------------------
-            // Insert the byte[] into a database BLOB field.
-            // The following code is a placeholder illustrating typical ADO.NET usage.
-            // Replace the connection string and command text with your actual schema.
-            // -----------------------------------------------------------------
-            /*
-            using (DbConnection conn = new SqlConnection("your-connection-string"))
-            {
-                conn.Open();
-                using (DbCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "INSERT INTO DiagramResources (ResourceName, Data) VALUES (@name, @data)";
-                    var paramName = cmd.CreateParameter();
-                    paramName.ParameterName = "@name";
-                    paramName.Value = key;
-                    cmd.Parameters.Add(paramName);
-
-                    var paramData = cmd.CreateParameter();
-                    paramData.ParameterName = "@data";
-                    paramData.Value = data;
-                    cmd.Parameters.Add(paramData);
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
-            */
-            // Since external DB drivers are not available, we simulate the operation with a DataTable.
-            DataTable simulatedTable = new DataTable("DiagramResources");
-            simulatedTable.Columns.Add("ResourceName", typeof(string));
-            simulatedTable.Columns.Add("Data", typeof(byte[]));
-            DataRow row = simulatedTable.NewRow();
-            row["ResourceName"] = key;
-            row["Data"] = data;
-            simulatedTable.Rows.Add(row);
-            Console.WriteLine($"[Info] Resource '{key}' stored in simulated DB table (Rows: {simulatedTable.Rows.Count}).");
-
-            // Clean up the cached stream.
-            _streamCache.Remove(key);
-            memStream.Dispose();
-        }
+        _resourceTable = resourceTable ?? throw new ArgumentNullException(nameof(resourceTable));
     }
 
-    public class Program
+    // Called by Aspose when a new resource stream is required.
+    public void InitStream(StreamProviderOptions options)
     {
-        public static void Main()
-        {
-            try
-            {
-
-                // Load an existing Visio diagram.
-                string diagramPath = "sample.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Configure HTML export options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // The StreamProvider will intercept resource streams (e.g., images) during export.
-                    StreamProvider = new DatabaseStreamProvider()
-                };
-
-                // Export the diagram to HTML. Resources will be captured by DatabaseStreamProvider.
-                string outputHtml = "output.html";
-                diagram.Save(outputHtml, htmlOptions);
-
-                Console.WriteLine($"Diagram exported to '{outputHtml}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Create a memory stream that Aspose will write the resource into.
+        var memoryStream = new MemoryStream();
+        // Assign the stream back to the options so Aspose can use it.
+        options.Stream = memoryStream;
+        // Store the stream using the default path as the key for later retrieval.
+        _activeStreams[options.DefaultPath] = memoryStream;
     }
+
+    // Called by Aspose when the resource stream is closed.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // Retrieve the memory stream that was previously created.
+        if (_activeStreams.TryGetValue(options.DefaultPath, out var memoryStream))
+        {
+            // Ensure all data is flushed and read from the beginning.
+            memoryStream.Position = 0;
+            byte[] data = memoryStream.ToArray();
+
+            // Insert the resource into the simulated database table.
+            DataRow row = _resourceTable.NewRow();
+            row["Path"] = options.DefaultPath; // Resource identifier (e.g., image file name)
+            row["Data"] = data;                // BLOB content
+            _resourceTable.Rows.Add(row);
+
+            // Clean up.
+            memoryStream.Dispose();
+            _activeStreams.Remove(options.DefaultPath);
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Prepare a DataTable to act as the database for storing resources.
+        DataTable resourceTable = new DataTable("DiagramResources");
+        resourceTable.Columns.Add("Path", typeof(string));
+        resourceTable.Columns.Add("Data", typeof(byte[]));
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create the custom stream provider that writes resources to the DataTable.
+            var streamProvider = new DatabaseStreamProvider(resourceTable);
+
+            // Configure HTML export options and assign the stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = streamProvider;
+            // Export only the first page as a single HTML file (adjust as needed).
+            htmlOptions.PageIndex = 0;
+            htmlOptions.PageCount = 1;
+
+            // Output HTML file path.
+            string outputHtml = "output.html";
+
+            // Save the diagram to HTML using the custom stream provider.
+            diagram.Save(outputHtml, htmlOptions);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            return;
+        }
+
+        // After export, display information about stored resources.
+        Console.WriteLine("Resources stored in the simulated database:");
+        foreach (DataRow row in resourceTable.Rows)
+        {
+            string path = row["Path"] as string;
+            byte[] data = row["Data"] as byte[];
+            Console.WriteLine($"- {path}: {data?.Length ?? 0} bytes");
+        }
     }
 }

@@ -4,61 +4,87 @@ using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class GzipStreamProvider : IStreamProvider
+class GzipStreamProvider : IStreamProvider
 {
-    // Called before a resource stream is created.
+    // Initialize the stream for a resource. The resource will be written to a GZIP-compressed file.
     public void InitStream(StreamProviderOptions options)
     {
+        // Determine the target file path for the compressed resource.
+        // Append ".gz" to the default path provided by Aspose.
+        string gzipFilePath = options.DefaultPath + ".gz";
+
         // Ensure the directory for the target file exists.
-        string directory = Path.GetDirectoryName(options.DefaultPath);
+        string directory = Path.GetDirectoryName(gzipFilePath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
-        // Create a file stream for the resource and wrap it with GZip compression.
-        FileStream fileStream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
+        // Create a file stream and wrap it with GZipStream for compression.
+        FileStream fileStream = new FileStream(gzipFilePath, FileMode.Create, FileAccess.Write);
         GZipStream gzipStream = new GZipStream(fileStream, CompressionMode.Compress);
+
+        // Assign the compressed stream back to the options so Aspose writes into it.
         options.Stream = gzipStream;
     }
 
-    // Called after the resource has been written.
+    // Close and dispose the stream after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Dispose the stream (which also disposes the underlying file stream).
-        options.Stream?.Dispose();
+        if (options.Stream != null)
+        {
+            // Disposing the GZipStream also disposes the underlying FileStream.
+            options.Stream.Dispose();
+        }
     }
 }
 
-public class Program
+class Program
 {
-    public static void Main(string[] args)
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output HTML file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio diagram.
-            string inputDiagramPath = "input.vsdx";
-
-            // Path where the HTML file will be created.
-            string outputHtmlPath = "output.html";
-
-            // Load the diagram.
-            Diagram diagram = new Diagram(inputDiagramPath);
-
-            // Configure HTML save options and assign the custom GZIP stream provider.
+            // Configure HTML save options with the custom GZIP stream provider.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             htmlOptions.StreamProvider = new GzipStreamProvider();
 
-            // Save the diagram as HTML; resources will be written through the GZIP provider.
-            diagram.Save(outputHtmlPath, htmlOptions);
+            // Ensure the output directory exists.
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
 
-            Console.WriteLine("Diagram exported to HTML with compressed resources.");
+            // Save the diagram to HTML using the configured options.
+            diagram.Save(outputPath, htmlOptions);
 
+            Console.WriteLine("Diagram successfully saved to HTML with GZIP-compressed resources.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

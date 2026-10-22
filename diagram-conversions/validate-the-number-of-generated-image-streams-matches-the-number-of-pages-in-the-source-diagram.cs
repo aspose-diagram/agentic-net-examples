@@ -6,61 +6,82 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command line argument for source diagram path
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
+
+        string sourcePath = args[0];
+
+        // Guard: ensure the source file exists
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {sourcePath}");
+            return;
+        }
+
+        // List to hold generated image streams
+        List<MemoryStream> imageStreams = new List<MemoryStream>();
+
         try
         {
-
-            // Path to the source Visio diagram
-            string sourcePath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(sourcePath);
 
-            // List to hold generated image streams
-            List<MemoryStream> imageStreams = new List<MemoryStream>();
+            // Get the total number of pages in the diagram
+            int pageCount = diagram.Pages.Count;
 
-            // Export each page to a separate image stream
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Iterate over each page and export it to a PNG image stream
+            for (int i = 0; i < pageCount; i++)
             {
-                // Configure image save options for a single page
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                options.PageIndex = i;   // zero‑based page index
-                options.PageCount = 1;   // export only this page
-
-                // Create a memory stream to hold the image
+                // Create a new memory stream for the current page image
                 MemoryStream ms = new MemoryStream();
 
-                // Save the page to the memory stream
+                // Configure image save options for PNG format and single-page export
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                options.PageIndex = i;   // Zero‑based page index
+                options.PageCount = 1;   // Export only the current page
+
+                // Save the current page to the memory stream
                 diagram.Save(ms, options);
 
-                // Reset stream position for potential further use
+                // Reset stream position for potential downstream reading
                 ms.Position = 0;
 
-                // Store the stream
+                // Store the stream in the collection
                 imageStreams.Add(ms);
             }
 
-            // Validate that the number of generated streams matches the number of pages
-            if (imageStreams.Count != diagram.Pages.Count)
+            // Validate that the number of generated streams matches the page count
+            if (imageStreams.Count != pageCount)
             {
-                throw new Exception($"Mismatch: {imageStreams.Count} image streams generated, but diagram has {diagram.Pages.Count} pages.");
+                throw new Exception($"Mismatch: Generated {imageStreams.Count} image streams but diagram has {pageCount} pages.");
             }
             else
             {
-                Console.WriteLine($"Success: Generated {imageStreams.Count} image streams for {diagram.Pages.Count} pages.");
+                Console.WriteLine($"Success: Generated {imageStreams.Count} image streams matching the {pageCount} pages.");
             }
 
-            // Optional: clean up streams (if not needed later)
+            // Dispose the diagram object to free resources
+            diagram.Dispose();
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+            return;
+        }
+        finally
+        {
+            // Ensure all memory streams are properly disposed
             foreach (var stream in imageStreams)
             {
                 stream.Dispose();
             }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
         }
     }
 }

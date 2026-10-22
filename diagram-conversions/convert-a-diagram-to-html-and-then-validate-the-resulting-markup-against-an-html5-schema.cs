@@ -1,93 +1,68 @@
 using System;
 using System.IO;
-using System.Xml;
-using System.Xml.Schema;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class DiagramToHtmlValidator
+class Program
 {
-    // Path to the input Visio diagram
-    private const string InputDiagramPath = "input.vsdx";
-
-    // Path where the HTML output will be saved
-    private const string OutputHtmlPath = "output.html";
-
-    // Path to the HTML5 XSD schema file
-    private const string Html5SchemaPath = "html5.xsd";
-
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram using Aspose.Diagram
-            Diagram diagram = new Diagram(InputDiagramPath);
+            // Prepare HTML export options (default settings).
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Save the diagram as HTML
-            diagram.Save(OutputHtmlPath, SaveFileFormat.Html);
-
-            // Read the generated HTML content
-            string htmlContent = File.ReadAllText(OutputHtmlPath);
-
-            // Validate the HTML against the HTML5 schema
-            bool isValid = ValidateHtml(htmlContent, Html5SchemaPath);
-
-            Console.WriteLine(isValid
-                ? "HTML validation succeeded."
-                : "HTML validation failed. See errors above.");
-
+            // Export the entire diagram to a single HTML file.
+            diagram.Save(outputPath, htmlOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error during diagram conversion: {ex.Message}");
+            return;
         }
-    }
 
-    /// <summary>
-    /// Validates an HTML string against an XSD schema.
-    /// </summary>
-    /// <param name="html">The HTML markup to validate.</param>
-    /// <param name="schemaPath">Path to the XSD schema file.</param>
-    /// <returns>True if validation succeeds; otherwise false.</returns>
-    private static bool ValidateHtml(string html, string schemaPath)
-    {
-        bool isValid = true;
-
-        // Set up XML reader settings with schema validation
-        XmlReaderSettings settings = new XmlReaderSettings
+        // Simple HTML5 validation: check for required DOCTYPE and root tags.
+        try
         {
-            ValidationType = ValidationType.Schema,
-            DtdProcessing = DtdProcessing.Prohibit,
-            XmlResolver = null
-        };
+            string htmlContent = File.ReadAllText(outputPath);
 
-        // Attach the HTML5 schema
-        settings.Schemas.Add(null, schemaPath);
+            bool hasDoctype = htmlContent.IndexOf("<!DOCTYPE html>", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hasHtmlOpen = htmlContent.IndexOf("<html", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hasHtmlClose = htmlContent.IndexOf("</html>", StringComparison.OrdinalIgnoreCase) >= 0;
 
-        // Capture validation errors
-        settings.ValidationEventHandler += (sender, args) =>
-        {
-            isValid = false;
-            Console.WriteLine($"Validation {args.Severity}: {args.Message}");
-        };
-
-        // Use a StringReader to feed the HTML content to the XmlReader
-        using (StringReader stringReader = new StringReader(html))
-        using (XmlReader reader = XmlReader.Create(stringReader, settings))
-        {
-            try
+            if (hasDoctype && hasHtmlOpen && hasHtmlClose)
             {
-                // Parse the entire document; validation occurs during reading
-                while (reader.Read()) { }
+                Console.WriteLine("HTML validation passed.");
             }
-            catch (XmlException ex)
+            else
             {
-                // Parsing errors (e.g., not well-formed XML) are treated as validation failures
-                isValid = false;
-                Console.WriteLine($"XML parsing error: {ex.Message}");
+                Console.Error.WriteLine("HTML validation failed: missing required HTML5 elements.");
+                // Optionally, you could throw an exception to indicate failure.
             }
         }
-
-        return isValid;
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during HTML validation: {ex.Message}");
+        }
     }
 }

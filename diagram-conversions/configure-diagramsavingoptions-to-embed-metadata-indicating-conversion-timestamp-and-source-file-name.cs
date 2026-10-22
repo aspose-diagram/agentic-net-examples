@@ -6,39 +6,64 @@ using Aspose.Diagram.Properties;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string sourcePath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure source file exists
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for source and output diagrams
-            string sourcePath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from the source file
+            // Load the Visio diagram from the source file
             Diagram diagram = new Diagram(sourcePath);
 
-            // Create a custom property for the conversion timestamp
-            CustomProp timestampProp = new CustomProp();
-            timestampProp.Name = "ConversionTimestamp";
-            timestampProp.PropType = PropType.String;
-            timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o"); // ISO 8601 format
+            // ---------- Embed conversion timestamp as a custom document property ----------
+            CustomProp timestampProp = new CustomProp
+            {
+                Name = "ConversionTimestamp",
+                // Use string type for the property value
+                PropType = PropType.String,
+                // Assign a CustomValue object with the timestamp string
+                CustomValue = new CustomValue { ValueString = DateTime.UtcNow.ToString("o") }
+            };
             diagram.DocumentProps.CustomProps.Add(timestampProp);
 
-            // Create a custom property for the source file name
-            CustomProp sourceFileProp = new CustomProp();
-            sourceFileProp.Name = "SourceFileName";
-            sourceFileProp.PropType = PropType.String;
-            sourceFileProp.CustomValue.ValueString = Path.GetFileName(sourcePath);
+            // ---------- Embed source file name as a custom document property ----------
+            CustomProp sourceFileProp = new CustomProp
+            {
+                Name = "SourceFileName",
+                PropType = PropType.String,
+                CustomValue = new CustomValue { ValueString = Path.GetFileName(sourcePath) }
+            };
             diagram.DocumentProps.CustomProps.Add(sourceFileProp);
 
-            // Save the diagram with the embedded custom metadata
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // ---------- Configure DiagramSaveOptions ----------
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions
+            {
+                // Example option: auto‑fit page to drawing content
+                AutoFitPageToDrawingContent = true // corrected: use bool instead of BOOL
+            };
 
+            // Save the diagram with the configured options
+            diagram.Save(outputPath, saveOptions);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

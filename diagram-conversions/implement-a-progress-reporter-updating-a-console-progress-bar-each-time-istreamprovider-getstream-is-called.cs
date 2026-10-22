@@ -3,74 +3,114 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class ConsoleProgressStreamProvider : IStreamProvider
+class ProgressStreamProvider : IStreamProvider
 {
-    private int _currentCount = 0;
-    private readonly int _expectedCount;
+    private readonly string _outputDirectory;
+    private int _streamCount = 0;
 
-    public ConsoleProgressStreamProvider(int expectedCount)
+    public ProgressStreamProvider(string outputDirectory)
     {
-        _expectedCount = expectedCount > 0 ? expectedCount : 1;
+        _outputDirectory = outputDirectory;
     }
 
-    // Called by Aspose.Diagram when a new stream is required (e.g., for an image file during HTML export)
+    // Called before a stream is created – no special initialization needed.
     public void InitStream(StreamProviderOptions options)
     {
-        _currentCount++;
-        DrawProgress(_currentCount, _expectedCount);
-
-        // Provide a writable stream for the resource. Using MemoryStream as a placeholder.
-        options.Stream = new MemoryStream();
+        // No initialization required for this implementation.
     }
 
-    // Called after the stream has been written.
+    // Called to obtain a stream for a resource (e.g., image, CSS) during HTML export.
+    public Stream GetStream(StreamProviderOptions options)
+    {
+        // Increment the counter and update the console progress indicator.
+        _streamCount++;
+        Console.Write($"\rStreams created: {_streamCount}");
+
+        // Ensure the output directory exists.
+        if (!Directory.Exists(_outputDirectory))
+        {
+            Directory.CreateDirectory(_outputDirectory);
+        }
+
+        // Combine the output directory with the default path provided by the options.
+        // options.DefaultPath is read‑only and contains the relative file name.
+        string filePath = Path.Combine(_outputDirectory, options.DefaultPath);
+
+        // Ensure the directory for the specific file exists (handles subfolders).
+        string fileDir = Path.GetDirectoryName(filePath);
+        if (!Directory.Exists(fileDir))
+        {
+            Directory.CreateDirectory(fileDir);
+        }
+
+        // Return a writable file stream for the resource.
+        return new FileStream(filePath, FileMode.Create, FileAccess.Write);
+    }
+
+    // Called after the stream has been written – no special cleanup needed.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Ensure the stream is properly disposed.
-        options.Stream?.Dispose();
-    }
-
-    private void DrawProgress(int current, int total)
-    {
-        const int barWidth = 50;
-        double ratio = (double)current / total;
-        int filled = (int)(barWidth * ratio);
-
-        Console.Write("\r[");
-        Console.Write(new string('#', filled));
-        Console.Write(new string('-', barWidth - filled));
-        Console.Write($"] {current}/{total}");
-
-        if (current >= total)
-        {
-            Console.WriteLine();
-        }
+        // No cleanup required for this implementation.
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output directory.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputDirectory>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputDir = args[1];
+
+        // Guard: verify the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the output directory exists or can be created.
         try
         {
-
-            // Load an existing Visio diagram.
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Prepare HTML export options and attach the custom stream provider.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            // Estimate the number of resources (images, CSS files, etc.) that will be generated.
-            // Adjust this number based on the actual diagram complexity.
-            htmlOptions.StreamProvider = new ConsoleProgressStreamProvider(expectedCount: 10);
-
-            // Export the diagram to HTML. The progress bar updates each time a stream is requested.
-            diagram.Save("output.html", htmlOptions);
-
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML export options with a custom stream provider for progress reporting.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new ProgressStreamProvider(outputDir);
+
+            // Define the main HTML file path.
+            string mainHtmlPath = Path.Combine(outputDir, "index.html");
+
+            // Save the diagram as HTML, invoking the stream provider for each resource.
+            diagram.Save(mainHtmlPath, htmlOptions);
+
+            // Move to a new line after the progress bar output.
+            Console.WriteLine("\nHTML export completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

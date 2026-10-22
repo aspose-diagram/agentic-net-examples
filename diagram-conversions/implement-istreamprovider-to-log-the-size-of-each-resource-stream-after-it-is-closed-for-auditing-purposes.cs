@@ -3,56 +3,82 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class AuditingStreamProvider : IStreamProvider
+class CustomStreamProvider : IStreamProvider
 {
-    // Called when Aspose.Diagram needs a stream for a resource (e.g., an image) during HTML export.
+    // Called by Aspose.Diagram before writing a resource (e.g., image) to a stream.
     public void InitStream(StreamProviderOptions options)
     {
-        // If Aspose did not supply a stream, create one using the default path.
-        if (options.Stream == null && !string.IsNullOrEmpty(options.DefaultPath))
+        // The DefaultPath property contains the relative file name for the resource.
+        string resourcePath = options.DefaultPath;
+
+        // Ensure the directory for the resource exists.
+        string directory = Path.GetDirectoryName(resourcePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
-            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
+            Directory.CreateDirectory(directory);
         }
+
+        // Create a file stream that Aspose will write the resource into.
+        options.Stream = new FileStream(resourcePath, FileMode.Create, FileAccess.Write);
     }
 
-    // Called after the resource stream has been written and closed.
+    // Called by Aspose.Diagram after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
         if (options.Stream != null)
         {
-            // Capture the size before disposing the stream.
-            long size = options.Stream.Length;
-            Console.WriteLine($"Closed resource '{options.DefaultPath}'. Size = {size} bytes.");
+            // Capture the size of the written resource.
+            long sizeInBytes = options.Stream.Length;
+
+            // Dispose the stream to release the file handle.
             options.Stream.Dispose();
+
+            // Log the resource name and its size for auditing.
+            Console.WriteLine($"Resource '{options.DefaultPath}' written, size: {sizeInBytes} bytes.");
         }
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input Visio file path.
+        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+
+        // Guard: verify the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output HTML file path.
+        string outputHtmlPath = args.Length > 1 ? args[1] : "output.html";
+
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputHtmlPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-
-            // Load an existing Visio diagram.
-            string inputPath = "sample.vsdx"; // replace with your file path
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Set up HTML export options and attach the custom stream provider.
+            // Configure HTML save options and assign the custom stream provider.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new AuditingStreamProvider();
+            htmlOptions.StreamProvider = new CustomStreamProvider();
 
-            // Export the diagram to HTML. All resource streams will be logged when closed.
-            string outputPath = "output.html";
-            diagram.Save(outputPath, htmlOptions);
-
-            diagram.Dispose();
-
+            // Save the diagram as HTML. Resources (images, etc.) will be handled by the stream provider.
+            diagram.Save(outputHtmlPath, htmlOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

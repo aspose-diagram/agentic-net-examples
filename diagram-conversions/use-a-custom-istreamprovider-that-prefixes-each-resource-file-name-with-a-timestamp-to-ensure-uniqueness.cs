@@ -3,54 +3,103 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExportExample
+class TimestampStreamProvider : IStreamProvider
 {
-    // Custom stream provider that prefixes each resource file name with a timestamp
-    public class TimestampedStreamProvider : IStreamProvider
+    private readonly string _outputDirectory;
+
+    public TimestampStreamProvider(string outputDirectory)
     {
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Create a unique file name using the current timestamp and the original resource name
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            string originalFileName = Path.GetFileName(options.DefaultPath);
-            string uniqueFileName = $"{timestamp}_{originalFileName}";
-
-            // Open a file stream for writing the resource
-            var fileStream = new FileStream(uniqueFileName, FileMode.Create, FileAccess.Write);
-            options.Stream = fileStream;
-        }
-
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Ensure the stream is properly closed after the resource is written
-            options.Stream?.Close();
-        }
+        _outputDirectory = outputDirectory;
     }
 
-    class Program
+    // Called by Aspose.Diagram when a resource stream is needed
+    public void InitStream(StreamProviderOptions options)
     {
-        static void Main()
-        {
-            try
-            {
+        // Ensure the output directory exists
+        Directory.CreateDirectory(_outputDirectory);
 
-                // Load an existing Visio diagram
-                var diagram = new Diagram("input.vsdx");
+        // Extract the original file name from the default path provided by Aspose
+        string originalFileName = Path.GetFileName(options.DefaultPath);
 
-                // Configure HTML export options and assign the custom stream provider
-                var htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new TimestampedStreamProvider();
+        // Create a timestamp prefix (yyyyMMddHHmmssfff) for uniqueness
+        string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
 
-                // Export the diagram to HTML; resources (images, CSS, etc.) will be saved with timestamped names
-                diagram.Save("output.html", htmlOptions);
+        // Build the new file name with the timestamp prefix
+        string newFileName = $"{timestamp}_{originalFileName}";
 
-                Console.WriteLine("Diagram exported to HTML with timestamped resource files.");
+        // Combine with the output directory to get the full path
+        string fullPath = Path.Combine(_outputDirectory, newFileName);
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Assign a writable FileStream to the options so Aspose can write the resource
+        options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
     }
+
+    // Called by Aspose.Diagram after the resource has been written
+    public void CloseStream(StreamProviderOptions options)
+    {
+        if (options.Stream != null)
+        {
+            options.Stream.Dispose();
+            options.Stream = null;
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Expect two arguments: input Visio file path and output HTML file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputHtmlPath = args[1];
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Determine the directory where HTML resources (images, etc.) will be stored
+        string outputDir = Path.GetDirectoryName(outputHtmlPath);
+        if (string.IsNullOrEmpty(outputDir))
+        {
+            Console.Error.WriteLine("Unable to determine output directory from the HTML path.");
+            return;
+        }
+
+        // Ensure the output directory exists
+        Directory.CreateDirectory(outputDir);
+
+        // Create a subfolder for resources to keep the HTML folder tidy
+        string resourcesDir = Path.Combine(outputDir, "Resources");
+        Directory.CreateDirectory(resourcesDir);
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML save options and assign the custom stream provider
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new TimestampStreamProvider(resourcesDir);
+
+            // Save the diagram as HTML using the configured options
+            diagram.Save(outputHtmlPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully saved to HTML: {outputHtmlPath}");
+            Console.WriteLine($"Resources are stored in: {resourcesDir}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
+        }
     }
 }

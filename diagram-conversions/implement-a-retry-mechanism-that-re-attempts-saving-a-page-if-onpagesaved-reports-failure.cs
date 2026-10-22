@@ -1,73 +1,97 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class RetryPageSavingCallback : IPageSavingCallback
-{
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-    }
-
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        // No explicit failure flag is provided by the API.
-        // If an exception occurs during saving, it will be caught in the retry loop.
-    }
-}
-
 class Program
 {
-    static void Main()
+    // Custom callback to track page saving progress
+    private class MyPageSavingCallback : IPageSavingCallback
     {
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            // Log start of page saving
+            Console.WriteLine($"Start saving page index {args.PageIndex} of {args.PageCount}");
+        }
+
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            // Log end of page saving
+            Console.WriteLine($"End saving page index {args.PageIndex} of {args.PageCount}");
+        }
+    }
+
+    static void Main(string[] args)
+    {
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output directory (second argument or default "output")
+        string outputDir = args.Length > 1 ? args[1] : "output";
+
+        // Ensure the output directory exists
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-
-            const string inputPath = "input.vsdx";
-            const string outputPath = "output.pdf";
-
             // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.PageSavingCallback = new RetryPageSavingCallback();
+            Diagram diagram = new Diagram(inputPath);
 
-                const int maxRetries = 3;
+            int pageCount = diagram.Pages.Count;
+
+            // Iterate through each page and attempt to save with retries
+            for (int i = 0; i < pageCount; i++)
+            {
                 int attempt = 0;
+                const int maxAttempts = 3;
                 bool saved = false;
 
-                while (attempt < maxRetries && !saved)
+                while (attempt < maxAttempts && !saved)
                 {
                     try
                     {
+                        // Configure PDF save options for a single page
+                        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                        pdfOptions.PageIndex = i;      // Zero‑based page index
+                        pdfOptions.PageCount = 1;      // Export only this page
+                        pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+
+                        // Build output file path for the current page
+                        string outputPath = Path.Combine(outputDir, $"page_{i + 1}.pdf");
+
+                        // Save the specific page
                         diagram.Save(outputPath, pdfOptions);
+
+                        Console.WriteLine($"Successfully saved page {i + 1} to \"{outputPath}\"");
                         saved = true;
-                        Console.WriteLine("Diagram saved successfully.");
                     }
                     catch (Exception ex)
                     {
                         attempt++;
-                        Console.WriteLine($"Save attempt {attempt} failed: {ex.Message}");
-                        if (attempt >= maxRetries)
+                        Console.Error.WriteLine($"Error saving page {i + 1} (attempt {attempt} of {maxAttempts}): {ex.Message}");
+
+                        if (attempt >= maxAttempts)
                         {
-                            Console.WriteLine("Maximum retry attempts reached. Save operation aborted.");
-                            throw;
-                        }
-                        else
-                        {
-                            Console.WriteLine("Retrying save operation...");
+                            Console.Error.WriteLine($"Failed to save page {i + 1} after {maxAttempts} attempts. Skipping.");
                         }
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any unexpected errors during loading or processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

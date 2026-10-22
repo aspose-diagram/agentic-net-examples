@@ -1,120 +1,118 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace IStreamProviderTest
+class MyStreamProvider : IStreamProvider
 {
-    // Custom stream provider to capture resource type identifiers during HTML export
-    public class TestStreamProvider : IStreamProvider
+    // Store captured identifiers for verification
+    private readonly List<string> _capturedIdentifiers = new List<string>();
+    public IReadOnlyList<string> CapturedIdentifiers => _capturedIdentifiers;
+
+    // Called by Aspose when a new resource stream is required
+    public void InitStream(StreamProviderOptions options)
     {
-        // List to store the resource type identifiers received in InitStream
-        public List<string> ReceivedResourceTypes { get; } = new List<string>();
+        // Attempt to capture a meaningful identifier.
+        // Prefer a hypothetical ResourceType property; fall back to DefaultPath.
+        string identifier = null;
 
-        // Called by Aspose.Diagram when a resource stream is initialized
-        public void InitStream(StreamProviderOptions options)
+        // Use reflection to safely access a possible ResourceType property.
+        var resourceTypeProp = options.GetType().GetProperty("ResourceType");
+        if (resourceTypeProp != null)
         {
-            // Guard against null options
-            if (options == null) return;
-
-            // Determine resource type based on the default path (image files usually have an extension)
-            string type = "Shape"; // default assumption
-            if (!string.IsNullOrEmpty(options.DefaultPath) &&
-                options.DefaultPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-            {
-                type = "Image";
-            }
-
-            // Record the inferred type
-            ReceivedResourceTypes.Add(type);
-
-            // Provide a dummy stream to satisfy the export process
-            options.Stream = new MemoryStream();
+            var rtValue = resourceTypeProp.GetValue(options);
+            if (rtValue != null)
+                identifier = rtValue.ToString();
         }
 
-        // Called by Aspose.Diagram when a resource stream is closed
-        public void CloseStream(StreamProviderOptions options)
+        // If ResourceType is not available, use the default path provided by Aspose.
+        if (string.IsNullOrEmpty(identifier))
         {
-            // Guard against null options
-            if (options?.Stream == null) return;
-
-            // Dispose the dummy stream
-            options.Stream.Dispose();
-            options.Stream = null;
+            identifier = options.DefaultPath ?? "unknown";
         }
+
+        _capturedIdentifiers.Add(identifier);
+
+        // Provide a dummy stream so Aspose can write the resource.
+        // The Stream property is writable in the current API version.
+        options.Stream = new MemoryStream();
     }
 
-    public class Program
+    // Called by Aspose when the resource stream should be closed
+    public void CloseStream(StreamProviderOptions options)
     {
-        public static void Main()
+        // Dispose the stream we created in InitStream.
+        if (options.Stream != null)
         {
-            try
+            options.Stream.Dispose();
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Input Visio file path (adjust as needed)
+        string inputPath = "sample.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Instantiate the custom stream provider
+            MyStreamProvider provider = new MyStreamProvider();
+
+            // Configure HTML save options with the stream provider
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = provider;
+
+            // Prepare output directory and file
+            string outputDir = Path.Combine(Path.GetDirectoryName(inputPath) ?? ".", "html_output");
+            Directory.CreateDirectory(outputDir);
+            string outputPath = Path.Combine(outputDir, "output.html");
+
+            // Save the diagram as HTML using the custom stream provider
+            diagram.Save(outputPath, htmlOptions);
+
+            // Verify that the provider received identifiers for both images and shapes
+            bool hasImage = false;
+            bool hasShape = false;
+
+            foreach (var id in provider.CapturedIdentifiers)
             {
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Access the first (and only) page
-                Page page = diagram.Pages[0];
-
-                // Add a simple rectangle shape
-                long rectShapeId = page.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle", false);
-                Shape rectShape = page.Shapes.GetShape(rectShapeId);
-                rectShape.Text.Value.Add(new Txt("Rectangle Shape"));
-
-                // Add an image shape using a dummy PNG byte array
-                byte[] dummyPng = new byte[]
-                {
-                    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-                    0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-                    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-                    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
-                    0xDE, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
-                    0x54, 0x08, 0xD7, 0x63, 0x60, 0x00, 0x00, 0x00,
-                    0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC, 0x33, 0x00,
-                    0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
-                    0x42, 0x60, 0x82
-                };
-                using (MemoryStream imgStream = new MemoryStream(dummyPng))
-                {
-                    // AddShape overload that accepts a stream creates a foreign (image) shape
-                    long imgShapeId = page.AddShape(4.0, 1.0, 2.0, 2.0, imgStream);
-                    // No additional configuration needed for the image shape
-                }
-
-                // Prepare HTML export options with the custom stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                TestStreamProvider provider = new TestStreamProvider();
-                htmlOptions.StreamProvider = provider;
-
-                // Export the diagram to HTML (output path is irrelevant for the test)
-                diagram.Save("test_output.html", htmlOptions);
-
-                // Verify that the stream provider received both image and shape resource types
-                bool hasImage = false;
-                bool hasShape = false;
-                foreach (string type in provider.ReceivedResourceTypes)
-                {
-                    Console.WriteLine($"Received resource type: {type}");
-                    if (type.Equals("Image", StringComparison.OrdinalIgnoreCase))
-                        hasImage = true;
-                    if (type.Equals("Shape", StringComparison.OrdinalIgnoreCase))
-                        hasShape = true;
-                }
-
-                if (!hasImage)
-                    throw new Exception("IStreamProvider did not receive an Image resource type.");
-
-                if (!hasShape)
-                    throw new Exception("IStreamProvider did not receive a Shape resource type.");
-
-                Console.WriteLine("IStreamProvider correctly received both Image and Shape resource types.");
+                // Simple heuristic checks; adjust based on actual identifier format
+                if (id.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0)
+                    hasImage = true;
+                if (id.IndexOf("shape", StringComparison.OrdinalIgnoreCase) >= 0)
+                    hasShape = true;
             }
-            catch (Exception ex)
+
+            if (!hasImage || !hasShape)
             {
-                // Write any errors to the error stream
-                Console.Error.WriteLine($"Error: {ex.Message}");
+                throw new Exception("IStreamProvider did not receive expected resource identifiers for images and shapes.");
             }
+
+            Console.WriteLine("HTML export completed successfully. Stream provider captured expected resource types.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

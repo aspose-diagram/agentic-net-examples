@@ -1,67 +1,107 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class PageSavingLogger : IPageSavingCallback
-{
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"[Callback] Starting to save page {args.PageIndex + 1} of {args.PageCount}");
-    }
-
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"[Callback] Finished saving page {args.PageIndex + 1}");
-        // Continue processing remaining pages
-    }
-}
-
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output folder path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Ensure output directory exists.
+        if (!Directory.Exists(outputFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string sourcePath = "input.vsdx";
+            // ---------- PDF Save with Page Saving Callback (progress tracking) ----------
+            // The callback is only valid for PdfSaveOptions, so we perform a temporary PDF save
+            // to trigger progress events while still extracting images per page.
+            string tempPdfPath = Path.Combine(outputFolder, "temp_progress.pdf");
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new PageProgressCallback();
+            // Explicitly set the format (optional, but clarifies intent).
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Load the diagram
-            using (Diagram diagram = new Diagram(sourcePath))
+            // Perform the temporary PDF save to invoke the callback.
+            diagram.Save(tempPdfPath, pdfOptions);
+
+            // Optionally delete the temporary PDF after progress tracking.
+            try
             {
-                // -------------------------------------------------
-                // 1. Use PDF save with page callback to report progress
-                // -------------------------------------------------
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new PageSavingLogger();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // explicit format
-                pdfOptions.ExportHiddenPage = false;
-
-                // Save to a temporary PDF to trigger the callbacks
-                diagram.Save("temp_progress.pdf", pdfOptions);
-
-                // -------------------------------------------------
-                // 2. Export each page as a separate PNG image
-                // -------------------------------------------------
-                int pageCount = diagram.Pages.Count;
-                for (int i = 0; i < pageCount; i++)
-                {
-                    // Configure image save options for the current page
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    imgOptions.PageIndex = i;   // zero‑based page index
-                    imgOptions.PageCount = 1;   // export only this page
-                    imgOptions.Resolution = 300; // optional DPI setting
-
-                    string outputPath = $"Page_{i + 1}.png";
-                    diagram.Save(outputPath, imgOptions);
-                    Console.WriteLine($"Saved page {i + 1} as PNG: {outputPath}");
-                }
+                File.Delete(tempPdfPath);
+            }
+            catch
+            {
+                // Ignore deletion errors; the file is not critical.
             }
 
+            // ---------- Export each page as a separate PNG ----------
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Configure image save options for a single page.
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                imgOptions.PageIndex = i;      // Zero‑based page index.
+                imgOptions.PageCount = 1;      // Export only the current page.
+                imgOptions.ExportHiddenPage = false; // Do not export hidden pages.
+
+                string pngPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+
+                // Save the current page as PNG.
+                diagram.Save(pngPath, imgOptions);
+                Console.WriteLine($"Saved page {i + 1} to {pngPath}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    // Implementation of IPageSavingCallback to report progress during PDF save.
+    private class PageProgressCallback : IPageSavingCallback
+    {
+        // Called before a page starts saving.
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
+        }
+
+        // Called after a page has been saved.
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+            // Continue processing remaining pages.
+            args.HasMorePages = true;
         }
     }
 }

@@ -1,61 +1,73 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramConversion
+class ProgressCallback : IPageSavingCallback
 {
-    // Callback to track page saving progress during PDF export
-    class PageProgressCallback : IPageSavingCallback
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-        }
-
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        }
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
     }
 
-    class Program
+    // Called after a page has been saved.
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        static void Main()
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        // If you need to stop further processing, set:
+        // args.HasMorePages = false;
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Input Visio file path (encrypted file handling not supported via LoadOptions in this version).
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            string inputPath = "encrypted.vsdx";   // Path to the encrypted Visio file
-            string outputPath = "output.pdf";      // Desired output PDF file
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output PDF file path.
+        string outputPath = "output.pdf";
 
-            Diagram diagram;
-            try
-            {
-                // Load the diagram. Password handling is not supported via LoadOptions,
-                // so the file must be accessible without a password or handled externally.
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Configure PDF save options with a progress callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                DefaultFont = "Arial",                     // Fallback font
-                SaveFormat = SaveFileFormat.Pdf,           // Explicitly set format
-                PageSavingCallback = new PageProgressCallback()
-            };
+        try
+        {
+            // Create LoadOptions instance (no password property available).
+            LoadOptions loadOptions = new LoadOptions();
 
-            // Save the diagram to PDF while tracking progress
-            try
-            {
-                diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine("Diagram conversion completed successfully.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during conversion: {ex.Message}");
-            }
+            // Load the diagram using the LoadOptions.
+            Diagram diagram = new Diagram(inputPath, loadOptions);
+
+            // Prepare PDF save options and assign the progress callback.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new ProgressCallback();
+
+            // Explicitly set the save format for the options.
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Save the diagram to PDF while tracking progress.
+            diagram.Save(outputPath, pdfOptions);
+
+            // Dispose the diagram to free resources.
+            diagram.Dispose();
+
+            Console.WriteLine("Conversion completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during loading or saving.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

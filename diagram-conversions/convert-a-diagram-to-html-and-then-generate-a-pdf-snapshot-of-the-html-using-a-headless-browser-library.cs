@@ -1,49 +1,57 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.IO;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: input Visio file, output HTML file, output PDF file.
+        if (args.Length < 3)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath> <outputPdfPath>");
+            return;
+        }
 
-                // Input Visio diagram path (first argument or default)
-                string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string visioPath = args[0];
+        string htmlPath = args[1];
+        string pdfPath = args[2];
 
-                // Output files
-                string htmlPath = "output.html";
-                string pdfPath = "output.pdf";
+        // Guard against missing input file.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Input Visio file not found: {visioPath}");
+            return;
+        }
 
-                // Ensure the input file exists
-                if (!File.Exists(diagramPath))
-                {
-                    throw new FileNotFoundException($"Diagram file not found: {diagramPath}");
-                }
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // Export the entire diagram to a single HTML file.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            diagram.Save(htmlPath, htmlOptions);
 
-                // Export diagram to HTML
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                // Optional: do not export hidden pages
-                htmlOptions.ExportHiddenPage = false;
-                diagram.Save(htmlPath, htmlOptions);
+            // Dispose the diagram to free resources.
+            diagram.Dispose();
 
-                // Convert the generated HTML to PDF using Aspose.Pdf (fully qualified to avoid ambiguity)
-                // Load the HTML file
-                Aspose.Pdf.HtmlLoadOptions loadOptions = new Aspose.Pdf.HtmlLoadOptions();
-                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(htmlPath, loadOptions);
+            // Convert the generated HTML to PDF using Aspose.Pdf (headless rendering).
+            // Fully qualified names are used to avoid ambiguity with Aspose.Diagram types.
+            Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(htmlPath);
+            pdfDocument.Save(pdfPath, Aspose.Pdf.SaveFormat.Pdf);
+            pdfDocument.Dispose();
 
-                // Save as PDF
-                pdfDocument.Save(pdfPath);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine("Conversion completed successfully.");
+            Console.WriteLine($"HTML output: {htmlPath}");
+            Console.WriteLine($"PDF snapshot: {pdfPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine("An error occurred during conversion:");
+            Console.Error.WriteLine(ex.Message);
+        }
     }
-    }
+}

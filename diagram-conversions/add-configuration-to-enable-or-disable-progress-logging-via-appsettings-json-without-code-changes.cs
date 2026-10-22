@@ -2,57 +2,94 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to the configuration file.
+        const string configFileName = "appsettings.json";
+
+        // Verify that the configuration file exists.
+        if (!File.Exists(configFileName))
+        {
+            Console.Error.WriteLine($"Configuration file '{configFileName}' not found.");
+            return;
+        }
+
+        // Load configuration JSON and retrieve the EnableProgressLogging flag.
+        bool enableProgressLogging = false;
         try
         {
-
-            // Read configuration from appsettings.json
-            bool enableProgressLogging = false;
-            const string configFile = "appsettings.json";
-
-            if (File.Exists(configFile))
+            string json = File.ReadAllText(configFileName);
+            using JsonDocument doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement elem) &&
+                elem.ValueKind == JsonValueKind.True || elem.ValueKind == JsonValueKind.False)
             {
-                try
-                {
-                    string json = File.ReadAllText(configFile);
-                    using JsonDocument doc = JsonDocument.Parse(json);
-                    if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement elem) &&
-                        elem.ValueKind == JsonValueKind.True)
-                    {
-                        enableProgressLogging = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // If config cannot be read, treat as disabled and report the error
-                    Console.WriteLine($"Failed to read configuration: {ex.Message}");
-                }
+                enableProgressLogging = elem.GetBoolean();
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to read configuration: {ex.Message}");
+            return;
+        }
 
-            // Example file paths (adjust as needed)
-            const string inputPath = "input.vsdx";
-            const string outputPath = "output.pdf";
+        // Determine input and output file paths.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = "output.pdf";
 
-            if (enableProgressLogging) Console.WriteLine("Starting diagram processing...");
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file '{inputPath}' not found.");
+            return;
+        }
 
-            // Load diagram
-            if (enableProgressLogging) Console.WriteLine($"Loading diagram from '{inputPath}'");
+        try
+        {
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Save diagram as PDF
-            if (enableProgressLogging) Console.WriteLine($"Saving diagram to '{outputPath}' as PDF");
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
+            if (enableProgressLogging)
+            {
+                // Create PDF save options and attach the progress logging callback.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = new ProgressLoggingCallback();
 
-            if (enableProgressLogging) Console.WriteLine("Diagram processing completed successfully.");
+                // Save the diagram as PDF with progress logging.
+                diagram.Save(outputPath, pdfOptions);
+            }
+            else
+            {
+                // Save the diagram as PDF without progress logging.
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
+            }
 
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+}
+
+// Implementation of the page saving callback that logs progress to the console.
+class ProgressLoggingCallback : IPageSavingCallback
+{
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"[Progress] Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+    }
+
+    // Called after a page has been saved.
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"[Progress] Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        // No need to modify args.HasMorePages; let the process continue normally.
     }
 }

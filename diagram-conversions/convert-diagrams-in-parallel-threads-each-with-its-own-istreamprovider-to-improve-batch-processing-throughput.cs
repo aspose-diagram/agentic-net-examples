@@ -5,24 +5,34 @@ using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class CustomStreamProvider : IStreamProvider
+class FileStreamProvider : IStreamProvider
 {
-    private readonly string _outputPath;
+    // Base directory where all resource files (images, etc.) will be saved.
+    private readonly string _baseDirectory;
 
-    public CustomStreamProvider(string outputPath)
+    public FileStreamProvider(string baseDirectory)
     {
-        _outputPath = outputPath;
+        _baseDirectory = baseDirectory;
     }
 
-    // Called before the HTML export starts writing to the stream
+    // Called by Aspose.Diagram when a new resource stream is required.
     public void InitStream(StreamProviderOptions options)
     {
-        // Create a file stream for the HTML file
-        var stream = new FileStream(_outputPath, FileMode.Create, FileAccess.Write);
-        options.Stream = stream;
+        // Combine the base directory with the default relative path provided by Aspose.
+        string fullPath = Path.Combine(_baseDirectory, options.DefaultPath);
+
+        // Ensure the target directory exists.
+        string directory = Path.GetDirectoryName(fullPath);
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        // Create a writable file stream for the resource.
+        options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
     }
 
-    // Called after the HTML export finishes
+    // Called by Aspose.Diagram after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
         options.Stream?.Close();
@@ -33,46 +43,90 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input folder containing Visio files; can be passed as an argument or hard‑coded
-        string inputFolder = args.Length > 0 ? args[0] : @"C:\VisioFiles";
-
-        // Collect all supported Visio files (e.g., .vsdx, .vdx, .vsd)
-        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        var supportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".vsdx", ".vdx", ".vsd", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm", ".html", ".mmd" };
-        var filesToProcess = new List<string>();
-        foreach (var file in diagramFiles)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            if (supportedExtensions.Contains(Path.GetExtension(file)))
-                filesToProcess.Add(file);
+            Console.Error.WriteLine("Usage: DiagramBatchConvert <inputFolder> <outputFolder>");
+            return;
         }
 
-        // Process each diagram in parallel, each thread gets its own IStreamProvider instance
-        Parallel.ForEach(filesToProcess, diagramPath =>
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+
+        // Guard against missing input folder.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Ensure the output folder exists.
+        if (!Directory.Exists(outputFolder))
         {
             try
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Determine HTML output path (same name, .html extension)
-                string htmlOutputPath = Path.ChangeExtension(diagramPath, ".html");
-
-                // Configure HTML save options with a dedicated stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new CustomStreamProvider(htmlOutputPath);
-                // Optional: do not export hidden pages
-                htmlOptions.ExportHiddenPage = false;
-
-                // Save the diagram as HTML using the custom stream provider
-                diagram.Save(htmlOutputPath, htmlOptions);
+                Directory.CreateDirectory(outputFolder);
             }
             catch (Exception ex)
             {
-                // Simple error handling – write to console
-                Console.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
+        }
+
+        // Define supported Visio file extensions.
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".mmd" };
+
+        // Collect all diagram files from the input folder.
+        List<string> diagramFiles = new List<string>();
+        foreach (string ext in supportedExtensions)
+        {
+            diagramFiles.AddRange(Directory.GetFiles(inputFolder, $"*{ext}", SearchOption.TopDirectoryOnly));
+        }
+
+        // Process each diagram in parallel to improve throughput.
+        Parallel.ForEach(diagramFiles, diagramPath =>
+        {
+            // Guard against the file being removed between enumeration and processing.
+            if (!File.Exists(diagramPath))
+            {
+                Console.Error.WriteLine($"File not found (skipped): {diagramPath}");
+                return;
+            }
+
+            try
+            {
+                // Load the diagram.
+                Diagram diagram = new Diagram(diagramPath);
+
+                // Prepare output sub‑directory for this diagram's HTML resources.
+                string diagramName = Path.GetFileNameWithoutExtension(diagramPath);
+                string diagramOutputDir = Path.Combine(outputFolder, diagramName);
+                if (!Directory.Exists(diagramOutputDir))
+                {
+                    Directory.CreateDirectory(diagramOutputDir);
+                }
+
+                // Configure HTML save options with a dedicated stream provider.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.StreamProvider = new FileStreamProvider(diagramOutputDir);
+
+                // Define the output HTML file path.
+                string htmlOutputPath = Path.Combine(diagramOutputDir, diagramName + ".html");
+
+                // Save the diagram as HTML using the configured options.
+                diagram.Save(htmlOutputPath, htmlOptions);
+
+                // Release resources held by the diagram.
+                diagram.Dispose();
+
+                Console.WriteLine($"Successfully converted: {diagramPath} -> {htmlOutputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of this file.
+                Console.Error.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
             }
         });
-
-        Console.WriteLine("Batch conversion completed.");
     }
 }

@@ -3,54 +3,87 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class HttpResponseStreamProvider : IStreamProvider
+class MyStreamProvider : IStreamProvider
 {
-    private readonly Stream _responseStream;
-
-    public HttpResponseStreamProvider(Stream responseStream)
-    {
-        _responseStream = responseStream ?? throw new ArgumentNullException(nameof(responseStream));
-    }
-
-    // Called by Aspose.Diagram when it needs to write a resource (e.g., images, CSS) during HTML export.
+    // Initialize the stream for a given resource during HTML export.
     public void InitStream(StreamProviderOptions options)
     {
-        // Direct the output to the HTTP response stream.
-        options.Stream = _responseStream;
+        // Determine a folder to store the resources (images, shapes, etc.).
+        string resourcesFolder = "Resources";
+
+        // Ensure the folder exists.
+        if (!Directory.Exists(resourcesFolder))
+        {
+            Directory.CreateDirectory(resourcesFolder);
+        }
+
+        // Use the default path (resource name) to create a file name.
+        string fileName = Path.GetFileName(options.DefaultPath);
+
+        // Combine folder and file name to get the full path.
+        string fullPath = Path.Combine(resourcesFolder, fileName);
+
+        // Create a file stream for writing the resource.
+        FileStream fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+
+        // Assign the created stream to the options so Aspose can write into it.
+        options.Stream = fileStream;
     }
 
-    // Called after the resource has been written.
+    // Close the stream after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // No additional cleanup required; the framework will handle flushing/closing the response.
+        // Safely close and dispose the stream if it was created.
+        if (options.Stream != null)
+        {
+            options.Stream.Close();
+            options.Stream.Dispose();
+        }
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <input-visio-file>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram.
-            var diagram = new Diagram("sample.vsdx");
+            // Configure HTML save options with a custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new MyStreamProvider();
 
-            // Configure HTML export options.
-            var htmlOptions = new HTMLSaveOptions();
+            // Define the output HTML file path.
+            string outputHtml = "output.html";
 
-            // In a real ASP.NET Core controller you would pass HttpContext.Response.Body.
-            // For this console example we stream to a file that represents the HTTP response body.
-            using var responseStream = new FileStream("output.html", FileMode.Create, FileAccess.Write);
-            htmlOptions.StreamProvider = new HttpResponseStreamProvider(responseStream);
+            // Save the diagram to HTML; resources will be streamed via MyStreamProvider.
+            diagram.Save(outputHtml, htmlOptions);
 
-            // Export the diagram to HTML; resources are streamed via the custom provider.
-            diagram.Save("placeholder.html", htmlOptions);
-
+            Console.WriteLine($"Diagram successfully exported to '{outputHtml}'.");
+            Console.WriteLine("Associated resources are stored in the 'Resources' folder.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

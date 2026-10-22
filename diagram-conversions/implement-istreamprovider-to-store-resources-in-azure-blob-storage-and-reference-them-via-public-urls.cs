@@ -1,107 +1,121 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Net.Http;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExport
+class AzureBlobStreamProvider : IStreamProvider
 {
-    // Implements IStreamProvider to upload HTML resources (images, CSS, etc.) to Azure Blob Storage.
-    public class AzureBlobStreamProvider : IStreamProvider
+    private readonly string _baseUrl;
+    private readonly string _sasToken;
+    private readonly HttpClient _httpClient;
+    private readonly Dictionary<string, MemoryStream> _streamMap;
+
+    public AzureBlobStreamProvider(string baseUrl, string sasToken)
     {
-        private readonly string _connectionString;
-        private readonly string _containerName;
-
-        public AzureBlobStreamProvider(string connectionString, string containerName)
-        {
-            // Validate constructor arguments.
-            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-            _containerName = containerName ?? throw new ArgumentNullException(nameof(containerName));
-        }
-
-        // Called by Aspose.Diagram before writing a resource.
-        public void InitStream(StreamProviderOptions options)
-        {
-            if (options == null) throw new ArgumentNullException(nameof(options));
-
-            // The DefaultPath contains the relative path/filename for the resource (e.g., "images/img1.png").
-            string blobName = options.DefaultPath.Replace('\\', '/');
-
-            // Use reflection to avoid compile‑time dependency on Azure.Storage.Blobs (prevents version conflicts).
-            // Load the BlobContainerClient type.
-            Type containerClientType = Type.GetType("Azure.Storage.Blobs.BlobContainerClient, Azure.Storage.Blobs");
-            if (containerClientType == null) throw new InvalidOperationException("Azure.Storage.Blobs assembly not found.");
-
-            // Create an instance: new BlobContainerClient(connectionString, containerName)
-            object containerClient = Activator.CreateInstance(containerClientType, _connectionString, _containerName);
-            if (containerClient == null) throw new InvalidOperationException("Failed to create BlobContainerClient.");
-
-            // Call CreateIfNotExists() to ensure the container exists.
-            var createIfNotExistsMethod = containerClientType.GetMethod("CreateIfNotExists", Type.EmptyTypes);
-            createIfNotExistsMethod?.Invoke(containerClient, null);
-
-            // Get the BlobClient for the specific blob name.
-            var getBlobClientMethod = containerClientType.GetMethod("GetBlobClient", new[] { typeof(string) });
-            object blobClient = getBlobClientMethod?.Invoke(containerClient, new object[] { blobName });
-            if (blobClient == null) throw new InvalidOperationException("Failed to get BlobClient.");
-
-            // Open a writable stream to the blob (overwrite = true).
-            Type blobClientType = blobClient.GetType();
-            var openWriteMethod = blobClientType.GetMethod("OpenWrite", new[] { typeof(bool) });
-            Stream blobStream = (Stream)openWriteMethod?.Invoke(blobClient, new object[] { true });
-
-            // Assign the stream to the options so Aspose.Diagram can write the resource.
-            options.Stream = blobStream;
-        }
-
-        // Called by Aspose.Diagram after the resource has been written.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Dispose the stream if it was created.
-            if (options?.Stream != null)
-            {
-                options.Stream.Dispose();
-            }
-        }
+        _baseUrl = baseUrl?.TrimEnd('/') ?? throw new ArgumentNullException(nameof(baseUrl));
+        _sasToken = sasToken ?? throw new ArgumentNullException(nameof(sasToken));
+        _httpClient = new HttpClient();
+        _streamMap = new Dictionary<string, MemoryStream>();
     }
 
-    class Program
+    // Called by Aspose before writing a resource (image, shape, etc.)
+    public void InitStream(StreamProviderOptions options)
     {
-        static void Main(string[] args)
+        // Create a memory stream to capture the resource data.
+        var memStream = new MemoryStream();
+        // Store the stream so it can be uploaded later in CloseStream.
+        _streamMap[options.DefaultPath] = memStream;
+        // Assign the stream to the options so Aspose writes into it.
+        options.Stream = memStream;
+    }
+
+    // Called by Aspose after the resource has been written.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        if (!_streamMap.TryGetValue(options.DefaultPath, out var memStream))
         {
-            // Path to the source Visio file.
-            string visioPath = "input.vsdx";
+            // No stream was captured; nothing to upload.
+            return;
+        }
 
-            // Guard: ensure the Visio file exists before proceeding.
-            if (!File.Exists(visioPath))
+        try
+        {
+            // Reset position to the beginning before uploading.
+            memStream.Position = 0;
+
+            // Construct the full Azure Blob URL with SAS token.
+            string uploadUrl = $"{_baseUrl}/{options.DefaultPath}?{_sasToken}";
+
+            // Prepare HTTP content.
+            using var content = new StreamContent(memStream);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+
+            // Perform synchronous upload.
+            var response = _httpClient.PutAsync(uploadUrl, content).Result;
+            if (!response.IsSuccessStatusCode)
             {
-                Console.Error.WriteLine($"File not found: {visioPath}");
-                return;
+                Console.Error.WriteLine($"Failed to upload '{options.DefaultPath}' to Azure Blob Storage. Status: {response.StatusCode}");
             }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error uploading '{options.DefaultPath}': {ex.Message}");
+        }
+        finally
+        {
+            // Clean up.
+            memStream.Dispose();
+            _streamMap.Remove(options.DefaultPath);
+        }
+    }
+}
 
-            try
-            {
-                // Load the diagram from the Visio file.
-                Diagram diagram = new Diagram(visioPath);
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Expected arguments:
+        // 0 - Input Visio file path
+        // 1 - Output HTML file path
+        // 2 - Azure Blob Storage base URL (e.g., https://myaccount.blob.core.windows.net/container)
+        // 3 - SAS token (without leading '?')
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath> <azureBaseUrl> <sasToken>");
+            return;
+        }
 
-                // Azure Blob Storage connection details.
-                string azureConnectionString = "DefaultEndpointsProtocol=https;AccountName=youraccount;AccountKey=yourkey;EndpointSuffix=core.windows.net";
-                string containerName = "visio-resources";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string azureBaseUrl = args[2];
+        string sasToken = args[3];
 
-                // Set up HTML export options with the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new AzureBlobStreamProvider(azureConnectionString, containerName);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-                // Export the diagram to HTML. Resources will be uploaded to Azure Blob Storage.
-                string outputHtmlPath = "output.html";
-                diagram.Save(outputHtmlPath, htmlOptions);
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                Console.WriteLine("Diagram exported to HTML. Resources stored in Azure Blob Storage.");
-            }
-            catch (Exception ex)
-            {
-                // Write any errors to the error console.
-                Console.Error.WriteLine($"Error: {ex.Message}");
-            }
+            // Configure HTML export options with custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new AzureBlobStreamProvider(azureBaseUrl, sasToken);
+
+            // Save the diagram as HTML. The StreamProvider will handle resource uploads.
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

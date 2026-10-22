@@ -4,101 +4,126 @@ using System.Threading;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExportExample
+class NetworkStreamProvider : IStreamProvider
 {
-    // Custom IStreamProvider that writes streams to a network location with retry logic
-    public class NetworkStreamProvider : IStreamProvider
+    private readonly string _networkBasePath;
+    private const int MaxRetries = 3;
+    private const int DelayMilliseconds = 1000;
+
+    public NetworkStreamProvider(string networkBasePath)
     {
-        private readonly string _networkRoot;
-        private readonly int _maxRetries;
-        private readonly int _retryDelayMs;
-
-        public NetworkStreamProvider(string networkRoot, int maxRetries = 3, int retryDelayMs = 1000)
-        {
-            _networkRoot = networkRoot;
-            _maxRetries = maxRetries;
-            _retryDelayMs = retryDelayMs;
-        }
-
-        // Called by Aspose.Diagram before writing a resource (e.g., images, CSS) to a stream
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Build the full network path for the resource
-            string relativePath = options.DefaultPath; // e.g., "images/img1.png"
-            string fullPath = Path.Combine(_networkRoot, relativePath);
-
-            // Ensure the target directory exists
-            string directory = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            int attempt = 0;
-            while (true)
-            {
-                try
-                {
-                    // Create a writable file stream for the resource
-                    options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    break; // Success
-                }
-                catch (IOException)
-                {
-                    attempt++;
-                    if (attempt >= _maxRetries)
-                    {
-                        throw; // Re‑throw after exceeding retries
-                    }
-                    // Wait before retrying
-                    Thread.Sleep(_retryDelayMs);
-                }
-            }
-        }
-
-        // Called after the resource has been written
-        public void CloseStream(StreamProviderOptions options)
-        {
-            if (options.Stream != null)
-            {
-                options.Stream.Dispose();
-            }
-        }
+        _networkBasePath = networkBasePath;
     }
 
-    class Program
+    // Initialize the stream for a given resource using retry logic
+    public void InitStream(StreamProviderOptions options)
     {
-        static void Main(string[] args)
+        // Combine the network base path with the default relative path provided by Aspose
+        string relativePath = options.DefaultPath ?? string.Empty;
+        string fullPath = Path.Combine(_networkBasePath, relativePath);
+
+        // Ensure the directory exists
+        string directory = Path.GetDirectoryName(fullPath);
+        if (!Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        // Attempt to create the file stream with retries
+        int attempt = 0;
+        while (true)
         {
             try
             {
-
-                // Input Visio diagram
-                string inputDiagramPath = "sample.vsdx";
-
-                // Network folder where HTML and its resources will be saved
-                string networkRoot = @"\\networkshare\diagrams";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputDiagramPath);
-
-                // Configure HTML export options with the custom stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new NetworkStreamProvider(networkRoot);
-
-                // Output HTML file path (the main HTML file)
-                string outputHtmlPath = Path.Combine(networkRoot, "output.html");
-
-                // Export diagram to HTML using the custom provider
-                diagram.Save(outputHtmlPath, htmlOptions);
-
-                Console.WriteLine("Diagram exported to HTML with resources saved to the network location.");
-
+                // Assign a writable FileStream to the options
+                options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                break; // Success
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (IOException ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                attempt++;
+                if (attempt >= MaxRetries)
+                {
+                    Console.Error.WriteLine($"Failed to create stream for '{fullPath}' after {MaxRetries} attempts: {ex.Message}");
+                    throw;
+                }
+                // Wait before retrying
+                Thread.Sleep(DelayMilliseconds);
             }
+        }
     }
+
+    // Close the stream after the resource has been written
+    public void CloseStream(StreamProviderOptions options)
+    {
+        if (options.Stream != null)
+        {
+            try
+            {
+                options.Stream.Close();
+                options.Stream.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error closing stream: {ex.Message}");
+            }
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Expect three arguments: input diagram path, output HTML file path, network base folder for resources
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputHtmlPath> <networkBaseFolder>");
+            return;
+        }
+
+        string inputDiagramPath = args[0];
+        string outputHtmlPath = args[1];
+        string networkBaseFolder = args[2];
+
+        // Guard: verify input diagram file exists
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+            return;
+        }
+
+        // Guard: ensure network base folder exists (create if necessary)
+        if (!Directory.Exists(networkBaseFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(networkBaseFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create network base folder '{networkBaseFolder}': {ex.Message}");
+                return;
+            }
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputDiagramPath);
+
+            // Configure HTML save options with custom stream provider
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new NetworkStreamProvider(networkBaseFolder);
+
+            // Save the diagram as HTML; resources (images, shapes) will be written via the stream provider
+            diagram.Save(outputHtmlPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully saved to HTML at '{outputHtmlPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
+        }
     }
 }

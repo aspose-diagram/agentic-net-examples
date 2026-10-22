@@ -1,84 +1,109 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramProgressMonitoring
+class Program
 {
-    // Represents progress information for each page saved.
-    public class PageProgress
+    static void Main(string[] args)
     {
-        public int PageIndex { get; set; }
-        public int PageCount { get; set; }
-        public DateTime Timestamp { get; set; }
-    }
-
-    // Implements the page saving callback to capture progress.
-    public class ProgressCallback : IPageSavingCallback
-    {
-        private readonly List<PageProgress> _progressData = new List<PageProgress>();
-
-        // Called before a page starts saving.
-        public void PageStartSaving(PageStartSavingArgs args)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // No action needed at start for this example.
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
-        // Called after a page has been saved.
-        public void PageEndSaving(PageEndSavingArgs args)
+        // Output PDF file path
+        string outputPath = "output.pdf";
+
+        // Simulated cloud storage bucket folder (replace with actual bucket handling)
+        string bucketFolder = "cloud_bucket";
+
+        // Ensure bucket folder exists
+        try
         {
-            _progressData.Add(new PageProgress
-            {
-                PageIndex = args.PageIndex,
-                PageCount = args.PageCount,
-                Timestamp = DateTime.UtcNow
-            });
+            if (!Directory.Exists(bucketFolder))
+                Directory.CreateDirectory(bucketFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create bucket folder: {ex.Message}");
+            return;
         }
 
-        // Serializes the collected progress data to JSON and writes it to a cloud bucket.
-        public void UploadProgress(string bucketPath)
+        try
         {
-            string json = JsonSerializer.Serialize(_progressData, new JsonSerializerOptions { WriteIndented = true });
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Simulate writing to a cloud storage bucket by writing to a file.
-            // In a real scenario, replace this with the appropriate cloud SDK call.
-            File.WriteAllText(bucketPath, json);
+            // Configure PDF save options with a custom page saving callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new ProgressCallback(bucketFolder);
+
+            // Save the diagram as PDF using the configured options
+            diagram.Save(outputPath, pdfOptions);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
+}
 
-    public class Program
+// Custom callback to track page saving progress and write JSON to cloud bucket
+class ProgressCallback : IPageSavingCallback
+{
+    private readonly string _bucketFolder;
+
+    public ProgressCallback(string bucketFolder)
     {
-        public static void Main()
-        {
-            try
-            {
-
-                // Load the Visio diagram.
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Prepare PDF save options and assign the custom page saving callback.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                ProgressCallback callback = new ProgressCallback();
-                pdfOptions.PageSavingCallback = callback;
-
-                // Save the diagram as PDF.
-                string outputPdfPath = "output.pdf";
-                diagram.Save(outputPdfPath, pdfOptions);
-
-                // After saving, upload the progress data to the cloud bucket.
-                string bucketJsonPath = "cloud_bucket/progress.json";
-                callback.UploadProgress(bucketJsonPath);
-
-                Console.WriteLine("Diagram saved and progress uploaded successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        _bucketFolder = bucketFolder;
     }
+
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        WriteProgress(args.PageIndex, args.PageCount, "Start");
+    }
+
+    // Called after a page has been saved
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        WriteProgress(args.PageIndex, args.PageCount, "End");
+        // Continue processing remaining pages
+        args.HasMorePages = true; // property expects a bool, not Aspose BOOL
+    }
+
+    // Helper method to serialize progress info to JSON and write to a file in the bucket
+    private void WriteProgress(int pageIndex, int pageCount, string stage)
+    {
+        var progressInfo = new
+        {
+            PageIndex = pageIndex,
+            PageCount = pageCount,
+            Stage = stage,
+            Timestamp = DateTime.UtcNow
+        };
+
+        string json = JsonSerializer.Serialize(progressInfo);
+
+        // Write each JSON line to a file named progress.log inside the bucket folder
+        string logPath = Path.Combine(_bucketFolder, "progress.log");
+        try
+        {
+            File.AppendAllText(logPath, json + Environment.NewLine);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to write progress to bucket: {ex.Message}");
+        }
     }
 }

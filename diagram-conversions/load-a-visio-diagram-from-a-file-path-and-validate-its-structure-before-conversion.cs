@@ -1,68 +1,139 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Get the input file path from command‑line arguments or use a default placeholder.
-        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPath>");
+            return;
+        }
 
-        // Load the Visio diagram.
-        Diagram diagram;
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        Diagram diagram = null;
+
+        // Load the Visio diagram inside a try/catch block.
         try
         {
             diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
             return;
         }
 
-        // ---------- Structure Validation ----------
+        bool isValid = true;
 
-        // 1. Ensure the diagram contains at least one page.
-        if (diagram.Pages == null || diagram.Pages.Count == 0)
-            throw new Exception("The diagram contains no pages.");
-
-        // 2. Iterate through each page and validate its properties.
-        foreach (Page page in diagram.Pages)
+        // Validate the diagram structure.
+        try
         {
-            // Validate page dimensions (must be positive).
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-            if (pageWidth <= 0 || pageHeight <= 0)
-                throw new Exception($"Page \"{page.Name}\" has invalid dimensions (Width={pageWidth}, Height={pageHeight}).");
-
-            // Validate that the page has a shape collection.
-            if (page.Shapes == null || page.Shapes.Count == 0)
-                Console.WriteLine($"Warning: Page \"{page.Name}\" contains no shapes.");
-
-            // 3. Validate each shape on the page.
-            foreach (Shape shape in page.Shapes)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages == null || diagram.Pages.Count == 0)
             {
-                // Skip shapes that are marked as deleted.
-                if (shape.Del == BOOL.True)
-                    continue;
+                Console.Error.WriteLine("Validation error: Diagram contains no pages.");
+                isValid = false;
+            }
+            else
+            {
+                // Iterate over each page explicitly typed as Aspose.Diagram.Page.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Validate that the page has a Shapes collection.
+                    if (page.Shapes == null || page.Shapes.Count == 0)
+                    {
+                        Console.Error.WriteLine($"Validation warning: Page '{page.NameU}' contains no shapes.");
+                        // Not a fatal error; continue checking other pages.
+                    }
 
-                // For non‑foreign shapes, ensure a master is associated.
-                if (shape.Type != TypeValue.Foreign && shape.Master == null)
-                    throw new Exception($"Shape ID {shape.ID} on page \"{page.Name}\" lacks a master.");
+                    // Iterate over each shape on the page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape == null)
+                            continue; // Defensive check.
 
-                // Example check: report shapes with empty text.
-                string shapeText = shape.Text.Value.ToString();
-                if (string.IsNullOrWhiteSpace(shapeText))
-                    Console.WriteLine($"Info: Shape ID {shape.ID} on page \"{page.Name}\" has empty text.");
+                        // Check if the shape is marked as deleted (shape.Del is of type BOOL).
+                        if (shape.Del == BOOL.True)
+                        {
+                            Console.Error.WriteLine($"Validation error: Shape ID {shape.ID} on page '{page.NameU}' is marked as deleted.");
+                            isValid = false;
+                            // Continue checking other shapes to report all issues.
+                        }
+
+                        // Validate that width and height are positive numbers.
+                        if (shape.XForm != null && shape.XForm.Width != null && shape.XForm.Height != null)
+                        {
+                            double width = shape.XForm.Width.Value;
+                            double height = shape.XForm.Height.Value;
+                            if (width <= 0 || height <= 0)
+                            {
+                                Console.Error.WriteLine($"Validation error: Shape ID {shape.ID} on page '{page.NameU}' has non‑positive dimensions (Width={width}, Height={height}).");
+                                isValid = false;
+                            }
+                        }
+
+                        // Validate custom properties (Props collection contains Prop objects).
+                        if (shape.Props != null && shape.Props.Count > 0)
+                        {
+                            foreach (Prop prop in shape.Props)
+                            {
+                                if (prop == null)
+                                    continue;
+
+                                // Example check: property label (name) should not be empty.
+                                if (string.IsNullOrWhiteSpace(prop.Label?.Value))
+                                {
+                                    Console.Error.WriteLine($"Validation warning: Shape ID {shape.ID} has a custom property with an empty label.");
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Validation failed with exception: {ex.Message}");
+            isValid = false;
+        }
 
-        // 4. Validate basic document properties.
-        if (string.IsNullOrWhiteSpace(diagram.DocumentProps.Title))
-            Console.WriteLine("Notice: Document title property is empty.");
+        if (!isValid)
+        {
+            Console.Error.WriteLine("Diagram validation failed. Conversion aborted.");
+            return;
+        }
 
-        // If all checks pass, report success.
-        Console.WriteLine("Diagram validation completed successfully.");
+        // Conversion: save the diagram to PDF (example format).
+        try
+        {
+            // Ensure the output directory exists.
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Save using the appropriate SaveFileFormat.
+            diagram.Save(outputPath, SaveFileFormat.Pdf);
+            Console.WriteLine($"Diagram successfully converted and saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+        }
     }
 }

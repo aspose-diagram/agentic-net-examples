@@ -1,58 +1,98 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Data;
-using System.Data.SqlClient;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class DiagramAuditLogger
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as an argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Prepare the output PDF path in the same directory.
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + ".pdf");
+
+        // Create an in‑memory DataTable to simulate the audit log.
+        DataTable auditLog = new DataTable("AuditLog");
+        auditLog.Columns.Add("PageIndex", typeof(int));
+        auditLog.Columns.Add("PageCount", typeof(int));
+        auditLog.Columns.Add("Timestamp", typeof(DateTime));
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram (lifecycle rule: load)
-            Diagram diagram = new Diagram("input.vsdx");
+            // Configure PDF save options and assign the custom page‑saving callback.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new AuditCallback(auditLog);
 
-            // Get total number of pages in the diagram
-            int totalPages = diagram.Pages.Count;
-
-            // Connection string to the audit database (replace with actual values)
-            string connectionString = "Data Source=SERVER_NAME;Initial Catalog=AuditDB;Integrated Security=True";
-
-            // Prepare the SQL command for inserting audit records
-            const string insertSql = @"
-                INSERT INTO AuditLog (PageIndex, TotalPages, LoggedAt)
-                VALUES (@PageIndex, @TotalPages, @LoggedAt)";
-
-            // Open a connection to the database
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-
-                // Iterate through each page and log its index with the total page count
-                foreach (Page page in diagram.Pages)
-                {
-                    using (SqlCommand cmd = new SqlCommand(insertSql, conn))
-                    {
-                        // Page index (Visio pages are 1‑based)
-                        cmd.Parameters.Add("@PageIndex", SqlDbType.Int).Value = page.ID;
-                        // Total page count (same for all pages)
-                        cmd.Parameters.Add("@TotalPages", SqlDbType.Int).Value = totalPages;
-                        // Timestamp of the audit entry
-                        cmd.Parameters.Add("@LoggedAt", SqlDbType.DateTime).Value = DateTime.UtcNow;
-
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-
-            // No saving of the diagram is required for this audit operation
-
+            // Save the diagram to PDF using the configured options.
+            diagram.Save(outputPath, pdfOptions);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
         }
+
+        // After saving, display the audit log entries.
+        Console.WriteLine("Audit Log:");
+        foreach (DataRow row in auditLog.Rows)
+        {
+            int pageIndex = (int)row["PageIndex"];
+            int pageCount = (int)row["PageCount"];
+            DateTime timestamp = (DateTime)row["Timestamp"];
+            Console.WriteLine($"Page {pageIndex + 1} of {pageCount} saved at {timestamp:O}");
+        }
+    }
+}
+
+// Custom callback to log page start/end events during PDF export.
+class AuditCallback : IPageSavingCallback
+{
+    private readonly DataTable _logTable;
+
+    public AuditCallback(DataTable logTable)
+    {
+        _logTable = logTable;
+    }
+
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Start saving page {args.PageIndex + 1} of {args.PageCount}");
+        AddLogEntry(args.PageIndex, args.PageCount);
+    }
+
+    // Called after a page has finished saving.
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"End saving page {args.PageIndex + 1} of {args.PageCount}");
+        // No additional action needed; the start event already logged the entry.
+    }
+
+    // Helper to insert a row into the audit DataTable.
+    private void AddLogEntry(int pageIndex, int pageCount)
+    {
+        DataRow row = _logTable.NewRow();
+        row["PageIndex"] = pageIndex;
+        row["PageCount"] = pageCount;
+        row["Timestamp"] = DateTime.Now;
+        _logTable.Rows.Add(row);
     }
 }

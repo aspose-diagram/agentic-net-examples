@@ -3,63 +3,84 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExportWithLogging
+class LoggingStreamProvider : IStreamProvider
 {
-    // Custom stream provider that logs resource creation events
-    public class LoggingStreamProvider : IStreamProvider
+    private string _basePath;
+
+    // Called before any streams are requested; store the default path.
+    public void InitStream(StreamProviderOptions options)
     {
-        // Called when a new resource stream is required (e.g., a file for an HTML resource)
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Log the creation of the resource
-            Console.WriteLine($"[Log] Creating resource: {options.DefaultPath}");
-
-            // Create the file stream for the resource
-            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
-        }
-
-        // Called after the resource has been written
-        public void CloseStream(StreamProviderOptions options)
-        {
-            // Ensure the stream is properly closed
-            if (options.Stream != null)
-            {
-                options.Stream.Close();
-                Console.WriteLine($"[Log] Closed resource: {options.DefaultPath}");
-            }
-        }
+        _basePath = options.DefaultPath;
+        Console.WriteLine($"[StreamProvider] Initialized. Base path: {_basePath}");
     }
 
-    class Program
+    // Called for each resource (image, shape, etc.) that needs a stream.
+    public Stream GetStream(string resourcePath)
     {
-        static void Main(string[] args)
+        // Log the creation of the resource stream.
+        Console.WriteLine($"[StreamProvider] Creating stream for resource: {resourcePath}");
+
+        // Combine the base path with the relative resource path.
+        string fullPath = Path.Combine(_basePath ?? string.Empty, resourcePath);
+
+        // Ensure the directory exists.
+        string directory = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
-            try
-            {
+            Directory.CreateDirectory(directory);
+        }
 
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-
-                // Output HTML file path
-                string outputPath = "output.html";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure HTML save options and assign the custom stream provider
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new LoggingStreamProvider();
-
-                // Save the diagram as HTML; the stream provider will log each resource creation
-                diagram.Save(outputPath, htmlOptions);
-
-                Console.WriteLine("Diagram exported to HTML with logging completed.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        // Return a writable file stream for the resource.
+        return new FileStream(fullPath, FileMode.Create, FileAccess.Write);
     }
+
+    // Called after all streams have been processed; perform any cleanup if needed.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        Console.WriteLine("[StreamProvider] Closed.");
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Path to the source Visio diagram.
+        string inputPath = "sample.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML save options with the custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new LoggingStreamProvider();
+
+            // Output HTML file path.
+            string outputPath = "output.html";
+
+            // Save the diagram as HTML; resources will be handled by the stream provider.
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully saved to HTML at: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

@@ -1,43 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define the output PDF file path
+        string outputPath = "Circles.pdf";
 
-        // Access the first page of the diagram
-        Page page = diagram.Pages[0];
-
-        // Define circle parameters
-        double startRadius = 0.5;          // initial radius in inches
-        double radiusIncrement = 0.1;      // radius increase per circle
-        double spacing = 0.5;              // extra horizontal spacing between circles
-
-        // Add 50 circles with incremental radii
-        for (int i = 0; i < 50; i++)
+        try
         {
-            double radius = startRadius + i * radiusIncrement;
-            double diameter = radius * 2;
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Position each circle horizontally, keeping a constant vertical position
-            double pinX = i * (diameter + spacing) + radius;
-            double pinY = 5.0; // fixed Y coordinate
+            // Ensure there is at least one page to draw on
+            if (diagram.Pages.Count == 0)
+            {
+                // Create a new page with ID = 1 and add it to the diagram
+                Page newPage = new Page(1);
+                diagram.Pages.Add(newPage);
+            }
 
-            // Draw a circle (ellipse with equal width and height)
-            page.DrawEllipse(pinX, pinY, diameter, diameter);
+            // Use the first page for drawing
+            Page page = diagram.Pages[0];
+
+            // Define the center point for all circles (in inches)
+            double centerX = 5.0;
+            double centerY = 5.0;
+
+            // Define the incremental radius step (in inches)
+            double radiusStep = 0.2;
+
+            // Draw 50 circles with increasing radii
+            for (int i = 1; i <= 50; i++)
+            {
+                double radius = i * radiusStep;
+                double diameter = radius * 2.0;
+
+                // Calculate the lower‑left corner of the bounding rectangle
+                double pinX = centerX - radius;
+                double pinY = centerY - radius;
+
+                // Draw the circle (ellipse with equal width and height)
+                page.DrawEllipse(pinX, pinY, diameter, diameter);
+            }
+
+            // Configure PDF save options
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Explicitly set the target format
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Set a fallback font (optional)
+            pdfOptions.DefaultFont = "Arial";
+
+            // Save the diagram as PDF
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram with 50 circles saved successfully to '{outputPath}'.");
         }
-
-        // Configure PDF save options
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
-        pdfOptions.DefaultFont = "Arial";
-        pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-        // Export the diagram to PDF
-        diagram.Save("Circles.pdf", pdfOptions);
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

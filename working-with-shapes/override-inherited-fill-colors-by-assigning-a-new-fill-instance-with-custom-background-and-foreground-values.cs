@@ -6,32 +6,58 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-            // Add a new page to the diagram
-            Page page = new Page();
-            diagram.Pages.Add(page);
+                        // Override fill colors by modifying the existing Fill object
+                        // Set foreground (fill) color to red
+                        shape.Fill.FillForegnd.Value = "#FF0000";
 
-            // Draw a simple rectangle shape on the page (pinX, pinY, width, height)
-            long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 4.0);
+                        // Set background color to green
+                        shape.Fill.FillBkgnd.Value = "#00FF00";
 
-            // Retrieve the shape object using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+                        // Use a solid fill pattern (1 = solid)
+                        shape.Fill.FillPattern.Value = 1;
+                    }
+                }
 
-            // Override inherited fill colors by setting the shape's Fill properties directly
-            shape.Fill.FillBkgnd.Value = "#ADD8E6";   // Light blue background
-            shape.Fill.FillForegnd.Value = "#FF0000"; // Red foreground
-
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any processing errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

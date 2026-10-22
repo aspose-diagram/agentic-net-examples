@@ -3,64 +3,54 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the list of Visio files to process.
+        string[] filesToProcess;
+        if (args.Length > 0)
         {
-            // Folder containing Visio files (modify as needed)
-            string folderPath = @"C:\VisioFiles";
+            // Use file paths supplied via command‑line arguments.
+            filesToProcess = args;
+        }
+        else
+        {
+            // No arguments – process all .vsdx files in the current directory.
+            filesToProcess = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.vsdx");
+        }
 
-            // Get all supported Visio files in the folder
-            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
+        // Iterate over each file path.
+        foreach (string filePath in filesToProcess)
+        {
+            // Guard: ensure the file exists before attempting to load.
+            if (!File.Exists(filePath))
             {
-                string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                if (!IsSupportedExtension(extension))
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
+            try
+            {
+                // Load the Visio diagram inside a using block (required pattern).
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    continue; // Skip unsupported files
+                    // Iterate through all windows in the diagram and disable guides.
+                    foreach (Window window in diagram.Windows)
+                    {
+                        window.ShowGuides = BOOL.False;
+                    }
+
+                    // Save the modified diagram back to the original file (overwrite).
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
                 }
 
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Set ShowGuides to false for all windows in the diagram
-                foreach (Window window in diagram.Windows)
-                {
-                    window.ShowGuides = BOOL.False;
-                }
-
-                // Determine the appropriate SaveFileFormat based on the file extension
-                SaveFileFormat format = GetSaveFileFormat(extension);
-
-                // Save the diagram back to the same file
-                diagram.Save(filePath, format);
+                Console.WriteLine($"Processed successfully: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                // Write any errors that occur during loading, modification, or saving.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
-
-        // Checks if the file extension is a supported Visio format
-        private static bool IsSupportedExtension(string ext)
-        {
-            return ext == ".vsdx" || ext == ".vsd" || ext == ".vdx" ||
-                   ext == ".vsx" || ext == ".vtx" || ext == ".vssx" ||
-                   ext == ".vstx" || ext == ".vsdm" || ext == ".vssm" ||
-                   ext == ".vstm";
-        }
-
-        // Maps file extensions to the corresponding SaveFileFormat enum values
-        private static SaveFileFormat GetSaveFileFormat(string ext)
-        {
-            return ext switch
-            {
-                ".vsdx" => SaveFileFormat.Vsdx,
-                ".vsd"  => SaveFileFormat.Vsd,
-                ".vdx"  => SaveFileFormat.Vdx,
-                ".vsx"  => SaveFileFormat.Vsx,
-                ".vtx"  => SaveFileFormat.Vtx,
-                ".vssx" => SaveFileFormat.Vssx,
-                ".vstx" => SaveFileFormat.Vstx,
-                ".vsdm" => SaveFileFormat.Vsdm,
-                ".vssm" => SaveFileFormat.Vssm,
-                ".vstm" => SaveFileFormat.Vstm,
-                _       => SaveFileFormat.Vsdx // Default fallback
-            };
-        }
     }
+}

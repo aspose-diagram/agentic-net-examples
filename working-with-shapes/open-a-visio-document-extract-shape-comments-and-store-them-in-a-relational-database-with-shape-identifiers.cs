@@ -1,102 +1,96 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Data;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
+        // Prepare an in‑memory table that mimics a relational database table.
+        DataTable commentsTable = new DataTable("ShapeComments");
+        commentsTable.Columns.Add("ShapeID", typeof(int));
+        commentsTable.Columns.Add("CommentText", typeof(string));
+
         try
         {
-
-            // Path to the Visio file
-            string visioPath = "input.vsdx";
-
-            // Load the Visio diagram
+            // Load the Visio document.
             Diagram diagram = new Diagram(visioPath);
 
-            // In‑memory table that mimics a relational database table for comments
-            DataTable commentTable = new DataTable("ShapeComments");
-            commentTable.Columns.Add("ShapeId", typeof(int));
-            commentTable.Columns.Add("ShapeName", typeof(string));
-            commentTable.Columns.Add("CommentId", typeof(long));
-            commentTable.Columns.Add("CommentText", typeof(string));
-            commentTable.Columns.Add("ReviewerId", typeof(int));
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages in the diagram.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Annotations (comments) are stored at the page level
-                foreach (Annotation annotation in page.PageSheet.Annotations)
+                Page page = diagram.Pages[pageIndex];
+
+                // Ensure the page has an annotation collection.
+                if (page.PageSheet?.Annotations == null)
+                    continue;
+
+                // Iterate over each annotation (comment) on the page.
+                foreach (Annotation ann in page.PageSheet.Annotations)
                 {
-                    // Extract comment details
-                    long commentId = annotation.MarkerIndex.Value;
-                    string commentText = annotation.Comment.Value;
-                    int reviewerId = annotation.ReviewerID.Value;
-                    int shapeId = annotation.ShapeID; // primitive int
+                    // ShapeID links the comment to a shape; 0 means no shape association.
+                    int shapeId = ann.ShapeID;
 
-                    // Try to obtain the shape name; the shape may have been deleted
-                    string shapeName = null;
-                    try
-                    {
-                        Shape shape = page.Shapes.GetShape(shapeId);
-                        shapeName = shape.NameU;
-                    }
-                    catch
-                    {
-                        // Shape not found – leave shapeName null
-                    }
+                    // Retrieve the comment text; handle possible nulls.
+                    string commentText = ann.Comment?.Value ?? string.Empty;
 
-                    // Add a row to the in‑memory table
-                    DataRow row = commentTable.NewRow();
-                    row["ShapeId"] = shapeId;
-                    row["ShapeName"] = (object)shapeName ?? DBNull.Value;
-                    row["CommentId"] = commentId;
+                    // Add the extracted data to the in‑memory table.
+                    DataRow row = commentsTable.NewRow();
+                    row["ShapeID"] = shapeId;
                     row["CommentText"] = commentText;
-                    row["ReviewerId"] = reviewerId;
-                    commentTable.Rows.Add(row);
+                    commentsTable.Rows.Add(row);
                 }
             }
 
-            // Example output: display extracted comments
-            foreach (DataRow r in commentTable.Rows)
+            // Output the collected comments to the console.
+            Console.WriteLine("Extracted Shape Comments:");
+            foreach (DataRow row in commentsTable.Rows)
             {
-                Console.WriteLine(
-                    $"Shape ID: {r["ShapeId"]}, Name: {r["ShapeName"]}, " +
-                    $"Comment ID: {r["CommentId"]}, Text: {r["CommentText"]}, " +
-                    $"Reviewer: {r["ReviewerId"]}");
+                Console.WriteLine($"ShapeID: {row["ShapeID"]}, Comment: {row["CommentText"]}");
             }
 
             // -----------------------------------------------------------------
-            // Real database insertion (illustrative – requires a DB provider)
-            // -----------------------------------------------------------------
-            // string connectionString = "your-connection-string-here";
-            // using (var connection = new System.Data.SqlClient.SqlConnection(connectionString))
+            // Example of persisting the data to a real relational database.
+            // The following code is illustrative; replace the connection string
+            // and provider as needed for your environment.
+            //
+            // using (var connection = new System.Data.SqlClient.SqlConnection("your_connection_string"))
             // {
             //     connection.Open();
-            //     foreach (DataRow r in commentTable.Rows)
+            //     foreach (DataRow row in commentsTable.Rows)
             //     {
-            //         using (var cmd = new System.Data.SqlClient.SqlCommand(
-            //             "INSERT INTO ShapeComments (ShapeId, ShapeName, CommentId, CommentText, ReviewerId) " +
-            //             "VALUES (@ShapeId, @ShapeName, @CommentId, @CommentText, @ReviewerId)", connection))
+            //         using (var command = new System.Data.SqlClient.SqlCommand(
+            //             "INSERT INTO ShapeComments (ShapeID, CommentText) VALUES (@ShapeID, @CommentText)", connection))
             //         {
-            //             cmd.Parameters.AddWithValue("@ShapeId", r["ShapeId"]);
-            //             cmd.Parameters.AddWithValue("@ShapeName", r["ShapeName"] ?? (object)DBNull.Value);
-            //             cmd.Parameters.AddWithValue("@CommentId", r["CommentId"]);
-            //             cmd.Parameters.AddWithValue("@CommentText", r["CommentText"]);
-            //             cmd.Parameters.AddWithValue("@ReviewerId", r["ReviewerId"]);
-            //             cmd.ExecuteNonQuery();
+            //             command.Parameters.AddWithValue("@ShapeID", (int)row["ShapeID"]);
+            //             command.Parameters.AddWithValue("@CommentText", (string)row["CommentText"]);
+            //             command.ExecuteNonQuery();
             //         }
             //     }
             // }
-
-            Console.WriteLine("Comment extraction completed.");
-
+            // -----------------------------------------------------------------
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

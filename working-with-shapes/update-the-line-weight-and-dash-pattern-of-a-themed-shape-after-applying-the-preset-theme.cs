@@ -1,54 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Assume the shape we want to modify is on the first page and has the universal name "MyShape"
+            // Get the first page
             Page page = diagram.Pages[0];
-            Shape targetShape = null;
 
-            foreach (Shape shape in page.Shapes)
+            if (page.Shapes.Count == 0)
             {
-                if (shape.NameU == "MyShape")
-                {
-                    targetShape = shape;
-                    break;
-                }
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
             }
 
-            if (targetShape == null)
-            {
-                throw new Exception("Shape with NameU 'MyShape' not found.");
-            }
+            // Retrieve the first shape on the page
+            Shape shape = page.Shapes[0];
 
             // Apply a preset theme to the shape
-            targetShape.PresetTheme = PresetThemeValue.Bubble;
-            targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            // Note: PresetTheme and PresetThemeVariant are write‑only properties
+            shape.PresetTheme = PresetThemeValue.Clouds;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-            // After applying the theme, update line weight and dash pattern
-            // Line weight is in inches; here we set it to 0.02 inches
-            targetShape.Line.LineWeight.Value = 0.02;
+            // After applying the theme, update line weight (thickness) and dash pattern
+            // LineWeight is a DoubleValue; value is in inches
+            shape.Line.LineWeight.Value = 0.03; // approx 0.76 mm
 
-            // Set dash pattern using the LinePatternValue enum (e.g., Dash)
-            targetShape.Line.LinePattern.Value = LinePatternValue.Dash;
+            // Set dash pattern using the LinePatternValue enumeration
+            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+
+            // Optionally, ensure the shape is not marked as deleted
+            if (shape.Del == BOOL.True)
+            {
+                shape.Del = BOOL.False;
+            }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

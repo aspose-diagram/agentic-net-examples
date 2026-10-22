@@ -1,58 +1,92 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
+            return;
+        }
+
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+
+        // Guard: input folder must exist.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Ensure output folder exists (create if necessary).
+        if (!Directory.Exists(outputFolder))
         {
             try
             {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
+        }
 
-                // Input Visio file path (replace with actual path)
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
+        // Get all files in the input folder (process Visio files only).
+        string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in files)
+        {
+            // Guard: file must exist (redundant but required by rules).
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page and add a numbered text shape
-                int pageNumber = 0;
-                foreach (Page page in diagram.Pages)
+            try
+            {
+                // Load the Visio diagram inside a using block (mandatory pattern).
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    pageNumber++;
+                    // Iterate through each page and add a numbered text shape.
+                    int pageCounter = 0;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        pageCounter++;
 
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        // Define position and size for the new text shape.
+                        double pinX = 1.0;      // Horizontal position (in inches).
+                        double pinY = 1.0;      // Vertical position (in inches).
+                        double width = 2.0;     // Width of the text box.
+                        double height = 0.5;    // Height of the text box.
 
-                    // Define position and size for the text shape
-                    double pinX = 1.0;                     // X coordinate (center) from left
-                    double pinY = pageHeight - 1.0;        // Y coordinate (center) from top
-                    double shapeWidth = 2.0;               // Width of the text shape
-                    double shapeHeight = 0.5;              // Height of the text shape
+                        // Text to display: use the page index as the label.
+                        string label = $"Page {pageCounter}";
 
-                    // Create label using the page index
-                    string label = $"Page {pageNumber}";
+                        // Add the text shape to the current page.
+                        page.AddText(pinX, pinY, width, height, label);
+                    }
 
-                    // Add the text shape to the current page
-                    Shape textShape = page.AddText(pinX, pinY, shapeWidth, shapeHeight, label);
+                    // Build the output file path (original name with suffix).
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, $"{fileNameWithoutExt}_labeled.vsdx");
 
-                    // Optional: set font size and color (using shape's text collection)
-                    textShape.Text.Value.Clear();
-                    textShape.Text.Value.Add(new Txt(label));
-                    // Example of setting font size (in inches) and color
-                    // textShape.Chars[0].Size.Value = 12.0 / 72.0; // 12 pt
-                    // textShape.Chars[0].Color.Value = "#000000"; // Black
+                    // Save the modified diagram as VSDX.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Processed and saved: {filePath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Report any errors that occur during processing of the current file.
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
             }
+        }
     }
-    }
+}

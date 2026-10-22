@@ -1,36 +1,57 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command line arguments.
+        if (args.Length < 3)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <outputHtmlPath> <includeComments:true|false>");
+            return;
+        }
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string includeCommentsArg = args[2];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+        // Guard: check input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-                // Configure HTML export options
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+        // Parse the includeComments flag.
+        bool includeComments;
+        if (!bool.TryParse(includeCommentsArg, out includeComments))
+        {
+            Console.Error.WriteLine($"Invalid value for includeComments: {includeCommentsArg}. Expected true or false.");
+            return;
+        }
 
-                // Set to true to include comments, false to exclude them
-                htmlOptions.IsExportComments = true; // change to false to disable comment export
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Export the diagram to HTML with the specified options
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
+            // Configure HTML save options.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-                Console.WriteLine($"Diagram exported to HTML at: {outputPath}");
+            // Enable or disable comment export based on the flag.
+            // The IsExportComments property expects a bool.
+            htmlOptions.IsExportComments = includeComments;
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the diagram to HTML using the configured options.
+            diagram.Save(outputPath, htmlOptions);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

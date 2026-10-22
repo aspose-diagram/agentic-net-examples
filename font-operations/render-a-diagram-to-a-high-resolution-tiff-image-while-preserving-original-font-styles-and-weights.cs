@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -9,57 +9,102 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: DiagramToTiff <inputVisioFile> <outputDirectory>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputDir = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Guard against missing output directory.
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Error: Output directory \"{outputDir}\" does not exist.");
+            return;
+        }
+
         try
         {
+            // -----------------------------------------------------------------
+            // Configure font handling before loading the diagram.
+            // -----------------------------------------------------------------
+            // Set the system font folder so Aspose.Diagram can locate installed fonts.
+            string systemFontFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "Fonts");
 
-            // Input Visio file path (change as needed)
-            string inputPath = "input.vsdx";
-            // Output TIFF file path
-            string outputPath = "output.tiff";
+            if (Directory.Exists(systemFontFolder))
+            {
+                // Register the system font folder (recursive search enabled).
+                FontConfigs.SetFontFolder(systemFontFolder, true);
+            }
 
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure font folder(s) – required before rendering
-            // Example uses the Windows fonts folder; adjust the path as appropriate for your environment
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-            // Set a fallback default font
+            // Optionally set a default fallback font.
             FontConfigs.DefaultFontName = "Arial";
 
-            // Validate that all fonts used in the diagram are installed on the system
+            // -----------------------------------------------------------------
+            // Load the Visio diagram.
+            // -----------------------------------------------------------------
+            Diagram diagram = new Diagram(inputPath);
+
+            // -----------------------------------------------------------------
+            // Validate that all fonts used in the diagram are installed.
+            // -----------------------------------------------------------------
             InstalledFontCollection installedFonts = new InstalledFontCollection();
-            var installedFamilies = installedFonts.Families; // dynamic collection, type not strongly typed
+
+            // Build a hash set of installed font family names for quick lookup.
+            var installedFontNames = installedFonts.Families
+                .Select(f => f.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (Font font in diagram.Fonts)
             {
-                bool isInstalled = installedFamilies
-                    .Cast<object>()
-                    .Any(f => f.GetType().GetProperty("Name")?.GetValue(f)?.ToString()
-                              .Equals(font.Name, StringComparison.OrdinalIgnoreCase) == true);
-
-                if (!isInstalled)
+                // Font.Name gives the font family name used in the diagram.
+                if (!installedFontNames.Contains(font.Name))
                 {
-                    Console.WriteLine($"Warning: Font \"{font.Name}\" used in the diagram is not installed. It will be substituted with the default font.");
+                    Console.Error.WriteLine($"Warning: Font \"{font.Name}\" used in the diagram is not installed on this system.");
                 }
             }
 
-            // Prepare high‑resolution TIFF export options
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-            saveOptions.Resolution = 300f;               // 300 DPI for high quality
-            saveOptions.DefaultFont = "Arial";           // Ensure fallback font is set
-            // Export all pages; adjust PageIndex/PageCount if only a subset is needed
-            saveOptions.PageIndex = 0;
-            saveOptions.PageCount = diagram.Pages.Count;
+            // -----------------------------------------------------------------
+            // Export each page to a high‑resolution TIFF image.
+            // -----------------------------------------------------------------
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Configure image save options for TIFF.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff)
+                {
+                    // Export a single page at a time.
+                    PageIndex = i,
+                    PageCount = 1,
+                    // Set a high resolution (e.g., 300 DPI).
+                    Resolution = 300f,
+                    // Preserve original font rendering; set default font as fallback.
+                    DefaultFont = "Arial"
+                };
 
-            // Save the diagram as a TIFF image
-            diagram.Save(outputPath, saveOptions);
+                // Build output file name.
+                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.tiff");
 
-            Console.WriteLine($"Diagram successfully rendered to high‑resolution TIFF at \"{outputPath}\".");
-
+                // Save the page as TIFF.
+                diagram.Save(outputPath, saveOptions);
+                Console.WriteLine($"Saved page {i + 1} to \"{outputPath}\".");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

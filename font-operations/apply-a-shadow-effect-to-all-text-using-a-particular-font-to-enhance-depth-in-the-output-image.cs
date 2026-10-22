@@ -1,79 +1,106 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputImagePath> <targetFontName>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string targetFontName = args[2];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output image file
-            string outputPath = "output.png";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the target font name (case-sensitive as stored in the diagram)
-            string targetFont = "Arial";
+            // Determine the index of the target font in the diagram's font collection
+            int targetFontIndex = -1;
+            for (int i = 0; i < diagram.Fonts.Count; i++)
+            {
+                Font font = diagram.Fonts[i];
+                if (string.Equals(font.Name, targetFontName, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetFontIndex = i;
+                    break;
+                }
+            }
+
+            if (targetFontIndex == -1)
+            {
+                Console.Error.WriteLine($"Font \"{targetFontName}\" not found in diagram fonts. No shadow will be applied.");
+            }
 
             // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            for (int p = 0; p < diagram.Pages.Count; p++)
             {
+                Page page = diagram.Pages[p];
+
                 // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
+                    // Skip shapes without text
+                    if (shape.Text == null || string.IsNullOrEmpty(shape.Text.Value.Text))
                         continue;
 
-                    // Check if the shape contains any characters
-                    if (shape.Chars == null || shape.Chars.Count == 0)
-                        continue;
+                    bool applyShadow = false;
 
-                    bool usesTargetFont = false;
-
-                    // Examine each character's font name
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                    // If the target font was found, check each character's font index
+                    if (targetFontIndex != -1 && shape.Chars != null && shape.Chars.Count > 0)
                     {
-                        if (ch.FontName != null && ch.FontName.Value == targetFont)
+                        for (int c = 0; c < shape.Chars.Count; c++)
                         {
-                            usesTargetFont = true;
-                            break;
+                            // Font.Value holds the index into diagram.Fonts
+                            if (shape.Chars[c].Font != null && shape.Chars[c].Font.Value == targetFontIndex)
+                            {
+                                applyShadow = true;
+                                break;
+                            }
                         }
                     }
-
-                    // If the shape uses the target font, apply a simple shadow effect
-                    if (usesTargetFont)
+                    else
                     {
-                        // Enable simple shadow
-                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+                        // If target font not found, apply shadow to all text shapes
+                        applyShadow = true;
+                    }
 
-                        // Set shadow color (dark gray)
-                        shape.Fill.ShdwForegnd.Value = "#808080";
-
-                        // Set shadow transparency (30% transparent)
-                        shape.Fill.ShdwForegndTrans.Value = 0.3;
-
-                        // Set shadow offsets (in inches)
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.05;
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.05;
+                    if (applyShadow)
+                    {
+                        // Apply a simple drop shadow to the shape's fill
+                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;          // Shadow type
+                        shape.Fill.ShdwForegnd.Value = "#000000";                           // Shadow color (black)
+                        shape.Fill.ShdwForegndTrans.Value = 0.3;                            // 30% transparency
+                        shape.Fill.ShapeShdwOffsetX.Value = 0.05;                           // Horizontal offset
+                        shape.Fill.ShapeShdwOffsetY.Value = 0.05;                           // Vertical offset
                     }
                 }
             }
 
-            // Save the modified diagram as a PNG image
+            // Save the modified diagram as an image (PNG)
             ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
             diagram.Save(outputPath, saveOptions);
 
+            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,99 +1,85 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
-using Aspose.Drawing.Text;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Define the deprecated font and its modern replacement
-    private const string DeprecatedFont = "Arial Unicode MS";
-    private const string ModernFont = "Arial";
+    // Define the deprecated font name and its replacement.
+    private const string DeprecatedFontName = "OldFont";
+    private const string ReplacementFontName = "NewFont";
 
     static void Main(string[] args)
     {
-        // Determine folder to process: argument or current directory
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-
-        // Retrieve all Visio files with common extensions
-        string[] visioFiles = Directory.GetFiles(folderPath, "*.vsd*");
-
-        // Process each file individually
-        foreach (string filePath in visioFiles)
+        // Expect a single argument: the path to the folder containing VSD/VSDX files.
+        if (args.Length == 0)
         {
-            try
-            {
-                ProcessDiagram(filePath);
-                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
-            }
-            catch (Exception ex)
-            {
-                // Log any errors that escape inner handling
-                Console.Error.WriteLine($"Error processing {Path.GetFileName(filePath)}: {ex.Message}");
-            }
-        }
-    }
-
-    private static void ProcessDiagram(string filePath)
-    {
-        // Guard: ensure the file actually exists before proceeding
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine("Usage: Program <folderPath>");
             return;
         }
 
-        // Verify that the modern replacement font is installed on the system
-        InstalledFontCollection fontCollection = new InstalledFontCollection();
-        bool modernFontAvailable = false;
-        foreach (var family in fontCollection.Families)
+        string folderPath = args[0];
+
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
         {
-            if (family.Name.Equals(ModernFont, StringComparison.OrdinalIgnoreCase))
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Gather all Visio files with supported extensions.
+        string[] vsdFiles = Directory.GetFiles(folderPath, "*.vsd");
+        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx");
+        string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx");
+        string[] allFiles = vsdFiles.Concat(vsdxFiles).Concat(vdxFiles).ToArray();
+
+        if (allFiles.Length == 0)
+        {
+            Console.WriteLine("No Visio files found in the specified folder.");
+            return;
+        }
+
+        foreach (string filePath in allFiles)
+        {
+            // Guard: ensure the file still exists before processing.
+            if (!File.Exists(filePath))
             {
-                modernFontAvailable = true;
-                break;
+                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                continue;
             }
-        }
 
-        if (!modernFontAvailable)
-        {
-            throw new Exception($"Modern font \"{ModernFont}\" is not installed on this machine.");
-        }
-
-        try
-        {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through all pages and shapes to replace deprecated font
-            foreach (Page page in diagram.Pages)
+            try
             {
-                foreach (Shape shape in page.Shapes)
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // Iterate over all fonts used in the diagram.
+                foreach (Font font in diagram.Fonts)
                 {
-                    // Replace font in character formatting (per‑character)
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                    // If the font matches the deprecated name, replace it.
+                    if (string.Equals(font.Name, DeprecatedFontName, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (ch.FontName.Value != null &&
-                            ch.FontName.Value.Equals(DeprecatedFont, StringComparison.OrdinalIgnoreCase))
-                        {
-                            ch.FontName.Value = ModernFont;
-                        }
+                        // Substitute with the modern equivalent.
+                        font.Name = ReplacementFontName;
+                        Console.WriteLine($"Replaced font in '{Path.GetFileName(filePath)}': '{DeprecatedFontName}' -> '{ReplacementFontName}'");
                     }
-
-                    // No direct Txt.Font property exists; font changes are handled via Char objects above
                 }
+
+                // Determine output file path (save as VSDX with a suffix to avoid overwriting original).
+                string directory = Path.GetDirectoryName(filePath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_updated.vsdx");
+
+                // Save the modified diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Saved updated diagram to: {outputPath}");
             }
-
-            // Set the default fallback font for the diagram (used when a font is missing)
-            FontConfigs.DefaultFontName = ModernFont;
-
-            // Save the diagram, overwriting the original file in VSDX format
-            diagram.Save(filePath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Capture any Aspose‑related errors and report them
-            Console.Error.WriteLine($"Aspose error processing {Path.GetFileName(filePath)}: {ex.Message}");
-            throw; // Re‑throw to allow outer handler to report the file as failed
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of the current file.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
 }

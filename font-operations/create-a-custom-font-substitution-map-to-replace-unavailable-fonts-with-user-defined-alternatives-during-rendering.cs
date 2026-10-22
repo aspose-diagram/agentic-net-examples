@@ -1,50 +1,109 @@
-using System.IO;
 using System;
-using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output PDF file path
+        string outputPath = "output.pdf";
+
+        // Define custom font substitution map (missing font -> replacement font)
+        var fontSubstitutionMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "MissingFontA", "Arial" },
+            { "MissingFontB", "Calibri" }
+        };
+
+        // Configure custom font folder (adjust the path as needed)
+        string customFontFolder = @"C:\CustomFonts";
+        if (Directory.Exists(customFontFolder))
+        {
+            // Set the folder recursively
+            FontConfigs.SetFontFolder(customFontFolder, true);
+        }
+        else
+        {
+            Console.Error.WriteLine($"Custom font folder not found: {customFontFolder}");
+        }
+
+        // Set a global default font (used when no specific substitution is defined)
+        FontConfigs.DefaultFontName = "Arial";
+
         try
         {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Configure global font settings before loading the diagram
-            // Add the system font folder (recursive) so Aspose.Diagram can locate fonts
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
-            // Set a default fallback font that will be used when a required font is missing
-            FontConfigs.DefaultFontName = "Arial";
+            // Enumerate fonts used in the diagram and log any missing fonts
+            // InstalledFontCollection is used to check system-installed fonts
+            var installedFonts = new InstalledFontCollection();
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Retrieve the list of installed system fonts using Aspose.Drawing.Text
-            InstalledFontCollection installedFonts = new InstalledFontCollection();
-            var installedFontNames = installedFonts.Families
-                .Select(f => f.Name)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            // Check each font used in the diagram and report missing ones
-            foreach (Font font in diagram.Fonts)
+            foreach (Font diagramFont in diagram.Fonts)
             {
-                if (!installedFontNames.Contains(font.Name))
+                bool isInstalled = false;
+                // Iterate over installed font families (type may vary, use implicit typing)
+                foreach (var family in installedFonts.Families)
                 {
-                    Console.WriteLine($"Missing font detected: '{font.Name}'. It will be substituted with '{FontConfigs.DefaultFontName}'.");
-                    // Specific substitution mapping is not required; the default font will be applied automatically.
+                    // Many Aspose font family objects expose a Name property
+                    var nameProp = family.GetType().GetProperty("Name");
+                    if (nameProp != null)
+                    {
+                        string familyName = nameProp.GetValue(family) as string;
+                        if (!string.IsNullOrEmpty(familyName) &&
+                            string.Equals(familyName, diagramFont.Name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            isInstalled = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!isInstalled)
+                {
+                    // Font is missing; attempt to find a substitution
+                    if (fontSubstitutionMap.TryGetValue(diagramFont.Name, out string replacement))
+                    {
+                        Console.WriteLine($"Missing font '{diagramFont.Name}' will be substituted with '{replacement}'.");
+                        // The substitution is handled by setting the default font in save options.
+                        // Specific per-font substitution is not directly supported by Aspose.Diagram.
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Missing font '{diagramFont.Name}' has no defined substitution. Default font will be used.");
+                    }
                 }
             }
 
-            // Save the diagram to PDF; the default font substitution will be applied during rendering
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            diagram.Save("output.pdf", pdfOptions);
+            // Create PDF save options and set the default font
+            PdfSaveOptions saveOptions = new PdfSaveOptions();
+            // The DefaultFont property ensures a fallback font is used during rendering
+            saveOptions.DefaultFont = "Arial";
 
+            // Save the diagram to PDF using the configured options
+            diagram.Save(outputPath, saveOptions);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

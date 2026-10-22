@@ -1,70 +1,115 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing.Text;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect four arguments: input diagram path, source font name, target font name, output diagram path
+        if (args.Length != 4)
         {
-            if (args.Length < 4)
-            {
-                Console.WriteLine("Usage: FontReplacementExample <inputVisio> <outputFile> <oldFontName> <newFontName>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <sourceFontName> <targetFontName> <outputDiagramPath>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            string oldFont = args[2];
-            string newFont = args[3];
+        string inputPath = args[0];
+        string sourceFontName = args[1];
+        string targetFontName = args[2];
+        string outputPath = args[3];
 
-            // Verify that the replacement font is installed on the system
-            InstalledFontCollection fontCollection = new InstalledFontCollection();
-            bool newFontInstalled = false;
-            foreach (var family in fontCollection.Families)
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Find indices of source and target fonts in the diagram's font collection
+            int sourceFontIndex = -1;
+            int targetFontIndex = -1;
+
+            for (int i = 0; i < diagram.Fonts.Count; i++)
             {
-                if (string.Equals(family.Name, newFont, StringComparison.OrdinalIgnoreCase))
+                Font font = diagram.Fonts[i];
+                if (font.Name.Equals(sourceFontName, StringComparison.OrdinalIgnoreCase))
                 {
-                    newFontInstalled = true;
-                    break;
+                    sourceFontIndex = i;
+                }
+                if (font.Name.Equals(targetFontName, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetFontIndex = i;
                 }
             }
 
-            if (!newFontInstalled)
+            // If the source font is not present, nothing to replace
+            if (sourceFontIndex == -1)
             {
-                Console.WriteLine($"Warning: The replacement font \"{newFont}\" is not installed on this machine.");
+                Console.WriteLine($"Source font \"{sourceFontName}\" not found in diagram. No replacement performed.");
             }
-
-            try
+            else
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages, shapes, and character runs to replace the font
-                foreach (Page page in diagram.Pages)
+                // Add target font to the collection if it does not already exist
+                if (targetFontIndex == -1)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    Font newFont = new Font();
+                    newFont.Name = targetFontName;
+                    diagram.Fonts.Add(newFont);
+                    targetFontIndex = diagram.Fonts.Count - 1;
+                    Console.WriteLine($"Target font \"{targetFontName}\" added to diagram font collection.");
+                }
+
+                // Iterate through all pages, shapes, and characters to replace font indices
+                for (int p = 0; p < diagram.Pages.Count; p++)
+                {
+                    Page page = diagram.Pages[p];
+                    for (int s = 0; s < page.Shapes.Count; s++)
                     {
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        Shape shape = page.Shapes[s];
+
+                        // Process only shapes that have character formatting
+                        if (shape.Chars != null && shape.Chars.Count > 0)
                         {
-                            if (string.Equals(ch.FontName.Value, oldFont, StringComparison.OrdinalIgnoreCase))
+                            for (int c = 0; c < shape.Chars.Count; c++)
                             {
-                                ch.FontName.Value = newFont;
+                                // Use fully qualified type to avoid ambiguity with System.Char
+                                Aspose.Diagram.Char ch = shape.Chars[c];
+                                int currentFontIdx = ch.Font.Value;
+                                if (currentFontIdx == sourceFontIndex)
+                                {
+                                    ch.Font.Value = targetFontIndex;
+                                }
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram as PDF, specifying the default font for fallback
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = newFont;
-                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"All occurrences of font \"{sourceFontName}\" have been replaced with \"{targetFontName}\".");
+            }
 
-                Console.WriteLine($"Diagram saved to \"{outputPath}\" with font \"{oldFont}\" replaced by \"{newFont}\".");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

@@ -1,39 +1,52 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine the input VSDX file path (first command‑line argument)
+        string inputPath;
+        if (args.Length > 0)
         {
-            try
-            {
+            inputPath = args[0];
+        }
+        else
+        {
+            Console.Error.WriteLine("Error: No input file path provided. Pass the VSDX file path as the first argument.");
+            return;
+        }
 
-                // Path to the source VSDX file
-                string inputPath = "inputDiagram.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+        // Set a custom default font for rendering before loading the diagram.
+        // This font will be used whenever a required font is missing in the diagram.
+        FontConfigs.DefaultFontName = "Calibri";
 
-                // Set a custom default font for rendering.
-                // This font name must be installed on the system or located in a font folder added to FontConfigs.
-                FontConfigs.DefaultFontName = "Calibri";
+        // Optional: add an additional font folder if your custom fonts are stored elsewhere.
+        // FontConfigs.SetFontFolder(@"C:\MyCustomFonts", true);
 
-                // Optional: add a custom font folder if the font is not in the default system fonts.
-                // FontConfigs.SetFontFolder(@"C:\CustomFonts", true);
+        try
+        {
+            // Load the Visio diagram from the specified VSDX file
+            Diagram diagram = new Diagram(inputPath);
 
-                // Save the diagram to PDF to trigger rendering with the custom default font.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Calibri"; // Ensure the save options also use the custom font.
-
-                diagram.Save("outputDiagram.pdf", pdfOptions);
-
-                Console.WriteLine("Diagram loaded and saved with custom default font.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the diagram to a new file to confirm that the custom font setting is applied
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output_with_custom_font.vsdx");
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose.Diagram errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

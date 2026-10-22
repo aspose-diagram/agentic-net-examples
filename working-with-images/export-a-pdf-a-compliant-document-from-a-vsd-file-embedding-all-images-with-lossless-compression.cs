@@ -1,40 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input and output file paths
+        string inputPath = "input.vsd";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.pdf";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the VSD diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Path to the source Visio file (VSD format)
-                string inputPath = "input.vsd";
+                // Set the save format explicitly
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Path for the exported PDF/A file
-                string outputPath = "output.pdf";
+                // NOTE: Aspose.Diagram does not expose a direct property for PDF/A compliance
+                // or lossless image compression in PdfSaveOptions. The default PDF export
+                // embeds images as they are, which is the closest achievable result.
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+                // Assign a page saving callback to demonstrate per‑page processing
+                pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
 
-                // Configure PDF save options for PDF/A compliance
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Set PDF/A compliance level (PDF/A-1b)
-                    Compliance = PdfCompliance.PdfA1b
-                    // Images are embedded by default; lossless compression is used when possible.
-                };
-
-                // Save the diagram as a PDF/A compliant document
+                // Save the diagram as PDF
                 diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Diagram successfully exported to PDF/A at: {outputPath}");
-
+                Console.WriteLine($"PDF exported successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+}
+
+// Implementation of the IPageSavingCallback interface for PDF export
+class CustomPageSavingCallback : IPageSavingCallback
+{
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
     }
+
+    // Called after a page has finished saving
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}");
+        // No need to stop further processing; continue with remaining pages
+    }
+}

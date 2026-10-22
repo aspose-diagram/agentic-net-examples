@@ -1,37 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
+        // Expect two arguments: input Visio file path and output PNG file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            return;
+        }
 
-        // Path for the exported PNG image of the first page
-        string outputPath = "first_page.png";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure image save options for high‑resolution PNG export
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                // Export only the first page (index 0)
+                options.PageIndex = 0;
+                options.PageCount = 1;
+                // Set a high DPI resolution (e.g., 300 DPI) for better quality
+                options.Resolution = 300f;
 
-            // Set up high‑resolution PNG export options
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300f;   // DPI for high quality
-            saveOptions.PageIndex = 0;       // Zero‑based index of the first page
-            saveOptions.PageCount = 1;       // Export only this page
-
-            // Export the first page as a PNG image
-            diagram.Save(outputPath, saveOptions);
+                // Save the first page as a PNG image
+                diagram.Save(outputPath, options);
+            }
 
             Console.WriteLine($"First page exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

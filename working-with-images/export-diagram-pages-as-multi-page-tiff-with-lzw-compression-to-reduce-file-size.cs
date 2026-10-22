@@ -7,34 +7,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputTiffFile>");
+            return;
+        }
 
-        // Output multi‑page TIFF file path
-        string outputPath = "output.tiff";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure image save options for multi‑page TIFF
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
 
-            // Configure image save options for TIFF
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-            // Export all pages: start from first page (0) and include all pages
-            saveOptions.PageIndex = 0;
-            saveOptions.PageCount = diagram.Pages.Count;
-            // Note: LZW compression is applied by default for TIFF in Aspose.Diagram;
-            // the ImageSaveOptions class does not expose a Compression property.
+                // Export all pages: start from the first page (index 0) and include all pages
+                saveOptions.PageIndex = 0;
+                saveOptions.PageCount = diagram.Pages.Count;
 
-            // Save the diagram as a multi‑page TIFF using the configured options
-            diagram.Save(outputPath, saveOptions);
+                // Set smoothing mode for better rendering quality
+                saveOptions.SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias;
+
+                // NOTE: Aspose.Diagram's ImageSaveOptions does not expose a Compression property.
+                // LZW compression for TIFF is not directly configurable via the current API,
+                // so the default compression will be used.
+
+                // Save the diagram as a multi‑page TIFF file
+                diagram.Save(outputPath, saveOptions);
+                Console.WriteLine($"Successfully exported to \"{outputPath}\".");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

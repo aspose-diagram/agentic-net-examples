@@ -2,82 +2,105 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using AsposeDrawing = Aspose.Drawing;
-using AsposeDrawingImaging = Aspose.Drawing.Imaging;
-using AsposeDrawingDrawing2D = Aspose.Drawing.Drawing2D;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string diagramPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(diagramPath)) { Console.Error.WriteLine($"File not found: {diagramPath}"); return; }
-
-        // Output folder for resized BMP images
-        string outputFolder = "ResizedBmp";
-        Directory.CreateDirectory(outputFolder);
-
-        // Load the diagram inside a using block for proper disposal
-        using (Diagram diagram = new Diagram(diagramPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Iterate through each page in the diagram
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the output folder exists or create it.
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                // Export the page as BMP using ImageSaveOptions
-                string tempBmpPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}_original.bmp");
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
-                imgOptions.PageIndex = pageIndex; // zero‑based page index
-
-                try
-                {
-                    diagram.Save(tempBmpPath, imgOptions);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error exporting page {pageIndex + 1}: {ex.Message}");
-                    continue;
-                }
-
-                // Load the exported BMP with Aspose.Drawing and resize it
-                try
-                {
-                    using (AsposeDrawing.Image srcImage = AsposeDrawing.Image.FromFile(tempBmpPath))
-                    {
-                        const int targetWidth = 800; // desired width in pixels
-                        double scaleFactor = (double)targetWidth / srcImage.Width;
-                        int targetHeight = (int)(srcImage.Height * scaleFactor);
-
-                        // Create a new bitmap with the target dimensions
-                        using (AsposeDrawing.Bitmap resizedBitmap = new AsposeDrawing.Bitmap(targetWidth, targetHeight))
-                        {
-                            // Draw the source image onto the new bitmap with high‑quality scaling
-                            using (AsposeDrawing.Graphics graphics = AsposeDrawing.Graphics.FromImage(resizedBitmap))
-                            {
-                                graphics.InterpolationMode = AsposeDrawingDrawing2D.InterpolationMode.HighQualityBicubic;
-                                graphics.DrawImage(srcImage, 0, 0, targetWidth, targetHeight);
-                            }
-
-                            // Save the resized BMP, overwriting the temporary file
-                            string finalBmpPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}_800.bmp");
-                            resizedBitmap.Save(finalBmpPath, AsposeDrawingImaging.ImageFormat.Bmp);
-                        }
-                    }
-
-                    // Optionally delete the original un‑resized BMP
-                    try { File.Delete(tempBmpPath); } catch { /* ignore deletion errors */ }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error processing image for page {pageIndex + 1}: {ex.Message}");
-                    continue;
-                }
-
-                Console.WriteLine($"Page {pageIndex + 1} resized and saved.");
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
             }
         }
 
-        Console.WriteLine("All pages processed.");
+        try
+        {
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate over each page in the diagram.
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Prepare temporary and final BMP file paths.
+                    string tempBmpPath = Path.Combine(outputFolder, $"page_{i + 1}_temp.bmp");
+                    string finalBmpPath = Path.Combine(outputFolder, $"page_{i + 1}.bmp");
+
+                    // Configure image save options for BMP export.
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
+                    imgOptions.PageIndex = i;   // Export only the current page.
+                    imgOptions.PageCount = 1;   // Single page.
+
+                    // Export the page to a temporary BMP file.
+                    diagram.Save(tempBmpPath, imgOptions);
+
+                    // Resize the exported BMP to a fixed width of 800 pixels while preserving aspect ratio.
+                    using (Aspose.Drawing.Image original = Aspose.Drawing.Image.FromFile(tempBmpPath))
+                    {
+                        int originalWidth = original.Width;
+                        int originalHeight = original.Height;
+
+                        // Calculate new dimensions.
+                        int newWidth = 800;
+                        int newHeight = (int)(originalHeight * (newWidth / (double)originalWidth));
+
+                        // Create a new bitmap with the target size.
+                        using (Aspose.Drawing.Bitmap resized = new Aspose.Drawing.Bitmap(newWidth, newHeight))
+                        {
+                            using (Aspose.Drawing.Graphics g = Aspose.Drawing.Graphics.FromImage(resized))
+                            {
+                                // Use high‑quality scaling.
+                                g.InterpolationMode = Aspose.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                g.DrawImage(original, 0, 0, newWidth, newHeight);
+                            }
+
+                            // Save the resized image to the final path.
+                            resized.Save(finalBmpPath, Aspose.Drawing.Imaging.ImageFormat.Bmp);
+                        }
+                    }
+
+                    // Delete the temporary BMP file.
+                    try
+                    {
+                        File.Delete(tempBmpPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Warning: could not delete temporary file '{tempBmpPath}': {ex.Message}");
+                    }
+
+                    Console.WriteLine($"Page {i + 1} exported and resized to '{finalBmpPath}'.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

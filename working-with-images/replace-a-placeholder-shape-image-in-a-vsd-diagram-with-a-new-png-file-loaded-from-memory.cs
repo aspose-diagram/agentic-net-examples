@@ -4,61 +4,66 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input VSD diagram, PNG image, output diagram path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <pngImagePath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputDiagramPath = args[0];
+        string pngImagePath = args[1];
+        string outputDiagramPath = args[2];
+
+        // Guard: ensure input diagram file exists
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+            return;
+        }
+
+        // Guard: ensure PNG image file exists
+        if (!File.Exists(pngImagePath))
+        {
+            Console.Error.WriteLine($"PNG image file not found: {pngImagePath}");
+            return;
+        }
+
         try
         {
+            // Load PNG image into memory
+            byte[] pngBytes = File.ReadAllBytes(pngImagePath);
 
-            // Paths to the source Visio file and the output file.
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Load the new PNG image into a byte array (memory source).
-            // In a real scenario, the byte[] could come from any source (e.g., a database, network stream, etc.).
-            byte[] newImageBytes = File.ReadAllBytes("newImage.png");
-
-            // Flag to indicate whether a placeholder image was replaced.
-            bool replaced = false;
-
-            // Iterate through all pages and shapes to locate a placeholder image.
-            // Here we assume the placeholder is a foreign shape (image) with a specific name.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputDiagramPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify foreign (image) shapes.
-                    if (shape.Type == TypeValue.Foreign)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Example condition: shape name contains "Placeholder".
-                        // Adjust the condition as needed for your specific diagram.
-                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.IndexOf("Placeholder", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Identify picture shapes by checking for Foreign type
+                        if (shape.Type == TypeValue.Foreign)
                         {
-                            // Replace the embedded image data.
-                            shape.ForeignData.Value = newImageBytes;
-                            replaced = true;
-                            // If only one placeholder should be replaced, exit loops.
-                            break;
+                            // Replace the existing image data with the new PNG bytes
+                            shape.ForeignData.Value = pngBytes;
                         }
                     }
                 }
-                if (replaced) break;
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
             }
 
-            if (!replaced)
-            {
-                throw new Exception("Placeholder image shape not found in the diagram.");
-            }
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine("Image replacement completed successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

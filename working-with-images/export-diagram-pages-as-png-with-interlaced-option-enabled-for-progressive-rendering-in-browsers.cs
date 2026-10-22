@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,58 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath;
-        // Output folder for PNG files
-        string outputFolder;
-
-        if (args.Length >= 2)
+        // Validate arguments: input Visio file and output directory.
+        if (args.Length < 2)
         {
-            inputPath = args[0];
-            outputFolder = args[1];
-        }
-        else
-        {
-            Console.WriteLine("Enter the full path to the Visio file:");
-            inputPath = Console.ReadLine();
-
-            Console.WriteLine("Enter the folder path where PNG pages will be saved:");
-            outputFolder = Console.ReadLine();
-        }
-
-        if (string.IsNullOrWhiteSpace(inputPath) || string.IsNullOrWhiteSpace(outputFolder))
-        {
-            Console.WriteLine("Invalid input or output path.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
             return;
         }
 
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
+        string inputPath = args[0];
+        string outputDir = args[1];
 
-        // Ensure the output folder exists
-        if (!System.IO.Directory.Exists(outputFolder))
+        // Guard: check input file exists.
+        if (!File.Exists(inputPath))
         {
-            System.IO.Directory.CreateDirectory(outputFolder);
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
-        // Export each page as a separate PNG file
-        for (int i = 0; i < diagram.Pages.Count; i++)
+        // Guard: ensure output directory exists or create it.
+        if (!Directory.Exists(outputDir))
         {
-            // Configure PNG export options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            try
             {
-                // Export only the current page
-                PageIndex = i,
-                PageCount = 1,
-                // Do not export hidden pages
-                ExportHiddenPage = false
-            };
-
-            string outputFile = System.IO.Path.Combine(outputFolder, $"Page_{i + 1}.png");
-            diagram.Save(outputFile, pngOptions);
-            Console.WriteLine($"Saved page {i + 1} to {outputFile}");
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+                return;
+            }
         }
 
-        Console.WriteLine("Export completed.");
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate over each page and export it as a PNG image.
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Configure image save options for PNG.
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    // Export only the current page.
+                    saveOptions.PageIndex = i;
+                    saveOptions.PageCount = 1;
+
+                    // NOTE: Aspose.Diagram does not support interlaced PNG export.
+                    // The interlaced option cannot be enabled; we export standard PNG files.
+
+                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
+                    diagram.Save(outputPath, saveOptions);
+                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console.
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
+        }
     }
 }

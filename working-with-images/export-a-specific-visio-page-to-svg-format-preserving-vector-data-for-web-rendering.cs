@@ -7,63 +7,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputSvgPath> <pageIndex>");
             return;
         }
 
-        // Desired output SVG file path
-        string outputPath = "output.svg";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string pageIndexArg = args[2];
 
-        // Name of the page to export (visible name or universal name)
-        string targetPageName = "Page-1";
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Parse the page index (zero‑based).
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
+        {
+            Console.Error.WriteLine("Error: Page index must be a non‑negative integer.");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Find the zero‑based index of the target page
-            int pageIndex = -1;
-            int currentIndex = 0;
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (page.Name == targetPageName || page.NameU == targetPageName)
+                // Validate the requested page index against the diagram's page count.
+                if (pageIndex >= diagram.Pages.Count)
                 {
-                    pageIndex = currentIndex;
-                    break;
+                    Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
+                    return;
                 }
-                currentIndex++;
+
+                // Configure SVG export options for a single page.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                svgOptions.PageIndex = pageIndex;          // Export only the specified page.
+                // svgOptions.PageCount = 1;                // Not required; omitted to avoid missing member error.
+                svgOptions.SVGFitToViewPort = true;        // Preserve viewbox.
+                svgOptions.ExportGuideShapes = false;      // Do not export guide shapes.
+                svgOptions.IsExportComments = false;       // Do not export comments.
+                svgOptions.SaveFormat = SaveFileFormat.Svg; // Explicitly set the format.
+
+                // Save the selected page as SVG.
+                diagram.Save(outputPath, svgOptions);
             }
 
-            // Abort if the page was not found
-            if (pageIndex == -1)
-            {
-                Console.Error.WriteLine($"Page '{targetPageName}' not found in the diagram.");
-                return;
-            }
-
-            // Configure SVG export options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            svgOptions.PageIndex = pageIndex;          // Export only the selected page
-            // PageCount is optional; omitting it avoids compatibility issues
-            svgOptions.SVGFitToViewPort = true;        // Preserve viewbox for web rendering
-            svgOptions.ExportGuideShapes = false;      // Do not export guide shapes
-            svgOptions.IsExportComments = false;       // Do not export comments
-
-            // Save the selected page as SVG
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Page '{targetPageName}' has been exported to SVG at '{outputPath}'.");
+            Console.WriteLine($"Page {pageIndex} exported successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

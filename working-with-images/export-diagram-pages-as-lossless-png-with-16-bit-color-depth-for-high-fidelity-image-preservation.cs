@@ -7,58 +7,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
             return;
         }
 
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Guard: ensure the output folder exists or create it.
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page and export it as a high‑resolution PNG
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                // Prepare the output file name (e.g., Page_1.png, Page_2.png, ...)
-                string outputPath = $"Page_{i + 1}.png";
-
-                // Configure image save options for lossless PNG export
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                {
-                    // Export only the current page
-                    PageIndex = i,
-                    PageCount = 1,
-
-                    // Use a high resolution to preserve detail (300 DPI)
-                    Resolution = 300f
-
-                    // ImageColorMode defaults to full color; omitted to avoid unsupported enum member
-                };
-
-                try
-                {
-                    // Save the current page as PNG using the configured options
-                    diagram.Save(outputPath, saveOptions);
-                }
-                catch (Exception ex)
-                {
-                    // Log any errors that occur while saving a specific page
-                    Console.Error.WriteLine($"Error saving page {i + 1}: {ex.Message}");
-                }
-            }
-
-            Console.WriteLine("Export completed.");
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during diagram loading or overall processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error creating output folder \"{outputFolder}\": {ex.Message}");
+            return;
+        }
+
+        // Load the diagram and export each page as a lossless 16‑bit PNG.
+        try
+        {
+            // Using block is mandatory for Diagram instances.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                int pageCount = diagram.Pages.Count;
+
+                // Iterate through all pages.
+                for (int i = 0; i < pageCount; i++)
+                {
+                    // Configure PNG export options.
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        // Export a single page at a time.
+                        PageIndex = i,
+                        PageCount = 1
+                        // PNG is inherently lossless; Aspose.Diagram does not expose a direct 16‑bit depth setting.
+                    };
+
+                    // Build the output file name.
+                    string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}.png");
+
+                    // Save the current page as PNG.
+                    diagram.Save(outputPath, pngOptions);
+                    Console.WriteLine($"Exported page {i + 1} to \"{outputPath}\"");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

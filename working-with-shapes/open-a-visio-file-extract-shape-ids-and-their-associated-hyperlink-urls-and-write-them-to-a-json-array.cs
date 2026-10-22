@@ -1,80 +1,84 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace VisioHyperlinkExtractor
+class ShapeLink
 {
-    // DTO for JSON output
-    public class ShapeHyperlinkInfo
-    {
-        public long Id { get; set; }
-        public List<string> Urls { get; set; } = new();
-    }
+    public long ShapeId { get; set; }
+    public string Url { get; set; }
+}
 
-    public class Program
+class Program
+{
+    static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare a list to hold shape‑ID / hyperlink pairs.
+            List<ShapeLink> links = new List<ShapeLink>();
+
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-
-                // Input Visio file path (adjust as needed)
-                string inputPath = "input.vsdx";
-
-                // Output JSON file path
-                string outputPath = "hyperlinks.json";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Collect shape IDs and their hyperlink URLs
-                List<ShapeHyperlinkInfo> result = new();
-
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    long shapeId = shape.ID;
+
+                    // Ensure the Hyperlinks collection is present.
+                    if (shape.Hyperlinks != null)
                     {
-                        // Ensure the shape has hyperlinks
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                        // Enumerate each hyperlink attached to the shape.
+                        foreach (Hyperlink hyperlink in shape.Hyperlinks)
                         {
-                            ShapeHyperlinkInfo info = new ShapeHyperlinkInfo
-                            {
-                                Id = shape.ID
-                            };
+                            // Retrieve the address (URL) of the hyperlink.
+                            string url = hyperlink.Address?.Value ?? string.Empty;
 
-                            foreach (Hyperlink link in shape.Hyperlinks)
+                            // Add the pair to the result list.
+                            links.Add(new ShapeLink
                             {
-                                // Guard against null address cells
-                                if (link != null && link.Address != null && !string.IsNullOrWhiteSpace(link.Address.Value))
-                                {
-                                    info.Urls.Add(link.Address.Value);
-                                }
-                            }
-
-                            // Add only if at least one URL was found
-                            if (info.Urls.Count > 0)
-                            {
-                                result.Add(info);
-                            }
+                                ShapeId = shapeId,
+                                Url = url
+                            });
                         }
                     }
                 }
-
-                // Serialize the result to JSON with indentation
-                string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-
-                // Write JSON to the output file
-                File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"Extraction complete. JSON written to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+
+            // Serialize the list to JSON with indentation.
+            string json = JsonSerializer.Serialize(links, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the specified output file.
+            File.WriteAllText(outputPath, json);
+
+            Console.WriteLine($"Extraction complete. {links.Count} hyperlink(s) written to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

@@ -1,57 +1,89 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Expected arguments:
+        // 0 - input Visio file path
+        // 1 - shape ID (integer)
+        // 2 - new width (double, inches)
+        // 3 - new height (double, inches)
+        // 4 - output Visio file path
+        if (args.Length < 5)
+        {
+            Console.Error.WriteLine("Usage: <inputPath> <shapeId> <newWidth> <newHeight> <outputPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+        string newWidthArg = args[2];
+        string newHeightArg = args[3];
+        string outputPath = args[4];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse numeric arguments with validation
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        if (!double.TryParse(newWidthArg, out double newWidth))
+        {
+            Console.Error.WriteLine($"Invalid width value: {newWidthArg}");
+            return;
+        }
+
+        if (!double.TryParse(newHeightArg, out double newHeight))
+        {
+            Console.Error.WriteLine($"Invalid height value: {newHeightArg}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output Visio file path
-            string outputPath = "output.vsdx";
-
-            // Desired dimensions (in inches)
-            double newWidth = 2.0;
-            double newHeight = 1.0;
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Assume the shape is on the first page; adjust as needed
+            if (diagram.Pages.Count == 0)
             {
-                // Get the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Retrieve the first shape on the page
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    targetShape = shape;
-                    break;
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No shape found on the page.");
-                    return;
-                }
-
-                // Resize the shape
-                targetShape.XForm.Width.Value = newWidth;
-                targetShape.XForm.Height.Value = newHeight;
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            Console.WriteLine("Shape resized and diagram saved successfully.");
+            Page page = diagram.Pages[0];
 
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on the first page.");
+                return;
+            }
+
+            // Set the new width and height (values are in inches)
+            shape.XForm.Width.Value = newWidth;
+            shape.XForm.Height.Value = newHeight;
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Shape resized and diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,26 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input file path as first argument
+        if (args.Length == 0)
         {
-            // Path to the Visio file to load
-            string filePath = "input.vsdx";
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
 
-            try
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        Diagram diagram = null;
+        try
+        {
+            // Attempt to load the diagram; this may throw if master definitions are corrupted
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram '{inputPath}'. Exception: {ex.Message}");
+            return;
+        }
+
+        // Process masters: list their IDs and names, and detect possible corruption (e.g., missing name)
+        Console.WriteLine("Master information:");
+        foreach (Master master in diagram.Masters)
+        {
+            string masterName = master.Name;
+            if (string.IsNullOrEmpty(masterName))
             {
-                // Load the diagram. If the file contains corrupted master definitions,
-                // an exception will be thrown and caught below.
-                Diagram diagram = new Diagram(filePath);
-                Console.WriteLine("Diagram loaded successfully.");
-                // Further processing of the diagram can be added here.
+                Console.Error.WriteLine($"Warning: Master with ID {master.ID} has an invalid or missing name. It may be corrupted.");
+                // Continue processing other masters; you could implement additional recovery logic here
+                continue;
             }
-            catch (Exception ex)
-            {
-                // Handle loading errors (e.g., corrupted masters, missing file, etc.)
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                // Additional error handling or logging can be performed here.
-            }
+
+            Console.WriteLine($"- ID: {master.ID}, Name: {masterName}");
+        }
+
+        // Prepare output path
+        string directory = Path.GetDirectoryName(inputPath) ?? "";
+        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+        string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_clean.vsdx");
+
+        try
+        {
+            // Save the diagram to a new file (unchanged content)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram to '{outputPath}'. Exception: {ex.Message}");
         }
     }
+}

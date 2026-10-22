@@ -1,85 +1,129 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command line arguments.
+        if (args.Length < 4)
         {
-            try
+            Console.Error.WriteLine("Usage: <input.vsdx> <sourceMasterName> <targetMasterName> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string sourceMasterName = args[1];
+        string targetMasterName = args[2];
+        string outputPath = args[3];
+
+        // Guard: ensure input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Retrieve source and target masters.
+            Master? sourceMaster = null;
+            Master? targetMaster = null;
+
+            // Find source master by name.
+            foreach (Master master in diagram.Masters)
             {
-
-                // Paths to input and output Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Names of the masters to replace
-                string oldMasterName = "OldMaster";
-                string newMasterName = "NewMaster";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                if (master.Name == sourceMasterName)
                 {
-                    // Collect IDs of shapes that use the old master
-                    List<long> shapesToReplace = new List<long>();
-                    foreach (Shape shape in page.Shapes)
+                    sourceMaster = master;
+                }
+                if (master.Name == targetMasterName)
+                {
+                    targetMaster = master;
+                }
+                if (sourceMaster != null && targetMaster != null)
+                {
+                    break;
+                }
+            }
+
+            if (sourceMaster == null)
+            {
+                Console.Error.WriteLine($"Source master \"{sourceMasterName}\" not found in diagram.");
+                return;
+            }
+
+            if (targetMaster == null)
+            {
+                Console.Error.WriteLine($"Target master \"{targetMasterName}\" not found in diagram.");
+                return;
+            }
+
+            // Iterate through each page and replace shapes that use the source master.
+            foreach (Page page in diagram.Pages)
+            {
+                // Collect shape IDs that need replacement to avoid modifying collection while iterating.
+                List<long> shapesToReplace = new List<long>();
+
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the shape has an associated master and compare its name.
+                    if (shape.Master != null && shape.Master.Name == sourceMasterName)
                     {
-                        if (shape.Master != null && shape.Master.Name == oldMasterName)
-                        {
-                            shapesToReplace.Add(shape.ID);
-                        }
-                    }
-
-                    // Replace each identified shape with a new shape based on the new master
-                    foreach (long oldShapeId in shapesToReplace)
-                    {
-                        Shape oldShape = page.Shapes.GetShape(oldShapeId);
-
-                        // Preserve geometry and text
-                        double pinX = oldShape.XForm.PinX.Value;
-                        double pinY = oldShape.XForm.PinY.Value;
-                        double width = oldShape.XForm.Width.Value;
-                        double height = oldShape.XForm.Height.Value;
-                        string text = oldShape.Text.Value.ToString();
-
-                        // Add a new shape using the new master at the same location
-                        long newShapeId = page.AddShape(pinX, pinY, newMasterName);
-                        Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                        // Apply original size and text to the new shape
-                        newShape.XForm.Width.Value = width;
-                        newShape.XForm.Height.Value = height;
-                        newShape.Text.Value.Clear();
-                        newShape.Text.Value.Add(new Txt(text));
-
-                        // Rewire connections from the old shape to the new shape
-                        foreach (Connect conn in page.Connects)
-                        {
-                            if (conn.FromSheet == oldShapeId)
-                            {
-                                conn.FromSheet = newShapeId;
-                            }
-                            if (conn.ToSheet == oldShapeId)
-                            {
-                                conn.ToSheet = newShapeId;
-                            }
-                        }
-
-                        // Mark the old shape as deleted
-                        oldShape.Del = BOOL.True;
+                        shapesToReplace.Add(shape.ID);
                     }
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Process each shape that uses the source master.
+                foreach (long oldShapeId in shapesToReplace)
+                {
+                    Shape oldShape = page.Shapes.GetShape(oldShapeId);
 
+                    // Preserve geometry.
+                    double pinX = oldShape.XForm.PinX.Value;
+                    double pinY = oldShape.XForm.PinY.Value;
+                    double width = oldShape.XForm.Width.Value;
+                    double height = oldShape.XForm.Height.Value;
+
+                    // Add a new shape using the target master at the same location and size.
+                    // Note: AddShape overload with size parameters is not documented; use the overload with pinX, pinY, masterName.
+                    // After adding, set size manually.
+                    long newShapeId = page.AddShape(pinX, pinY, targetMaster.Name);
+                    Shape newShape = page.Shapes.GetShape(newShapeId);
+                    newShape.XForm.Width.Value = width;
+                    newShape.XForm.Height.Value = height;
+
+                    // Preserve connections: update any Connect objects that reference the old shape ID.
+                    foreach (Connect conn in page.Connects)
+                    {
+                        if (conn.FromSheet == oldShapeId)
+                        {
+                            conn.FromSheet = newShapeId;
+                        }
+                        if (conn.ToSheet == oldShapeId)
+                        {
+                            conn.ToSheet = newShapeId;
+                        }
+                    }
+
+                    // Hide the old shape instead of deleting it (removal APIs are not guaranteed).
+                    oldShape.Del = BOOL.True;
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

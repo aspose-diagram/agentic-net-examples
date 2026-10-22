@@ -1,49 +1,88 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Xml;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: diagram file path, masters XML file path, output diagram path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <mastersXmlPath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string xmlPath = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing files
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(xmlPath))
+        {
+            Console.Error.WriteLine($"Masters XML file not found: {xmlPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the existing Visio document that will receive the masters
-            string targetDiagramPath = "target.vsdx";
+            // Load and parse the XML containing master definitions
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(xmlPath);
 
-            // Path to the XML file that contains master definitions (saved as a Visio diagram)
-            string masterDefinitionsPath = "masters.xml";
-
-            // Path where the updated diagram will be saved
-            string outputDiagramPath = "output.vsdx";
-
-            // Load the target diagram
-            Diagram targetDiagram = new Diagram(targetDiagramPath);
-
-            // Load the diagram that holds the master definitions (XML format is supported)
-            Diagram masterDiagram = new Diagram(masterDefinitionsPath);
-
-            // Iterate through each master in the source diagram
-            foreach (Master sourceMaster in masterDiagram.Masters)
+            // Expect XML structure: <Masters><Master>...</Master></Masters>
+            XmlNodeList masterNodes = xmlDoc.SelectNodes("//Masters/Master");
+            if (masterNodes == null || masterNodes.Count == 0)
             {
-                // Check if a master with the same name already exists in the target diagram
-                if (!targetDiagram.Masters.IsExist(sourceMaster.Name))
-                {
-                    // Import the master from the source diagram into the target diagram
-                    // Overload that accepts a source Diagram instance and the master name
-                    targetDiagram.AddMaster(masterDiagram, sourceMaster.Name);
-                }
+                Console.Error.WriteLine("No master definitions found in the XML file.");
+                return;
             }
 
-            // Save the updated diagram with the newly imported masters
-            targetDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            // Iterate over each master definition and import it into the diagram
+            foreach (XmlNode masterNode in masterNodes)
+            {
+                // Extract required information
+                string stencilPath = masterNode.SelectSingleNode("StencilPath")?.InnerText?.Trim();
+                string masterName = masterNode.SelectSingleNode("MasterName")?.InnerText?.Trim();
 
+                if (string.IsNullOrEmpty(stencilPath) || string.IsNullOrEmpty(masterName))
+                {
+                    Console.Error.WriteLine("Master definition missing StencilPath or MasterName. Skipping this entry.");
+                    continue;
+                }
+
+                // Guard against missing stencil file
+                if (!File.Exists(stencilPath))
+                {
+                    Console.Error.WriteLine($"Stencil file not found: {stencilPath}. Skipping master '{masterName}'.");
+                    continue;
+                }
+
+                // Import the master from the stencil into the diagram
+                // Diagram.AddMaster returns the ID of the added master (long), but we don't need it here
+                diagram.AddMaster(stencilPath, masterName);
+                Console.WriteLine($"Imported master '{masterName}' from stencil '{stencilPath}'.");
+            }
+
+            // Save the updated diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

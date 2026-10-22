@@ -1,48 +1,64 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all masters in the diagram
-            foreach (Master master in diagram.Masters)
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-                // Each master can contain one or more shapes
-                foreach (Shape shape in master.Shapes)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate over all text runs within the shape
-                    foreach (object item in shape.Text.Value)
+                    // Process only shapes that are based on a master shape.
+                    if (shape.Master != null)
                     {
-                        if (item is Txt txt && !string.IsNullOrEmpty(txt.Text))
+                        // The Text.Value collection holds a mix of Txt objects (actual text)
+                        // and formatting objects (Char, etc.). We replace the text in each Txt
+                        // while leaving formatting objects untouched.
+                        for (int i = 0; i < shape.Text.Value.Count; i++)
                         {
-                            // Convert the text to uppercase while keeping formatting unchanged
-                            txt.Text = txt.Text.ToUpperInvariant();
+                            object item = shape.Text.Value[i];
+                            if (item is Txt txt && txt.Text != null)
+                            {
+                                txt.Text = txt.Text.ToUpperInvariant();
+                            }
                         }
                     }
-
-                    // Alignment and other formatting are stored in paragraph/shape properties.
-                    // No changes are needed here because we only modify the text content.
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram preserving the original format (VSDX used here).
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,11 +1,11 @@
 {
   "category": "working-with-masters",
   "display_name": "Working With Masters",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 29,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -18,11 +18,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -47,6 +47,7 @@
       "task": "Apply a rotation transformation to all masters that have a specific tag attribute",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -63,6 +64,22 @@
       "task": "Batch process a folder of visio files to remove unused masters and reduce file size",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes",
+      "file": "clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes.cs",
+      "task": "Clone an existing master modify its text block and apply it to selected shapes",
+      "namespaces": [
+        "Aspose.Diagram",
         "System",
         "System.IO"
       ],
@@ -75,38 +92,19 @@
       ]
     },
     {
-      "slug": "clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes",
-      "file": "clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes.cs",
-      "task": "Clone an existing master modify its text block and apply it to selected shapes",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.Collections.Generic",
-        "System.IO"
-      ],
-      "key_apis": [
-        "AddShape",
-        "Diagram",
-        "Masters",
-        "Pages",
-        "Save"
-      ]
-    },
-    {
       "slug": "convert-master-shape-text-to-uppercase-while-preserving-original-formatting-and-alignment",
       "file": "convert-master-shape-text-to-uppercase-while-preserving-original-formatting-and-alignment.cs",
       "task": "Convert master shape text to uppercase while preserving original formatting and alignment",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Masters",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -116,7 +114,6 @@
       "task": "Create a master containing a data graphic and embed it into a diagram for dynamic visualization",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -139,11 +136,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
-        "Pages",
-        "Save",
-        "diagram"
+        "Master",
+        "Masters",
+        "Pages"
       ]
     },
     {
@@ -152,6 +149,7 @@
       "task": "Create a new master shape set its geometry and add it to an existing diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -187,7 +185,7 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
-        "System.Xml"
+        "System.Xml.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -218,13 +216,16 @@
       "task": "Export master shape thumbnails as png images for use in a custom shape picker ui",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Masters",
-        "diagram"
+        "Page",
+        "Pages"
       ]
     },
     {
@@ -266,10 +267,14 @@
       "task": "Implement error handling to catch exceptions when loading diagrams with corrupted master definitions",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Masters",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -280,10 +285,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Xml"
       ],
       "key_apis": [
-        "Diagram"
+        "AddMaster",
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -292,7 +302,10 @@
       "task": "Load a diagram change the master of a group shape and preserve its subshape layout",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -341,8 +354,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -355,7 +367,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -371,15 +384,17 @@
       "task": "Replace all instances of a specific master with another master while preserving connections",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Masters",
         "Pages",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -388,14 +403,15 @@
       "task": "Set a default master for newly added shapes when creating diagrams programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddMaster",
         "AddShape",
         "Diagram",
-        "Pages",
-        "Save"
+        "Masters",
+        "Pages"
       ]
     },
     {
@@ -420,6 +436,7 @@
       "task": "Synchronize master definitions across multiple visio files to ensure consistent branding organization wide",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -433,7 +450,8 @@
       "task": "Update the line color of all masters that use a dashed line style",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -448,7 +466,9 @@
       "task": "Validate that every master referenced in the diagram has a corresponding definition file",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -464,9 +484,8 @@
       "task": "Validate that master shapes comply with company style guidelines by checking color and font settings",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing.Text",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

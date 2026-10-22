@@ -1,35 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Assign a custom ID to each master (e.g., "CustomMasterID_1", "CustomMasterID_2", ...)
-            int masterIndex = 1;
-            foreach (Master master in diagram.Masters)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Use the NameU property to store a custom identifier
-                master.NameU = $"CustomMasterID_{masterIndex}";
-                masterIndex++;
+                // Starting value for custom master IDs.
+                int customId = 1000;
+
+                // Iterate through all masters in the diagram.
+                foreach (Master master in diagram.Masters)
+                {
+                    // Assign a new custom ID to the master.
+                    master.ID = customId;
+
+                    // Ensure the master is visible (optional).
+                    master.Hidden = BOOL.False;
+
+                    // Increment the custom ID for the next master.
+                    customId++;
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with updated master IDs to: {outputPath}");
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

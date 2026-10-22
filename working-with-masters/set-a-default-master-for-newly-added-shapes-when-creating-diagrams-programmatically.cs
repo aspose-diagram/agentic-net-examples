@@ -1,43 +1,63 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Path to the stencil file that contains the master shapes.
+        string stencilPath = "Basic_U.vssx";
+        if (!File.Exists(stencilPath))
         {
-            try
-            {
+            Console.Error.WriteLine($"File not found: {stencilPath}");
+            return;
+        }
 
-                // Path to a Visio stencil that contains the master we want to use.
-                // Replace with an actual .vss or .vssx file path on your system.
-                string stencilPath = @"C:\Stencils\Basic Shapes.vssx";
+        // Output Visio diagram path.
+        string outputPath = "DefaultMasterDiagram.vsdx";
 
-                // Name of the master inside the stencil that will be used as the default.
-                string defaultMasterName = "Rectangle";
+        try
+        {
+            // Create a new empty diagram.
+            Diagram diagram = new Diagram();
 
-                // Create a new empty diagram.
-                Diagram diagram = new Diagram();
+            // Import a master (e.g., "Rectangle") from the stencil into the diagram.
+            // AddMaster returns the master ID (int); retrieve the Master object via the Masters collection.
+            diagram.AddMaster(stencilPath, "Rectangle");
+            Master rectangleMaster = diagram.Masters.GetMasterByName("Rectangle");
 
-                // Import the master from the stencil into the diagram.
-                // This makes the master available for shape creation.
-                diagram.AddMaster(stencilPath, defaultMasterName);
+            // Store the master name to use as the default for subsequent shape additions.
+            string defaultMasterName = rectangleMaster.Name;
 
-                // Add a shape using the default master.
-                // Parameters: pinX, pinY (position), master name, page index (0 for the first page).
-                long shapeId = diagram.AddShape(2.0, 2.0, defaultMasterName, 0);
+            // Add several shapes using the default master.
+            // Parameters: PinX, PinY, master name, page index (0 for the first page).
+            long shapeId1 = diagram.AddShape(2.0, 2.0, defaultMasterName, 0);
+            long shapeId2 = diagram.AddShape(5.0, 2.0, defaultMasterName, 0);
+            long shapeId3 = diagram.AddShape(8.0, 2.0, defaultMasterName, 0);
 
-                // Retrieve the newly added shape to modify its properties if needed.
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                shape.Text.Value.Add(new Txt("Default Master Shape"));
-                shape.Fill.FillForegnd.Value = "#FFCC00"; // Set fill color.
+            // Retrieve each newly added shape for optional customization.
+            Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
+            Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
+            Shape shape3 = diagram.Pages[0].Shapes.GetShape(shapeId3);
 
-                // Save the diagram to a VSDX file.
-                diagram.Save("DefaultMasterDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Example: set simple text on each shape.
+            shape1.Text.Value.Clear();
+            shape1.Text.Value.Add(new Txt("Shape 1"));
+            shape2.Text.Value.Clear();
+            shape2.Text.Value.Add(new Txt("Shape 2"));
+            shape3.Text.Value.Clear();
+            shape3.Text.Value.Add(new Txt("Shape 3"));
 
-            }
-            catch (System.IO.DirectoryNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Added shapes with IDs {shapeId1}, {shapeId2}, {shapeId3} using default master '{defaultMasterName}'.");
+
+            // Save the diagram to a VSDX file.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,33 +1,47 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramFilePath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        // Load the diagram inside a using block as required.
+        try
+        {
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-
-                // Expect the diagram file path as the first argument.
-                if (args.Length == 0)
-                {
-                    Console.WriteLine("Usage: MasterValidation <diagram-file-path>");
-                    return;
-                }
-
-                string diagramPath = args[0];
-
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
                 // Collect all master names referenced by shapes in the diagram.
-                var referencedMasters = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                HashSet<string> referencedMasters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                // Iterate through each page.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Only consider shapes that have an associated master.
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // If the shape is based on a master, record its name.
                         if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
                         {
                             referencedMasters.Add(shape.Master.Name);
@@ -35,31 +49,36 @@ class Program
                     }
                 }
 
-                // Verify that each referenced master exists in the diagram's master collection.
-                int missingCount = 0;
+                // Validate that each referenced master exists in the diagram's master collection.
+                List<string> missingMasters = new List<string>();
                 foreach (string masterName in referencedMasters)
                 {
-                    // Diagram.Masters.IsExist(string) checks for the presence of a master by name.
+                    // Use the IsExist(string) method to check presence.
                     if (!diagram.Masters.IsExist(masterName))
                     {
-                        Console.WriteLine($"Missing master definition: {masterName}");
-                        missingCount++;
+                        missingMasters.Add(masterName);
                     }
                 }
 
-                if (missingCount == 0)
+                // Output the validation results.
+                if (missingMasters.Count == 0)
                 {
-                    Console.WriteLine("All masters referenced in the diagram have corresponding definitions.");
+                    Console.WriteLine("All referenced masters have corresponding definitions.");
                 }
                 else
                 {
-                    Console.WriteLine($"Total missing masters: {missingCount}");
+                    Console.Error.WriteLine("The following masters are referenced but missing definitions:");
+                    foreach (string missing in missingMasters)
+                    {
+                        Console.Error.WriteLine($"- {missing}");
+                    }
                 }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any unexpected errors during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

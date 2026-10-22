@@ -1,101 +1,116 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expected arguments:
+        // 0 - input Visio file path
+        // 1 - name of the master to clone
+        // 2 - comma‑separated list of shape IDs to which the cloned master will be applied
+        // 3 - output Visio file path
+        if (args.Length != 4)
         {
+            Console.Error.WriteLine("Usage: <program> <inputPath> <masterName> <shapeIdsCsv> <outputPath>");
+            return;
+        }
 
-            // Load the source diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+        string inputPath = args[0];
+        string masterName = args[1];
+        string shapeIdsCsv = args[2];
+        string outputPath = args[3];
 
-            // ------------------------------------------------------------
-            // 1. Clone an existing master (e.g., a master named "Rectangle")
-            // ------------------------------------------------------------
-            Master originalMaster = diagram.Masters.GetMasterByName("Rectangle");
-            if (originalMaster == null)
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape IDs
+        string[] idTokens = shapeIdsCsv.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        long[] shapeIds = new long[idTokens.Length];
+        for (int i = 0; i < idTokens.Length; i++)
+        {
+            if (!long.TryParse(idTokens[i].Trim(), out shapeIds[i]))
             {
-                Console.WriteLine("Master named 'Rectangle' was not found in the diagram.");
+                Console.Error.WriteLine($"Invalid shape ID: '{idTokens[i]}'");
                 return;
             }
-
-            // Clone and give the new master a distinct name
-            Master clonedMaster = (Master)originalMaster.Clone();
-            clonedMaster.Name = "RectangleClone";
-            diagram.Masters.Add(clonedMaster);
-
-            // ------------------------------------------------------------
-            // 2. Modify the text block of shapes inside the cloned master
-            // ------------------------------------------------------------
-            foreach (Shape masterShape in clonedMaster.Shapes)
-            {
-                // Replace any existing text with new text
-                masterShape.Text.Value.Clear();
-                masterShape.Text.Value.Add(new Txt("Cloned Master Text"));
-
-                // Example: set a background color for the text block
-                // (uses the RGB() string format as required by the API)
-                masterShape.TextBlock.TextBkgnd.Ufe.F = "RGB(255,255,0)"; // yellow background
-            }
-
-            // ------------------------------------------------------------
-            // 3. Apply the cloned master to selected shapes
-            //    (here we replace all shapes that currently use the "Rectangle" master)
-            // ------------------------------------------------------------
-            foreach (Page page in diagram.Pages)
-            {
-                // Collect IDs of shapes that need to be replaced
-                List<long> shapesToReplace = new List<long>();
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        shapesToReplace.Add(shape.ID);
-                    }
-                }
-
-                // Determine the page index for the AddShape overload
-                int pageIndex = diagram.Pages.IndexOf(page);
-
-                // Replace each identified shape
-                foreach (long oldShapeId in shapesToReplace)
-                {
-                    Shape oldShape = page.Shapes.GetShape(oldShapeId);
-
-                    // Preserve geometry of the original shape
-                    double pinX = oldShape.XForm.PinX.Value;
-                    double pinY = oldShape.XForm.PinY.Value;
-                    double width = oldShape.XForm.Width.Value;
-                    double height = oldShape.XForm.Height.Value;
-
-                    // Hide the old shape (setting Del to BOOL.True marks it as deleted)
-                    oldShape.Del = BOOL.True;
-
-                    // Add a new shape based on the cloned master at the same location/size
-                    long newShapeId = diagram.AddShape(pinX, pinY, width, height, clonedMaster.Name, pageIndex);
-                    Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                    // Optional: apply additional formatting to the newly added shape
-                    newShape.Fill.FillForegnd.Value = "#00FF00"; // green fill
-                }
-            }
-
-            // ------------------------------------------------------------
-            // 4. Save the modified diagram
-            // ------------------------------------------------------------
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        try
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Load the diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Verify that the requested master exists
+                if (!diagram.Masters.IsExist(masterName))
+                {
+                    Console.Error.WriteLine($"Master with name '{masterName}' does not exist in the diagram.");
+                    return;
+                }
+
+                // Retrieve the original master
+                Master originalMaster = diagram.Masters.GetMasterByName(masterName);
+
+                // Clone the master (explicit cast required)
+                Master clonedMaster = (Master)originalMaster.Clone();
+
+                // Modify the text block of the cloned master.
+                // A master can contain multiple shapes; we modify the first shape for simplicity.
+                if (clonedMaster.Shapes.Count > 0)
+                {
+                    Shape masterShape = clonedMaster.Shapes[0];
+                    // Clear existing text
+                    masterShape.Text.Value.Clear();
+                    // Add new text content
+                    masterShape.Text.Value.Add(new Txt("Cloned Master Text"));
+                }
+                else
+                {
+                    Console.Error.WriteLine("Cloned master contains no shapes to modify text.");
+                }
+
+                // Add the cloned master to the diagram's master collection
+                diagram.Masters.Add(clonedMaster);
+
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Apply the cloned master to each selected shape
+                foreach (long shapeId in shapeIds)
+                {
+                    // Retrieve the shape by its ID
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape == null)
+                    {
+                        Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                        continue;
+                    }
+
+                    // Assign the cloned master to the shape
+                    shape.Master = clonedMaster;
+                }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

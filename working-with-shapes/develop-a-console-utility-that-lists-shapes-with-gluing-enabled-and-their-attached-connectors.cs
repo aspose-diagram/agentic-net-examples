@@ -1,86 +1,75 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect the first argument to be the path to the Visio file.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input-visio-file>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio file (can be passed as a command‑line argument)
-                string filePath = "input.vsdx";
-                if (args.Length > 0)
+                // Iterate through each page in the diagram.
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    filePath = args[0];
-                }
+                    Console.WriteLine($"Page: {page.Name}");
 
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    Console.WriteLine($"Page: {page.NameU}");
-
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all shapes on the current page.
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Check if the shape has dynamic gluing enabled
-                        if (shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if the shape has dynamic glue enabled.
+                        if (shape.Misc != null && shape.Misc.GlueType != null &&
+                            shape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue)
                         {
-                            Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                            // Retrieve IDs of all 1‑D (connector) shapes glued to this shape.
+                            long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
 
-                            // Collect IDs of connectors attached to this shape
-                            System.Collections.Generic.List<long> attachedConnectorIds = new System.Collections.Generic.List<long>();
-
-                            foreach (Connect connect in page.Connects)
+                            // If there are any attached connectors, output the information.
+                            if (gluedConnectorIds != null && gluedConnectorIds.Length > 0)
                             {
-                                long fromId = connect.FromSheet;
-                                long toId = connect.ToSheet;
+                                string shapeName = shape.NameU ?? "(unknown)";
+                                Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shapeName}");
+                                Console.WriteLine("    Attached Connectors:");
 
-                                // If the shape is the source and the target is a connector
-                                if (fromId == shape.ID && IsConnector(page, toId))
+                                foreach (long connectorId in gluedConnectorIds)
                                 {
-                                    attachedConnectorIds.Add(toId);
+                                    // Retrieve the connector shape to obtain its name.
+                                    Aspose.Diagram.Shape connectorShape = page.Shapes.GetShape(connectorId);
+                                    string connectorName = connectorShape != null ? connectorShape.NameU ?? "(unknown)" : "(missing)";
+                                    Console.WriteLine($"      Connector ID: {connectorId}, Name: {connectorName}");
                                 }
-                                // If the shape is the target and the source is a connector
-                                else if (toId == shape.ID && IsConnector(page, fromId))
-                                {
-                                    attachedConnectorIds.Add(fromId);
-                                }
-                            }
-
-                            if (attachedConnectorIds.Count > 0)
-                            {
-                                Console.WriteLine("  Attached Connectors:");
-                                foreach (long connectorId in attachedConnectorIds)
-                                {
-                                    Shape connectorShape = page.Shapes.GetShape(connectorId);
-                                    string masterName = connectorShape.Master != null ? connectorShape.Master.Name : "N/A";
-                                    Console.WriteLine($"    Connector ID: {connectorShape.ID}, Master: {masterName}");
-                                }
-                            }
-                            else
-                            {
-                                Console.WriteLine("  No attached connectors.");
                             }
                         }
                     }
                 }
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
-    }
-
-        // Determines whether a shape is a connector (1‑D shape)
-        private static bool IsConnector(Page page, long shapeId)
+        }
+        catch (Exception ex)
         {
-            Shape shape = page.Shapes.GetShape(shapeId);
-            // The OneD property returns a native bool
-            return shape.OneD;
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

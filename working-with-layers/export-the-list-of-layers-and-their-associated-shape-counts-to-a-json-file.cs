@@ -4,106 +4,117 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace LayerExportExample
+class Program
 {
-    // DTO for JSON output
-    public class LayerInfo
+    // Helper class to store layer information
+    private class LayerInfo
     {
-        public string PageName { get; set; } = string.Empty;
-        public string LayerName { get; set; } = string.Empty;
-        public int ShapeCount { get; set; }
+        public int Index { get; set; }
+        public string Name { get; set; }
     }
 
-    public class Program
+    static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output JSON file path
+        if (args.Length < 2)
         {
-            // Validate arguments
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: LayerExportExample <inputVisioFile> <outputJsonFile>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
             // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            Diagram diagram = new Diagram(inputPath);
 
-            var layerInfos = new List<LayerInfo>();
+            // Dictionaries to hold layer counts and layer metadata
+            Dictionary<int, int> layerShapeCounts = new Dictionary<int, int>();
+            List<LayerInfo> layerInfos = new List<LayerInfo>();
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                string pageName = page.Name; // Page name
-
-                // Build a dictionary to hold shape counts per layer index for this page
-                var layerCountMap = new Dictionary<int, int>();
-
-                // Initialize counts for all layers on the page
+                // Collect layers defined on this page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    layerCountMap[layer.IX] = 0;
-                }
-
-                // Count shapes per layer
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    string memberString = shape.LayerMem.LayerMember.Value;
-                    if (string.IsNullOrEmpty(memberString))
-                        continue;
-
-                    // Layer membership can be a semicolon‑separated list of indexes
-                    string[] parts = memberString.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (string part in parts)
+                    int ix = layer.IX;
+                    if (!layerShapeCounts.ContainsKey(ix))
                     {
-                        if (int.TryParse(part, out int layerIdx) && layerCountMap.ContainsKey(layerIdx))
+                        layerShapeCounts[ix] = 0;
+                        layerInfos.Add(new LayerInfo
                         {
-                            layerCountMap[layerIdx]++;
-                        }
+                            Index = ix,
+                            Name = layer.Name.Value
+                        });
                     }
                 }
 
-                // Create LayerInfo objects for each layer
-                foreach (Layer layer in page.PageSheet.Layers)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    int count = layerCountMap.TryGetValue(layer.IX, out int c) ? c : 0;
-                    layerInfos.Add(new LayerInfo
+                    // Retrieve the layer membership string (e.g., "1,2")
+                    string member = shape.LayerMem.LayerMember.Value;
+                    if (string.IsNullOrEmpty(member))
+                        continue; // Shape does not belong to any layer
+
+                    // Split the membership string and update counts
+                    string[] parts = member.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string part in parts)
                     {
-                        PageName = pageName,
-                        LayerName = layer.Name.Value,
-                        ShapeCount = count
-                    });
+                        if (int.TryParse(part.Trim(), out int ix))
+                        {
+                            if (layerShapeCounts.ContainsKey(ix))
+                            {
+                                layerShapeCounts[ix]++;
+                            }
+                            else
+                            {
+                                // Layer index not previously recorded (possible cross-page reference)
+                                layerShapeCounts[ix] = 1;
+                                // Add placeholder name if unknown
+                                layerInfos.Add(new LayerInfo
+                                {
+                                    Index = ix,
+                                    Name = $"Layer_{ix}"
+                                });
+                            }
+                        }
+                    }
                 }
             }
 
-            // Serialize to JSON
-            string json = JsonSerializer.Serialize(layerInfos, new JsonSerializerOptions { WriteIndented = true });
+            // Prepare the result list for JSON serialization
+            var result = new List<object>();
+            foreach (LayerInfo info in layerInfos)
+            {
+                int count = layerShapeCounts.TryGetValue(info.Index, out int c) ? c : 0;
+                result.Add(new
+                {
+                    Name = info.Name,
+                    ShapeCount = count
+                });
+            }
 
-            // Write JSON to file
-            try
-            {
-                File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Layer export completed successfully. Output written to: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write JSON file: {ex.Message}");
-            }
+            // Serialize to JSON with indentation
+            string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the output file
+            File.WriteAllText(outputPath, json);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

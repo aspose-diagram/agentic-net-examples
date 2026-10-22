@@ -1,57 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input file path as the first argument
+        if (args.Length == 0)
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: OrphanedShapeRemoval <inputFilePath> <outputFilePath>");
-                return;
-            }
+            Console.Error.WriteLine("Please provide the path to the Visio file as an argument.");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
+        // Guard: ensure the file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            // Load the Visio diagram.
+        // Define output path (original name with _cleaned suffix)
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_cleaned.vsdx");
+
+        try
+        {
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages.
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Collect shapes to be removed to avoid modifying the collection while iterating.
+                // Collect shapes to delete to avoid modifying collection during iteration
                 var shapesToDelete = new System.Collections.Generic.List<Shape>();
 
-                // Examine each shape on the page.
+                // Iterate through shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the LayerMem and its LayerMember are available.
-                    if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
+                    // Retrieve the layer membership string (comma‑separated list of layer indexes)
+                    string layerMember = shape.LayerMem.LayerMember.Value;
+
+                    // If the shape is not assigned to any layer, mark it for deletion
+                    if (string.IsNullOrWhiteSpace(layerMember))
                     {
-                        // An empty LayerMember string means the shape is not assigned to any layer.
-                        string layerMembership = shape.LayerMem.LayerMember.Value;
-                        if (string.IsNullOrWhiteSpace(layerMembership))
-                        {
-                            // Mark the shape for deletion.
-                            shape.Del = BOOL.True;
-                            // Optionally keep a reference if further processing is needed.
-                            shapesToDelete.Add(shape);
-                        }
+                        shapesToDelete.Add(shape);
                     }
                 }
 
-                // Remove the marked shapes from the collection.
-                foreach (Shape s in shapesToDelete)
+                // Delete the identified orphaned shapes
+                foreach (Shape orphan in shapesToDelete)
                 {
-                    // The ShapeCollection supports removal by shape reference.
-                    page.Shapes.Remove(s);
+                    // Mark the shape as deleted
+                    orphan.Del = BOOL.True;
+                    Console.WriteLine($"Removed orphaned shape ID {orphan.ID} from page {page.ID}.");
                 }
             }
 
-            // Save the modified diagram.
+            // Save the cleaned diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Orphaned shapes removed and diagram saved to '{outputPath}'.");
+            Console.WriteLine($"Cleaned diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

@@ -1,63 +1,102 @@
-using System.IO;
 using System;
-using System.Linq;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Find the 'Infrastructure' layer on the current page
-                Layer infrastructureLayer = null;
-                foreach (Layer layer in page.PageSheet.Layers)
+                // Convert 2 points to inches (Visio stores line weight in inches).
+                double lineWeightInInches = 2.0 / 72.0;
+
+                // Iterate through each page because layers are stored per page.
+                foreach (Page page in diagram.Pages)
                 {
-                    if (layer.Name.Value == "Infrastructure")
+                    // Find the layer named "Infrastructure" in the current page.
+                    Layer targetLayer = null;
+                    foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        infrastructureLayer = layer;
-                        break;
+                        if (layer.Name.Value == "Infrastructure")
+                        {
+                            targetLayer = layer;
+                            break;
+                        }
+                    }
+
+                    // If the layer does not exist on this page, skip to the next page.
+                    if (targetLayer == null)
+                        continue;
+
+                    // The zero‑based index of the target layer.
+                    int layerIndex = targetLayer.IX;
+
+                    // Iterate over all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has layer membership information.
+                        if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
+                            continue;
+
+                        string layerMember = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue;
+
+                        // Check if the shape belongs to the target layer.
+                        // The membership string is a semicolon‑separated list of indexes.
+                        string[] members = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        bool belongsToTarget = false;
+                        foreach (string m in members)
+                        {
+                            if (m == layerIndex.ToString())
+                            {
+                                belongsToTarget = true;
+                                break;
+                            }
+                        }
+
+                        if (belongsToTarget)
+                        {
+                            // Set the line weight to 2 points (converted to inches).
+                            shape.Line.LineWeight.Value = lineWeightInInches;
+                        }
                     }
                 }
 
-                // If the layer does not exist on this page, skip to the next page
-                if (infrastructureLayer == null)
-                    continue;
-
-                // Get the index of the layer as a string (used in the layer membership cell)
-                string layerIndexStr = infrastructureLayer.IX.ToString();
-
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Check if the shape belongs to the 'Infrastructure' layer
-                    // The LayerMember cell contains a semicolon‑separated list of layer indexes
-                    string[] memberIndexes = shape.LayerMem.LayerMember.Value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (memberIndexes.Contains(layerIndexStr))
-                    {
-                        // Set line weight to 2 points (2/72 inches)
-                        shape.Line.LineWeight.Value = 2.0 / 72.0;
-                    }
-                }
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

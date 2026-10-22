@@ -1,122 +1,125 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Define input file path
-        string inputPath = "input.vsdx";
-        // Verify the input file exists
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
-        Diagram diagram;
+        string inputPath = args[0];
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "MergedLayers.vsdx");
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
             // Load the Visio diagram
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            Diagram diagram = new Diagram(inputPath);
 
-        // Assume we work with the first page
-        Page page = diagram.Pages[0];
-
-        // Find the indexes of the "Draft" and "Review" layers
-        int draftIndex = -1;
-        int reviewIndex = -1;
-        foreach (Layer layer in page.PageSheet.Layers)
-        {
-            if (layer.Name.Value == "Draft")
-                draftIndex = layer.IX;
-            else if (layer.Name.Value == "Review")
-                reviewIndex = layer.IX;
-        }
-
-        if (draftIndex == -1 && reviewIndex == -1)
-        {
-            Console.WriteLine("Neither 'Draft' nor 'Review' layers were found.");
-            return;
-        }
-
-        // Create a new merged layer
-        Layer mergedLayer = new Layer();
-        mergedLayer.Name.Value = "DraftReview";
-        // Set visibility via the .Value property (Visible is read‑only)
-        mergedLayer.Visible.Value = BOOL.True;
-        mergedLayer.IsColorChecked = BOOL.True;
-        page.PageSheet.Layers.Add(mergedLayer);
-        int mergedIndex = mergedLayer.IX;
-
-        // Update each shape's layer membership
-        foreach (Shape shape in page.Shapes)
-        {
-            // Get current layer membership string (e.g., "0;2")
-            string member = shape.LayerMem.LayerMember.Value;
-            if (string.IsNullOrEmpty(member))
-                continue;
-
-            // Split into individual indexes
-            string[] parts = member.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            List<string> newParts = new List<string>();
-            bool needsUpdate = false;
-
-            foreach (string part in parts)
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                if (int.TryParse(part, out int idx))
+                // Locate the "Draft" and "Review" layers on the current page
+                Layer draftLayer = null;
+                Layer reviewLayer = null;
+
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    if (idx == draftIndex || idx == reviewIndex)
+                    if (layer.Name.Value == "Draft")
+                        draftLayer = layer;
+                    else if (layer.Name.Value == "Review")
+                        reviewLayer = layer;
+                }
+
+                // If neither layer exists, continue to next page
+                if (draftLayer == null && reviewLayer == null)
+                    continue;
+
+                // Determine the target layer (existing or new)
+                Layer targetLayer = null;
+
+                if (draftLayer != null && reviewLayer != null)
+                {
+                    // Both layers exist – create a new merged layer
+                    targetLayer = new Layer();
+                    targetLayer.Name.Value = "DraftReview";
+                    targetLayer.Visible.Value = BOOL.True;
+                    page.PageSheet.Layers.Add(targetLayer);
+                }
+                else if (draftLayer != null)
+                {
+                    // Only Draft exists – rename it to the merged name
+                    draftLayer.Name.Value = "DraftReview";
+                    targetLayer = draftLayer;
+                }
+                else // only Review exists
+                {
+                    reviewLayer.Name.Value = "DraftReview";
+                    targetLayer = reviewLayer;
+                }
+
+                // Cache the index string of the target layer for assignment
+                string targetLayerIndex = targetLayer.IX.ToString();
+
+                // Helper function to check if a shape belongs to a given layer index
+                bool ShapeBelongsToLayer(Shape shape, int layerIx)
+                {
+                    string memberValue = shape.LayerMem.LayerMember.Value;
+                    if (string.IsNullOrEmpty(memberValue))
+                        return false;
+
+                    string[] parts = memberValue.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string part in parts)
                     {
-                        // Replace Draft/Review index with merged layer index
-                        if (!newParts.Contains(mergedIndex.ToString()))
-                            newParts.Add(mergedIndex.ToString());
-                        needsUpdate = true;
+                        if (int.TryParse(part.Trim(), out int ix) && ix == layerIx)
+                            return true;
                     }
-                    else
+                    return false;
+                }
+
+                // Preserve shape order by iterating through the Shapes collection sequentially
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Shape shape = page.Shapes[i];
+
+                    bool belongsToDraft = draftLayer != null && ShapeBelongsToLayer(shape, draftLayer.IX);
+                    bool belongsToReview = reviewLayer != null && ShapeBelongsToLayer(shape, reviewLayer.IX);
+
+                    if (belongsToDraft || belongsToReview)
                     {
-                        // Preserve other layer indexes
-                        if (!newParts.Contains(part))
-                            newParts.Add(part);
+                        // Assign the shape to the merged layer (replace existing layer membership)
+                        shape.LayerMem.LayerMember.Value = targetLayerIndex;
                     }
+                }
+
+                // Remove the original layers if they were both present and a new layer was created
+                if (draftLayer != null && reviewLayer != null && targetLayer != null && targetLayer.Name.Value == "DraftReview")
+                {
+                    // Removing layers may shift indices; perform removal after shape reassignment
+                    page.PageSheet.Layers.Remove(draftLayer);
+                    page.PageSheet.Layers.Remove(reviewLayer);
                 }
             }
 
-            if (needsUpdate)
-            {
-                // Reassign the updated layer membership string
-                shape.LayerMem.LayerMember.Value = string.Join(";", newParts);
-            }
-        }
-
-        // Optionally hide the original layers
-        foreach (Layer layer in page.PageSheet.Layers)
-        {
-            if (layer.Name.Value == "Draft" || layer.Name.Value == "Review")
-            {
-                // Hide layer via the .Value property
-                layer.Visible.Value = BOOL.False;
-            }
-        }
-
-        try
-        {
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Layers merged and diagram saved as 'output.vsdx'.");
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

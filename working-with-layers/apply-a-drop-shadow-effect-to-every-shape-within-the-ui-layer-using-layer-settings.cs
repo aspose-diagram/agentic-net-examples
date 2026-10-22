@@ -1,79 +1,99 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Name of the target layer
-                string targetLayerName = "UI";
-
-                // Iterate through all pages in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Find the layer with the specified name and get its index
-                    int uiLayerIndex = -1;
+                    // Find the layer named "UI" on the current page
+                    Layer uiLayer = null;
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        if (layer.Name.Value == targetLayerName)
+                        if (layer.Name != null && layer.Name.Value == "UI")
                         {
-                            uiLayerIndex = layer.IX;
+                            uiLayer = layer;
                             break;
                         }
                     }
 
-                    // If the layer was not found on this page, skip to the next page
-                    if (uiLayerIndex == -1)
+                    // If the UI layer does not exist on this page, skip processing
+                    if (uiLayer == null)
                         continue;
 
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
+                    string uiLayerIndexString = uiLayer.IX.ToString();
+
+                    // Iterate over all shapes on the page
+                    for (int i = 0; i < page.Shapes.Count; i++)
                     {
-                        // Retrieve the layer membership string (e.g., "0;2;5")
-                        string memberString = shape.LayerMem.LayerMember.Value;
-                        if (string.IsNullOrEmpty(memberString))
+                        Shape shape = page.Shapes[i];
+
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
                             continue;
 
-                        // Check if the shape belongs to the target layer
-                        bool belongsToTargetLayer = false;
-                        string[] members = memberString.Split(';');
-                        foreach (string member in members)
+                        // Ensure the shape has layer membership information
+                        if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
+                            continue;
+
+                        string layerMember = shape.LayerMem.LayerMember.Value ?? string.Empty;
+
+                        // Check if the shape belongs to the UI layer (comma‑separated list of indices)
+                        string[] memberIndices = layerMember.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        bool belongsToUi = false;
+                        foreach (string idx in memberIndices)
                         {
-                            if (member == uiLayerIndex.ToString())
+                            if (idx.Trim() == uiLayerIndexString)
                             {
-                                belongsToTargetLayer = true;
+                                belongsToUi = true;
                                 break;
                             }
                         }
 
-                        if (!belongsToTargetLayer)
+                        if (!belongsToUi)
                             continue;
 
-                        // Apply a simple drop shadow to the shape
-                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;   // Enable simple shadow
-                        shape.Fill.ShdwForegnd.Value = "#000000";                    // Shadow color (black)
-                        shape.Fill.ShdwForegndTrans.Value = 0.3;                     // 30% transparency
-                        shape.Fill.ShapeShdwOffsetX.Value = 0.1;                     // Horizontal offset
-                        shape.Fill.ShapeShdwOffsetY.Value = 0.1;                     // Vertical offset
+                        // Apply drop shadow effect to the shape
+                        shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;      // Simple drop shadow
+                        shape.Fill.ShdwForegnd.Value = "#000000";                       // Shadow color: black
+                        shape.Fill.ShdwForegndTrans.Value = 0.3;                        // 30% transparency
                     }
                 }
 
                 // Save the modified diagram
-                string outputPath = "output.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

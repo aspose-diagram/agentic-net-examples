@@ -1,55 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Iterate through all pages to locate the 'Confidential' layer.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages to locate the "Confidential" layer
-                foreach (Page page in diagram.Pages)
+                // Layers are stored inside the page's PageSheet.
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    foreach (Layer layer in page.PageSheet.Layers)
+                    // Compare layer name using the .Value property.
+                    if (layer.Name.Value == "Confidential")
                     {
-                        // Compare layer name (Str2Value) with the target name
-                        if (layer.Name.Value == "Confidential")
-                        {
-                            // Set the layer's print visibility to false
-                            layer.Print.Value = BOOL.False;
-                        }
+                        // Set the layer's print visibility to false.
+                        layer.Print.Value = BOOL.False;
                     }
                 }
-
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                // Optional: exclude hidden pages from the PDF
-                pdfOptions.ExportHiddenPage = false;
-
-                // Save the diagram as a PDF
-                diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine("PDF generated successfully with 'Confidential' layer hidden from printing.");
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format.
 
+            // Save the diagram as a print‑ready PDF.
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"PDF successfully saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

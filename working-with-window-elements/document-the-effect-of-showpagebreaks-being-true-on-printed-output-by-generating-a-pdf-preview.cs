@@ -1,50 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output PDF preview path
+        string outputPath = "output_showpagebreaks_true.pdf";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the generated PDF preview
-            string outputPath = "preview.pdf";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one window to set the ShowPageBreaks flag
-            if (diagram.Windows.Count == 0)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Window window = new Window();
-                window.WindowType = WindowTypeValue.Drawing;
-                window.WindowState = WindowStateValue.Maximized;
-                window.WindowWidth = 1100;
-                window.WindowHeight = 700;
-                diagram.Windows.Add(window);
+                // Ensure there is at least one window (Visio always has a default window)
+                if (diagram.Windows.Count > 0)
+                {
+                    // Enable page breaks visibility in the window
+                    diagram.Windows[0].ShowPageBreaks = BOOL.True;
+                }
+                else
+                {
+                    Console.Error.WriteLine("No windows found in the diagram.");
+                    return;
+                }
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Apply text compression to reduce file size (optional)
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Save the diagram as a PDF preview
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"PDF preview saved to: {outputPath}");
             }
-
-            // Enable page break visibility in the window
-            diagram.Windows[0].ShowPageBreaks = BOOL.True;
-
-            // Configure PDF save options (optional: set default font)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as a PDF preview
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine("PDF preview generated with ShowPageBreaks = TRUE.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

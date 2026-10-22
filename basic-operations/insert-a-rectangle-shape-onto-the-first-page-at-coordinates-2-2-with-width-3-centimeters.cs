@@ -1,43 +1,58 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define the output Visio file path.
+        string outputPath = "output.vsdx";
+
+        try
         {
-            try
+            // Create a new empty diagram. This automatically contains a default page.
+            Diagram diagram = new Diagram();
+
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-
-                // Create a new blank diagram
-                Diagram diagram = new Diagram();
-
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Coordinates (PinX, PinY) in inches
-                double pinX = 2.0;
-                double pinY = 2.0;
-
-                // Width of 3 centimeters converted to inches (1 cm = 0.393701 inches)
-                double widthInches = 3.0 * 0.393701;
-
-                // Add a rectangle shape using the built‑in "Rectangle" master.
-                // The fourth parameter (isCalculate) must be a boolean.
-                long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
-
-                // Retrieve the shape object to modify its dimensions
-                Shape rectangle = page.Shapes.GetShape(shapeId);
-
-                // Set the width to 3 cm (in inches). Height can remain default.
-                rectangle.XForm.Width.Value = widthInches;
-
-                // Optional: Save the diagram to a VSDX file to verify the result
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine("The diagram does not contain any pages.");
+                return;
             }
-            catch (Aspose.Diagram.DiagramException ex)
+
+            // Get the first page (index 0).
+            Page firstPage = diagram.Pages[0];
+
+            // Convert centimeters to inches (Aspose.Diagram uses inches for geometry).
+            double cmToInch = 0.393701;
+            double pinX = 2.0 * cmToInch;   // X coordinate (2 cm)
+            double pinY = 2.0 * cmToInch;   // Y coordinate (2 cm)
+            double widthInches = 3.0 * cmToInch; // Width (3 cm)
+
+            // Add a rectangle shape to the first page.
+            // The AddShape method returns the shape ID (long).
+            long shapeId = firstPage.AddShape(pinX, pinY, "Rectangle", false);
+
+            // Retrieve the newly added shape using its ID.
+            Shape rectangle = firstPage.Shapes.GetShape(shapeId);
+            if (rectangle == null)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                Console.Error.WriteLine("Failed to retrieve the newly added rectangle shape.");
+                return;
             }
+
+            // Set the width of the rectangle. Height is left as default.
+            rectangle.XForm.Width.Value = widthInches;
+
+            // Save the diagram to a VSDX file.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

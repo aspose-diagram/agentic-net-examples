@@ -1,52 +1,84 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Target shape name (NameU) to which the field will be added
+            string targetShapeName = "TargetShape";
 
-            // Locate the shape by its universal name (NameU)
-            Shape targetShape = null;
+            // Flag to indicate whether the shape was found
+            bool shapeFound = false;
+
+            // Iterate through all pages and shapes to locate the shape by its NameU
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.NameU == "TargetShapeName")
+                    // Compare the shape's NameU with the target name (case-sensitive)
+                    if (shape.NameU == targetShapeName)
                     {
-                        targetShape = shape;
+                        shapeFound = true;
+
+                        // Create a new field
+                        Field field = new Field();
+
+                        // Set the field's display value (static text)
+                        field.Value.Val = "Inserted Field Text";
+
+                        // Optionally, set the field type to Undefined (default)
+                        // field.Type.Value = (int)TypeFieldValue.Undefined; // Uncomment if needed
+
+                        // Add the field to the shape's Fields collection
+                        shape.Fields.Add(field);
+
+                        Console.WriteLine($"Field inserted into shape '{targetShapeName}' on page {page.Name}.");
+                        // Break out of loops after insertion
                         break;
                     }
                 }
-                if (targetShape != null)
+
+                if (shapeFound)
                     break;
             }
 
-            // If the shape is not found, abort with an error
-            if (targetShape == null)
-                throw new Exception("Shape with the specified name was not found.");
-
-            // Create a new field and set its properties
-            Field field = new Field();
-            field.Type.Value = TypeFieldValue.Undefined; // field type (can be changed as needed)
-            field.Value.Val = "Sample Field Value";      // field value
-
-            // Add the field to the shape's field collection
-            targetShape.Fields.Add(field);
+            if (!shapeFound)
+            {
+                Console.Error.WriteLine($"Shape with NameU '{targetShapeName}' not found in the diagram.");
+                return;
+            }
 
             // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

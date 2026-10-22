@@ -1,16 +1,22 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for SaveFileFormat enum (if needed)
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
 
-        // Verify the file exists before proceeding
+        string diagramPath = args[0];
+
+        // Guard against missing file
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
@@ -19,40 +25,56 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.WriteLine($"--- Page ID: {page.ID}, Name: {page.NameU} ---");
-
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True) continue;
+                    Page page = diagram.Pages[pageIndex];
+                    Console.WriteLine($"--- Page {pageIndex + 1} ({page.Name}) ---");
 
-                    // Access line pattern (dash style) and line weight (thickness)
-                    var linePattern = shape.Line.LinePattern.Value; // Enum LinePatternValue
-                    var lineWeight = shape.Line.LineWeight.Value;   // Double (in inches)
+                    // Iterate through all shapes on the current page
+                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
+                    {
+                        Shape shape = page.Shapes[shapeIdx];
 
-                    // Determine if the line pattern is inherited from the master/style
-                    bool isPatternInherited = linePattern == shape.InheritLine.LinePattern.Value;
-                    // Determine if the line weight is inherited
-                    bool isWeightInherited = Math.Abs(lineWeight - shape.InheritLine.LineWeight.Value) < 1e-6;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Output shape identification and line details
-                    Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.NameU}");
-                    Console.WriteLine($"  Line Pattern: {linePattern} (Inherited: {isPatternInherited})");
-                    Console.WriteLine($"  Line Weight: {lineWeight:F4} inches (Inherited: {isWeightInherited})");
+                        // Output basic shape identification
+                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+
+                        // Access current line properties
+                        var currentLine = shape.Line;
+
+                        // Access inherited line properties
+                        var inheritLine = shape.InheritLine;
+
+                        // Determine if the shape is using inherited line values
+                        bool usesInheritedLine =
+                            currentLine.LineColor.Value == inheritLine.LineColor.Value &&
+                            currentLine.LineWeight.Value == inheritLine.LineWeight.Value &&
+                            currentLine.LinePattern.Value == inheritLine.LinePattern.Value;
+
+                        Console.WriteLine($"  Uses Inherited Line: {usesInheritedLine}");
+
+                        // Output current line dash style (LinePattern) and thickness (LineWeight)
+                        Console.WriteLine($"  Current Line Pattern: {currentLine.LinePattern.Value}");
+                        Console.WriteLine($"  Current Line Weight (inches): {currentLine.LineWeight.Value}");
+
+                        // Output inherited line dash style and thickness for reference
+                        Console.WriteLine($"  Inherited Line Pattern: {inheritLine.LinePattern.Value}");
+                        Console.WriteLine($"  Inherited Line Weight (inches): {inheritLine.LineWeight.Value}");
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
             // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

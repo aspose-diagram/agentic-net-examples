@@ -7,59 +7,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Retrieve Visio file bytes (replace with actual data source).
-        byte[] visioData = GetVisioFileBytes();
-
-        // Guard against empty or null byte array to prevent stream read errors.
-        if (visioData == null || visioData.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Visio data is empty or null.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        // Load diagram from memory stream inside a try/catch to handle Aspose exceptions.
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
-            using (MemoryStream stream = new MemoryStream(visioData))
+            // Load the Visio file into a memory stream (no further disk I/O).
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
+            using (MemoryStream memoryStream = new MemoryStream(fileBytes))
             {
-                // Construct Diagram from the memory stream.
-                Diagram diagram = new Diagram(stream);
+                // Create a Diagram instance from the memory stream.
+                Diagram diagram = new Diagram(memoryStream);
 
-                // Access the read‑only VBA project.
-                VbaProject vba = diagram.VbaProject;
-                Console.WriteLine($"VBA Project Signed: {vba.IsSigned}");
+                // Access the VBA project (read‑only).
+                VbaProject vbaProject = diagram.VbaProject;
 
-                // List existing VBA modules.
-                for (int i = 0; i < vba.Modules.Count; i++)
+                if (vbaProject == null)
                 {
-                    VbaModule module = vba.Modules[i];
-                    Console.WriteLine($"Module {i}: Name = {module.Name}");
-                    Console.WriteLine("Code:");
-                    Console.WriteLine(module.Codes);
+                    Console.WriteLine("The diagram does not contain a VBA project.");
                 }
+                else
+                {
+                    // Output basic VBA project information.
+                    Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+                    Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
 
-                // Add a new procedural VBA module.
-                int newIndex = vba.Modules.Add(VbaModuleType.Procedural, "NewModule");
-                VbaModule newModule = vba.Modules[newIndex];
-                newModule.Codes = "Sub HelloWorld()\n    MsgBox \"Hello from Aspose.Diagram!\"\nEnd Sub";
-
-                Console.WriteLine($"Added module '{newModule.Name}' with code:");
-                Console.WriteLine(newModule.Codes);
+                    // List all VBA modules and their source code.
+                    foreach (VbaModule module in vbaProject.Modules)
+                    {
+                        Console.WriteLine($"--- Module: {module.Name} ---");
+                        Console.WriteLine(module.Codes);
+                        Console.WriteLine();
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during loading or VBA manipulation.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Report any errors that occur during loading or processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    // Placeholder method to obtain Visio file bytes.
-    // Replace this implementation with actual byte retrieval logic (e.g., reading from a file, network, etc.).
-    static byte[] GetVisioFileBytes()
-    {
-        // For demonstration, return an empty array.
-        // In a real scenario, provide valid Visio file content.
-        return new byte[0];
     }
 }

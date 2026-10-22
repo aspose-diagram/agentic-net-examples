@@ -3,79 +3,121 @@ using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
 
-class TextBlockConfig
-{
-    public double LeftMargin { get; set; }
-    public double RightMargin { get; set; }
-    public double TopMargin { get; set; }
-    public double BottomMargin { get; set; }
-    public string TextDirection { get; set; }
-    public string VerticalAlign { get; set; }
-    public string TextBackground { get; set; }
-    public double TextBackgroundTransparency { get; set; }
-    public double DefaultTabStop { get; set; }
-}
-
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments: input diagram path, shape index, output JSON path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeIndex> <outputJsonPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIndexArg = args[1];
+        string outputJsonPath = args[2];
+
+        // Guard: check input diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: parse shape index
+        if (!int.TryParse(shapeIndexArg, out int shapeIndex) || shapeIndex < 0)
+        {
+            Console.Error.WriteLine($"Invalid shape index: {shapeIndexArg}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram
-            string diagramPath = "input.vsdx";
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Ensure there is at least one page and one shape
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.WriteLine("No pages found in the diagram.");
-                return;
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Use the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Guard: check shape index within range
+                if (shapeIndex >= page.Shapes.Count)
+                {
+                    Console.Error.WriteLine($"Shape index {shapeIndex} is out of range. Page contains {page.Shapes.Count} shapes.");
+                    return;
+                }
+
+                // Retrieve the target shape
+                Shape shape = page.Shapes[shapeIndex];
+
+                // Extract TextBlock properties safely
+                var tb = shape.TextBlock;
+                var config = new TextBlockConfig
+                {
+                    // Margins (in inches)
+                    LeftMargin = tb.LeftMargin?.Value ?? 0.0,
+                    RightMargin = tb.RightMargin?.Value ?? 0.0,
+                    TopMargin = tb.TopMargin?.Value ?? 0.0,
+                    BottomMargin = tb.BottomMargin?.Value ?? 0.0,
+
+                    // Background transparency (percentage)
+                    TextBkgndTrans = tb.TextBkgndTrans?.Value ?? 0.0,
+
+                    // Background color formula (e.g., "RGB(95,108,53)")
+                    TextBkgnd = tb.TextBkgnd?.Ufe?.F,
+
+                    // Default tab stop (in inches)
+                    DefaultTabStop = tb.DefaultTabStop?.Value ?? 0.0,
+
+                    // Vertical alignment enum name
+                    // Fixed: VerticalAlign is an enum, not nullable; use ToString() directly
+                    VerticalAlign = tb.VerticalAlign.ToString(),
+
+                    // Text direction enum name
+                    // Fixed: TextDirection is an enum, not nullable; use ToString() directly
+                    TextDirection = tb.TextDirection.ToString()
+                };
+
+                // Serialize configuration to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(config, jsonOptions);
+
+                // Ensure output directory exists
+                string outputDir = Path.GetDirectoryName(outputJsonPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Write JSON to file
+                File.WriteAllText(outputJsonPath, json);
+                Console.WriteLine($"TextBlock configuration saved to: {outputJsonPath}");
             }
-
-            var page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
-            {
-                Console.WriteLine("No shapes found on the first page.");
-                return;
-            }
-
-            // Retrieve a shape (example: the first shape with ID 1)
-            Shape shape = page.Shapes.GetShape(1);
-            if (shape == null)
-            {
-                Console.WriteLine("Shape with ID 1 not found.");
-                return;
-            }
-
-            // Extract TextBlock properties
-            var config = new TextBlockConfig
-            {
-                LeftMargin = shape.TextBlock.LeftMargin.Value,
-                RightMargin = shape.TextBlock.RightMargin.Value,
-                TopMargin = shape.TextBlock.TopMargin.Value,
-                BottomMargin = shape.TextBlock.BottomMargin.Value,
-                TextDirection = shape.TextBlock.TextDirection.Value.ToString(),
-                VerticalAlign = shape.TextBlock.VerticalAlign.Value.ToString(),
-                TextBackground = shape.TextBlock.TextBkgnd.Ufe.F,
-                TextBackgroundTransparency = shape.TextBlock.TextBkgndTrans.Value,
-                DefaultTabStop = shape.TextBlock.DefaultTabStop.Value
-            };
-
-            // Serialize configuration to JSON
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(config, jsonOptions);
-
-            // Save JSON to a file
-            string outputPath = "textblock_config.json";
-            File.WriteAllText(outputPath, json);
-            Console.WriteLine($"TextBlock configuration saved to {outputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // DTO representing the serializable TextBlock configuration
+    private class TextBlockConfig
+    {
+        public double LeftMargin { get; set; }
+        public double RightMargin { get; set; }
+        public double TopMargin { get; set; }
+        public double BottomMargin { get; set; }
+        public double TextBkgndTrans { get; set; }
+        public string? TextBkgnd { get; set; }
+        public double DefaultTabStop { get; set; }
+        public string? VerticalAlign { get; set; }
+        public string? TextDirection { get; set; }
     }
 }

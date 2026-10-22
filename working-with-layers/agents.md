@@ -4,10 +4,10 @@ display_name: Working With Layers
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.9.0
+version: 26.10.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-09-24
+generated: 2026-10-22
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -63,12 +63,10 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 23 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 13 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 11 | List, Dictionary, HashSet |
-| `System.Linq` | 3 | LINQ queries on collections |
+| `System.IO` | 30 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 7 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
 | `System.Text.Json` | 1 | JSON serialization |
-| `Aspose.Diagram.Printing` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -106,14 +104,14 @@ class Program
 | [change-the-fill-color-of-all-shapes-in-the-marketing-layer-to-light-gray.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/change-the-fill-color-of-all-shapes-in-the-marketing-layer-to-light-gray.cs) | `Diagram`, `Pages`, `Save` | Change the fill color of all shapes in the marketing layer to light gray |
 | [clone-the-draft-layer-rename-the-clone-to-final-and-preserve-its-shape-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/clone-the-draft-layer-rename-the-clone-to-final-and-preserve-its-shape-properties.cs) | `Diagram`, `Pages`, `Save` | Clone the draft layer rename the clone to final and preserve its shape properties |
 | [copy-all-shapes-from-the-design-layer-into-a-newly-created-layer-called-prototype.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/copy-all-shapes-from-the-design-layer-into-a-newly-created-layer-called-prototype.cs) | `Diagram`, `Pages`, `Save` | Copy all shapes from the design layer into a newly created layer called prototype |
-| [create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs) | `Diagram`, `diagram`, `page` | Create a new diagram that contains only the shapes from the export layer of an existing file |
+| [create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/create-a-new-diagram-that-contains-only-the-shapes-from-the-export-layer-of-an-existing-file.cs) | `Diagram`, `Page`, `Window` | Create a new diagram that contains only the shapes from the export layer of an existing file |
 | [create-a-snapshot-image-of-the-diagram-with-only-the-presentation-layer-visible.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/create-a-snapshot-image-of-the-diagram-with-only-the-presentation-layer-visible.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Create a snapshot image of the diagram with only the presentation layer visible |
 | [delete-the-layer-obsolete-and-permanently-remove-its-associated-shapes-from-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/delete-the-layer-obsolete-and-permanently-remove-its-associated-shapes-from-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Delete the layer obsolete and permanently remove its associated shapes from the diagram |
 | [detect-and-remove-any-orphaned-shapes-that-are-not-assigned-to-any-layer.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/detect-and-remove-any-orphaned-shapes-that-are-not-assigned-to-any-layer.cs) | `Diagram`, `Pages`, `Save` | Detect and remove any orphaned shapes that are not assigned to any layer |
 | [export-a-diagram-showing-only-the-visible-layers-to-a-vdx-file-for-legacy-compatibility.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/export-a-diagram-showing-only-the-visible-layers-to-a-vdx-file-for-legacy-compatibility.cs) | `Diagram`, `Pages`, `Save` | Export a diagram showing only the visible layers to a vdx file for legacy compatibility |
 | [export-a-diagram-with-only-the-technical-layer-visible-to-an-svg-file-for-web-display.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/export-a-diagram-with-only-the-technical-layer-visible-to-an-svg-file-for-web-display.cs) | `Diagram`, `Pages`, `SVGSaveOptions` | Export a diagram with only the technical layer visible to an svg file for web display |
 | [export-the-list-of-layers-and-their-associated-shape-counts-to-a-json-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/export-the-list-of-layers-and-their-associated-shape-counts-to-a-json-file.cs) | `Diagram`, `Pages`, `Shapes` | Export the list of layers and their associated shape counts to a json file |
-| [filter-shapes-by-layer-and-export-only-those-from-the-analysis-layer-to-a-csv-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/filter-shapes-by-layer-and-export-only-those-from-the-analysis-layer-to-a-csv-report.cs) | `Diagram`, `Pages`, `Shapes` | Filter shapes by layer and export only those from the analysis layer to a csv report |
+| [filter-shapes-by-layer-and-export-only-those-from-the-analysis-layer-to-a-csv-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/filter-shapes-by-layer-and-export-only-those-from-the-analysis-layer-to-a-csv-report.cs) | `Diagram`, `Pages`, `Save` | Filter shapes by layer and export only those from the analysis layer to a csv report |
 | [generate-a-summary-report-listing-each-layer-s-name-visibility-and-total-shape-count.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/generate-a-summary-report-listing-each-layer-s-name-visibility-and-total-shape-count.cs) | `Diagram`, `Pages`, `Shapes` | Generate a summary report listing each layer s name visibility and total shape count |
 | [iterate-over-layers-and-export-each-visible-layer-as-an-individual-pdf-document.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/iterate-over-layers-and-export-each-visible-layer-as-an-individual-pdf-document.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Iterate over layers and export each visible layer as an individual pdf document |
 | [iterate-through-each-layer-and-count-the-number-of-connector-shapes-it-contains.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-layers/iterate-through-each-layer-and-count-the-number-of-connector-shapes-it-contains.cs) | `Diagram`, `Pages`, `Shapes` | Iterate through each layer and count the number of connector shapes it contains |
@@ -216,11 +214,13 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 - `Diagram`
 - `ImageSaveOptions`
+- `Page`
 - `Pages`
 - `PdfSaveOptions`
 - `SVGSaveOptions`
 - `Save`
 - `Shapes`
+- `Window`
 - `diagram`
 - `page`
 
@@ -238,7 +238,7 @@ Frequently asked questions about **Working With Layers** in **Aspose.Diagram for
 
 **Q: How do I get started with Working With Layers in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -270,4 +270,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-24 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-22 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

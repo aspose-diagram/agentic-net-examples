@@ -1,59 +1,101 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect four arguments: input diagram path, target shape name, source shape name, output diagram path
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <targetShapeName> <sourceShapeName> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string targetShapeName = args[1];
+        string sourceShapeName = args[2];
+        string outputPath = args[3];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Define the name of the shape whose field we want to update
-            string targetShapeNameU = "TargetShape";
-
-            // Define the formula that references another shape's data (e.g., shape with ID 2, property "MyProp")
-            string referenceFormula = "Sheet.2!Prop.MyProp";
-
-            // Iterate through all pages to find the target shape
-            foreach (Page page in diagram.Pages)
+            // Assume operations on the first page
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Match shape by its universal name
-                    if (shape.NameU == targetShapeNameU)
-                    {
-                        // If the shape already has at least one field, update the first field's formula
-                        if (shape.Fields.Count > 0)
-                        {
-                            Field existingField = shape.Fields[0];
-                            existingField.Value.Ufev.F = referenceFormula;
-                        }
-                        else
-                        {
-                            // Otherwise, create a new field and set its formula
-                            Field newField = new Field();
-                            newField.Value.Ufev.F = referenceFormula;
-                            shape.Fields.Add(newField);
-                        }
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-                        // Exit after updating the target shape
-                        break;
-                    }
+            Page page = diagram.Pages[0];
+
+            // Locate the target shape (the shape whose field formula will be updated)
+            Shape targetShape = null;
+            for (int i = 0; i < page.Shapes.Count; i++)
+            {
+                Shape shp = page.Shapes[i];
+                if (shp.NameU != null && shp.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetShape = shp;
+                    break;
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Target shape \"{targetShapeName}\" not found on the first page.");
+                return;
+            }
 
+            // Locate the source shape (the shape whose data will be referenced)
+            Shape sourceShape = null;
+            for (int i = 0; i < page.Shapes.Count; i++)
+            {
+                Shape shp = page.Shapes[i];
+                if (shp.NameU != null && shp.NameU.Equals(sourceShapeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceShape = shp;
+                    break;
+                }
+            }
+
+            if (sourceShape == null)
+            {
+                Console.Error.WriteLine($"Source shape \"{sourceShapeName}\" not found on the first page.");
+                return;
+            }
+
+            // Ensure the target shape has at least one field to modify
+            if (targetShape.Fields == null || targetShape.Fields.Count == 0)
+            {
+                Console.Error.WriteLine($"Target shape \"{targetShapeName}\" does not contain any fields to update.");
+                return;
+            }
+
+            // Update the first field's formula to reference the source shape's Data1 property
+            // Visio formula syntax: Sheet.<ShapeID>!Data1
+            Field field = targetShape.Fields[0];
+            field.Value.Ufev.F = $"Sheet.{sourceShape.ID}!Data1";
+            // Set unit to undefined (optional, but aligns with typical formula setup)
+            field.Value.Ufev.Unit = MeasureConst.Undefined;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

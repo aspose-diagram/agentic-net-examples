@@ -1,77 +1,122 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <inputDiagramPath> <shapeId> <fieldFormula>");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
+        // Parse the shape identifier.
+        if (!long.TryParse(args[1], out long shapeId))
+        {
+            Console.Error.WriteLine("Error: Invalid shape ID.");
+            return;
+        }
+
+        string fieldFormula = args[2];
+
+        try
+        {
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Assume we are working with the first page
-                Page page = diagram.Pages[0];
-
-                // Retrieve a shape by its ID (replace with a valid ID)
-                long shapeId = 1; // example ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
+                // Locate the target shape by its ID across all pages.
+                Shape targetShape = null;
+                foreach (Page page in diagram.Pages)
                 {
-                    throw new Exception($"Shape with ID {shapeId} not found.");
+                    try
+                    {
+                        Shape s = page.Shapes.GetShape(shapeId);
+                        if (s != null)
+                        {
+                            targetShape = s;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        // GetShape throws if the ID is not on this page – ignore and continue.
+                    }
                 }
 
-                // Check if a field of a specific type already exists on the shape
-                // Here we check for any existing field; adjust the condition as needed
-                bool fieldExists = ShapeHasField(shape);
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found.");
+                    return;
+                }
+
+                // -----------------------------------------------------------------
+                // Check whether a field with the same formula already exists.
+                // -----------------------------------------------------------------
+                bool fieldExists = false;
+                foreach (Field existingField in targetShape.Fields)
+                {
+                    // Guard against null members.
+                    if (existingField != null &&
+                        existingField.Value != null &&
+                        existingField.Value.Ufev != null &&
+                        existingField.Value.Ufev.F == fieldFormula)
+                    {
+                        fieldExists = true;
+                        break;
+                    }
+                }
 
                 if (fieldExists)
                 {
-                    Console.WriteLine("A field already exists on the shape. No duplicate will be added.");
+                    Console.WriteLine("A field with the specified formula already exists on the shape. No duplicate was added.");
                 }
                 else
                 {
-                    // Create a new field and add it to the shape
+                    // -------------------------------------------------------------
+                    // Create a new field and add it to the shape.
+                    // -------------------------------------------------------------
                     Field newField = new Field();
 
-                    // Set the field type to Undefined (safe default)
+                    // Set the field type to Undefined (generic custom field).
                     newField.Type.Value = TypeFieldValue.Undefined;
 
-                    // Assign a value to the field
-                    newField.Value.Val = "Sample Value";
+                    // Assign the formula to the field. The unit is left undefined.
+                    newField.Value.Ufev.F = fieldFormula;
+                    // If needed, you can also set the unit explicitly:
+                    // newField.Value.Ufev.Unit = MeasureConst.Undefined;
 
-                    // Add the field to the shape's Fields collection
-                    shape.Fields.Add(newField);
+                    // Add the newly created field to the shape's field collection.
+                    targetShape.Fields.Add(newField);
+                    Console.WriteLine("Field added to the shape.");
 
-                    Console.WriteLine("New field added to the shape.");
+                    // -------------------------------------------------------------
+                    // Save the updated diagram to a new file.
+                    // -------------------------------------------------------------
+                    string outputPath = Path.Combine(
+                        Path.GetDirectoryName(inputPath) ?? string.Empty,
+                        Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
+
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to: {outputPath}");
                 }
-
-                // Optionally save the diagram to verify changes
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Helper method to determine if the shape already contains any field
-        static bool ShapeHasField(Shape shape)
+        }
+        catch (Exception ex)
         {
-            // The Fields collection does not support LINQ; iterate manually
-            foreach (Field field in shape.Fields)
-            {
-                // If at least one field is present, return true
-                if (field != null)
-                {
-                    return true;
-                }
-            }
-            return false;
+            // Report any unexpected errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

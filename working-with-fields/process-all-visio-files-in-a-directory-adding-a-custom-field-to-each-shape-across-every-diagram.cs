@@ -3,87 +3,138 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the directory to process
+        string directoryPath;
+        if (args.Length > 0)
         {
-            // Determine the directory to process
-            string folderPath;
-            if (args.Length > 0 && Directory.Exists(args[0]))
+            directoryPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the directory containing Visio files: ");
+            directoryPath = Console.ReadLine();
+        }
+
+        // Guard: directory must exist
+        if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
+        {
+            Console.Error.WriteLine("The specified directory does not exist.");
+            return;
+        }
+
+        // Define supported Visio extensions
+        string[] supportedExtensions = new string[]
+        {
+            ".vsdx", ".vsd", ".vsx", ".vtx",
+            ".vsdm", ".vssx", ".vss", ".vstx",
+            ".vst", ".vssm", ".vstm"
+        };
+
+        // Get all files with supported extensions
+        string[] allFiles = Directory.GetFiles(directoryPath);
+        foreach (string filePath in allFiles)
+        {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (Array.IndexOf(supportedExtensions, ext) < 0)
             {
-                folderPath = args[0];
+                // Skip non-Visio files
+                continue;
             }
-            else
+
+            // Guard: file must exist (redundant but per rules)
+            if (!File.Exists(filePath))
             {
-                Console.Write("Enter the full path of the folder containing Visio files: ");
-                folderPath = Console.ReadLine()?.Trim() ?? string.Empty;
-                if (!Directory.Exists(folderPath))
-                {
-                    Console.WriteLine("The specified folder does not exist.");
-                    return;
-                }
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
             }
 
-            // Get all Visio files (common extensions)
-            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
+            try
             {
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
-                {
-                    continue; // Skip non‑Visio files
-                }
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(filePath);
 
-                try
+                // Iterate through each page
+                foreach (Page page in diagram.Pages)
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through each page
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each shape on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each shape on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Ensure the shape is not deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Check if the custom property already exists
-                            bool exists = false;
-                            foreach (Prop existingProp in shape.Props)
-                            {
-                                if (existingProp.Name == "MyCustomField")
-                                {
-                                    exists = true;
-                                    break;
-                                }
-                            }
+                        // Create a new custom property (Prop)
+                        Prop customProp = new Prop();
+                        customProp.Name = "MyCustomField";
+                        customProp.Label.Value = "My Custom Field";
+                        customProp.Value.Val = "DefaultValue";
+                        customProp.Type.Value = TypePropValue.String;
 
-                            if (!exists)
-                            {
-                                // Create a new custom property (Prop)
-                                Prop customProp = new Prop();
-                                customProp.Name = "MyCustomField";
-                                customProp.Label.Value = "MyCustomField";
-                                customProp.Value.Val = "CustomValue";
-                                customProp.Type.Value = TypePropValue.String;
-
-                                // Add the property to the shape
-                                shape.Props.Add(customProp);
-                            }
-                        }
+                        // Add the custom property to the shape
+                        shape.Props.Add(customProp);
                     }
-
-                    // Save the modified diagram, overwriting the original file
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
                 }
-                catch (Exception ex)
+
+                // Determine the appropriate SaveFileFormat based on extension
+                SaveFileFormat format;
+                switch (ext)
                 {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
+                    case ".vsdx":
+                        format = SaveFileFormat.Vsdx;
+                        break;
+                    case ".vsd":
+                        format = SaveFileFormat.Vsd;
+                        break;
+                    case ".vsx":
+                        format = SaveFileFormat.Vsx;
+                        break;
+                    case ".vtx":
+                        format = SaveFileFormat.Vtx;
+                        break;
+                    case ".vsdm":
+                        format = SaveFileFormat.Vsdm;
+                        break;
+                    case ".vssx":
+                        format = SaveFileFormat.Vssx;
+                        break;
+                    case ".vss":
+                        format = SaveFileFormat.Vss;
+                        break;
+                    case ".vstx":
+                        format = SaveFileFormat.Vstx;
+                        break;
+                    case ".vst":
+                        format = SaveFileFormat.Vst;
+                        break;
+                    case ".vssm":
+                        format = SaveFileFormat.Vssm;
+                        break;
+                    case ".vstm":
+                        format = SaveFileFormat.Vstm;
+                        break;
+                    default:
+                        // Unsupported extension; skip saving
+                        Console.Error.WriteLine($"Unsupported file format for: {filePath}");
+                        diagram.Dispose();
+                        continue;
                 }
-            }
 
-            Console.WriteLine("Batch processing completed.");
+                // Save the modified diagram (overwrites original file)
+                diagram.Save(filePath, format);
+
+                // Release resources
+                diagram.Dispose();
+
+                Console.WriteLine($"Processed and saved: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of this file
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}

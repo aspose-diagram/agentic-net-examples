@@ -1,59 +1,105 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard against missing diagram file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        // Parse the shape ID.
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram
-            string diagramPath = "sample.vsdx"; // replace with your file path
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Identify the page and shape you want to inspect
-            int pageIndex = 0;          // first page (zero‑based)
-            long shapeId = 1;           // replace with the actual shape ID
-
-            // Retrieve the page and shape objects
-            Page page = diagram.Pages[pageIndex];
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // -----------------------------------------------------------------
-            // 1. List custom shape properties (Props) – name and data type
-            // -----------------------------------------------------------------
-            Console.WriteLine("Custom Properties (Props):");
-            foreach (Prop prop in shape.Props)
+            // Locate the shape with the specified ID across all pages.
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                // Property name
-                string propName = prop.Name;
-
-                // Data type stored in the Type cell (enum TypePropValue)
-                string dataType = prop.Type.Value.ToString();
-
-                Console.WriteLine($"Name: {propName}, Type: {dataType}");
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID == targetShapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null)
+                    break;
             }
 
-            // -----------------------------------------------------------------
-            // 2. List text insertion fields (Fields) – index and data type
-            // -----------------------------------------------------------------
-            Console.WriteLine("\nText Fields (Fields):");
-            int fieldIndex = 0;
-            foreach (Field field in shape.Fields)
+            if (targetShape == null)
             {
-                // Fields have no explicit name; use the index as identifier
-                string fieldType = field.Type.Value.ToString();
-
-                Console.WriteLine($"Index: {fieldIndex}, Type: {fieldType}");
-                fieldIndex++;
+                Console.Error.WriteLine($"Error: No shape with ID {targetShapeId} was found in the diagram.");
+                return;
             }
 
+            // Ensure the shape has user-defined cells (fields) to inspect.
+            if (targetShape.Users == null || targetShape.Users.Count == 0)
+            {
+                Console.WriteLine($"Shape ID {targetShapeId} contains no user-defined fields.");
+                return;
+            }
+
+            Console.WriteLine($"User-defined fields for shape ID {targetShapeId}:");
+
+            // Iterate over each user-defined cell and infer its data type.
+            foreach (User userField in targetShape.Users)
+            {
+                // Retrieve the field name (NameU) and its raw string value.
+                string fieldName = userField.NameU ?? string.Empty;
+                string rawValue = userField.Value?.Val ?? string.Empty;
+
+                // Infer the data type based on the value content.
+                string inferredType;
+                if (int.TryParse(rawValue, out _))
+                {
+                    inferredType = "int";
+                }
+                else if (double.TryParse(rawValue, out _))
+                {
+                    inferredType = "double";
+                }
+                else if (DateTime.TryParse(rawValue, out _))
+                {
+                    inferredType = "DateTime";
+                }
+                else
+                {
+                    inferredType = "string";
+                }
+
+                // Output the field information.
+                Console.WriteLine($"  Name: {fieldName}, Type: {inferredType}, Value: {rawValue}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

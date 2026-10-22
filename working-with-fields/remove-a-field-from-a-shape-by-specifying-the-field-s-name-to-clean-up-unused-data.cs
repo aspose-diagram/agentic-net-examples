@@ -1,76 +1,101 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expecting four arguments: inputVisioPath, shapeId, fieldValueToRemove, outputVisioPath
+        if (args.Length < 4)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <fieldValueToRemove> <outputVisioPath>");
+            return;
+        }
 
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path where the modified Visio file will be saved
-                string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+        string targetFieldValue = args[2];
+        string outputPath = args[3];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Example: remove a custom property named "UnusedField" from a shape with a specific ID
-                long targetShapeId = 1; // replace with the actual shape ID
-                string propertyNameToRemove = "UnusedField";
-
-                // Retrieve the page that contains the shape (assumes first page)
-                Page page = diagram.Pages[0];
-
-                // Get the shape by its ID
-                Shape shape = page.Shapes.GetShape(targetShapeId);
-                if (shape != null)
-                {
-                    RemovePropByName(shape, propertyNameToRemove);
-                }
-                else
-                {
-                    Console.WriteLine($"Shape with ID {targetShapeId} not found.");
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved successfully.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Removes a custom property (Prop) from the specified shape by its name.
-        /// </summary>
-        /// <param name="shape">The shape from which to remove the property.</param>
-        /// <param name="propName">The name of the property to remove.</param>
-        static void RemovePropByName(Shape shape, string propName)
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
         {
-            if (shape.Props == null)
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: validate shape ID is an integer
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                // Shape IDs are stored as long; cast to int for comparison
+                foreach (Shape shape in page.Shapes)
+                {
+                    if ((int)shape.ID == shapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null)
+                    break;
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
                 return;
+            }
 
-            // Collect matching properties
-            var toRemove = new System.Collections.Generic.List<Prop>();
-            foreach (Prop prop in shape.Props)
+            // Ensure the shape is not logically deleted
+            if (targetShape.Del == BOOL.True)
             {
-                if (prop.Name == propName)
+                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
+                return;
+            }
+
+            // Iterate over the shape's fields to find the one with the matching value
+            bool fieldRemoved = false;
+            for (int i = 0; i < targetShape.Fields.Count; i++)
+            {
+                Field field = targetShape.Fields[i];
+                // Guard against null Value
+                if (field.Value != null && field.Value.Val == targetFieldValue)
                 {
-                    toRemove.Add(prop);
+                    // Remove the matching field
+                    targetShape.Fields.Remove(field);
+                    fieldRemoved = true;
+                    break; // Assuming only one field with this value needs removal
                 }
             }
 
-            // Remove the collected properties
-            foreach (Prop prop in toRemove)
+            if (!fieldRemoved)
             {
-                shape.Props.Remove(prop);
-                Console.WriteLine($"Removed property '{propName}' from shape ID {shape.ID}.");
+                Console.Error.WriteLine($"No field with value \"{targetFieldValue}\" found in shape ID {shapeId}.");
+                // Continue to save the diagram unchanged if desired, or exit
             }
+
+            // Save the modified diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

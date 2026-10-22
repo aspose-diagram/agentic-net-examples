@@ -1,60 +1,104 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Mail;
-using System.Net.Mime;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class DiagramToEmail
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio diagram path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output HTML file path
+        string htmlPath = "output.html";
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Convert Visio diagram to HTML
         try
         {
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+            // Set up HTML save options (default PNG images)
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Convert the diagram to HTML and save to a temporary file
-            string htmlPath = Path.Combine(Path.GetTempPath(), "diagram.html");
-            diagram.Save(htmlPath, SaveFileFormat.Html);
+            // Save the diagram as HTML
+            diagram.Save(htmlPath, htmlOptions);
 
-            // Read the generated HTML content
-            string htmlBody = File.ReadAllText(htmlPath);
-
-            // Create the email message
-            MailMessage mail = new MailMessage();
-            mail.From = new MailAddress("sender@example.com");
-            mail.To.Add("recipient@example.com");
-            mail.Subject = "Diagram as HTML";
-
-            // Set the email body as HTML using an alternate view (multipart/alternative)
-            AlternateView htmlView = AlternateView.CreateAlternateViewFromString(htmlBody, new ContentType(MediaTypeNames.Text.Html));
-            mail.AlternateViews.Add(htmlView);
-            mail.IsBodyHtml = true; // Ensure the client treats the body as HTML
-
-            // (Optional) Add a plain‑text alternative view
-            string plainText = "Please view this email in an HTML‑compatible client to see the diagram.";
-            AlternateView plainView = AlternateView.CreateAlternateViewFromString(plainText, new ContentType(MediaTypeNames.Text.Plain));
-            mail.AlternateViews.Add(plainView);
-
-            // Send the email (SMTP settings must be configured appropriately)
-            using (SmtpClient smtp = new SmtpClient("smtp.example.com", 587))
-            {
-                smtp.Credentials = new System.Net.NetworkCredential("username", "password");
-                smtp.EnableSsl = true;
-                smtp.Send(mail);
-            }
-
-            // Clean up the temporary HTML file
-            if (File.Exists(htmlPath))
-            {
-                File.Delete(htmlPath);
-            }
-
+            // Release resources
+            diagram.Dispose();
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error converting diagram to HTML: {ex.Message}");
+            return;
+        }
+
+        // Guard: ensure the HTML file was created
+        if (!File.Exists(htmlPath))
+        {
+            Console.Error.WriteLine($"HTML file was not created: {htmlPath}");
+            return;
+        }
+
+        // Read the generated HTML content
+        string htmlContent;
+        try
+        {
+            htmlContent = File.ReadAllText(htmlPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading HTML file: {ex.Message}");
+            return;
+        }
+
+        // Email parameters (subsequent arguments or defaults)
+        string smtpHost = args.Length > 1 ? args[1] : "smtp.example.com";
+        string fromAddress = args.Length > 2 ? args[2] : "sender@example.com";
+        string toAddress = args.Length > 3 ? args[3] : "recipient@example.com";
+
+        // Create the email message with HTML body
+        MailMessage mail = new MailMessage();
+        try
+        {
+            mail.From = new MailAddress(fromAddress);
+            mail.To.Add(toAddress);
+            mail.Subject = "Visio Diagram as HTML";
+            mail.Body = htmlContent;
+            mail.IsBodyHtml = true;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error constructing email message: {ex.Message}");
+            return;
+        }
+
+        // Send the email using SMTP
+        try
+        {
+            using (SmtpClient client = new SmtpClient(smtpHost))
+            {
+                // Optional: configure port and credentials if needed
+                // client.Port = 587;
+                // client.Credentials = new NetworkCredential("username", "password");
+                // client.EnableSsl = true;
+
+                client.Send(mail);
+                Console.WriteLine("Email sent successfully.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error sending email: {ex.Message}");
         }
     }
 }

@@ -1,57 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the source diagram
+            // Load the source diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Select the page to copy (e.g., the first page)
-                Page sourcePage = diagram.Pages[0];
-
-                // Determine a new unique page ID
-                int maxId = 0;
-                foreach (Page p in diagram.Pages)
+                // Choose the source page to copy. Here we use the first page (index 0).
+                if (diagram.Pages.Count == 0)
                 {
-                    if (p.ID > maxId)
-                        maxId = p.ID;
+                    Console.Error.WriteLine("The diagram contains no pages to copy.");
+                    return;
                 }
 
-                // Create a new blank page
-                Page newPage = new Page();
-                newPage.ID = maxId + 1;
-                newPage.Name = sourcePage.Name + "_Copy";
+                // Retrieve the source page.
+                Page sourcePage = diagram.Pages[0];
 
-                // Clone the source page's PageSheet (including background settings)
+                // Create a new page instance.
+                Page newPage = new Page();
+
+                // Copy the entire source page (including its PageSheet) into the new page.
                 newPage.Copy(sourcePage);
 
-                // Ensure background flags are explicitly preserved
-                newPage.Background = sourcePage.Background;
-                newPage.BackPage = sourcePage.BackPage;
+                // Preserve background settings explicitly.
+                newPage.Background = sourcePage.Background; // BOOL enum
+                newPage.BackPage = sourcePage.BackPage;     // preserve linked background page
 
-                // Add the new page to the diagram
+                // Add the new page to the diagram's page collection.
                 diagram.Pages.Add(newPage);
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Page copied successfully.");
-
+            Console.WriteLine($"Page copied successfully. Output saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

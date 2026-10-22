@@ -1,70 +1,73 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputXmlFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create XML document root
+            XDocument xmlDoc = new XDocument(new XElement("Masters"));
+
+            // Iterate over all masters in the diagram
+            foreach (Master master in diagram.Masters)
             {
+                // Build XML element for each master
+                XElement masterElement = new XElement("Master",
+                    new XAttribute("ID", master.ID),
+                    new XAttribute("Name", master.Name ?? string.Empty),
+                    new XAttribute("NameU", master.NameU ?? string.Empty),
+                    new XAttribute("UniqueID", master.UniqueID.ToString())
+                );
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
-
-                // Path for the exported XML file
-                string outputPath = "masters.xml";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Create an XmlWriter with indentation for readability
-                XmlWriterSettings settings = new XmlWriterSettings
+                // Optionally include count of shapes defined in the master
+                if (master.Shapes != null)
                 {
-                    Indent = true,
-                    IndentChars = "  ",
-                    NewLineOnAttributes = false
-                };
-
-                using (XmlWriter writer = XmlWriter.Create(outputPath, settings))
-                {
-                    writer.WriteStartDocument();
-                    writer.WriteStartElement("Masters");
-
-                    // Iterate through all masters in the diagram
-                    foreach (Master master in diagram.Masters)
-                    {
-                        writer.WriteStartElement("Master");
-
-                        // Basic master metadata
-                        writer.WriteElementString("ID", master.ID.ToString());
-                        writer.WriteElementString("Name", master.Name ?? string.Empty);
-                        writer.WriteElementString("UniqueID", master.UniqueID.ToString());
-                        writer.WriteElementString("Hidden", master.Hidden == BOOL.True ? "True" : "False");
-
-                        // Optional additional properties (if needed)
-                        writer.WriteElementString("BaseID", master.BaseID.ToString());
-                        writer.WriteElementString("IconSize", master.IconSize.ToString());
-
-                        // Export shapes contained in the master (only count here)
-                        writer.WriteStartElement("Shapes");
-                        writer.WriteAttributeString("Count", master.Shapes.Count.ToString());
-                        writer.WriteEndElement(); // Shapes
-
-                        writer.WriteEndElement(); // Master
-                    }
-
-                    writer.WriteEndElement(); // Masters
-                    writer.WriteEndDocument();
+                    masterElement.Add(new XAttribute("ShapeCount", master.Shapes.Count));
                 }
 
-                Console.WriteLine($"Master definitions exported to '{Path.GetFullPath(outputPath)}'.");
+                // Append master element to root
+                xmlDoc.Root.Add(masterElement);
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
+            // Ensure output directory exists
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Directory.CreateDirectory(outputDir);
             }
+
+            // Save XML to file
+            xmlDoc.Save(outputPath);
+            Console.WriteLine($"Master definitions exported successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,35 +1,61 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Retrieve document title and version.
+                string title = diagram.DocumentProps.Title ?? string.Empty;
+                string version = diagram.Version ?? string.Empty;
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                // Build the footer watermark text.
+                string footerText = $"{title} v{version}";
 
-            // Retrieve built‑in document properties
-            string title = diagram.DocumentProps.Title ?? "Untitled";
-            string version = diagram.Version ?? "1.0";
+                // Set the footer text (centered).
+                diagram.HeaderFooter.FooterCenter = footerText;
 
-            // Compose the footer watermark text
-            string footerText = $"{title} v{version}";
+                // Configure footer font appearance.
+                var footerFont = diagram.HeaderFooter.HeaderFooterFont;
+                footerFont.FaceName = "Arial";          // Font face.
+                footerFont.Height = 12;                 // Font size (points).
+                footerFont.Weight = 700;                // Bold weight.
+                footerFont.Underline = BOOL.False;      // No underline.
 
-            // Apply the watermark to the center of the footer
-            diagram.HeaderFooter.FooterCenter = footerText;
+                // Optionally adjust the footer margin (in inches from page edge).
+                diagram.HeaderFooter.FooterMargin.Value = 0.5;
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -3,50 +3,61 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
-            // Specify the directory containing VDX files
-            string directoryPath = @"C:\VisioFiles";
+            Console.Error.WriteLine("Please provide the directory path containing VDX files as the first argument.");
+            return;
+        }
 
-            // Verify the directory exists
-            if (!Directory.Exists(directoryPath))
+        string directoryPath = args[0];
+
+        // Guard: ensure the directory exists.
+        if (!Directory.Exists(directoryPath))
+        {
+            Console.Error.WriteLine($"Directory does not exist: {directoryPath}");
+            return;
+        }
+
+        // Get all .vdx files in the specified directory.
+        string[] vdxFiles = Directory.GetFiles(directoryPath, "*.vdx");
+
+        // Process each VDX file.
+        foreach (string filePath in vdxFiles)
+        {
+            // Guard: ensure the file still exists before processing.
+            if (!File.Exists(filePath))
             {
-                Console.WriteLine($"Directory not found: {directoryPath}");
-                return;
+                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                continue;
             }
 
-            // Get all .vdx files in the directory
-            string[] vdxFiles = Directory.GetFiles(directoryPath, "*.vdx", SearchOption.TopDirectoryOnly);
-
-            if (vdxFiles.Length == 0)
+            try
             {
-                Console.WriteLine("No VDX files found in the specified directory.");
-                return;
-            }
+                // Load the Visio diagram from the VDX file.
+                Diagram diagram = new Diagram(filePath);
 
-            // Process each VDX file
-            foreach (string filePath in vdxFiles)
+                // Prepare the current date string (e.g., 2026-10-21).
+                string currentDate = DateTime.Now.ToString("d");
+
+                // Update header fields with the current date.
+                // HeaderLeft, HeaderCenter, and HeaderRight are string properties.
+                diagram.HeaderFooter.HeaderLeft = currentDate;
+                diagram.HeaderFooter.HeaderCenter = currentDate;
+                diagram.HeaderFooter.HeaderRight = currentDate;
+
+                // Save the modified diagram back to the same file.
+                diagram.Save(filePath, SaveFileFormat.Vdx);
+                Console.WriteLine($"Successfully updated header for: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
             {
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Update the header center with the current date (e.g., 2026-09-23)
-                    diagram.HeaderFooter.HeaderCenter = DateTime.Now.ToString("yyyy-MM-dd");
-
-                    // Save the changes back to the same file
-                    diagram.Save(filePath, SaveFileFormat.Vdx);
-
-                    Console.WriteLine($"Updated header for: {Path.GetFileName(filePath)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
+                // Log any errors that occur during loading, modification, or saving.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
-
-            Console.WriteLine("Header update completed.");
         }
     }
+}

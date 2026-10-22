@@ -1,49 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output Visio file path
+        string outputPath = "output_page3_rotated.vsdx";
+
         try
         {
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Verify that the diagram has at least three pages
-            if (diagram.Pages.Count < 3)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("The diagram does not contain a third page.");
-                diagram.Dispose();
-                return;
+                // Ensure the diagram has at least three pages
+                if (diagram.Pages.Count < 3)
+                {
+                    Console.Error.WriteLine("The diagram does not contain a third page.");
+                    return;
+                }
+
+                // Page indices are zero‑based; page three is index 2
+                Page pageThree = diagram.Pages[2];
+
+                // Angle in radians for 90 degrees
+                double angleRad = (Math.PI / 180) * 90.0;
+
+                // Iterate over all shapes on page three
+                foreach (Shape shape in pageThree.Shapes)
+                {
+                    // Ensure the shape has a TextXForm object before setting the angle
+                    if (shape.TextXForm != null && shape.TextXForm.TxtAngle != null)
+                    {
+                        shape.TextXForm.TxtAngle.Value = angleRad;
+                    }
+                }
+
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Access page three (zero‑based index 2)
-            Page page = diagram.Pages[2];
-
-            // 90 degrees expressed in radians
-            double angleRadians = Math.PI / 2.0;
-
-            // Apply the rotation to every shape on the page
-            foreach (Aspose.Diagram.Shape shape in page.Shapes)
-            {
-                shape.TextXForm.TxtAngle.Value = angleRadians;
-            }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine("Text rotation set to 90° for all shapes on page three and saved to output.vsdx.");
-
+            Console.WriteLine($"Text rotation applied and diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

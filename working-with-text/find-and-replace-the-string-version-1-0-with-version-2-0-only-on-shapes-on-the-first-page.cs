@@ -1,52 +1,69 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-                // Input and output file paths
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Work only on the first page (index 0).
+            Page firstPage = diagram.Pages[0];
 
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
+            const string oldText = "Version 1.0";
+            const string newText = "Version 2.0";
 
-                // Define the text to find and its replacement
-                const string oldText = "Version 1.0";
-                const string newText = "Version 2.0";
-
-                // Get the first page (index 0)
-                Page firstPage = diagram.Pages[0];
-
-                // Iterate over all shapes on the first page
-                foreach (Shape shape in firstPage.Shapes)
+            // Iterate through all shapes on the first page.
+            foreach (Shape shape in firstPage.Shapes)
+            {
+                // Iterate through each text segment within the shape.
+                foreach (FormatTxt fmt in shape.Text.Value)
                 {
-                    // Ensure the shape has text
-                    if (shape.Text == null || shape.Text.Value == null)
-                        continue;
-
-                    // Iterate through each text run (Txt) within the shape's text collection
-                    foreach (var fmt in shape.Text.Value)
+                    // Cast to Txt to access the Text property.
+                    if (fmt is Txt txt && txt.Text != null && txt.Text.Contains(oldText))
                     {
-                        if (fmt is Txt txt && txt.Text != null && txt.Text.Contains(oldText))
-                        {
-                            // Replace the target substring
-                            txt.Text = txt.Text.Replace(oldText, newText);
-                        }
+                        // Replace the target substring.
+                        txt.Text = txt.Text.Replace(oldText, newText);
                     }
                 }
-
-                // Save the modified diagram (preserving the original format)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

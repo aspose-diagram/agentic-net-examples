@@ -1,94 +1,140 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
-class DiagramSummarizer
+class Program
 {
-    // List of common English stopwords
-    private static readonly HashSet<string> StopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "a","an","the","and","or","but","if","while","of","at","by","for","with","about","against",
-        "between","into","through","during","before","after","above","below","to","from","up","down",
-        "in","out","on","off","over","under","again","further","then","once","here","there","when",
-        "where","why","how","all","any","both","each","few","more","most","other","some","such",
-        "no","nor","not","only","own","same","so","than","too","very","can","will","just","don",
-        "should","now"
-    };
-
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio diagram file (VSDX, VSD, etc.)
-            string diagramPath = "inputDiagram.vsdx";
-
-            // Load the diagram using Aspose.Diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Extract all plain text from shapes across all pages
-            List<string> allTexts = new List<string>();
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Collect all plain text from every shape in the diagram.
+                StringBuilder allTextBuilder = new StringBuilder();
+
+                foreach (Page page in diagram.Pages)
                 {
-                    // Some shapes may not contain text; guard against nulls
-                    if (shape.Text != null && shape.Text.Value != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        string text = shape.Text.Value.ToString();
-                        if (!string.IsNullOrWhiteSpace(text))
-                        {
-                            allTexts.Add(text);
-                        }
+                        // Retrieve the concatenated plain text of the shape.
+                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
+
+                        // Skip empty or whitespace‑only text.
+                        if (string.IsNullOrWhiteSpace(shapeText))
+                            continue;
+
+                        // Remove any HTML tags that might be present.
+                        string cleanedText = Regex.Replace(shapeText, "<.*?>", string.Empty);
+
+                        // Append a space to separate texts from different shapes.
+                        allTextBuilder.Append(cleanedText).Append(' ');
                     }
                 }
-            }
 
-            // Combine extracted texts into a single block
-            string combinedText = string.Join(" ", allTexts);
+                string allText = allTextBuilder.ToString();
 
-            // Split the combined text into sentences (basic split on punctuation)
-            string[] sentences = combinedText
-                .Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => s.Trim())
-                .Where(s => s.Length > 0)
-                .ToArray();
-
-            // Process each sentence: remove stopwords and rebuild the sentence
-            List<string> filteredSentences = new List<string>();
-            foreach (string sentence in sentences)
-            {
-                string[] words = sentence.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                var filteredWords = words
-                    .Where(w => !StopWords.Contains(w.Trim(new[] { ',', ';', ':' })))
-                    .ToArray();
-
-                if (filteredWords.Length > 0)
+                if (string.IsNullOrWhiteSpace(allText))
                 {
-                    // Capitalize first word and add a period at the end
-                    string rebuilt = char.ToUpper(filteredWords[0][0]) + filteredWords[0].Substring(1);
-                    if (filteredWords.Length > 1)
-                    {
-                        rebuilt += " " + string.Join(" ", filteredWords.Skip(1));
-                    }
-                    rebuilt += ".";
-                    filteredSentences.Add(rebuilt);
+                    Console.WriteLine("No textual content found in the diagram.");
+                    return;
                 }
+
+                // ---------- Stop‑word filtering ----------
+                // Simple stop‑word list; can be extended as needed.
+                HashSet<string> stopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "a","an","the","and","or","but","if","while","of","at","by","for","with",
+                    "about","against","between","into","through","during","before","after",
+                    "above","below","to","from","up","down","in","out","on","off","over",
+                    "under","again","further","then","once","here","there","when","where",
+                    "why","how","all","any","both","each","few","more","most","other",
+                    "some","such","no","nor","not","only","own","same","so","than","too",
+                    "very","can","will","just","don","should","now"
+                };
+
+                // Build word frequency dictionary from filtered words.
+                Dictionary<string, int> wordFreq = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (Match match in Regex.Matches(allText, @"\b\w+\b"))
+                {
+                    string word = match.Value.ToLowerInvariant();
+                    if (stopWords.Contains(word))
+                        continue;
+
+                    if (wordFreq.ContainsKey(word))
+                        wordFreq[word]++;
+                    else
+                        wordFreq[word] = 1;
+                }
+
+                // ---------- Sentence scoring ----------
+                // Split the text into sentences.
+                string[] sentences = Regex.Split(allText, @"(?<=[\.!\?])\s+");
+
+                // Score each sentence based on word frequencies.
+                List<(string Sentence, double Score)> scoredSentences = new List<(string, double)>();
+                foreach (string sentence in sentences)
+                {
+                    if (string.IsNullOrWhiteSpace(sentence))
+                        continue;
+
+                    double score = 0;
+                    foreach (Match match in Regex.Matches(sentence, @"\b\w+\b"))
+                    {
+                        string word = match.Value.ToLowerInvariant();
+                        if (stopWords.Contains(word))
+                            continue;
+
+                        if (wordFreq.TryGetValue(word, out int freq))
+                            score += freq;
+                    }
+
+                    scoredSentences.Add((sentence.Trim(), score));
+                }
+
+                // Sort sentences by descending score.
+                scoredSentences.Sort((a, b) => b.Score.CompareTo(a.Score));
+
+                // Select top 3 sentences (or fewer if not enough).
+                int summarySentenceCount = Math.Min(3, scoredSentences.Count);
+                List<string> summarySentences = new List<string>();
+                for (int i = 0; i < summarySentenceCount; i++)
+                {
+                    summarySentences.Add(scoredSentences[i].Sentence);
+                }
+
+                // Combine selected sentences into a concise summary paragraph.
+                string summary = string.Join(" ", summarySentences);
+
+                // Output the summary.
+                Console.WriteLine("=== Summary ===");
+                Console.WriteLine(summary);
             }
-
-            // Generate a concise summary: take the first two filtered sentences (or fewer if not available)
-            string summary = string.Join(" ", filteredSentences.Take(2));
-
-            // Output the summary
-            Console.WriteLine("Summary:");
-            Console.WriteLine(summary);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

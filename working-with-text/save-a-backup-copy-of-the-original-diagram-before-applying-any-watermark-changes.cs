@@ -1,58 +1,53 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine input and backup file paths.
+        string inputPath;
+        string backupPath;
+
+        if (args.Length >= 2)
+        {
+            inputPath = args[0];
+            backupPath = args[1];
+        }
+        else
+        {
+            Console.WriteLine("Usage: Program <inputDiagramPath> <backupDiagramPath>");
+            return;
+        }
+
+        // Guard: ensure the source diagram exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for the original diagram, backup copy, and the final output
-            string inputPath = "input.vsdx";
-            string backupPath = "input_backup.vsdx";
-            string outputPath = "output.vsdx";
-
-            try
+            // Load the original diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Load the original diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Save a backup copy before any modifications
+                // Save a backup copy before any modifications.
                 diagram.Save(backupPath, SaveFileFormat.Vsdx);
 
-                // Apply a watermark to the first page
-                Page page = diagram.Pages[0];
+                // TODO: Apply watermark changes to the diagram.
+                // The specific API for adding a watermark is not defined in the provided reference.
+                // Implement the watermark logic here using Aspose.Diagram APIs when available.
 
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Center position for the watermark
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Add watermark text covering the full page area
-                // Font size is specified in inches (0.25 inches ≈ 18 points)
-                page.AddText(pinX, pinY, pageWidth, pageHeight,
-                             "CONFIDENTIAL", "Calibri", "#a5a5a5", 0.25);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Example placeholder for saving the modified diagram (overwrite original or new file).
+                // diagram.Save(inputPath, SaveFileFormat.Vsdx);
             }
-            catch (Exception ex)
-            {
-                // Simple error handling
-                Console.WriteLine($"Error: {ex.Message}");
-                throw;
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

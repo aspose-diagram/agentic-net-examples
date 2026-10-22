@@ -1,62 +1,80 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            // Folder containing .vsdx files – change as needed or pass as first argument
-            string folderPath = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+            Console.Error.WriteLine("Please provide the folder path containing .vsdx files as the first argument.");
+            return;
+        }
 
-            if (!Directory.Exists(folderPath))
+        string folderPath = args[0];
+
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Get all .vsdx files in the specified folder.
+        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
+
+        if (vsdxFiles.Length == 0)
+        {
+            Console.WriteLine("No .vsdx files found in the specified folder.");
+            return;
+        }
+
+        foreach (string filePath in vsdxFiles)
+        {
+            // Guard: ensure the file still exists before processing.
+            if (!File.Exists(filePath))
             {
-                Console.WriteLine($"Folder does not exist: {folderPath}");
-                return;
+                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                continue;
             }
 
-            // Get all Visio files with .vsdx extension
-            string[] files = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in files)
+            try
             {
-                try
+                // Load the Visio diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Add watermark to each page
+                    // Iterate through each page to add a full‑page watermark.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve page dimensions (in inches)
+                        // Retrieve page dimensions (in inches).
                         double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                         double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                        // Center position for the watermark
-                        double pinX = pageWidth / 2.0;
-                        double pinY = pageHeight / 2.0;
-
-                        // Watermark text and appearance
+                        // Define watermark properties.
                         string watermarkText = "CONFIDENTIAL";
                         string fontName = "Arial";
-                        string fontColorHex = "#CCCCCC"; // Light gray
-                        double fontSizeInInches = 0.5;   // Approx. 36 points
+                        string fontColor = "#FF0000"; // Red color in hex.
+                        double fontSize = 72; // Points.
 
-                        // Add a full‑page text shape as watermark
-                        page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                     watermarkText, fontName, fontColorHex, fontSizeInInches);
+                        // Add the watermark text covering the entire page.
+                        // pinX and pinY are set to 0 to start at the page origin.
+                        page.AddText(0, 0, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSize);
                     }
 
-                    // Save the modified diagram (overwrites original file)
+                    // Save the modified diagram, overwriting the original file.
                     diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Watermark added to: {Path.GetFileName(filePath)}");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-                }
-            }
 
-            Console.WriteLine("Batch processing completed.");
+                Console.WriteLine($"Watermark added to: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of the current file.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}

@@ -1,53 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Counter for generating simple incremental IDs (optional).
+            int counter = 1;
+
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
+                // ShapeCollection implements IEnumerable, so we can use foreach.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Retrieve the plain text of the shape.
+                    string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
-                    // Get the plain text of the shape
-                    string currentText = shape.Text.Value.ToString();
-
-                    // If the text is empty or whitespace, assign a new unique identifier
-                    if (string.IsNullOrWhiteSpace(currentText))
+                    // Check if the text is empty or whitespace.
+                    if (string.IsNullOrWhiteSpace(shapeText))
                     {
-                        string uniqueId = Guid.NewGuid().ToString();
+                        // Generate a unique identifier. Here we use a GUID combined with a counter.
+                        string uniqueId = $"ID-{Guid.NewGuid():N}-{counter++}";
 
-                        // Clear any existing text runs and add the new identifier
+                        // Clear any existing text runs.
                         shape.Text.Value.Clear();
+
+                        // Add the new text as a single Txt object.
                         shape.Text.Value.Add(new Txt(uniqueId));
+
+                        Console.WriteLine($"Shape ID {shape.ID} on page {page.ID} populated with identifier: {uniqueId}");
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

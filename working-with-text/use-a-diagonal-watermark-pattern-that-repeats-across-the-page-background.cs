@@ -7,76 +7,54 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Define output file path
+        string outputPath = "output.vsdx";
+
         try
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (foreground) page
-            Page foregroundPage = diagram.Pages[0];
-
-            // Determine the maximum existing page ID to assign a unique ID to the background page
-            int maxPageId = 0;
-            foreach (Page p in diagram.Pages)
-            {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
-            }
-
-            // Create a background page and mark it as a background canvas
-            Page backgroundPage = new Page();
-            backgroundPage.ID = maxPageId + 1;
-            backgroundPage.Name = "Background";
-            backgroundPage.Background = BOOL.True;
-
-            // Add the background page to the diagram
-            diagram.Pages.Add(backgroundPage);
-
-            // Link the foreground page to the background page
-            foregroundPage.BackPage = backgroundPage;
+            // Access the first (default) page
+            Page page = diagram.Pages[0];
 
             // Retrieve page dimensions (in inches)
-            double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
+            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
             // Watermark settings
             string watermarkText = "CONFIDENTIAL";
-            string fontName = "Calibri";
-            string fontColor = "#CCCCCC"; // Light gray
-            double fontSizeInInches = 0.5; // Approx. 36 points
-            double rotationAngle = 45; // Degrees
-            double tileSpacing = 2.0; // Inches between watermark instances
+            string fontName = "Arial";
+            string fontColor = "#C0C0C0"; // Light gray
+            double fontSize = 0.5; // Inches
+            double boxWidth = 2.0; // Width of the text box
+            double boxHeight = 0.5; // Height of the text box
+            double rotationAngle = 45.0; // Degrees
+            double transparency = 0.8; // 0 = opaque, 1 = fully transparent
 
-            // Tile the watermark across the background page
-            for (double y = 0; y < pageHeight; y += tileSpacing)
+            // Define spacing between watermarks
+            double stepX = 3.0; // Horizontal step (inches)
+            double stepY = 3.0; // Vertical step (inches)
+
+            // Loop over the page area and add repeated watermark shapes
+            for (double y = 0; y < pageHeight; y += stepY)
             {
-                for (double x = 0; x < pageWidth; x += tileSpacing)
+                for (double x = 0; x < pageWidth; x += stepX)
                 {
-                    // Add a text shape covering the whole page (width/height set to page size)
-                    // AddText returns a Shape object directly, so we capture it in 'shape'
-                    Shape shape = backgroundPage.AddText(
-                        x,                     // PinX (center X)
-                        y,                     // PinY (center Y)
-                        pageWidth,             // Width of the text shape
-                        pageHeight,            // Height of the text shape
-                        watermarkText,
-                        fontName,
-                        fontColor,
-                        fontSizeInInches);
+                    // Add a text shape as watermark
+                    Shape wmShape = page.AddText(x, y, boxWidth, boxHeight, watermarkText, fontName, fontColor, fontSize);
 
-                    // Rotate the text diagonally
-                    shape.XForm.Angle.Value = rotationAngle;
+                    // Rotate the watermark diagonally
+                    wmShape.XForm.Angle.Value = rotationAngle;
 
-                    // Send the watermark shape to the back so it appears behind other content
-                    shape.SendToBack();
-
-                    // Make the watermark non‑selectable
-                    shape.Protection.LockSelect.Value = BOOL.True;
+                    // Set semi‑transparent fill (foreground color transparency)
+                    wmShape.Fill.FillForegndTrans.Value = transparency;
                 }
             }
 
-            // Save the diagram with the tiled diagonal watermark
-            diagram.Save("WatermarkedDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Save the diagram with the repeated diagonal watermark pattern
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {

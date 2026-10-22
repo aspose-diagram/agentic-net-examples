@@ -1,111 +1,87 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard against missing input file
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        Diagram diagram;
-        try
-        {
-            // Load the diagram from the file system
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Add or update the timestamp watermark on the first page
-            AddOrUpdateTimestampWatermark(diagram);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing watermark: {ex.Message}");
-            return;
-        }
-
-        // Path for the output PDF file
-        string outputPath = "output.pdf";
-
-        try
-        {
-            // Configure PDF save options (fallback font specified)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as PDF using the configured options
-            diagram.Save(outputPath, pdfOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-        }
-    }
-
-    static void AddOrUpdateTimestampWatermark(Diagram diagram)
-    {
-        // Use the first page of the diagram for the watermark
-        Page page = diagram.Pages[0];
-
-        // Retrieve page dimensions (in inches)
-        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-        // Look for an existing watermark shape by its universal name
-        Shape watermarkShape = null;
-        foreach (Shape shape in page.Shapes)
-        {
-            if (shape.NameU != null && shape.NameU.Equals("TimestampWatermark", StringComparison.OrdinalIgnoreCase))
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                watermarkShape = shape;
-                break;
+                // Iterate over each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Collect existing watermark shapes (text starting with "Timestamp:") for deletion
+                    var shapesToDelete = new List<Shape>();
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.Del == BOOL.False && shape.Text != null && shape.Text.Value != null)
+                        {
+                            string existingText = shape.Text.Value.Text;
+                            if (!string.IsNullOrEmpty(existingText) && existingText.StartsWith("Timestamp:"))
+                            {
+                                shapesToDelete.Add(shape);
+                            }
+                        }
+                    }
+
+                    // Mark identified shapes as deleted
+                    foreach (Shape shape in shapesToDelete)
+                    {
+                        shape.Del = BOOL.True;
+                    }
+
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Define watermark text with current timestamp
+                    string watermarkText = $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+
+                    // Add the watermark text covering the full page
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize (in inches)
+                    page.AddText(
+                        0,                     // pinX (top‑left corner)
+                        0,                     // pinY (top‑left corner)
+                        pageWidth,             // width
+                        pageHeight,            // height
+                        watermarkText,         // text
+                        "Calibri",             // font name
+                        "#a5a5a5",             // font color (hex)
+                        0.25);                 // font size (in inches)
+                }
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-
-        // Current timestamp string to display
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-        if (watermarkShape != null)
+        catch (Exception ex)
         {
-            // Update the text of the existing watermark shape
-            watermarkShape.Text.Value.Clear();
-            watermarkShape.Text.Value.Add(new Txt(timestamp));
-        }
-        else
-        {
-            // Create a new full‑page text shape as the watermark
-            // PinX/PinY define the lower‑left corner; width/height cover the whole page
-            Shape newShape = page.AddText(
-                0,                 // pinX
-                0,                 // pinY
-                pageWidth,         // width
-                pageHeight,        // height
-                timestamp,         // text
-                "Calibri",         // fontName
-                "#A0A0A0",         // fontColor (light gray)
-                0.25               // fontSize in inches (≈18pt)
-            );
-
-            // Assign a recognizable universal name for future updates
-            newShape.NameU = "TimestampWatermark";
-
-            // Ensure the text is not rotated
-            newShape.TextXForm.TxtAngle.Value = 0;
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

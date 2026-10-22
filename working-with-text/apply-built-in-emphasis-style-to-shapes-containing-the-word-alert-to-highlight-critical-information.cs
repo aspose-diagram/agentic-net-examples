@@ -1,68 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram (replace with actual file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Find the built‑in "Emphasis" style sheet if it exists
-            StyleSheet emphasisStyle = null;
-            foreach (StyleSheet ss in diagram.StyleSheets)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (ss.Name == "Emphasis")
+                // Locate the built‑in style sheet named "Emphasis".
+                StyleSheet emphasisStyle = null;
+                foreach (StyleSheet ss in diagram.StyleSheets)
                 {
-                    emphasisStyle = ss;
-                    break;
+                    if (ss.Name != null && ss.Name.Equals("Emphasis", StringComparison.OrdinalIgnoreCase))
+                    {
+                        emphasisStyle = ss;
+                        break;
+                    }
                 }
-            }
 
-            if (emphasisStyle == null)
-            {
-                Console.WriteLine("Emphasis style not found in the document. No changes will be applied.");
-            }
-            else
-            {
-                // Iterate through all pages and shapes
+                if (emphasisStyle == null)
+                {
+                    Console.Error.WriteLine("Error: \"Emphasis\" style sheet not found in the diagram.");
+                    return;
+                }
+
+                // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve the shape's text content safely.
+                        string shapeText = shape.Text?.Value?.ToString() ?? string.Empty;
 
-                        // Get plain text of the shape
-                        string shapeText = shape.Text.Value.ToString();
-
-                        // Apply the Emphasis style if the text contains "Alert"
-                        if (!string.IsNullOrEmpty(shapeText) &&
-                            shapeText.IndexOf("Alert", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Check if the text contains the word "Alert".
+                        if (shapeText.Contains("Alert", StringComparison.OrdinalIgnoreCase))
                         {
+                            // Apply the Emphasis style to the shape's text.
                             shape.TextStyle = emphasisStyle;
-                            shape.FillStyle = emphasisStyle;
-                            shape.LineStyle = emphasisStyle;
                         }
                     }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

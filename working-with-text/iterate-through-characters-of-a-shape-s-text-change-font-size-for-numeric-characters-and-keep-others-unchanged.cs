@@ -1,56 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page and a shape on that page (adjust IDs as needed)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(1); // replace 1 with the actual shape ID
-
-            // Ensure the shape contains text
-            if (shape != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                string plainText = shape.Text.Value.Text;
-                double numericFontSizeInches = 14.0 / 72.0; // 14 pt in inches
+                Page page = diagram.Pages[pageIndex];
 
-                // Iterate over each character in the plain text
-                for (int i = 0; i < plainText.Length; i++)
+                // Iterate through all shapes on the current page.
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                 {
-                    char currentChar = plainText[i];
+                    Shape shape = page.Shapes[shapeIndex];
 
-                    // Find the corresponding Char object by its index (IX)
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                    // Retrieve the plain text of the shape.
+                    string text = shape.Text.Value.Text;
+
+                    // Skip shapes without text.
+                    if (string.IsNullOrEmpty(text))
+                        continue;
+
+                    // Ensure the character collection is available.
+                    if (shape.Chars == null || shape.Chars.Count == 0)
+                        continue;
+
+                    // Iterate over each character position.
+                    // The character formatting collection aligns with the text string.
+                    int charCount = Math.Min(text.Length, shape.Chars.Count);
+                    for (int i = 0; i < charCount; i++)
                     {
-                        if (ch.IX == i)
+                        char c = text[i];
+
+                        // If the character is a digit, change its font size.
+                        if (char.IsDigit(c))
                         {
-                            // If the character is a digit, change its font size
-                            if (char.IsDigit(currentChar))
-                            {
-                                ch.Size.Value = numericFontSizeInches;
-                            }
-                            // Non‑numeric characters retain their existing size
-                            break;
+                            // Set font size to 0.3 inches (approximately 21.6 points).
+                            shape.Chars[i].Size.Value = 0.3;
                         }
+                        // Non‑numeric characters are left unchanged.
                     }
                 }
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

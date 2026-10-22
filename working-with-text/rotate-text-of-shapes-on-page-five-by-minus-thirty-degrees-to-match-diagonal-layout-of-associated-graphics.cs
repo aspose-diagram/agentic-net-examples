@@ -1,55 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output_rotated.vsdx";
-
-            // Load the diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            // Verify that the diagram has at least five pages (zero‑based index 4).
+            if (diagram.Pages.Count < 5)
             {
-                // Verify that the diagram has at least five pages
-                if (diagram.Pages.Count < 5)
-                {
-                    Console.WriteLine("The diagram does not contain a fifth page.");
-                    return;
-                }
-
-                // Retrieve the fifth page (zero‑based index 4)
-                Page page = diagram.Pages[4];
-
-                // Rotation angle: -30 degrees converted to radians
-                double angleDeg = -30;
-                double angleRad = (Math.PI / 180) * angleDeg;
-
-                // Rotate the text of each non‑deleted shape on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Del == BOOL.True)
-                        continue; // Skip shapes marked for deletion
-
-                    shape.TextXForm.TxtAngle.Value = angleRad;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine("The diagram does not contain a fifth page.");
+                return;
             }
 
-            Console.WriteLine("Text rotation applied and diagram saved successfully.");
+            // Retrieve page five (index 4).
+            Page pageFive = diagram.Pages[4];
 
+            // Angle in radians for -30 degrees.
+            double angleRad = -30.0 * Math.PI / 180.0;
+
+            // Iterate through all shapes on page five.
+            foreach (Shape shape in pageFive.Shapes)
+            {
+                // Skip deleted shapes.
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                // Ensure the TextXForm object exists before setting the angle.
+                if (shape.TextXForm != null)
+                {
+                    // Rotate the text block by the specified angle (radians).
+                    shape.TextXForm.TxtAngle.Value = angleRad;
+                }
+            }
+
+            // Save the modified diagram to the output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

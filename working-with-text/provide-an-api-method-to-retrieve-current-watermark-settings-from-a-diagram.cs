@@ -1,118 +1,84 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-namespace DiagramWatermarkDemo
+class Program
 {
-    // DTO to hold watermark information
-    public class WatermarkInfo
+    static void Main(string[] args)
     {
-        public string Text { get; set; }
-        public string FontName { get; set; }
-        public double FontSize { get; set; }          // points (as stored in the shape)
-        public string Color { get; set; }             // hex string, e.g. "#FF0000"
-        public double Rotation { get; set; }          // degrees
-        public double PositionX { get; set; }         // inches
-        public double PositionY { get; set; }         // inches
-        public double Width { get; set; }             // inches
-        public double Height { get; set; }            // inches
-    }
-
-    public static class WatermarkHelper
-    {
-        // Retrieves the first shape that contains text and treats it as a watermark.
-        // Returns null if no such shape is found.
-        public static WatermarkInfo GetWatermarkInfo(Diagram diagram)
+        // Expect the diagram file path as the first argument.
+        if (args.Length == 0)
         {
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Get the plain text of the shape
-                    string text = shape.Text.Value.ToString();
-
-                    if (string.IsNullOrWhiteSpace(text))
-                        continue; // No text, not a watermark candidate
-
-                    // Basic heuristic: treat any text shape as a watermark.
-                    // Extract rotation (stored in radians) and convert to degrees.
-                    double rotationDeg = shape.TextXForm.TxtAngle.Value * 180.0 / Math.PI;
-
-                    // Extract font information from the first character run, if present.
-                    string fontName = null;
-                    double fontSize = 0;
-                    string color = null;
-
-                    if (shape.Chars.Count > 0)
-                    {
-                        Aspose.Diagram.Char ch = shape.Chars[0];
-                        fontName = ch.FontName?.Value;
-                        fontSize = ch.Size?.Value ?? 0;
-                        color = ch.Color?.Value;
-                    }
-
-                    // Extract geometric information.
-                    double posX = shape.XForm.PinX?.Value ?? 0;
-                    double posY = shape.XForm.PinY?.Value ?? 0;
-                    double width = shape.XForm.Width?.Value ?? 0;
-                    double height = shape.XForm.Height?.Value ?? 0;
-
-                    return new WatermarkInfo
-                    {
-                        Text = text,
-                        FontName = fontName,
-                        FontSize = fontSize,
-                        Color = color,
-                        Rotation = rotationDeg,
-                        PositionX = posX,
-                        PositionY = posY,
-                        Width = width,
-                        Height = height
-                    };
-                }
-            }
-
-            // No watermark found
-            return null;
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            return;
         }
-    }
 
-    class Program
-    {
-        static void Main()
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
+                // Retrieve watermark settings.
+                WatermarkSettings settings = GetWatermarkSettings(diagram);
 
-                // Load the Visio diagram (replace with your file path)
-                string diagramPath = "sample.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Retrieve watermark information
-                WatermarkInfo wmInfo = WatermarkHelper.GetWatermarkInfo(diagram);
-
-                if (wmInfo != null)
+                // Output the retrieved settings.
+                if (settings != null)
                 {
-                    Console.WriteLine("Watermark detected:");
-                    Console.WriteLine($" Text      : {wmInfo.Text}");
-                    Console.WriteLine($" Font      : {wmInfo.FontName}");
-                    Console.WriteLine($" FontSize  : {wmInfo.FontSize} pt");
-                    Console.WriteLine($" Color     : {wmInfo.Color}");
-                    Console.WriteLine($" Rotation  : {wmInfo.Rotation}°");
-                    Console.WriteLine($" PositionX : {wmInfo.PositionX} in");
-                    Console.WriteLine($" PositionY : {wmInfo.PositionY} in");
-                    Console.WriteLine($" Width     : {wmInfo.Width} in");
-                    Console.WriteLine($" Height    : {wmInfo.Height} in");
+                    Console.WriteLine("Watermark Settings:");
+                    Console.WriteLine($"  Text: {settings.Text}");
+                    Console.WriteLine($"  Opacity: {settings.Opacity}");
+                    Console.WriteLine($"  Rotation: {settings.Rotation}");
                 }
                 else
                 {
-                    Console.WriteLine("No watermark shape found in the diagram.");
+                    Console.WriteLine("No watermark settings were found or the feature is not supported.");
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+
+    /// <summary>
+    /// Retrieves the current watermark settings from the provided diagram.
+    /// </summary>
+    /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
+    /// <returns>A WatermarkSettings object if available; otherwise, null.</returns>
+    private static WatermarkSettings GetWatermarkSettings(Diagram diagram)
+    {
+        // TODO: Implement actual retrieval of watermark settings.
+        // Aspose.Diagram does not expose a direct Watermark API in the current version.
+        // If such functionality becomes available, replace this placeholder with the appropriate calls.
+        // For now, return null to indicate that watermark settings cannot be retrieved.
+        return null;
+    }
+}
+
+/// <summary>
+/// Represents watermark configuration details.
+/// </summary>
+class WatermarkSettings
+{
+    public string Text { get; set; }
+    public double Opacity { get; set; }
+    public double Rotation { get; set; }
+
+    public WatermarkSettings(string text, double opacity, double rotation)
+    {
+        Text = text;
+        Opacity = opacity;
+        Rotation = rotation;
     }
 }

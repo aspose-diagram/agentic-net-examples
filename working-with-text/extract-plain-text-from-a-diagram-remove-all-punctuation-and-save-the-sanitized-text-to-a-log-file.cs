@@ -6,53 +6,75 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputLogPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args.Length >= 2 ? args[1] : "sanitized_text.log";
+
+        // Guard: ensure the input diagram file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        // StringBuilder to accumulate sanitized text
+        StringBuilder sanitizedBuilder = new StringBuilder();
+
         try
         {
-
-            // Path to the source Visio diagram
-            string diagramPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Collect all plain text from the diagram
-            StringBuilder allTextBuilder = new StringBuilder();
-
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve concatenated plain text of the shape
-                    string shapeText = shape.Text?.Value?.Text;
-
-                    if (!string.IsNullOrWhiteSpace(shapeText))
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        allTextBuilder.AppendLine(shapeText);
+                        // Guard: skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve plain text from the shape
+                        string rawText = shape.Text?.Value?.Text ?? string.Empty;
+
+                        // Skip empty text
+                        if (string.IsNullOrWhiteSpace(rawText))
+                            continue;
+
+                        // Remove all punctuation using a regular expression
+                        // This keeps letters, digits and whitespace
+                        string sanitized = Regex.Replace(rawText, @"[^\w\s]", string.Empty);
+
+                        // Append the sanitized line to the builder
+                        sanitizedBuilder.AppendLine(sanitized);
                     }
                 }
             }
-
-            // Combine collected text
-            string allText = allTextBuilder.ToString();
-
-            // Remove punctuation using a regular expression
-            string sanitizedText = Regex.Replace(allText, @"[^\w\s]", string.Empty);
-
-            // Path to the log file where sanitized text will be saved
-            string logPath = "sanitized_log.txt";
-
-            // Write the sanitized text to the log file
-            File.WriteAllText(logPath, sanitizedText);
-
-            // Optional: inform the user
-            Console.WriteLine($"Sanitized text has been written to '{logPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Write the accumulated sanitized text to the log file
+            File.WriteAllText(outputPath, sanitizedBuilder.ToString());
+            Console.WriteLine($"Sanitized text saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error writing log file: {ex.Message}");
         }
     }
 }

@@ -1,29 +1,35 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Define output path (same directory, new file name)
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+
         try
         {
-
             // Load the Visio diagram
-            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape with ID 10
-            Shape shape = page.Shapes.GetShape(10);
-            if (shape == null)
-            {
-                throw new Exception("Shape with ID 10 not found.");
-            }
-
-            // Locate the built‑in stylesheet named "Heading 1"
+            // Locate the built‑in "Heading 1" stylesheet
             StyleSheet headingStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
@@ -33,24 +39,52 @@ class Program
                     break;
                 }
             }
+
             if (headingStyle == null)
             {
-                throw new Exception("Stylesheet 'Heading 1' not found.");
+                Console.Error.WriteLine("The 'Heading 1' stylesheet was not found in the document.");
+                return;
             }
 
-            // Apply the stylesheet to the shape for title formatting
+            // Assume the shape is on the first page; retrieve the page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            Page page = diagram.Pages[0];
+
+            // Retrieve shape with ID 10
+            long targetShapeId = 10;
+            Shape shape = page.Shapes.GetShape(targetShapeId);
+
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} was not found on the first page.");
+                return;
+            }
+
+            // Ensure the shape is not deleted
+            if (shape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} is marked as deleted.");
+                return;
+            }
+
+            // Apply the Heading 1 stylesheet to text, fill, and line styles
             shape.TextStyle = headingStyle;
             shape.FillStyle = headingStyle;
             shape.LineStyle = headingStyle;
 
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

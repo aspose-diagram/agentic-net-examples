@@ -1,62 +1,90 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a custom stylesheet that defines an underline character style
-            StyleSheet underlineStyle = new StyleSheet();
-            underlineStyle.ID = diagram.StyleSheets.Count + 1;
-            underlineStyle.Name = "UnderlineStyle";
-
-            // Define a character with underline formatting
-            Aspose.Diagram.Char underlineChar = new Aspose.Diagram.Char();
-            underlineChar.IX = 0; // character index
-            underlineChar.Style.Value = StyleValue.Underline; // apply underline
-            underlineStyle.Chars.Add(underlineChar);
-
-            // Add the stylesheet to the diagram
-            diagram.StyleSheets.Add(underlineStyle);
-
-            // Iterate through all pages and shapes to apply the stylesheet to headings
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // ------------------------------------------------------------
+                // Create a custom stylesheet that defines an underline style
+                // ------------------------------------------------------------
+                StyleSheet underlineStyle = new StyleSheet();
+                underlineStyle.ID = diagram.StyleSheets.Count + 1;
+                // Optional: give the stylesheet a name (if supported)
+                // underlineStyle.NameU = "UnderlineStyle";
+
+                // Define a character style with underline
+                Aspose.Diagram.Char underlineChar = new Aspose.Diagram.Char();
+                underlineChar.Style.Value = StyleValue.Underline;
+                // Add the character definition to the stylesheet
+                underlineStyle.Chars.Add(underlineChar);
+
+                // Add the stylesheet to the diagram's collection
+                diagram.StyleSheets.Add(underlineStyle);
+
+                // ------------------------------------------------------------
+                // Apply the underline stylesheet to all heading shapes
+                // ------------------------------------------------------------
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve plain text of the shape
-                    string shapeText = shape.Text.Value.ToString();
-
-                    // Simple heuristic: treat shapes whose text starts with "Heading" as headings
-                    if (!string.IsNullOrWhiteSpace(shapeText) && shapeText.StartsWith("Heading"))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply the underline stylesheet to the shape's text
-                        shape.TextStyle = underlineStyle;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify heading shapes by name containing "Heading"
+                        // (adjust the condition as needed for your diagram)
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.IndexOf("Heading", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // Apply the stylesheet to the shape's text
+                            shape.TextStyle = underlineStyle;
+
+                            // Ensure each character in the shape also has underline style
+                            foreach (Aspose.Diagram.Char c in shape.Chars)
+                            {
+                                c.Style.Value = StyleValue.Underline;
+                            }
+                        }
                     }
                 }
+
+                // ------------------------------------------------------------
+                // Save the modified diagram to the specified output path
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

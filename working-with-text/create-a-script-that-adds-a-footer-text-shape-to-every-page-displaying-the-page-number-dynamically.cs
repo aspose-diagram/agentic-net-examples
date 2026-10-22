@@ -1,31 +1,46 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) and output path (second argument)
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <exe> <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(inputPath);
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Set the footer text to display the page number dynamically.
-        // '&p' is the Visio field code for the current page number.
-        diagram.HeaderFooter.FooterRight = "Page: &p";
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Save the modified diagram (preserving the original format)
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Set footer text to display the page number dynamically using Visio field code &p
+            // This footer will appear on every page of the document.
+            diagram.HeaderFooter.FooterCenter = "&p";
 
-        Console.WriteLine($"Footer added and diagram saved to '{outputPath}'.");
+            // Optionally adjust the distance of the footer from the page edge (in inches)
+            diagram.HeaderFooter.FooterMargin.Value = 0.2;
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

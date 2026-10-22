@@ -1,78 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: WatermarkUtility <inputVisioFile> [outputVisioFile]");
             return;
         }
-        string outputPath = "output_with_watermark.vsdx";
+
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_watermarked.vsdx");
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
             // Load the Visio diagram
-            using (Diagram diagram = new Diagram(inputPath))
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page and add a diagonal watermark
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Retrieve page dimensions
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Center position for the watermark shape
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
+                // Center position for the watermark shape
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
 
-                    // Use the full page size for the text shape
-                    double shapeWidth = pageWidth;
-                    double shapeHeight = pageHeight;
+                // Add a text shape that spans the whole page
+                // Overload: AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSize)
+                Shape watermark = page.AddText(pinX, pinY, pageWidth, pageHeight, "CONFIDENTIAL", "Arial", "#808080", 72);
 
-                    // Add a text shape that will serve as the watermark
-                    // Parameters: pinX, pinY, width, height, text, font name, font color (hex), font size (in inches)
-                    Shape watermarkShape = page.AddText(
-                        pinX,
-                        pinY,
-                        shapeWidth,
-                        shapeHeight,
-                        "CONFIDENTIAL",
-                        "Arial",
-                        "#808080",   // Gray color
-                        0.5          // 36 pt = 0.5 inches
-                    );
+                // Rotate the text 45 degrees to make it diagonal
+                watermark.TextXForm.TxtAngle.Value = 45;
 
-                    // Rotate the shape 45 degrees to run diagonally across the page
-                    watermarkShape.XForm.Angle.Value = 45;
+                // Set foreground transparency to 30% (30 out of 100)
+                watermark.Fill.FillForegndTrans.Value = 30;
 
-                    // Remove any fill (we only want the text)
-                    watermarkShape.Fill.FillPattern.Value = 0; // No fill
-
-                    // Set fill foreground transparency to achieve 30% opacity (70% transparent)
-                    watermarkShape.Fill.FillForegndTrans.Value = 70;
-
-                    // Optionally remove the outline by setting line weight to zero
-                    watermarkShape.Line.LineWeight.Value = 0;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Optionally set text background transparency to 30%
+                watermark.TextBlock.TextBkgndTrans.Value = 30;
             }
 
-            Console.WriteLine("Watermark added and diagram saved to: " + outputPath);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Watermarked diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine("Error processing diagram: " + ex.Message);
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

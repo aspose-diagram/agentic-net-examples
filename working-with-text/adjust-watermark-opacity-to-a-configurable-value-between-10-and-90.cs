@@ -4,97 +4,81 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: input Visio file, output Visio file, opacity percentage (10-90)
+        if (args.Length < 3)
         {
-            // Expected arguments: inputVisioPath outputVisioPath opacityPercentage
-            if (args.Length != 3)
-            {
-                Console.WriteLine("Usage: WatermarkOpacityExample <inputVisioPath> <outputVisioPath> <opacityPercentage>");
-                Console.WriteLine("Opacity must be between 10 and 90 (inclusive).");
-                return;
-            }
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <opacityPercent>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            if (!int.TryParse(args[2], out int opacityPercent))
-            {
-                Console.WriteLine("Opacity must be an integer percentage.");
-                return;
-            }
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string opacityArg = args[2];
 
-            // Validate opacity range (10% - 90%)
-            if (opacityPercent < 10 || opacityPercent > 90)
-            {
-                Console.WriteLine("Opacity percentage must be between 10 and 90.");
-                return;
-            }
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            // Convert percentage to a decimal value (0.1 - 0.9) used by Visio transparency cells
-            double opacityDecimal = opacityPercent / 100.0;
+        // Parse and validate opacity percentage (must be between 10 and 90)
+        if (!int.TryParse(opacityArg, out int opacityPercent) ||
+            opacityPercent < 10 || opacityPercent > 90)
+        {
+            Console.Error.WriteLine("Opacity must be an integer between 10 and 90.");
+            return;
+        }
 
+        try
+        {
             // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            Diagram diagram = new Diagram(inputPath);
 
-            // Use the first page (or adjust as needed)
-            if (diagram.Pages.Count == 0)
-            {
-                Console.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
+            // Use the first page for the watermark
             Page page = diagram.Pages[0];
 
             // Retrieve page dimensions (in inches)
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Position the watermark at the center of the page
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
-
-            // Use the full page size for the watermark shape so the text spans the page
-            double shapeWidth = pageWidth;
-            double shapeHeight = pageHeight;
-
-            // Watermark text and styling
-            string watermarkText = "CONFIDENTIAL";
+            // Watermark text and appearance settings
+            string watermarkText = "Watermark";
             string fontName = "Calibri";
-            string fontColorHex = "#A0A0A0"; // Light gray
-            // Font size is in inches; 36 points ≈ 0.5 inches
-            double fontSizeInches = 36.0 / 72.0;
+            string fontColor = "#a5a5a5"; // Light gray
+            // Font size is in inches; 12 points = 12/72 inches
+            double fontSizeInches = 12.0 / 72.0;
 
-            // Add the watermark shape
-            Shape watermarkShape = page.AddText(pinX, pinY, shapeWidth, shapeHeight,
-                                                watermarkText, fontName, fontColorHex, fontSizeInches);
+            // Add a full‑page text shape (returns a Shape object)
+            Shape watermarkShape = page.AddText(
+                0,                     // pinX
+                0,                     // pinY
+                pageWidth,             // width
+                pageHeight,            // height
+                watermarkText,         // text
+                fontName,              // fontName
+                fontColor,             // fontColor (hex)
+                fontSizeInches);       // fontSize (in inches)
 
-            // Apply opacity via the FillForegndTrans cell (0 = opaque, 1 = fully transparent)
-            // Since we want the watermark to be semi‑transparent, set the transparency to (1 - opacity)
-            // Example: 70% opacity => 30% transparency
-            double transparency = 1.0 - opacityDecimal;
-            watermarkShape.Fill.FillForegndTrans.Value = transparency;
+            // Calculate transparency based on desired opacity
+            // opacityPercent is 10‑90, convert to 0.1‑0.9 range
+            double opacity = opacityPercent / 100.0;
+            double transparency = 1.0 - opacity; // 0 = opaque, 1 = fully transparent
 
-            // Optionally, reduce the shape's line visibility (no border)
-            watermarkShape.Line.LineWeight.Value = 0.0;
+            // Apply a simple drop shadow to simulate watermark opacity
+            watermarkShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
+            watermarkShape.Fill.ShdwForegnd.Value = "#000000";               // Shadow color (black)
+            watermarkShape.Fill.ShdwForegndTrans.Value = transparency;     // Shadow transparency
 
-            // Save the modified diagram
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved with watermark opacity {opacityPercent}% to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

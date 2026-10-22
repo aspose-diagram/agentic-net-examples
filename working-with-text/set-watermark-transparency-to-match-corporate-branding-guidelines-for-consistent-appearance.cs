@@ -1,56 +1,71 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: DiagramWatermark <input.vsdx> <output.vsdx>");
-                return;
-            }
+                // Use the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and add a semi‑transparent watermark.
-            foreach (Page page in diagram.Pages)
-            {
-                // Page dimensions (in inches).
+                // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Center position for the watermark.
+                // Define watermark properties
+                string watermarkText = "CONFIDENTIAL";
+                string fontName = "Arial";
+                string fontColor = "#808080"; // Gray color in hex
+                // Font size is in inches; convert from points (e.g., 72 points = 1 inch)
+                double fontSizeInches = 72.0 / 72.0; // 72 points = 1 inch
+
+                // Position the watermark at the center of the page
                 double pinX = pageWidth / 2.0;
                 double pinY = pageHeight / 2.0;
 
-                // Add a full‑page text shape as the watermark.
-                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches).
-                Shape watermark = page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                              "CONFIDENTIAL",
-                                              "Calibri",
-                                              "#A0A0A0",          // Light gray color.
-                                              0.25);               // Font size ~18pt (18/72).
+                // Add the text shape as a watermark; AddText returns a Shape object
+                Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
+                                                   watermarkText, fontName, fontColor, fontSizeInches);
 
-                // Rotate the watermark for a typical diagonal appearance.
-                watermark.XForm.Angle.Value = 45.0;
+                // Set fill transparency (0.0 = opaque, 1.0 = fully transparent)
+                // Example: 70% transparency (30% visible)
+                double desiredTransparency = 0.70;
+                watermarkShape.Fill.FillForegndTrans.Value = desiredTransparency;
 
-                // Apply transparency to both fill (background) and line (border) of the shape.
-                // Transparency values are percentages (0‑100).
-                watermark.Fill.FillForegndTrans.Value = 80;   // 80 % transparent fill.
-                watermark.Line.LineColorTrans.Value = 80;    // 80 % transparent line.
+                // Optionally, set line (border) transparency as a percent value
+                int lineTransparencyPercent = (int)(desiredTransparency * 100);
+                watermarkShape.Line.LineColorTrans.Value = lineTransparencyPercent;
 
-                // Optionally hide the shape border by setting line weight to zero.
-                watermark.Line.LineWeight.Value = 0.0;
+                // Save the modified diagram with the correct overload
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

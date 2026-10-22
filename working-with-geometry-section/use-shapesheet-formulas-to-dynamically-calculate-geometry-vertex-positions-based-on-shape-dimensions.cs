@@ -1,74 +1,86 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define the output file path
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
         try
         {
-
-            // Create a new empty diagram (contains a default page)
+            // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+            // Add a rectangle shape to the active page
+            // Parameters: PinX, PinY, master name, isCalculate (false to avoid auto layout)
+            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Add a rectangle shape; the fourth parameter (isCalculate) must be a bool
-            long rectId = page.AddShape(2.0, 2.0, 4.0, 2.0, "Rectangle", false);
+            // Retrieve the shape object using its ID
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
-            // Retrieve the shape instance for further manipulation
-            Shape rectShape = page.Shapes.GetShape(rectId);
+            // Set explicit width and height for the shape (in inches)
+            shape.XForm.Width.Value = 3.0;   // Width = 3 inches
+            shape.XForm.Height.Value = 2.0;  // Height = 2 inches
 
-            // Clear any existing geometry definitions
-            rectShape.Geoms.Clear();
+            // Ensure the shape has at least one geometry section
+            if (shape.Geoms.Count > 0)
+            {
+                // Get the first geometry (most built‑in shapes have a single geometry)
+                Aspose.Diagram.Geom geom = (Aspose.Diagram.Geom)shape.Geoms[0];
 
-            // Create a new geometry section
-            Geom geom = new Geom();
+                // Verify that the geometry has at least four vertices (rectangle)
+                if (geom.CoordinateCol.Count >= 4)
+                {
+                    // Vertex 0 – Top‑Left (MoveTo)
+                    Aspose.Diagram.MoveTo v0 = (Aspose.Diagram.MoveTo)geom.CoordinateCol[0];
+                    v0.X.Ufe.F = "0";
+                    v0.Y.Ufe.F = "0";
 
-            // ---- MoveTo (starting point at the lower‑left corner) ----
-            MoveTo move = new MoveTo();
-            // Use ShapeSheet formulas so the geometry reacts to shape size changes
-            move.X.Ufe.F = "0";               // X = 0 (relative to shape)
-            move.Y.Ufe.F = "0";               // Y = 0
-            geom.CoordinateCol.Add(move);
+                    // Vertex 1 – Top‑Right (LineTo)
+                    Aspose.Diagram.LineTo v1 = (Aspose.Diagram.LineTo)geom.CoordinateCol[1];
+                    v1.X.Ufe.F = "Width";
+                    v1.Y.Ufe.F = "0";
 
-            // ---- LineTo (top edge) ----
-            LineTo top = new LineTo();
-            top.X.Ufe.F = "Width";            // X = shape's Width
-            top.Y.Ufe.F = "0";                // Y = 0
-            geom.CoordinateCol.Add(top);
+                    // Vertex 2 – Bottom‑Right (LineTo)
+                    Aspose.Diagram.LineTo v2 = (Aspose.Diagram.LineTo)geom.CoordinateCol[2];
+                    v2.X.Ufe.F = "Width";
+                    v2.Y.Ufe.F = "Height";
 
-            // ---- LineTo (right edge) ----
-            LineTo right = new LineTo();
-            right.X.Ufe.F = "Width";          // X = shape's Width
-            right.Y.Ufe.F = "Height";         // Y = shape's Height
-            geom.CoordinateCol.Add(right);
+                    // Vertex 3 – Bottom‑Left (LineTo)
+                    Aspose.Diagram.LineTo v3 = (Aspose.Diagram.LineTo)geom.CoordinateCol[3];
+                    v3.X.Ufe.F = "0";
+                    v3.Y.Ufe.F = "Height";
+                }
+                else
+                {
+                    Console.Error.WriteLine("Unexpected geometry vertex count; cannot apply formulas.");
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine("Shape does not contain any geometry sections.");
+            }
 
-            // ---- LineTo (bottom edge) ----
-            LineTo bottom = new LineTo();
-            bottom.X.Ufe.F = "0";             // X = 0
-            bottom.Y.Ufe.F = "Height";        // Y = shape's Height
-            geom.CoordinateCol.Add(bottom);
-
-            // ---- Close the shape by returning to the start point ----
-            LineTo close = new LineTo();
-            close.X.Ufe.F = "0";
-            close.Y.Ufe.F = "0";
-            geom.CoordinateCol.Add(close);
-
-            // Add the constructed geometry to the shape
-            rectShape.Geoms.Add(geom);
-
-            // Save the diagram; use a valid SaveFileFormat enum member
-            diagram.Save("DynamicGeometry.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the diagram to VSDX format using the correct overload
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

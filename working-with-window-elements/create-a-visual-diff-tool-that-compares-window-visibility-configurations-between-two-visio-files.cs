@@ -1,106 +1,92 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two file paths as arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: DiffTool <VisioFile1> <VisioFile2>");
+            Console.Error.WriteLine("Usage: VisualDiff <VisioFile1> <VisioFile2>");
             return;
         }
 
         string filePath1 = args[0];
         string filePath2 = args[1];
 
-        // Load the two Visio diagrams
-        Diagram diagram1 = new Diagram(filePath1);
-        Diagram diagram2 = new Diagram(filePath2);
-
-        CompareWindowConfigurations(diagram1, diagram2);
-    }
-
-    static void CompareWindowConfigurations(Diagram d1, Diagram d2)
-    {
-        int count1 = d1.Windows.Count;
-        int count2 = d2.Windows.Count;
-        int maxCount = Math.Max(count1, count2);
-
-        for (int i = 0; i < maxCount; i++)
+        // Guard against missing input files.
+        if (!File.Exists(filePath1))
         {
-            Console.WriteLine($"--- Window Index {i} ---");
-
-            if (i >= count1)
-            {
-                Console.WriteLine("Only present in second diagram.");
-                PrintWindowDetails(d2.Windows[i], "Second");
-                continue;
-            }
-
-            if (i >= count2)
-            {
-                Console.WriteLine("Only present in first diagram.");
-                PrintWindowDetails(d1.Windows[i], "First");
-                continue;
-            }
-
-            Window w1 = d1.Windows[i];
-            Window w2 = d2.Windows[i];
-
-            CompareBoolProperty("ShowGrid", w1.ShowGrid, w2.ShowGrid);
-            CompareBoolProperty("ShowGuides", w1.ShowGuides, w2.ShowGuides);
-            CompareBoolProperty("ShowRulers", w1.ShowRulers, w2.ShowRulers);
-            CompareBoolProperty("ShowPageBreaks", w1.ShowPageBreaks, w2.ShowPageBreaks);
-            CompareBoolProperty("DynamicGridEnabled", w1.DynamicGridEnabled, w2.DynamicGridEnabled);
-            CompareBoolProperty("ShowConnectionPoints", w1.ShowConnectionPoints, w2.ShowConnectionPoints);
-
-            CompareLongProperty("WindowWidth", w1.WindowWidth, w2.WindowWidth);
-            CompareLongProperty("WindowHeight", w1.WindowHeight, w2.WindowHeight);
-
-            CompareEnumProperty("WindowState", w1.WindowState, w2.WindowState);
-            CompareEnumProperty("WindowType", w1.WindowType, w2.WindowType);
+            Console.Error.WriteLine($"Error: File not found – {filePath1}");
+            return;
         }
-    }
+        if (!File.Exists(filePath2))
+        {
+            Console.Error.WriteLine($"Error: File not found – {filePath2}");
+            return;
+        }
 
-    static void CompareBoolProperty(string name, BOOL val1, BOOL val2)
-    {
-        if (val1 != val2)
-            Console.WriteLine($"{name} differs: {val1} vs {val2}");
-        else
-            Console.WriteLine($"{name} same: {val1}");
-    }
+        try
+        {
+            // Load the two Visio diagrams.
+            Diagram diagram1 = new Diagram(filePath1);
+            Diagram diagram2 = new Diagram(filePath2);
 
-    static void CompareLongProperty(string name, long val1, long val2)
-    {
-        if (val1 != val2)
-            Console.WriteLine($"{name} differs: {val1} vs {val2}");
-        else
-            Console.WriteLine($"{name} same: {val1}");
-    }
+            // Retrieve window collections.
+            var windows1 = diagram1.Windows;
+            var windows2 = diagram2.Windows;
 
-    static void CompareEnumProperty<T>(string name, T val1, T val2) where T : Enum
-    {
-        if (!val1.Equals(val2))
-            Console.WriteLine($"{name} differs: {val1} vs {val2}");
-        else
-            Console.WriteLine($"{name} same: {val1}");
-    }
+            // Compare window counts.
+            if (windows1.Count != windows2.Count)
+            {
+                Console.WriteLine($"Window count differs: File1 has {windows1.Count}, File2 has {windows2.Count}");
+            }
 
-    static void PrintWindowDetails(Window window, string diagramLabel)
-    {
-        Console.WriteLine($"{diagramLabel} Window Details:");
-        Console.WriteLine($"  ShowGrid: {window.ShowGrid}");
-        Console.WriteLine($"  ShowGuides: {window.ShowGuides}");
-        Console.WriteLine($"  ShowRulers: {window.ShowRulers}");
-        Console.WriteLine($"  ShowPageBreaks: {window.ShowPageBreaks}");
-        Console.WriteLine($"  DynamicGridEnabled: {window.DynamicGridEnabled}");
-        Console.WriteLine($"  ShowConnectionPoints: {window.ShowConnectionPoints}");
-        Console.WriteLine($"  WindowWidth: {window.WindowWidth}");
-        Console.WriteLine($"  WindowHeight: {window.WindowHeight}");
-        Console.WriteLine($"  WindowState: {window.WindowState}");
-        Console.WriteLine($"  WindowType: {window.WindowType}");
+            // Determine the number of windows to compare (minimum of both counts).
+            int compareCount = Math.Min(windows1.Count, windows2.Count);
+
+            // Iterate through each window and compare visibility settings.
+            for (int i = 0; i < compareCount; i++)
+            {
+                Window w1 = windows1[i];
+                Window w2 = windows2[i];
+
+                Console.WriteLine($"Comparing Window #{i + 1}:");
+
+                // Helper local function to report a difference.
+                void ReportDiff(string propName, BOOL val1, BOOL val2)
+                {
+                    if (val1 != val2)
+                    {
+                        Console.WriteLine($"  {propName} differs – File1: {val1}, File2: {val2}");
+                    }
+                }
+
+                // Compare each visibility‑related property.
+                ReportDiff("ShowGrid", w1.ShowGrid, w2.ShowGrid);
+                ReportDiff("ShowGuides", w1.ShowGuides, w2.ShowGuides);
+                ReportDiff("ShowRulers", w1.ShowRulers, w2.ShowRulers);
+                ReportDiff("ShowPageBreaks", w1.ShowPageBreaks, w2.ShowPageBreaks);
+                ReportDiff("DynamicGridEnabled", w1.DynamicGridEnabled, w2.DynamicGridEnabled);
+                ReportDiff("ShowConnectionPoints", w1.ShowConnectionPoints, w2.ShowConnectionPoints);
+            }
+
+            // If there are extra windows in either file, list them.
+            if (windows1.Count > compareCount)
+            {
+                Console.WriteLine($"File1 has {windows1.Count - compareCount} additional window(s) not present in File2.");
+            }
+            if (windows2.Count > compareCount)
+            {
+                Console.WriteLine($"File2 has {windows2.Count - compareCount} additional window(s) not present in File1.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

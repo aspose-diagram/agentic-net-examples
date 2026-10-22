@@ -1,11 +1,11 @@
 {
   "category": "working-with-shapes",
   "display_name": "Working With Shapes",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 459,
   "pass_rate": 100.0,
-  "generated": "2026-09-24",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -66,7 +66,8 @@
       "task": "Access the layout property of a connector shape and modify its x and y coordinates programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -82,16 +83,15 @@
       "task": "Add a circle shape with a specific radius to the diagram s shapes collection",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
-        "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -100,6 +100,7 @@
       "task": "Add a custom connection point at coordinates 1 2 3 4 to a shape using connections add method",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "System",
         "System.IO"
       ],
@@ -124,8 +125,8 @@
         "AddMaster",
         "AddShape",
         "Diagram",
-        "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -134,16 +135,15 @@
       "task": "Add a new rectangle shape to the page using diagram addshape with master id and position",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
-        "AddShape",
         "Diagram",
+        "Masters",
         "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -152,14 +152,16 @@
       "task": "Add a rectangle shape with defined width and height to the diagram s shapes collection",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "Window"
       ]
     },
     {
@@ -169,14 +171,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
-        "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -189,11 +192,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Connection",
         "Diagram",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -208,9 +211,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "PresetTheme",
         "Prop",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -225,9 +228,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -236,16 +239,15 @@
       "task": "Add the modified shape back to the page s shapes collection and ensure it appears in the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -315,7 +317,7 @@
         "Pages",
         "PdfSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -324,7 +326,6 @@
       "task": "Adjust the width of a group sub shape to 5 0 inches by invoking setwidth with double precision",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -359,12 +360,14 @@
       "task": "After adding a shape immediately retrieve its geometry data to confirm correct placement",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Pages",
+        "Save",
         "Shapes",
         "diagram"
       ]
@@ -375,9 +378,7 @@
       "task": "After rotating a shape capture its new bounding box coordinates and write them to a json report",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text.Json"
       ],
@@ -402,9 +403,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "PdfSaveOptions",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -413,7 +414,6 @@
       "task": "Apply a 3 d rotation transformation to a shape after theme assignment to create perspective view",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -449,14 +449,15 @@
       "task": "Apply a dashed line style to a shape by assigning the appropriate dash pattern",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -518,8 +519,8 @@
       "task": "Apply a gradient fill to shapes while preserving existing paragraph formatting and colors",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -535,16 +536,15 @@
       "task": "Apply a predefined theme to the newly created shape and confirm theme properties are applied",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "PresetThemeVariant"
       ]
     },
     {
@@ -574,11 +574,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -587,8 +587,8 @@
       "task": "Apply a theme to shapes only when their existing fill color matches a specific rgb value",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -604,6 +604,7 @@
       "task": "Apply a theme to shapes whose names start with process using a case insensitive comparison",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -621,6 +622,7 @@
       "task": "Apply a uniform distancefromground of 15 points to all shapes in the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -643,9 +645,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -655,14 +655,16 @@
       "task": "Apply conditional formatting to paragraphs based on their length using larger fonts for longer texts",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -671,7 +673,6 @@
       "task": "Apply conditional logic to enable fill inheritance only for shapes whose area exceeds a threshold",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -689,7 +690,6 @@
       "task": "Apply conditional logic to set shape height only if current height is less than a specified threshold",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -709,7 +709,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -725,7 +726,6 @@
       "task": "Apply the preset theme bubble to the retrieved shape and confirm theme properties changed",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -748,10 +748,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Prop",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -761,14 +761,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
-        "Pages",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -777,7 +778,10 @@
       "task": "Automatically disable gluing on shapes once they reach a maximum number of attached connectors",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -835,10 +839,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Layout",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -847,7 +851,6 @@
       "task": "Batch process a folder of vsdx files setting each connector s jump style to none",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -865,7 +868,6 @@
       "task": "Batch process diagrams in a folder rotating all shapes named arrow by ninety degrees before saving",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -917,6 +919,7 @@
       "task": "Benchmark performance impact of toggling fill inherit on large diagrams containing thousands of shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
@@ -952,12 +955,15 @@
       "task": "Calculate the bounding box of a group shape by aggregating absolute pinx y values of its child shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -1000,15 +1006,15 @@
       "task": "Change the fill gradient of a shape to a two color scheme after theme application",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
       ]
     },
     {
@@ -1017,7 +1023,6 @@
       "task": "Change the second paragraph s font style to italic and set its text color to dark blue",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1053,14 +1058,14 @@
       "task": "Check for missing shapes by id before applying themes and log any discrepancies found",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -1069,6 +1074,7 @@
       "task": "Check that locpinx and locpiny cells contain numeric values before performing absolute pin calculations",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1104,7 +1110,8 @@
       "task": "Check whether a shape inherits its fill from a master and log the inheritance status",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1121,6 +1128,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1139,7 +1147,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1155,6 +1164,7 @@
       "task": "Clone a shape preserve its gluing settings and insert the cloned shape elsewhere in the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -1182,7 +1192,7 @@
         "Page",
         "Pages",
         "Save",
-        "diagram"
+        "Shape"
       ]
     },
     {
@@ -1197,9 +1207,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -1208,7 +1218,6 @@
       "task": "Compare fill inheritance values between original and cloned diagrams to ensure consistency after duplication",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1223,10 +1232,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "diagram"
       ]
     },
     {
@@ -1258,8 +1269,8 @@
         "Diagram",
         "ImageSaveOptions",
         "Pages",
-        "Save",
-        "diagram"
+        "PresetTheme",
+        "PresetThemeVariant"
       ]
     },
     {
@@ -1321,14 +1332,13 @@
       "task": "Connect a star shape to a rectangle using source index 1 and target index 2",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
         "AddShape",
         "Diagram",
+        "Masters",
         "Pages",
         "Save"
       ]
@@ -1341,14 +1351,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
-        "Page",
-        "Pages"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -1358,8 +1369,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -1393,16 +1404,15 @@
       "task": "Convert a shape to pdf format using appropriate save options",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "PdfSaveOptions",
-        "Save",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -1467,14 +1477,14 @@
       "task": "Convert a shape to swf format and handle potential conversion errors",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Pages",
+        "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1502,15 +1512,15 @@
       "task": "Copy a shape s custom data cells to another shape and verify data integrity after copying",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
-        "User"
+        "Prop",
+        "Save"
       ]
     },
     {
@@ -1519,6 +1529,7 @@
       "task": "Copy an entire page s pagesheet to a newly created page while preserving background settings",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1536,7 +1547,6 @@
       "task": "Copy an existing hexagon shape to a new location on the same page using offset coordinates",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1559,7 +1569,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page"
+        "shape"
       ]
     },
     {
@@ -1568,7 +1578,6 @@
       "task": "Copy the shape together with its paragraphs to another page named page 3 preserving formatting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1587,7 +1596,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1605,7 +1613,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1622,7 +1631,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.IO.Compression"
       ],
@@ -1641,8 +1649,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -1658,8 +1666,8 @@
       "task": "Create a diagnostic tool that flags connectors lacking explicit line jump style definitions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1694,8 +1702,8 @@
       "task": "Create a linq query to select shapes whose names start with connector and adjust their widths",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
@@ -1712,9 +1720,9 @@
       "task": "Create a macro that automatically adds a timestamp paragraph to every new shape on a page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -1728,7 +1736,6 @@
       "task": "Create a macro that iterates over selected shapes and flips their fill inheritance status",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1750,9 +1757,8 @@
         "System.IO"
       ],
       "key_apis": [
-        "Pages",
+        "Diagram",
         "Shapes",
-        "diagram",
         "page"
       ]
     },
@@ -1762,15 +1768,16 @@
       "task": "Create a new rectangle shape on a page and assign the flowchart theme during creation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "PresetTheme"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -1779,7 +1786,6 @@
       "task": "Create a new shape on the page at coordinates 2 2 and assign a unique identifier",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1798,7 +1804,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -1814,13 +1821,16 @@
       "task": "Create a reusable method that accepts a shape and theme name applying the theme and returning success status",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "Diagram",
+        "Pages",
         "PresetTheme",
         "PresetThemeVariant",
-        "shape"
+        "Save"
       ]
     },
     {
@@ -1829,38 +1839,22 @@
       "task": "Create a unit test that ensures adding a connection point increases the connections collection count by one",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Manipulation",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Connection",
         "Diagram",
-        "Pages",
-        "Shapes"
+        "Page",
+        "Pages"
       ]
     },
     {
       "slug": "create-a-unit-test-that-verifies-fill-inheritance-is-correctly-reported-after-saving-and-reloading-a-diagram",
       "file": "create-a-unit-test-that-verifies-fill-inheritance-is-correctly-reported-after-saving-and-reloading-a-diagram.cs",
       "task": "Create a unit test that verifies fill inheritance is correctly reported after saving and reloading a diagram",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
-      ]
-    },
-    {
-      "slug": "create-a-unit-test-that-verifies-line-jump-style-changes-persist-after-diagram-serialization",
-      "file": "create-a-unit-test-that-verifies-line-jump-style-changes-persist-after-diagram-serialization.cs",
-      "task": "Create a unit test that verifies line jump style changes persist after diagram serialization",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
@@ -1876,6 +1870,24 @@
       ]
     },
     {
+      "slug": "create-a-unit-test-that-verifies-line-jump-style-changes-persist-after-diagram-serialization",
+      "file": "create-a-unit-test-that-verifies-line-jump-style-changes-persist-after-diagram-serialization.cs",
+      "task": "Create a unit test that verifies line jump style changes persist after diagram serialization",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
+      ]
+    },
+    {
       "slug": "create-a-utility-method-that-returns-a-dictionary-mapping-shape-ids-to-their-absolute-pin-coordinates",
       "file": "create-a-utility-method-that-returns-a-dictionary-mapping-shape-ids-to-their-absolute-pin-coordinates.cs",
       "task": "Create a utility method that returns a dictionary mapping shape ids to their absolute pin coordinates",
@@ -1886,6 +1898,7 @@
         "System.IO"
       ],
       "key_apis": [
+        "Diagram",
         "Pages",
         "Shapes",
         "diagram",
@@ -1906,7 +1919,7 @@
         "Diagram",
         "Pages",
         "SVGSaveOptions",
-        "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1916,7 +1929,6 @@
       "task": "Create five distinct shapes on a new page and arrange them in a circular layout",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1938,11 +1950,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Shapes",
-        "diagram"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -1957,9 +1969,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -1971,7 +1981,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text.Json"
       ],
@@ -1989,7 +1998,10 @@
       "task": "Detach all connectors from a shape after disabling its gluing property to prepare for deletion",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -2043,14 +2055,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Prop"
+        "Prop",
+        "Save"
       ]
     },
     {
@@ -2060,15 +2072,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -2096,13 +2107,12 @@
       "task": "Determine the parent shape of a sub shape and display its id and name in the console",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Shapes",
-        "diagram",
         "page"
       ]
     },
@@ -2117,9 +2127,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Shapes",
-        "diagram",
         "page"
       ]
     },
@@ -2146,7 +2154,8 @@
       "task": "Develop a console utility that lists shapes with gluing enabled and their attached connectors",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2162,7 +2171,7 @@
       "task": "Disable gluing on a shape to prevent further connector attachments during editing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Manipulation",
         "System",
         "System.IO"
       ],
@@ -2229,11 +2238,12 @@
       "task": "Duplicate a shape several times with incremental position offsets and ensure no id collisions occur",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "Shapes"
@@ -2249,10 +2259,10 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shape",
         "Shapes"
       ]
     },
@@ -2263,6 +2273,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -2279,8 +2290,8 @@
       "task": "Enable glow effect on connector shapes after setting their connectors type to a dashed style",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2297,13 +2308,13 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -2313,7 +2324,6 @@
       "task": "Enable the reroute option for a dynamic connector by setting layout confixedcode to appropriate value",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2331,7 +2341,6 @@
       "task": "Ensure that disabling line inheritance does not affect existing line color attributes on the shape",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2349,14 +2358,15 @@
       "task": "Enumerate all shapes that are currently glued to a given shape and list their ids",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -2384,15 +2394,14 @@
       "task": "Export a diagram s shape hierarchy including theme information to an xml representation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Xml"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -2402,14 +2411,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
         "Shapes",
-        "diagram"
+        "page"
       ]
     },
     {
@@ -2418,11 +2427,9 @@
       "task": "Export a shape s line and fill definitions to a json file for reuse",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Text.Json",
-        "System.Text.Json.Serialization"
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
@@ -2444,8 +2451,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Save",
-        "diagram"
+        "HTMLSaveOptions",
+        "ImageSaveOptions",
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -2462,9 +2471,8 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
-        "Pages",
         "Shapes",
-        "diagram"
+        "page"
       ]
     },
     {
@@ -2473,7 +2481,6 @@
       "task": "Export a specific shape to pdf format with high resolution",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2527,7 +2534,6 @@
       "task": "Export each shape on a specific page to separate pdf files named by shape id",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2547,6 +2553,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -2659,10 +2666,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "Pages",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -2678,9 +2685,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -2724,7 +2731,8 @@
       "task": "Filter shapes by a custom property value and output the ids of matching shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2740,8 +2748,8 @@
       "task": "Filter shapes by master name and apply a custom theme only to those matching the filter",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2775,6 +2783,7 @@
       "task": "Filter shapes on a page by checking for paragraphs containing the word important and highlight them",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2792,7 +2801,8 @@
       "task": "Filter shapes on a page by ids greater than 100 and rotate each filtered shape by five degrees",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2809,8 +2819,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2834,8 +2843,8 @@
         "Diagram",
         "ImageSaveOptions",
         "Pages",
-        "diagram",
-        "page"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -2846,6 +2855,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -2862,7 +2872,8 @@
       "task": "Generate a report listing each connector id together with its associated line jump style",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -2878,15 +2889,15 @@
       "task": "Generate a report summarizing each shape s id name width height and absolute pin coordinates",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -2946,6 +2957,7 @@
       "task": "Generate a visual diagram highlighting shapes with disabled line inheritance using custom line colors",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -2963,7 +2975,6 @@
       "task": "Generate a visual preview of connector line jumps before saving changes to verify appearance",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -3001,14 +3012,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shape",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -3023,8 +3035,9 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "SVGSaveOptions",
-        "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -3034,7 +3047,10 @@
       "task": "Implement a batch routine that updates line weight for all page shapes based on current width",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3050,9 +3066,9 @@
       "task": "Implement a cleanup routine that removes duplicate connection points from shapes after batch modifications",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3068,7 +3084,6 @@
       "task": "Implement a command line tool that toggles fill inheritance for a shape identified by name",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -3086,7 +3101,9 @@
       "task": "Implement a feature to copy connection points from a template shape to multiple target shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Connection",
@@ -3119,7 +3136,8 @@
       "task": "Implement a logging wrapper around setwidth and setheight to record old and new dimension values",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3135,6 +3153,7 @@
       "task": "Implement a retry mechanism when loading a diagram fails due to file lock then set paragraph text",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Threading"
@@ -3152,7 +3171,8 @@
       "task": "Implement a validation routine that ensures no connector has an undefined line jump style",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3169,8 +3189,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -3203,6 +3223,7 @@
       "task": "Implement error handling to catch exceptions when a shape id is not found during retrieval",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -3210,6 +3231,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -3219,8 +3241,8 @@
       "task": "Implement try catch blocks around theme application to handle exceptions for unsupported shape types",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3244,8 +3266,8 @@
         "AddShape",
         "ConnectShapesViaConnector",
         "Diagram",
-        "Page",
-        "Pages"
+        "Pages",
+        "Shapes"
       ]
     },
     {
@@ -3269,13 +3291,11 @@
       "task": "Iterate over all pages add a header shape containing the current date and position it consistently",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -3321,7 +3341,6 @@
       "task": "Iterate through all shapes and count how many have a red line attribute",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -3391,7 +3410,8 @@
       "task": "Iterate through the connectedshapes collection and log each connected shape s id and type",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3426,7 +3446,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -3469,8 +3488,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -3479,7 +3498,6 @@
       "task": "Load a diagram from a memory stream modify shape size and write the result to a byte array",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -3496,6 +3514,7 @@
       "task": "Load a diagram locate a group shape and rotate each of its sub shapes individually by twenty degrees",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -3552,7 +3571,8 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -3586,7 +3606,9 @@
       "task": "Load a visio diagram apply a drop shadow to all shapes with a specific tag and save the modified diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3640,7 +3662,8 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -3656,17 +3679,17 @@
       "task": "Load a visio diagram extract each shape s geometry as a dxf file and archive the dxf files",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.IO.Compression",
-        "System.Text"
+        "System.IO.Compression"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "SVGSaveOptions",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -3676,7 +3699,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Xml"
       ],
@@ -3825,7 +3847,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3877,8 +3900,8 @@
       "task": "Load a visio diagram programmatically set shape protection to prevent deletion and save the protected file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3895,9 +3918,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -3914,7 +3935,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -3935,11 +3957,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "ImageSaveOptions",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -3965,6 +3987,7 @@
       "task": "Load a visio file apply a custom color gradient to all shapes based on their layer then save",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4001,7 +4024,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4074,13 +4098,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Page",
-        "page"
+        "Pages",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -4089,11 +4115,17 @@
       "task": "Load a visio file convert each shape to a vector pdf page and preserve original layer ordering",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -4102,8 +4134,8 @@
       "task": "Load a visio file detect shapes with missing fill colors assign a default color and save the corrected diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4120,7 +4152,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4136,17 +4169,16 @@
       "task": "Load a visio file extract shape custom properties map them to a database schema and insert records",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.Data"
+        "System.Data",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -4161,10 +4193,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
-        "PdfSaveOptions",
-        "Save"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -4212,7 +4244,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4228,11 +4261,12 @@
       "task": "Load a visio file identify shapes with no assigned master and assign a default master programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
+        "AddShape",
         "Diagram",
         "Masters",
         "Pages",
@@ -4260,6 +4294,7 @@
       "task": "Load a visio file merge two separate diagrams into a single file preserving all shape layers and connections",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4291,6 +4326,7 @@
       "task": "Load a visio file replace shape fill colors based on external csv data then save the modified diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -4390,7 +4426,6 @@
       "task": "Load multiple visio files from a directory apply a common theme to new shapes and save them",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4431,7 +4466,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -4474,7 +4511,6 @@
       "task": "Log each theme application event with timestamp and shape identifier to a text log file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4493,6 +4529,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4500,6 +4537,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Windows",
         "diagram"
       ]
     },
@@ -4509,7 +4547,6 @@
       "task": "Loop through all shapes on a page and apply the office theme to each shape sequentially",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4529,7 +4566,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -4548,6 +4584,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.Diagnostics",
         "System.IO"
       ],
@@ -4565,7 +4602,6 @@
       "task": "Merge paragraphs from two shapes into a single shape while preserving individual formatting attributes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4583,7 +4619,6 @@
       "task": "Modify a shape s fill inherit flag to disable inheritance and apply a custom fill color",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4618,7 +4653,6 @@
       "task": "Modify the first paragraph s font size to twelve points and align it to center",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4636,16 +4670,15 @@
       "task": "Modify the text formatting of a shape including font size and color following theme assignment",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -4661,6 +4694,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -4670,7 +4704,8 @@
       "task": "Move the shape to new coordinates by updating its pinx and piny cells",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4721,14 +4756,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "PdfSaveOptions",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -4755,7 +4792,6 @@
       "task": "Open a visio diagram batch increase the font size of all title shapes by two points then save",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -4827,16 +4863,18 @@
       "task": "Open a visio diagram detect overlapping shapes and automatically reposition them to eliminate collisions",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.AutoLayout",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
+        "AutoSpaceOptions",
+        "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -4846,15 +4884,10 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Diagram"
       ]
     },
     {
@@ -4881,9 +4914,8 @@
       "task": "Open a visio diagram detect shapes with missing custom properties and add default properties programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4936,14 +4968,15 @@
       "task": "Open a visio diagram extract shape comments translate them using an external service and update the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO",
+        "System.Net.Http",
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -4954,7 +4987,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Data"
+        "System.Collections.Generic",
+        "System.Data",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -4989,14 +5024,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PdfSaveOptions",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -5013,9 +5049,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Prop",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -5024,6 +5060,7 @@
       "task": "Open a visio document batch resize all shapes to a uniform width then save the updated file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -5048,9 +5085,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -5095,14 +5130,15 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
         "Pages",
         "Save",
-        "StyleSheet"
+        "Shapes"
       ]
     },
     {
@@ -5130,6 +5166,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -5222,7 +5259,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Drawing",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -5230,9 +5266,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "SVGSaveOptions",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -5241,7 +5277,9 @@
       "task": "Open a visio file extract shape ids and their associated comments and output to a markdown table",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -5256,6 +5294,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.IO",
         "System.Xml.Linq"
       ],
       "key_apis": [
@@ -5360,7 +5399,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -5396,10 +5436,9 @@
       "task": "Open a visio file validate that every shape contains alt text and generate a report of missing entries",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -5420,10 +5459,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -5435,14 +5474,15 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -5468,7 +5508,6 @@
       "task": "Perform batch processing to set a uniform paragraph margin for shapes across multiple diagram files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -5486,6 +5525,7 @@
       "task": "Process multiple diagram files in a batch applying the same theme to all shapes on each file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -5505,7 +5545,23 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
         "System",
-        "System.Collections.Generic",
+        "System.IO"
+      ],
+      "key_apis": [
+        "AddShape",
+        "ConnectShapesViaConnector",
+        "Diagram",
+        "Pages",
+        "Save"
+      ]
+    },
+    {
+      "slug": "programmatically-clone-a-shape-inherit-its-fill-settings-then-modify-the-clone-s-line-inheritance-flag",
+      "file": "programmatically-clone-a-shape-inherit-its-fill-settings-then-modify-the-clone-s-line-inheritance-flag.cs",
+      "task": "Programmatically clone a shape inherit its fill settings then modify the clone s line inheritance flag",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
         "System.IO"
       ],
       "key_apis": [
@@ -5517,30 +5573,13 @@
       ]
     },
     {
-      "slug": "programmatically-clone-a-shape-inherit-its-fill-settings-then-modify-the-clone-s-line-inheritance-flag",
-      "file": "programmatically-clone-a-shape-inherit-its-fill-settings-then-modify-the-clone-s-line-inheritance-flag.cs",
-      "task": "Programmatically clone a shape inherit its fill settings then modify the clone s line inheritance flag",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System",
-        "System.IO"
-      ],
-      "key_apis": [
-        "AddShape",
-        "Diagram",
-        "Pages",
-        "Save",
-        "Shapes"
-      ]
-    },
-    {
       "slug": "programmatically-set-a-shape-s-glue-options-to-allow-only-incoming-connectors-not-outgoing",
       "file": "programmatically-set-a-shape-s-glue-options-to-allow-only-incoming-connectors-not-outgoing.cs",
       "task": "Programmatically set a shape s glue options to allow only incoming connectors not outgoing",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -5556,7 +5595,6 @@
       "task": "Protect the shape from editing while allowing paragraph text modifications and verify protection",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -5574,6 +5612,7 @@
       "task": "Read a custom user defined cell named cost from a shape s data collection into a dictionary",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -5628,6 +5667,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
@@ -5681,7 +5722,6 @@
       "task": "Read a visio diagram batch convert all connector lines to dashed style and save the modified diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -5712,22 +5752,22 @@
       ]
     },
     {
-      "slug": "read-a-visio-diagram-batch-convert-all-shapes-to-svg-embed-metadata-attributes-and-store-in-a-version-controlled-reposit",
-      "file": "read-a-visio-diagram-batch-convert-all-shapes-to-svg-embed-metadata-attributes-and-store-in-a-version-controlled-reposit.cs",
-      "task": "Read a visio diagram batch convert all shapes to svg embed metadata attributes and store in a version controlled reposit",
+      "slug": "read-a-visio-diagram-batch-convert-all-shapes-to-svg-embed-metadata-attributes-and-store-in-a-version-controlled-repository",
+      "file": "read-a-visio-diagram-batch-convert-all-shapes-to-svg-embed-metadata-attributes-and-store-in-a-version-controlled-repository.cs",
+      "task": "Read a visio diagram batch convert all shapes to svg embed metadata attributes and store in a version controlled repository",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Xml.Linq"
+        "System.Xml"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "SVGSaveOptions",
-        "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -5745,7 +5785,7 @@
         "Pages",
         "PdfSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -5790,16 +5830,17 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.IO",
         "System.IO.Compression"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Pages",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -5809,7 +5850,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -5827,15 +5869,12 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.Globalization",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -5844,8 +5883,8 @@
       "task": "Read a visio diagram generate a printable index page listing all shape names and page numbers and prepend it",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text"
       ],
@@ -5881,8 +5920,8 @@
       "task": "Read a visio diagram identify shapes with missing hyperlinks and automatically add default urls based on shape names",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -5917,9 +5956,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -5990,7 +6027,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6042,7 +6080,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6058,7 +6097,8 @@
       "task": "Read a visio file batch increase the opacity of all shape fills to 90 and save the updated file",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6092,7 +6132,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6110,15 +6151,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "PdfSaveOptions",
-        "Save"
+        "Save",
+        "StyleSheet"
       ]
     },
     {
@@ -6152,9 +6192,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Pages",
         "PdfSaveOptions",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -6165,8 +6205,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text.RegularExpressions"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6192,7 +6231,7 @@
         "Diagram",
         "ImageSaveOptions",
         "Page",
-        "diagram"
+        "page"
       ]
     },
     {
@@ -6209,9 +6248,9 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Page",
         "Pages",
-        "PdfSaveOptions"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -6222,7 +6261,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -6256,18 +6294,10 @@
       "file": "read-a-visio-file-generate-a-vector-eps-file-for-each-page-and-store-them-in-an-output-directory.cs",
       "task": "Read a visio file generate a vector eps file for each page and store them in an output directory",
       "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
-      "key_apis": [
-        "Diagram",
-        "ImageSaveOptions",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
+      "key_apis": []
     },
     {
       "slug": "read-multiple-visio-files-convert-each-shape-to-an-image-and-combine-all-images-into-a-multi-page-pdf",
@@ -6276,6 +6306,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -6295,10 +6326,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO",
-        "System.IO.Compression",
-        "System.Linq"
+        "System.IO.Compression"
       ],
       "key_apis": [
         "Diagram",
@@ -6314,14 +6343,15 @@
       "task": "Read the current line jump style of the identified connector and log the value",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Layout",
         "Pages",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -6330,7 +6360,8 @@
       "task": "Read the current xform coordinates width and height of a selected shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6346,6 +6377,7 @@
       "task": "Read the dash style of a shape s line map it to a descriptive string and display it",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -6397,9 +6429,7 @@
       "task": "Remove all shapes that have no child shapes leaving only parent elements",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -6416,7 +6446,6 @@
       "task": "Replace a shape s fill pattern with a solid fill by clearing the pattern index",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -6434,15 +6463,16 @@
       "task": "Replace a shape s master with a different master id to change its visual representation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Masters",
         "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -6452,7 +6482,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6468,7 +6499,6 @@
       "task": "Reset a shape s theme to default values before applying a new custom theme",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -6526,7 +6556,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -6593,9 +6622,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -6645,6 +6674,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -6744,8 +6774,8 @@
         "AddShape",
         "Diagram",
         "Pages",
-        "diagram",
-        "shape"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -6788,7 +6818,8 @@
       "task": "Rotate all group shapes on a specific page uniformly by thirty degrees for consistent orientation",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6811,6 +6842,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -6820,7 +6852,6 @@
       "task": "Save the modified diagram back to a visio file preserving original page layout",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -6836,13 +6867,11 @@
       "task": "Save the modified diagram into a memory stream for further processing in a web service",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -6857,11 +6886,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shape"
       ]
     },
     {
@@ -6887,7 +6916,8 @@
       "task": "Save the modified diagram to a new vsdx file using diagram save with appropriate format",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -6902,6 +6932,7 @@
       "task": "Save the updated diagram to a new vsdx file while preserving original page order",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -6953,7 +6984,6 @@
       "task": "Serialize shape inheritance settings to json format for external configuration management and version control",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -7008,7 +7038,6 @@
       "task": "Set a 45 degree x axis rotation on a shape and retrieve its threedformat properties",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7033,7 +7062,8 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Save",
+        "Pages",
+        "Shapes",
         "diagram"
       ]
     },
@@ -7043,7 +7073,6 @@
       "task": "Set a custom theme color on a shape using the themecolor property with a hexadecimal value",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7065,11 +7094,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -7113,16 +7142,15 @@
       "task": "Set hyperlink property on a themed shape to open a documentation url when clicked",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -7131,14 +7159,16 @@
       "task": "Set multiline paragraph text including bullet points for the newly created shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -7165,15 +7195,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Layout",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -7216,16 +7247,15 @@
       "task": "Set the distancefromground property to 20 points for a shape and preview elevation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -7258,6 +7288,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -7267,7 +7298,6 @@
       "task": "Set the keeptextflat flag to false on a rotated shape to allow text rotation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7285,7 +7315,6 @@
       "task": "Set the keeptextflat flag to true on a rotated shape to keep text horizontal",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7303,6 +7332,7 @@
       "task": "Set the rotationtype to fixed and apply a 90 degree y axis rotation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7320,7 +7350,6 @@
       "task": "Set the x coordinate of a shape to a specific value while preserving its y position",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7355,7 +7384,9 @@
       "task": "Update paragraph alignment to justified for all paragraphs in shapes belonging to a specific master",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -7371,16 +7402,15 @@
       "task": "Update the line weight and dash pattern of a themed shape after applying the preset theme",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
       ]
     },
     {
@@ -7406,7 +7436,6 @@
       "task": "Use a configuration file to specify which shapes should retain custom fill while inheriting line styles",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -7425,11 +7454,9 @@
       "task": "Use a configuration file to specify which theme to apply to each shape type during runtime",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -7454,8 +7481,8 @@
         "AddMaster",
         "AddShape",
         "Diagram",
-        "Pages",
-        "Save"
+        "Page",
+        "Pages"
       ]
     },
     {
@@ -7464,16 +7491,15 @@
       "task": "Use a dictionary to map shape ids to custom connection point collections for later batch updates",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Manipulation",
         "System",
         "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
+        "Connection",
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -7507,9 +7533,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -7519,6 +7545,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.IO",
         "System.Linq"
       ],
       "key_apis": [
@@ -7535,7 +7562,6 @@
       "task": "Use linq to select shapes whose fill foreground color matches a specific rgb value for targeted updates",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Linq"
@@ -7554,25 +7580,8 @@
       "task": "Use shape data fields to drive conditional theme selection for each shape during processing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
-      ]
-    },
-    {
-      "slug": "use-shape-s-shapesheet-to-directly-modify-theme-related-cells-for-advanced-customization-in-the-diagram-s-underlying-dat",
-      "file": "use-shape-s-shapesheet-to-directly-modify-theme-related-cells-for-advanced-customization-in-the-diagram-s-underlying-dat.cs",
-      "task": "Use shape s shapesheet to directly modify theme related cells for advanced customization in the diagram s underlying dat",
-      "namespaces": [
-        "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -7583,22 +7592,38 @@
       ]
     },
     {
-      "slug": "use-shape-setconnectorstype-to-change-a-connector-shape-to-a-curved-style-and-observe-rendering",
-      "file": "use-shape-setconnectorstype-to-change-a-connector-shape-to-a-curved-style-and-observe-rendering.cs",
-      "task": "Use shape setconnectorstype to change a connector shape to a curved style and observe rendering",
+      "slug": "use-shape-s-shapesheet-to-directly-modify-theme-related-cells-for-advanced-customization-in-the-diagram-s-underlying-data-structure",
+      "file": "use-shape-s-shapesheet-to-directly-modify-theme-related-cells-for-advanced-customization-in-the-diagram-s-underlying-data-structure.cs",
+      "task": "Use shape s shapesheet to directly modify theme related cells for advanced customization in the diagram s underlying data structure",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
-        "ImageSaveOptions",
-        "Pages"
+        "Pages",
+        "PresetTheme",
+        "PresetThemeVariant",
+        "Save"
+      ]
+    },
+    {
+      "slug": "use-shape-setconnectorstype-to-change-a-connector-shape-to-a-curved-style-and-observe-rendering",
+      "file": "use-shape-setconnectorstype-to-change-a-connector-shape-to-a-curved-style-and-observe-rendering.cs",
+      "task": "Use shape setconnectorstype to change a connector shape to a curved style and observe rendering",
+      "namespaces": [
+        "Aspose.Diagram",
+        "System",
+        "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -7630,8 +7655,8 @@
       ],
       "key_apis": [
         "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
+        "Page",
         "Pages",
         "Save"
       ]
@@ -7642,7 +7667,9 @@
       "task": "Validate that a shape s xform coordinates remain within page boundaries after translation transformations",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -7682,18 +7709,17 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "PdfSaveOptions",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
-      "slug": "validate-that-dynamic-connectors-have-reroute-enabled-after-setting-layout-confixedcode-appropriately-in-the-current-dia",
-      "file": "validate-that-dynamic-connectors-have-reroute-enabled-after-setting-layout-confixedcode-appropriately-in-the-current-dia.cs",
-      "task": "Validate that dynamic connectors have reroute enabled after setting layout confixedcode appropriately in the current dia",
+      "slug": "validate-that-dynamic-connectors-have-reroute-enabled-after-setting-layout-confixedcode-appropriately-in-the-current-diagram",
+      "file": "validate-that-dynamic-connectors-have-reroute-enabled-after-setting-layout-confixedcode-appropriately-in-the-current-diagram.cs",
+      "task": "Validate that dynamic connectors have reroute enabled after setting layout confixedcode appropriately in the current diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7711,16 +7737,15 @@
       "task": "Validate that each shape has a non null themecolor after applying custom colors to all shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -7736,7 +7761,7 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Save",
+        "PresetThemeVariant",
         "Shapes"
       ]
     },
@@ -7781,7 +7806,6 @@
       "task": "Validate that no shape exceeds a rotationyangle of 360 degrees",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7800,7 +7824,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -7822,10 +7847,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -7852,7 +7877,6 @@
       "task": "Validate that the distancefromground value for each shape does not exceed 100 points",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -7870,8 +7894,8 @@
       "task": "Verify that all connector shapes contain at least one valid connection index and flag invalid ones",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -7887,16 +7911,16 @@
       "task": "Verify that the angle cell of each rotated shape matches the intended rotation value",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -7928,9 +7952,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -7939,8 +7963,8 @@
       "task": "Verify whether a shape belongs to any group and add it if not",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -7957,6 +7981,7 @@
       "task": "Write a function that returns the number of connectors attached to each gluing enabled shape",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -7975,7 +8000,6 @@
       "task": "Write a script that reads shape inheritance data and outputs a csv summary for reporting purposes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

@@ -1,49 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each text run in the shape
-                    foreach (var item in shape.Text.Value)
+                    // Iterate over each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (item is Txt txt && txt.Text != null)
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Iterate over each text element within the shape.
+                        foreach (FormatTxt fmt in shape.Text.Value)
                         {
-                            // Replace the trademark symbol (™) with the word 'Trademark'
-                            if (txt.Text.Contains("\u2122"))
+                            // Cast to Txt to access the actual text string.
+                            Txt txt = fmt as Txt;
+                            if (txt != null && txt.Text != null && txt.Text.Contains("™"))
                             {
-                                txt.Text = txt.Text.Replace("\u2122", "Trademark");
+                                // Replace the trademark symbol with the word 'Trademark'.
+                                txt.Text = txt.Text.Replace("™", "Trademark");
                             }
                         }
                     }
                 }
+
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

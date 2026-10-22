@@ -1,57 +1,84 @@
 using System;
-using System.Xml.Linq;
+using System.IO;
 using Aspose.Diagram;
+using System.Xml.Linq;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXmlPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Create the root XML element.
+                XDocument xmlDoc = new XDocument(new XElement("Diagram"));
 
-                // Input Visio file path
-                string visioPath = "input.vsdx";
-
-                // Output XML file path
-                string xmlOutputPath = "shapes.xml";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Create the root XML element
-                XElement root = new XElement("Diagram");
-
-                // Iterate through all pages and shapes
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Create an XML element for each shape
+                        // Create an element for the current shape with its ID.
                         XElement shapeElement = new XElement("Shape",
-                            new XAttribute("ID", shape.ID),
-                            new XAttribute("Data1", shape.Data1 ?? string.Empty),
-                            new XAttribute("Data2", shape.Data2 ?? string.Empty),
-                            new XAttribute("Data3", shape.Data3 ?? string.Empty)
-                        );
+                            new XAttribute("id", shape.ID));
 
-                        root.Add(shapeElement);
+                        // Ensure the shape has a Props collection before iterating.
+                        if (shape.Props != null)
+                        {
+                            // Iterate through all custom properties (Props) of the shape.
+                            foreach (Prop prop in shape.Props)
+                            {
+                                // Extract property name and value.
+                                string propName = prop.Name ?? string.Empty;
+                                string propValue = prop.Value?.Val ?? string.Empty;
+
+                                // Add a Property element under the current Shape element.
+                                XElement propElement = new XElement("Property",
+                                    new XAttribute("name", propName),
+                                    new XAttribute("value", propValue));
+
+                                shapeElement.Add(propElement);
+                            }
+                        }
+
+                        // Append the shape element to the root.
+                        xmlDoc.Root.Add(shapeElement);
                     }
                 }
 
-                // Build the XDocument and save to file
-                XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
-                doc.Save(xmlOutputPath);
-
-                Console.WriteLine($"Shape data exported to '{xmlOutputPath}'.");
-
+                // Save the constructed XML document.
+                xmlDoc.Save(outputPath);
+                Console.WriteLine($"Extraction completed. XML saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

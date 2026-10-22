@@ -4,35 +4,48 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Ensure an input file path is provided
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path specified.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: verify the file exists before attempting to load
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file
-            string filePath = "sample.vsdx";
-
-            // Open the file as a stream
-            using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            // Open a file stream for reading the Visio diagram
+            using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
-                // Load the Visio diagram from the stream
-                Diagram diagram = new Diagram(stream);
-
-                // Verify that the diagram contains at least one page
-                if (diagram.Pages.Count > 0)
+                // Load the diagram from the stream inside a using block as required
+                using (Diagram diagram = new Diagram(stream))
                 {
-                    Console.WriteLine("The diagram contains at least one page.");
-                }
-                else
-                {
-                    Console.WriteLine("The diagram does not contain any pages.");
+                    // Verify that the diagram contains at least one page
+                    if (diagram.Pages != null && diagram.Pages.Count > 0)
+                    {
+                        Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("Error: The loaded diagram contains no pages.");
+                    }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during loading
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

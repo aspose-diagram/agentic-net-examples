@@ -1,57 +1,62 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input diagram path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Define output path
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "ThemesApplied.vsdx");
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Define the preset theme to apply
+            PresetThemeValue presetTheme = PresetThemeValue.Bubble;
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
+                // Apply preset theme to the page
+                page.PresetTheme = presetTheme;
 
-                // Input and output file paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
+                // Log the page theme application
+                // Page name is accessed via NameU (user-friendly name)
+                string pageName = page.NameU ?? $"Page_{page.ID}";
+                Console.WriteLine($"Applied preset theme '{presetTheme}' to page '{pageName}' (ID: {page.ID})");
 
-                // Load the diagram
-                using (Diagram diagram = new Diagram(inputPath))
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Define the preset theme to apply
-                    PresetThemeValue presetTheme = PresetThemeValue.Bubble;
-                    PresetThemeVariantValue presetVariant = PresetThemeVariantValue.Variant1;
-                    PresetQuickStyleValue quickStyle = PresetQuickStyleValue.VariantStyle1;
+                    // Apply the same preset theme to the shape
+                    shape.PresetTheme = presetTheme;
 
-                    // Iterate through each page and apply the theme
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Apply theme to the page
-                        page.PresetTheme = presetTheme;
-                        page.PresetThemeVariant = presetVariant;
-
-                        // Log the page theme application
-                        Console.WriteLine($"Applied preset theme '{presetTheme}' (variant '{presetVariant}') to page '{page.Name}'.");
-
-                        // Iterate through each shape on the page and apply the same theme
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Apply theme to the shape
-                            shape.PresetTheme = presetTheme;
-                            shape.PresetThemeVariant = presetVariant;
-                            shape.PresetThemeQuickStyle = quickStyle;
-
-                            // Log the shape theme application
-                            Console.WriteLine($"Applied preset theme '{presetTheme}' (variant '{presetVariant}', quick style '{quickStyle}') to shape ID {shape.ID} on page '{page.Name}'.");
-                        }
-                    }
-
-                    // Save the modified diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to '{outputPath}'.");
+                    // Log the shape theme application
+                    Console.WriteLine($"Applied preset theme '{presetTheme}' to shape ID {shape.ID} on page '{pageName}'");
                 }
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

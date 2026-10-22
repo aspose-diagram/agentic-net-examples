@@ -1,73 +1,91 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments: first argument is output file, remaining are source diagram files.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <outputMaster.vsdx> <source1.vsdx> [<source2.vsdx> ...]");
+            return;
+        }
+
+        string outputPath = args[0];
+
+        // Guard for output directory existence.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Verify each source file exists.
+        for (int i = 1; i < args.Length; i++)
+        {
+            if (!File.Exists(args[i]))
+            {
+                Console.Error.WriteLine($"Source file not found: {args[i]}");
+                return;
+            }
+        }
+
         try
         {
-
-            // Paths to source Visio files whose first pages will be copied.
-            string[] sourceFiles = new string[]
-            {
-                "Diagram1.vsdx",
-                "Diagram2.vsdx",
-                "Diagram3.vsdx"
-            };
-
             // Create an empty master diagram.
-            Diagram masterDiagram = new Diagram();
-
-            // The newly created diagram contains a default empty page.
-            // Remove it so we can add only the copied pages.
-            if (masterDiagram.Pages.Count > 0)
+            using (Diagram masterDiagram = new Diagram())
             {
-                masterDiagram.Pages.Remove(masterDiagram.Pages[0]);
-            }
+                // Add a temporary placeholder page (will be removed later).
+                masterDiagram.Pages.Add(new Page());
 
-            foreach (string filePath in sourceFiles)
-            {
-                // Load the source diagram.
-                Diagram sourceDiagram = new Diagram(filePath);
-
-                // Ensure the source diagram has at least one page.
-                if (sourceDiagram.Pages.Count == 0)
+                // Iterate over each source diagram and copy its first page.
+                for (int i = 1; i < args.Length; i++)
                 {
-                    Console.WriteLine($"Source file '{filePath}' contains no pages. Skipping.");
-                    continue;
+                    string sourcePath = args[i];
+
+                    using (Diagram sourceDiagram = new Diagram(sourcePath))
+                    {
+                        // Ensure the source diagram has at least one page.
+                        if (sourceDiagram.Pages.Count == 0)
+                        {
+                            Console.WriteLine($"Source diagram has no pages: {sourcePath}");
+                            continue;
+                        }
+
+                        // Retrieve the first page from the source.
+                        Page sourcePage = sourceDiagram.Pages[0];
+
+                        // Create a new page instance and copy the source page's content.
+                        Page copiedPage = new Page();
+                        copiedPage.Copy(sourcePage);
+
+                        // Preserve the original page ID.
+                        copiedPage.ID = sourcePage.ID;
+
+                        // Add the copied page to the master diagram.
+                        masterDiagram.Pages.Add(copiedPage);
+                    }
                 }
 
-                // Get the first page from the source diagram.
-                Page sourcePage = sourceDiagram.Pages[0];
+                // Remove the initial placeholder page if it still exists.
+                if (masterDiagram.Pages.Count > 0)
+                {
+                    // The placeholder is the first page added before any copies.
+                    // It typically has ID = 0; we remove it to keep only copied pages.
+                    masterDiagram.Pages.Remove(masterDiagram.Pages[0]);
+                }
 
-                // Create a new page in the master diagram.
-                Page newPage = new Page();
-
-                // Copy the content of the source page into the new page.
-                newPage.Copy(sourcePage);
-
-                // Preserve the original page ID and name.
-                newPage.ID = sourcePage.ID;
-                newPage.Name = sourcePage.Name;
-
-                // Add the new page to the master diagram.
-                masterDiagram.Pages.Add(newPage);
-
-                Console.WriteLine($"Copied page '{sourcePage.Name}' (ID={sourcePage.ID}) from '{filePath}'.");
+                // Save the master diagram containing the copied pages.
+                masterDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Master diagram saved to: {outputPath}");
             }
-
-            // Save the master diagram containing the copied pages.
-            string outputPath = "MasterDiagram.vsdx";
-            masterDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Master diagram saved to '{outputPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 }

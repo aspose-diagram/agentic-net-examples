@@ -6,59 +6,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file to be loaded
-        string inputPath = "input.vsdx";
-
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> [ShapeId]");
             return;
+        }
+
+        string visioPath = args[0];
+        // Guard: ensure the Visio file exists
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
+        // Optional shape ID argument (default to 1)
+        int shapeId = 1;
+        if (args.Length >= 2 && int.TryParse(args[1], out int parsedId))
+        {
+            shapeId = parsedId;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
 
-            // Retrieve the first page (index 0) – Visio diagrams contain pages
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
+            }
+
+            // Retrieve the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape (for example, the shape with ID 1) from the page
-            Shape shape = page.Shapes.GetShape(1);
-
-            // Enable gradient fill on the shape (optional, depends on the diagram)
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-
-            // Access the first gradient stop (index 0) and read its color value
-            GradientStop firstStop = null;
-            int currentIndex = 0;
-            foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-                if (currentIndex == 0)
-                {
-                    firstStop = stop;
-                    break;
-                }
-                currentIndex++;
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on page.");
+                return;
             }
 
-            if (firstStop != null)
+            // Access the gradient fill of the shape
+            GradientFill gradientFill = shape.Fill.GradientFill;
+
+            // Verify that gradient stops are present
+            if (gradientFill.GradientStops.Count == 0)
             {
-                // The color is stored as a hexadecimal string (e.g., "#FF0000")
-                string colorHex = firstStop.Color.Value;
-                Console.WriteLine($"First gradient stop color: {colorHex}");
+                Console.WriteLine("The shape does not contain any gradient stops.");
+                return;
             }
-            else
-            {
-                Console.WriteLine("No gradient stops found on the shape.");
-            }
+
+            // Access the gradient stop at index 0
+            GradientStop firstStop = gradientFill.GradientStops[0];
+
+            // Read the color value of the first gradient stop
+            string colorValue = firstStop.Color.Value;
+
+            // Output the color value for analysis
+            Console.WriteLine($"Gradient Stop 0 Color: {colorValue}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose.Diagram errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

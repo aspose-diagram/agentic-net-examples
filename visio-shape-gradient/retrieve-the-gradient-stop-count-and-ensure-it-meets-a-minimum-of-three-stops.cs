@@ -1,68 +1,95 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input Visio file path (first argument) – fallback to a default name.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output file path (second argument) – fallback to a default name.
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
         try
         {
-
-            // Paths to input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page and the first shape (ID = 1)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(1);
-
-            if (shape != null && shape.Fill != null && shape.Fill.GradientFill != null)
+            // Ensure there is at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                var gradientFill = shape.Fill.GradientFill;
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-                // Retrieve current gradient stop count
-                int stopCount = gradientFill.GradientStops.Count;
-                Console.WriteLine($"Current gradient stop count: {stopCount}");
+            // Work with the first page.
+            Page page = diagram.Pages[0];
 
-                // Ensure at least three stops
-                if (stopCount < 3)
-                {
-                    // Clear existing stops before adding new ones
-                    gradientFill.GradientStops.Clear();
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
 
-                    // Add three default gradient stops
-                    gradientFill.GradientStops.Add(
-                        new DoubleValue(0, MeasureConst.NUM),
-                        new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at position 0
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes[0];
 
-                    gradientFill.GradientStops.Add(
-                        new DoubleValue(0.5, MeasureConst.NUM),
-                        new ColorValue("#00FF00", MeasureConst.Undefined)); // Green at position 0.5
+            // Access the gradient fill of the shape.
+            GradientFill gradientFill = shape.Fill.GradientFill;
 
-                    gradientFill.GradientStops.Add(
-                        new DoubleValue(1, MeasureConst.NUM),
-                        new ColorValue("#0000FF", MeasureConst.Undefined)); // Blue at position 1
+            // Retrieve the current gradient stop count.
+            int stopCount = gradientFill.GradientStops.Count;
+            Console.WriteLine($"Current gradient stop count: {stopCount}");
 
-                    Console.WriteLine("Added default gradient stops to ensure a minimum of three stops.");
-                }
+            // Ensure there are at least three gradient stops.
+            if (stopCount < 3)
+            {
+                // Enable gradient if it is not already enabled.
+                gradientFill.GradientEnabled.Value = BOOL.True;
+
+                // Clear existing stops and add three default stops.
+                gradientFill.GradientStops.Clear();
+
+                // Add stop at position 0 (red).
+                gradientFill.GradientStops.Add(
+                    new DoubleValue(0, MeasureConst.NUM),
+                    new ColorValue("#FF0000", MeasureConst.Undefined));
+
+                // Add stop at position 0.5 (green).
+                gradientFill.GradientStops.Add(
+                    new DoubleValue(0.5, MeasureConst.NUM),
+                    new ColorValue("#00FF00", MeasureConst.Undefined));
+
+                // Add stop at position 1 (blue).
+                gradientFill.GradientStops.Add(
+                    new DoubleValue(1, MeasureConst.NUM),
+                    new ColorValue("#0000FF", MeasureConst.Undefined));
+
+                Console.WriteLine("Added missing gradient stops to meet the minimum of three.");
             }
             else
             {
-                Console.WriteLine("The specified shape does not have a gradient fill.");
+                Console.WriteLine("The shape already has three or more gradient stops.");
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

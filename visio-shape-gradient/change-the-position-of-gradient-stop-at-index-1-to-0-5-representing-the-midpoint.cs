@@ -1,75 +1,102 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Ensure there is at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Access the first page
+                // Work with the first page.
                 Page page = diagram.Pages[0];
 
-                // Retrieve the first shape on the page (adjust as needed)
-                Shape shape = null;
+                // Find the first non‑deleted shape on the page.
+                Shape targetShape = null;
                 foreach (Shape s in page.Shapes)
                 {
-                    shape = s;
-                    break;
+                    if (s.Del == BOOL.False)
+                    {
+                        targetShape = s;
+                        break;
+                    }
                 }
 
-                if (shape == null)
+                if (targetShape == null)
                 {
-                    throw new Exception("No shape found on the first page.");
+                    Console.Error.WriteLine("No visible shape found on the first page.");
+                    return;
                 }
 
-                // Ensure the shape has a gradient fill
-                shape.Fill.FillPattern.Value = 25;                         // Gradient fill pattern
-                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Enable gradient
-                shape.Fill.GradientFill.GradientDir.Value = 0;             // Direction (optional)
+                // Enable gradient fill for the shape.
+                targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-                // Capture existing gradient stops
-                List<(double Position, string Color)> stops = new List<(double, string)>();
-                foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+                // Access the gradient stops collection.
+                var gradientStops = targetShape.Fill.GradientFill.GradientStops;
+
+                // Ensure there are at least two stops to modify index 1.
+                if (gradientStops.Count < 2)
                 {
-                    double pos = stop.Position.Value;
-                    string col = stop.Color.Value;
-                    stops.Add((pos, col));
+                    Console.Error.WriteLine("The shape does not have a gradient stop at index 1.");
+                    return;
                 }
 
-                // Verify there is a stop at index 1
-                if (stops.Count <= 1)
+                // Store existing positions and colors.
+                List<double> positions = new List<double>();
+                List<ColorValue> colors = new List<ColorValue>();
+                foreach (GradientStop stop in gradientStops)
                 {
-                    throw new Exception("The shape does not have a gradient stop at index 1.");
+                    positions.Add(stop.Position.Value);
+                    colors.Add(stop.Color); // Store the ColorValue object itself.
                 }
 
-                // Change the position of the stop at index 1 to 0.5 (midpoint)
-                var modifiedStop = stops[1];
-                modifiedStop.Position = 0.5;
-                stops[1] = modifiedStop;
+                // Clear existing stops before re‑adding.
+                gradientStops.Clear();
 
-                // Reapply the gradient stops
-                shape.Fill.GradientFill.GradientStops.Clear();
-                foreach (var stopInfo in stops)
+                // Re‑add stops, adjusting the position of the stop at index 1 to 0.5.
+                for (int i = 0; i < positions.Count; i++)
                 {
-                    shape.Fill.GradientFill.GradientStops.Add(
-                        new DoubleValue(stopInfo.Position, MeasureConst.NUM),
-                        new ColorValue(stopInfo.Color, MeasureConst.Undefined));
+                    double newPos = (i == 1) ? 0.5 : positions[i];
+                    gradientStops.Add(new DoubleValue(newPos, MeasureConst.NUM), colors[i]);
                 }
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,41 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            var diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has a gradient fill enabled
-                    if (shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                    // Iterate through each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate over each gradient stop in the shape's gradient fill
-                        foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has a gradient fill defined.
+                        if (shape.Fill == null || shape.Fill.GradientFill == null)
+                            continue;
+
+                        // Access the collection of gradient stops.
+                        GradientStopCollection stops = shape.Fill.GradientFill.GradientStops;
+
+                        // If there are no stops, continue to next shape.
+                        if (stops == null || stops.Count == 0)
+                            continue;
+
+                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+
+                        // Iterate explicitly using GradientStop type.
+                        foreach (GradientStop stop in stops)
                         {
-                            double position = stop.Position.Value;   // Position (0.0 to 1.0)
-                            string color = stop.Color.Value;        // Color as HEX string (e.g., "#FF0000")
-                            Console.WriteLine($"Shape ID {shape.ID}: Stop Position = {position}, Color = {color}");
+                            // Log position and color values of each stop.
+                            // Position.Value is a double, Color.Value is a hex string.
+                            Console.WriteLine($"  Stop Position: {stop.Position.Value}, Color: {stop.Color.Value}");
                         }
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

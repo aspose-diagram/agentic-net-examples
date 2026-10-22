@@ -1,62 +1,75 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Determine the input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-
-                // Load an existing Visio diagram
-                var diagram = new Diagram("input.vsdx");
-
-                // Access the first page (index 0)
-                var page = diagram.Pages[0];
-
-                // Retrieve a shape from the page.
-                // Here we assume the shape with ID 1 exists; adjust as needed.
-                var shape = page.Shapes.GetShape(1);
-
-                // Ensure the shape has a gradient fill defined
-                if (shape.Fill.GradientFill == null)
-                {
-                    Console.WriteLine("The selected shape does not contain a gradient fill.");
-                    return;
-                }
-
-                var gradientStops = shape.Fill.GradientFill.GradientStops;
-
-                // Verify that at least one gradient stop is present
-                if (gradientStops.Count == 0)
-                {
-                    Console.WriteLine("No gradient stops are defined for this shape.");
-                    return;
-                }
-
-                // Access the gradient stop at index 0
-                GradientStop firstStop = gradientStops[0];
-
-                // Read its position value (stored as DoubleValue)
-                double position = firstStop.Position.Value;
-
-                Console.WriteLine($"First gradient stop position: {position}");
-
-                // Example verification: expect the position to be 0.0 (start of gradient)
-                double expectedPosition = 0.0;
-                if (Math.Abs(position - expectedPosition) > 0.0001)
-                {
-                    throw new Exception($"Verification failed: expected position {expectedPosition}, but found {position}.");
-                }
-                else
-                {
-                    Console.WriteLine("Gradient stop position verification succeeded.");
-                }
-
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Access the first page
+            Page page = diagram.Pages[0];
+
+            // Ensure the page contains at least one shape
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("Error: Page contains no shapes.");
+                return;
             }
+
+            // Access the first shape on the page
+            Shape shape = page.Shapes[0];
+
+            // Access the gradient fill of the shape
+            GradientFill gradientFill = shape.Fill?.GradientFill;
+            if (gradientFill == null)
+            {
+                Console.Error.WriteLine("Error: Shape does not have a gradient fill.");
+                return;
+            }
+
+            // Access the collection of gradient stops
+            GradientStopCollection stops = gradientFill.GradientStops;
+            if (stops == null || stops.Count == 0)
+            {
+                Console.Error.WriteLine("Error: No gradient stops found in the shape.");
+                return;
+            }
+
+            // Retrieve the gradient stop at index 0
+            GradientStop firstStop = stops[0];
+
+            // Read the position value of the first gradient stop
+            double position = firstStop.Position.Value;
+
+            // Output the position for verification
+            Console.WriteLine($"Gradient stop at index 0 has position value: {position}");
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error console
+            Console.Error.WriteLine($"Exception occurred: {ex.Message}");
+        }
     }
-    }
+}

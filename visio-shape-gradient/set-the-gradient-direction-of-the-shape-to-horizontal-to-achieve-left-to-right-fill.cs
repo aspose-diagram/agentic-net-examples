@@ -1,54 +1,89 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Get the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve a shape by its ID (example uses ID = 1)
-            Shape shape = page.Shapes.GetShape(1);
-            if (shape == null)
+            // Ensure there is at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                Console.WriteLine("Shape with ID 1 not found.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Enable gradient fill and set it to horizontal (left‑to‑right)
-            shape.Fill.FillPattern.Value = 25;                         // Gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True; // Turn on gradient
-            shape.Fill.GradientFill.GradientDir.Value = 0;             // 0 = horizontal direction
+            // Retrieve the first page.
+            Page page = diagram.Pages[0];
 
-            // Clear any existing gradient stops
+            // Ensure the page contains at least one shape.
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
+
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes.GetShape(0);
+
+            // -----------------------------------------------------------------
+            // Configure gradient fill: horizontal (left‑to‑right) direction.
+            // -----------------------------------------------------------------
+
+            // Set the fill pattern to gradient (value 25 as per API).
+            shape.Fill.FillPattern.Value = 25;
+
+            // Enable gradient fill.
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+            // Set gradient direction to horizontal (0 = left‑to‑right).
+            shape.Fill.GradientFill.GradientDir.Value = 0;
+
+            // Clear any existing gradient stops.
             shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Add two gradient stops: start (red) and end (green)
+            // Add a start color stop at position 0 (e.g., red).
             shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0, MeasureConst.NUM),                 // Position at start (0%)
-                new ColorValue("#FF0000", MeasureConst.Undefined));   // Red color
+                new DoubleValue(0, MeasureConst.NUM),
+                new ColorValue("#FF0000", MeasureConst.Undefined));
 
+            // Add an end color stop at position 1 (e.g., green).
             shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1, MeasureConst.NUM),                 // Position at end (100%)
-                new ColorValue("#00FF00", MeasureConst.Undefined));   // Green color
+                new DoubleValue(1, MeasureConst.NUM),
+                new ColorValue("#00FF00", MeasureConst.Undefined));
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with horizontal gradient fill.");
-
+            // -----------------------------------------------------------------
+            // Save the modified diagram.
+            // -----------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

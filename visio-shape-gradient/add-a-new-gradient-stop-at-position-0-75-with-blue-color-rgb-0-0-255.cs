@@ -1,39 +1,79 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            // Create a new diagram (contains a default page)
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Draw a rectangle shape on the page
-            // Parameters: pinX, pinY, width, height (all in inches)
-            long rectId = page.DrawRectangle(2.0, 2.0, 3.0, 2.0);
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape((int)rectId);
+        // Load the Visio diagram inside a using block as required.
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                try
+                {
+                    // Access the first page of the diagram.
+                    Page page = diagram.Pages[0];
 
-            // Enable gradient fill
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            shape.Fill.GradientFill.GradientDir.Value = 0; // Direction (0 = left‑to‑right)
+                    // Iterate through shapes on the page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-            // Clear any existing gradient stops
-            shape.Fill.GradientFill.GradientStops.Clear();
+                        // Retrieve the shape again via GetShape as mandated.
+                        long shapeId = shape.ID;
+                        Shape targetShape = page.Shapes.GetShape(shapeId);
 
-            // Add a new gradient stop at position 0.75 with blue color (RGB 0,0,255)
-            // Position is a fraction (0‑1) using MeasureConst.NUM
-            // Color is specified as a hex string using ColorValue
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.75, MeasureConst.NUM),
-                new ColorValue("#0000FF", MeasureConst.Undefined));
+                        // Enable gradient fill (pattern 25 corresponds to gradient).
+                        targetShape.Fill.FillPattern.Value = 25;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("GradientRectangle.vsdx", SaveFileFormat.Vsdx);
+                        // Turn on the gradient.
+                        targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+                        // Clear any existing gradient stops.
+                        targetShape.Fill.GradientFill.GradientStops.Clear();
+
+                        // Add a new gradient stop at position 0.75 with blue color (#0000FF).
+                        targetShape.Fill.GradientFill.GradientStops.Add(
+                            new DoubleValue(0.75, MeasureConst.NUM),
+                            new ColorValue("#0000FF", MeasureConst.Undefined));
+
+                        // Process only the first applicable shape.
+                        break;
+                    }
+
+                    // Save the modified diagram to the specified output path.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
         }
     }
+}

@@ -3,56 +3,58 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output log file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "EventDropLog.txt";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Expect two arguments: input Visio file path and output log file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: EventDropLogger <inputVisioFile> <outputLogFile>");
-                return;
-            }
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-            string inputPath = args[0];
-            string logPath = args[1];
-
+        try
+        {
             // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+            Diagram diagram = new Diagram(inputPath);
 
-            // Open a StreamWriter for logging
-            using (StreamWriter writer = new StreamWriter(logPath, false))
+            // Open a StreamWriter for the log file
+            using (StreamWriter writer = new StreamWriter(outputPath, false))
             {
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the Event section exists
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve the EventDrop formula if available
+                        string eventDropFormula = null;
                         if (shape.Event != null && shape.Event.EventDrop != null && shape.Event.EventDrop.Ufe != null)
                         {
-                            string eventDropFormula = shape.Event.EventDrop.Ufe.F ?? string.Empty;
-                            // Log shape ID and its EventDrop formula
-                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, EventDrop: {eventDropFormula}");
+                            eventDropFormula = shape.Event.EventDrop.Ufe.F;
                         }
-                        else
-                        {
-                            // Log that the shape has no EventDrop defined
-                            writer.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, EventDrop: <none>");
-                        }
+
+                        // Write the information to the log file
+                        writer.WriteLine($"Page {page.ID}, Shape {shape.ID}: EventDrop = {eventDropFormula ?? "null"}");
                     }
                 }
             }
 
-            Console.WriteLine($"EventDrop values have been logged to: {logPath}");
+            Console.WriteLine($"EventDrop values have been logged to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

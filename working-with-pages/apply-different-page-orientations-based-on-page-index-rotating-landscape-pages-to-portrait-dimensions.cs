@@ -1,59 +1,64 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate over all pages in the diagram.
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Retrieve current page dimensions (in inches)
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
+                    Page page = diagram.Pages[i];
 
-                    // Determine if the page is in landscape orientation
-                    bool isLandscape = width > height;
+                    // Retrieve current orientation.
+                    var currentOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
-                    if (isLandscape)
+                    // If the page is Landscape, rotate it to Portrait.
+                    if (currentOrientation == PrintPageOrientationValue.Landscape)
                     {
-                        // Swap width and height to convert to portrait dimensions
-                        page.PageSheet.PageProps.PageWidth.Value = height;
-                        page.PageSheet.PageProps.PageHeight.Value = width;
+                        // Set orientation to Portrait.
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
-                        // Set the print orientation to Portrait
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
-                    }
-                    else
-                    {
-                        // Ensure portrait pages have Portrait orientation
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        // Swap width and height to reflect the rotation.
+                        double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                        page.PageSheet.PageProps.PageWidth.Value = originalHeight;
+                        page.PageSheet.PageProps.PageHeight.Value = originalWidth;
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Clean up
-                diagram.Dispose();
-
-                Console.WriteLine("Page orientation adjustment completed.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

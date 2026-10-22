@@ -4,51 +4,46 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // If no file paths are provided, inform the user and exit.
+        if (args.Length == 0)
         {
+            Console.Error.WriteLine("Please provide one or more Visio file paths as command-line arguments.");
+            return;
+        }
 
-            // Folder containing the source Visio files
-            string inputFolder = "VisioFiles";
-
-            // Folder where the updated files will be saved
-            string outputFolder = "UpdatedVisioFiles";
-
-            // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
-
-            // Get all files in the input folder (Visio supports multiple extensions)
-            string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in files)
+        // Process each file path supplied via command line.
+        foreach (string filePath in args)
+        {
+            // Guard: ensure the file exists before attempting to load.
+            if (!File.Exists(filePath))
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Use the document title; if missing, fall back to the file name without extension
-                string title = diagram.DocumentProps.Title;
-                if (string.IsNullOrWhiteSpace(title))
-                    title = Path.GetFileNameWithoutExtension(filePath);
-
-                // Set the left header text to the title
-                diagram.HeaderFooter.HeaderLeft = title;
-
-                // Build the output file path (preserve original file name)
-                string fileName = Path.GetFileName(filePath);
-                string outPath = Path.Combine(outputFolder, fileName);
-
-                // Save the diagram (using Vsdx format as a common Visio format)
-                diagram.Save(outPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
             }
 
-            Console.WriteLine("All Visio files have been processed and saved with updated headers.");
+            try
+            {
+                // Load the Visio diagram from the specified file.
+                Diagram diagram = new Diagram(filePath);
 
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                // Retrieve the document title; if missing, use an empty string.
+                string title = diagram.DocumentProps.Title ?? string.Empty;
+
+                // Set the left header text to the document title.
+                diagram.HeaderFooter.HeaderLeft = title;
+
+                // Save the diagram back to the same file in VSDX format.
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Successfully updated header for: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                // Write any errors that occur during processing to the error stream.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
 }

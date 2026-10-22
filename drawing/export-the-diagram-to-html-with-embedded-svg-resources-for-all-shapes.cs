@@ -1,112 +1,92 @@
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramExportExample
+class HtmlStreamProvider : IStreamProvider
 {
-    // Implements IStreamProvider to supply SVG streams for each shape during HTML export
-    public class SvgStreamProvider : IStreamProvider
+    private readonly string _outputDirectory;
+
+    public HtmlStreamProvider(string outputDirectory)
     {
-        private readonly Diagram _diagram;
-
-        public SvgStreamProvider(Diagram diagram)
-        {
-            _diagram = diagram;
-        }
-
-        // Called by Aspose.Diagram when a resource stream is required
-        public void InitStream(StreamProviderOptions options)
-        {
-            // The requested file name (e.g., "shape_12.svg")
-            string fileName = options.DefaultPath;
-
-            // Determine a temporary file path to store the generated SVG
-            string tempFilePath = Path.Combine(Path.GetTempPath(), fileName);
-
-            // Extract the shape ID from the file name using a regular expression
-            long shapeId = 0;
-            Match match = Regex.Match(fileName, @"shape_(\d+)\.svg", RegexOptions.IgnoreCase);
-            if (match.Success)
-            {
-                long.TryParse(match.Groups[1].Value, out shapeId);
-            }
-
-            // If a valid shape ID was found, locate the shape and export it to SVG
-            if (shapeId > 0)
-            {
-                Shape targetShape = null;
-                foreach (Page page in _diagram.Pages)
-                {
-                    // GetShape returns null if the ID does not exist on this page
-                    targetShape = page.Shapes.GetShape(shapeId);
-                    if (targetShape != null)
-                        break;
-                }
-
-                if (targetShape != null)
-                {
-                    // Export the shape to an SVG file using SVGSaveOptions
-                    SVGSaveOptions svgOptions = new SVGSaveOptions();
-                    targetShape.ToSvg(tempFilePath, svgOptions);
-                }
-            }
-
-            // Open a read‑only stream to the generated SVG (or an empty stream if not found)
-            if (File.Exists(tempFilePath))
-                options.Stream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read);
-            else
-                options.Stream = Stream.Null;
-        }
-
-        // Called after the resource has been consumed
-        public void CloseStream(StreamProviderOptions options)
-        {
-            options.Stream?.Close();
-        }
+        _outputDirectory = outputDirectory;
     }
 
-    class Program
+    // Called by Aspose.Diagram when a resource stream is needed
+    public void InitStream(StreamProviderOptions options)
     {
-        static void Main(string[] args)
+        // Ensure the output directory exists
+        Directory.CreateDirectory(_outputDirectory);
+
+        // Build the full file path for the resource using the default name provided by Aspose.Diagram
+        string filePath = Path.Combine(_outputDirectory, options.DefaultPath);
+
+        // Create a writable file stream for the resource
+        options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+    }
+
+    // Called by Aspose.Diagram after writing to the resource stream
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // Close and dispose the stream if it was created
+        options.Stream?.Close();
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Validate command‑line arguments
+        if (args.Length < 1)
         {
-            // Path to the source Visio diagram
-            string inputPath = "input.vsdx";
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            return;
+        }
 
-            // Guard to ensure the input file exists
-            if (!File.Exists(inputPath))
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output HTML file path (same folder, same name with .html extension)
+        string outputDirectory = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
+        string outputFileName = Path.GetFileNameWithoutExtension(inputPath) + ".html";
+        string outputPath = Path.Combine(outputDirectory, outputFileName);
+
+        // Directory where embedded SVG (and other) resources will be saved
+        string resourcesDirectory = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(outputFileName) + "_files");
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
             {
-                Console.Error.WriteLine($"File not found: {inputPath}");
-                return;
-            }
+                // Do not export hidden pages (bool property)
+                ExportHiddenPage = false,
+                // Do not include comments in the HTML
+                IsExportComments = false,
+                // Use custom stream provider to control where resources are written
+                StreamProvider = new HtmlStreamProvider(resourcesDirectory)
+            };
 
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
+            // Save the diagram as HTML; resources (SVG images) will be written via the stream provider
+            diagram.Save(outputPath, htmlOptions);
 
-                // Configure HTML export options (no CustomPath property exists)
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    ExportHiddenPage = false,
-                    IsExportComments = false
-                };
-
-                // Assign the custom stream provider that supplies SVG data for each shape
-                htmlOptions.StreamProvider = new SvgStreamProvider(diagram);
-
-                // Export the diagram to HTML with embedded SVG resources
-                string outputPath = "output.html";
-                diagram.Save(outputPath, htmlOptions);
-
-                Console.WriteLine($"Diagram exported to HTML with embedded SVG at: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                // Write any Aspose or I/O errors to the error console
-                Console.Error.WriteLine($"Error during export: {ex.Message}");
-            }
+            Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
+            Console.WriteLine($"Embedded resources are stored in: {resourcesDirectory}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred during export: {ex.Message}");
         }
     }
 }

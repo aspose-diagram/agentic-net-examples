@@ -1,59 +1,89 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.WriteLine("Usage: DiagramTextCompact <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through all pages
-        foreach (Page page in diagram.Pages)
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Get the plain text of the shape
-                string originalText = shape.Text.Value.Text;
-
-                // If there is no text, continue
-                if (string.IsNullOrWhiteSpace(originalText))
-                    continue;
-
-                // Replace multiple consecutive spaces with a single space
-                string compactText = originalText;
-                while (compactText.Contains("  "))
-                {
-                    compactText = compactText.Replace("  ", " ");
-                }
-
-                // If text changed, update the shape's text
-                if (!compactText.Equals(originalText))
-                {
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(compactText));
-                }
-            }
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
-        // Save the modified diagram
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        // Determine output path
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Append suffix to input file name if output not specified
+            string dir = Path.GetDirectoryName(inputPath) ?? "";
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{fileNameWithoutExt}_cleaned.vsdx");
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the shape has a Text object
+                    if (shape.Text == null || shape.Text.Value == null)
+                        continue;
+
+                    // Retrieve the plain text of the shape
+                    string originalText = shape.Text.Value.Text ?? string.Empty;
+
+                    // Skip processing if the text is empty or does not contain double spaces
+                    if (string.IsNullOrWhiteSpace(originalText) || !originalText.Contains("  "))
+                        continue;
+
+                    // Replace consecutive double spaces with a single space iteratively
+                    string cleanedText = originalText;
+                    while (cleanedText.Contains("  "))
+                    {
+                        cleanedText = cleanedText.Replace("  ", " ");
+                    }
+
+                    // Update the shape's text only if it changed
+                    if (!cleanedText.Equals(originalText))
+                    {
+                        // Clear existing text fragments
+                        shape.Text.Value.Clear();
+
+                        // Add the cleaned text as a new Txt object
+                        shape.Text.Value.Add(new Txt(cleanedText));
+                    }
+                }
+            }
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

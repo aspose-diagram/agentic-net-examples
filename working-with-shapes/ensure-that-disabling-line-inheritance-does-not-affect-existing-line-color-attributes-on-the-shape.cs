@@ -1,61 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the input file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip 1‑D connector shapes – they have no line fill to preserve
-                    if (shape.OneD) continue;
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Store the current explicit line color (hex string)
-                    string originalLineColor = shape.Line.LineColor.Value;
+                    // Retrieve the current line color (may be null)
+                    string originalLineColor = shape.Line.LineColor?.Value;
 
-                    // Disable line inheritance by explicitly setting the line color
-                    // to its current value. This forces the shape to use its own value
-                    // rather than inheriting from a master or style.
-                    shape.Line.LineColor.Value = originalLineColor;
+                    // Disable line inheritance by reassigning the current value
+                    // This forces the shape to use its own line color rather than inheriting
+                    shape.Line.LineColor.Value = shape.Line.LineColor.Value;
 
-                    // Verify that the line color remains unchanged after disabling inheritance
-                    if (shape.Line.LineColor.Value != originalLineColor)
+                    // Verify that the line color remains unchanged
+                    string afterLineColor = shape.Line.LineColor?.Value;
+                    if (originalLineColor != afterLineColor)
                     {
-                        Console.Error.WriteLine($"Line color altered for shape ID {shape.ID}");
+                        Console.Error.WriteLine($"Line color changed for shape ID {shape.ID} on page '{page.Name}'.");
+                        Console.Error.WriteLine($"Original: {originalLineColor ?? "null"}, After: {afterLineColor ?? "null"}");
                     }
                 }
             }
 
-            // Save the modified diagram to the output file using VSDX format
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine("An error occurred while processing the diagram:");
+            Console.Error.WriteLine(ex.Message);
         }
     }
 }

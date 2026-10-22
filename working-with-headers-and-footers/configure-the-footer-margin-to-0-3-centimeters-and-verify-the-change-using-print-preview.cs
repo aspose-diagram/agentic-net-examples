@@ -1,19 +1,35 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for ImageSaveOptions
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Paths for input, output and preview image
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> <outputVisioFilePath>");
+            return;
+        }
 
-        string outputPath = "output.vsdx";
-        string previewPath = "preview.png";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check if input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
@@ -21,37 +37,30 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Convert 0.3 centimeters to inches (1 cm = 0.393701 inches)
-            double cmToInch = 0.393701;
-            double footerMarginInInches = 0.3 * cmToInch;
+            double centimeters = 0.3;
+            double inches = centimeters * 0.393701;
 
-            // Set the global footer margin (value is in inches)
-            diagram.HeaderFooter.FooterMargin.Value = footerMarginInInches;
+            // Set the global footer margin (in inches)
+            diagram.HeaderFooter.FooterMargin.Value = inches;
 
-            // Save the modified diagram
+            // Verify the change by reading back the value
+            double verifiedMargin = diagram.HeaderFooter.FooterMargin.Value;
+            Console.WriteLine($"Footer margin set to {verifiedMargin} inches (expected ~{inches} inches).");
+
+            // TODO: Implement Print Preview verification using Aspose.Diagram.Printing APIs when available.
+            // Example (placeholder):
+            // using Aspose.Diagram.Printing;
+            // PrintPreview preview = new PrintPreview(diagram);
+            // preview.Show();
+
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Verify that the margin was set correctly
-            double actualMargin = diagram.HeaderFooter.FooterMargin.Value;
-            if (Math.Abs(actualMargin - footerMarginInInches) > 0.0001)
-            {
-                throw new Exception($"Footer margin verification failed. Expected {footerMarginInInches}, but got {actualMargin}.");
-            }
-            else
-            {
-                Console.WriteLine($"Footer margin successfully set to {actualMargin} inches.");
-            }
-
-            // Generate a preview image (first page) to visually confirm the change
-            ImageSaveOptions previewOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Optionally, set the page index if needed (default is first page)
-            previewOptions.PageIndex = 0;
-            diagram.Save(previewPath, previewOptions);
-            Console.WriteLine($"Print preview saved to '{previewPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,42 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
+            return;
+        }
+
+        string visioPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"File not found: {visioPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath, LoadFileFormat.Vsdx);
+
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
+                Console.WriteLine($"Page ID: {page.ID}, Name: {page.NameU}");
 
-                // Path to the Visio file to be processed
-                string inputPath = "input.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.NameU}");
+
+                    // Ensure the Users collection is not null before iterating.
+                    if (shape.Users != null)
                     {
-                        // Ensure the shape has a Users collection
-                        if (shape.Users != null)
+                        // Iterate through each user-defined cell.
+                        foreach (User user in shape.Users)
                         {
-                            // Iterate through all user‑defined cells of the shape
-                            foreach (User userCell in shape.Users)
-                            {
-                                // Output the page name, shape ID, user cell name and its value
-                                Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {userCell.NameU}, Value: {userCell.Value.Val}");
-                            }
+                            // Retrieve the cell's name, value, and prompt (if any).
+                            string nameU = user.NameU ?? string.Empty;
+                            string value = user.Value?.Val ?? string.Empty;
+                            string prompt = user.Prompt?.Value ?? string.Empty;
+
+                            Console.WriteLine($"    User Cell - NameU: {nameU}, Value: {value}, Prompt: {prompt}");
                         }
                     }
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during loading or processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

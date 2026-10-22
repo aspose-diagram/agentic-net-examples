@@ -1,28 +1,40 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Store original user-defined cell values for rollback
-            // Key: shape ID, Value: dictionary of user cell name -> original value
+            // Store original user-defined cell values for rollback.
+            // Key: Shape ID, Value: Dictionary of User cell name -> original value.
             var originalValues = new Dictionary<long, Dictionary<string, string>>();
 
-            // Flag to indicate validation failure
-            bool validationFailed = false;
-
-            // Iterate through all pages and shapes to capture original values
+            // Iterate all pages and shapes to capture original values.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -30,79 +42,97 @@ class Program
                     long shapeId = shape.ID;
                     var userValues = new Dictionary<string, string>();
 
-                    foreach (User userCell in shape.Users)
+                    foreach (User user in shape.Users)
                     {
-                        // Store the current value
-                        userValues[userCell.Name] = userCell.Value.Val;
+                        // Use NameU as the unique identifier for the user-defined cell.
+                        string cellName = user.NameU;
+                        string cellValue = user.Value?.Val ?? string.Empty;
+                        userValues[cellName] = cellValue;
                     }
 
                     originalValues[shapeId] = userValues;
                 }
             }
 
-            // Example validation: ensure that any user-defined cell named "Width" contains a positive number
+            // -----------------------------------------------------------------
+            // Example modification: append "_mod" to each user-defined cell value.
+            // In a real scenario, this would be where you apply business logic.
+            // -----------------------------------------------------------------
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    foreach (User userCell in shape.Users)
+                    foreach (User user in shape.Users)
                     {
-                        if (string.Equals(userCell.Name, "Width", StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (!double.TryParse(userCell.Value.Val, out double width) || width <= 0)
-                            {
-                                Console.WriteLine($"Validation failed for shape ID {shape.ID}: Width must be a positive number.");
-                                validationFailed = true;
-                                break;
-                            }
-                        }
+                        // Modify the cell value.
+                        string current = user.Value?.Val ?? string.Empty;
+                        user.Value.Val = current + "_mod";
                     }
-
-                    if (validationFailed)
-                        break;
                 }
-
-                if (validationFailed)
-                    break;
             }
 
-            // If validation failed, rollback to original values
+            // -----------------------------------------------------------------
+            // Validation: ensure all user-defined cell values are numeric.
+            // If any value fails validation, trigger rollback.
+            // -----------------------------------------------------------------
+            bool validationFailed = false;
+
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    foreach (User user in shape.Users)
+                    {
+                        string val = user.Value?.Val ?? string.Empty;
+                        // Simple numeric validation.
+                        if (!double.TryParse(val, out _))
+                        {
+                            validationFailed = true;
+                            Console.WriteLine($"Validation failed for Shape ID {shape.ID}, User Cell '{user.NameU}' with value '{val}'.");
+                            // No need to continue checking once a failure is detected.
+                            break;
+                        }
+                    }
+                    if (validationFailed) break;
+                }
+                if (validationFailed) break;
+            }
+
+            // -----------------------------------------------------------------
+            // Rollback if validation failed.
+            // -----------------------------------------------------------------
             if (validationFailed)
             {
-                Console.WriteLine("Rolling back changes to original user-defined cell values.");
+                Console.WriteLine("Rolling back to original user-defined cell values...");
 
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
                         long shapeId = shape.ID;
-                        if (originalValues.TryGetValue(shapeId, out var savedUserValues))
+                        if (originalValues.TryGetValue(shapeId, out var userValues))
                         {
-                            foreach (User userCell in shape.Users)
+                            foreach (User user in shape.Users)
                             {
-                                if (savedUserValues.TryGetValue(userCell.Name, out string originalVal))
+                                string cellName = user.NameU;
+                                if (userValues.TryGetValue(cellName, out string originalVal))
                                 {
-                                    userCell.Value.Val = originalVal;
+                                    user.Value.Val = originalVal;
                                 }
                             }
                         }
                     }
                 }
             }
-            else
-            {
-                Console.WriteLine("All validations passed. Proceeding with further processing if needed.");
-            }
 
-            // Save the diagram (overwrites the original file or saves to a new file)
-            string outputPath = "output.vsdx";
+            // Save the (potentially modified) diagram to the output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

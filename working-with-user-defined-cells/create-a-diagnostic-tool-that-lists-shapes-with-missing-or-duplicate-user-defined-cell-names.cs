@@ -1,97 +1,127 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            // Expect the Visio file path as the first argument
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Please provide the path to the Visio file as a command‑line argument.");
-                return;
-            }
+            Console.Error.WriteLine("Error: No diagram file path provided.");
+            return;
+        }
 
-            string inputPath = args[0];
-            Diagram diagram;
+        string diagramPath = args[0];
 
-            // Load the diagram
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
 
-            var reportLines = new List<string>();
-            int pageIndex = 0;
-
-            // Iterate through pages and shapes
-            foreach (Page page in diagram.Pages)
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // List to hold shapes that have no user-defined cells
+                var shapesMissingUserCells = new List<(string PageName, long ShapeId, string ShapeName)>();
+
+                // Map to track user-defined cell names and the shapes that use them
+                var userCellNameMap = new Dictionary<string, List<(string PageName, long ShapeId, string ShapeName)>>();
+
+                // Manual page counter because Page does not have an Index property
+                int pageCounter = 0;
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check for missing user‑defined cells
-                    if (shape.Users == null || shape.Users.Count == 0)
-                    {
-                        string msg = $"Page {pageIndex}, Shape ID {shape.ID} ({shape.NameU}) has no user‑defined cells.";
-                        Console.WriteLine(msg);
-                        reportLines.Add(msg);
-                        continue;
-                    }
+                    // Determine a readable page name
+                    string pageName = !string.IsNullOrEmpty(page.NameU) ? page.NameU : $"Page_{pageCounter}";
+                    pageCounter++;
 
-                    // Detect duplicate user‑defined cell names within the shape
-                    var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    var duplicateNames = new List<string>();
-
-                    foreach (User user in shape.Users)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        string name = user.NameU ?? user.Name;
-                        if (!seenNames.Add(name))
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Resolve shape name (fallback to ID if missing)
+                        string shapeName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : $"Shape_{shape.ID}";
+                        long shapeId = shape.ID;
+
+                        // Check for missing user-defined cells
+                        if (shape.Users == null || shape.Users.Count == 0)
                         {
-                            duplicateNames.Add(name);
+                            shapesMissingUserCells.Add((pageName, shapeId, shapeName));
                         }
-                    }
+                        else
+                        {
+                            // Process each user-defined cell
+                            foreach (User userCell in shape.Users)
+                            {
+                                // Prefer universal name, fallback to local name
+                                string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
 
-                    if (duplicateNames.Count > 0)
-                    {
-                        string dupList = string.Join(", ", duplicateNames);
-                        string msg = $"Page {pageIndex}, Shape ID {shape.ID} ({shape.NameU}) has duplicate user‑defined cell names: {dupList}.";
-                        Console.WriteLine(msg);
-                        reportLines.Add(msg);
+                                if (string.IsNullOrEmpty(cellName))
+                                    continue; // Skip unnamed cells
+
+                                if (!userCellNameMap.ContainsKey(cellName))
+                                {
+                                    userCellNameMap[cellName] = new List<(string, long, string)>();
+                                }
+
+                                userCellNameMap[cellName].Add((pageName, shapeId, shapeName));
+                            }
+                        }
                     }
                 }
 
-                pageIndex++;
-            }
+                // Output shapes missing user-defined cells
+                Console.WriteLine("=== Shapes Missing User-Defined Cells ===");
+                if (shapesMissingUserCells.Count == 0)
+                {
+                    Console.WriteLine("None");
+                }
+                else
+                {
+                    foreach (var entry in shapesMissingUserCells)
+                    {
+                        Console.WriteLine($"Page: {entry.PageName}, Shape ID: {entry.ShapeId}, Shape Name: {entry.ShapeName}");
+                    }
+                }
 
-            // Write the diagnostic report to a text file
-            string reportPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "diagnostic_report.txt");
-            try
-            {
-                File.WriteAllLines(reportPath, reportLines);
-                Console.WriteLine($"Diagnostic report written to: {reportPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write report file: {ex.Message}");
-            }
+                // Output duplicate user-defined cell names
+                Console.WriteLine();
+                Console.WriteLine("=== Duplicate User-Defined Cell Names ===");
+                bool anyDuplicates = false;
+                foreach (var kvp in userCellNameMap)
+                {
+                    if (kvp.Value.Count > 1)
+                    {
+                        anyDuplicates = true;
+                        Console.WriteLine($"Cell Name: {kvp.Key}");
+                        foreach (var shapeInfo in kvp.Value)
+                        {
+                            Console.WriteLine($"\tPage: {shapeInfo.PageName}, Shape ID: {shapeInfo.ShapeId}, Shape Name: {shapeInfo.ShapeName}");
+                        }
+                    }
+                }
 
-            // Save a copy of the diagram (unchanged) to demonstrate save usage
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "diagnostic_output.vsdx");
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
+                if (!anyDuplicates)
+                {
+                    Console.WriteLine("None");
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

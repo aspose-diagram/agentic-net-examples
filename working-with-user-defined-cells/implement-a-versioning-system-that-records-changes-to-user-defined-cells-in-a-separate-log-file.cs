@@ -2,93 +2,111 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input Visio file path
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Log file path for versioning changes
+        string logPath = "cell_changes.log";
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Build a lookup of shapes by their ID for quick access
+            Dictionary<long, Shape> shapeLookup = new Dictionary<long, Shape>();
+            foreach (Page page in diagram.Pages)
             {
-
-                // Paths (adjust as needed)
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-                string logPath = "cell_changes.log";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Capture original user-defined cell values
-                var originalValues = new Dictionary<string, string>();
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.Users == null) continue;
-                        foreach (User userCell in shape.Users)
-                        {
-                            string key = $"{page.ID}_{shape.ID}_{userCell.NameU}";
-                            originalValues[key] = userCell.Value.Val;
-                        }
-                    }
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True) continue;
+                    shapeLookup[shape.ID] = shape;
                 }
-
-                // ----- Simulate modifications to user-defined cells -----
-                // For demonstration, modify the first user-defined cell found
-                bool modificationDone = false;
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.Users == null) continue;
-                        foreach (User userCell in shape.Users)
-                        {
-                            // Change the value
-                            userCell.Value.Val = "ModifiedValue";
-                            modificationDone = true;
-                            break;
-                        }
-                        if (modificationDone) break;
-                    }
-                    if (modificationDone) break;
-                }
-
-                // Capture new values and log differences
-                using (StreamWriter logWriter = new StreamWriter(logPath, append: true))
-                {
-                    logWriter.WriteLine($"--- Change Log: {DateTime.Now} ---");
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (shape.Users == null) continue;
-                            foreach (User userCell in shape.Users)
-                            {
-                                string key = $"{page.ID}_{shape.ID}_{userCell.NameU}";
-                                string original = originalValues.ContainsKey(key) ? originalValues[key] : null;
-                                string current = userCell.Value.Val;
-
-                                if (original != current)
-                                {
-                                    logWriter.WriteLine($"Page {page.ID}, Shape {shape.ID}, Cell '{userCell.NameU}':");
-                                    logWriter.WriteLine($"    Original Value: {(original ?? "N/A")}");
-                                    logWriter.WriteLine($"    New Value: {current}");
-                                }
-                            }
-                        }
-                    }
-                    logWriter.WriteLine(); // Blank line for readability
-                }
-
-                // Save the updated diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Diagram processing complete. Changes logged to: " + logPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // List all shapes with user-defined cells
+            Console.WriteLine("Shapes with user-defined cells:");
+            foreach (var kvp in shapeLookup)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Shape shape = kvp.Value;
+                if (shape.Users.Count > 0)
+                {
+                    Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.NameU}");
+                    foreach (User user in shape.Users)
+                    {
+                        Console.WriteLine($"  Cell: {user.NameU}, Value: {user.Value.Val}");
+                    }
+                }
             }
+
+            // Prompt user to select a shape ID
+            Console.Write("Enter Shape ID to modify: ");
+            if (!long.TryParse(Console.ReadLine(), out long shapeId) || !shapeLookup.ContainsKey(shapeId))
+            {
+                Console.Error.WriteLine("Invalid Shape ID.");
+                return;
+            }
+
+            Shape targetShape = shapeLookup[shapeId];
+
+            // Prompt user to select a user-defined cell name
+            Console.Write("Enter User-defined Cell NameU to modify: ");
+            string cellNameU = Console.ReadLine();
+            User targetUser = null;
+            foreach (User user in targetShape.Users)
+            {
+                if (string.Equals(user.NameU, cellNameU, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetUser = user;
+                    break;
+                }
+            }
+
+            if (targetUser == null)
+            {
+                Console.Error.WriteLine("User-defined cell not found on the selected shape.");
+                return;
+            }
+
+            // Show current value and ask for new value
+            string oldValue = targetUser.Value.Val;
+            Console.WriteLine($"Current value of '{cellNameU}': {oldValue}");
+            Console.Write("Enter new value: ");
+            string newValue = Console.ReadLine();
+
+            // Update the cell value
+            targetUser.Value.Val = newValue;
+
+            // Save the diagram (overwrite original or save as new)
+            string outputPath = "output.vsdx";
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+
+            // Append change to log file
+            string logEntry = $"{DateTime.Now:u} | ShapeID: {shapeId} | Cell: {cellNameU} | Old: {oldValue} | New: {newValue}";
+            File.AppendAllText(logPath, logEntry + Environment.NewLine);
+            Console.WriteLine($"Change logged to {logPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

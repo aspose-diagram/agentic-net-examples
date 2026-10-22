@@ -1,83 +1,150 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: input diagram path and output VSDX path
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputVsdxPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Define a simple schema for user-defined cells (cell name -> expected data type)
+        // Supported types: "int", "double", "date", "string"
+        var schema = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Amount", "double" },
+            { "Count", "int" },
+            { "Date", "date" }
+            // Add more schema entries as needed
+        };
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                bool validationFailed = false;
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "validated_output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define a simple schema for user-defined cells
-                // Key: cell name, Value: expected .NET type
-                var schema = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "Length", typeof(double) },
-                    { "Count", typeof(int) },
-                    { "StartDate", typeof(DateTime) }
-                    // Add more entries as needed
-                };
-
-                // Validate each shape's user-defined cells against the schema
+                // Iterate over all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate over all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.Users == null) continue;
-
-                        foreach (User userCell in shape.Users)
+                        // Ensure the Users collection is not null before iterating
+                        if (shape.Users != null)
                         {
-                            if (!schema.TryGetValue(userCell.Name, out Type expectedType))
-                                continue; // No validation rule for this cell
+                            // Iterate over each user-defined cell
+                            foreach (User userField in shape.Users)
+                            {
+                                // Check if the cell name is defined in the schema
+                                if (schema.TryGetValue(userField.NameU, out string expectedType))
+                                {
+                                    string cellValue = userField.Value?.Val ?? string.Empty;
 
-                            string cellValue = userCell.Value?.Val ?? string.Empty;
-                            bool isValid = true;
+                                    // Validate the cell value against the expected type
+                                    if (!ValidateCellValue(expectedType, cellValue, out string errorMessage))
+                                    {
+                                        Console.Error.WriteLine(
+                                            $"Validation error in shape ID {shape.ID} on page ID {page.ID}: " +
+                                            $"User cell '{userField.NameU}' has invalid value '{cellValue}'. " +
+                                            $"Expected {expectedType}. {errorMessage}");
 
-                            if (expectedType == typeof(int))
-                            {
-                                isValid = int.TryParse(cellValue, out _);
-                            }
-                            else if (expectedType == typeof(double))
-                            {
-                                isValid = double.TryParse(cellValue, out _);
-                            }
-                            else if (expectedType == typeof(DateTime))
-                            {
-                                isValid = DateTime.TryParse(cellValue, out _);
-                            }
-                            else
-                            {
-                                // For string or other types, consider it always valid
-                                isValid = true;
-                            }
-
-                            if (!isValid)
-                            {
-                                string message = $"Validation failed: Shape ID {shape.ID}, User Cell '{userCell.Name}' " +
-                                                 $"has value '{cellValue}' which is not a valid {expectedType.Name}.";
-                                // Throwing stops the process; alternatively, log and continue
-                                throw new Exception(message);
+                                        validationFailed = true;
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                // Save the validated diagram as VSDX
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Abort saving if any validation errors were detected
+                if (validationFailed)
+                {
+                    Console.Error.WriteLine("Diagram validation failed. The diagram will not be saved.");
+                    return;
+                }
 
+                // Save the validated diagram to VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or I/O exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+
+    /// <summary>
+    /// Validates a cell value against an expected data type.
+    /// </summary>
+    /// <param name="expectedType">The expected type (int, double, date, string).</param>
+    /// <param name="value">The cell value to validate.</param>
+    /// <param name="errorMessage">Detailed error message if validation fails.</param>
+    /// <returns>True if the value matches the expected type; otherwise false.</returns>
+    private static bool ValidateCellValue(string expectedType, string value, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+        switch (expectedType.ToLowerInvariant())
+        {
+            case "int":
+                if (!int.TryParse(value, out _))
+                {
+                    errorMessage = "Value is not a valid integer.";
+                    return false;
+                }
+                return true;
+
+            case "double":
+                if (!double.TryParse(value, out _))
+                {
+                    errorMessage = "Value is not a valid double.";
+                    return false;
+                }
+                return true;
+
+            case "date":
+                if (!DateTime.TryParse(value, out _))
+                {
+                    errorMessage = "Value is not a valid date.";
+                    return false;
+                }
+                return true;
+
+            case "string":
+                // All values are valid strings
+                return true;
+
+            default:
+                errorMessage = $"Unsupported expected type '{expectedType}'.";
+                return false;
+        }
     }
+}

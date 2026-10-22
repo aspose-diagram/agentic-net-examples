@@ -1,55 +1,77 @@
-using System.IO;
 using System;
-using Aspose.Diagram;
+using System.IO;
 using System.Data;
+using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Path to the Visio diagram file
-            string filePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through all pages, shapes, and user‑defined cells
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Iterate through all user‑defined cells (User collection) of the shape.
                     foreach (User userCell in shape.Users)
                     {
-                        string cellName = userCell.NameU;          // Universal name of the user cell
-                        string formula = userCell.Value.Val;       // The formula or value stored in the cell
+                        // Extract the cell name and the raw formula/value string.
+                        string cellName = userCell.NameU ?? userCell.Name;
+                        string formula = userCell.Value?.Val ?? string.Empty;
 
-                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {cellName}, Formula: {formula}");
+                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {cellName}");
+                        Console.WriteLine($"  Formula/Value: {formula}");
 
-                        // Try to evaluate the formula using a simple .NET expression evaluator
-                        try
+                        // Attempt to evaluate simple numeric expressions using DataTable.Compute.
+                        // This is a fallback because Aspose.Diagram does not provide a formula engine.
+                        if (!string.IsNullOrWhiteSpace(formula))
                         {
-                            // DataTable.Compute can handle basic arithmetic expressions
-                            object result = new DataTable().Compute(formula, null);
-                            Console.WriteLine($"Evaluated Result: {result}");
-                        }
-                        catch (Exception ex)
-                        {
-                            // If the formula cannot be evaluated, report the error
-                            Console.WriteLine($"Could not evaluate formula: {ex.Message}");
+                            try
+                            {
+                                // DataTable.Compute can evaluate basic arithmetic expressions.
+                                // It will throw if the expression contains unsupported tokens.
+                                object result = new DataTable().Compute(formula, null);
+                                Console.WriteLine($"  Evaluated Result: {result}");
+                            }
+                            catch (Exception evalEx)
+                            {
+                                // If evaluation fails, report the issue but continue processing.
+                                Console.WriteLine($"  Evaluation failed: {evalEx.Message}");
+                            }
                         }
 
-                        Console.WriteLine(); // Blank line for readability
+                        Console.WriteLine(); // Blank line for readability.
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during Aspose.Diagram processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

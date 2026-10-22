@@ -1,93 +1,85 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Retrieves the value of a user‑defined cell by name.
-    // Returns null if the cell does not exist.
-    static string GetUserCellValue(Shape shape, string cellName)
+    static void Main(string[] args)
     {
-        if (shape == null || shape.Users == null)
-            return null;
+        // Input and output file paths (can be passed as command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        foreach (User user in shape.Users)
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            if (user == null)
-                continue;
-
-            // Compare both the internal name and the universal name.
-            if (string.Equals(user.Name, cellName, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(user.NameU, cellName, StringComparison.OrdinalIgnoreCase))
-            {
-                return user.Value?.Val;
-            }
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
         }
 
-        return null; // Cell not found.
-    }
-
-    static void Main()
-    {
         try
         {
-
-            // Path to the source Visio file.
-            string inputPath = "input.vsdx";
-            // Path for the output Visio file after processing.
-            string outputPath = "output.vsdx";
-
-            // Load the diagram.
-            Diagram diagram;
-            using (FileStream fs = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            // Load the diagram inside a using block (ensures proper disposal)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                diagram = new Diagram(fs);
-            }
+                double totalCost = 0.0;
+                int shapesWithCost = 0;
 
-            // Iterate through all pages and shapes.
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Example: we expect a user‑defined cell named "Multiplier".
-                    string cellValue = GetUserCellValue(shape, "Multiplier");
-
-                    if (cellValue == null)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Console.WriteLine($"Warning: Shape ID {shape.ID} on page '{page.Name}' is missing the 'Multiplier' user‑defined cell. Skipping calculation.");
-                        continue; // Skip this shape because required data is absent.
-                    }
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Try to parse the cell value as a double.
-                    if (!double.TryParse(cellValue, out double multiplier))
-                    {
-                        Console.WriteLine($"Error: Shape ID {shape.ID} has an invalid 'Multiplier' value ('{cellValue}'). Expected a numeric value. Skipping.");
-                        continue;
-                    }
+                        // Attempt to find a user‑defined cell named "Cost"
+                        User costCell = null;
+                        foreach (User userCell in shape.Users)
+                        {
+                            if (string.Equals(userCell.NameU, "Cost", StringComparison.OrdinalIgnoreCase))
+                            {
+                                costCell = userCell;
+                                break;
+                            }
+                        }
 
-                    // Perform a simple calculation: increase the shape's width by the multiplier.
-                    try
-                    {
-                        double originalWidth = shape.XForm.Width.Value;
-                        double newWidth = originalWidth * multiplier;
-                        shape.XForm.Width.Value = newWidth;
+                        // If the cell is missing, report the issue and continue
+                        if (costCell == null)
+                        {
+                            Console.Error.WriteLine($"Warning: Shape ID {shape.ID} on page \"{page.Name}\" does not contain a \"Cost\" user‑defined cell.");
+                            continue;
+                        }
 
-                        Console.WriteLine($"Shape ID {shape.ID}: Width changed from {originalWidth} to {newWidth} using multiplier {multiplier}.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Exception while updating shape ID {shape.ID}: {ex.Message}");
+                        // Try to parse the cell value as a double for calculation
+                        if (double.TryParse(costCell.Value.Val, out double costValue))
+                        {
+                            totalCost += costValue;
+                            shapesWithCost++;
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine($"Error: Invalid numeric value \"{costCell.Value.Val}\" in \"Cost\" cell of shape ID {shape.ID}.");
+                        }
                     }
                 }
+
+                // Output the calculation result
+                Console.WriteLine($"Processed {shapesWithCost} shapes with a valid \"Cost\" cell.");
+                Console.WriteLine($"Total Cost: {totalCost}");
+
+                // Save the (unchanged) diagram to the output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
             }
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Catch any Aspose.Diagram or I/O exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

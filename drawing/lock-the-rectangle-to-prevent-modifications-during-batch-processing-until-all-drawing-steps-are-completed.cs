@@ -1,27 +1,34 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define output file path
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure we can write to the directory
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
         try
         {
-
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (always exists in a new diagram)
+            // Access the first (default) page
             Page page = diagram.Pages[0];
 
             // Add a rectangle shape to the page
-            // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
-            long rectId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
-
-            // Retrieve the shape object using the returned ID
-            Shape rectShape = page.Shapes.GetShape(rectId);
+            // Parameters: pinX, pinY, width, height, master name, isConnector
+            long rectShapeId = page.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", false);
+            Shape rectShape = page.Shapes.GetShape(rectShapeId);
 
             // Lock the rectangle to prevent modifications during batch processing
             rectShape.Protection.LockMoveX.Value = BOOL.True;
@@ -31,13 +38,29 @@ class Program
             rectShape.Protection.LockRotate.Value = BOOL.True;
             rectShape.Protection.LockVtxEdit.Value = BOOL.True;
 
-            // (Optional) Save the diagram to verify the shape is locked
-            diagram.Save("LockedRectangle.vsdx", SaveFileFormat.Vsdx);
+            // ----- Begin batch processing steps -----
+            // Example: add another shape (ellipse) while the rectangle is locked
+            long ellipseShapeId = page.AddShape(5.0, 2.0, 1.5, 1.5, "Ellipse", false);
+            Shape ellipseShape = page.Shapes.GetShape(ellipseShapeId);
+            // (Additional drawing or manipulation logic would go here)
+            // ----- End batch processing steps -----
 
+            // Unlock the rectangle after all drawing steps are completed
+            rectShape.Protection.LockMoveX.Value = BOOL.False;
+            rectShape.Protection.LockMoveY.Value = BOOL.False;
+            rectShape.Protection.LockWidth.Value = BOOL.False;
+            rectShape.Protection.LockHeight.Value = BOOL.False;
+            rectShape.Protection.LockRotate.Value = BOOL.False;
+            rectShape.Protection.LockVtxEdit.Value = BOOL.False;
+
+            // Save the diagram to VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

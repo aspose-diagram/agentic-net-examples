@@ -1,60 +1,77 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Expect two arguments: input diagram path and output text file path
-            if (args.Length < 2)
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputTextPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: DiagramTextExtractor <inputDiagramPath> <outputTextFilePath>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args[1];
-
-            try
-            {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure there is at least one page
+                // Ensure the diagram contains at least one page.
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.WriteLine("The diagram contains no pages.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Access the first page (index 0)
+                // Retrieve the first page (page index 0).
                 Page page = diagram.Pages[0];
 
-                // Accumulate plain text from all shapes on the first page
-                StringBuilder allText = new StringBuilder();
+                // StringBuilder to accumulate extracted plain text.
+                StringBuilder sb = new StringBuilder();
 
+                // Iterate over all shapes on the first page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve concatenated plain text of the shape
-                    string shapeText = shape.Text.Value.Text;
-
-                    // Append non‑empty text with a line break
-                    if (!string.IsNullOrWhiteSpace(shapeText))
+                    // Guard against null Text objects.
+                    if (shape.Text != null && shape.Text.Value != null)
                     {
-                        allText.AppendLine(shapeText);
+                        // Extract the raw text from the shape.
+                        string rawText = shape.Text.Value.Text;
+
+                        // Skip empty strings.
+                        if (!string.IsNullOrEmpty(rawText))
+                        {
+                            // Remove any HTML or XML tags to obtain plain text.
+                            string plainText = Regex.Replace(rawText, "<.*?>", string.Empty);
+
+                            // Append the cleaned text followed by a newline.
+                            sb.AppendLine(plainText);
+                        }
                     }
                 }
 
-                // Write the collected text to a UTF‑8 encoded file
-                File.WriteAllText(outputPath, allText.ToString(), Encoding.UTF8);
-
-                Console.WriteLine($"Text extracted from page 1 and saved to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
+                // Write the accumulated text to the output file using UTF‑8 encoding.
+                File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
             }
         }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
+}

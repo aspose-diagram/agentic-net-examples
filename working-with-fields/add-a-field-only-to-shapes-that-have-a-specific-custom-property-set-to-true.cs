@@ -1,59 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths (provided via command‑line arguments or defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the source Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Name of the custom property to check
-            const string targetPropName = "MyFlag";
-
-            // Iterate through all pages
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a Props collection
-                    if (shape.Props == null)
-                        continue;
-
-                    // Look for the custom property with the specified name
+                    // Determine whether the shape has the custom property "IsTarget" set to "True"
+                    bool hasTargetProperty = false;
                     foreach (Prop prop in shape.Props)
                     {
-                        if (prop.Name == targetPropName && 
-                            string.Equals(prop.Value.Val, "TRUE", StringComparison.OrdinalIgnoreCase))
+                        if (prop.Name == "IsTarget" &&
+                            string.Equals(prop.Value.Val, "True", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Create a new text field and set its value
-                            Field field = new Field();
-                            field.Value.Val = "AddedField";
-
-                            // Add the field to the shape
-                            shape.Fields.Add(field);
-
-                            // No need to check other properties for this shape
+                            hasTargetProperty = true;
                             break;
                         }
+                    }
+
+                    // If the condition is met, add a new text field to the shape
+                    if (hasTargetProperty)
+                    {
+                        // Create a new Field object
+                        Field field = new Field();
+
+                        // Set the field's displayed value (static text "Special")
+                        field.Value.Val = "Special";
+
+                        // Add the field to the shape's Fields collection
+                        shape.Fields.Add(field);
                     }
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

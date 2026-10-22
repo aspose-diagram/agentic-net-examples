@@ -1,76 +1,138 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile> [duplicateCount]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        int duplicateCount = 3; // default number of duplicates
+
+        // Optional duplicate count argument
+        if (args.Length >= 3 && !int.TryParse(args[2], out duplicateCount))
+        {
+            Console.Error.WriteLine("Invalid duplicate count. Using default value of 3.");
+            duplicateCount = 3;
+        }
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
             {
-
-                // Load the source Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Assume the master shape is on the first page and has a known name
-                Page page = diagram.Pages[0];
-                string masterShapeName = "MasterShape"; // replace with actual master shape name
-
-                // Locate the master shape
-                Shape? masterShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.NameU == masterShapeName)
-                    {
-                        masterShape = shape;
-                        break;
-                    }
-                }
-
-                if (masterShape == null)
-                {
-                    throw new Exception($"Master shape '{masterShapeName}' not found.");
-                }
-
-                // Capture the event formulas from the master shape
-                var eventFormulas = new Dictionary<string, string>
-                {
-                    { "EventXFMod",   masterShape.Event.EventXFMod.Ufe.F },
-                    { "EventDblClick",masterShape.Event.EventDblClick.Ufe.F },
-                    { "EventDrop",    masterShape.Event.EventDrop.Ufe.F },
-                    { "EventMultiDrop",masterShape.Event.EventMultiDrop.Ufe.F },
-                    { "TheText",      masterShape.Event.TheText.Ufe.F },
-                    { "TheData",      masterShape.Event.TheData.Ufe.F }
-                };
-
-                // Clone the event section to all duplicate shapes that share the same master
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip the original master shape
-                    if (shape.ID == masterShape.ID)
-                        continue;
-
-                    // Ensure the shape uses the same master (i.e., is a duplicate)
-                    if (shape.Master != null && masterShape.Master != null && shape.Master.Name == masterShape.Master.Name)
-                    {
-                        // Apply each captured event formula to the duplicate shape
-                        shape.Event.EventXFMod.Ufe.F    = eventFormulas["EventXFMod"];
-                        shape.Event.EventDblClick.Ufe.F = eventFormulas["EventDblClick"];
-                        shape.Event.EventDrop.Ufe.F    = eventFormulas["EventDrop"];
-                        shape.Event.EventMultiDrop.Ufe.F = eventFormulas["EventMultiDrop"];
-                        shape.Event.TheText.Ufe.F      = eventFormulas["TheText"];
-                        shape.Event.TheData.Ufe.F      = eventFormulas["TheData"];
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Use the first page as the working canvas
+            Page page = diagram.Pages[0];
+
+            // Find a source shape that has an associated master (the "master shape")
+            Shape sourceShape = null;
+            foreach (Shape shp in page.Shapes)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Skip deleted shapes
+                if (shp.Del == BOOL.True)
+                    continue;
+
+                if (shp.Master != null)
+                {
+                    sourceShape = shp;
+                    break;
+                }
             }
+
+            if (sourceShape == null)
+            {
+                Console.Error.WriteLine("No shape with a master was found on the first page.");
+                return;
+            }
+
+            // Retrieve the master name for creating duplicates
+            string masterName = sourceShape.Master.Name;
+
+            // Store created duplicate shapes for later grouping
+            List<Shape> duplicateShapes = new List<Shape>();
+
+            // Base position for the first duplicate (offset from source shape)
+            double basePinX = sourceShape.XForm.PinX.Value;
+            double basePinY = sourceShape.XForm.PinY.Value;
+            double offsetX = 2.0; // inches offset between duplicates
+
+            // Clone event formulas from the source shape
+            string eventDropFormula = sourceShape.Event.EventDrop.Ufe.F;
+            string eventDblClickFormula = sourceShape.Event.EventDblClick.Ufe.F;
+            string eventXFModFormula = sourceShape.Event.EventXFMod.Ufe.F;
+            string eventMultiDropFormula = sourceShape.Event.EventMultiDrop.Ufe.F;
+            string theTextFormula = sourceShape.Event.TheText.Ufe.F;
+            string theDataFormula = sourceShape.Event.TheData.Ufe.F;
+
+            // Create the requested number of duplicate shapes
+            for (int i = 0; i < duplicateCount; i++)
+            {
+                // Calculate position for this duplicate
+                double pinX = basePinX + (i + 1) * offsetX;
+                double pinY = basePinY;
+
+                // Add a new shape based on the same master; isCalculate set to false
+                long newShapeId = page.AddShape(pinX, pinY, masterName, false);
+
+                // Retrieve the Shape object from the ID
+                Shape newShape = page.Shapes.GetShape((int)newShapeId);
+                if (newShape == null)
+                {
+                    Console.Error.WriteLine($"Failed to retrieve newly added shape with ID {newShapeId}.");
+                    continue;
+                }
+
+                // Copy event formulas to the new shape
+                newShape.Event.EventDrop.Ufe.F = eventDropFormula;
+                newShape.Event.EventDblClick.Ufe.F = eventDblClickFormula;
+                newShape.Event.EventXFMod.Ufe.F = eventXFModFormula;
+                newShape.Event.EventMultiDrop.Ufe.F = eventMultiDropFormula;
+                newShape.Event.TheText.Ufe.F = theTextFormula;
+                newShape.Event.TheData.Ufe.F = theDataFormula;
+
+                // Add to collection for grouping
+                duplicateShapes.Add(newShape);
+            }
+
+            // Include the original source shape in the group as well
+            duplicateShapes.Insert(0, sourceShape);
+
+            // Group all shapes together
+            Shape groupShape = page.Shapes.Group(duplicateShapes.ToArray());
+
+            // Optional: you could set a name for the group (if needed)
+            // groupShape.NameU = "ClonedEventGroup";
+
+            // Save the modified diagram to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

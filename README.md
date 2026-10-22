@@ -9,9 +9,9 @@
 | Total Examples | 1840 |
 | Categories | 31 |
 | Overall Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Repository Structure
 
@@ -198,7 +198,7 @@ dotnet build && dotnet run
 ## Prerequisites
 
 - .NET SDK (net8.0 or later)
-- [Aspose.Diagram for .NET 26.9.0](https://releases.aspose.com/diagram/net/)
+- [Aspose.Diagram for .NET 26.10.0](https://releases.aspose.com/diagram/net/)
 - DLL referenced in your `.csproj`
 
 ## Agent Pipeline
@@ -222,7 +222,7 @@ Each Aspose.Diagram release gets its own set of PRs validated against that versi
 
 ## Contributing
 
-Examples are generated automatically by the Aspose.Diagram Examples Generator Agent. To request new examples or report issues, open an issue on this repository. For AI agent instructions, see [agents.md](./agents.md).
+Examples are generated automatically by the Aspose Diagram .NET MCP Agent. To request new examples or report issues, open an issue on this repository. For AI agent instructions, see [agents.md](./agents.md).
 
 ## Aspose.Diagram for .NET Capabilities
 
@@ -290,7 +290,7 @@ All examples are compiler-validated before being committed. The benchmark is a 1
 
 | Version | Total Examples | Pass Rate | Framework |
 |---------|----------------|-----------|-----------|
-| 26.9.0 | 1840 | 100.0% | net8.0 |
+| 26.10.0 | 1840 | 100.0% | net8.0 |
 
 Pass rate is enforced by the agent pipeline — only examples that pass both `dotnet build` and `dotnet run` are committed to this repository.
 
@@ -307,4 +307,4 @@ To trigger validation:
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-09-24*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-10-22*

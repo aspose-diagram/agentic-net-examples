@@ -1,48 +1,42 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file path (use first argument if provided, otherwise default).
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Verify that the input file exists before proceeding.
-        if (!File.Exists(inputPath))
+        // Expect input and output file paths as arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Define output Visio file path (use second argument if provided, otherwise default).
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-        // Ensure the directory for the output file exists; create it if necessary.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Directory.CreateDirectory(outputDir);
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
         try
         {
-            // Load the diagram from the input file.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Save the diagram back to a Visio file, preserving original layout.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // -----------------------------------------------------------------
-            // PLACE FOR MODIFICATIONS:
-            // Any changes to pages, shapes, styles, etc., can be performed here.
-            // The example does not modify the diagram to keep the original layout.
-            // -----------------------------------------------------------------
-
-            // Save the diagram back to a Visio file, preserving the original page layout.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
+            // Write any Aspose or IO errors to the error console.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

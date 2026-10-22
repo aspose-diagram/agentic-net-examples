@@ -1,55 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Find the first shape on the first page (as a representative themed shape).
+            // In a real scenario you might locate a shape by its name, master, or theme.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Access the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Define shape geometry and master name
-            double pinX = 5.0;      // X coordinate (in inches)
-            double pinY = 5.0;      // Y coordinate (in inches)
-            double width = 2.0;     // Shape width (in inches)
-            double height = 1.0;    // Shape height (in inches)
-            string masterName = "Rectangle";
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
 
-            // Add the shape to the page; AddShape returns the shape ID (long)
-            long shapeId = page.AddShape(pinX, pinY, width, height, masterName, false);
+            // Retrieve the first shape.
+            // Shapes are accessed via GetShape(long id) where the id is returned by AddShape or stored in the collection.
+            // Here we use the first shape's ID from the collection.
+            long firstShapeId = page.Shapes[0].ID;
+            Shape shape = page.Shapes.GetShape(firstShapeId);
 
-            // Retrieve the concrete Shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Apply a preset theme to the shape (write‑only properties)
-            shape.PresetTheme = PresetThemeValue.Bubble;
-            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-            // Create a hyperlink that points to the documentation URL
+            // Create a new hyperlink that points to the documentation URL.
             Hyperlink link = new Hyperlink();
-            link.Name = "DocLink";
+            link.Name = "DocumentationLink";
             link.Address.Value = "https://example.com/documentation";
-            link.Description.Value = "Open documentation";
 
-            // Add the hyperlink to the shape's Hyperlinks collection
+            // Add the hyperlink to the shape's Hyperlinks collection.
             shape.Hyperlinks.Add(link);
 
-            // Save the diagram to VSDX format
-            string outputPath = "ThemedShapeWithLink.vsdx";
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            Console.WriteLine($"Hyperlink added and diagram saved to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose.Diagram or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,39 +1,51 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Lambda expression: set page width based on whether the page index is even or odd
-            Action<int, Page> setPageWidth = (index, page) =>
-            {
-                // Even-indexed pages get 8.5 inches width, odd-indexed pages get 11 inches width
-                page.PageSheet.PageProps.PageWidth.Value = (index % 2 == 0) ? 8.5 : 11.0;
-            };
+            // Use a lambda expression with index to set page width based on parity
+            // Even-indexed pages get width 8.5 inches, odd-indexed pages get width 11 inches
+            diagram.Pages
+                .Select((page, index) =>
+                {
+                    double width = (index % 2 == 0) ? 8.5 : 11.0;
+                    page.PageSheet.PageProps.PageWidth.Value = width;
+                    return page;
+                })
+                .ToList(); // Force execution of the lambda for all pages
 
-            // Apply the lambda to each page in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                setPageWidth(i, diagram.Pages[i]);
-            }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

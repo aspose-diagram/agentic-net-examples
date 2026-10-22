@@ -1,11 +1,11 @@
 {
   "category": "working-with-user-defined-cells",
   "display_name": "Working With User Defined Cells",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-09-24",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Add a new user defined cell with a custom name to every shape in a loaded diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -32,9 +31,9 @@
       "task": "Apply a custom namespace prefix to all user defined cells when exporting the diagram to xml",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Linq",
         "System.Xml.Linq"
       ],
       "key_apis": [
@@ -49,8 +48,8 @@
       "task": "Apply a mathematical expression to a user defined cell based on other cell values and save changes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -66,9 +65,9 @@
       "task": "Apply localization by translating user defined cell text values based on the target language settings",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -84,7 +83,6 @@
       "task": "Clone a shape copy its user defined cells and insert the clone into a different page",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -102,7 +100,6 @@
       "task": "Create a batch process that updates a specific user defined cell across multiple visio files in a folder",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -127,9 +124,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -143,11 +140,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "User"
       ]
     },
     {
@@ -158,12 +155,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -195,7 +194,6 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Linq",
         "System.Xml.Linq"
       ],
       "key_apis": [
@@ -213,9 +211,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -231,6 +227,7 @@
       "task": "Extract user defined cell formulas and evaluate them using the built in expression engine",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Data",
         "System.IO"
@@ -249,14 +246,15 @@
       "task": "Filter shapes to process only those containing a specific user defined cell name pattern",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -266,7 +264,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -319,6 +318,7 @@
       "task": "Implement a versioning system that records changes to user defined cells in a separate log file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -337,6 +337,7 @@
       "task": "Implement error handling for missing user defined cells when performing calculations on diagram shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -353,10 +354,10 @@
       "file": "import-a-spreadsheet-and-map-its-columns-to-corresponding-user-defined-cells-in-the-diagram.cs",
       "task": "Import a spreadsheet and map its columns to corresponding user defined cells in the diagram",
       "namespaces": [
+        "Aspose.Cells",
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -373,6 +374,7 @@
       "task": "Import user defined cell values from a json file and assign them to matching shapes in the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -409,7 +411,8 @@
       "task": "Load a visio file and retrieve values of all user defined cells from each shape",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -425,15 +428,16 @@
       "task": "Set a user defined cell to read only mode to prevent further modifications during runtime",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "User"
       ]
     },
     {
@@ -442,14 +446,12 @@
       "task": "Synchronize user defined cell values between two diagrams to maintain consistent metadata across files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Shapes",
         "User",
-        "page",
         "user"
       ]
     },
@@ -477,8 +479,8 @@
       "task": "Use conditional formatting to change shape colors based on values of associated user defined cells",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -494,9 +496,8 @@
       "task": "Use multithreading to concurrently update user defined cells in large diagrams for performance improvement",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -514,14 +515,16 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "PdfSaveOptions",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -532,7 +535,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

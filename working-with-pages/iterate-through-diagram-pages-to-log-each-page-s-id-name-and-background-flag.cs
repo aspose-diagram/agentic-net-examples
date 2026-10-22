@@ -1,31 +1,50 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing diagram file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Log the page's ID, name, and background flag
-                Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}, IsBackground: {page.Background}");
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve page properties
+                    int pageId = page.ID;
+                    string pageName = page.Name;
+                    // Background flag is a BOOL; compare with BOOL.True
+                    string isBackground = page.Background == BOOL.True ? "True" : "False";
+
+                    // Log the page information
+                    Console.WriteLine($"Page ID: {pageId}, Name: \"{pageName}\", IsBackground: {isBackground}");
+                }
             }
-
-            // (Optional) Save the diagram if modifications were made
-            // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during loading or processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

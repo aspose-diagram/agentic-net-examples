@@ -1,61 +1,76 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect at least three arguments: diagramPath, templatePageName, targetPageName(s)
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <program> <diagramPath> <templatePageName> <targetPageName1> [<targetPageName2> ...]");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string templatePageName = args[1];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Retrieve the template page by name
+            Page templatePage = diagram.Pages.GetPage(templatePageName);
+            if (templatePage == null)
             {
+                Console.Error.WriteLine($"Error: Template page '{templatePageName}' not found.");
+                return;
+            }
 
-                // Paths to the source diagram and the output diagram
-                string sourcePath = "input.vsdx";
-                string outputPath = "output.vsdx";
+            // Read width and height from the template page's PageProps
+            double templateWidth = templatePage.PageSheet.PageProps.PageWidth.Value;
+            double templateHeight = templatePage.PageSheet.PageProps.PageHeight.Value;
 
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Index of the template page (zero‑based). Adjust as needed.
-                int templatePageIndex = 0;
-
-                // Indices of pages that should receive the template size.
-                // Example: copy to pages 2, 3 and 4 (zero‑based indices 1, 2, 3)
-                List<int> targetPageIndices = new List<int> { 1, 2, 3 };
-
-                // Retrieve the template page
-                Page templatePage = diagram.Pages[templatePageIndex];
-
-                // Read width and height from the template page (values are in inches)
-                double templateWidth = templatePage.PageSheet.PageProps.PageWidth.Value;
-                double templateHeight = templatePage.PageSheet.PageProps.PageHeight.Value;
-
-                // Apply the template size to each target page
-                foreach (int idx in targetPageIndices)
+            // Iterate over each target page name provided in the arguments
+            for (int i = 2; i < args.Length; i++)
+            {
+                string targetPageName = args[i];
+                Page targetPage = diagram.Pages.GetPage(targetPageName);
+                if (targetPage == null)
                 {
-                    // Ensure the index is within the collection bounds
-                    if (idx >= 0 && idx < diagram.Pages.Count)
-                    {
-                        Page targetPage = diagram.Pages[idx];
-                        targetPage.PageSheet.PageProps.PageWidth.Value = templateWidth;
-                        targetPage.PageSheet.PageProps.PageHeight.Value = templateHeight;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Warning: Page index {idx} is out of range.");
-                    }
+                    Console.Error.WriteLine($"Warning: Target page '{targetPageName}' not found. Skipping.");
+                    continue;
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Copy size from the template page to the target page
+                targetPage.PageSheet.PageProps.PageWidth.Value = templateWidth;
+                targetPage.PageSheet.PageProps.PageHeight.Value = templateHeight;
 
-                Console.WriteLine("Page sizes have been copied and diagram saved successfully.");
+                Console.WriteLine($"Copied size to page '{targetPageName}'.");
+            }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            // Prepare output path (original name with "_updated" suffix)
+            string directory = Path.GetDirectoryName(diagramPath);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(diagramPath);
+            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_updated.vsdx");
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

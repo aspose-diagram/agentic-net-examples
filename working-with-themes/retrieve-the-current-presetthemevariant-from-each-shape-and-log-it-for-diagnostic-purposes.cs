@@ -1,37 +1,55 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Error: No diagram file path provided.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                string inputPath = "input.vsdx";
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Shape.PresetThemeVariant is write‑only; it cannot be read.
-                        // For diagnostic purposes we log the shape identifier and note that the variant cannot be retrieved.
-                        Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU} - PresetThemeVariant is write‑only and cannot be read.");
-                    }
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Log basic shape information
+                    Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+
+                    // NOTE: Shape.PresetThemeVariant is write‑only and cannot be read.
+                    // Therefore we cannot retrieve its current value. We log this fact.
+                    Console.WriteLine("  PresetThemeVariant: [cannot read - write only property]");
                 }
-
-                // Optional: Save the diagram if any modifications were made
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

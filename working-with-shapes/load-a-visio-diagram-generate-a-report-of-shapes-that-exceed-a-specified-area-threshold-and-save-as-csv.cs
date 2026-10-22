@@ -4,89 +4,82 @@ using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            // Expected arguments: inputVisioPath outputCsvPath areaThreshold
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Usage: VisioShapeAreaReport <inputVisioPath> <outputCsvPath> <areaThreshold>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputCsvPath> <areaThreshold>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
-            if (!double.TryParse(args[2], out double areaThreshold))
-            {
-                Console.WriteLine("Invalid area threshold. Provide a numeric value.");
-                return;
-            }
+        string inputPath = args[0];
+        string outputCsvPath = args[1];
+        string thresholdArg = args[2];
 
-            // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
-            // Prepare list to hold report rows
-            List<string> csvLines = new List<string>();
-            // Header
-            csvLines.Add("PageName,ShapeID,ShapeName,MasterName,Width,Height,Area");
+        // Parse the area threshold (in square inches).
+        if (!double.TryParse(thresholdArg, out double areaThreshold))
+        {
+            Console.Error.WriteLine($"Error: Unable to parse area threshold \"{thresholdArg}\" as a number.");
+            return;
+        }
 
-            // Iterate through pages and shapes
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare CSV lines.
+            var reportLines = new List<string>();
+            // CSV header.
+            reportLines.Add("ShapeID,ShapeName,MasterName,Area");
+
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve width and height (in inches)
+                    // Retrieve width and height (in inches) from the shape's XForm.
                     double width = shape.XForm.Width.Value;
                     double height = shape.XForm.Height.Value;
                     double area = width * height;
 
+                    // Check if the shape's area exceeds the threshold.
                     if (area > areaThreshold)
                     {
-                        string pageName = page.NameU ?? string.Empty;
-                        string shapeId = shape.ID.ToString();
-                        string shapeName = shape.NameU ?? string.Empty;
+                        // Gather shape details.
+                        long shapeId = shape.ID;
+                        string shapeName = shape.Name ?? string.Empty;
                         string masterName = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
 
-                        // Build CSV line (comma escaped if needed)
-                        string line = $"{EscapeCsv(pageName)},{shapeId},{EscapeCsv(shapeName)},{EscapeCsv(masterName)},{width:F4},{height:F4},{area:F4}";
-                        csvLines.Add(line);
+                        // Escape commas in text fields.
+                        shapeName = shapeName.Replace(",", ";");
+                        masterName = masterName.Replace(",", ";");
+
+                        // Build CSV line.
+                        string line = $"{shapeId},{shapeName},{masterName},{area}";
+                        reportLines.Add(line);
                     }
                 }
             }
 
-            // Write CSV file
-            try
-            {
-                File.WriteAllLines(outputPath, csvLines);
-                Console.WriteLine($"Report generated successfully at: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write CSV: {ex.Message}");
-            }
+            // Write the CSV report to the specified output file.
+            File.WriteAllLines(outputCsvPath, reportLines);
+            Console.WriteLine($"Report generated successfully at \"{outputCsvPath}\".");
         }
-
-        // Helper to escape commas and quotes in CSV fields
-        private static string EscapeCsv(string field)
+        catch (Exception ex)
         {
-            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
-            {
-                string escaped = field.Replace("\"", "\"\"");
-                return $"\"{escaped}\"";
-            }
-            return field;
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

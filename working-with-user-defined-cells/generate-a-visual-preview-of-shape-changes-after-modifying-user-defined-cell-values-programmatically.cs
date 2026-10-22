@@ -1,19 +1,32 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output preview image path
+        string outputPath = "preview.png";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages and shapes
@@ -21,49 +34,32 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Look for a user-defined cell named "MyCustomValue"
-                    bool cellFound = false;
-                    foreach (User userCell in shape.Users)
+                    // Ensure the shape has user-defined cells
+                    if (shape.Users != null && shape.Users.Count > 0)
                     {
-                        if (userCell.Name == "MyCustomValue")
+                        // Modify each user-defined cell's value
+                        foreach (User userCell in shape.Users)
                         {
-                            // Update the existing cell value
-                            userCell.Value.Val = "1234";
-                            userCell.Prompt.Value = "Updated value";
-                            cellFound = true;
-                            break;
+                            // Example modification: prepend "Modified_" to the existing value
+                            string originalValue = userCell.Value?.Val ?? string.Empty;
+                            userCell.Value.Val = "Modified_" + originalValue;
                         }
                     }
-
-                    // If the cell does not exist, create it
-                    if (!cellFound)
-                    {
-                        User newUser = new User();
-                        newUser.Name = "MyCustomValue";
-                        newUser.Value.Val = "1234";
-                        newUser.Prompt.Value = "Initial value";
-                        shape.Users.Add(newUser);
-                    }
-
-                    // Apply changes to the shape
-                    shape.RefreshData();
                 }
             }
 
-            // Configure image export options (PNG format)
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            imgOptions.PageIndex = 0; // Export the first page
+            // Prepare image save options for PNG preview
+            ImageSaveOptions imageOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Save the preview image
-            string outputPath = "preview.png";
-            diagram.Save(outputPath, imgOptions);
+            // Save the modified diagram as a PNG preview
+            diagram.Save(outputPath, imageOptions);
 
-            Console.WriteLine($"Preview image saved to {outputPath}");
-
+            Console.WriteLine($"Preview image saved to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,59 +1,103 @@
-using System.IO;
 using System;
-using System.Linq;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputHtmlFilePath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Determine output HTML path. If not supplied, place it beside the input file.
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".html");
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the exported HTML file
-            string outputPath = "output.html";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure font folder (system fonts) and default fallback font (web‑safe)
-            // The second parameter indicates recursive search
-            FontConfigs.SetFontFolder(@"C:\Windows\Fonts", true);
+            // -----------------------------------------------------------------
+            // Configure Aspose.Diagram to use a web‑safe fallback font.
+            // This ensures that any missing fonts are rendered with Arial.
+            // -----------------------------------------------------------------
             FontConfigs.DefaultFontName = "Arial";
 
-            // Verify that all fonts used in the diagram are installed on the system
-            // Use Aspose.Drawing.Text.InstalledFontCollection for enumeration
-            InstalledFontCollection installedFonts = new InstalledFontCollection();
+            // -----------------------------------------------------------------
+            // Load the Visio diagram.
+            // -----------------------------------------------------------------
+            Diagram diagram = new Diagram(inputPath);
 
-            foreach (Font diagramFont in diagram.Fonts)
+            // -----------------------------------------------------------------
+            // Define a list of web‑safe fonts.
+            // -----------------------------------------------------------------
+            List<string> webSafeFonts = new List<string>
             {
-                bool isInstalled = installedFonts.Families.Any(f => string.Equals(f.Name, diagramFont.Name, StringComparison.OrdinalIgnoreCase));
-                if (!isInstalled)
+                "Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana",
+                "Georgia", "Trebuchet MS", "Comic Sans MS", "Impact", "Tahoma"
+            };
+
+            // -----------------------------------------------------------------
+            // Enumerate installed system fonts using Aspose.Drawing.Text.
+            // -----------------------------------------------------------------
+            InstalledFontCollection systemFonts = new InstalledFontCollection();
+            HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var family in systemFonts.Families)
+            {
+                // The FontFamily type is not strongly typed here to avoid compile issues.
+                // Assume it has a Name property.
+                installedFontNames.Add(family.Name);
+            }
+
+            // -----------------------------------------------------------------
+            // Check each font used in the diagram against the web‑safe list.
+            // -----------------------------------------------------------------
+            foreach (Font font in diagram.Fonts)
+            {
+                string fontName = font.Name;
+                if (!webSafeFonts.Contains(fontName))
                 {
-                    Console.WriteLine($"Warning: Font \"{diagramFont.Name}\" is not installed. It will be substituted with the default font \"Arial\".");
+                    Console.WriteLine($"Warning: Font \"{fontName}\" is not a web‑safe font. It will be substituted with the default font.");
+                }
+                else if (!installedFontNames.Contains(fontName))
+                {
+                    Console.WriteLine($"Warning: Web‑safe font \"{fontName}\" is not installed on this system.");
                 }
             }
 
-            // Prepare HTML export options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            // Export only visible pages (optional)
-            htmlOptions.ExportHiddenPage = false;
-            // Ensure the default font is used for missing fonts
-            htmlOptions.DefaultFont = "Arial";
+            // -----------------------------------------------------------------
+            // Prepare HTML save options.
+            // -----------------------------------------------------------------
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Export only visible pages and omit comments for a cleaner output.
+                ExportHiddenPage = false,          // BOOL is not used here; plain bool required.
+                IsExportComments = false          // BOOL is not used here; plain bool required.
+            };
 
-            // Save the diagram as HTML with embedded web‑safe fonts
+            // -----------------------------------------------------------------
+            // Save the diagram to HTML.
+            // -----------------------------------------------------------------
             diagram.Save(outputPath, htmlOptions);
 
-            Console.WriteLine("Diagram exported to HTML successfully.");
-
+            Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

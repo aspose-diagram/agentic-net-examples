@@ -1,48 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new diagram
-            Diagram diagram = new Diagram();
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Set the closest equivalent event cell (EventDrop) to apply a default style
+                    // when the shape is added/dropped onto the page.
+                    // The formula uses the Visio SETSTYLE function; adjust the style name as needed.
+                    shape.Event.EventDrop.Ufe.F = "SETSTYLE(\"MyDefaultStyle\")";
+                }
+            }
 
-            // Add a page to the diagram (required before adding shapes)
-            Page page = new Page();
-            diagram.Pages.Add(page);
-
-            // Add a rectangle shape to the page
-            // Parameters: pinX, pinY, width, height, master name, isCalculate (bool)
-            long shapeId = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
-
-            // Retrieve the shape object using the returned ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Set an event formula that will be triggered when the shape is added.
-            // Since Aspose.Diagram does not expose an EventShapeAdded cell,
-            // we use the closest available event cell: EventDrop.
-            // The formula calls a Visio macro (AssignDefaultStyle) that should
-            // apply the desired default style to the shape.
-            shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"AssignDefaultStyle\")";
-
-            // Optionally, define a simple default style directly on the shape
-            // (e.g., fill color). This ensures the shape has a style even if
-            // the macro is not present.
-            shape.Fill.FillForegnd.Value = "#FFCC00"; // Light orange fill
-
-            // Save the diagram to a VSDX file
-            diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

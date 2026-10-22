@@ -1,46 +1,49 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect the input Visio file path as the first argument.
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // TODO: Apply any required modifications to the diagram here.
+
+            // Save the diagram to a memory stream in VSDX format.
+            using (MemoryStream memoryStream = new MemoryStream())
             {
+                diagram.Save(memoryStream, SaveFileFormat.Vsdx);
+                memoryStream.Position = 0; // Reset stream position for further processing.
 
-                // Path to the source Visio file (replace with actual path)
-                string sourcePath = "input.vsdx";
+                // Example output: report the size of the generated stream.
+                Console.WriteLine($"Diagram saved to memory stream. Size: {memoryStream.Length} bytes.");
 
-                // Load the diagram from file
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Example modification: change the first page size
-                Page firstPage = diagram.Pages[0];
-                firstPage.PageSheet.PageProps.PageWidth.Value = 11.0;   // width in inches
-                firstPage.PageSheet.PageProps.PageHeight.Value = 8.5;   // height in inches
-
-                // Save the modified diagram to a memory stream in VSDX format
-                using (MemoryStream memoryStream = new MemoryStream())
-                {
-                    diagram.Save(memoryStream, SaveFileFormat.Vsdx);
-
-                    // Reset stream position to the beginning for further processing
-                    memoryStream.Position = 0;
-
-                    // Example: write the stream length to console
-                    Console.WriteLine($"Diagram saved to memory stream. Length: {memoryStream.Length} bytes.");
-
-                    // The memoryStream can now be used for transmission, e.g., sending over a network
-                    // byte[] diagramBytes = memoryStream.ToArray();
-                    // ... (transmission logic)
-                }
-
+                // The memoryStream can now be used for further processing or transmission.
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

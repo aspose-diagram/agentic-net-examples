@@ -1,11 +1,11 @@
 {
   "category": "basic-operations",
   "display_name": "Basic Operations",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Add a second page to the diagram and set its size to a4 dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -37,8 +36,8 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
         "Save",
         "Shapes"
@@ -51,7 +50,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -70,10 +70,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -155,7 +156,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -166,14 +169,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "SVGSaveOptions",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -223,6 +227,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -255,10 +260,7 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddMaster",
-        "Diagram",
-        "Masters",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -267,14 +269,14 @@
       "task": "Insert a rectangle shape onto the first page at coordinates 2 2 with width 3 centimeters",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -299,15 +301,15 @@
       "task": "Load a single stencil from a vss file and add a master shape to the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddMaster",
         "AddShape",
         "Diagram",
-        "Pages",
-        "Save"
+        "Page",
+        "Pages"
       ]
     },
     {
@@ -346,18 +348,13 @@
       "task": "Parse an mmd file into a diagram object and convert its flowchart to visio format",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
-        "Pages",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -375,7 +372,7 @@
         "HTMLSaveOptions",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -405,6 +402,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -429,14 +427,15 @@
       "task": "Set the default font for the entire diagram to times new roman before adding shapes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -471,6 +470,7 @@
       "key_apis": [
         "Diagram",
         "HTMLSaveOptions",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -500,15 +500,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     }
   ]

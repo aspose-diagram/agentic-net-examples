@@ -1,55 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the existing diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to a stencil file that contains the required masters (e.g., "Rectangle" and "Dynamic connector")
-            string stencilPath = @"C:\Stencils\Basic_U.vss";
-            // Output Visio file
-            string outputPath = @"C:\Output\ConnectorDemo.vsdx";
-
-            // Load the stencil as a diagram (masters become available)
-            Diagram diagram = new Diagram(stencilPath);
-
-            // Use the first page of the diagram
+            // Get the first page (assumes at least one page exists)
             Page page = diagram.Pages[0];
 
-            // Add two rectangle shapes
-            long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle", false);
-            long shapeId2 = page.AddShape(5.0, 5.0, "Rectangle", false);
+            // Add first rectangle shape
+            // Parameters: pinX, pinY, width, height, master name, isCalculate
+            long rect1Id = page.AddShape(2.0, 2.0, 2.0, 2.0, "Rectangle", false);
+            Shape rect1 = page.Shapes.GetShape(rect1Id);
 
-            // Add a dynamic connector shape (initial position is irrelevant; it will be glued)
-            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
+            // Add second rectangle shape
+            long rect2Id = page.AddShape(5.0, 5.0, 2.0, 2.0, "Rectangle", false);
+            Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-            // Connect the two rectangles using the connector
+            // Add a dynamic connector shape (initially zero size)
+            long connectorId = page.AddShape(0.0, 0.0, 0.0, 0.0, "Dynamic connector", false);
+            Shape connector = page.Shapes.GetShape(connectorId);
+
+            // Configure the connector's line style to a dashed pattern
+            connector.Line.LinePattern.Value = LinePatternValue.Dash;
+
+            // Connect the two rectangles via the connector
+            // Use bottom of the first shape and top of the second shape as connection points
             page.ConnectShapesViaConnector(
-                shapeId1,
+                rect1Id,
                 ConnectionPointPlace.Bottom,
-                shapeId2,
+                rect2Id,
                 ConnectionPointPlace.Top,
                 connectorId);
 
-            // Retrieve the connector shape to modify its line style
-            Shape connector = page.Shapes.GetShape(connectorId);
-            // Set the line pattern to a dashed style
-            connector.Line.LinePattern.Value = LinePatternValue.Dash;
-
-            // Save the diagram
+            // Save the modified diagram to the output file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Diagram saved to: " + outputPath);
-
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -4,54 +4,88 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            // Define the folder containing VDX files.
-            // You can change this path or pass it as a command‑line argument.
-            string inputFolder = args.Length > 0 ? args[0] : @"C:\VisioFiles";
-            string outputFolder = Path.Combine(inputFolder, "PdfOutput");
+            Console.Error.WriteLine("Usage: Program <inputFolderPath> <outputFolderPath>");
+            return;
+        }
 
-            // Ensure the output directory exists.
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
+        string inputFolder = args[0];
+        string outputFolder = args[1];
 
-            // Get all VDX files in the input folder.
-            string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
+        // Guard: input folder must exist
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
 
-            foreach (string vdxPath in vdxFiles)
+        // Ensure output folder exists (create if necessary)
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                try
-                {
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(vdxPath);
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
 
-                    // Configure PDF save options.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        // Use a fallback font in case the diagram references missing fonts.
-                        DefaultFont = "Arial",
-                        // Export hidden pages as well.
-                        ExportHiddenPage = true,
-                        // Set PDF/A compliance (optional).
-                        Compliance = PdfCompliance.PdfA1b
-                    };
+        // Get all .vdx files in the input folder (non‑recursive)
+        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx", SearchOption.TopDirectoryOnly);
 
-                    // Build the output PDF file path.
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vdxPath);
-                    string pdfPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+        if (vdxFiles.Length == 0)
+        {
+            Console.WriteLine("No VDX files found to convert.");
+            return;
+        }
 
-                    // Save the diagram as PDF with the specified options.
-                    diagram.Save(pdfPath, pdfOptions);
-
-                    Console.WriteLine($"Successfully converted: {vdxPath} -> {pdfPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
-                }
+        // Process each VDX file
+        foreach (string vdxPath in vdxFiles)
+        {
+            // Guard: file must exist (redundant but required by rules)
+            if (!File.Exists(vdxPath))
+            {
+                Console.Error.WriteLine($"File not found: {vdxPath}");
+                continue;
             }
 
-            Console.WriteLine("Batch conversion completed.");
+            try
+            {
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(vdxPath);
+
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
+                {
+                    // Fallback font if the original font is missing
+                    DefaultFont = "Arial",
+                    // Do not export hidden pages (bool, not BOOL)
+                    ExportHiddenPage = false,
+                    // Do not split multi‑page diagrams into separate PDFs (bool, not BOOL)
+                    SplitMultiPages = false
+                };
+
+                // Determine output PDF file path
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vdxPath);
+                string pdfPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
+
+                // Save the diagram as PDF using the configured options
+                diagram.Save(pdfPath, pdfOptions);
+
+                Console.WriteLine($"Successfully converted: {vdxPath} -> {pdfPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
+            }
         }
     }
+}

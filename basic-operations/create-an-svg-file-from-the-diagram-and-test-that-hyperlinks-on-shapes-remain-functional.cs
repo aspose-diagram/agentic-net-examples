@@ -1,74 +1,126 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
+
+        Diagram diagram;
         try
         {
+            // Load the Visio diagram.
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-            // Path to the source Visio file (replace with an actual file path)
-            string sourcePath = "input.vsdx";
-            // Path for the generated SVG file
-            string svgPath = "output.svg";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Access the first page
-            Page page = diagram.Pages[0];
-
-            // Add a rectangle shape to the page
-            // Parameters: pinX, pinY, master name, isCalculate (bool)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
-
-            // Retrieve the newly added shape
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Create a hyperlink and assign its properties
-            Hyperlink link = new Hyperlink();
-            link.Name = "ExampleLink";
-            link.Address.Value = "https://example.com";
-            link.Description.Value = "Visit Example.com";
-
-            // Add the hyperlink to the shape
-            shape.Hyperlinks.Add(link);
-
-            // Verify that the hyperlink was added correctly
-            if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
+        // Collect all hyperlink addresses from the diagram.
+        List<string> hyperlinkAddresses = new List<string>();
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                throw new Exception("Hyperlink collection is empty after addition.");
-            }
-
-            bool addressMatches = false;
-            foreach (Hyperlink hl in shape.Hyperlinks)
-            {
-                if (hl.Address != null && hl.Address.Value == "https://example.com")
+                if (shape.Hyperlinks != null)
                 {
-                    addressMatches = true;
-                    break;
+                    foreach (Hyperlink link in shape.Hyperlinks)
+                    {
+                        if (link != null && link.Address != null && link.Address.Value != null)
+                        {
+                            hyperlinkAddresses.Add(link.Address.Value);
+                        }
+                    }
                 }
             }
-
-            if (!addressMatches)
-            {
-                throw new Exception("Hyperlink address does not match the expected value.");
-            }
-
-            // Save the diagram as SVG
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            diagram.Save(svgPath, svgOptions);
-
-            Console.WriteLine("SVG file created successfully at: " + svgPath);
-            Console.WriteLine("Hyperlink on shape verified and preserved.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Export the diagram to SVG using SVGSaveOptions.
+        try
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Export the first page only; adjust as needed.
+            svgOptions.PageIndex = 0;
+            // Set the format explicitly.
+            svgOptions.SaveFormat = SaveFileFormat.Svg;
+            // Optional: fit SVG to viewport.
+            svgOptions.SVGFitToViewPort = true;
+            // Export comments if needed.
+            svgOptions.IsExportComments = false;
+
+            diagram.Save(outputPath, svgOptions);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving SVG: {ex.Message}");
+            return;
+        }
+
+        // Verify that the generated SVG contains the hyperlink addresses.
+        string svgContent;
+        try
+        {
+            svgContent = File.ReadAllText(outputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading generated SVG: {ex.Message}");
+            return;
+        }
+
+        bool allLinksFound = true;
+        foreach (string address in hyperlinkAddresses)
+        {
+            if (!svgContent.Contains(address))
+            {
+                Console.Error.WriteLine($"Hyperlink address not found in SVG: {address}");
+                allLinksFound = false;
+            }
+        }
+
+        if (allLinksFound)
+        {
+            Console.WriteLine("SVG export completed successfully. All hyperlinks are present.");
+        }
+        else
+        {
+            Console.Error.WriteLine("SVG export completed, but some hyperlinks are missing.");
         }
     }
 }

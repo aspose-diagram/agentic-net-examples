@@ -1,104 +1,100 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace VisioCommentExtractor
+class Program
 {
-    // Simple DTO to hold extracted comment information
-    public class CommentRecord
+    static void Main(string[] args)
     {
-        public string FileName { get; set; } = string.Empty;
-        public int PageId { get; set; }
-        public string CommentText { get; set; } = string.Empty;
-        public string Timestamp { get; set; } = string.Empty;
-    }
-
-    public class Program
-    {
-        public static void Main(string[] args)
+        // Determine the folder containing Visio files.
+        string folderPath;
+        if (args.Length > 0)
         {
-            // Determine the folder to scan
-            string folderPath;
-            if (args.Length > 0 && Directory.Exists(args[0]))
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the folder containing Visio files: ");
+            folderPath = Console.ReadLine();
+        }
+
+        // Validate folder existence.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
+            return;
+        }
+
+        // Prepare the output report file.
+        string reportPath = Path.Combine(folderPath, "CommentReport.csv");
+        var reportLines = new List<string>();
+        // Header line for CSV.
+        reportLines.Add("FileName,PageName,CommentID,ReviewerID,CommentText,CommentDate");
+
+        // Define supported Visio extensions.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".vsx", ".vtx", ".vss", ".vst" };
+
+        // Iterate over each file in the folder.
+        foreach (string filePath in Directory.GetFiles(folderPath))
+        {
+            // Process only files with supported extensions.
+            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
+                continue;
+
+            // Guard against missing file (should not happen from GetFiles, but per requirements).
+            if (!File.Exists(filePath))
             {
-                folderPath = args[0];
+                Console.Error.WriteLine("File not found: " + filePath);
+                continue;
             }
-            else
+
+            try
             {
-                Console.WriteLine("Please provide a valid folder path as the first argument.");
-                return;
-            }
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(filePath);
 
-            // Prepare a list to collect all comment records
-            List<CommentRecord> allComments = new List<CommentRecord>();
-
-            // Get all Visio files in the folder (supports common extensions)
-            string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (string filePath in visioFiles)
-            {
-                // Guard to ensure the file actually exists before processing
-                if (!File.Exists(filePath))
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine($"File not found: {filePath}");
-                    continue;
-                }
+                    // Ensure the page has a PageSheet (always true for valid pages).
+                    if (page.PageSheet == null)
+                        continue;
 
-                string extension = Path.GetExtension(filePath).ToLowerInvariant();
-                if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
-                {
-                    continue; // Skip non‑Visio files
-                }
-
-                try
-                {
-                    // Load the Visio diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through each page
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each annotation (comment) on the page.
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Access annotations (comments) on the page
-                        foreach (Annotation annotation in page.PageSheet.Annotations)
-                        {
-                            // Extract comment text
-                            string commentText = annotation.Comment?.Value ?? string.Empty;
+                        // Extract comment details.
+                        string fileName = Path.GetFileName(filePath);
+                        string pageName = page.Name;
+                        int commentId = annotation.MarkerIndex.Value;
+                        int reviewerId = annotation.ReviewerID.Value;
+                        string commentText = annotation.Comment.Value?.Replace("\"", "\"\""); // Escape quotes for CSV.
+                        DateTime commentDate = annotation.Date?.Value ?? DateTime.MinValue;
 
-                            // Extract timestamp (Date). If Date is not set, fallback to empty string.
-                            string timestamp = string.Empty;
-                            if (annotation.Date != null)
-                            {
-                                // Date is stored as a DateTime; format it as ISO 8601.
-                                DateTime dt = annotation.Date.Value;
-                                timestamp = dt.ToString("o");
-                            }
-
-                            // Add record to the list
-                            allComments.Add(new CommentRecord
-                            {
-                                FileName = Path.GetFileName(filePath),
-                                PageId = page.ID,
-                                CommentText = commentText,
-                                Timestamp = timestamp
-                            });
-                        }
+                        // Build CSV line (quote fields that may contain commas).
+                        string csvLine = $"\"{fileName}\",\"{pageName}\",{commentId},{reviewerId},\"{commentText}\",\"{commentDate:O}\"";
+                        reportLines.Add(csvLine);
                     }
                 }
-                catch (Exception ex)
-                {
-                    // Log any errors encountered while processing a file
-                    Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
             }
-
-            // Output consolidated report as CSV to console
-            Console.WriteLine("FileName,PageId,Timestamp,CommentText");
-            foreach (CommentRecord record in allComments)
+            catch (Exception ex)
             {
-                // Escape double quotes in comment text
-                string escapedComment = record.CommentText.Replace("\"", "\"\"");
-                Console.WriteLine($"\"{record.FileName}\",{record.PageId},\"{record.Timestamp}\",\"{escapedComment}\"");
+                // Log any errors that occur while processing a file.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
+        }
+
+        try
+        {
+            // Write all collected lines to the report file.
+            File.WriteAllLines(reportPath, reportLines, Encoding.UTF8);
+            Console.WriteLine("Comment report generated at: " + reportPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Failed to write report file: " + ex.Message);
         }
     }
 }

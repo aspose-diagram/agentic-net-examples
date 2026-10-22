@@ -1,24 +1,23 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Prompt user for input Visio file path
-        Console.Write("Enter path to the Visio file to modify: ");
+        // Prompt for the input Visio diagram path
+        Console.Write("Enter path to input Visio diagram: ");
         string inputPath = Console.ReadLine();
-
-        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Prompt user for output file path
-        Console.Write("Enter output file path (including .vsdx): ");
+        // Prompt for the output diagram path
+        Console.Write("Enter path for output diagram (e.g., output.vsdx): ");
         string outputPath = Console.ReadLine();
 
         // Prompt for watermark text
@@ -26,67 +25,120 @@ class Program
         string watermarkText = Console.ReadLine();
 
         // Prompt for font name
-        Console.Write("Enter font name (e.g., Calibri): ");
+        Console.Write("Enter font name for watermark (e.g., Calibri): ");
         string fontName = Console.ReadLine();
 
         // Prompt for font size in points and convert to inches
         Console.Write("Enter font size in points (e.g., 24): ");
-        if (!double.TryParse(Console.ReadLine(), out double fontSizePoints))
+        string sizeInput = Console.ReadLine();
+        if (!double.TryParse(sizeInput, out double fontSizePoints) || fontSizePoints <= 0)
         {
             Console.Error.WriteLine("Invalid font size.");
             return;
         }
-        double fontSizeInches = fontSizePoints / 72.0; // 1 point = 1/72 inch
+        double fontSizeInches = fontSizePoints / 72.0;
 
-        // Prompt for font color as hex string
-        Console.Write("Enter font color as hex string (e.g., #FF0000): ");
+        // Prompt for font color (hex string)
+        Console.Write("Enter font color hex (e.g., #A5A5A5): ");
         string fontColor = Console.ReadLine();
+
+        // Prompt for style keywords
+        Console.Write("Enter style (None, Bold, Italic, Underline, combinations like BoldItalic): ");
+        string styleInput = Console.ReadLine();
+
+        // Parse style string into StyleValue flags
+        StyleValue style = ParseStyle(styleInput);
 
         try
         {
-            // Load the diagram inside a using block for proper disposal
+            // Load the diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
+                // Iterate through each page and add the watermark
                 foreach (Page page in diagram.Pages)
                 {
                     // Retrieve page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Calculate center position for the watermark
+                    // Center position for the watermark
                     double pinX = pageWidth / 2.0;
                     double pinY = pageHeight / 2.0;
 
-                    // Add a text shape that spans the whole page; AddText returns a Shape
+                    // Add watermark text covering the full page
+                    // AddText returns a Shape object directly
                     Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
                                                         watermarkText, fontName, fontColor, fontSizeInches);
 
-                    // Clear any existing text runs and add the desired watermark text
-                    watermarkShape.Text.Value.Clear();
-                    watermarkShape.Text.Value.Add(new Txt(watermarkText));
-
-                    // Apply character formatting (bold style, font name, size, color)
-                    watermarkShape.Chars.Clear();
-                    Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                    ch.IX = 0; // start index of the character run
-                    ch.FontName.Value = fontName;
-                    ch.Size.Value = fontSizeInches;
-                    ch.Color.Value = fontColor;
-                    ch.Style.Value = StyleValue.Bold; // apply bold style
-                    watermarkShape.Chars.Add(ch);
+                    // Apply the requested style to all characters in the watermark
+                    for (int i = 0; i < watermarkShape.Chars.Count; i++)
+                    {
+                        watermarkShape.Chars[i].Style.Value = style;
+                    }
                 }
 
-                // Save the modified diagram to the specified output path
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+                // Determine the appropriate SaveFileFormat based on the output extension
+                SaveFileFormat format = GetSaveFormat(outputPath);
 
-            Console.WriteLine("Watermark applied and diagram saved successfully.");
+                // Save the modified diagram using the two‑argument overload
+                diagram.Save(outputPath, format);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Converts a user‑provided style string into StyleValue flags
+    static StyleValue ParseStyle(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return StyleValue.Undefined;
+
+        string s = input.Trim().ToLowerInvariant();
+        StyleValue style = StyleValue.Undefined;
+
+        if (s.Contains("bold"))
+            style |= StyleValue.Bold;
+        if (s.Contains("italic"))
+            style |= StyleValue.Italic;
+        if (s.Contains("underline"))
+            style |= StyleValue.Underline;
+
+        return style;
+    }
+
+    // Maps file extensions to the corresponding SaveFileFormat enum values
+    static SaveFileFormat GetSaveFormat(string path)
+    {
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext switch
+        {
+            ".vsdx" => SaveFileFormat.Vsdx,
+            ".vsd" => SaveFileFormat.Vsd,
+            ".vdx" => SaveFileFormat.Vdx,
+            ".pdf" => SaveFileFormat.Pdf,
+            ".png" => SaveFileFormat.Png,
+            ".jpg" => SaveFileFormat.Jpeg,
+            ".jpeg" => SaveFileFormat.Jpeg,
+            ".svg" => SaveFileFormat.Svg,
+            ".html" => SaveFileFormat.Html,
+            ".xps" => SaveFileFormat.Xps,
+            ".gif" => SaveFileFormat.Gif,
+            ".bmp" => SaveFileFormat.Bmp,
+            ".emf" => SaveFileFormat.Emf,
+            ".tiff" => SaveFileFormat.Tiff,
+            ".swf" => SaveFileFormat.Swf,
+            ".xaml" => SaveFileFormat.Xaml,
+            ".vss" => SaveFileFormat.Vss,
+            ".vssx" => SaveFileFormat.Vssx,
+            ".vssm" => SaveFileFormat.Vssm,
+            ".vst" => SaveFileFormat.Vst,
+            ".vstx" => SaveFileFormat.Vstx,
+            ".vstm" => SaveFileFormat.Vstm,
+            ".csv" => SaveFileFormat.Csv,
+            _ => SaveFileFormat.Vsdx // Default format
+        };
     }
 }

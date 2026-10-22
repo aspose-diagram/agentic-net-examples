@@ -1,36 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input Visio file, output PDF file, shape ID to export.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPdfPath> <shapeId>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: validate shape ID argument.
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from a file
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page (adjust index if needed)
+            // Retrieve the first page (or you could select a specific page if needed).
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
             Page page = diagram.Pages[0];
 
-            // Specify the ID of the shape you want to export
-            // Replace this with the actual shape ID in your diagram
-            long shapeId = 1;
-
-            // Retrieve the shape by its ID
+            // Retrieve the shape by its ID.
             Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page {page.Name}.");
+                return;
+            }
 
-            // Export the selected shape to a high‑resolution PDF file
-            // The ToPdf method uses the library's default high‑quality rendering
-            shape.ToPdf("shape_output.pdf");
+            // Export the specific shape to PDF.
+            // The ToPdf method renders the shape at the highest available quality.
+            shape.ToPdf(outputPath);
 
+            Console.WriteLine($"Shape {shapeId} exported successfully to PDF: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

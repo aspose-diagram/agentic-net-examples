@@ -1,32 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Get the first (default) page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Draw an oval (ellipse) on the page
-        // Parameters: PinX, PinY, Width, Height
-        long ovalId = page.DrawEllipse(2.0, 2.0, 4.0, 2.0);
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-        // Retrieve the shape object using the returned ID
-        Shape oval = page.Shapes.GetShape((int)ovalId);
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        // Set the fill foreground color (optional, here green)
-        oval.Fill.FillForegnd.Value = "#00FF00";
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-        // Set fill opacity to 70% (70% transparent)
-        // FillForegndTrans expects a percentage (0 = opaque, 100 = fully transparent)
-        oval.Fill.FillForegndTrans.Value = 70;
+            // Get the first page
+            Page page = diagram.Pages[0];
 
-        // Save the diagram to a VSDX file
-        diagram.Save("OvalWithOpacity.vsdx", SaveFileFormat.Vsdx);
+            // Ensure the page has at least one shape
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
+
+            // Retrieve the first shape (assumed to be an oval/ellipse)
+            Shape shape = page.Shapes[0];
+
+            // Set fill pattern to solid color (value 1)
+            shape.Fill.FillPattern.Value = 1;
+
+            // Set fill foreground transparency to achieve 70% opacity (30% transparent)
+            // FillForegndTrans.Value: 0.0 = fully opaque, 1.0 = fully transparent
+            shape.Fill.FillForegndTrans.Value = 0.30;
+
+            // Optionally, set a fill color (example: light blue) – adjust as needed
+            shape.Fill.FillForegnd.Value = "#ADD8E6";
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

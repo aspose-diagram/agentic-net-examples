@@ -1,51 +1,53 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Get the diagram file path from command‑line arguments or ask the user.
-        string filePath;
-        if (args.Length > 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            filePath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the full path to the Visio file: ");
-            filePath = Console.ReadLine()?.Trim() ?? string.Empty;
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
         }
 
-        if (string.IsNullOrWhiteSpace(filePath))
+        string filePath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(filePath))
         {
-            Console.WriteLine("No file path provided. Exiting.");
+            Console.Error.WriteLine($"Error: File not found – {filePath}");
             return;
         }
 
         try
         {
-            // Load the diagram. The using block ensures resources are released.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Iterate through each page and increase its width by 10 %.
+                // Iterate over each page and increase its width by 10 %.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Retrieve the current width (in inches).
                     double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    page.PageSheet.PageProps.PageWidth.Value = currentWidth * 1.10;
+
+                    // Calculate the new width (10 % larger).
+                    double newWidth = currentWidth * 1.10;
+
+                    // Apply the new width back to the page.
+                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
                 }
 
-                // Overwrite the original file. Adjust the SaveFileFormat if the source
-                // file uses a different Visio format (e.g., Vdx, Vsx, etc.).
+                // Overwrite the original file with the updated diagram.
                 diagram.Save(filePath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Page widths increased by 10 % and file saved successfully.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

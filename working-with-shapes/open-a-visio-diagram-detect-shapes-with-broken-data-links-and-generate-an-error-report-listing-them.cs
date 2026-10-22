@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 
@@ -7,106 +6,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input file path (command‑line argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard: ensure the Visio file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Determine the input Visio file path
+        string inputPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            inputPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the Visio diagram: ");
+            inputPath = Console.ReadLine();
+        }
+
+        // Guard: ensure the file exists before proceeding
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - '{inputPath}'.");
             return;
         }
 
-        // List to collect report lines for shapes with broken data links
-        List<string> brokenShapesReport = new List<string>();
+        // Prepare the path for the error report file (same folder as the diagram)
+        string reportPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "error_report.txt");
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Header for the report
+                string reportContent = $"Error Report for '{Path.GetFileName(inputPath)}'{Environment.NewLine}";
+                reportContent += $"Generated on: {DateTime.Now:u}{Environment.NewLine}{Environment.NewLine}";
+
+                bool anyBroken = false;
+
+                // Iterate over all data connections defined in the diagram
+                for (int i = 0; i < diagram.DataConnections.Count; i++)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    DataConnection conn = diagram.DataConnections[i];
 
-                    // Determine whether the shape has any Data* fields populated
-                    bool hasDataLink = !string.IsNullOrWhiteSpace(shape.Data1) ||
-                                       !string.IsNullOrWhiteSpace(shape.Data2) ||
-                                       !string.IsNullOrWhiteSpace(shape.Data3);
+                    // A data connection is considered broken if its ConnectionString or Command is missing/empty
+                    bool isBroken = string.IsNullOrWhiteSpace(conn.ConnectionString) ||
+                                    string.IsNullOrWhiteSpace(conn.Command);
 
-                    if (!hasDataLink)
-                        continue; // No data fields, move to next shape
-
-                    // If the diagram contains no data connections, any populated Data* field is considered broken
-                    if (diagram.DataConnections.Count == 0)
+                    if (isBroken)
                     {
-                        brokenShapesReport.Add(
-                            $"Page: \"{page.NameU}\", Shape ID: {shape.ID}, Name: \"{shape.NameU}\", Data1: \"{shape.Data1}\", Data2: \"{shape.Data2}\", Data3: \"{shape.Data3}\"");
+                        anyBroken = true;
+                        reportContent += $"Data Connection #{i + 1}:{Environment.NewLine}";
+                        reportContent += $"  ConnectionString: {(string.IsNullOrWhiteSpace(conn.ConnectionString) ? "<missing>" : conn.ConnectionString)}{Environment.NewLine}";
+                        reportContent += $"  Command: {(string.IsNullOrWhiteSpace(conn.Command) ? "<missing>" : conn.Command)}{Environment.NewLine}";
+                        reportContent += Environment.NewLine;
                     }
-                    else
-                    {
-                        // Verify that at least one Data* value references an existing data connection
-                        bool referenceValid = false;
-                        foreach (DataConnection conn in diagram.DataConnections)
-                        {
-                            // Use the connection's Command or ConnectionString as a reference string (Name property does not exist)
-                            string reference = !string.IsNullOrWhiteSpace(conn.Command) ? conn.Command : conn.ConnectionString;
+                }
 
-                            if (!string.IsNullOrWhiteSpace(reference) &&
-                                (shape.Data1?.Contains(reference) == true ||
-                                 shape.Data2?.Contains(reference) == true ||
-                                 shape.Data3?.Contains(reference) == true))
-                            {
-                                referenceValid = true;
-                                break;
-                            }
-                        }
+                if (!anyBroken)
+                {
+                    reportContent += "No broken data connections were detected." + Environment.NewLine;
+                }
 
-                        // If no valid reference was found, record the shape as having a broken link
-                        if (!referenceValid)
-                        {
-                            brokenShapesReport.Add(
-                                $"Page: \"{page.NameU}\", Shape ID: {shape.ID}, Name: \"{shape.NameU}\", Data1: \"{shape.Data1}\", Data2: \"{shape.Data2}\", Data3: \"{shape.Data3}\"");
-                        }
-                    }
+                // Output the report to the console
+                Console.WriteLine(reportContent);
+
+                // Attempt to write the report to a file
+                try
+                {
+                    File.WriteAllText(reportPath, reportContent);
+                    Console.WriteLine($"Error report saved to: {reportPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to write report file: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occurred while loading or processing the diagram
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
-        }
-
-        // Output the report to the console
-        Console.WriteLine("=== Broken Data Link Report ===");
-        if (brokenShapesReport.Count == 0)
-        {
-            Console.WriteLine("No broken data links were detected.");
-        }
-        else
-        {
-            foreach (string line in brokenShapesReport)
-                Console.WriteLine(line);
-        }
-
-        // Attempt to write the report to a text file
-        string reportPath = "BrokenDataLinksReport.txt";
-        try
-        {
-            File.WriteAllLines(reportPath, brokenShapesReport);
-            Console.WriteLine($"\nReport saved to: {Path.GetFullPath(reportPath)}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"\nFailed to write report file: {ex.Message}");
+            // Capture any Aspose.Diagram related errors
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

@@ -1,50 +1,52 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Define input Visio file and output PDF file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // Determine input and output file paths
-            string inputPath;
-            string outputPath;
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.pdf";
 
-            if (args.Length >= 2)
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                inputPath = args[0];
-                outputPath = args[1];
-            }
-            else
-            {
-                Console.WriteLine("Enter the full path to the Visio file to load:");
-                inputPath = Console.ReadLine();
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                Console.WriteLine("Enter the full path for the PDF output file:");
-                outputPath = Console.ReadLine();
-            }
+                // Explicitly set the format tracker
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Validate paths
-            if (string.IsNullOrWhiteSpace(inputPath) || string.IsNullOrWhiteSpace(outputPath))
-            {
-                throw new Exception("Input and output paths must be provided.");
+                // Apply ZIP (Flate) compression to text streams within the PDF
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Save the diagram as a PDF with the configured options
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Use a default font to avoid missing font warnings
-            pdfOptions.DefaultFont = "Arial";
-            // Apply ZIP (Flate) compression to streams (including text and images)
-            pdfOptions.TextCompression = PdfTextCompression.Flate;
-            // Explicitly set the save format
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-            // Save the diagram as a PDF with compression
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
+            Console.WriteLine($"PDF generated successfully at: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

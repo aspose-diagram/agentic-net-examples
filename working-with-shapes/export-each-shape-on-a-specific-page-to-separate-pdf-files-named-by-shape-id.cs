@@ -1,77 +1,77 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving; // Required for shape export methods like ToPdf
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: first argument is the Visio file path
-        if (args.Length < 1)
+        // Validate command‑line arguments: input file path and page index
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: ExportShapesById <VisioFilePath> [PageIndex]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <pageIndex>");
             return;
         }
 
-        // Path to the source Visio diagram
-        string diagramPath = args[0];
-        // Guard: ensure the file exists before proceeding
-        if (!File.Exists(diagramPath))
+        string inputPath = args[0];
+        string pageIndexArg = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Optional page index (default to first page)
-        int pageIndex = 0;
-        if (args.Length > 1 && !int.TryParse(args[1], out pageIndex))
+        // Parse the page index (zero‑based)
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
         {
-            Console.Error.WriteLine($"Invalid page index: {args[1]}");
+            Console.Error.WriteLine("Error: Invalid page index.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Guard: verify the requested page index exists
-            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+            // Validate the requested page index
+            if (pageIndex >= diagram.Pages.Count)
             {
-                Console.Error.WriteLine($"Page index out of range. Diagram contains {diagram.Pages.Count} page(s).");
+                Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
                 return;
             }
 
-            // Retrieve the target page
+            // Retrieve the specific page
             Page page = diagram.Pages[pageIndex];
 
-            // Iterate over every shape on the selected page
+            // Iterate over each shape on the page
             foreach (Shape shape in page.Shapes)
             {
-                // Skip shapes that are marked as deleted (BOOL.True)
+                // Skip deleted shapes
                 if (shape.Del == BOOL.True)
                     continue;
 
-                // Build an output file name using the shape's unique ID
-                string outputFile = $"shape_{shape.ID}.pdf";
+                // Build output PDF file name using shape ID
+                string outputFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page{pageIndex}_Shape{shape.ID}.pdf";
+                string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", outputFileName);
 
                 try
                 {
-                    // Export the current shape to a PDF file
-                    shape.ToPdf(outputFile);
-                    Console.WriteLine($"Exported shape ID {shape.ID} to {outputFile}");
+                    // Export the individual shape to PDF
+                    shape.ToPdf(outputPath);
+                    Console.WriteLine($"Exported Shape ID {shape.ID} to {outputPath}");
                 }
                 catch (Exception ex)
                 {
-                    // Report any errors that occur during shape export
-                    Console.Error.WriteLine($"Failed to export shape ID {shape.ID}: {ex.Message}");
+                    // Report errors for this shape but continue processing others
+                    Console.Error.WriteLine($"Failed to export Shape ID {shape.ID}: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur while loading or processing the diagram
+            // Report any errors that occurred while loading or processing the diagram
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

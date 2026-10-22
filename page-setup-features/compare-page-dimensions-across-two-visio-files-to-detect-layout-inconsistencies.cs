@@ -1,87 +1,102 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine file paths for the two Visio diagrams
-        string filePath1;
-        string filePath2;
-
-        if (args.Length >= 2)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            filePath1 = args[0];
-            filePath2 = args[1];
-        }
-        else
-        {
-            Console.WriteLine("Enter the full path for the first Visio file:");
-            filePath1 = Console.ReadLine();
-
-            Console.WriteLine("Enter the full path for the second Visio file:");
-            filePath2 = Console.ReadLine();
+            Console.Error.WriteLine("Usage: Program <VisioFile1> <VisioFile2>");
+            return;
         }
 
-        // Load the diagrams
-        Diagram diagram1 = new Diagram(filePath1);
-        Diagram diagram2 = new Diagram(filePath2);
+        string filePath1 = args[0];
+        string filePath2 = args[1];
 
-        // Compare page counts
-        int pageCount1 = diagram1.Pages.Count;
-        int pageCount2 = diagram2.Pages.Count;
-
-        if (pageCount1 != pageCount2)
+        // Guard against missing files.
+        if (!File.Exists(filePath1))
         {
-            Console.WriteLine($"Page count mismatch: Diagram1 has {pageCount1} pages, Diagram2 has {pageCount2} pages.");
+            Console.Error.WriteLine($"File not found: {filePath1}");
+            return;
+        }
+        if (!File.Exists(filePath2))
+        {
+            Console.Error.WriteLine($"File not found: {filePath2}");
+            return;
         }
 
-        // Determine the number of pages to compare (minimum of both counts)
-        int pagesToCompare = Math.Min(pageCount1, pageCount2);
-        bool anyMismatch = false;
-
-        for (int i = 0; i < pagesToCompare; i++)
+        try
         {
-            // Access pages by index
-            Page page1 = diagram1.Pages[i];
-            Page page2 = diagram2.Pages[i];
+            // Load both Visio diagrams.
+            Diagram diagram1 = new Diagram(filePath1);
+            Diagram diagram2 = new Diagram(filePath2);
 
-            // Retrieve dimensions (values are in inches)
-            double width1 = page1.PageSheet.PageProps.PageWidth.Value;
-            double height1 = page1.PageSheet.PageProps.PageHeight.Value;
+            int pageCount1 = diagram1.Pages.Count;
+            int pageCount2 = diagram2.Pages.Count;
+            int minPageCount = Math.Min(pageCount1, pageCount2);
 
-            double width2 = page2.PageSheet.PageProps.PageWidth.Value;
-            double height2 = page2.PageSheet.PageProps.PageHeight.Value;
-
-            // Compare dimensions with a tolerance to account for floating‑point precision
-            const double tolerance = 0.001; // inches
-
-            bool widthMatch = Math.Abs(width1 - width2) <= tolerance;
-            bool heightMatch = Math.Abs(height1 - height2) <= tolerance;
-
-            if (!widthMatch || !heightMatch)
+            // Compare dimensions page by page.
+            for (int i = 0; i < minPageCount; i++)
             {
-                anyMismatch = true;
-                Console.WriteLine($"Page {i + 1} dimension mismatch:");
-                if (!widthMatch)
+                // Access pages explicitly (no var in foreach).
+                Page page1 = diagram1.Pages[i];
+                Page page2 = diagram2.Pages[i];
+
+                // Retrieve width and height (values are in inches).
+                double width1 = page1.PageSheet.PageProps.PageWidth.Value;
+                double height1 = page1.PageSheet.PageProps.PageHeight.Value;
+                double width2 = page2.PageSheet.PageProps.PageWidth.Value;
+                double height2 = page2.PageSheet.PageProps.PageHeight.Value;
+
+                // Use a small tolerance for floating‑point comparison.
+                const double tolerance = 0.001;
+
+                bool widthDiff = Math.Abs(width1 - width2) > tolerance;
+                bool heightDiff = Math.Abs(height1 - height2) > tolerance;
+
+                if (widthDiff || heightDiff)
                 {
-                    Console.WriteLine($"  Width - Diagram1: {width1} in, Diagram2: {width2} in");
+                    Console.WriteLine($"Page {i + 1} dimensions differ:");
+                    Console.WriteLine($"  File1: {width1:F3} in × {height1:F3} in");
+                    Console.WriteLine($"  File2: {width2:F3} in × {height2:F3} in");
                 }
-                if (!heightMatch)
+                else
                 {
-                    Console.WriteLine($"  Height - Diagram1: {height1} in, Diagram2: {height2} in");
+                    Console.WriteLine($"Page {i + 1} dimensions match ({width1:F3} in × {height1:F3} in).");
+                }
+            }
+
+            // Report extra pages in the first file, if any.
+            if (pageCount1 > minPageCount)
+            {
+                for (int i = minPageCount; i < pageCount1; i++)
+                {
+                    Page extraPage = diagram1.Pages[i];
+                    double w = extraPage.PageSheet.PageProps.PageWidth.Value;
+                    double h = extraPage.PageSheet.PageProps.PageHeight.Value;
+                    Console.WriteLine($"File1 has extra page {i + 1} with dimensions {w:F3} in × {h:F3} in.");
+                }
+            }
+
+            // Report extra pages in the second file, if any.
+            if (pageCount2 > minPageCount)
+            {
+                for (int i = minPageCount; i < pageCount2; i++)
+                {
+                    Page extraPage = diagram2.Pages[i];
+                    double w = extraPage.PageSheet.PageProps.PageWidth.Value;
+                    double h = extraPage.PageSheet.PageProps.PageHeight.Value;
+                    Console.WriteLine($"File2 has extra page {i + 1} with dimensions {w:F3} in × {h:F3} in.");
                 }
             }
         }
-
-        if (!anyMismatch && pageCount1 == pageCount2)
+        catch (Exception ex)
         {
-            Console.WriteLine("All page dimensions match between the two diagrams.");
-        }
-        else if (!anyMismatch)
-        {
-            Console.WriteLine("Page counts differ but all compared pages have matching dimensions.");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing Visio files: {ex.Message}");
         }
     }
 }

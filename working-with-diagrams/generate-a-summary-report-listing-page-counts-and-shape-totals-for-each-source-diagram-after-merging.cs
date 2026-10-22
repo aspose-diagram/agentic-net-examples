@@ -1,105 +1,130 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace DiagramMergeReport
+class Program
 {
-    // Holds summary information for each source diagram
-    class SourceInfo
+    static void Main(string[] args)
     {
-        public string FilePath { get; set; }
-        public int PageCount { get; set; }
-        public int ShapeCount { get; set; }
-    }
-
-    class Program
-    {
-        static void Main()
+        // Validate command‑line arguments: first argument is output file, remaining are source diagrams.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <outputPath> <sourceDiagram1> [<sourceDiagram2> ...]");
+            return;
+        }
+
+        string outputPath = args[0];
+
+        // Collect source file paths.
+        List<string> sourcePaths = new List<string>();
+        for (int i = 1; i < args.Length; i++)
+        {
+            sourcePaths.Add(args[i]);
+        }
+
+        // Verify that each source file exists.
+        foreach (string path in sourcePaths)
+        {
+            if (!File.Exists(path))
             {
+                Console.Error.WriteLine($"Source file not found: {path}");
+                return;
+            }
+        }
 
-                // Paths to source Visio files – replace with actual file locations
-                string[] sourceFiles = new string[]
+        // List to hold page and shape counts for each source diagram.
+        List<(string Path, int PageCount, int ShapeCount)> reportData = new List<(string, int, int)>();
+
+        // Load the first diagram as the target for merging.
+        try
+        {
+            using (Diagram targetDiagram = new Diagram(sourcePaths[0]))
+            {
+                // Count pages and shapes of the first (target) diagram.
+                int firstPageCount = targetDiagram.Pages.Count;
+                int firstShapeCount = 0;
+                foreach (Aspose.Diagram.Page page in targetDiagram.Pages)
                 {
-                    "source1.vsdx",
-                    "source2.vsdx",
-                    "source3.vsdx"
-                };
+                    firstShapeCount += page.Shapes.Count;
+                }
+                reportData.Add((sourcePaths[0], firstPageCount, firstShapeCount));
 
-                // Collection to store summary data for each source diagram
-                SourceInfo[] summaries = new SourceInfo[sourceFiles.Length];
-
-                Diagram mergedDiagram = null;
-
-                for (int i = 0; i < sourceFiles.Length; i++)
+                // Process remaining source diagrams: count and merge.
+                for (int idx = 1; idx < sourcePaths.Count; idx++)
                 {
-                    string path = sourceFiles[i];
-
-                    // Load the diagram from file
-                    Diagram diagram = new Diagram(path);
-
-                    // Count pages
-                    int pageCount = diagram.Pages.Count;
-
-                    // Count shapes across all pages
-                    int shapeCount = 0;
-                    foreach (Page page in diagram.Pages)
+                    string srcPath = sourcePaths[idx];
+                    try
                     {
-                        foreach (Shape shape in page.Shapes)
+                        using (Diagram srcDiagram = new Diagram(srcPath))
                         {
-                            shapeCount++;
+                            // Count pages and shapes of the current source diagram.
+                            int srcPageCount = srcDiagram.Pages.Count;
+                            int srcShapeCount = 0;
+                            foreach (Aspose.Diagram.Page page in srcDiagram.Pages)
+                            {
+                                srcShapeCount += page.Shapes.Count;
+                            }
+                            reportData.Add((srcPath, srcPageCount, srcShapeCount));
+
+                            // Merge the current source diagram into the target diagram.
+                            targetDiagram.Combine(srcDiagram);
                         }
                     }
-
-                    // Store the summary information
-                    summaries[i] = new SourceInfo
+                    catch (Exception ex)
                     {
-                        FilePath = path,
-                        PageCount = pageCount,
-                        ShapeCount = shapeCount
-                    };
-
-                    // Build the merged diagram
-                    if (mergedDiagram == null)
-                    {
-                        // First diagram becomes the base of the merge
-                        mergedDiagram = diagram;
-                    }
-                    else
-                    {
-                        // Merge subsequent diagrams into the base diagram
-                        mergedDiagram.Combine(diagram);
+                        Console.Error.WriteLine($"Error processing source diagram '{srcPath}': {ex.Message}");
+                        return;
                     }
                 }
 
-                // Save the merged diagram
-                if (mergedDiagram != null)
+                // Save the merged diagram to the specified output path.
+                try
                 {
-                    string outputPath = "merged_output.vsdx";
-                    mergedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Merged diagram saved to: {outputPath}");
+                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("No diagrams were loaded; merged diagram not created.");
+                    Console.Error.WriteLine($"Error saving merged diagram to '{outputPath}': {ex.Message}");
+                    return;
                 }
-
-                // Output the summary report
-                Console.WriteLine("\nSummary Report:");
-                Console.WriteLine("-------------------------------------------------");
-                foreach (SourceInfo info in summaries)
-                {
-                    Console.WriteLine($"File: {info.FilePath}");
-                    Console.WriteLine($"  Pages: {info.PageCount}");
-                    Console.WriteLine($"  Shapes: {info.ShapeCount}");
-                    Console.WriteLine("-------------------------------------------------");
-                }
-
             }
-            catch (System.IO.FileNotFoundException ex)
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading target diagram '{sourcePaths[0]}': {ex.Message}");
+            return;
+        }
+
+        // Output the summary report for each source diagram.
+        Console.WriteLine("Summary Report:");
+        foreach (var item in reportData)
+        {
+            Console.WriteLine($"Source: {item.Path}");
+            Console.WriteLine($"  Pages : {item.PageCount}");
+            Console.WriteLine($"  Shapes: {item.ShapeCount}");
+        }
+
+        // Load the merged diagram to report its final page and shape totals.
+        try
+        {
+            using (Diagram mergedDiagram = new Diagram(outputPath))
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                int mergedPageCount = mergedDiagram.Pages.Count;
+                int mergedShapeCount = 0;
+                foreach (Aspose.Diagram.Page page in mergedDiagram.Pages)
+                {
+                    mergedShapeCount += page.Shapes.Count;
+                }
+
+                Console.WriteLine("Merged Diagram:");
+                Console.WriteLine($"  Pages : {mergedPageCount}");
+                Console.WriteLine($"  Shapes: {mergedShapeCount}");
             }
-    }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading merged diagram for final report: {ex.Message}");
+        }
     }
 }

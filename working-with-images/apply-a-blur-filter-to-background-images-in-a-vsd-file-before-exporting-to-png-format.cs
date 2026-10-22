@@ -1,46 +1,67 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument) or default.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output directory for PNG files (second argument) or default.
+        string outputDir = args.Length > 1 ? args[1] : "output";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Ensure the output directory exists.
+        Directory.CreateDirectory(outputDir);
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram (VSDX format)
-            Diagram diagram = new Diagram(inputPath, LoadFileFormat.Vsdx);
-
-            // Iterate through all pages and shapes to find background images
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages in the diagram.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                foreach (Shape shape in page.Shapes)
+                Page page = diagram.Pages[pageIndex];
+
+                // Process only background pages.
+                if (page.Background == BOOL.True)
                 {
-                    // Background images are foreign shapes that contain an Image object
-                    if (shape.Type == TypeValue.Foreign && shape.Image != null)
+                    // Iterate through all shapes on the background page.
+                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
                     {
-                        // Apply a blur effect (value between 0.0 and 1.0)
-                        shape.Image.Blur.Value = 0.25;
+                        Shape shape = page.Shapes[shapeIdx];
+
+                        // Identify foreign (image) shapes.
+                        if (shape.Type == TypeValue.Foreign && shape.Image != null)
+                        {
+                            // Apply a blur filter (e.g., 25% blur).
+                            shape.Image.Blur.Value = 0.25;
+                        }
                     }
                 }
+
+                // Export the current page to PNG.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.PageIndex = pageIndex;   // Export this specific page.
+                pngOptions.PageCount = 1;           // Export only one page per file.
+
+                string outputPath = Path.Combine(outputDir, $"page_{pageIndex + 1}.png");
+                diagram.Save(outputPath, pngOptions);
             }
-
-            // Configure PNG export options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-
-            // Export the modified diagram to PNG
-            string outputPath = "output.png";
-            diagram.Save(outputPath, pngOptions);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

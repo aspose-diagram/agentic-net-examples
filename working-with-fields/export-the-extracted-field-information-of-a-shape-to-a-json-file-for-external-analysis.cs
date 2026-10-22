@@ -4,92 +4,118 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramFieldExport
+class Program
 {
-    // DTO for field information
-    public class FieldInfo
+    // Model classes for JSON serialization
+    private class FieldInfo
     {
-        public int IX { get; set; }
         public string Value { get; set; }
-        public string Format { get; set; }
-        public int Type { get; set; }
+        public string Type { get; set; }
+        public string Calendar { get; set; }
     }
 
-    // DTO for shape information
-    public class ShapeInfo
+    private class ShapeInfo
     {
         public long Id { get; set; }
         public string NameU { get; set; }
-        public List<FieldInfo> Fields { get; set; } = new();
+        public List<FieldInfo> Fields { get; set; }
     }
 
-    class Program
+    private class PageInfo
     {
-        static void Main()
+        public int Index { get; set; }
+        public List<ShapeInfo> Shapes { get; set; }
+    }
+
+    static void Main(string[] args)
+    {
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare collection to hold extracted information
+            List<PageInfo> pagesData = new List<PageInfo>();
+            int pageIndex = 0;
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-
-                // Load the Visio diagram (adjust the path as needed)
-                string diagramPath = "input.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Collect shape information
-                List<ShapeInfo> shapesData = new();
-
-                foreach (Page page in diagram.Pages)
+                PageInfo pageInfo = new PageInfo
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    Index = pageIndex,
+                    Shapes = new List<ShapeInfo>()
+                };
 
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Process only non-deleted shapes
+                    if (shape.Del == BOOL.False)
+                    {
                         ShapeInfo shapeInfo = new ShapeInfo
                         {
                             Id = shape.ID,
-                            NameU = shape.NameU
+                            NameU = shape.NameU,
+                            Fields = new List<FieldInfo>()
                         };
 
-                        // Extract fields (text insertion fields) if any
-                        if (shape.Fields != null && shape.Fields.Count > 0)
+                        // Iterate through all fields of the shape
+                        foreach (Field field in shape.Fields)
                         {
-                            foreach (Field field in shape.Fields)
+                            FieldInfo fieldInfo = new FieldInfo
                             {
-                                // Field.Value is read‑only; use its .Val property for the actual string
-                                string fieldValue = field.Value?.Val ?? string.Empty;
-                                string fieldFormat = field.Format?.Val ?? string.Empty;
-                                int fieldType = (int)field.Type?.Value;
+                                // Extract the field's textual value
+                                Value = field.Value?.Val,
+                                // Extract the field type as string (enum)
+                                Type = field.Type?.Value.ToString(),
+                                // Extract calendar information if present
+                                Calendar = field.Calendar?.Value.ToString()
+                            };
 
-                                shapeInfo.Fields.Add(new FieldInfo
-                                {
-                                    IX = field.IX,
-                                    Value = fieldValue,
-                                    Format = fieldFormat,
-                                    Type = fieldType
-                                });
-                            }
+                            shapeInfo.Fields.Add(fieldInfo);
                         }
 
-                        shapesData.Add(shapeInfo);
+                        pageInfo.Shapes.Add(shapeInfo);
                     }
                 }
 
-                // Serialize to JSON
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string jsonOutput = JsonSerializer.Serialize(shapesData, jsonOptions);
-
-                // Write JSON to file
-                string outputPath = "shape_fields.json";
-                File.WriteAllText(outputPath, jsonOutput);
-
-                Console.WriteLine($"Export completed. JSON saved to '{outputPath}'.");
-
+                pagesData.Add(pageInfo);
+                pageIndex++;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Serialize the collected data to JSON with indentation
+            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+                WriteIndented = true
+            };
+            string jsonOutput = JsonSerializer.Serialize(pagesData, jsonOptions);
+
+            // Write JSON to the specified output file
+            File.WriteAllText(outputPath, jsonOutput);
+            Console.WriteLine($"Field information exported successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Capture any errors from Aspose.Diagram operations or I/O
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

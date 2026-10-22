@@ -1,67 +1,70 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments.
+        if (args.Length < 2)
         {
-            // Determine input and output file paths.
-            string inputPath;
-            string outputPath;
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-            if (args.Length >= 2)
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                inputPath = args[0];
-                outputPath = args[1];
-            }
-            else
-            {
-                Console.WriteLine("Enter the full path to the Visio file to process:");
-                inputPath = Console.ReadLine();
-
-                Console.WriteLine("Enter the full path for the updated Visio file to save:");
-                outputPath = Console.ReadLine();
-            }
-
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Determine if the shape already has at least one hyperlink.
-                    bool hasHyperlink = shape.Hyperlinks != null && shape.Hyperlinks.Count > 0;
-
-                    if (!hasHyperlink)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Build a default URL based on the shape's universal name.
-                        // If NameU is empty, fall back to the shape's ID.
-                        string baseName = !string.IsNullOrWhiteSpace(shape.NameU) ? shape.NameU : shape.ID.ToString();
-                        string defaultUrl = $"https://example.com/{baseName}";
+                        // If the shape has no hyperlinks, add a default one.
+                        // Hyperlinks collection provides a Count property.
+                        if (shape.Hyperlinks.Count == 0)
+                        {
+                            // Create a new hyperlink instance.
+                            Hyperlink link = new Hyperlink();
 
-                        // Create and configure a new hyperlink.
-                        Hyperlink link = new Hyperlink();
-                        link.Name = "DefaultLink";
-                        link.Address.Value = defaultUrl;
-                        link.Description.Value = $"Auto‑generated link for shape '{baseName}'";
+                            // Assign a name for the hyperlink (optional).
+                            link.Name = "DefaultLink";
 
-                        // Add the hyperlink to the shape.
-                        shape.Hyperlinks.Add(link);
+                            // Build a default URL based on the shape's NameU.
+                            // Ensure the URL is well‑formed.
+                            string safeName = Uri.EscapeDataString(shape.NameU ?? "shape");
+                            link.Address.Value = $"https://example.com/{safeName}";
+
+                            // Add the hyperlink to the shape's collection.
+                            shape.Hyperlinks.Add(link);
+                        }
                     }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Processing complete. Updated file saved to: {outputPath}");
+            Console.WriteLine("Processing completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

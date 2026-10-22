@@ -3,65 +3,65 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Expect two arguments: input Visio file path and output CSV file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: VisioTextExtractor <inputVisioPath> <outputCsvPath>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputCsvPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Load the Visio diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(inputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
-            // Open CSV writer
-            try
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare the CSV writer.
+            using (StreamWriter writer = new StreamWriter(outputPath, false))
             {
-                using (var writer = new StreamWriter(outputCsvPath, false))
+                // Write CSV header.
+                writer.WriteLine("ShapeId,Text");
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Write CSV header
-                    writer.WriteLine("ShapeId,Text");
-
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Retrieve shape ID
-                            long shapeId = shape.ID;
+                        // Retrieve plain text from the shape.
+                        string text = shape.Text?.Value?.Text ?? string.Empty;
 
-                            // Retrieve plain text of the shape
-                            string text = shape.Text.Value.Text ?? string.Empty;
+                        // Skip shapes without text.
+                        if (string.IsNullOrWhiteSpace(text))
+                            continue;
 
-                            // Clean text for CSV (replace commas and newlines)
-                            text = text.Replace(",", " ").Replace("\r", " ").Replace("\n", " ").Trim();
+                        // Escape double quotes in text for CSV compliance.
+                        string escapedText = text.Replace("\"", "\"\"");
 
-                            // Write CSV line
-                            writer.WriteLine($"{shapeId},\"{text}\"");
-                        }
+                        // Write shape ID and text to CSV.
+                        writer.WriteLine($"{shape.ID},\"{escapedText}\"");
                     }
                 }
+            }
 
-                Console.WriteLine($"Extraction completed. CSV saved to: {outputCsvPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to write CSV: {ex.Message}");
-            }
+            Console.WriteLine($"Successfully exported shape texts to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

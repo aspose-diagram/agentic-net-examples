@@ -1,45 +1,81 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeId> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_ThemeApplied.vsdx");
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard: parse the shape ID.
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. It must be a numeric value.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the modified Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // ID of the shape whose theme we want to change
-            long targetShapeId = 5; // replace with the actual shape ID
-
-            // Retrieve the shape from the first page
-            Shape shape = diagram.Pages[0].Shapes.GetShape(targetShapeId);
-            if (shape == null)
+            // Locate the shape with the specified ID across all pages.
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                throw new Exception($"Shape with ID {targetShapeId} not found.");
+                // Iterate through shapes on the current page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID == shapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null)
+                    break;
             }
 
-            // Apply a preset theme to the shape
-            shape.PresetTheme = PresetThemeValue.Bubble;
-            // Optionally, set a variant and quick style
-            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Error: No shape with ID {shapeId} was found in the diagram.");
+                return;
+            }
 
-            // Save the modified diagram
+            // Apply a preset theme to the shape.
+            // Only confirmed enum member is PresetThemeValue.Bubble.
+            targetShape.PresetTheme = PresetThemeValue.Bubble;
+
+            // Optionally, you could also set a variant or quick style here if desired.
+            // Example (commented out):
+            // targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+            // targetShape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+
+            // Save the modified diagram to the output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Shape ID {shapeId} theme applied successfully. Saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,56 +1,71 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Vba;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: <inputVisioFile> <existingModuleName> <newModuleName>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string existingModuleName = args[1];
+        string newModuleName = args[2];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the VBA module with the specified existing name.
+            int targetIndex = -1;
+            for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
             {
-
-                // Path to the source Visio file (must be a macro‑enabled format)
-                string sourcePath = "input.vsdm";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Ensure the diagram contains a VBA project
-                if (diagram.VbaProject == null)
+                VbaModule module = diagram.VbaProject.Modules[i];
+                if (module.Name.Equals(existingModuleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("The diagram does not contain a VBA project.");
-                    return;
+                    targetIndex = i;
+                    break;
                 }
-
-                // Rename the desired VBA module.
-                // Example: rename a module named "Module1" to "DescriptiveModule"
-                bool renamed = false;
-                foreach (VbaModule module in diagram.VbaProject.Modules)
-                {
-                    if (module.Name == "Module1")
-                    {
-                        module.Name = "DescriptiveModule";
-                        renamed = true;
-                        Console.WriteLine($"Module renamed to '{module.Name}'.");
-                        break;
-                    }
-                }
-
-                if (!renamed)
-                {
-                    Console.WriteLine("Target module not found. No changes were made.");
-                }
-
-                // Save the updated diagram in a macro‑enabled format to preserve VBA changes
-                string outputPath = "output.vsdm";
-                diagram.Save(outputPath, SaveFileFormat.Vsdm);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            if (targetIndex == -1)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Error: VBA module \"{existingModuleName}\" not found.");
+                return;
             }
+
+            // Rename the module.
+            VbaModule targetModule = diagram.VbaProject.Modules[targetIndex];
+            targetModule.Name = newModuleName;
+            Console.WriteLine($"Module \"{existingModuleName}\" renamed to \"{newModuleName}\".");
+
+            // Prepare output path – same directory with a suffix to preserve the original file.
+            string directory = Path.GetDirectoryName(inputPath);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_renamed.vsdm");
+
+            // Save the diagram in a macro‑enabled format to retain VBA code.
+            diagram.Save(outputPath, SaveFileFormat.Vsdm);
+            Console.WriteLine($"Diagram saved to \"{outputPath}\".");
+        }
+        catch (Exception ex)
+        {
+            // Report any Aspose or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,64 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <moduleNameToDelete> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string moduleName = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdm");
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the output file (must be macro‑enabled to keep VBA)
-            string outputPath = "output.vsdm";
-            // Name of the VBA module to delete
-            string moduleNameToDelete = "ModuleToRemove";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure a VBA project and modules collection exist
-            if (diagram.VbaProject != null && diagram.VbaProject.Modules != null)
+            // Ensure the diagram contains a VBA project.
+            if (diagram.VbaProject == null)
             {
-                int removeIndex = -1;
+                Console.Error.WriteLine("Error: The diagram does not contain a VBA project.");
+                return;
+            }
 
-                // Locate the module by name (case‑insensitive)
-                for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
+            // Find the index of the module with the specified name.
+            int moduleIndex = -1;
+            for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
+            {
+                VbaModule mod = diagram.VbaProject.Modules[i];
+                if (mod != null && string.Equals(mod.Name, moduleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    VbaModule module = diagram.VbaProject.Modules[i];
-                    if (string.Equals(module.Name, moduleNameToDelete, StringComparison.OrdinalIgnoreCase))
-                    {
-                        removeIndex = i;
-                        break;
-                    }
+                    moduleIndex = i;
+                    break;
                 }
+            }
 
-                if (removeIndex >= 0)
-                {
-                    // Delete the identified module
-                    diagram.VbaProject.Modules.RemoveAt(removeIndex);
-                    Console.WriteLine($"VBA module '{moduleNameToDelete}' has been removed.");
-                }
-                else
-                {
-                    Console.WriteLine($"VBA module '{moduleNameToDelete}' was not found.");
-                }
+            if (moduleIndex == -1)
+            {
+                Console.WriteLine($"Info: No VBA module named \"{moduleName}\" was found.");
             }
             else
             {
-                Console.WriteLine("The diagram does not contain a VBA project or any modules.");
+                // Delete the module at the identified index.
+                diagram.VbaProject.Modules.RemoveAt(moduleIndex);
+                Console.WriteLine($"Info: VBA module \"{moduleName}\" has been deleted.");
             }
 
-            // Save the modified diagram using a macro‑enabled format
+            // Save the modified diagram in a macro‑enabled format.
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
-
+            Console.WriteLine($"Info: Modified diagram saved to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

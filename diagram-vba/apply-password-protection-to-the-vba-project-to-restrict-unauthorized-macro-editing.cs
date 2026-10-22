@@ -1,42 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file (must contain VBA macros)
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the VBA project
+            // Access the VBA project (read‑only property).
             VbaProject vbaProject = diagram.VbaProject;
 
-            // ------------------------------------------------------------
-            // NOTE:
-            // Aspose.Diagram does not expose a direct API to set a password
-            // on the VBA project. If a password property becomes available
-            // in a future version, it can be set here, e.g.:
-            // vbaProject.Password = "MySecretPassword";
-            // ------------------------------------------------------------
+            if (vbaProject == null)
+            {
+                Console.WriteLine("The diagram does not contain a VBA project.");
+            }
+            else
+            {
+                // Output basic VBA project information.
+                Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+                Console.WriteLine($"VBA Project IsSigned: {vbaProject.IsSigned}");
 
-            // Save the diagram in a macro‑enabled format to preserve VBA
-            string outputPath = "output.vsdm";
+                // List existing VBA modules.
+                Console.WriteLine("Existing VBA Modules:");
+                foreach (VbaModule module in vbaProject.Modules)
+                {
+                    Console.WriteLine($"- {module.Name}");
+                }
+
+                // TODO: Apply password protection to the VBA project when a supported API becomes available.
+                // Aspose.Diagram currently does not expose a property or method to set a VBA project password.
+                // When such an API is added, it should be invoked here, e.g.:
+                // vbaProject.Password = "YourPassword";
+            }
+
+            // Save the diagram in a macro‑enabled format (VSDM) to preserve VBA content.
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
-
-            Console.WriteLine("Diagram saved as macro‑enabled file: " + outputPath);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,41 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output file path.
-        if (args.Length != 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.WriteLine("Usage: RemoveVbaSignature <inputFile> <outputFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Load the Visio diagram.
-        Diagram diagram = new Diagram(inputPath);
-
-        // Check if the VBA project is signed.
-        bool isSigned = diagram.VbaProject.IsSigned;
-        Console.WriteLine($"VBA project signed: {isSigned}");
-
-        if (isSigned)
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
         {
-            // Remove the entire VBA project data (including the signature).
-            diagram.VbProjectData = null;
-            Console.WriteLine("VBA signature removed by clearing VBA project data.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
         }
         else
         {
-            Console.WriteLine("No signature found; no changes made to VBA project.");
+            // Append suffix "_unsigned" before extension
+            string dir = Path.GetDirectoryName(inputPath);
+            string name = Path.GetFileNameWithoutExtension(inputPath);
+            string ext = ".vsdx"; // save as non‑macro format
+            outputPath = Path.Combine(dir, $"{name}_unsigned{ext}");
         }
 
-        // Save the diagram. Since the VBA project is removed, a non‑macro format is appropriate.
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"Diagram saved to '{outputPath}'.");
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Check if the VBA project is signed
+            bool isSigned = diagram.VbaProject.IsSigned;
+            Console.WriteLine($"VBA project signed: {isSigned}");
+
+            if (isSigned)
+            {
+                // Remove all VBA/macros data (including the signature)
+                diagram.VbProjectData = null;
+                Console.WriteLine("Signature removed by clearing VBA project data.");
+            }
+            else
+            {
+                Console.WriteLine("No signature present; no changes made.");
+            }
+
+            // Save the diagram in a non‑macro format (VSDX)
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

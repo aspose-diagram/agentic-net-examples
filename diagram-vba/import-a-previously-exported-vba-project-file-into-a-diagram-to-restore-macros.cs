@@ -7,39 +7,58 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, VBA project file path, output diagram path
+        if (args.Length != 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <vbaProjectPath> <outputDiagramPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string vbaPath = args[1];
+        string outputPath = args[2];
+
+        // Guard: ensure input diagram exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        // Guard: ensure VBA project file exists
+        if (!File.Exists(vbaPath))
+        {
+            Console.Error.WriteLine($"Error: VBA project file not found at '{vbaPath}'.");
+            return;
+        }
+
         try
         {
-
-            // Paths – adjust as needed
-            string diagramPath = "inputDiagram.vsdx";   // Existing Visio file
-            string vbaFilePath = "exportedProject.vba"; // Exported VBA project file (plain text)
-            string outputPath = "outputDiagram.vsdm";   // Macro‑enabled Visio file
-
             // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Read the VBA project file content
-            if (!File.Exists(vbaFilePath))
-            {
-                Console.WriteLine($"VBA file not found: {vbaFilePath}");
-                return;
-            }
-            string vbaCode = File.ReadAllText(vbaFilePath);
+            // Read VBA project file content (assumed to be plain VBA source code)
+            string vbaCode = File.ReadAllText(vbaPath);
 
-            // Add a new procedural module and set its code
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "ImportedModule");
+            // Add a new procedural VBA module with the name derived from the file name
+            string moduleName = Path.GetFileNameWithoutExtension(vbaPath);
+            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, moduleName);
+
+            // Retrieve the newly added module and set its code
             VbaModule module = diagram.VbaProject.Modules[moduleIndex];
             module.Codes = vbaCode;
 
-            // Save the diagram in a macro‑enabled format to preserve the VBA project
+            // Save the diagram in a macro‑enabled format to preserve the imported VBA code
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
 
-            Console.WriteLine($"Diagram saved with imported VBA macros to: {outputPath}");
+            // Dispose the diagram to free resources
+            diagram.Dispose();
 
+            Console.WriteLine($"Successfully imported VBA project and saved diagram to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

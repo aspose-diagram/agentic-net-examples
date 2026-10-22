@@ -1,49 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio macro-enabled file path and macro name to execute
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVsdmPath> <macroName>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string macroName = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio file
-            string inputPath = "input.vsdx";
+            // Load the macro-enabled Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Access the VBA project
-            var vbaProject = diagram.VbaProject;
+            VbaProject vbaProject = diagram.VbaProject;
 
-            // Add a new procedural VBA module
-            int moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "TestModule");
-            var module = vbaProject.Modules[moduleIndex];
+            // Output basic VBA project information
+            Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+            Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
+            Console.WriteLine("Modules in the VBA project:");
 
-            // Define the macro code
-            string macroCode = @"
-            Attribute VB_Name = ""TestModule""
-            Sub TestMacro()
-            MsgBox ""Hello from macro""
-            End Sub
-            ";
+            foreach (VbaModule module in vbaProject.Modules)
+            {
+                Console.WriteLine($"- {module.Name}");
+            }
 
-            // Set the macro code in the module
-            module.Codes = macroCode;
+            // TODO: Implement macro execution using Aspose.Diagram's VBA execution API when available.
+            // The current Aspose.Diagram version provides only VBA code manipulation (add, modify, remove)
+            // but does not support executing macros programmatically.
+            // Once supported, the implementation would locate the desired macro within the modules,
+            // invoke it, and capture any output (e.g., via a custom logger or return value).
 
-            // Save the diagram in a macro‑enabled format
-            string outputPath = "output.vsdm";
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
+            // Placeholder for macro execution result
+            string macroOutput = "[Macro execution not supported in current Aspose.Diagram version]";
 
-            // Capture and display the macro code for verification
-            Console.WriteLine("Macro code added to the document:");
-            Console.WriteLine(module.Codes);
-
+            // Display the captured output (or placeholder)
+            Console.WriteLine($"Macro \"{macroName}\" output:");
+            Console.WriteLine(macroOutput);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,68 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, VBA module name, output diagram path
+        if (args.Length != 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <vbaModuleName> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string moduleName = args[1];
+        string outputPath = args[2];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // New VBA macro statements to replace the existing module content
+        // In a real scenario, you might read this from a file or another source.
+        string newVbaCode = @"
+Attribute VB_Name = ""{0}""
+Sub NewMacro()
+    MsgBox ""This is the updated macro.""
+End Sub
+".Replace("{0}", moduleName);
+
         try
         {
-
-            // Input Visio file (must be macro-enabled to contain VBA)
-            string inputPath = "input.vsdm";
-            // Output Visio file where the VBA module will be updated
-            string outputPath = "output.vsdm";
-
-            // Load the diagram
+            // Load the existing Visio diagram (supports macro-enabled formats)
             Diagram diagram = new Diagram(inputPath);
 
             // Access the VBA project
-            var vbaProject = diagram.VbaProject;
+            VbaProject vbaProject = diagram.VbaProject;
 
-            // Name of the module to update (or create if it does not exist)
-            string targetModuleName = "MyMacroModule";
-
-            // Locate the module index; -1 means not found
-            int moduleIndex = -1;
-            for (int i = 0; i < vbaProject.Modules.Count; i++)
+            // Find the module by name
+            VbaModule targetModule = null;
+            foreach (VbaModule module in vbaProject.Modules)
             {
-                var mod = vbaProject.Modules[i];
-                if (mod.Name.Equals(targetModuleName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(module.Name, moduleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    moduleIndex = i;
+                    targetModule = module;
                     break;
                 }
             }
 
-            // If the module does not exist, add a new procedural module
-            if (moduleIndex == -1)
+            if (targetModule == null)
             {
-                moduleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, targetModuleName);
+                Console.Error.WriteLine($"Error: VBA module \"{moduleName}\" not found in the diagram.");
+                return;
             }
 
-            // Retrieve the module
-            var module = vbaProject.Modules[moduleIndex];
+            // Replace the module's code with the new macro statements
+            targetModule.Codes = newVbaCode;
 
-            // New VBA code to replace the existing content
-            string newVbaCode = @"
-            Attribute VB_Name = ""MyMacroModule""
-            Sub HelloWorld()
-            MsgBox ""Hello from Aspose.Diagram!""
-            End Sub
-            ";
-
-            // Replace the module's code
-            module.Codes = newVbaCode;
-
-            // Save the diagram using a macro-enabled format to preserve VBA
+            // Save the diagram in a macro-enabled format to preserve VBA code
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
 
+            Console.WriteLine($"Successfully updated VBA module \"{moduleName}\" and saved to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

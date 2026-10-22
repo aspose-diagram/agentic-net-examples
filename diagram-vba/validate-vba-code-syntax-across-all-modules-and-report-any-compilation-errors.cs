@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
@@ -7,81 +7,87 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument
+        // Expect the Visio file path as the first argument.
         if (args.Length == 0)
         {
-            Console.WriteLine("Usage: dotnet run <VisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
         string visioPath = args[0];
 
-        // Load the diagram (no password handling required)
-        Diagram diagram;
+        // Guard: ensure the file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
         try
         {
-            diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
+
+            // Check if the diagram contains a VBA project.
+            if (diagram.VbaProject == null)
+            {
+                Console.WriteLine("No VBA project found in the diagram.");
+                return;
+            }
+
+            bool anyErrors = false;
+
+            // Iterate through each VBA module.
+            foreach (VbaModule module in diagram.VbaProject.Modules)
+            {
+                Console.WriteLine($"Analyzing module: {module.Name}");
+
+                string code = module.Codes ?? string.Empty;
+
+                // Count occurrences of Sub, End Sub, and Function (case-insensitive).
+                int subCount = CountOccurrences(code, "Sub ");
+                int endSubCount = CountOccurrences(code, "End Sub");
+                int functionCount = CountOccurrences(code, "Function ");
+
+                // Validate Sub/End Sub pairing.
+                if (subCount != endSubCount)
+                {
+                    anyErrors = true;
+                    Console.Error.WriteLine($"[Error] Module '{module.Name}': Mismatched Sub/End Sub count (Sub: {subCount}, End Sub: {endSubCount}).");
+                }
+
+                // Ensure at least one Sub or Function exists.
+                if (subCount == 0 && functionCount == 0)
+                {
+                    anyErrors = true;
+                    Console.Error.WriteLine($"[Error] Module '{module.Name}': No Sub or Function definitions found.");
+                }
+            }
+
+            if (!anyErrors)
+            {
+                Console.WriteLine("VBA syntax validation completed successfully. No errors detected.");
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        // Access the VBA project
-        VbaProject vbaProject = diagram.VbaProject;
-        if (vbaProject == null)
-        {
-            Console.WriteLine("No VBA project found in the diagram.");
-            return;
-        }
-
-        bool anyErrors = false;
-
-        // Iterate through all VBA modules
-        for (int i = 0; i < vbaProject.Modules.Count; i++)
-        {
-            VbaModule module = vbaProject.Modules[i];
-            string code = module.Codes ?? string.Empty;
-
-            // Simple syntax validation: ensure each Sub has a matching End Sub
-            // This is a rudimentary check and may not catch all errors.
-            int subCount = CountOccurrences(code, "Sub ");
-            int endSubCount = CountOccurrences(code, "End Sub");
-
-            if (subCount != endSubCount)
-            {
-                anyErrors = true;
-                Console.WriteLine($"Module '{module.Name}' (Index {i}) has mismatched Sub/End Sub statements.");
-                Console.WriteLine($"  Sub statements: {subCount}, End Sub statements: {endSubCount}");
-            }
-
-            // Additional basic check: ensure the module contains at least one Sub or Function
-            if (!code.Contains("Sub ") && !code.Contains("Function "))
-            {
-                anyErrors = true;
-                Console.WriteLine($"Module '{module.Name}' (Index {i}) does not contain any Sub or Function definitions.");
-            }
-        }
-
-        if (!anyErrors)
-        {
-            Console.WriteLine("All VBA modules passed the basic syntax validation.");
+            // Capture any Aspose or runtime exceptions.
+            Console.Error.WriteLine($"Exception occurred: {ex.Message}");
         }
     }
 
-    // Helper method to count non-overlapping occurrences of a substring
-    private static int CountOccurrences(string source, string substring)
+    // Helper method to count non-overlapping occurrences of a substring (case-insensitive).
+    private static int CountOccurrences(string source, string value)
     {
-        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(substring))
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
             return 0;
 
         int count = 0;
         int index = 0;
-        while ((index = source.IndexOf(substring, index, StringComparison.OrdinalIgnoreCase)) != -1)
+        while ((index = source.IndexOf(value, index, StringComparison.OrdinalIgnoreCase)) != -1)
         {
             count++;
-            index += substring.Length;
+            index += value.Length;
         }
         return count;
     }

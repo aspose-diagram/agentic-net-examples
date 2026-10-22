@@ -1,6 +1,5 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
@@ -9,62 +8,80 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Expect the Visio file path as the first argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
+            return;
+        }
+
+        string filePath = args[0];
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"File not found: {filePath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file (must be a macro-enabled format, e.g., .vsdm)
-            string filePath = "input.vsdm";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(filePath);
 
-            // Ensure the diagram contains a VBA project
-            if (diagram.VbaProject == null || diagram.VbaProject.Modules == null)
+            // Access the VBA project; it may be null if the diagram has no VBA.
+            VbaProject vbaProject = diagram.VbaProject;
+
+            if (vbaProject == null)
             {
-                Console.WriteLine("No VBA project found in the diagram.");
+                Console.WriteLine("The diagram does not contain a VBA project.");
                 return;
             }
 
-            // Regular expression to match Sub and Function declarations
-            Regex macroRegex = new Regex(@"^\s*(Public|Private)?\s*(Sub|Function)\s+(\w+)", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            // Output basic VBA project information.
+            Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+            Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
+            Console.WriteLine();
 
-            // Iterate through each VBA module
-            foreach (VbaModule module in diagram.VbaProject.Modules)
+            // Regular expression to capture Sub and Function names.
+            Regex macroRegex = new Regex(@"^\s*(Sub|Function)\s+([A-Za-z0-9_]+)", RegexOptions.IgnoreCase);
+
+            // Iterate through each VBA module.
+            foreach (VbaModule module in vbaProject.Modules)
             {
-                string moduleName = module.Name;
+                Console.WriteLine($"Module: {module.Name}");
+
                 string code = module.Codes ?? string.Empty;
+                bool foundMacro = false;
 
-                // Find all macro definitions in the module code
-                MatchCollection matches = macroRegex.Matches(code);
-                List<string> macroNames = new List<string>();
-
-                foreach (Match match in matches)
+                // Scan each line of the module's code for macro definitions.
+                using (StringReader reader = new StringReader(code))
                 {
-                    // The macro name is captured in group 3
-                    if (match.Groups.Count > 3)
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        macroNames.Add(match.Groups[3].Value);
+                        Match match = macroRegex.Match(line);
+                        if (match.Success)
+                        {
+                            string macroName = match.Groups[2].Value;
+                            Console.WriteLine($"  Macro: {macroName}");
+                            foundMacro = true;
+                        }
                     }
                 }
 
-                // Output the results
-                if (macroNames.Count > 0)
+                if (!foundMacro)
                 {
-                    foreach (string macroName in macroNames)
-                    {
-                        Console.WriteLine($"Module: {moduleName}, Macro: {macroName}");
-                    }
+                    Console.WriteLine("  (No macros found in this module)");
                 }
-                else
-                {
-                    Console.WriteLine($"Module: {moduleName} contains no macros.");
-                }
+
+                Console.WriteLine(); // Blank line between modules.
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,41 +1,56 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths to the input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and disable the layer named "Grid"
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Assume the first page contains the layers we need to modify.
+                Page page = diagram.Pages[0];
+
+                // Iterate over all layers on the page and disable the one named "Grid".
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
+                    // Compare the layer name; if it matches "Grid", set its visibility to false.
                     if (layer.Name.Value == "Grid")
                     {
-                        // Hide the Grid layer
                         layer.Visible.Value = BOOL.False;
+                        // Optionally also hide it from printing.
+                        layer.Print.Value = BOOL.False;
                     }
                 }
+
+                // Save the modified diagram as VSDX.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram as VSDX
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

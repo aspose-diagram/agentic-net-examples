@@ -2,104 +2,136 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string sourcePath = "source.vsdx";
-        // Verify source file exists
-        if (!File.Exists(sourcePath)) { Console.Error.WriteLine($"File not found: {sourcePath}"); return; }
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Load the source diagram inside a try/catch block.
         try
         {
-            // Load the source diagram
-            Diagram sourceDiagram = new Diagram(sourcePath);
-
-            // Assume we work with the first page
-            Page srcPage = sourceDiagram.Pages[0];
-
-            // Collect all shape IDs that participate in connections
-            HashSet<long> nodeIds = new HashSet<long>();
-            foreach (Connect conn in srcPage.Connects)
+            using (Diagram sourceDiagram = new Diagram(inputPath))
             {
-                nodeIds.Add(conn.FromSheet);
-                nodeIds.Add(conn.ToSheet);
+                // Ensure the diagram has at least one page.
+                if (sourceDiagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The source diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page of the source diagram.
+                Page sourcePage = sourceDiagram.Pages[0];
+
+                // Create a new blank page that will hold the visual representation.
+                Page visualPage = new Page();
+                sourceDiagram.Pages.Add(visualPage);
+                int visualPageIndex = sourceDiagram.Pages.Count - 1;
+
+                // Map original shape IDs to the IDs of the visual placeholder shapes.
+                Dictionary<long, long> shapeIdMap = new Dictionary<long, long>();
+
+                // Simple grid layout parameters for the placeholder shapes.
+                const int columns = 5;
+                const double startX = 1.0;
+                const double startY = 1.0;
+                const double offsetX = 2.5;
+                const double offsetY = 2.0;
+                int shapeCounter = 0;
+
+                // Create a rectangle placeholder for each shape on the source page.
+                foreach (Shape srcShape in sourcePage.Shapes)
+                {
+                    // Calculate grid position.
+                    double posX = startX + (shapeCounter % columns) * offsetX;
+                    double posY = startY + (shapeCounter / columns) * offsetY;
+
+                    // Add a rectangle shape to the visual page.
+                    // The last argument (isCalculate) is a plain bool, not BOOL.
+                    long newShapeId = visualPage.AddShape(
+                        posX,               // pinX
+                        posY,               // pinY
+                        1.0,                // width
+                        0.5,                // height
+                        "Rectangle",        // master name (must exist in the stencil)
+                        false);             // isCalculate
+
+                    // Retrieve the newly added shape to set its label.
+                    Shape visualShape = visualPage.Shapes.GetShape(newShapeId);
+                    visualShape.Text.Value.Clear();
+                    visualShape.Text.Value.Add(new Txt(srcShape.ID.ToString()));
+
+                    // Store the mapping from source shape ID to visual shape ID.
+                    shapeIdMap[srcShape.ID] = newShapeId;
+
+                    shapeCounter++;
+                }
+
+                // Iterate over all connectors on the source page and recreate them on the visual page.
+                foreach (Connect conn in sourcePage.Connects)
+                {
+                    long fromOldId = conn.FromSheet;
+                    long toOldId = conn.ToSheet;
+
+                    // Output connector information to the console.
+                    Console.WriteLine($"Connector: From Shape ID {fromOldId} To Shape ID {toOldId}");
+
+                    // Verify that both endpoint shapes were mapped.
+                    if (!shapeIdMap.ContainsKey(fromOldId) || !shapeIdMap.ContainsKey(toOldId))
+                    {
+                        Console.Error.WriteLine($"Warning: Unable to map connector endpoints for IDs {fromOldId} or {toOldId}.");
+                        continue;
+                    }
+
+                    // Create a dynamic connector shape.
+                    Shape connectorShape = new Shape();
+                    long connectorId = sourceDiagram.AddShape(connectorShape, "Dynamic connector", visualPageIndex);
+
+                    // Set the routing style of the connector to right‑angle.
+                    Shape visualConnector = visualPage.Shapes.GetShape(connectorId);
+                    visualConnector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+
+                    // Connect the visual placeholder shapes using the connector.
+                    visualPage.ConnectShapesViaConnector(
+                        shapeIdMap[fromOldId],
+                        ConnectionPointPlace.Bottom,
+                        shapeIdMap[toOldId],
+                        ConnectionPointPlace.Top,
+                        connectorId);
+                }
+
+                // Save the modified diagram with the visualized connectors.
+                try
+                {
+                    sourceDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                }
+                catch (Exception saveEx)
+                {
+                    Console.Error.WriteLine($"Error saving diagram: {saveEx.Message}");
+                }
             }
-
-            // Create a new diagram for visualizing the connections
-            Diagram visualDiagram = new Diagram();
-            visualDiagram.Pages.Add(new Page());
-            Page visPage = visualDiagram.Pages[0];
-
-            // Map original shape IDs to new shape IDs in the visual diagram
-            Dictionary<long, long> idMap = new Dictionary<long, long>();
-
-            // Simple grid layout parameters
-            double startX = 2.0;
-            double startY = 2.0;
-            double stepX = 4.0;
-            double stepY = 3.0;
-            int index = 0;
-
-            // Add a rectangle shape for each node
-            foreach (long originalId in nodeIds)
-            {
-                double pinX = startX + (index % 5) * stepX;
-                double pinY = startY + (index / 5) * stepY;
-                double width = 2.0;
-                double height = 1.0;
-
-                // Add a rectangle master shape (isCalculate parameter expects int in this version)
-                long newShapeId = visualDiagram.AddShape(pinX, pinY, width, height, "Rectangle", 0);
-                idMap[originalId] = newShapeId;
-
-                // Retrieve the newly added shape to set its label
-                Shape shape = visPage.Shapes.GetShape(newShapeId);
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt($"ID:{originalId}"));
-                index++;
-            }
-
-            // Add connectors based on the source connections
-            foreach (Connect conn in srcPage.Connects)
-            {
-                long srcOriginal = conn.FromSheet;
-                long tgtOriginal = conn.ToSheet;
-
-                if (!idMap.ContainsKey(srcOriginal) || !idMap.ContainsKey(tgtOriginal))
-                    continue; // safety check
-
-                long srcNewId = idMap[srcOriginal];
-                long tgtNewId = idMap[tgtOriginal];
-
-                // Create a dynamic connector shape (isCalculate parameter expects int)
-                long connectorId = visualDiagram.AddShape(0, 0, 0, 0, "Dynamic connector", 0);
-
-                // Connect the two nodes using bottom-to-top points
-                visPage.ConnectShapesViaConnector(srcNewId, ConnectionPointPlace.Bottom, tgtNewId, ConnectionPointPlace.Top, connectorId);
-
-                // Set routing style to right-angle
-                Shape connector = visPage.Shapes.GetShape(connectorId);
-                connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-            }
-
-            // Export the visual diagram as a PNG image
-            string outputImage = "connections.png";
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            visualDiagram.Save(outputImage, imgOptions);
-
-            // Also save as Visio file for further editing
-            string outputVisio = "connections.vsdx";
-            visualDiagram.Save(outputVisio, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

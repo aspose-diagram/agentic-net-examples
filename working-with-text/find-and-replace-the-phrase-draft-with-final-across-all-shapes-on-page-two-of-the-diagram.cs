@@ -1,59 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard against missing output directory.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram from a file
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram has at least two pages
-            if (diagram.Pages.Count < 2)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("The diagram does not contain a second page.");
-                return;
-            }
-
-            // Get the second page (index 1)
-            Page page = diagram.Pages[1];
-
-            // Iterate over all shapes on the second page
-            foreach (Shape shape in page.Shapes)
-            {
-                // Retrieve the plain text of the shape
-                string plainText = shape.Text.Value.Text;
-
-                // If the text contains the target phrase, replace it in each Txt run
-                if (!string.IsNullOrEmpty(plainText) && plainText.Contains("Draft"))
+                // Ensure the diagram has at least two pages.
+                if (diagram.Pages.Count < 2)
                 {
-                    // Iterate through the text runs (Txt objects) within the shape
-                    foreach (var item in shape.Text.Value)
+                    Console.Error.WriteLine("The diagram does not contain a second page.");
+                    return;
+                }
+
+                // Page indices are zero‑based; page two is index 1.
+                Page page = diagram.Pages[1];
+
+                // Iterate all shapes on the second page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Iterate all text fragments within the shape.
+                    foreach (FormatTxt txt in shape.Text.Value)
                     {
-                        if (item is Txt txt && txt.Text.Contains("Draft"))
+                        Txt tx = txt as Txt;
+                        if (tx != null && tx.Text != null && tx.Text.Contains("Draft"))
                         {
-                            txt.Text = txt.Text.Replace("Draft", "Final");
+                            // Replace the phrase "Draft" with "Final".
+                            tx.Text = tx.Text.Replace("Draft", "Final");
                         }
                     }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Replacement complete. Saved to " + outputPath);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

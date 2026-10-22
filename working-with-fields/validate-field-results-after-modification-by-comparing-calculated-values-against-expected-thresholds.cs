@@ -1,72 +1,107 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page and one shape
-            if (diagram.Pages.Count == 0)
-                throw new Exception("The diagram contains no pages.");
+            // Define a threshold for validation (example: 1000.0).
+            double threshold = 1000.0;
 
-            Page page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
-                throw new Exception("The first page contains no shapes.");
-
-            // Retrieve the first shape on the page
-            Shape shape = page.Shapes[0];
-
-            // Ensure the shape has at least one field to modify
-            if (shape.Fields.Count == 0)
-                throw new Exception("The selected shape does not contain any fields.");
-
-            // Modify the first field's value
-            Field field = shape.Fields[0];
-            // Example: set a numeric value as string
-            field.Value.Val = "123.45";
-
-            // Optionally, set a formula (Visio formula syntax) for the field
-            // field.Value.Ufev.F = "Width*Height";
-
-            // Refresh the shape to apply changes
-            shape.RefreshData();
-
-            // Validate the modified field against expected thresholds
-            // Parse the field value to a double for comparison
-            if (!double.TryParse(field.Value.Val, out double numericValue))
-                throw new Exception("Failed to parse the field value to a numeric type.");
-
-            double lowerThreshold = 100.0;
-            double upperThreshold = 200.0;
-
-            if (numericValue < lowerThreshold || numericValue > upperThreshold)
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Validation failed
-                throw new Exception($"Field value {numericValue} is outside the expected range [{lowerThreshold}, {upperThreshold}].");
-            }
-            else
-            {
-                // Validation succeeded
-                Console.WriteLine($"Field value {numericValue} is within the expected range.");
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate through all shapes on the current page.
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                {
+                    Shape shape = page.Shapes[shapeIndex];
+
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has a Fields collection.
+                    if (shape.Fields == null)
+                        continue;
+
+                    // Iterate through all text fields of the shape.
+                    for (int fieldIndex = 0; fieldIndex < shape.Fields.Count; fieldIndex++)
+                    {
+                        Field field = shape.Fields[fieldIndex];
+
+                        // Read the current field value as string.
+                        string currentValStr = field.Value.Val;
+
+                        // Try to parse the value as a double for numeric processing.
+                        double currentVal;
+                        bool isNumeric = double.TryParse(currentValStr, out currentVal);
+
+                        if (!isNumeric)
+                        {
+                            // Non‑numeric fields are ignored for this validation.
+                            continue;
+                        }
+
+                        // Example modification: double the original numeric value.
+                        double modifiedVal = currentVal * 2.0;
+
+                        // Update the field with the new value.
+                        field.Value.Val = modifiedVal.ToString();
+                        // Reset formula and unit to indicate a plain value.
+                        field.Value.Ufev.F = "";
+                        field.Value.Ufev.Unit = MeasureConst.Undefined;
+
+                        // Validate the modified value against the threshold.
+                        if (modifiedVal > threshold)
+                        {
+                            // Report validation failure.
+                            Console.Error.WriteLine($"Validation failed: Shape ID {shape.ID}, Field IX {field.IX} value {modifiedVal} exceeds threshold {threshold}.");
+                            // Optionally, throw to stop processing.
+                            throw new Exception($"Field value exceeds threshold on shape ID {shape.ID}.");
+                        }
+                        else
+                        {
+                            // Report successful validation.
+                            Console.WriteLine($"Shape ID {shape.ID}, Field IX {field.IX} updated to {modifiedVal} (within threshold).");
+                        }
+                    }
+                }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

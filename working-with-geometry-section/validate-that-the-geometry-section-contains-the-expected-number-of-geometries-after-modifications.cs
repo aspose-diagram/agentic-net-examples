@@ -1,86 +1,93 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page
+            // Ensure there is at least one page and one shape to work with.
             if (diagram.Pages.Count == 0)
             {
-                throw new Exception("The diagram contains no pages.");
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Work with the first page
+            // Work with the first page.
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
+            if (page.Shapes.Count == 0)
             {
-                shape = s;
-                break;
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
             }
 
-            if (shape == null)
-            {
-                throw new Exception("No shapes found on the first page.");
-            }
+            // Retrieve the first shape (using the correct API).
+            Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
 
-            // Record the original number of geometries
+            // Record the original number of geometries.
             int originalGeomCount = shape.Geoms.Count;
 
-            // ----- Begin geometry modification -----
-            // Create a new geometry (Geom) and add a simple line segment
+            // -----------------------------------------------------------------
+            // Modification: add a new geometry to the shape.
+            // -----------------------------------------------------------------
+            // Create a new empty geometry object.
             Geom newGeom = new Geom();
 
-            // Start point (MoveTo)
-            MoveTo move = new MoveTo();
-            move.X.Value = 0.0;
-            move.Y.Value = 0.0;
-            newGeom.CoordinateCol.Add(move);
-
-            // End point (LineTo)
-            LineTo line = new LineTo();
-            line.X.Value = 2.0;
-            line.Y.Value = 2.0;
-            newGeom.CoordinateCol.Add(line);
-
-            // Append the new geometry to the shape's geometry collection
+            // Add the new geometry to the shape's Geoms collection.
             shape.Geoms.Add(newGeom);
-            // ----- End geometry modification -----
 
-            // Expected geometry count after adding one geometry
+            // Expected geometry count after the addition.
             int expectedGeomCount = originalGeomCount + 1;
 
-            // Validate the geometry count
-            if (shape.Geoms.Count != expectedGeomCount)
+            // -----------------------------------------------------------------
+            // Validation: check that the geometry count matches the expectation.
+            // -----------------------------------------------------------------
+            int actualGeomCount = shape.Geoms.Count;
+
+            if (actualGeomCount == expectedGeomCount)
             {
-                throw new Exception($"Geometry count mismatch. Expected: {expectedGeomCount}, Actual: {shape.Geoms.Count}");
+                Console.WriteLine($"Validation succeeded: Geometry count is {actualGeomCount} as expected.");
             }
             else
             {
-                Console.WriteLine($"Geometry count validation passed. Count = {shape.Geoms.Count}");
+                // Throw an exception to indicate failure as per the rules.
+                throw new Exception($"Validation failed: Expected {expectedGeomCount} geometries, but found {actualGeomCount}.");
             }
 
-            // Optionally, save the modified diagram
-            // string outputPath = "output.vsdx";
-            // diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            // -----------------------------------------------------------------
+            // Save the modified diagram to the specified output path.
+            // -----------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

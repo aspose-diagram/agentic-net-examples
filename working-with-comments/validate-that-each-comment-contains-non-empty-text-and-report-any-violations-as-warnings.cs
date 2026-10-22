@@ -1,60 +1,70 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                int totalWarnings = 0;
 
-                // Load the Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // List to collect warning messages for empty comments
-                List<string> warnings = new List<string>();
-
-                // Iterate through all pages in the diagram
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate through each page in the diagram.
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    Page page = diagram.Pages[pageIdx];
 
-                    // Iterate through all annotations (comments) on the current page
+                    // Iterate through all annotations (comments) on the page.
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Retrieve the comment text
-                        string commentText = annotation.Comment.Value;
+                        // Retrieve the comment text safely.
+                        string commentText = annotation.Comment?.Value ?? string.Empty;
 
-                        // Check for empty or whitespace-only comment text
+                        // Check for empty or whitespace‑only comments.
                         if (string.IsNullOrWhiteSpace(commentText))
                         {
-                            warnings.Add(
-                                $"Warning: Empty comment detected on page {pageIndex + 1}, marker index {annotation.MarkerIndex.Value}.");
+                            totalWarnings++;
+                            Console.WriteLine(
+                                $"Warning: Empty comment detected on page {pageIdx + 1}, marker ID {annotation.MarkerIndex?.Value ?? 0}.");
                         }
                     }
                 }
 
-                // Output the collected warnings
-                if (warnings.Count > 0)
+                // Summarize the result.
+                if (totalWarnings == 0)
                 {
-                    foreach (string warning in warnings)
-                    {
-                        Console.WriteLine(warning);
-                    }
+                    Console.WriteLine("No empty comments were found.");
                 }
                 else
                 {
-                    Console.WriteLine("No empty comments found.");
+                    Console.WriteLine($"Validation completed with {totalWarnings} warning(s).");
                 }
-
-                // Save the diagram (optional, can be omitted if no changes are made)
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

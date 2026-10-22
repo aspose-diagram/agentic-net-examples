@@ -7,51 +7,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file (multi‑page diagram)
-        string sourcePath = "input.vsdx";
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        // Verify the source file exists before proceeding
-        if (!File.Exists(sourcePath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
+        Diagram diagram = null;
+        try
+        {
+            // Load the Visio diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Determine the total number of pages in the diagram
-            int totalPages = diagram.Pages.Count;
-
-            // Iterate over each page and export it as an individual HTML file
-            for (int i = 0; i < totalPages; i++)
+            // Verify the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                // Configure HTML save options for a single page export
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-                {
-                    // Export only the current page (zero‑based index)
-                    PageIndex = i,
-                    // Limit export to one page
-                    PageCount = 1,
-                    // Exclude hidden pages from the output
-                    ExportHiddenPage = false
-                };
-
-                // Build a distinct output file name for each page
-                string outputPath = $"output_page_{i + 1}.html";
-
-                // Save the current page as HTML using the configured options
-                diagram.Save(outputPath, htmlOptions);
+                Console.Error.WriteLine("The diagram contains no pages to export.");
+                return;
             }
 
-            Console.WriteLine("HTML export completed. Separate files generated for each page.");
+            // Export each page as a separate HTML file
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Configure HTML save options for a single page
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    PageIndex = i,          // Zero‑based index of the page to export
+                    PageCount = 1,          // Export only one page
+                    ExportHiddenPage = false // Do not export hidden pages
+                };
+
+                // Build output file name (e.g., page_1.html, page_2.html, ...)
+                string outputPath = $"page_{i + 1}.html";
+
+                try
+                {
+                    // Save the current page to HTML
+                    diagram.Save(outputPath, htmlOptions);
+                    Console.WriteLine($"Page {i + 1} saved to '{outputPath}'.");
+                }
+                catch (Exception saveEx)
+                {
+                    Console.Error.WriteLine($"Error saving page {i + 1}: {saveEx.Message}");
+                }
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error during HTML export: {ex.Message}");
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
         }
+
+        // No explicit disposal needed; Diagram does not implement IDisposable
     }
 }

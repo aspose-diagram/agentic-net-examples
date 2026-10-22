@@ -1,23 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputVisioPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Determine output path – use supplied argument or create a default one.
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            string dir = Path.GetDirectoryName(inputPath) ?? "";
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{nameWithoutExt}_modified.vsdx");
+        }
+
         try
         {
-
-            // Input Visio file path (change as needed)
-            string inputPath = "input.vsdx";
-            // Output Visio file path
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Define a palette of solid fill colors (hex strings)
+            // Define a simple palette of solid colors (hex strings).
             string[] palette = new string[]
             {
                 "#FF0000", // Red
@@ -28,33 +50,37 @@ class Program
                 "#00FFFF"  // Cyan
             };
 
-            int colorIndex = 0;
+            int colorIndex = 0; // Index to cycle through the palette.
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Set fill pattern to solid (value 1)
+                    // Set the fill pattern to solid (value 1).
                     shape.Fill.FillPattern.Value = 1;
 
-                    // Assign a solid fill color from the palette (cycle through)
-                    shape.Fill.FillForegnd.Value = palette[colorIndex % palette.Length];
+                    // Assign a solid foreground color from the palette, cycling as needed.
+                    string colorHex = palette[colorIndex % palette.Length];
+                    shape.Fill.FillForegnd.Value = colorHex;
+
+                    // Move to the next color in the palette.
                     colorIndex++;
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,45 +1,75 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the sanitized output file
-            string outputPath = "output_sanitized.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Regular expression to match typical external references (http, https, file URLs)
-            Regex externalRefPattern = new Regex(@"(https?://\S+)|(file://\S+)", RegexOptions.IgnoreCase);
-
-            // Iterate through all SolutionXML elements and remove external references
-            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+            // Iterate over all SolutionXML elements and remove external references
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                if (!string.IsNullOrEmpty(solutionXml.XmlValue))
-                {
-                    // Replace any external reference with an empty string
-                    string sanitizedXml = externalRefPattern.Replace(solutionXml.XmlValue, string.Empty);
-                    solutionXml.XmlValue = sanitizedXml;
-                }
+                if (solXml == null || string.IsNullOrEmpty(solXml.XmlValue))
+                    continue;
+
+                string cleanedXml = solXml.XmlValue;
+
+                // Remove HTTP/HTTPS URLs
+                cleanedXml = Regex.Replace(
+                    cleanedXml,
+                    @"\bhttps?://\S+",
+                    string.Empty,
+                    RegexOptions.IgnoreCase);
+
+                // Remove file:// URLs
+                cleanedXml = Regex.Replace(
+                    cleanedXml,
+                    @"\bfile://\S+",
+                    string.Empty,
+                    RegexOptions.IgnoreCase);
+
+                // Optionally remove Windows absolute paths (e.g., C:\folder\file)
+                cleanedXml = Regex.Replace(
+                    cleanedXml,
+                    @"[A-Za-z]:\\[^\s""'>]*",
+                    string.Empty,
+                    RegexOptions.IgnoreCase);
+
+                // Update the SolutionXML with the cleaned content
+                solXml.XmlValue = cleanedXml;
             }
 
-            // Save the sanitized diagram
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

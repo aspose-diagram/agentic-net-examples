@@ -1,87 +1,80 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath> [backgroundHexColor]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        // Default background color is red if not supplied.
+        string backgroundColor = args.Length > 2 ? args[2] : "#FF0000";
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-            // Output PDF file path
-            string outputPath = "output.pdf";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the background color (hex string)
-            string backgroundHex = "#ADD8E6"; // Light blue
-
-            // Process each foreground page
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Skip pages that are already background pages
-                if (page.Background == BOOL.True)
-                    continue;
-
-                // Retrieve page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Create a new background page
-                Page bgPage = new Page();
-
-                // Assign a unique ID and name to the background page
-                int maxId = 0;
-                foreach (Page p in diagram.Pages)
+                // Iterate over all pages to apply the background color.
+                foreach (Page page in diagram.Pages)
                 {
-                    if (p.ID > maxId) maxId = p.ID;
+                    // Retrieve page dimensions (in inches).
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Center point for the rectangle shape.
+                    double centerX = pageWidth / 2.0;
+                    double centerY = pageHeight / 2.0;
+
+                    // Add a rectangle that spans the whole page.
+                    long rectShapeId = page.DrawRectangle(centerX, centerY, pageWidth, pageHeight);
+
+                    // Retrieve the newly added shape.
+                    Shape rectShape = page.Shapes.GetShape(rectShapeId);
+
+                    // Set a solid fill pattern and the desired background color.
+                    rectShape.Fill.FillPattern.Value = 1;               // 1 = solid fill
+                    rectShape.Fill.FillForegnd.Value = backgroundColor; // Hex color string
+
+                    // Remove the outline stroke.
+                    rectShape.Line.LinePattern.Value = 0; // No line
+
+                    // Send the rectangle to the back so other content appears above it.
+                    rectShape.SendToBack();
+
+                    // Make the background shape non‑selectable.
+                    rectShape.Protection.LockSelect.Value = BOOL.True;
                 }
-                bgPage.ID = maxId + 1;
-                bgPage.Name = "Background_" + bgPage.ID;
-                bgPage.Background = BOOL.True;
 
-                // Calculate the center position for the rectangle shape
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
+                // Prepare PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.DefaultFont = "Arial";
 
-                // Add a rectangle shape that spans the entire page
-                // Parameters: pinX, pinY, width, height, master name, isCalculate
-                long shapeId = bgPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
-                Shape bgShape = bgPage.Shapes.GetShape(shapeId);
-
-                // Set solid fill pattern
-                bgShape.Fill.FillPattern.Value = 1; // Solid
-                // Set the desired background color
-                bgShape.Fill.FillForegnd.Value = backgroundHex;
-                // Remove outline by setting line pattern to none
-                bgShape.Line.LinePattern.Value = (LinePatternValue)0;
-                // Send the shape to the back so other content appears above it
-                bgShape.SendToBack();
-                // Make the background shape non‑selectable
-                bgShape.Protection.LockSelect.Value = BOOL.True;
-
-                // Add the background page to the diagram
-                diagram.Pages.Add(bgPage);
-                // Link the foreground page to its background page
-                page.BackPage = bgPage;
+                // Export the diagram to PDF with the custom background.
+                diagram.Save(outputPath, pdfOptions);
             }
-
-            // Configure PDF save options (optional: set default font)
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as PDF with the branding background
-            diagram.Save(outputPath, pdfOptions);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,54 +1,116 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Validate arguments: input file, page index, output file
+        if (args.Length < 3)
         {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <pageIndex> <output.vsdx>");
+            return;
+        }
 
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output_cleaned.vsdx";
+        string inputPath = args[0];
+        string pageIndexArg = args[1];
+        string outputPath = args[2];
 
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputPath);
+        // Guard: input file must exist
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            // Specify the page index to process (0 = first page)
-            int pageIndex = 0;
-            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+        // Guard: output directory must exist (create if necessary)
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            try
             {
-                Console.WriteLine("Invalid page index.");
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
                 return;
             }
-
-            // Retrieve the target page
-            Page page = diagram.Pages[pageIndex];
-
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
-            {
-                // Obtain the plain text of the shape
-                string shapeText = shape.Text.Value.Text;
-
-                // If the shape contains no visible text, remove all its paragraphs
-                if (string.IsNullOrWhiteSpace(shapeText))
-                {
-                    shape.Paras.Clear();
-                }
-            }
-
-            // Save the cleaned diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Parse page index
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine("Invalid page index. It must be a non‑negative integer.");
+            return;
         }
+
+        try
+        {
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Validate page index range
+                if (pageIndex >= diagram.Pages.Count)
+                {
+                    Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                    return;
+                }
+
+                // Retrieve the target page
+                Page page = diagram.Pages[pageIndex];
+
+                // Process each shape on the page (including shapes inside groups)
+                foreach (Shape shape in page.Shapes)
+                {
+                    ProcessShape(shape);
+                }
+
+                // Save the cleaned diagram to the output path using VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    // Recursively processes a shape: removes empty paragraphs and handles group children
+    private static void ProcessShape(Shape shape)
+    {
+        // Skip deleted shapes
+        if (shape.Del == BOOL.True)
+            return;
+
+        // Remove empty paragraphs from the current shape
+        RemoveEmptyParagraphs(shape);
+
+        // If the shape is a group, process its child shapes recursively
+        if (shape.Type == TypeValue.Group && shape.Shapes != null)
+        {
+            foreach (Shape child in shape.Shapes)
+            {
+                ProcessShape(child);
+            }
+        }
+    }
+
+    // Removes paragraphs that contain no text from a shape
+    private static void RemoveEmptyParagraphs(Shape shape)
+    {
+        // Get the plain text of the shape
+        string plainText = shape.Text.Value.ToString();
+
+        // If the shape has no text (empty or whitespace), clear all paragraphs
+        if (string.IsNullOrWhiteSpace(plainText))
+        {
+            // Clear existing paragraphs
+            shape.Paras.Clear();
+        }
+        // Otherwise, keep existing paragraphs (no action needed)
     }
 }

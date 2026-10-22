@@ -1,55 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as a command-line argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Verify that a diagram file path was provided
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Usage: DiagramHyperlinkScanner <diagram file path>");
-                return;
-            }
-
-            string diagramPath = args[0];
-
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(diagramPath);
 
             // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
                 // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Output the shape's name
-                    Console.WriteLine($"Shape Name: {shape.Name}");
-
-                    // If the shape contains hyperlinks, list their URLs
+                    // Ensure the shape has a Hyperlinks collection
                     if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                     {
-                        foreach (Hyperlink link in shape.Hyperlinks)
+                        // Iterate through each hyperlink associated with the shape
+                        foreach (Aspose.Diagram.Hyperlink hyperlink in shape.Hyperlinks)
                         {
-                            // Hyperlink address is stored in the Address cell; use .Value to retrieve it
-                            Console.WriteLine($"  Hyperlink URL: {link.Address.Value}");
+                            // Retrieve the hyperlink address (URL or target)
+                            string address = hyperlink.Address != null ? hyperlink.Address.Value : string.Empty;
+
+                            // Output the shape name and its hyperlink URL
+                            Console.WriteLine($"Shape: {shape.NameU} - Hyperlink: {address}");
                         }
                     }
                 }
             }
-
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

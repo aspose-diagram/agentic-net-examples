@@ -4,10 +4,10 @@ display_name: Working With Themes
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.9.0
+version: 26.10.0
 examples: 40
 pass_rate: 100.0
-generated: 2026-09-24
+generated: 2026-10-22
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 40 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -63,14 +63,15 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 40 | Core diagram API |
 | `System` | 40 | Console, Math, DateTime, Exception |
-| `Aspose.Diagram.Saving` | 29 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.IO` | 24 | File, Stream, Path, Directory operations |
-| `System.Collections.Generic` | 7 | List, Dictionary, HashSet |
-| `System.Text.Json` | 2 | JSON serialization |
+| `System.IO` | 40 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 13 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 9 | List, Dictionary, HashSet |
 | `System.Threading.Tasks` | 2 | Supporting utilities |
 | `Aspose.Drawing` | 1 | Supporting utilities |
+| `System.Text.Json` | 1 | JSON serialization |
 | `System.Linq` | 1 | LINQ queries on collections |
 | `System.Data` | 1 | Supporting utilities |
+| `System.Threading` | 1 | Supporting utilities |
 | `System.Diagnostics` | 1 | Supporting utilities |
 
 ## Common Code Pattern
@@ -98,21 +99,6 @@ class Program
 }
 ```
 
-## Domain Knowledge
-
-Category-specific API rules and gotchas:
-
-- APPLY PRESET THEME TO PAGE — Load diagram, get page, set page.PresetTheme: Page page = diagram.Pages[0]; page.PresetTheme = PresetThemeValue.Bubble;
-- APPLY PRESET THEME VARIANT TO PAGE — Set both PresetTheme and PresetThemeVariant on the page: page.PresetTheme = PresetThemeValue.Bubble; page.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-- APPLY PRESET THEME TO SHAPE — Get shape from page, set shape.PresetTheme: Shape shape = diagram.Pages[0].Shapes[0]; shape.PresetTheme = PresetThemeValue.Bubble;
-- NOTE — In the docs the shape is retrieved as: Shape shape = doc.Pages[0].Shapes[0]; — the variable name doc refers to the Diagram instance. Always use your own Diagram variable name.
-- APPLY PRESET THEME VARIANT TO SHAPE — Set both PresetTheme and PresetThemeVariant on the shape: shape.PresetTheme = PresetThemeValue.Bubble; shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-- APPLY PRESET THEME QUICKSTYLE TO SHAPE — Set PresetTheme, PresetThemeVariant, and PresetThemeQuickStyle on the shape: shape.PresetTheme = PresetThemeValue.Bubble; shape.PresetThemeVariant = PresetThemeVariantValue.Variant3; shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
-- APPLY PRESET THEME STYLE USING SetPresetThemeStyleMatrics — Set PresetTheme, PresetThemeVariant, then call shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color7);
-- SetPresetThemeStyleMatrics takes two parameters: PresetStyleMatricsValue (style index) and PresetColorMatricsValue (color index).
-- Valid PresetThemeValue members include: Bubble, and others. Bubble is confirmed in all doc examples.
-- Valid PresetThemeVariantValue members include: Variant1, Variant2, Variant3, Variant4.
-
 ## Examples
 
 | File | Key APIs | Task |
@@ -129,13 +115,13 @@ Category-specific API rules and gotchas:
 | [apply-a-preset-theme-variant-to-a-shape-group-by-iterating-through-its-child-shapes-and-setting-each.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/apply-a-preset-theme-variant-to-a-shape-group-by-iterating-through-its-child-shapes-and-setting-each.cs) | `Diagram`, `Pages`, `Save` | Apply a preset theme variant to a shape group by iterating through its child shapes and setting each |
 | [apply-a-preset-theme-variant-to-a-shape-only-if-the-shape-s-existing-theme-matrix-contains-a-color.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/apply-a-preset-theme-variant-to-a-shape-only-if-the-shape-s-existing-theme-matrix-contains-a-color.cs) | `Diagram`, `Pages`, `PresetTheme` | Apply a preset theme variant to a shape only if the shape s existing theme matrix contains a color |
 | [batch-process-diagrams-in-parallel-applying-a-common-preset-theme-to-each-and-saving-results-concurrently.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/batch-process-diagrams-in-parallel-applying-a-common-preset-theme-to-each-and-saving-results-concurrently.cs) | `Diagram`, `Pages`, `PresetTheme` | Batch process diagrams in parallel applying a common preset theme to each and saving results concurrently |
-| [clone-the-theme-settings-from-one-page-and-apply-them-to-another-page-within-the-same-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/clone-the-theme-settings-from-one-page-and-apply-them-to-another-page-within-the-same-diagram.cs) | `Diagram`, `Page`, `Pages` | Clone the theme settings from one page and apply them to another page within the same diagram |
+| [clone-the-theme-settings-from-one-page-and-apply-them-to-another-page-within-the-same-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/clone-the-theme-settings-from-one-page-and-apply-them-to-another-page-within-the-same-diagram.cs) | `Diagram`, `Pages`, `Save` | Clone the theme settings from one page and apply them to another page within the same diagram |
 | [compare-the-theme-settings-of-a-shape-before-and-after-applying-a-quickstyle-to-verify-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/compare-the-theme-settings-of-a-shape-before-and-after-applying-a-quickstyle-to-verify-changes.cs) | `Diagram`, `Pages`, `PresetTheme` | Compare the theme settings of a shape before and after applying a quickstyle to verify changes |
 | [create-a-configuration-file-that-maps-page-names-to-preset-themes-and-apply-them-programmatically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/create-a-configuration-file-that-maps-page-names-to-preset-themes-and-apply-them-programmatically.cs) | `Diagram`, `Pages`, `PresetTheme` | Create a configuration file that maps page names to preset themes and apply them programmatically |
 | [create-a-script-that-reads-theme-preferences-from-a-database-and-applies-them-to-corresponding-diagram-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/create-a-script-that-reads-theme-preferences-from-a-database-and-applies-them-to-corresponding-diagram-pages.cs) | `Diagram`, `Pages`, `PresetTheme` | Create a script that reads theme preferences from a database and applies them to corresponding diagram pages |
-| [create-a-unit-test-that-verifies-a-shape-s-presettheme-property-changes-after-applying-a-new-theme.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/create-a-unit-test-that-verifies-a-shape-s-presettheme-property-changes-after-applying-a-new-theme.cs) | `AddShape`, `Diagram`, `Pages` | Create a unit test that verifies a shape s presettheme property changes after applying a new theme |
+| [create-a-unit-test-that-verifies-a-shape-s-presettheme-property-changes-after-applying-a-new-theme.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/create-a-unit-test-that-verifies-a-shape-s-presettheme-property-changes-after-applying-a-new-theme.cs) | `Diagram`, `Pages`, `PresetTheme` | Create a unit test that verifies a shape s presettheme property changes after applying a new theme |
 | [export-a-themed-diagram-to-pdf-and-inspect-the-visual-consistency-across-all-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/export-a-themed-diagram-to-pdf-and-inspect-the-visual-consistency-across-all-pages.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Export a themed diagram to pdf and inspect the visual consistency across all pages |
-| [export-the-diagram-after-theming-to-both-pdf-and-xps-formats-to-compare-rendering-fidelity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/export-the-diagram-after-theming-to-both-pdf-and-xps-formats-to-compare-rendering-fidelity.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Export the diagram after theming to both pdf and xps formats to compare rendering fidelity |
+| [export-the-diagram-after-theming-to-both-pdf-and-xps-formats-to-compare-rendering-fidelity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/export-the-diagram-after-theming-to-both-pdf-and-xps-formats-to-compare-rendering-fidelity.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Export the diagram after theming to both pdf and xps formats to compare rendering fidelity |
 | [export-the-themed-diagram-to-svg-format-for-web-preview-after-applying-page-level-themes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/export-the-themed-diagram-to-svg-format-for-web-preview-after-applying-page-level-themes.cs) | `Diagram`, `Pages`, `PresetTheme` | Export the themed diagram to svg format for web preview after applying page level themes |
 | [generate-a-report-listing-each-shape-s-original-theme-and-the-new-preset-theme-after-modification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/generate-a-report-listing-each-shape-s-original-theme-and-the-new-preset-theme-after-modification.cs) | `Diagram`, `Pages`, `PresetTheme` | Generate a report listing each shape s original theme and the new preset theme after modification |
 | [implement-a-retry-mechanism-when-setting-a-preset-theme-on-a-shape-that-may-be-locked.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/implement-a-retry-mechanism-when-setting-a-preset-theme-on-a-shape-that-may-be-locked.cs) | `Diagram`, `Pages`, `PresetTheme` | Implement a retry mechanism when setting a preset theme on a shape that may be locked |
@@ -150,13 +136,13 @@ Category-specific API rules and gotchas:
 | [reset-the-presettheme-of-a-shape-to-the-default-value-to-remove-previously-applied-styling.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/reset-the-presettheme-of-a-shape-to-the-default-value-to-remove-previously-applied-styling.cs) | `Diagram`, `Pages`, `PresetTheme` | Reset the presettheme of a shape to the default value to remove previously applied styling |
 | [retrieve-the-current-presetthemevariant-from-each-shape-and-log-it-for-diagnostic-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/retrieve-the-current-presetthemevariant-from-each-shape-and-log-it-for-diagnostic-purposes.cs) | `Diagram`, `Pages`, `PresetThemeVariant` | Retrieve the current presetthemevariant from each shape and log it for diagnostic purposes |
 | [save-a-diagram-with-applied-themes-to-a-memory-stream-for-further-processing-without-disk-i-o.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/save-a-diagram-with-applied-themes-to-a-memory-stream-for-further-processing-without-disk-i-o.cs) | `Diagram`, `Pages`, `PresetTheme` | Save a diagram with applied themes to a memory stream for further processing without disk i o |
-| [set-the-presettheme-property-on-a-specific-shape-identified-by-its-id-to-change-its-appearance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/set-the-presettheme-property-on-a-specific-shape-identified-by-its-id-to-change-its-appearance.cs) | `Diagram`, `Pages`, `PresetTheme` | Set the presettheme property on a specific shape identified by its id to change its appearance |
+| [set-the-presettheme-property-on-a-specific-shape-identified-by-its-id-to-change-its-appearance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/set-the-presettheme-property-on-a-specific-shape-identified-by-its-id-to-change-its-appearance.cs) | `Diagram`, `Pages`, `Save` | Set the presettheme property on a specific shape identified by its id to change its appearance |
 | [use-a-dictionary-to-map-shape-ids-to-specific-preset-themes-and-apply-them-accordingly.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/use-a-dictionary-to-map-shape-ids-to-specific-preset-themes-and-apply-them-accordingly.cs) | `Diagram`, `Pages`, `PresetTheme` | Use a dictionary to map shape ids to specific preset themes and apply them accordingly |
 | [use-a-loop-to-apply-different-preset-themes-to-each-page-based-on-its-index-position.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/use-a-loop-to-apply-different-preset-themes-to-each-page-based-on-its-index-position.cs) | `Diagram`, `Pages`, `PresetTheme` | Use a loop to apply different preset themes to each page based on its index position |
 | [use-asynchronous-loading-of-a-vsdx-file-then-apply-a-preset-theme-to-its-pages-concurrently.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/use-asynchronous-loading-of-a-vsdx-file-then-apply-a-preset-theme-to-its-pages-concurrently.cs) | `Diagram`, `Pages`, `PresetTheme` | Use asynchronous loading of a vsdx file then apply a preset theme to its pages concurrently |
-| [use-setpresetthemestylematrics-to-assign-a-custom-style-matrix-to-a-shape-for-advanced-formatting.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/use-setpresetthemestylematrics-to-assign-a-custom-style-matrix-to-a-shape-for-advanced-formatting.cs) | `AddShape`, `Diagram`, `Pages` | Use setpresetthemestylematrics to assign a custom style matrix to a shape for advanced formatting |
+| [use-setpresetthemestylematrics-to-assign-a-custom-style-matrix-to-a-shape-for-advanced-formatting.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/use-setpresetthemestylematrics-to-assign-a-custom-style-matrix-to-a-shape-for-advanced-formatting.cs) | `Diagram`, `Pages`, `PresetTheme` | Use setpresetthemestylematrics to assign a custom style matrix to a shape for advanced formatting |
 | [validate-that-applying-a-preset-theme-does-not-alter-shape-geometry-by-comparing-bounding-boxes-before-and-after.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/validate-that-applying-a-preset-theme-does-not-alter-shape-geometry-by-comparing-bounding-boxes-before-and-after.cs) | `Diagram`, `Pages`, `PresetTheme` | Validate that applying a preset theme does not alter shape geometry by comparing bounding boxes before and after |
-| [validate-that-the-applied-preset-theme-matches-the-expected-theme-by-comparing-theme-identifiers-after-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/validate-that-the-applied-preset-theme-matches-the-expected-theme-by-comparing-theme-identifiers-after-saving.cs) | `Diagram`, `Page`, `Pages` | Validate that the applied preset theme matches the expected theme by comparing theme identifiers after saving |
+| [validate-that-the-applied-preset-theme-matches-the-expected-theme-by-comparing-theme-identifiers-after-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-themes/validate-that-the-applied-preset-theme-matches-the-expected-theme-by-comparing-theme-identifiers-after-saving.cs) | `Diagram`, `Pages`, `PresetTheme` | Validate that the applied preset theme matches the expected theme by comparing theme identifiers after saving |
 
 ## Command Reference
 
@@ -242,10 +228,8 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ## Key API Surface
 
-- `AddShape`
 - `Colors`
 - `Diagram`
-- `Page`
 - `Pages`
 - `PdfSaveOptions`
 - `PresetTheme`
@@ -274,7 +258,7 @@ Frequently asked questions about **Working With Themes** in **Aspose.Diagram for
 
 **Q: How do I get started with Working With Themes in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -310,4 +294,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-24 | Examples: 40 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-22 | Examples: 40 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

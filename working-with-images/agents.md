@@ -4,10 +4,10 @@ display_name: Working With Images
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.9.0
+version: 26.10.0
 examples: 38
 pass_rate: 100.0
-generated: 2026-09-24
+generated: 2026-10-22
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 38 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -63,13 +63,15 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 38 | Core diagram API |
 | `System` | 38 | Console, Math, DateTime, Exception |
-| `System.IO` | 34 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 32 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `Aspose.Drawing` | 8 | Supporting utilities |
-| `System.Collections.Generic` | 6 | List, Dictionary, HashSet |
-| `Aspose.Drawing.Imaging` | 5 | Supporting utilities |
-| `Aspose.Drawing.Drawing2D` | 3 | Supporting utilities |
+| `System.IO` | 38 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 29 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Drawing` | 6 | Supporting utilities |
+| `Aspose.Drawing.Imaging` | 6 | Supporting utilities |
+| `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
+| `Aspose.Drawing.Text` | 1 | Font enumeration via InstalledFontCollection |
+| `System.Linq` | 1 | LINQ queries on collections |
+| `Aspose.Drawing.Drawing2D` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -106,7 +108,7 @@ class Program
 | [apply-a-color-inversion-filter-to-exported-png-images-to-create-a-negative-visual-effect.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/apply-a-color-inversion-filter-to-exported-png-images-to-create-a-negative-visual-effect.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Apply a color inversion filter to exported png images to create a negative visual effect |
 | [apply-a-custom-color-palette-to-exported-png-images-to-match-corporate-branding-guidelines.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/apply-a-custom-color-palette-to-exported-png-images-to-match-corporate-branding-guidelines.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Apply a custom color palette to exported png images to match corporate branding guidelines |
 | [apply-a-grayscale-filter-to-all-images-in-a-vsdx-diagram-before-exporting-pages-as-tiff-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/apply-a-grayscale-filter-to-all-images-in-a-vsdx-diagram-before-exporting-pages-as-tiff-files.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Apply a grayscale filter to all images in a vsdx diagram before exporting pages as tiff files |
-| [apply-a-sepia-tone-effect-to-all-images-during-export-to-create-a-vintage-visual-style.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/apply-a-sepia-tone-effect-to-all-images-during-export-to-create-a-vintage-visual-style.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Apply a sepia tone effect to all images during export to create a vintage visual style |
+| [apply-a-sepia-tone-effect-to-all-images-during-export-to-create-a-vintage-visual-style.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/apply-a-sepia-tone-effect-to-all-images-during-export-to-create-a-vintage-visual-style.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Apply a sepia tone effect to all images during export to create a vintage visual style |
 | [batch-convert-multiple-vsd-files-to-png-images-using-parallel-processing-to-improve-performance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/batch-convert-multiple-vsd-files-to-png-images-using-parallel-processing-to-improve-performance.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Batch convert multiple vsd files to png images using parallel processing to improve performance |
 | [batch-process-a-folder-of-vdx-files-extracting-images-and-saving-them-with-original-file-name-prefixes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/batch-process-a-folder-of-vdx-files-extracting-images-and-saving-them-with-original-file-name-prefixes.cs) | `Diagram`, `Pages`, `Shapes` | Batch process a folder of vdx files extracting images and saving them with original file name prefixes |
 | [batch-replace-a-specific-placeholder-image-across-multiple-vsdx-files-using-a-single-source-png.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/batch-replace-a-specific-placeholder-image-across-multiple-vsdx-files-using-a-single-source-png.cs) | `Diagram`, `Pages`, `Save` | Batch replace a specific placeholder image across multiple vsdx files using a single source png |
@@ -114,13 +116,13 @@ class Program
 | [export-a-pdf-a-compliant-document-from-a-vsd-file-embedding-all-images-with-lossless-compression.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-a-pdf-a-compliant-document-from-a-vsd-file-embedding-all-images-with-lossless-compression.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Export a pdf a compliant document from a vsd file embedding all images with lossless compression |
 | [export-a-specific-layer-of-a-visio-diagram-as-a-transparent-png-for-overlay-use.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-a-specific-layer-of-a-visio-diagram-as-a-transparent-png-for-overlay-use.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export a specific layer of a visio diagram as a transparent png for overlay use |
 | [export-a-specific-visio-page-to-svg-format-preserving-vector-data-for-web-rendering.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-a-specific-visio-page-to-svg-format-preserving-vector-data-for-web-rendering.cs) | `Diagram`, `Pages`, `SVGSaveOptions` | Export a specific visio page to svg format preserving vector data for web rendering |
-| [export-a-visio-diagram-to-a-multi-page-pdf-and-embed-extracted-images-as-separate-attachments.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-a-visio-diagram-to-a-multi-page-pdf-and-embed-extracted-images-as-separate-attachments.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Export a visio diagram to a multi page pdf and embed extracted images as separate attachments |
+| [export-a-visio-diagram-to-a-multi-page-pdf-and-embed-extracted-images-as-separate-attachments.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-a-visio-diagram-to-a-multi-page-pdf-and-embed-extracted-images-as-separate-attachments.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export a visio diagram to a multi page pdf and embed extracted images as separate attachments |
 | [export-diagram-pages-as-jpeg-with-custom-quality-settings-per-page-based-on-content-complexity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-as-jpeg-with-custom-quality-settings-per-page-based-on-content-complexity.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export diagram pages as jpeg with custom quality settings per page based on content complexity |
 | [export-diagram-pages-as-lossless-png-with-16-bit-color-depth-for-high-fidelity-image-preservation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-as-lossless-png-with-16-bit-color-depth-for-high-fidelity-image-preservation.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export diagram pages as lossless png with 16 bit color depth for high fidelity image preservation |
 | [export-diagram-pages-as-multi-page-tiff-with-lzw-compression-to-reduce-file-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-as-multi-page-tiff-with-lzw-compression-to-reduce-file-size.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export diagram pages as multi page tiff with lzw compression to reduce file size |
 | [export-diagram-pages-as-png-with-interlaced-option-enabled-for-progressive-rendering-in-browsers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-as-png-with-interlaced-option-enabled-for-progressive-rendering-in-browsers.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export diagram pages as png with interlaced option enabled for progressive rendering in browsers |
 | [export-diagram-pages-as-progressive-jpegs-to-improve-loading-speed-on-web-browsers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-as-progressive-jpegs-to-improve-loading-speed-on-web-browsers.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Export diagram pages as progressive jpegs to improve loading speed on web browsers |
-| [export-diagram-pages-to-high-resolution-pdf-with-embedded-fonts-and-images-for-print-ready-output.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-to-high-resolution-pdf-with-embedded-fonts-and-images-for-print-ready-output.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Export diagram pages to high resolution pdf with embedded fonts and images for print ready output |
+| [export-diagram-pages-to-high-resolution-pdf-with-embedded-fonts-and-images-for-print-ready-output.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/export-diagram-pages-to-high-resolution-pdf-with-embedded-fonts-and-images-for-print-ready-output.cs) | `Diagram`, `Fonts`, `PdfSaveOptions` | Export diagram pages to high resolution pdf with embedded fonts and images for print ready output |
 | [extract-all-embedded-images-from-a-vdx-file-and-save-each-to-a-designated-output-directory.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/extract-all-embedded-images-from-a-vdx-file-and-save-each-to-a-designated-output-directory.cs) | `Diagram`, `Pages`, `Shapes` | Extract all embedded images from a vdx file and save each to a designated output directory |
 | [extract-image-metadata-such-as-dimensions-and-color-depth-from-each-shape-in-a-vdx-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/extract-image-metadata-such-as-dimensions-and-color-depth-from-each-shape-in-a-vdx-diagram.cs) | `Diagram`, `Pages`, `Shapes` | Extract image metadata such as dimensions and color depth from each shape in a vdx diagram |
 | [generate-a-pdf-file-from-a-vsdx-diagram-while-embedding-all-extracted-images-as-high-quality-resources.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/generate-a-pdf-file-from-a-vsdx-diagram-while-embedding-all-extracted-images-as-high-quality-resources.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Generate a pdf file from a vsdx diagram while embedding all extracted images as high quality resources |
@@ -137,7 +139,7 @@ class Program
 | [resize-exported-bmp-images-to-a-fixed-width-of-eight-hundred-pixels-while-maintaining-aspect-ratio.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/resize-exported-bmp-images-to-a-fixed-width-of-eight-hundred-pixels-while-maintaining-aspect-ratio.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Resize exported bmp images to a fixed width of eight hundred pixels while maintaining aspect ratio |
 | [save-extracted-images-as-base64-strings-and-embed-them-back-into-the-diagram-using-data-uris.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/save-extracted-images-as-base64-strings-and-embed-them-back-into-the-diagram-using-data-uris.cs) | `Diagram`, `Pages`, `Save` | Save extracted images as base64 strings and embed them back into the diagram using data uris |
 | [validate-that-all-images-embedded-in-a-vsdx-file-meet-a-minimum-resolution-of-300-dpi.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/validate-that-all-images-embedded-in-a-vsdx-file-meet-a-minimum-resolution-of-300-dpi.cs) | `Diagram`, `Pages`, `Shapes` | Validate that all images embedded in a vsdx file meet a minimum resolution of 300 dpi |
-| [validate-that-no-image-exceeds-a-file-size-limit-of-two-megabytes-before-exporting-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/validate-that-no-image-exceeds-a-file-size-limit-of-two-megabytes-before-exporting-the-diagram.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Validate that no image exceeds a file size limit of two megabytes before exporting the diagram |
+| [validate-that-no-image-exceeds-a-file-size-limit-of-two-megabytes-before-exporting-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-images/validate-that-no-image-exceeds-a-file-size-limit-of-two-megabytes-before-exporting-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Validate that no image exceeds a file size limit of two megabytes before exporting the diagram |
 
 ## Command Reference
 
@@ -224,6 +226,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 ## Key API Surface
 
 - `Diagram`
+- `Fonts`
 - `ImageSaveOptions`
 - `Pages`
 - `PdfSaveOptions`
@@ -247,7 +250,7 @@ Frequently asked questions about **Working With Images** in **Aspose.Diagram for
 
 **Q: How do I get started with Working With Images in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -279,4 +282,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-24 | Examples: 38 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-22 | Examples: 38 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

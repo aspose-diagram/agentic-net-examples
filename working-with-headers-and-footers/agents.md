@@ -4,10 +4,10 @@ display_name: Working With Headers And Footers
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.9.0
+version: 26.10.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-09-24
+generated: 2026-10-22
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -63,13 +63,13 @@ You always use explicit types (never `var`), include all required `using` direct
 |-----------|-------|---------|
 | `Aspose.Diagram` | 30 | Core diagram API |
 | `System` | 30 | Console, Math, DateTime, Exception |
-| `System.IO` | 29 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 10 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `Aspose.Drawing` | 5 | Supporting utilities |
+| `System.IO` | 30 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 4 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Drawing` | 4 | Supporting utilities |
+| `System.Collections.Generic` | 2 | List, Dictionary, HashSet |
 | `System.Xml.Linq` | 1 | Supporting utilities |
+| `Aspose.Diagram.Printing` | 1 | Supporting utilities |
 | `System.Text.Json` | 1 | JSON serialization |
-| `System.Linq` | 1 | LINQ queries on collections |
-| `System.Globalization` | 1 | Supporting utilities |
 | `System.Text.RegularExpressions` | 1 | Supporting utilities |
 
 ## Common Code Pattern
@@ -108,12 +108,12 @@ class Program
 | [assign-a-new-string-to-the-right-footer-text-and-save-the-diagram-as-a-vdx-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/assign-a-new-string-to-the-right-footer-text-and-save-the-diagram-as-a-vdx-file.cs) | `Diagram`, `Save`, `diagram` | Assign a new string to the right footer text and save the diagram as a vdx file |
 | [automate-the-process-of-adding-a-page-number-placeholder-to-the-right-footer-of-each-diagram-in-a-collection.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/automate-the-process-of-adding-a-page-number-placeholder-to-the-right-footer-of-each-diagram-in-a-collection.cs) | `Diagram`, `Save`, `diagram` | Automate the process of adding a page number placeholder to the right footer of each diagram in a collection |
 | [compare-left-header-text-between-two-diagrams-and-output-the-differences-to-a-log-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/compare-left-header-text-between-two-diagrams-and-output-the-differences-to-a-log-file.cs) | `Diagram` | Compare left header text between two diagrams and output the differences to a log file |
-| [configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Configure the footer margin to 0 3 centimeters and verify the change using print preview |
-| [create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi.cs) | `Diagram`, `Save`, `diagram` | Create a command line tool that accepts a directory path and applies a predefined header footer template to all visio fi |
+| [configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs) | `Diagram`, `Save`, `diagram` | Configure the footer margin to 0 3 centimeters and verify the change using print preview |
+| [create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-files.cs) | `Diagram`, `Save`, `diagram` | Create a command line tool that accepts a directory path and applies a predefined header footer template to all visio files |
 | [create-a-script-that-reads-header-and-footer-configurations-from-an-xml-file-and-applies-them-to-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-script-that-reads-header-and-footer-configurations-from-an-xml-file-and-applies-them-to-a-diagram.cs) | `Diagram`, `Save`, `diagram` | Create a script that reads header and footer configurations from an xml file and applies them to a diagram |
 | [create-a-utility-method-that-accepts-a-diagram-path-and-header-settings-applies-them-and-saves-the-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-utility-method-that-accepts-a-diagram-path-and-header-settings-applies-them-and-saves-the-file.cs) | `Diagram`, `Save`, `diagram` | Create a utility method that accepts a diagram path and header settings applies them and saves the file |
 | [define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs) | `Diagram`, `Save`, `diagram` | Define header font name as arial size 10 points and apply bold style to the left header |
-| [ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs) | `Diagram`, `Save`, `diagram` | Ensure that after modifying header text the diagram s print preview reflects the updated content accurately |
+| [ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/ensure-that-after-modifying-header-text-the-diagram-s-print-preview-reflects-the-updated-content-accurately.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Ensure that after modifying header text the diagram s print preview reflects the updated content accurately |
 | [extract-current-header-and-footer-text-values-from-a-diagram-and-write-them-to-a-json-configuration-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/extract-current-header-and-footer-text-values-from-a-diagram-and-write-them-to-a-json-configuration-file.cs) | `Diagram` | Extract current header and footer text values from a diagram and write them to a json configuration file |
 | [generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/generate-a-report-listing-each-diagram-s-left-center-and-right-header-texts-after-batch-modifications.cs) | `Diagram`, `Save`, `diagram` | Generate a report listing each diagram s left center and right header texts after batch modifications |
 | [generate-a-summary-csv-file-listing-each-diagram-s-file-name-header-margins-and-footer-font-sizes-after-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/generate-a-summary-csv-file-listing-each-diagram-s-file-name-header-margins-and-footer-font-sizes-after-processing.cs) | `Diagram` | Generate a summary csv file listing each diagram s file name header margins and footer font sizes after processing |
@@ -217,7 +217,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 ## Key API Surface
 
 - `Diagram`
-- `ImageSaveOptions`
 - `Pages`
 - `PdfSaveOptions`
 - `Save`
@@ -239,7 +238,7 @@ Frequently asked questions about **Working With Headers And Footers** in **Aspos
 
 **Q: How do I get started with Working With Headers And Footers in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -271,4 +270,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-24 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-22 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

@@ -6,53 +6,55 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument.
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Error: No diagram file path provided.");
             return;
         }
 
-        string visioPath = args[0];
-        // Verify that the provided file exists.
-        if (!File.Exists(visioPath))
+        string diagramPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio document.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through each page in the document.
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Iterate through each shape on the current page.
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // If the shape is based on a master (i.e., not a group or foreign shape).
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve and log the master name if available.
                     if (shape.Master != null)
                     {
-                        // Retrieve the master name (universal name) from the stencil.
-                        string masterName = shape.Master.NameU;
-
-                        // Log the shape ID together with its master name.
-                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Master Name: {masterName}");
+                        Console.WriteLine($"Shape ID {shape.ID} uses master: {shape.Master.Name}");
                     }
                     else
                     {
-                        // Shape does not have a master; log that information.
-                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, No master associated.");
+                        Console.WriteLine($"Shape ID {shape.ID} has no master.");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during processing.
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

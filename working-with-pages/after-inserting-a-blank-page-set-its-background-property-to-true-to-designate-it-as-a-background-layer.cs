@@ -1,33 +1,49 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        using (Diagram diagram = new Diagram())
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Determine the maximum existing page ID
-            int maxPageId = 0;
-            foreach (Page existingPage in diagram.Pages)
-            {
-                if (existingPage.ID > maxPageId)
-                    maxPageId = existingPage.ID;
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-            // Create a new blank page
-            Page backgroundPage = new Page();
-            backgroundPage.ID = maxPageId + 1;               // Assign a unique ID
-            backgroundPage.Name = "BackgroundPage";          // Optional name
-            backgroundPage.Background = BOOL.True;           // Designate as a background layer
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Add the new page to the diagram
-            diagram.Pages.Add(backgroundPage);
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+        try
+        {
+            // Load the existing Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Insert a new blank page into the diagram.
+            // The Add method returns the newly created Page object.
+            Page newPage = new Page();
+            diagram.Pages.Add(newPage);
+
+            // Designate the newly added page as a background page.
+            // The Background property expects an Aspose.Diagram.BOOL value.
+            newPage.Background = BOOL.True;
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

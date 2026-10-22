@@ -7,70 +7,85 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
             return;
         }
 
-        // Output directory for preview images
-        string outputDir = "PreviewImages";
-        // Guard: create the output directory if it does not exist
-        if (!Directory.Exists(outputDir))
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: input file must exist
+        if (!File.Exists(inputPath))
         {
-            Directory.CreateDirectory(outputDir);
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Ensure output folder exists
+        if (!Directory.Exists(outputFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
         }
 
         try
         {
-            // Load the diagram from the specified file
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Add a full‑page watermark to each page
+            foreach (Page page in diagram.Pages)
             {
-                int pageIndex = 0;
+                // Retrieve page dimensions
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Add a watermark text shape that covers the entire page
-                    // Note: using positional arguments to match the AddText overload signature
-                    page.AddText(
-                        0,                 // pinX (left)
-                        0,                 // pinY (bottom)
-                        pageWidth,         // width (full page width)
-                        pageHeight,        // height (full page height)
-                        "WATERMARK",       // text content
-                        "Arial",           // font name
-                        "#CCCCCC",         // font color in hex
-                        0.5);              // font size in inches (~36 points)
-
-                    // Configure image save options for PNG export
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    saveOptions.PageIndex = pageIndex; // zero‑based page index
-
-                    // Build output file path for the current page
-                    string outputPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.png");
-
-                    // Save the current page as an image with the watermark overlay
-                    diagram.Save(outputPath, saveOptions);
-
-                    // Increment page index for the next iteration
-                    pageIndex++;
-                }
+                // Add watermark text covering the entire page
+                // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize
+                page.AddText(
+                    0,                     // pinX (left)
+                    0,                     // pinY (top)
+                    pageWidth,             // width
+                    pageHeight,            // height
+                    "CONFIDENTIAL",        // watermark text
+                    "Arial",               // font name
+                    "#C0C0C0",             // light gray color in hex
+                    36);                   // font size
             }
 
-            Console.WriteLine("Preview images with watermarks have been generated.");
+            // Export each page as a PNG preview image
+            int pageIndex = 0;
+            foreach (Page page in diagram.Pages)
+            {
+                // Configure image save options for a single page
+                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                options.PageIndex = pageIndex;   // zero‑based page index
+                options.PageCount = 1;           // export only this page
+
+                // Build output file path
+                string outputPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}_preview.png");
+
+                // Save the page image
+                diagram.Save(outputPath, options);
+                Console.WriteLine($"Saved preview: {outputPath}");
+
+                pageIndex++;
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram related errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

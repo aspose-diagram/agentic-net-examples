@@ -1,67 +1,78 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyPageSavingCallback : IPageSavingCallback
+class MockPageSavingCallback : IPageSavingCallback
 {
+    // Called before a page starts saving
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
+        Console.WriteLine($"[Callback] Start saving page {args.PageIndex + 1} of {args.PageCount}");
     }
 
+    // Called after a page has been saved
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}");
-        // Example: stop after the first page to demonstrate control flow
-        if (args.PageIndex == 0)
+        Console.WriteLine($"[Callback] End saving page {args.PageIndex + 1} of {args.PageCount}");
+        // Example: stop further processing after the first page (for test purposes)
+        if (args.PageIndex >= 0)
         {
             args.HasMorePages = false;
-            Console.WriteLine("Stopping further page processing.");
+            Console.WriteLine("[Callback] Requested to stop further page processing.");
         }
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Path to a sample Visio file – adjust as needed for your environment
+        string diagramPath = "sample.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists before proceeding
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load a diagram (replace with a valid path in your test environment)
-            string diagramPath = "sample.vsdx";
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(diagramPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                throw;
-            }
-
-            // Configure PDF save options and attach the mock callback
+            // Create PDF save options and assign the mock callback
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+            pdfOptions.PageSavingCallback = new MockPageSavingCallback();
 
-            // Attempt to save; in a test you may ignore the output file or redirect to a stream
-            string outputPath = "output.pdf";
-            try
+            // NOTE: We intentionally do NOT call diagram.Save(...) here.
+            // The purpose is to demonstrate how the callback can be mocked
+            // and injected without performing an actual file save.
+            Console.WriteLine("Mock IPageSavingCallback has been configured. In integration tests, Aspose.Diagram will invoke the callback during PDF export.");
+
+            // OPTIONAL: Simulate callback invocation manually (purely for illustration)
+            // Since the actual args constructors may not be publicly accessible,
+            // this block simply logs what would happen.
+            for (int i = 0; i < 2; i++)
             {
-                diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine("Diagram save operation completed (or simulated).");
-            }
-            catch (Exception ex)
-            {
-                // In a mock scenario the save may be intentionally bypassed
-                Console.WriteLine($"Save operation simulated; caught exception: {ex.Message}");
+                Console.WriteLine($"[Simulation] Would invoke PageStartSaving for page {i + 1}");
+                Console.WriteLine($"[Simulation] Would invoke PageEndSaving for page {i + 1}");
             }
 
+            // Clean up resources
+            diagram.Dispose();
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

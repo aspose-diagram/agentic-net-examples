@@ -1,93 +1,98 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file (adjust as needed)
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one window; add a default one if none exist
+            // Ensure there is at least one window; if none, add a default window
             if (diagram.Windows.Count == 0)
             {
-                Window defaultWindow = new Window();
-                defaultWindow.WindowType = WindowTypeValue.Drawing;
-                defaultWindow.WindowState = WindowStateValue.Maximized;
-                defaultWindow.WindowWidth = 1100;
-                defaultWindow.WindowHeight = 700;
+                Window defaultWindow = new Window
+                {
+                    // Set basic window properties
+                    WindowType = WindowTypeValue.Drawing,
+                    WindowState = (WindowStateValue)0, // Normal state
+                    WindowWidth = 1100,
+                    WindowHeight = 700
+                };
                 diagram.Windows.Add(defaultWindow);
             }
 
-            // Apply bulk visibility changes and log before/after states
+            // Iterate over each window and apply bulk visibility changes
             foreach (Window window in diagram.Windows)
             {
-                // Capture before values
-                long beforeHeight = window.WindowHeight;
-                long beforeWidth = window.WindowWidth;
-                WindowStateValue beforeState = window.WindowState;
-                WindowTypeValue beforeType = window.WindowType;
+                Console.WriteLine($"--- Window ID: {window.ID} ---");
+
+                // ShowGrid
                 BOOL beforeShowGrid = window.ShowGrid;
+                Console.WriteLine($"ShowGrid before: {beforeShowGrid}");
+                window.ShowGrid = BOOL.True;
+                Console.WriteLine($"ShowGrid after: {window.ShowGrid}");
+
+                // ShowGuides
                 BOOL beforeShowGuides = window.ShowGuides;
+                Console.WriteLine($"ShowGuides before: {beforeShowGuides}");
+                window.ShowGuides = BOOL.True;
+                Console.WriteLine($"ShowGuides after: {window.ShowGuides}");
+
+                // ShowRulers
                 BOOL beforeShowRulers = window.ShowRulers;
+                Console.WriteLine($"ShowRulers before: {beforeShowRulers}");
+                window.ShowRulers = BOOL.True;
+                Console.WriteLine($"ShowRulers after: {window.ShowRulers}");
+
+                // ShowPageBreaks
                 BOOL beforeShowPageBreaks = window.ShowPageBreaks;
+                Console.WriteLine($"ShowPageBreaks before: {beforeShowPageBreaks}");
+                window.ShowPageBreaks = BOOL.True;
+                Console.WriteLine($"ShowPageBreaks after: {window.ShowPageBreaks}");
+
+                // DynamicGridEnabled
                 BOOL beforeDynamicGrid = window.DynamicGridEnabled;
-                BOOL beforeShowConnectionPoints = window.ShowConnectionPoints;
+                Console.WriteLine($"DynamicGridEnabled before: {beforeDynamicGrid}");
+                window.DynamicGridEnabled = BOOL.True;
+                Console.WriteLine($"DynamicGridEnabled after: {window.DynamicGridEnabled}");
 
-                // Log before state
-                Console.WriteLine("=== Window ID: {0} ===", window.ID);
-                Console.WriteLine("Before - Height: {0}, Width: {1}", beforeHeight, beforeWidth);
-                Console.WriteLine("Before - State: {0}, Type: {1}", beforeState, beforeType);
-                Console.WriteLine("Before - ShowGrid: {0}, ShowGuides: {1}, ShowRulers: {2}, ShowPageBreaks: {3}",
-                    beforeShowGrid, beforeShowGuides, beforeShowRulers, beforeShowPageBreaks);
-                Console.WriteLine("Before - DynamicGridEnabled: {0}, ShowConnectionPoints: {1}",
-                    beforeDynamicGrid, beforeShowConnectionPoints);
-
-                // Bulk visibility changes (example: hide all UI aids)
-                window.ShowGrid = BOOL.False;
-                window.ShowGuides = BOOL.False;
-                window.ShowRulers = BOOL.False;
-                window.ShowPageBreaks = BOOL.False;
-                window.DynamicGridEnabled = BOOL.False;
-                window.ShowConnectionPoints = BOOL.False;
-
-                // Capture after values
-                long afterHeight = window.WindowHeight;
-                long afterWidth = window.WindowWidth;
-                WindowStateValue afterState = window.WindowState;
-                WindowTypeValue afterType = window.WindowType;
-                BOOL afterShowGrid = window.ShowGrid;
-                BOOL afterShowGuides = window.ShowGuides;
-                BOOL afterShowRulers = window.ShowRulers;
-                BOOL afterShowPageBreaks = window.ShowPageBreaks;
-                BOOL afterDynamicGrid = window.DynamicGridEnabled;
-                BOOL afterShowConnectionPoints = window.ShowConnectionPoints;
-
-                // Log after state
-                Console.WriteLine("After  - Height: {0}, Width: {1}", afterHeight, afterWidth);
-                Console.WriteLine("After  - State: {0}, Type: {1}", afterState, afterType);
-                Console.WriteLine("After  - ShowGrid: {0}, ShowGuides: {1}, ShowRulers: {2}, ShowPageBreaks: {3}",
-                    afterShowGrid, afterShowGuides, afterShowRulers, afterShowPageBreaks);
-                Console.WriteLine("After  - DynamicGridEnabled: {0}, ShowConnectionPoints: {1}",
-                    afterDynamicGrid, afterShowConnectionPoints);
-                Console.WriteLine();
+                // ShowConnectionPoints
+                BOOL beforeConnectionPoints = window.ShowConnectionPoints;
+                Console.WriteLine($"ShowConnectionPoints before: {beforeConnectionPoints}");
+                window.ShowConnectionPoints = BOOL.True;
+                Console.WriteLine($"ShowConnectionPoints after: {window.ShowConnectionPoints}");
             }
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

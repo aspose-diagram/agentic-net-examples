@@ -1,65 +1,73 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <outputVisioPath> <pageIndex>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string pageIndexArg = args[2];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse page index
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
+        {
+            Console.Error.WriteLine($"Invalid page index: {pageIndexArg}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Create a simple stylesheet
             StyleSheet style = new StyleSheet();
+            // Assign a unique ID (Visio IDs start at 1)
             style.ID = diagram.StyleSheets.Count + 1;
 
-            // Character formatting (red text)
-            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-            ch.IX = 0;
-            ch.Color.Value = "#FF0000";
-            style.Chars.Add(ch);
-
-            // Line formatting (green line)
-            style.Line.LineColor.Value = "#00FF00";
-
-            // Fill formatting (blue fill)
-            style.Fill.FillForegnd.Value = "#0000FF";
+            // Example: set line color and fill foreground
+            style.Line.LineColor.Value = "#FF0000"; // Red line
+            style.Fill.FillForegnd.Value = "#00FF00"; // Green fill
 
             // Add the stylesheet to the diagram
             diagram.StyleSheets.Add(style);
 
-            // Index of the page we want to style (example: a non‑existent page)
-            int pageIndex = 5;
+            // Attempt to retrieve the target page
+            Page targetPage = diagram.Pages[pageIndex]; // May throw if index is out of range
 
-            try
-            {
-                // Attempt to retrieve the page; will throw if index is out of range
-                Page page = diagram.Pages[pageIndex];
-
-                // Apply the stylesheet to the page (master, line, and fill styles)
-                page.ApplyStyle(style.ID, style.ID, style.ID);
-
-                Console.WriteLine($"Successfully applied stylesheet to page index {pageIndex}.");
-            }
-            catch (Exception ex)
-            {
-                // Handle errors such as invalid page index
-                Console.WriteLine($"Error: Unable to apply stylesheet to page index {pageIndex}. {ex.Message}");
-            }
+            // Apply the stylesheet to the page
+            // ApplyStyle takes (StyleID, CharStyleID, ParagraphStyleID)
+            targetPage.ApplyStyle(style.ID, style.ID, style.ID);
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (ArgumentOutOfRangeException ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Specific handling for non‑existent page index
+            Console.Error.WriteLine($"Error: The specified page index {pageIndex} does not exist. {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            // General error handling for any other Aspose or I/O issues
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
         }
     }
 }

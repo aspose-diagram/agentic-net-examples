@@ -1,86 +1,80 @@
 using System;
 using System.IO;
+using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.Xml.Linq;
-using System.Xml;
 
-/// <summary>
-/// Demonstrates loading a Visio diagram, validating the XML namespaces
-/// of all SolutionXML elements, and saving the diagram.
-/// </summary>
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard to ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        Diagram diagram;
         try
         {
-            // Load the diagram (Aspose operation)
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            // Report loading errors
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Validate SolutionXML namespaces before saving
-        ValidateSolutionXmlNamespaces(diagram);
+            // Iterate over all SolutionXML elements and validate their XML content.
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+            {
+                // NOTE: In a real implementation a third‑party XML namespace validation library
+                // would be invoked here. Since external libraries are not available in this
+                // environment, we perform a basic validation using the built‑in .NET XML parser.
+                try
+                {
+                    // Parse the XML string with line‑info to aid debugging.
+                    XDocument xDoc = XDocument.Parse(solXml.XmlValue, System.Xml.Linq.LoadOptions.SetLineInfo);
 
-        // Path for the output Visio file
-        string outputPath = "output.vsdx";
+                    // Ensure each element has a non‑empty namespace.
+                    foreach (XElement elem in xDoc.Descendants())
+                    {
+                        XNamespace ns = elem.Name.Namespace;
+                        if (ns == null || string.IsNullOrWhiteSpace(ns.NamespaceName))
+                        {
+                            Console.Error.WriteLine($"Element '{elem.Name.LocalName}' in SolutionXML '{solXml.Name}' lacks a namespace.");
+                            // Abort saving due to validation failure.
+                            return;
+                        }
+                    }
+                }
+                catch (XmlException xmlEx)
+                {
+                    Console.Error.WriteLine($"Invalid XML in SolutionXML '{solXml.Name}': {xmlEx.Message}");
+                    // Abort saving due to validation failure.
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Unexpected error while validating SolutionXML '{solXml.Name}': {ex.Message}");
+                    return;
+                }
+            }
 
-        try
-        {
-            // Save the diagram after successful validation (Aspose operation)
+            // All SolutionXML entries passed validation. Save the diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report saving errors
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Parses each SolutionXML.XmlValue and ensures that the XML is well‑formed
-    /// and that all namespace prefixes are properly declared.
-    /// Throws an exception if any validation error is found.
-    /// </summary>
-    /// <param name="diagram">The diagram whose SolutionXML collection will be validated.</param>
-    private static void ValidateSolutionXmlNamespaces(Diagram diagram)
-    {
-        foreach (SolutionXML solXml in diagram.SolutionXMLs)
-        {
-            if (string.IsNullOrWhiteSpace(solXml.XmlValue))
-            {
-                // Empty XML is considered valid; continue to next item
-                continue;
-            }
-
-            try
-            {
-                // Parse the XML string. XDocument will throw if the XML is not well‑formed
-                // or if a namespace prefix is used without a corresponding declaration.
-                XDocument.Parse(solXml.XmlValue, System.Xml.Linq.LoadOptions.SetLineInfo);
-            }
-            catch (XmlException ex)
-            {
-                // Include the name of the SolutionXML element in the error message
-                throw new Exception($"Invalid XML in SolutionXML '{solXml.Name}': {ex.Message}", ex);
-            }
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

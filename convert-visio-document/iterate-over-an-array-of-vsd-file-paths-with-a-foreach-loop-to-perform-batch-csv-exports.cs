@@ -2,38 +2,47 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 
-class BatchCsvExport
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Define the list of Visio files to be exported to CSV.
+        // Adjust the paths as needed for your environment.
+        string[] visioFiles = new string[]
         {
+            @"C:\Diagrams\Diagram1.vsd",
+            @"C:\Diagrams\Diagram2.vsdx",
+            @"C:\Diagrams\Diagram3.vdx"
+        };
 
-            // Array of VSD file paths to be processed
-            string[] vsdFilePaths = new string[]
+        // Iterate over each file path and perform the export.
+        foreach (string filePath in visioFiles)
+        {
+            // Guard: ensure the source file exists before processing.
+            if (!File.Exists(filePath))
             {
-                @"C:\Diagrams\Diagram1.vsd",
-                @"C:\Diagrams\Diagram2.vsd",
-                // Add more file paths as needed
-            };
-
-            // Iterate over each VSD file and export it to CSV
-            foreach (string vsdPath in vsdFilePaths)
-            {
-                // Load the VSD diagram
-                Diagram diagram = new Diagram(vsdPath);
-
-                // Create the output CSV file path (same name, .csv extension)
-                string csvPath = Path.ChangeExtension(vsdPath, ".csv");
-
-                // Export the diagram to CSV format
-                diagram.Save(csvPath, SaveFileFormat.Csv);
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
             }
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            try
+            {
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // Determine the output CSV file path (same folder, .csv extension).
+                string outputPath = Path.ChangeExtension(filePath, ".csv");
+
+                // Export the diagram to CSV format.
+                diagram.Save(outputPath, SaveFileFormat.Csv);
+
+                Console.WriteLine($"Successfully exported '{filePath}' to '{outputPath}'.");
+            }
+            catch (Exception ex)
+            {
+                // Report any errors that occur during loading or saving.
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+            }
         }
     }
 }

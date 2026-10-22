@@ -5,75 +5,92 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: Visio file path and Excel CSV file path
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ExcelCsvFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+        string excelCsvPath = args[1];
+
+        // Guard: check Visio file existence
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Visio file not found: {visioPath}");
+            return;
+        }
+
+        // Guard: check Excel CSV file existence
+        if (!File.Exists(excelCsvPath))
+        {
+            Console.Error.WriteLine($"Excel CSV file not found: {excelCsvPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(visioPath))
             {
-
-                // Paths to the Visio file and the external CSV (exported from Excel)
-                string visioPath = "input.vsdx";
-                string csvPath = "data.csv";
-                string outputPath = "output.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Read CSV data into a dictionary: key = shape NameU, value = data to assign
+                // Read the external Excel values (assumed CSV for simplicity)
+                // Expected format per line: ShapeName,DataGraphicValue
                 var dataMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                if (File.Exists(csvPath))
+                foreach (string line in File.ReadAllLines(excelCsvPath))
                 {
-                    string[] lines = File.ReadAllLines(csvPath);
-                    foreach (string line in lines)
+                    // Skip empty lines
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    string[] parts = line.Split(',');
+                    if (parts.Length >= 2)
                     {
-                        // Skip empty lines
-                        if (string.IsNullOrWhiteSpace(line))
+                        string shapeName = parts[0].Trim();
+                        string graphicValue = parts[1].Trim();
+                        dataMap[shapeName] = graphicValue;
+                    }
+                }
+
+                // Iterate through all pages and shapes to apply data graphics (as custom properties)
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape is not marked for deletion
+                        if (shape.Del == BOOL.True)
                             continue;
 
-                        // Expected format: ShapeName,Value
-                        string[] parts = line.Split(',');
-                        if (parts.Length >= 2)
+                        // Match shape by its universal name
+                        if (!string.IsNullOrEmpty(shape.NameU) && dataMap.TryGetValue(shape.NameU, out string value))
                         {
-                            string shapeName = parts[0].Trim();
-                            string value = parts[1].Trim();
-                            if (!dataMap.ContainsKey(shapeName))
-                            {
-                                dataMap.Add(shapeName, value);
-                            }
+                            // Add a custom property to store the data graphic value
+                            // This serves as a placeholder since explicit DataGraphic APIs are not available in the reference
+                            Prop prop = new Prop();
+                            prop.Name = "DataGraphic";
+                            prop.Label.Value = "Data Graphic";
+                            prop.Value.Val = value;
+                            prop.Type.Value = TypePropValue.String;
+                            shape.Props.Add(prop);
                         }
                     }
                 }
-                else
-                {
-                    Console.WriteLine($"CSV file not found: {csvPath}");
-                    return;
-                }
 
-                // Iterate over shapes on the first page and assign Data1 based on the CSV mapping
-                Page page = diagram.Pages[0];
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                // Save the modified diagram to a new file
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(visioPath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(visioPath) + "_Updated.vsdx");
 
-                    // Use the universal name of the shape to look up data
-                    string shapeNameU = shape.NameU;
-                    if (dataMap.TryGetValue(shapeNameU, out string dataValue))
-                    {
-                        // Assign the external value to the shape's Data1 field
-                        shape.Data1 = dataValue;
-                    }
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Csv);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,24 +1,69 @@
+using System;
 using System.IO;
 using Aspose.Diagram;
-using System;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Output basic VBA project information.
+                VbaProject vba = diagram.VbaProject;
+                if (vba != null)
+                {
+                    Console.WriteLine($"VBA Project Name: {vba.Name}");
+                    Console.WriteLine($"VBA Project IsSigned: {vba.IsSigned}");
 
-            // Load the existing Visio diagram (VBA project is loaded automatically)
-            Diagram diagram = new Diagram("input.vsd");
+                    // List all VBA modules.
+                    Console.WriteLine("VBA Modules:");
+                    foreach (VbaModule module in vba.Modules)
+                    {
+                        Console.WriteLine($"  Module Name: {module.Name}");
+                        // Optionally display a snippet of the code.
+                        string codeSnippet = module.Codes?.Length > 100
+                            ? module.Codes.Substring(0, 100) + "..."
+                            : module.Codes;
+                        Console.WriteLine($"    Code: {codeSnippet}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No VBA project found in the diagram.");
+                }
 
-            // Save the diagram to a new Visio file format (e.g., VSDX) preserving the VBA project
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the diagram preserving the VBA project.
+                // Use the macro‑enabled VSDM format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdm);
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\" preserving VBA.");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

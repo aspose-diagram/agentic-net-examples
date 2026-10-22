@@ -6,45 +6,53 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Ensure a file path argument is provided.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path specified.");
+            return;
+        }
+
+        string filePath = args[0];
+
+        // Guard: verify the Visio file exists.
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file path (adjust as needed)
-            string inputPath = "input.vsdx";
-
-            // Output report file path
-            string reportPath = "ShapeParagraphReport.txt";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a text report
-            using (StreamWriter writer = new StreamWriter(reportPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(filePath))
             {
-                writer.WriteLine("Shape Name\tParagraph Count");
-
-                // Iterate through all pages and shapes
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Use universal name if available, otherwise fallback to name
-                        string shapeName = shape.NameU ?? shape.Name ?? "Unnamed";
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Number of paragraphs in the shape
-                        int paragraphCount = shape.Paras != null ? shape.Paras.Count : 0;
+                        // Retrieve the shape's name (use NameU; fallback to empty string if null).
+                        string shapeName = shape.NameU ?? string.Empty;
 
-                        writer.WriteLine($"{shapeName}\t{paragraphCount}");
+                        // Count the number of paragraphs in the shape.
+                        int paragraphCount = shape.Paras.Count;
+
+                        // Output the shape name and its paragraph count.
+                        Console.WriteLine($"{shapeName}: {paragraphCount}");
                     }
                 }
             }
-
-            Console.WriteLine($"Report generated at: {Path.GetFullPath(reportPath)}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any exceptions to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

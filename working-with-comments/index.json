@@ -1,11 +1,11 @@
 {
   "category": "working-with-comments",
   "display_name": "Working With Comments",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -21,7 +21,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -31,13 +30,13 @@
       "task": "Add timestamps to comments automatically when they are created using the system s current time zone",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -47,7 +46,9 @@
       "task": "Apply a conditional formatting rule that changes comment background color based on author role",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -79,7 +80,6 @@
       "task": "Copy comments from one diagram to another preserving their original author and creation dates",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -93,8 +93,8 @@
       "task": "Create a custom comment style with specific font and background color then apply it to selected comments",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -110,8 +110,9 @@
       "task": "Create a macro that removes all comments older than a specified number of days from a diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -127,7 +128,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -160,6 +162,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -176,7 +179,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -196,7 +200,10 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -205,6 +212,7 @@
       "task": "Export all diagram comments to a json file including position coordinates and linked shape identifiers",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -213,9 +221,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "diagram"
       ]
     },
     {
@@ -256,9 +262,10 @@
       "task": "Extract comment text and embed it as hidden metadata within the diagram file for later retrieval",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -274,7 +281,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -295,10 +301,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "PdfSaveOptions",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -323,7 +328,8 @@
       "task": "Implement a feature to lock comments preventing further edits unless a specific unlock flag is set",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -339,8 +345,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -363,7 +368,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -373,9 +377,8 @@
       "task": "Import comments from an xml document assigning them to corresponding shapes based on matching ids",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
+        "System.IO",
         "System.Xml.Linq"
       ],
       "key_apis": [
@@ -394,7 +397,8 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -409,7 +413,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -423,7 +428,8 @@
       "task": "Load a visio diagram add a new comment to a specific shape then save the file",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -439,17 +445,15 @@
       "task": "Programmatically attach a comment to a connector shape specifying the exact segment where it appears",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Manipulation",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
-        "ConnectShapesViaConnector",
         "Diagram",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -458,8 +462,11 @@
       "task": "Read comments from a diagram translate their text using an external service and update them in place",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Net.Http"
       ],
       "key_apis": [
         "Diagram",
@@ -490,6 +497,7 @@
       "task": "Search for comments authored by a particular user and highlight the associated shapes in the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -520,9 +528,9 @@
       ]
     },
     {
-      "slug": "synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-re",
-      "file": "synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-re.cs",
-      "task": "Synchronize comment visibility settings across multiple diagrams to ensure consistent presentation during stakeholder re",
+      "slug": "synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-reviews",
+      "file": "synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-reviews.cs",
+      "task": "Synchronize comment visibility settings across multiple diagrams to ensure consistent presentation during stakeholder reviews",
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
@@ -531,7 +539,7 @@
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -558,7 +566,8 @@
       "task": "Validate that comment positions stay within page boundaries after diagram scaling operations",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -573,12 +582,11 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     }

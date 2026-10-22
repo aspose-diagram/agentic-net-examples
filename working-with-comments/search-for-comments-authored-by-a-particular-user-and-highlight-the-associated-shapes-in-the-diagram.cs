@@ -1,69 +1,89 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
-        // Input diagram file path
-        Console.WriteLine("Enter the path to the Visio diagram file:");
-        string inputPath = Console.ReadLine();
-
-        // Input reviewer (author) name to search for
-        Console.WriteLine("Enter the reviewer name whose comments should be highlighted:");
-        string targetReviewer = Console.ReadLine();
-
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Iterate through all pages
-        foreach (Page page in diagram.Pages)
+        // Expect three arguments: input diagram path, output diagram path, author name to search for.
+        if (args.Length < 3)
         {
-            // Iterate through all annotations (comments) on the page
-            foreach (Annotation annotation in page.PageSheet.Annotations)
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <authorName>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string targetAuthor = args[2];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the reviewer ID from the annotation
-                int reviewerId = annotation.ReviewerID.Value;
-
-                // Get the reviewer name safely
-                string reviewerName = GetReviewerName(diagram, reviewerId);
-
-                // If the reviewer matches the target, highlight the associated shape
-                if (!string.IsNullOrEmpty(reviewerName) && reviewerName.Equals(targetReviewer, StringComparison.OrdinalIgnoreCase))
+                // Build a list of reviewer names indexed by ReviewerID.
+                var reviewerNames = new System.Collections.Generic.List<string>();
+                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
                 {
-                    // Retrieve the shape referenced by the annotation
-                    Shape shape = page.Shapes.GetShape(annotation.ShapeID);
+                    // Reviewer.Name is a Str2Value; retrieve the string via .Value.
+                    reviewerNames.Add(reviewer.Name?.Value ?? string.Empty);
+                }
 
-                    // Ensure the shape exists and is not deleted
-                    if (shape != null && shape.Del == BOOL.False)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Access page‑level annotations (comments).
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Highlight by setting a bright fill color (yellow)
-                        shape.Fill.FillForegnd.Value = "#FFFF00";
+                        // Resolve the author name using the ReviewerID.
+                        int reviewerId = annotation.ReviewerID?.Value ?? -1;
+                        string author = (reviewerId >= 0 && reviewerId < reviewerNames.Count)
+                            ? reviewerNames[reviewerId]
+                            : string.Empty;
+
+                        // Compare with the target author (case‑insensitive).
+                        if (!author.Equals(targetAuthor, StringComparison.OrdinalIgnoreCase))
+                            continue; // Not the author we are looking for.
+
+                        // Get the shape ID that the comment is attached to.
+                        int shapeId = annotation.ShapeID; // Primitive int, no .Value.
+                        if (shapeId == 0)
+                            continue; // No shape associated.
+
+                        // Retrieve the shape from the page's shape collection.
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        if (shape == null)
+                            continue; // Shape not found.
+
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Highlight the shape:
+                        // - Set a bright fill color (yellow).
+                        // - Set a thick red outline.
+                        shape.Fill.FillForegnd.Value = "#FFFF00"; // Yellow
+                        shape.Line.LineColor.Value = "#FF0000";   // Red
+                        shape.Line.LineWeight.Value = 0.03;      // Thicker line (in inches)
                     }
                 }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
-
-        // Save the modified diagram
-        Console.WriteLine("Enter the output path for the highlighted diagram:");
-        string outputPath = Console.ReadLine();
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-        Console.WriteLine("Processing complete. Diagram saved to: " + outputPath);
-    }
-
-    // Helper method to obtain reviewer name by ID
-    private static string GetReviewerName(Diagram diagram, int reviewerId)
-    {
-        // Validate reviewer index
-        if (reviewerId >= 0 && reviewerId < diagram.DocumentSheet.Reviewers.Count)
+        catch (Exception ex)
         {
-            Reviewer reviewer = diagram.DocumentSheet.Reviewers[reviewerId];
-            // Reviewer.Name is a Str2Value; use .Value to get the string
-            return reviewer.Name.Value;
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-
-        return null;
     }
 }

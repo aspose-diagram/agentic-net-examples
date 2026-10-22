@@ -1,46 +1,86 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Vba;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Prompt for user credentials
-        Console.Write("Enter username: ");
-        string username = Console.ReadLine();
+        // Determine input and output file paths
+        string inputPath;
+        string outputPath;
 
-        Console.Write("Enter password: ");
-        string password = Console.ReadLine();
-
-        // Simple credential verification (replace with real logic as needed)
-        if (username != "admin" || password != "secret")
+        if (args.Length >= 2)
         {
-            Console.WriteLine("Invalid credentials. Operation aborted.");
+            inputPath = args[0];
+            outputPath = args[1];
+        }
+        else
+        {
+            Console.Write("Enter the path to the Visio file (macro-enabled .vsdm or .vsdx): ");
+            inputPath = Console.ReadLine()?.Trim();
+
+            Console.Write("Enter the desired output file path (e.g., output.vsdm): ");
+            outputPath = Console.ReadLine()?.Trim();
+        }
+
+        // Guard against missing input file
+        if (string.IsNullOrEmpty(inputPath) || !File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Paths to the input and output Visio files
-        string inputPath = "protected.vsdm";   // Visio file with VBA password protection
-        string outputPath = "unprotected.vsdm"; // Destination file without VBA protection
+        // Simple credential verification (hard‑coded for demonstration)
+        Console.Write("Enter username: ");
+        string username = Console.ReadLine()?.Trim();
+
+        Console.Write("Enter password: ");
+        string password = Console.ReadLine()?.Trim();
+
+        // Replace these with real credential checks as needed
+        const string validUser = "admin";
+        const string validPass = "password";
+
+        if (username != validUser || password != validPass)
+        {
+            Console.Error.WriteLine("Invalid credentials. Operation aborted.");
+            return;
+        }
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Remove all VBA project data (clears password protection)
-            diagram.VbProjectData = null;
+            // Check if a VBA project exists
+            if (diagram.VbaProject != null)
+            {
+                // Remove VBA project data (including any password protection)
+                // According to Aspose.Diagram guidelines, setting VbProjectData to null clears macros/VBA.
+                diagram.VbProjectData = null;
 
-            // Save the diagram in a macro‑enabled format
+                Console.WriteLine("VBA project data cleared successfully.");
+            }
+            else
+            {
+                Console.WriteLine("No VBA project found in the diagram.");
+            }
+
+            // Ensure the output directory exists
+            string outDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outDir) && !Directory.Exists(outDir))
+            {
+                Directory.CreateDirectory(outDir);
+            }
+
+            // Save the modified diagram in a macro‑enabled format
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
-
-            Console.WriteLine($"VBA password protection removed. File saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

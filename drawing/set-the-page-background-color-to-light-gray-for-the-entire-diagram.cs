@@ -1,77 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for input and output diagrams
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Determine the maximum existing page ID to assign a unique ID to the new background page
-            int maxPageId = 0;
-            foreach (Page p in diagram.Pages)
-            {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
-            }
-
-            // Create a new background page
-            Page backgroundPage = new Page();
-            backgroundPage.ID = maxPageId + 1;
-            backgroundPage.Name = "Background";
-            backgroundPage.Background = BOOL.True; // Mark as a background page
-
-            // Add the background page to the diagram
-            diagram.Pages.Add(backgroundPage);
-
-            // Use dimensions from the first foreground page (assumes at least one page exists)
-            Page referencePage = diagram.Pages[0];
-            double pageWidth = referencePage.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = referencePage.PageSheet.PageProps.PageHeight.Value;
-
-            // Add a rectangle shape that spans the entire page
-            // PinX and PinY are the center coordinates of the shape
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
-            long rectShapeId = backgroundPage.AddShape(pinX, pinY, pageWidth, pageHeight, "Rectangle", false);
-            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
-
-            // Set the rectangle fill to a solid light gray color
-            rectShape.Fill.FillPattern.Value = 1;               // Solid fill
-            rectShape.Fill.FillForegnd.Value = "#D3D3D3";       // Light gray (hex)
-
-            // Remove any outline
-            rectShape.Line.LinePattern.Value = 0;               // No line
-
-            // Ensure the background shape is behind all other content
-            rectShape.SendToBack();
-
-            // Assign the background page to all foreground pages
+            // Iterate over all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
-                if (page.Background != BOOL.True) // Skip the background page itself
-                {
-                    page.BackPage = backgroundPage;
-                }
+                // Retrieve page dimensions
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Calculate center position for the background rectangle
+                double centerX = pageWidth / 2.0;
+                double centerY = pageHeight / 2.0;
+
+                // Add a rectangle shape that spans the entire page
+                // The fourth argument 'false' indicates that the shape is not a calculation shape
+                long shapeId = page.AddShape(centerX, centerY, "Rectangle", false);
+                Shape backgroundShape = page.Shapes.GetShape(shapeId);
+
+                // Set the rectangle size to match the page size
+                backgroundShape.XForm.Width.Value = pageWidth;
+                backgroundShape.XForm.Height.Value = pageHeight;
+
+                // Set fill to solid light gray (hex #D3D3D3)
+                backgroundShape.Fill.FillPattern.Value = 1; // Solid fill
+                backgroundShape.Fill.FillForegnd.Value = "#D3D3D3";
+
+                // Optional: remove outline by setting line pattern to none
+                backgroundShape.Line.LinePattern.Value = 0;
             }
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            // Clean up
+            diagram.Dispose();
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

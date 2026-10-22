@@ -1,52 +1,84 @@
-using System.IO;
 using System;
+using System.IO;
+using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using System.Xml.Linq;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the Visio file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        Diagram diagram = null;
+
         try
         {
+            // Load the Visio diagram
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            // Log any loading errors
+            Console.Error.WriteLine($"Failed to load diagram '{diagramPath}': {ex.Message}");
+            return;
+        }
 
-            // Path to the Visio file
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all SolutionXML elements and validate their XML content
-            foreach (SolutionXML solXml in diagram.SolutionXMLs)
+        // Iterate through all SolutionXML elements and validate their XML content
+        foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+        {
+            try
             {
-                Console.WriteLine($"Processing SolutionXML: Name = '{solXml.Name}'");
-                try
+                // Attempt to parse the stored XML value
+                XDocument.Parse(solutionXml.XmlValue);
+                // If parsing succeeds, optionally log success
+                Console.WriteLine($"SolutionXML '{solutionXml.Name}' is well-formed.");
+            }
+            catch (Exception ex)
+            {
+                // Log detailed diagnostics for malformed XML
+                Console.Error.WriteLine($"Malformed SolutionXML detected:");
+                Console.Error.WriteLine($"  Name      : {solutionXml.Name}");
+                Console.Error.WriteLine($"  Error     : {ex.Message}");
+                // If the exception provides line info, include it
+                if (ex is System.Xml.XmlException xmlEx)
                 {
-                    // Attempt to parse the XML value
-                    XDocument xmlDoc = XDocument.Parse(solXml.XmlValue);
-                    // If needed, further validation logic can be added here
-                    Console.WriteLine("  XML is well-formed.");
-                }
-                catch (Exception ex)
-                {
-                    // Log detailed diagnostics for malformed XML
-                    Console.WriteLine($"  ERROR: Malformed XML detected in SolutionXML '{solXml.Name}'.");
-                    Console.WriteLine($"  Exception Message: {ex.Message}");
-                    Console.WriteLine($"  StackTrace: {ex.StackTrace}");
-                    // Optionally, you could decide to remove or fix the malformed entry here
+                    Console.Error.WriteLine($"  Line      : {xmlEx.LineNumber}, Position: {xmlEx.LinePosition}");
                 }
             }
-
-            // Save the diagram (even if no changes were made) to demonstrate proper save usage
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+
+        // Example: add a new well-formed SolutionXML element (optional)
+        try
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            var newSolutionXml = new SolutionXML
+            {
+                Name = "ExampleSolution",
+                XmlValue = "<Root><Data>Sample</Data></Root>"
+            };
+            diagram.SolutionXMLs.Add(newSolutionXml);
+            // Save the updated diagram to a new file
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "Updated_" + Path.GetFileName(diagramPath));
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with new SolutionXML to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error while adding or saving new SolutionXML: {ex.Message}");
         }
     }
 }

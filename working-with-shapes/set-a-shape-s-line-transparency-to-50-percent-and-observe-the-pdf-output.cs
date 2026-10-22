@@ -7,21 +7,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure the required arguments are provided: input Visio file and output PDF file.
+        // Expect two arguments: input Visio file path and output PDF file path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
             return;
         }
 
-        // Assign input and output paths from command‑line arguments.
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify the input Visio file exists before proceeding.
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -30,43 +29,49 @@ class Program
             // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page of the diagram (index 0).
-            Page page = diagram.Pages[0];
-
-            // Find the first shape on the page; iterate to obtain a shape instance.
-            Shape? targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Verify that the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                targetShape = shape;
-                break; // only need the first shape.
-            }
-
-            // Guard: ensure a shape was found before attempting modifications.
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No shapes found on the first page.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Set the line transparency (LineColorTrans) to 50 percent.
-            // The value is a percentage (0‑100) where 0 = opaque, 100 = fully transparent.
+            // Retrieve the first page in the diagram.
+            Page page = diagram.Pages[0];
+
+            // Locate the first non-deleted shape on the page.
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip shapes that are marked as deleted.
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No visible shape found on the page.");
+                return;
+            }
+
+            // Set the line transparency of the shape to 50 percent.
+            // The value is a percentage (0 = opaque, 100 = fully transparent).
             targetShape.Line.LineColorTrans.Value = 50;
 
-            // Prepare PDF save options; set a default font to avoid missing‑font warnings.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                DefaultFont = "Arial"
-            };
+            // Configure PDF save options (default settings are sufficient for this task).
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Save the modified diagram as a PDF to the specified output path.
+            // Save the modified diagram as a PDF file.
             diagram.Save(outputPath, pdfOptions);
 
-            // Inform the user that the operation completed successfully.
-            Console.WriteLine($"PDF saved to: {outputPath}");
+            Console.WriteLine($"PDF successfully saved to '{outputPath}' with line transparency set to 50%.");
         }
         catch (Exception ex)
         {
-            // Write any exceptions that occur during processing to the error stream.
+            // Output any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

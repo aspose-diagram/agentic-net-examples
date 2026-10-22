@@ -6,42 +6,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the Visio file path: use first argument or prompt the user.
-        string visioPath = args.Length > 0 ? args[0] : "";
-        if (string.IsNullOrWhiteSpace(visioPath))
+        // Verify that a file path argument was provided
+        if (args.Length == 0)
         {
-            Console.Write("Enter the full path to the Visio file: ");
-            visioPath = Console.ReadLine()?.Trim() ?? "";
-        }
-
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine("Error: No input file path specified.");
             return;
         }
 
-        Diagram diagram = null;
+        string inputPath = args[0];
+
+        // Guard: ensure the specified Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found at path '{inputPath}'.");
+            return;
+        }
+
         try
         {
-            // Load the Visio file into a Diagram object.
-            diagram = new Diagram(visioPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Verify that the diagram object was initialized and contains pages
+                if (diagram == null)
+                {
+                    Console.Error.WriteLine("Error: Diagram object is null after loading.");
+                    return;
+                }
+
+                // Access the Pages collection to confirm successful load
+                int pageCount = diagram.Pages.Count;
+
+                if (pageCount == 0)
+                {
+                    Console.Error.WriteLine("Error: Diagram loaded but contains no pages.");
+                }
+                else
+                {
+                    Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
+                }
+            }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading.
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Verify that the Diagram object was initialized and contains at least one page.
-        if (diagram != null && diagram.Pages != null && diagram.Pages.Count > 0)
-        {
-            Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-        }
-        else
-        {
-            Console.Error.WriteLine("Diagram loaded but contains no pages.");
+            // Output any exceptions that occur during loading
+            Console.Error.WriteLine($"Exception occurred while loading diagram: {ex.Message}");
         }
     }
 }

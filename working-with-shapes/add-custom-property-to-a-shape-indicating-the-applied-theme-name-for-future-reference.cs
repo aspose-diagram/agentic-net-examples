@@ -1,49 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Theme name that was applied (hard‑coded for this example)
-            string themeName = "Bubble";
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Create a custom property to store the theme name
-                    Prop themeProp = new Prop();
-                    themeProp.Name = "AppliedTheme";
-                    themeProp.Label.Value = "Applied Theme";
-                    themeProp.Value.Val = themeName;
-                    themeProp.Type.Value = TypePropValue.String;
-
-                    // Add the custom property to the shape
-                    shape.Props.Add(themeProp);
-                }
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            Page page = diagram.Pages[0];
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
 
+            // Get the first shape on the first page
+            Shape shape = page.Shapes[0];
+
+            // Define the theme name to apply (example value)
+            string themeName = "MyCustomTheme";
+
+            // Apply a preset theme to the shape (write‑only property)
+            // Note: PresetTheme is write‑only; we cannot read it back.
+            // The actual enum/value depends on the Visio theme you want.
+            // Here we simply demonstrate setting a theme identifier.
+            // shape.PresetTheme = PresetThemeValue.Theme1; // Uncomment and set appropriate enum if needed
+
+            // Add a custom property to store the applied theme name
+            Prop customProp = new Prop();
+            customProp.Name = "AppliedTheme";               // Property name
+            customProp.Value.Val = themeName;               // Property value (the theme name)
+            customProp.Label.Value = "Applied Theme";       // Human‑readable label
+            customProp.Type.Value = TypePropValue.String;  // Data type of the property
+
+            // Add the custom property to the shape's property collection
+            shape.Props.Add(customProp);
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -7,57 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Expect two arguments: input Visio file path and output PDF file path.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
-        // Output PDF file path
-        string outputPath = "output.pdf";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first shape on the first page
-            Shape targetShape = null;
-            foreach (Shape shape in diagram.Pages[0].Shapes)
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                targetShape = shape;
-                break; // only need the first shape
-            }
-
-            // Guard: ensure a shape was found
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No shape found in the diagram.");
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
                 return;
             }
 
-            // Set the rotation type to Perspective to enable Y‑axis rotation
-            targetShape.ThreeDFormat.RotationType.Value = RotationTypeValue.Perspective;
+            // Get the first page.
+            Page page = diagram.Pages[0];
 
-            // Adjust the Y‑axis rotation (perspective angle) to 30 degrees
-            targetShape.ThreeDFormat.RotationYAngle.Value = 30;
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("Error: First page contains no shapes.");
+                return;
+            }
 
-            // Configure PDF save options (set a default font for safety)
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes[0];
+
+            // Adjust the perspective angle to 30 degrees.
+            // Perspective is a double value representing the angle.
+            shape.ThreeDFormat.Perspective.Value = 30.0;
+
+            // Prepare PDF save options.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
 
-            // Export the diagram to PDF with the modified shape
+            // Save the modified diagram as PDF.
             diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"PDF exported successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved to PDF successfully: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,65 +1,87 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace PageSizeExport
+class Program
 {
-    // DTO for JSON serialization
-    public class PageInfo
+    static void Main(string[] args)
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare a list to hold page size information
+            var pageInfos = new List<PageInfo>();
+
+            // Iterate through all pages in the diagram
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page identifier and name
+                int pageId = page.ID;
+                string pageName = page.Name;
+
+                // Retrieve page width and height (values are in inches)
+                double width = page.PageSheet.PageProps.PageWidth.Value;
+                double height = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Add the collected information to the list
+                pageInfos.Add(new PageInfo
+                {
+                    PageId = pageId,
+                    Name = pageName,
+                    WidthInches = width,
+                    HeightInches = height
+                });
+            }
+
+            // Serialize the list to JSON with indentation for readability
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(pageInfos, jsonOptions);
+
+            // Ensure the output directory exists
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Write JSON to the specified output file
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"Page size information successfully written to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+
+    // Helper class to represent page size information
+    private class PageInfo
+    {
+        public int PageId { get; set; }
+        public string Name { get; set; }
         public double WidthInches { get; set; }
         public double HeightInches { get; set; }
-    }
-
-    public class Program
-    {
-        public static void Main()
-        {
-            try
-            {
-
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Collect page size information
-                List<PageInfo> pages = new List<PageInfo>();
-                foreach (Page page in diagram.Pages)
-                {
-                    PageInfo info = new PageInfo
-                    {
-                        Id = page.ID,
-                        Name = page.Name,
-                        WidthInches = page.PageSheet.PageProps.PageWidth.Value,
-                        HeightInches = page.PageSheet.PageProps.PageHeight.Value
-                    };
-                    pages.Add(info);
-                }
-
-                // Serialize to JSON
-                JsonSerializerOptions options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-                string json = JsonSerializer.Serialize(pages, options);
-
-                // Output JSON to a file
-                string outputPath = "pageSizes.json";
-                File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"Page size information has been written to {outputPath}");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
     }
 }

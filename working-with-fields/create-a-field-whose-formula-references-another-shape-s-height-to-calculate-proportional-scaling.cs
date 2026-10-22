@@ -1,60 +1,111 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // -----------------------------------------------------------------
+                // Locate the source shape whose Height will be referenced.
+                // Assumes the shape has a unique NameU of "SourceShape".
+                // -----------------------------------------------------------------
+                Shape sourceShape = null;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU == "SourceShape")
+                        {
+                            sourceShape = shape;
+                            break;
+                        }
+                    }
+                    if (sourceShape != null) break;
+                }
 
-            // Create a new diagram
-            Diagram diagram = new Diagram();
+                if (sourceShape == null)
+                {
+                    Console.Error.WriteLine("Source shape 'SourceShape' not found.");
+                    return;
+                }
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+                // -----------------------------------------------------------------
+                // Locate the target shape where the custom field will be added.
+                // Assumes the shape has a unique NameU of "TargetShape".
+                // -----------------------------------------------------------------
+                Shape targetShape = null;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU == "TargetShape")
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    if (targetShape != null) break;
+                }
 
-            // Add the first rectangle shape (the one that will contain the field)
-            double pinX1 = 2.0;
-            double pinY1 = 2.0;
-            double width1 = 1.0;
-            double height1 = 1.0;
-            string masterName = "Rectangle";
-            long shapeId1 = page.AddShape(pinX1, pinY1, width1, height1, masterName, false);
-            Shape shape1 = page.Shapes.GetShape((int)shapeId1);
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine("Target shape 'TargetShape' not found.");
+                    return;
+                }
 
-            // Add a second rectangle shape whose Height will be referenced
-            double pinX2 = 5.0;
-            double pinY2 = 2.0;
-            double width2 = 1.0;
-            double height2 = 2.0; // arbitrary height
-            long shapeId2 = page.AddShape(pinX2, pinY2, width2, height2, masterName, false);
-            Shape shape2 = page.Shapes.GetShape((int)shapeId2);
+                // -----------------------------------------------------------------
+                // Create a new text insertion field on the target shape.
+                // The field's formula references the Height of the source shape
+                // and scales it by 0.5 (i.e., half the source height).
+                // -----------------------------------------------------------------
+                Field field = new Field();
 
-            // Give the reference shape a universal name for formula usage
-            shape2.NameU = "ReferenceShape";
+                // Set the field type to Undefined (generic formula field)
+                field.Type.Value = TypeFieldValue.Undefined;
 
-            // Create a new field on shape1
-            Field field = new Field();
+                // Ensure the unit is undefined (default)
+                field.Value.Ufev.Unit = MeasureConst.Undefined;
 
-            // Set the formula to reference the Height cell of the second shape
-            field.Value.Ufev.F = "Height of shape \"ReferenceShape\"";
+                // Build the formula string referencing the source shape's Height
+                field.Value.Ufev.F = "Height of SourceShape * 0.5";
 
-            // Optional: set an initial display value
-            field.Value.Val = "0";
+                // Add the field to the target shape's Fields collection
+                targetShape.Fields.Add(field);
 
-            // Add the field to shape1
-            shape1.Fields.Add(field);
-
-            // Save the diagram
-            diagram.Save("ProportionalScaling.vsdx", SaveFileFormat.Vsdx);
-
+                // -----------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

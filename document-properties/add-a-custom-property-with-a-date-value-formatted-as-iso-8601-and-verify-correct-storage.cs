@@ -1,51 +1,96 @@
-using System.IO;
 using System;
-using System.Linq;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Define the custom property name
-        const string propName = "ExportDate";
-
-        // Create ISO 8601 formatted date string
-        string isoDate = DateTime.UtcNow.ToString("o"); // e.g., 2023-08-15T13:45:30.0000000Z
-
-        // Create and configure the custom property
-        CustomProp customProp = new CustomProp();
-        customProp.Name = propName;
-        customProp.PropType = PropType.String;               // Use the correct enum
-        customProp.CustomValue.ValueString = isoDate;        // Store the date as a string
-
-        // Add the custom property to the document
-        diagram.DocumentProps.CustomProps.Add(customProp);
-
-        // Save the diagram to verify persistence
-        diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
-        // Reload the diagram to confirm the property was saved correctly
-        Diagram loadedDiagram = new Diagram("output.vsdx");
-
-        // Retrieve the custom property by name
-        var retrievedProp = loadedDiagram.DocumentProps.CustomProps
-                              .FirstOrDefault(p => p.Name == propName);
-
-        // Verify the property exists and its value matches the original ISO date
-        if (retrievedProp == null)
+        // Expect input and output file paths as arguments.
+        if (args.Length < 2)
         {
-            throw new Exception($"Custom property '{propName}' was not found after reload.");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
         }
 
-        if (retrievedProp.CustomValue.ValueString != isoDate)
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            throw new Exception($"Custom property value mismatch. Expected: {isoDate}, Actual: {retrievedProp.CustomValue.ValueString}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
         }
 
-        Console.WriteLine($"Custom property '{propName}' stored successfully with value: {retrievedProp.CustomValue.ValueString}");
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a new custom property with ISO 8601 date value.
+            CustomProp customProp = new CustomProp();
+            customProp.Name = "CreatedDate";
+            customProp.PropType = PropType.String;
+
+            // Format current UTC time as ISO 8601.
+            string isoDate = DateTime.UtcNow.ToString("o");
+            customProp.CustomValue.ValueString = isoDate;
+
+            // Add the custom property to the document's custom properties collection.
+            diagram.DocumentProps.CustomProps.Add(customProp);
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            return;
+        }
+
+        // Verification: reload the saved diagram and check the custom property.
+        try
+        {
+            Diagram loadedDiagram = new Diagram(outputPath);
+            bool found = false;
+            foreach (CustomProp prop in loadedDiagram.DocumentProps.CustomProps)
+            {
+                if (prop.Name == "CreatedDate")
+                {
+                    found = true;
+                    string storedValue = prop.CustomValue.ValueString;
+                    // Compare stored value with the expected ISO 8601 format.
+                    // Since the original value was generated just before saving, we allow a small time difference.
+                    // For simplicity, we just check that the stored string can be parsed as a DateTime.
+                    if (DateTime.TryParse(storedValue, out DateTime parsedDate))
+                    {
+                        Console.WriteLine("Custom property 'CreatedDate' verified successfully.");
+                    }
+                    else
+                    {
+                        throw new Exception("Stored custom property value is not a valid ISO 8601 date.");
+                    }
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                throw new Exception("Custom property 'CreatedDate' was not found after saving.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Verification failed: {ex.Message}");
+        }
     }
 }

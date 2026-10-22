@@ -3,114 +3,154 @@ using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Folder containing Visio files (change as needed)
-        string inputFolder = @"C:\VisioFiles";
-        // Verify the input folder exists
-        if (!Directory.Exists(inputFolder))
+        // Validate arguments: at least one input file and one output PDF path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Folder not found: {inputFolder}");
+            Console.Error.WriteLine("Usage: Program.exe <output.pdf> <input1.vsdx> [<input2.vsdx> ...]");
             return;
         }
 
-        // Output PDF file
-        string outputPdfPath = @"C:\Output\CombinedShapes.pdf";
+        string outputPdfPath = args[0];
+        string[] inputFiles = new string[args.Length - 1];
+        Array.Copy(args, 1, inputFiles, 0, inputFiles.Length);
 
-        // Collect temporary image file paths
-        List<string> imageFiles = new List<string>();
-
-        // Process each Visio file in the folder
-        foreach (string visioPath in Directory.GetFiles(inputFolder, "*.vsdx"))
+        // Guard for output directory existence
+        string outputDir = Path.GetDirectoryName(outputPdfPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
         {
-            // Verify the Visio file exists (should always be true from GetFiles, but guard per rules)
-            if (!File.Exists(visioPath))
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Verify each input file exists
+        foreach (string filePath in inputFiles)
+        {
+            if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found: {visioPath}");
-                continue;
-            }
-
-            try
-            {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Export the shape to a PNG image
-                        string tempImagePath = Path.Combine(Path.GetTempPath(),
-                            Guid.NewGuid().ToString() + ".png");
-
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        shape.ToImage(tempImagePath, imgOptions);
-                        imageFiles.Add(tempImagePath);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Log any errors that occur while processing a Visio file
-                Console.Error.WriteLine($"Error processing '{visioPath}': {ex.Message}");
+                Console.Error.WriteLine($"Input file not found: {filePath}");
+                return;
             }
         }
 
+        // Create a temporary folder for shape images
+        string tempImageFolder = Path.Combine(Path.GetTempPath(), "VisioShapeImages_" + Guid.NewGuid().ToString("N"));
         try
         {
-            // Create a new PDF document using fully qualified Aspose.Pdf types
+            Directory.CreateDirectory(tempImageFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create temporary folder: {ex.Message}");
+            return;
+        }
+
+        // List to hold all generated image file paths
+        List<string> allImagePaths = new List<string>();
+
+        // Process each Visio file
+        foreach (string visioPath in inputFiles)
+        {
+            try
+            {
+                // Load diagram inside a using block as required
+                using (Diagram diagram = new Diagram(visioPath))
+                {
+                    int pageIndex = 0;
+                    // Iterate through pages
+                    foreach (Page page in diagram.Pages)
+                    {
+                        pageIndex++;
+                        // Iterate through shapes on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Build a unique image file name for each shape
+                            string imageFileName = $"{Path.GetFileNameWithoutExtension(visioPath)}_Page{pageIndex}_Shape{shape.ID}.png";
+                            string imagePath = Path.Combine(tempImageFolder, imageFileName);
+
+                            try
+                            {
+                                // Export shape to PNG image
+                                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                                shape.ToImage(imagePath, imgOptions);
+                                allImagePaths.Add(imagePath);
+                            }
+                            catch (Exception imgEx)
+                            {
+                                Console.Error.WriteLine($"Failed to export shape ID {shape.ID} from '{visioPath}' (Page {pageIndex}): {imgEx.Message}");
+                                // Continue with next shape
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception diagEx)
+            {
+                Console.Error.WriteLine($"Failed to process Visio file '{visioPath}': {diagEx.Message}");
+                // Continue with next file
+            }
+        }
+
+        // Create PDF document and add each image as a separate page
+        try
+        {
+            // Fully qualified Aspose.Pdf types are used to avoid namespace conflicts
             Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
 
-            // Add each image as a separate page
-            foreach (string imgPath in imageFiles)
+            foreach (string imgPath in allImagePaths)
             {
-                // Add a new page
-                Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
+                // Load image to obtain its dimensions
+                using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(imgPath))
+                {
+                    // Add a new page to the PDF
+                    Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
 
-                // Create an image object and set its source file
-                Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
-                pdfImage.File = imgPath;
+                    // Set page size to match image dimensions (points: 1 point = 1/72 inch, but using pixel size directly)
+                    pdfPage.PageInfo.Width = img.Width;
+                    pdfPage.PageInfo.Height = img.Height;
 
-                // Fit the image to the page dimensions
-                pdfImage.FixWidth = pdfPage.PageInfo.Width;
-                pdfImage.FixHeight = pdfPage.PageInfo.Height;
+                    // Create PDF image object and attach the file
+                    Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
+                    pdfImage.File = imgPath;
 
-                // Add the image to the page
-                pdfPage.Paragraphs.Add(pdfImage);
+                    // Add the image to the page's paragraphs collection
+                    pdfPage.Paragraphs.Add(pdfImage);
+                }
             }
 
             // Save the combined PDF
             pdfDoc.Save(outputPdfPath);
         }
-        catch (Exception ex)
+        catch (Exception pdfEx)
         {
-            // Log any errors that occur during PDF creation
-            Console.Error.WriteLine($"Error creating PDF: {ex.Message}");
+            Console.Error.WriteLine($"Failed to create PDF '{outputPdfPath}': {pdfEx.Message}");
+            // Cleanup temporary images before exiting
+            CleanupTempFolder(tempImageFolder);
             return;
         }
 
-        // Clean up temporary image files
-        foreach (string imgPath in imageFiles)
+        // Cleanup temporary images
+        CleanupTempFolder(tempImageFolder);
+    }
+
+    // Helper method to delete temporary folder and its contents
+    private static void CleanupTempFolder(string folderPath)
+    {
+        try
         {
-            try
+            if (Directory.Exists(folderPath))
             {
-                File.Delete(imgPath);
-            }
-            catch
-            {
-                // Ignore any errors during cleanup
+                Directory.Delete(folderPath, true);
             }
         }
-
-        Console.WriteLine($"PDF created successfully at: {outputPdfPath}");
+        catch (Exception cleanupEx)
+        {
+            Console.Error.WriteLine($"Failed to clean up temporary folder '{folderPath}': {cleanupEx.Message}");
+        }
     }
 }

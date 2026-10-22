@@ -1,75 +1,97 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramMemoryProfiling
+class Program
 {
-    // Callback to profile memory usage for each page during PDF export
-    public class MemoryProfilingCallback : IPageSavingCallback
+    static void Main(string[] args)
     {
-        private long _pageStartMemory;
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            return;
+        }
 
-        // Called before a page starts rendering
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Lists to store memory usage before and after each page is saved.
+        List<long> memoryBeforePage = new List<long>();
+        List<long> memoryAfterPage = new List<long>();
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create PDF save options and assign the custom page‑saving callback.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new PageMemoryProfiler(memoryBeforePage, memoryAfterPage);
+
+            // Record total memory before the conversion starts.
+            long totalMemoryBefore = GC.GetTotalMemory(true);
+            Console.WriteLine($"Total memory before conversion: {totalMemoryBefore} bytes");
+
+            // Perform the conversion to PDF. The callback will be invoked per page.
+            diagram.Save(outputPath, pdfOptions);
+
+            // Record total memory after the conversion completes.
+            long totalMemoryAfter = GC.GetTotalMemory(true);
+            Console.WriteLine($"Total memory after conversion: {totalMemoryAfter} bytes");
+
+            // Output per‑page memory profiling results.
+            for (int i = 0; i < memoryBeforePage.Count; i++)
+            {
+                long before = memoryBeforePage[i];
+                long after = memoryAfterPage[i];
+                Console.WriteLine($"Page {i + 1}: Memory before = {before} bytes, after = {after} bytes, delta = {after - before} bytes");
+            }
+
+            Console.WriteLine("Diagram conversion completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+        }
+    }
+
+    // Custom implementation of IPageSavingCallback to profile memory usage per page.
+    private class PageMemoryProfiler : IPageSavingCallback
+    {
+        private readonly List<long> _before;
+        private readonly List<long> _after;
+
+        public PageMemoryProfiler(List<long> before, List<long> after)
+        {
+            _before = before;
+            _after = after;
+        }
+
+        // Called before a page starts saving.
         public void PageStartSaving(PageStartSavingArgs args)
         {
-            // Ensure a clean state before measuring
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-            _pageStartMemory = GC.GetTotalMemory(true);
-            Console.WriteLine($"[Start] Page {args.PageIndex + 1}/{args.PageCount} - Memory: {(_pageStartMemory / 1024.0 / 1024.0):F2} MB");
+            long mem = GC.GetTotalMemory(true);
+            _before.Add(mem);
+            Console.WriteLine($"Starting page {args.PageIndex + 1} of {args.PageCount}. Memory: {mem} bytes");
         }
 
-        // Called after a page has been rendered
+        // Called after a page has been saved.
         public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Force garbage collection again for accurate measurement
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-            long endMemory = GC.GetTotalMemory(true);
-            long delta = endMemory - _pageStartMemory;
-
-            Console.WriteLine($"[End]   Page {args.PageIndex + 1}/{args.PageCount} - Memory: { (endMemory / 1024.0 / 1024.0):F2} MB (Δ { (delta / 1024.0 / 1024.0):F2} MB)");
-
-            // Example: stop processing if memory usage exceeds a threshold
-            // if (endMemory > 500 * 1024 * 1024) args.HasMorePages = false;
+            long mem = GC.GetTotalMemory(true);
+            _after.Add(mem);
+            Console.WriteLine($"Finished page {args.PageIndex + 1} of {args.PageCount}. Memory: {mem} bytes");
         }
-    }
-
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            try
-            {
-
-                // Input Visio file (large diagram)
-                string inputPath = "largeDiagram.vsdx";
-
-                // Output PDF file
-                string outputPath = "largeDiagram.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Configure PDF save options with the memory profiling callback
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                pdfOptions.PageSavingCallback = new MemoryProfilingCallback();
-
-                // Save the diagram to PDF while profiling memory per page
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Conversion completed.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
     }
 }

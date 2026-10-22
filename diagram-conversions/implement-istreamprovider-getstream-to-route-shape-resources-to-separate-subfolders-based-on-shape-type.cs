@@ -3,87 +3,118 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramHtmlExport
+class CustomStreamProvider : IStreamProvider
 {
-    // Custom stream provider to route shape resources into subfolders based on file type.
-    public class ShapeResourceStreamProvider : IStreamProvider
+    private readonly string _basePath;
+
+    // Constructor receives the base output directory where subfolders will be created.
+    public CustomStreamProvider(string basePath)
     {
-        // Called before a resource stream is needed.
-        public void InitStream(StreamProviderOptions options)
-        {
-            // Determine the folder based on the resource file extension.
-            string extension = Path.GetExtension(options.DefaultPath).ToLowerInvariant();
-            string subFolder;
-
-            switch (extension)
-            {
-                case ".png":
-                case ".jpg":
-                case ".jpeg":
-                case ".gif":
-                case ".bmp":
-                    subFolder = "images";
-                    break;
-                case ".svg":
-                    subFolder = "svgs";
-                    break;
-                case ".css":
-                    subFolder = "styles";
-                    break;
-                case ".js":
-                    subFolder = "scripts";
-                    break;
-                default:
-                    subFolder = "resources";
-                    break;
-            }
-
-            // Build the full path: <output directory>/<subFolder>/<file name>
-            string outputDirectory = Path.GetDirectoryName(options.DefaultPath);
-            string targetDirectory = Path.Combine(outputDirectory, subFolder);
-            Directory.CreateDirectory(targetDirectory); // Ensure the folder exists.
-
-            string targetPath = Path.Combine(targetDirectory, Path.GetFileName(options.DefaultPath));
-
-            // Assign a writable file stream to the options.
-            options.Stream = new FileStream(targetPath, FileMode.Create, FileAccess.Write);
-        }
-
-        // Called after the resource has been written.
-        public void CloseStream(StreamProviderOptions options)
-        {
-            if (options.Stream != null)
-            {
-                options.Stream.Dispose();
-                options.Stream = null;
-            }
-        }
+        _basePath = basePath;
     }
 
-    class Program
+    // Called before a resource stream is created. No special initialization needed here.
+    public void InitStream(StreamProviderOptions options)
     {
-        static void Main()
+        // No initialization required for this implementation.
+    }
+
+    // Called after a resource stream is closed. No special cleanup needed here.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // No cleanup required for this implementation.
+    }
+
+    // Provides a writable stream for each resource (image, shape, etc.) during HTML export.
+    public Stream GetStream(StreamProviderOptions options)
+    {
+        // The DefaultPath property contains the original file name (e.g., "image1.png").
+        string fileName = Path.GetFileName(options.DefaultPath);
+        string extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+        // Determine subfolder based on file type.
+        string subFolder = "Resources";
+        if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".gif" || extension == ".bmp")
+        {
+            subFolder = "Images";
+        }
+        else if (extension == ".svg")
+        {
+            subFolder = "Shapes";
+        }
+
+        // Ensure the target directory exists.
+        string targetDir = Path.Combine(_basePath, subFolder);
+        Directory.CreateDirectory(targetDir);
+
+        // Full path for the resource file.
+        string fullPath = Path.Combine(targetDir, fileName);
+
+        // Create the file stream for writing.
+        FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+        // Assign the stream back to options (required by the interface contract).
+        options.Stream = stream;
+
+        return stream;
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Expect two arguments: input Visio file path and output directory.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputDirectory>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputDir = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output directory exists (create if necessary).
+        if (!Directory.Exists(outputDir))
         {
             try
             {
-
-                // Load an existing Visio diagram.
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Configure HTML export options and assign the custom stream provider.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.StreamProvider = new ShapeResourceStreamProvider();
-
-                // Export the diagram to HTML. Resources will be placed in subfolders.
-                diagram.Save("output.html", htmlOptions);
-
-                Console.WriteLine("HTML export completed with resources organized into subfolders.");
-
+                Directory.CreateDirectory(outputDir);
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
             }
-    }
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML export options with the custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new CustomStreamProvider(outputDir);
+
+            // Define the main HTML file path.
+            string htmlOutputPath = Path.Combine(outputDir, "output.html");
+
+            // Save the diagram as HTML using the configured options.
+            diagram.Save(htmlOutputPath, htmlOptions);
+
+            Console.WriteLine($"HTML export completed successfully: {htmlOutputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

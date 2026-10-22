@@ -8,37 +8,55 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Expect two arguments: input Visio file path and output PDF file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputPath);
-
             // Create an InterruptMonitor instance
             InterruptMonitor monitor = new InterruptMonitor();
 
-            // Set up a timer that will trigger an interrupt after 5 seconds
-            using (Timer timer = new Timer(_ => monitor.Interrupt(), null, TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan))
+            // Start a background thread that will interrupt after 5 seconds
+            Thread interruptThread = new Thread(() =>
             {
-                // Assign the monitor to the diagram to enable interruption during conversion
-                diagram.InterruptMonitor = monitor;
+                // Wait for 5 seconds (5000 milliseconds)
+                Thread.Sleep(5000);
+                // Trigger interruption
+                monitor.Interrupt();
+            });
+            interruptThread.IsBackground = true;
+            interruptThread.Start();
 
-                // Configure PDF save options (optional settings can be added here)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Save the diagram as PDF; the timer will interrupt if the operation exceeds 5 seconds
-                diagram.Save("output.pdf", pdfOptions);
-            }
+            // Assign the monitor to the diagram to enable interruption during conversion
+            diagram.InterruptMonitor = monitor;
+
+            // Configure PDF save options (optional settings can be added here)
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+            // Perform the PDF conversion
+            diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

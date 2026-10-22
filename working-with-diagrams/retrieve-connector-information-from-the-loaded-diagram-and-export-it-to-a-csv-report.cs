@@ -1,75 +1,68 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command-line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Guard against empty output path
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            Console.Error.WriteLine("Output CSV path is empty.");
+            return;
+        }
+
         try
         {
-
-            // Path to the Visio file to be processed
-            string inputPath = "input.vsdx";
-
-            // Path where the CSV report will be saved
-            string csvPath = "connectors_report.csv";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a CSV file and write the header
-            using (StreamWriter writer = new StreamWriter(csvPath))
+            // Prepare CSV lines with header
+            List<string> csvLines = new List<string>();
+            csvLines.Add("PageName,FromShapeID,ToShapeID");
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                writer.WriteLine("PageName,ConnectorID,FromShapeID,FromShapeName,ToShapeID,ToShapeName");
+                // Retrieve page name (fallback to empty string if null)
+                string pageName = page.NameU ?? string.Empty;
 
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                // Iterate through each connector (Connect) on the page
+                foreach (Connect connect in page.Connects)
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Identify connector shapes (1‑D shapes)
-                        if (shape.OneD)
-                        {
-                            long connectorId = shape.ID;
-
-                            // Retrieve IDs of shapes connected to this connector
-                            long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
-
-                            // A valid connector should have exactly two connected shapes
-                            if (connectedIds.Length >= 2)
-                            {
-                                Shape fromShape = page.Shapes.GetShape(connectedIds[0]);
-                                Shape toShape   = page.Shapes.GetShape(connectedIds[1]);
-
-                                // Write a CSV line with escaped values
-                                writer.WriteLine(
-                                    $"{Escape(page.Name)},{connectorId},{fromShape.ID},{Escape(fromShape.Name)},{toShape.ID},{Escape(toShape.Name)}");
-                            }
-                        }
-                    }
+                    // Build CSV line: page name, source shape ID, target shape ID
+                    string line = $"{pageName},{connect.FromSheet},{connect.ToSheet}";
+                    csvLines.Add(line);
                 }
             }
 
-            Console.WriteLine($"Connector report saved to: {csvPath}");
-
+            // Write all CSV lines to the specified output file
+            File.WriteAllLines(outputPath, csvLines);
+            Console.WriteLine($"Connector report saved to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper method to escape CSV fields containing commas, quotes, or line breaks
-    static string Escape(string value)
-    {
-        if (value == null) return string.Empty;
-        if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
-        {
-            value = value.Replace("\"", "\"\"");
-            return $"\"{value}\"";
-        }
-        return value;
     }
 }

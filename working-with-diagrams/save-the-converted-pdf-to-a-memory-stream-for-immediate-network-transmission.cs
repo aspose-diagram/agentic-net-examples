@@ -1,38 +1,52 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-
-public class DiagramToPdfConverter
-{
-    /// <summary>
-    /// Loads a Visio diagram from the specified file path,
-    /// converts it to PDF, and returns the PDF data in a MemoryStream.
-    /// The stream is positioned at the beginning for immediate transmission.
-    /// </summary>
-    /// <param name="diagramPath">Full path to the source Visio file.</param>
-    /// <returns>MemoryStream containing the PDF representation of the diagram.</returns>
-    public static MemoryStream ConvertDiagramToPdf(string diagramPath)
-    {
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(diagramPath);
-
-        // Prepare a memory stream to receive the PDF output
-        MemoryStream pdfStream = new MemoryStream();
-
-        // Save the diagram as PDF directly into the memory stream
-        diagram.Save(pdfStream, SaveFileFormat.Pdf);
-
-        // Reset the stream position so it can be read from the start
-        pdfStream.Position = 0;
-
-        return pdfStream;
-    }
-}
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // See classes above
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Create a memory stream to hold the PDF output
+                using (MemoryStream pdfStream = new MemoryStream())
+                {
+                    // Save the diagram as PDF directly into the memory stream
+                    diagram.Save(pdfStream, SaveFileFormat.Pdf);
+
+                    // Reset stream position for any subsequent reading/transmission
+                    pdfStream.Position = 0;
+
+                    // Example output: report the size of the generated PDF
+                    Console.WriteLine($"PDF successfully saved to memory stream. Size: {pdfStream.Length} bytes.");
+
+                    // At this point, pdfStream can be sent over the network as needed.
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

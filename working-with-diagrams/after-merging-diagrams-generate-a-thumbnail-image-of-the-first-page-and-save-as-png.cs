@@ -1,44 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: first diagram path, second diagram path, output PNG thumbnail path.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <firstDiagram.vsdx> <secondDiagram.vsdx> <outputThumbnail.png>");
+            return;
+        }
+
+        string firstDiagramPath = args[0];
+        string secondDiagramPath = args[1];
+        string outputPngPath = args[2];
+
+        // Guard: ensure input files exist.
+        if (!File.Exists(firstDiagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {firstDiagramPath}");
+            return;
+        }
+        if (!File.Exists(secondDiagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {secondDiagramPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths of the diagrams to be merged.
-            string[] diagramPaths = { "Diagram1.vsdx", "Diagram2.vsdx", "Diagram3.vsdx" };
-
-            // Load the first diagram – it will become the target diagram.
-            Diagram mergedDiagram = new Diagram(diagramPaths[0]);
-
-            // Load each subsequent diagram and combine it into the target.
-            for (int i = 1; i < diagramPaths.Length; i++)
+            // Load the first diagram.
+            using (Diagram mergedDiagram = new Diagram(firstDiagramPath))
             {
-                Diagram sourceDiagram = new Diagram(diagramPaths[i]);
-                mergedDiagram.Combine(sourceDiagram);
+                // Load the second diagram and merge it into the first.
+                using (Diagram secondDiagram = new Diagram(secondDiagramPath))
+                {
+                    mergedDiagram.Combine(secondDiagram);
+                }
+
+                // Prepare image save options for PNG thumbnail.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Export only the first page.
+                pngOptions.PageIndex = 0;
+                pngOptions.PageCount = 1;
+                // Do not export hidden pages.
+                pngOptions.ExportHiddenPage = false;
+                // Scale down to create a thumbnail (e.g., 20% of original size).
+                pngOptions.Scale = 0.2f;
+
+                // Ensure the output directory exists.
+                string? outputDir = Path.GetDirectoryName(outputPngPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Save the first page as a PNG thumbnail.
+                mergedDiagram.Save(outputPngPath, pngOptions);
             }
-
-            // Optional: save the merged diagram for later use.
-            mergedDiagram.Save("MergedDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            // Create image save options for PNG thumbnail.
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.PageIndex = 0;      // Export only the first page.
-            pngOptions.PageCount = 1;      // Ensure a single page is rendered.
-            pngOptions.Scale = 0.5f;       // Scale down to create a thumbnail (adjust as needed).
-
-            // Save the thumbnail of the first page as PNG.
-            mergedDiagram.Save("Thumbnail.png", pngOptions);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

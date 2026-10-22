@@ -1,36 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-public class Program
+class Program
 {
-    public static void Main(string[] args)
+    static void Main(string[] args)
     {
+        // Expect three arguments: first diagram path, second diagram path, output diagram path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: MergeDiagrams <first.vsdx> <second.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string firstPath = args[0];
+        string secondPath = args[1];
+        string outputPath = args[2];
+
+        // Guard clauses for input files
+        if (!File.Exists(firstPath))
+        {
+            Console.Error.WriteLine($"File not found: {firstPath}");
+            return;
+        }
+        if (!File.Exists(secondPath))
+        {
+            Console.Error.WriteLine($"File not found: {secondPath}");
+            return;
+        }
+
         try
         {
+            // Load the first diagram (target diagram)
+            Diagram targetDiagram = new Diagram(firstPath);
 
-            // Paths to the source Visio files (VSDX format)
-            string firstDiagramPath = "Diagram1.vsdx";
-            string secondDiagramPath = "Diagram2.vsdx";
+            // Load the second diagram (source diagram to be merged)
+            Diagram sourceDiagram = new Diagram(secondPath);
 
-            // Load the two diagrams
-            Diagram firstDiagram = new Diagram(firstDiagramPath, LoadFileFormat.Vsdx);
-            Diagram secondDiagram = new Diagram(secondDiagramPath, LoadFileFormat.Vsdx);
+            // Combine the source diagram into the target diagram.
+            // Aspose.Diagram.Combine automatically merges pages, masters and resolves duplicate shape IDs.
+            targetDiagram.Combine(sourceDiagram);
 
-            // Merge the second diagram into the first.
-            // The Combine method merges pages, masters, and resolves duplicate shape IDs internally.
-            firstDiagram.Combine(secondDiagram);
-
-            // Save the merged diagram
-            string outputPath = "MergedDiagram.vsdx";
-            firstDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Merged diagram saved to: {outputPath}");
-
+            // Save the merged diagram to the specified output path in VSDX format.
+            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagrams merged successfully. Output saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

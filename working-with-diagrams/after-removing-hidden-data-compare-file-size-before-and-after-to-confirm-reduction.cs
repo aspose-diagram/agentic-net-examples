@@ -3,59 +3,65 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Record the original file size before any processing.
+            long originalSize = new FileInfo(inputPath).Length;
+
+            // Load the diagram inside a using block as required by the API guidelines.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Remove hidden information (shapes and masters). Pages flag is omitted because it is not defined.
+                diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
 
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output_cleaned.vsdx";
-
-                // Ensure the input file exists
-                if (!File.Exists(inputPath))
-                {
-                    throw new FileNotFoundException($"Input file not found: {inputPath}");
-                }
-
-                // Get original file size
-                long originalSize = new FileInfo(inputPath).Length;
-                Console.WriteLine($"Original file size: {originalSize} bytes");
-
-                // Load the diagram, remove hidden information, and save the cleaned file
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Remove hidden shapes and masters (add other flags as needed)
-                    diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
-
-                    // Save the cleaned diagram in VSDX format
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-
-                // Get cleaned file size
-                long cleanedSize = new FileInfo(outputPath).Length;
-                Console.WriteLine($"Cleaned file size: {cleanedSize} bytes");
-
-                // Compare sizes
-                if (cleanedSize < originalSize)
-                {
-                    Console.WriteLine("Hidden data removal successful: file size reduced.");
-                }
-                else if (cleanedSize == originalSize)
-                {
-                    Console.WriteLine("No size reduction detected after hidden data removal.");
-                }
-                else
-                {
-                    // Unexpected increase; raise an exception to indicate failure
-                    throw new Exception("File size increased after hidden data removal, which is unexpected.");
-                }
-
+                // Save the cleaned diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Record the cleaned file size after removal.
+            long cleanedSize = new FileInfo(outputPath).Length;
+
+            // Output size comparison results.
+            Console.WriteLine($"Original file size: {originalSize} bytes");
+            Console.WriteLine($"Cleaned file size : {cleanedSize} bytes");
+
+            if (cleanedSize < originalSize)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.WriteLine("Success: The file size was reduced after removing hidden data.");
             }
+            else if (cleanedSize == originalSize)
+            {
+                Console.WriteLine("Notice: The file size is unchanged after removal.");
+            }
+            else
+            {
+                Console.WriteLine("Warning: The file size increased after removal (unexpected).");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

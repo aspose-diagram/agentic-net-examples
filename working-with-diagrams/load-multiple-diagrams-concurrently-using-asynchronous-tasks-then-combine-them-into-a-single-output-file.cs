@@ -6,43 +6,98 @@ using Aspose.Diagram;
 
 class Program
 {
-    static async Task Main(string[] args)
+    static void Main(string[] args)
     {
-        // Folder containing the diagrams to combine
-        string inputFolder = "InputDiagrams";
-        if (!Directory.Exists(inputFolder))
+        // Run the asynchronous workflow synchronously.
+        RunAsync(args).GetAwaiter().GetResult();
+    }
+
+    private static async Task RunAsync(string[] args)
+    {
+        // Validate arguments: first argument is output file, remaining are input files.
+        if (args.Length < 2)
         {
-            Console.WriteLine($"Folder not found: {inputFolder}");
+            Console.Error.WriteLine("Usage: Program <outputPath> <inputPath1> [<inputPath2> ...]");
             return;
         }
 
-        // Get all Visio files (adjust the pattern if needed)
-        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-        if (diagramFiles.Length == 0)
+        string outputPath = args[0];
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
         {
-            Console.WriteLine("No diagram files found to process.");
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
             return;
         }
 
-        // Load each diagram concurrently
-        List<Task<Diagram>> loadTasks = new List<Task<Diagram>>();
-        foreach (string filePath in diagramFiles)
+        // Collect input file paths.
+        var inputPaths = new List<string>();
+        for (int i = 1; i < args.Length; i++)
         {
-            loadTasks.Add(Task.Run(() => new Diagram(filePath)));
+            string path = args[i];
+            if (!File.Exists(path))
+            {
+                Console.Error.WriteLine($"Input file not found: {path}");
+                return;
+            }
+            inputPaths.Add(path);
         }
 
-        Diagram[] loadedDiagrams = await Task.WhenAll(loadTasks);
-
-        // Use the first diagram as the base and combine the rest into it
-        Diagram combinedDiagram = loadedDiagrams[0];
-        for (int i = 1; i < loadedDiagrams.Length; i++)
+        // Load all diagrams concurrently.
+        var loadTasks = new List<Task<Diagram>>();
+        foreach (var path in inputPaths)
         {
-            combinedDiagram.Combine(loadedDiagrams[i]);
+            loadTasks.Add(Task.Run(() =>
+            {
+                try
+                {
+                    // Load diagram from file.
+                    return new Diagram(path);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to load diagram '{path}': {ex.Message}");
+                    throw;
+                }
+            }));
         }
 
-        // Save the combined diagram
-        string outputPath = "CombinedDiagram.vsdx";
-        combinedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"Combined diagram saved to: {outputPath}");
+        Diagram[] diagrams;
+        try
+        {
+            diagrams = await Task.WhenAll(loadTasks);
+        }
+        catch
+        {
+            // One or more load operations failed; abort.
+            return;
+        }
+
+        // Use the first diagram as the base for combination.
+        Diagram baseDiagram = diagrams[0];
+
+        // Combine remaining diagrams into the base diagram.
+        for (int i = 1; i < diagrams.Length; i++)
+        {
+            try
+            {
+                baseDiagram.Combine(diagrams[i]);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to combine diagram '{inputPaths[i]}' into base diagram: {ex.Message}");
+                // Continue with next diagram.
+            }
+        }
+
+        // Save the combined diagram to the specified output path.
+        try
+        {
+            baseDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Combined diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save combined diagram: {ex.Message}");
+        }
     }
 }

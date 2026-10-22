@@ -1,38 +1,58 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: first diagram path, second diagram path, and output path.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <firstDiagramPath> <secondDiagramPath> <outputPath>");
+            return;
+        }
+
+        string firstPath = args[0];
+        string secondPath = args[1];
+        string outputPath = args[2];
+
+        // Verify that the input files exist.
+        if (!File.Exists(firstPath))
+        {
+            Console.Error.WriteLine($"File not found: {firstPath}");
+            return;
+        }
+        if (!File.Exists(secondPath))
+        {
+            Console.Error.WriteLine($"File not found: {secondPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the first diagram (the target) inside a using block.
+            using (Diagram targetDiagram = new Diagram(firstPath))
             {
+                // Load the second diagram (the source) inside a using block.
+                using (Diagram sourceDiagram = new Diagram(secondPath))
+                {
+                    // Combine the source diagram into the target diagram.
+                    // This appends the source pages after the target pages,
+                    // preserving the original order of the first diagram.
+                    targetDiagram.Combine(sourceDiagram);
+                }
 
-                // Paths to the source diagrams
-                string firstDiagramPath = "FirstDiagram.vsd";   // VSD file (source order)
-                string secondDiagramPath = "SecondDiagram.vsdx"; // VSDX file to be appended
-
-                // Load the first diagram (target) – its page order will be preserved
-                Diagram targetDiagram = new Diagram(firstDiagramPath);
-
-                // Load the second diagram (source) – its pages will be added after the target's pages
-                Diagram sourceDiagram = new Diagram(secondDiagramPath);
-
-                // Combine the source diagram into the target diagram
-                // This merges all pages, masters, and other resources from sourceDiagram into targetDiagram
-                targetDiagram.Combine(sourceDiagram);
-
-                // Save the combined diagram. The result is saved as VSDX to retain modern format.
-                string outputPath = "CombinedDiagram.vsdx";
+                // Save the combined diagram to the specified output path in VSDX format.
                 targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagrams combined successfully. Output saved to: {outputPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine($"Diagrams combined successfully. Output saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+        }
     }
-    }
+}

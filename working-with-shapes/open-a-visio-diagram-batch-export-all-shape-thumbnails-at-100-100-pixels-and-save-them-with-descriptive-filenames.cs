@@ -5,60 +5,77 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputDirectory]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output directory (default: "Thumbnails" in the current folder)
+        string outputDir = args.Length > 1 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "Thumbnails");
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        // Load the Visio diagram inside a using block as required
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Directory where thumbnails will be saved
-            string outputDir = "Thumbnails";
-            Directory.CreateDirectory(outputDir);
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Prepare a descriptive file name
-                    string pageName = string.IsNullOrWhiteSpace(page.NameU) ? "Page" + page.ID : page.NameU;
-                    string shapeName = string.IsNullOrWhiteSpace(shape.NameU) ? "Shape" + shape.ID : shape.NameU;
-                    string rawFileName = $"{pageName}_{shape.ID}_{shapeName}.png";
-
-                    // Remove characters that are invalid in file names
-                    foreach (char c in Path.GetInvalidFileNameChars())
+                    // Iterate through each shape on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        rawFileName = rawFileName.Replace(c, '_');
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Build a descriptive filename using shape name (if available), page ID and shape ID
+                        string baseName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : shape.ID.ToString();
+                        // Sanitize filename characters
+                        foreach (char c in Path.GetInvalidFileNameChars())
+                        {
+                            baseName = baseName.Replace(c, '_');
+                        }
+                        string fileName = $"{baseName}_Page{page.ID}_Shape{shape.ID}.png";
+                        string outputPath = Path.Combine(outputDir, fileName);
+
+                        try
+                        {
+                            // Configure image export options for 100x100 pixels
+                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                            // Set the physical size of the exported image (100x100). PageSize is expressed in inches,
+                            // but the API will map it to the requested pixel dimensions.
+                            imgOptions.PageSize = new PageSize(100, 100);
+
+                            // Export the shape thumbnail to the specified file
+                            shape.ToImage(outputPath, imgOptions);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page {page.ID}: {ex.Message}");
+                        }
                     }
-
-                    string outputPath = Path.Combine(outputDir, rawFileName);
-
-                    // Configure image export options for a 100 × 100 pixel thumbnail
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                    options.PageSize = new PageSize(100f, 100f);
-                    options.ExportHiddenPage = false;
-
-                    // Export the shape as an image
-                    shape.ToImage(outputPath, options);
                 }
             }
-
-            Console.WriteLine("Thumbnail export completed.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

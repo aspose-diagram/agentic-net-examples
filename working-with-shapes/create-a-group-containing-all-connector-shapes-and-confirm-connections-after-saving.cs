@@ -8,118 +8,106 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path – adjust as needed.
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists.
+        // Validate command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Output Visio file path.
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the diagram from the input file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Work with the first page (index 0).
-            Page page = diagram.Pages[0];
-
-            // Collect all connector shapes (1‑D shapes) on the page.
-            List<Shape> connectorShapes = new List<Shape>();
-            foreach (Shape shape in page.Shapes)
+            // Load the source diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Connector shapes are identified by the OneD boolean flag.
-                if (shape.OneD)
+                // Iterate each page to collect connector shapes and group them
+                foreach (Page page in diagram.Pages)
                 {
-                    connectorShapes.Add(shape);
+                    List<Shape> connectorShapes = new List<Shape>();
+
+                    // Gather all 1‑D connector shapes that are not deleted
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.Del == BOOL.True)
+                            continue; // Skip deleted shapes
+
+                        // OneD is a native bool – true means a connector
+                        if (shape.OneD)
+                        {
+                            connectorShapes.Add(shape);
+                        }
+                    }
+
+                    // Create a group if any connectors were found
+                    if (connectorShapes.Count > 0)
+                    {
+                        Shape[] array = connectorShapes.ToArray();
+                        Shape groupShape = page.Shapes.Group(array);
+                        Console.WriteLine($"Created group (ID: {groupShape.ID}) for {array.Length} connector(s) on page '{page.Name}'.");
+                    }
                 }
+
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
 
-            // If there are connectors, group them into a single group shape.
-            if (connectorShapes.Count > 0)
+            // Reload the saved diagram to verify that all connections are still valid
+            using (Diagram savedDiagram = new Diagram(outputPath))
             {
-                // The Group method returns the newly created group shape.
-                Shape groupShape = page.Shapes.Group(connectorShapes.ToArray());
+                bool allConnectionsValid = true;
+                int totalConnections = 0;
+                int brokenConnections = 0;
 
-                // Optionally set a name for the group for easier identification.
-                groupShape.NameU = "AllConnectorsGroup";
-            }
-            else
-            {
-                Console.WriteLine("No connector shapes found to group.");
-            }
-
-            // Save the modified diagram to the output file using the Vsdx format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            // Log any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
-        }
-
-        // Verify that connectors remain correctly connected after saving.
-        try
-        {
-            // Reload the saved diagram.
-            Diagram savedDiagram = new Diagram(outputPath);
-            Page savedPage = savedDiagram.Pages[0];
-
-            // Build a lookup of connector IDs for quick access.
-            HashSet<long> connectorIds = new HashSet<long>();
-            foreach (Shape shape in savedPage.Shapes)
-            {
-                if (shape.OneD)
+                foreach (Page page in savedDiagram.Pages)
                 {
-                    connectorIds.Add(shape.ID);
-                }
-            }
+                    foreach (Connect connect in page.Connects)
+                    {
+                        totalConnections++;
 
-            // Track connectors that have at least one connection.
-            HashSet<long> connectedConnectorIds = new HashSet<long>();
-            foreach (Connect conn in savedPage.Connects)
-            {
-                // FromSheet or ToSheet may reference a connector shape.
-                if (connectorIds.Contains(conn.FromSheet))
-                {
-                    connectedConnectorIds.Add(conn.FromSheet);
-                }
-                if (connectorIds.Contains(conn.ToSheet))
-                {
-                    connectedConnectorIds.Add(conn.ToSheet);
-                }
-            }
+                        // Retrieve the source and target shapes by their IDs
+                        Shape fromShape = page.Shapes.GetShape(connect.FromSheet);
+                        Shape toShape = page.Shapes.GetShape(connect.ToSheet);
 
-            // Determine if any connector lost its connections.
-            bool allConnected = true;
-            foreach (long id in connectorIds)
-            {
-                if (!connectedConnectorIds.Contains(id))
-                {
-                    Console.Error.WriteLine($"Connector shape ID {id} has no connections after save.");
-                    allConnected = false;
-                }
-            }
+                        bool fromValid = fromShape != null && fromShape.Del == BOOL.False;
+                        bool toValid = toShape != null && toShape.Del == BOOL.False;
 
-            // Report verification result.
-            if (allConnected)
-            {
-                Console.WriteLine("All connector shapes remain connected after saving.");
-            }
-            else
-            {
-                Console.Error.WriteLine("Some connector shapes lost their connections after saving.");
+                        if (!fromValid || !toValid)
+                        {
+                            brokenConnections++;
+                            Console.Error.WriteLine($"Broken connection on page '{page.Name}': FromSheet={connect.FromSheet}, ToSheet={connect.ToSheet}");
+                            allConnectionsValid = false;
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Total connections checked: {totalConnections}");
+                Console.WriteLine($"Broken connections found: {brokenConnections}");
+
+                if (!allConnectionsValid)
+                {
+                    throw new Exception("One or more connections are invalid after saving.");
+                }
+                else
+                {
+                    Console.WriteLine("All connections are valid after saving.");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during verification.
-            Console.Error.WriteLine($"Error verifying saved diagram: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

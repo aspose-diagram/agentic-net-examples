@@ -4,65 +4,75 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the folder containing VSDX files (argument or user input).
+        string folderPath;
+        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
         {
-            // Define the folder containing VSDX files.
-            // You can change this path or pass it as a command‑line argument.
-            string inputFolder = args.Length > 0 ? args[0] : @"C:\VisioFiles";
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the folder containing VSDX files: ");
+            folderPath = Console.ReadLine();
+        }
 
-            // Verify the folder exists.
-            if (!Directory.Exists(inputFolder))
+        // Guard: ensure the folder exists.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Retrieve all VSDX files in the folder.
+        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx");
+        if (vsdxFiles.Length == 0)
+        {
+            Console.WriteLine("No VSDX files found in the specified folder.");
+            return;
+        }
+
+        // Process each VSDX file.
+        foreach (string inputPath in vsdxFiles)
+        {
+            // Guard: ensure the file still exists.
+            if (!File.Exists(inputPath))
             {
-                Console.WriteLine($"Folder not found: {inputFolder}");
-                return;
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                continue;
             }
 
-            // Get all VSDX files in the folder.
-            string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-            if (vsdxFiles.Length == 0)
-            {
-                Console.WriteLine("No VSDX files found in the specified folder.");
-                return;
-            }
+            // Determine the output PDF path (same folder, same name with .pdf extension).
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + ".pdf");
 
-            // Process each file.
-            foreach (string filePath in vsdxFiles)
+            try
             {
-                try
+                // Load the diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    Console.WriteLine($"Processing: {Path.GetFileName(filePath)}");
-
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(filePath, LoadFileFormat.Vsdx);
-
-                    // Remove hidden information (shapes and masters in this example).
+                    // Remove hidden shapes and masters from the diagram.
                     diagram.RemoveHiddenInformation(
                         (int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
 
-                    // Prepare PDF save options.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        // Fallback font if the original font is missing.
-                        DefaultFont = "Arial"
-                    };
-
-                    // Build the output PDF path (same name, .pdf extension, placed in the same folder).
-                    string outputPdfPath = Path.Combine(
-                        Path.GetDirectoryName(filePath) ?? string.Empty,
-                        Path.GetFileNameWithoutExtension(filePath) + ".pdf");
+                    // Configure PDF save options (optional: set default font).
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";
 
                     // Save the cleaned diagram as PDF.
-                    diagram.Save(outputPdfPath, pdfOptions);
+                    diagram.Save(outputPath, pdfOptions);
+                }
 
-                    Console.WriteLine($"Saved PDF: {Path.GetFileName(outputPdfPath)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
+                Console.WriteLine($"Successfully converted: {inputPath} -> {outputPath}");
             }
-
-            Console.WriteLine("Batch processing completed.");
+            catch (Exception ex)
+            {
+                // Write any errors that occur during processing to the error stream.
+                Console.Error.WriteLine($"Error processing '{inputPath}': {ex.Message}");
+            }
         }
     }
+}

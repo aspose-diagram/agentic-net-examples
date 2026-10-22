@@ -5,65 +5,83 @@ using System.Xml.Xsl;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input arguments: diagram file, XSLT file, output report file
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string xsltPath = args.Length > 1 ? args[1] : "transform.xslt";
+        string outputPath = args.Length > 2 ? args[2] : "report.xml";
+
+        // Guard against missing files
+        if (!File.Exists(diagramPath))
         {
-            try
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(xsltPath))
+        {
+            Console.Error.WriteLine($"XSLT file not found: {xsltPath}");
+            return;
+        }
+
+        // Load the XSLT transformation
+        XslCompiledTransform xslt = new XslCompiledTransform();
+        try
+        {
+            xslt.Load(xsltPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load XSLT file: {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram using Aspose.Diagram
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Prepare a writer for the final report
+        using (StreamWriter reportWriter = new StreamWriter(outputPath, false))
+        {
+            // Iterate over all SolutionXML elements in the document
+            // (Assuming diagram.SolutionXMLs provides the collection)
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
+                // Retrieve the raw XML stored in the SolutionXML element
+                string xmlContent = solXml.XmlValue;
 
-                // Path to the Visio file
-                string visioPath = "input.vsdx";
-
-                // Path to the XSLT file that defines the report format
-                string xsltPath = "ShapePropertiesReport.xslt";
-
-                // Output directory for the generated reports
-                string outputDir = "Reports";
-
-                // Ensure the output directory exists
-                if (!Directory.Exists(outputDir))
+                // Transform the XML using the loaded XSLT
+                try
                 {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Prepare the XSLT transformer
-                XslCompiledTransform xslt = new XslCompiledTransform();
-                xslt.Load(xsltPath);
-
-                // Iterate over all SolutionXML elements in the diagram
-                int index = 1;
-                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
-                {
-                    // The XML content stored in the SolutionXML element
-                    string xmlContent = solutionXml.XmlValue;
-
-                    // Load the XML content into an XmlReader
                     using (StringReader stringReader = new StringReader(xmlContent))
                     using (XmlReader xmlReader = XmlReader.Create(stringReader))
-                    // Prepare the output file for this SolutionXML element
-                    using (FileStream outputStream = new FileStream(
-                        Path.Combine(outputDir, $"SolutionXmlReport_{index}.html"),
-                        FileMode.Create, FileAccess.Write))
-                    using (XmlWriter xmlWriter = XmlWriter.Create(outputStream, xslt.OutputSettings))
+                    using (StringWriter stringWriter = new StringWriter())
                     {
-                        // Apply the XSLT transformation
-                        xslt.Transform(xmlReader, xmlWriter);
+                        xslt.Transform(xmlReader, null, stringWriter);
+                        string transformedResult = stringWriter.ToString();
+
+                        // Write the transformed result to the report file
+                        reportWriter.WriteLine($"<!-- SolutionXML Name: {solXml.Name} -->");
+                        reportWriter.WriteLine(transformedResult);
+                        reportWriter.WriteLine(); // Add a blank line between entries
                     }
-
-                    Console.WriteLine($"Report generated for SolutionXML #{index}");
-                    index++;
                 }
-
-                // Optionally, save the diagram if any modifications were made
-                // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"XSLT transformation failed for SolutionXML '{solXml.Name}': {ex.Message}");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+
+        Console.WriteLine($"Report generated successfully at: {outputPath}");
     }
-    }
+}

@@ -1,73 +1,78 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.Properties; // Required for custom property types
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        string outputPath = "output.svg";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            return;
+        }
 
-        // Guard: ensure the input file exists before proceeding
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the collection of custom properties
-            var customProps = diagram.DocumentProps.CustomProps;
-            CustomProp reviewProp = null;
+            // Access the custom properties collection
+            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
 
-            // Search for an existing "ReviewStatus" property
-            foreach (CustomProp prop in customProps)
+            // Try to find an existing custom property named "ReviewStatus"
+            CustomProp reviewProp = null;
+            foreach (CustomProp cp in customProps)
             {
-                if (prop.Name == "ReviewStatus")
+                if (cp.Name == "ReviewStatus")
                 {
-                    reviewProp = prop;
+                    reviewProp = cp;
                     break;
                 }
             }
 
             if (reviewProp != null)
             {
-                // Update the value of the existing property
+                // Update the existing property's value to "Pending"
                 reviewProp.CustomValue.ValueString = "Pending";
             }
             else
             {
-                // Create and add a new custom property with the desired value
-                CustomProp newProp = new CustomProp
-                {
-                    Name = "ReviewStatus",
-                    PropType = PropType.String,
-                    CustomValue = new CustomValue { ValueString = "Pending" }
-                };
+                // Create a new custom property with the required settings
+                CustomProp newProp = new CustomProp();
+                newProp.Name = "ReviewStatus";
+                newProp.PropType = PropType.String;
+                newProp.CustomValue.ValueString = "Pending";
+
+                // Add the new property to the document's custom properties collection
                 customProps.Add(newProp);
             }
 
-            // Configure SVG export options (export first page)
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                PageIndex = 0 // Export only the first page
-                // PageCount property is not supported in this version; omitted
-            };
+            // Prepare SVG save options (default options preserve metadata where possible)
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // No additional option is required for metadata preservation; defaults are used.
 
-            // Save the diagram as SVG, preserving custom metadata
+            // Save the diagram as SVG
             diagram.Save(outputPath, svgOptions);
+
+            Console.WriteLine($"Diagram saved to SVG with ReviewStatus set to Pending: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,57 +1,87 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Output file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
         try
         {
-
-            // Load the diagram from a file
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Sample orientation values for each page (could come from any source)
-            string[] orientationValues = { "Landscape", "Portrait", "InvalidOrientation", "SameAsPrinter" };
-
-            int i = 0;
-            foreach (Page page in diagram.Pages)
+            // Example orientation list for each page (can be customized)
+            // For demonstration, we alternate between Portrait, Landscape, and an invalid value
+            string[] orientations = new string[diagram.Pages.Count];
+            for (int i = 0; i < orientations.Length; i++)
             {
-                if (i >= orientationValues.Length)
-                    break;
+                if (i % 3 == 0)
+                    orientations[i] = "Portrait";
+                else if (i % 3 == 1)
+                    orientations[i] = "Landscape";
+                else
+                    orientations[i] = "InvalidOrientation";
+            }
 
-                string orientStr = orientationValues[i];
+            // Process each page and apply orientation
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                Page page = diagram.Pages[i];
+                string orientation = orientations[i];
+
                 try
                 {
-                    // Try to parse the string to the enum; throws ArgumentException if not valid
-                    PrintPageOrientationValue orientation = (PrintPageOrientationValue)Enum.Parse(
-                        typeof(PrintPageOrientationValue), orientStr, ignoreCase: true);
+                    // Set page dimensions based on desired orientation
+                    if (orientation.Equals("Portrait", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Portrait: height greater than width
+                        page.PageSheet.PageProps.PageWidth.Value = 8.5;   // inches
+                        page.PageSheet.PageProps.PageHeight.Value = 11.0; // inches
+                    }
+                    else if (orientation.Equals("Landscape", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Landscape: width greater than height
+                        page.PageSheet.PageProps.PageWidth.Value = 11.0; // inches
+                        page.PageSheet.PageProps.PageHeight.Value = 8.5; // inches
+                    }
+                    else
+                    {
+                        // Unsupported orientation value – throw to be caught below
+                        throw new ArgumentException($"Unsupported orientation '{orientation}' for page index {i}.");
+                    }
 
-                    // Apply the orientation to the page
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
-                    Console.WriteLine($"Page {page.ID} orientation set to {orientation}.");
+                    Console.WriteLine($"Page {i + 1}: Orientation set to {orientation}.");
                 }
-                catch (ArgumentException)
+                catch (Exception ex)
                 {
-                    // Handle unsupported orientation values
-                    Console.WriteLine($"Unsupported orientation \"{orientStr}\" for page {page.ID}. Defaulting to Portrait.");
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                    // Handle unsupported orientation or any other page‑level errors
+                    Console.Error.WriteLine($"Error processing page {i + 1}: {ex.Message}");
+                    // Continue processing remaining pages
                 }
-
-                i++;
             }
 
             // Save the modified diagram
-            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Global error handling for loading, saving, or other unexpected issues
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

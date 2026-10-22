@@ -1,49 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input file path and verify existence
+        // Input and output file paths
         string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        if (!System.IO.File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the verified path
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Build a conditional formula that calls different actions based on shape type
-                    // Shape.Type = 1 → regular shape, Shape.Type = 2 → connector, else default
-                    string formula = "IF(Shape.Type=1, CALLTHIS(\"RectangleAction\"), " +
-                                     "IF(Shape.Type=2, CALLTHIS(\"ConnectorAction\"), " +
-                                     "CALLTHIS(\"DefaultAction\")))";
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Assign the formula to a valid event cell (EventXFMod) using the Ufe.F property
-                    shape.Event.EventXFMod.Ufe.F = formula;
+                    // Define conditional formula for the EventAfterUpdate equivalent.
+                    // Since Aspose.Diagram does not expose an EventAfterUpdate cell directly,
+                    // we use the EventDrop cell as a representative event cell.
+                    // The formula triggers different actions based on whether the shape is a connector (OneD) or a regular shape.
+                    string formula = "IF(OneD, \"ConnectorAction\", \"ShapeAction\")";
+
+                    // Assign the formula to the event cell
+                    shape.Event.EventDrop.Ufe.F = formula;
                 }
             }
 
-            // Save the modified diagram to the output file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

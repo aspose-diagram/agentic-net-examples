@@ -6,54 +6,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the path to the Visio file.
-        string visioFilePath = "input.vsdx";
-
-        // Verify that the file exists before proceeding.
-        if (!File.Exists(visioFilePath))
+        // Verify that a file path argument was provided
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {visioFilePath}");
+            Console.Error.WriteLine("Please provide the path to the Visio file as a command-line argument.");
             return;
         }
 
-        // Load the Visio diagram from a file stream inside a try/catch block.
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to open it
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
-            // Open a read-only file stream for the Visio file.
-            using (FileStream stream = new FileStream(visioFilePath, FileMode.Open, FileAccess.Read))
+            // Open the source file stream for reading and load the diagram directly from the stream
+            using (FileStream sourceStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            using (Diagram diagram = new Diagram(sourceStream)) // mandatory using block for Diagram
             {
-                // Initialize the Diagram object using the stream.
-                Diagram diagram = new Diagram(stream);
-
-                // Ensure the diagram contains at least one page.
-                if (diagram.Pages.Count == 0)
+                // Iterate through each page in the diagram
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    Console.WriteLine("The diagram contains no pages.");
-                    return;
-                }
+                    // Retrieve the page by index
+                    Page page = diagram.Pages[pageIndex];
 
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
-                {
-                    // Output the page name for context.
-                    Console.WriteLine($"Page: {page.Name}");
+                    // Output page information (Page.Name is a plain string, not a cell)
+                    string pageName = page.Name ?? "(no name)";
+                    Console.WriteLine($"Page {pageIndex + 1}/{diagram.Pages.Count}: {pageName}");
 
-                    // Access the shape collection of the current page.
-                    ShapeCollection shapes = page.Shapes;
-
-                    // Iterate through each shape and display basic information.
-                    foreach (Shape shape in shapes)
+                    // Iterate through each shape on the current page
+                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
                     {
-                        // Print shape ID and name (if available).
-                        Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name}");
+                        // Retrieve the shape using the integer indexer
+                        Shape shape = page.Shapes[shapeIdx];
+
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Gather basic shape details (Name is a plain string)
+                        string shapeName = shape.Name ?? "(no name)";
+                        string masterName = shape.Master != null ? shape.Master.Name ?? "(no master name)" : "(no master)";
+
+                        // Output shape information
+                        Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shapeName}, Master: {masterName}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any exceptions to the error console.
-            Console.Error.WriteLine($"Error loading Visio diagram: {ex.Message}");
+            // Report any errors that occur during loading or processing
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

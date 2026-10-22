@@ -1,6 +1,6 @@
 # Working With Headers And Footers — Aspose.Diagram for .NET C# Examples
 
-> Compiler-validated C# code examples for **Working With Headers And Footers** using [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.9.0. Every example in this folder passes both `dotnet build` and `dotnet run` on `net8.0`.
+> Compiler-validated C# code examples for **Working With Headers And Footers** using [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.10.0. Every example in this folder passes both `dotnet build` and `dotnet run` on `net8.0`.
 
 ## Statistics
 
@@ -8,9 +8,9 @@
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## What This Category Covers
 
@@ -35,7 +35,7 @@ dotnet build && dotnet run
 ## Prerequisites
 
 - .NET SDK (net8.0 or later)
-- [Aspose.Diagram for .NET 26.9.0](https://releases.aspose.com/diagram/net/)
+- [Aspose.Diagram for .NET 26.10.0](https://releases.aspose.com/diagram/net/)
 - `Aspose.Diagram.dll` referenced in your `.csproj` via `HintPath`
 
 ## Examples in This Category
@@ -50,7 +50,7 @@ dotnet build && dotnet run
 | [automate-the-process-of-adding-a-page-number-placeholder-to-the-right-footer-of-each-diagram-in-a-collection.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/automate-the-process-of-adding-a-page-number-placeholder-to-the-right-footer-of-each-diagram-in-a-collection.cs) | Automate the process of adding a page number placeholder to the right footer of  |
 | [compare-left-header-text-between-two-diagrams-and-output-the-differences-to-a-log-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/compare-left-header-text-between-two-diagrams-and-output-the-differences-to-a-log-file.cs) | Compare left header text between two diagrams and output the differences to a lo |
 | [configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/configure-the-footer-margin-to-0-3-centimeters-and-verify-the-change-using-print-preview.cs) | Configure the footer margin to 0 3 centimeters and verify the change using print |
-| [create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-fi.cs) | Create a command line tool that accepts a directory path and applies a predefine |
+| [create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-command-line-tool-that-accepts-a-directory-path-and-applies-a-predefined-header-footer-template-to-all-visio-files.cs) | Create a command line tool that accepts a directory path and applies a predefine |
 | [create-a-script-that-reads-header-and-footer-configurations-from-an-xml-file-and-applies-them-to-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-script-that-reads-header-and-footer-configurations-from-an-xml-file-and-applies-them-to-a-diagram.cs) | Create a script that reads header and footer configurations from an xml file and |
 | [create-a-utility-method-that-accepts-a-diagram-path-and-header-settings-applies-them-and-saves-the-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/create-a-utility-method-that-accepts-a-diagram-path-and-header-settings-applies-them-and-saves-the-file.cs) | Create a utility method that accepts a diagram path and header settings applies  |
 | [define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-headers-and-footers/define-header-font-name-as-arial-size-10-points-and-apply-bold-style-to-the-left-header.cs) | Define header font name as arial size 10 points and apply bold style to the left |
@@ -68,7 +68,7 @@ dotnet build && dotnet run
 
 **How do I get started with Working With Headers And Footers in Aspose.Diagram for .NET?**
 
-Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -98,4 +98,4 @@ Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.Tr
 
 ---
 
-*30 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.9.0 | Updated: 2026-09-24*
+*30 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.10.0 | Updated: 2026-10-22*

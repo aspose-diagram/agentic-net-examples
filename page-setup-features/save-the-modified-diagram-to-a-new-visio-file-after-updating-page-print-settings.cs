@@ -1,53 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_modified.vsdx";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for the source and the new Visio file
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the existing diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
             // Update print settings for each page
             foreach (Page page in diagram.Pages)
             {
-                // Set orientation to Landscape
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                // Access the PrintProps object for the page
+                PrintProps printProps = page.PageSheet.PrintProps;
 
-                // Set scaling to 75%
-                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
-                page.PageSheet.PrintProps.ScaleY.Value = 0.75;
+                // Example: set scaling factors (1 = 100%)
+                printProps.ScaleX.Value = 1.0;
+                printProps.ScaleY.Value = 1.0;
 
-                // Enable fit-to-sheet (print on a single page)
-                page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-                page.PageSheet.PrintProps.PagesX.Value = 1;
-                page.PageSheet.PrintProps.PagesY.Value = 1;
+                // Example: set page margins (in inches)
+                printProps.PageLeftMargin.Value = 0.5;
+                printProps.PageRightMargin.Value = 0.5;
+                printProps.PageTopMargin.Value = 0.5;
+                printProps.PageBottomMargin.Value = 0.5;
 
-                // Set page margins (in inches)
-                page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-                page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
-                page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-                page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
+                // Example: set orientation to portrait (true = portrait, false = landscape)
+                // Note: In Aspose.Diagram, orientation is controlled via the PageSheet's PageProps.
+                // Here we set the page width greater than height for landscape, otherwise portrait.
+                // Adjust as needed.
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                if (pageWidth > pageHeight)
+                {
+                    // Switch to portrait by swapping width and height
+                    page.PageSheet.PageProps.PageWidth.Value = pageHeight;
+                    page.PageSheet.PageProps.PageHeight.Value = pageWidth;
+                }
             }
 
-            // Save the modified diagram to a new file
+            // Save the modified diagram to a new VSDX file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

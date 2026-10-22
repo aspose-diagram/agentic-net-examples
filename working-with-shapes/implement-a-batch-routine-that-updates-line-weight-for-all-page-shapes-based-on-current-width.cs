@@ -1,56 +1,73 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Input Visio file path (first argument) and optional output path (second argument)
-            if (args.Length == 0)
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: DiagramBatchUpdate <inputFilePath> [outputFilePath]");
-                return;
-            }
-
-            string inputPath = args[0];
-            string outputPath = args.Length > 1 ? args[1] : System.IO.Path.Combine(
-                System.IO.Path.GetDirectoryName(inputPath) ?? "",
-                System.IO.Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
-
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Collect pages into a list to avoid enumeration issues.
+                List<Page> pages = new List<Page>();
+                foreach (Page p in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    pages.Add(p);
+                }
+
+                // Iterate over each page.
+                foreach (Page page in pages)
+                {
+                    // Iterate over each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the current width of the shape (in inches)
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve the current width of the shape (in inches).
                         double width = shape.XForm.Width.Value;
 
-                        // Calculate a new line weight based on the width.
-                        // Example: 1% of the width (adjust factor as needed)
-                        double newLineWeight = width * 0.01;
+                        // Determine a new line weight based on the width.
+                        // Example factor: 0.02 (adjust as needed for your scenario).
+                        double newLineWeight = width * 0.02;
 
-                        // Ensure the line weight is a positive value
-                        if (newLineWeight < 0.001)
-                            newLineWeight = 0.001; // minimum visible weight
-
-                        // Update the shape's line weight (in inches)
+                        // Update the shape's line weight.
                         shape.Line.LineWeight.Value = newLineWeight;
                     }
                 }
 
-                // Save the updated diagram in VSDX format
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error processing diagram: {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

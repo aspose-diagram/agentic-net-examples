@@ -1,35 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input Visio file, shape ID, output SVG file path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputSvgPath>");
+            return;
+        }
+
+        string visioPath = args[0];
+        string shapeIdArg = args[1];
+        string outputSvgPath = args[2];
+
+        // Guard: check input Visio file exists
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {visioPath}");
+            return;
+        }
+
+        // Guard: validate shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(visioPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
+            // Use the first page (index 0) for shape retrieval
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Get the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page
-            Shape shape = page.Shapes[0];
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                return;
+            }
 
             // Export the shape to SVG using default settings
-            string outputSvgPath = "shape_output.svg";
-            shape.ToSvg(outputSvgPath, new SVGSaveOptions());
+            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            shape.ToSvg(outputSvgPath, svgOptions);
 
-            Console.WriteLine($"Shape exported to SVG: {outputSvgPath}");
-
+            Console.WriteLine($"Shape {shapeId} successfully exported to SVG: {outputSvgPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,71 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Drawing.Text;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input file path, output file path, localized font name
-        if (args.Length < 3)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <program> <inputPath> <outputPath> <localizedFontName>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string localizedFont = args[2];
 
-        // Verify that the requested font is installed on the system
-        bool fontExists = false;
-        var installedFonts = new InstalledFontCollection();
-        foreach (var family in installedFonts.Families)
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
         {
-            if (family.Name.Equals(localizedFont, StringComparison.OrdinalIgnoreCase))
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages (required by task, even though header font is global)
+            foreach (Page page in diagram.Pages)
             {
-                fontExists = true;
-                break;
+                // No per-page header font; modify the global header/footer font
+                // Set the localized font name (example: Arial Unicode MS)
+                diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial Unicode MS";
+
+                // Optionally adjust other typography attributes
+                // Height uses a negative value to represent point size (e.g., -16 for 12pt)
+                diagram.HeaderFooter.HeaderFooterFont.Height = -16;
+                // Set regular weight (400) – use 700 for bold if desired
+                diagram.HeaderFooter.HeaderFooterFont.Weight = 400;
+                // Ensure underline and italic are disabled
+                diagram.HeaderFooter.HeaderFooterFont.Underline = BOOL.False;
+                diagram.HeaderFooter.HeaderFooterFont.Italic = BOOL.False;
             }
-        }
 
-        if (!fontExists)
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
         {
-            Console.WriteLine($"Warning: Font \"{localizedFont}\" is not installed. Using default font.");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        // Load the diagram
-        Diagram diagram = new Diagram(inputPath);
-
-        // Set the default font for the diagram (fallback if a shape font is missing)
-        FontConfigs.DefaultFontName = localizedFont;
-
-        // Iterate through all pages
-        foreach (Page page in diagram.Pages)
-        {
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
-            {
-                // Identify header shapes by a naming convention (e.g., name contains "Header")
-                if (shape.NameU != null && shape.NameU.IndexOf("Header", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    // Ensure the shape has text
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                    {
-                        // Update font for each character run in the shape
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
-                        {
-                            ch.FontName.Value = localizedFont;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Save the modified diagram
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine("Diagram processing completed successfully.");
     }
 }

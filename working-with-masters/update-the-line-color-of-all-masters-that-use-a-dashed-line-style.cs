@@ -1,55 +1,65 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Paths to the source and destination Visio files
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Desired line color for masters that use a dashed line style
-                const string newLineColor = "#FF0000"; // Red
-
                 // Iterate through all masters in the diagram
                 foreach (Master master in diagram.Masters)
                 {
-                    bool usesDashedLine = false;
-
-                    // Check if any shape within the master uses a dashed line pattern
-                    foreach (Shape shape in master.Shapes)
+                    // Iterate through shapes that belong to the master definition
+                    for (int i = 0; i < master.Shapes.Count; i++)
                     {
+                        Shape shape = master.Shapes[i];
+
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if the shape's line pattern is dashed
                         if (shape.Line.LinePattern.Value == LinePatternValue.Dash)
                         {
-                            usesDashedLine = true;
-                            break;
+                            // Update the line color to red (hex format)
+                            shape.Line.LineColor.Value = "#FF0000";
                         }
                     }
 
-                    // If the master uses a dashed line, update the line color of all its shapes
-                    if (usesDashedLine)
-                    {
-                        foreach (Shape shape in master.Shapes)
-                        {
-                            shape.Line.LineColor.Value = newLineColor;
-                        }
-                    }
+                    // Refresh the master icon to reflect visual changes
+                    master.IconUpdate = BOOL.True;
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

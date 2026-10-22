@@ -1,46 +1,61 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as a command-line argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the Visio file to be loaded
-            string filePath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through all pages and shapes to find embedded OLE objects
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Verify the shape is a foreign (OLE) shape and contains an embedded object
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
+                    // Check if the shape contains embedded OLE data via ForeignData
+                    if (shape.ForeignData != null)
                     {
-                        // Retrieve the binary OLE data
+                        // Retrieve the source information of the OLE object
+                        string oleSource = shape.ForeignData.ObjectSourceFullName ?? "Unknown";
+
+                        // Retrieve the raw OLE binary data (may be null)
                         byte[] oleData = shape.ForeignData.ObjectData;
 
-                        // Ensure the OLE data exists before processing
-                        if (oleData != null && oleData.Length > 0)
-                        {
-                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, OLE size: {oleData.Length} bytes");
-                        }
+                        // Output details about the OLE object
+                        Console.WriteLine(
+                            $"Page: {page.NameU} (ID: {page.ID}) | " +
+                            $"Shape ID: {shape.ID} | " +
+                            $"OLE Source: {oleSource} | " +
+                            $"Data Size: {(oleData != null ? oleData.Length : 0)} bytes");
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during loading or enumeration to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

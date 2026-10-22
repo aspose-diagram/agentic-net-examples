@@ -4,10 +4,10 @@ display_name: Working With Text
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.9.0
+version: 26.10.0
 examples: 89
 pass_rate: 100.0
-generated: 2026-09-24
+generated: 2026-10-22
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 89 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## Persona
 
@@ -61,16 +61,15 @@ You always use explicit types (never `var`), include all required `using` direct
 
 | Namespace | Files | Purpose |
 |-----------|-------|---------|
+| `Aspose.Diagram` | 89 | Core diagram API |
 | `System` | 89 | Console, Math, DateTime, Exception |
-| `Aspose.Diagram` | 88 | Core diagram API |
-| `System.IO` | 74 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 45 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 7 | List, Dictionary, HashSet |
-| `System.Linq` | 5 | LINQ queries on collections |
-| `System.Text` | 5 | StringBuilder |
-| `System.Text.RegularExpressions` | 4 | Supporting utilities |
-| `Aspose.Drawing.Text` | 1 | Font enumeration via InstalledFontCollection |
-| `System.Text.Json` | 1 | JSON serialization |
+| `System.IO` | 89 | File, Stream, Path, Directory operations |
+| `Aspose.Diagram.Saving` | 31 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 10 | List, Dictionary, HashSet |
+| `System.Text.RegularExpressions` | 8 | Supporting utilities |
+| `System.Text` | 6 | StringBuilder |
+| `Aspose.Drawing.Text` | 2 | Font enumeration via InstalledFontCollection |
+| `System.Linq` | 2 | LINQ queries on collections |
 
 ## Common Code Pattern
 
@@ -97,32 +96,17 @@ class Program
 }
 ```
 
-## Domain Knowledge
-
-Category-specific API rules and gotchas:
-
-- INSERT TEXT SHAPE — Use page.AddText(pinX, pinY, width, height, text) to add a standalone text shape to a page. Returns a Shape object. Example: diagram.Pages[0].AddText(1, 1, 1, 1, "Test text");
-- WATERMARK — Use the overloaded page.AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSize) to add a watermark. Calculate center position using page.PageSheet.PageProps.PageWidth.Value / 2 and PageHeight.Value / 2. Example: page.AddText(pinx, piny, width, height, "Watermark", "Calibri", "#a5a5a5", 0.25);
-- WATERMARK FULL PAGE — Set width and height to the full page dimensions: double width = page.PageSheet.PageProps.PageWidth.Value; double height = page.PageSheet.PageProps.PageHeight.Value; then call page.AddText(pinx, piny, width, height, text, fontName, fontColor, fontSize);
-- UPDATE SHAPE TEXT — Clear existing text and add new: shape.Text.Value.Clear(); shape.Text.Value.Add(new Txt("New Text"));
-- FIND SHAPE FOR TEXT UPDATE — Iterate page.Shapes and match by shape.NameU.ToLower() == "process" && shape.ID == 1 or by shape.Name == "targetName".
-- APPLY STYLESHEET — Set shape.TextStyle, shape.FillStyle, shape.LineStyle to a StyleSheet object found by iterating diagram.StyleSheets and matching by styleSheet.Name == "Basic".
-- Example: foreach (StyleSheet ss in diagram.StyleSheets) { if (ss.Name == "Basic") { shape.TextStyle = ss; shape.FillStyle = ss; shape.LineStyle = ss; break; } }
-- MULTIPLE TEXT RUNS WITH DIFFERENT STYLES — Clear shape text and chars first: shape.Text.Value.Clear(); shape.Chars.Clear();
-- Add character run markers with Cp(index) before each Txt: shape.Text.Value.Add(new Cp(0)); shape.Text.Value.Add(new Txt("Regular text\n")); shape.Text.Value.Add(new Cp(1)); shape.Text.Value.Add(new Txt("Bold text\n"));
-- Add matching Char objects to shape.Chars: shape.Chars.Add(new Aspose.Diagram.Char()); — one per Cp index.
-
 ## Examples
 
 | File | Key APIs | Task |
 |------|----------|------|
 | [add-a-footer-text-watermark-that-includes-document-title-and-version-number.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/add-a-footer-text-watermark-that-includes-document-title-and-version-number.cs) | `Diagram`, `Save`, `diagram` | Add a footer text watermark that includes document title and version number |
-| [add-a-timestamp-watermark-that-updates-each-time-the-file-is-saved.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/add-a-timestamp-watermark-that-updates-each-time-the-file-is-saved.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Add a timestamp watermark that updates each time the file is saved |
+| [add-a-timestamp-watermark-that-updates-each-time-the-file-is-saved.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/add-a-timestamp-watermark-that-updates-each-time-the-file-is-saved.cs) | `Diagram`, `Pages`, `Save` | Add a timestamp watermark that updates each time the file is saved |
 | [adjust-watermark-opacity-to-a-configurable-value-between-10-and-90.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/adjust-watermark-opacity-to-a-configurable-value-between-10-and-90.cs) | `Diagram`, `Pages`, `Save` | Adjust watermark opacity to a configurable value between 10 and 90 |
 | [allow-users-to-specify-watermark-rotation-angle-in-degrees-via-configuration.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/allow-users-to-specify-watermark-rotation-angle-in-degrees-via-configuration.cs) | `Diagram`, `Pages`, `Save` | Allow users to specify watermark rotation angle in degrees via configuration |
 | [apply-a-custom-color-to-the-watermark-text-based-on-user-defined-palette.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-color-to-the-watermark-text-based-on-user-defined-palette.cs) | `Diagram`, `Pages`, `Save` | Apply a custom color to the watermark text based on user defined palette |
 | [apply-a-custom-stylesheet-that-changes-text-color-based-on-shape-type-then-validate-color-assignments.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-stylesheet-that-changes-text-color-based-on-shape-type-then-validate-color-assignments.cs) | `Diagram`, `Pages`, `Save` | Apply a custom stylesheet that changes text color based on shape type then validate color assignments |
-| [apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes.cs) | `AddShape`, `Diagram`, `Pages` | Apply a custom stylesheet that defines paragraph spacing then verify spacing changes on target shapes |
+| [apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-stylesheet-that-defines-paragraph-spacing-then-verify-spacing-changes-on-target-shapes.cs) | `Diagram`, `Pages`, `Save` | Apply a custom stylesheet that defines paragraph spacing then verify spacing changes on target shapes |
 | [apply-a-custom-stylesheet-that-defines-text-alignment-then-align-all-paragraph-texts-to-center-on-page-two.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-stylesheet-that-defines-text-alignment-then-align-all-paragraph-texts-to-center-on-page-two.cs) | `Diagram`, `Pages`, `Save` | Apply a custom stylesheet that defines text alignment then align all paragraph texts to center on page two |
 | [apply-a-custom-stylesheet-that-defines-underline-style-then-underline-all-headings-in-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-stylesheet-that-defines-underline-style-then-underline-all-headings-in-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Apply a custom stylesheet that defines underline style then underline all headings in the diagram |
 | [apply-a-custom-stylesheet-that-sets-line-height-then-verify-line-spacing-on-multi-line-text-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/apply-a-custom-stylesheet-that-sets-line-height-then-verify-line-spacing-on-multi-line-text-shapes.cs) | `Diagram`, `Pages`, `Save` | Apply a custom stylesheet that sets line height then verify line spacing on multi line text shapes |
@@ -144,15 +128,15 @@ Category-specific API rules and gotchas:
 | [create-a-batch-script-that-loads-diagrams-applies-a-custom-stylesheet-and-saves-them-as-updated-files.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-batch-script-that-loads-diagrams-applies-a-custom-stylesheet-and-saves-them-as-updated-files.cs) | `Diagram`, `Pages`, `Save` | Create a batch script that loads diagrams applies a custom stylesheet and saves them as updated files |
 | [create-a-function-that-adds-a-caption-text-shape-below-each-image-using-the-image-name-as-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-function-that-adds-a-caption-text-shape-below-each-image-using-the-image-name-as-text.cs) | `Diagram`, `Pages`, `Save` | Create a function that adds a caption text shape below each image using the image name as text |
 | [create-a-macro-that-iterates-through-pages-and-appends-the-configured-watermark.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-macro-that-iterates-through-pages-and-appends-the-configured-watermark.cs) | `Diagram`, `Pages`, `Save` | Create a macro that iterates through pages and appends the configured watermark |
-| [create-a-new-diagram-and-add-a-text-shape-at-coordinates-2-3-with-specified-dimensions-and-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-new-diagram-and-add-a-text-shape-at-coordinates-2-3-with-specified-dimensions-and-content.cs) | `Diagram`, `Pages`, `Save` | Create a new diagram and add a text shape at coordinates 2 3 with specified dimensions and content |
+| [create-a-new-diagram-and-add-a-text-shape-at-coordinates-2-3-with-specified-dimensions-and-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-new-diagram-and-add-a-text-shape-at-coordinates-2-3-with-specified-dimensions-and-content.cs) | `Diagram`, `Save`, `Window` | Create a new diagram and add a text shape at coordinates 2 3 with specified dimensions and content |
 | [create-a-script-that-adds-a-footer-text-shape-to-every-page-displaying-the-page-number-dynamically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-script-that-adds-a-footer-text-shape-to-every-page-displaying-the-page-number-dynamically.cs) | `Diagram`, `Save`, `diagram` | Create a script that adds a footer text shape to every page displaying the page number dynamically |
 | [create-a-semi-transparent-text-watermark-layer-for-the-current-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-semi-transparent-text-watermark-layer-for-the-current-page.cs) | `Diagram`, `Pages`, `Save` | Create a semi transparent text watermark layer for the current page |
 | [create-a-utility-that-adds-a-legend-text-shape-describing-color-codes-used-in-styled-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-utility-that-adds-a-legend-text-shape-describing-color-codes-used-in-styled-shapes.cs) | `Diagram`, `Pages`, `Save` | Create a utility that adds a legend text shape describing color codes used in styled shapes |
 | [create-a-utility-that-adds-a-watermark-text-shape-diagonally-across-each-page-with-thirty-percent-opacity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/create-a-utility-that-adds-a-watermark-text-shape-diagonally-across-each-page-with-thirty-percent-opacity.cs) | `Diagram`, `Pages`, `Save` | Create a utility that adds a watermark text shape diagonally across each page with thirty percent opacity |
-| [document-the-watermark-addition-workflow-with-code-examples-and-usage-guidelines.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/document-the-watermark-addition-workflow-with-code-examples-and-usage-guidelines.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Document the watermark addition workflow with code examples and usage guidelines |
+| [document-the-watermark-addition-workflow-with-code-examples-and-usage-guidelines.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/document-the-watermark-addition-workflow-with-code-examples-and-usage-guidelines.cs) | `Diagram`, `Pages`, `Save` | Document the watermark addition workflow with code examples and usage guidelines |
 | [ensure-the-watermark-does-not-obscure-shape-text-by-setting-appropriate-layering.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/ensure-the-watermark-does-not-obscure-shape-text-by-setting-appropriate-layering.cs) | `Diagram`, `Pages`, `Save` | Ensure the watermark does not obscure shape text by setting appropriate layering |
 | [ensure-the-watermark-respects-page-margins-and-does-not-extend-beyond-printable-area.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/ensure-the-watermark-respects-page-margins-and-does-not-extend-beyond-printable-area.cs) | `Diagram`, `Pages`, `Save` | Ensure the watermark respects page margins and does not extend beyond printable area |
-| [export-the-modified-diagram-to-a-new-vsdx-file-preserving-original-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/export-the-modified-diagram-to-a-new-vsdx-file-preserving-original-content.cs) | `Pages`, `Save`, `diagram` | Export the modified diagram to a new vsdx file preserving original content |
+| [export-the-modified-diagram-to-a-new-vsdx-file-preserving-original-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/export-the-modified-diagram-to-a-new-vsdx-file-preserving-original-content.cs) | `Diagram`, `Save`, `diagram` | Export the modified diagram to a new vsdx file preserving original content |
 | [extract-plain-text-from-a-diagram-count-total-word-occurrences-and-generate-a-frequency-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/extract-plain-text-from-a-diagram-count-total-word-occurrences-and-generate-a-frequency-report.cs) | `Diagram`, `Pages`, `Shapes` | Extract plain text from a diagram count total word occurrences and generate a frequency report |
 | [extract-plain-text-from-a-diagram-filter-out-numeric-strings-and-save-the-cleaned-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/extract-plain-text-from-a-diagram-filter-out-numeric-strings-and-save-the-cleaned-content.cs) | `Diagram`, `Pages`, `Shapes` | Extract plain text from a diagram filter out numeric strings and save the cleaned content |
 | [extract-plain-text-from-a-diagram-filter-out-stopwords-and-generate-a-concise-summary-paragraph.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/extract-plain-text-from-a-diagram-filter-out-stopwords-and-generate-a-concise-summary-paragraph.cs) | `Diagram`, `Pages`, `Shapes` | Extract plain text from a diagram filter out stopwords and generate a concise summary paragraph |
@@ -184,7 +168,7 @@ Category-specific API rules and gotchas:
 | [log-the-success-or-failure-of-watermark-addition-for-each-processed-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/log-the-success-or-failure-of-watermark-addition-for-each-processed-file.cs) | `Diagram`, `Pages`, `Save` | Log the success or failure of watermark addition for each processed file |
 | [optimize-watermark-rendering-performance-for-large-diagrams-with-many-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/optimize-watermark-rendering-performance-for-large-diagrams-with-many-pages.cs) | `Diagram`, `Pages`, `Save` | Optimize watermark rendering performance for large diagrams with many pages |
 | [position-the-watermark-at-the-center-of-each-page-with-a-45-degree-rotation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/position-the-watermark-at-the-center-of-each-page-with-a-45-degree-rotation.cs) | `Diagram`, `Pages`, `Save` | Position the watermark at the center of each page with a 45 degree rotation |
-| [provide-an-api-method-to-retrieve-current-watermark-settings-from-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/provide-an-api-method-to-retrieve-current-watermark-settings-from-a-diagram.cs) | `Diagram`, `Pages`, `Shapes` | Provide an api method to retrieve current watermark settings from a diagram |
+| [provide-an-api-method-to-retrieve-current-watermark-settings-from-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/provide-an-api-method-to-retrieve-current-watermark-settings-from-a-diagram.cs) | `Diagram` | Provide an api method to retrieve current watermark settings from a diagram |
 | [provide-an-option-to-remove-existing-watermarks-from-a-diagram-before-adding-new-ones.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/provide-an-option-to-remove-existing-watermarks-from-a-diagram-before-adding-new-ones.cs) | `Diagram`, `Pages`, `Save` | Provide an option to remove existing watermarks from a diagram before adding new ones |
 | [read-watermark-text-and-opacity-settings-from-a-configuration-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/read-watermark-text-and-opacity-settings-from-a-configuration-file.cs) | `Diagram`, `Pages`, `Save` | Read watermark text and opacity settings from a configuration file |
 | [replace-all-occurrences-of-the-ampersand-character-with-the-word-and-in-every-shape-s-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/replace-all-occurrences-of-the-ampersand-character-with-the-word-and-in-every-shape-s-text.cs) | `Diagram`, `Pages`, `Save` | Replace all occurrences of the ampersand character with the word and in every shape s text |
@@ -197,12 +181,12 @@ Category-specific API rules and gotchas:
 | [rotate-text-of-all-footer-shapes-by-one-hundred-eighty-degrees-to-display-upside-down-information-on-printed-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/rotate-text-of-all-footer-shapes-by-one-hundred-eighty-degrees-to-display-upside-down-information-on-printed-pages.cs) | `Diagram`, `Pages`, `Save` | Rotate text of all footer shapes by one hundred eighty degrees to display upside down information on printed pages |
 | [rotate-text-of-shapes-on-page-five-by-minus-thirty-degrees-to-match-diagonal-layout-of-associated-graphics.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/rotate-text-of-shapes-on-page-five-by-minus-thirty-degrees-to-match-diagonal-layout-of-associated-graphics.cs) | `Diagram`, `Pages`, `Save` | Rotate text of shapes on page five by minus thirty degrees to match diagonal layout of associated graphics |
 | [rotate-the-text-of-shape-id-3-by-45-degrees-to-align-with-a-slanted-connector-line.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/rotate-the-text-of-shape-id-3-by-45-degrees-to-align-with-a-slanted-connector-line.cs) | `Diagram`, `Pages`, `Save` | Rotate the text of shape id 3 by 45 degrees to align with a slanted connector line |
-| [save-a-backup-copy-of-the-original-diagram-before-applying-any-watermark-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/save-a-backup-copy-of-the-original-diagram-before-applying-any-watermark-changes.cs) | `Diagram`, `Pages`, `Save` | Save a backup copy of the original diagram before applying any watermark changes |
+| [save-a-backup-copy-of-the-original-diagram-before-applying-any-watermark-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/save-a-backup-copy-of-the-original-diagram-before-applying-any-watermark-changes.cs) | `Diagram`, `Save`, `diagram` | Save a backup copy of the original diagram before applying any watermark changes |
 | [set-text-rotation-to-270-degrees-for-all-side-label-shapes-and-verify-orientation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/set-text-rotation-to-270-degrees-for-all-side-label-shapes-and-verify-orientation.cs) | `Diagram`, `Pages`, `Save` | Set text rotation to 270 degrees for all side label shapes and verify orientation |
 | [set-text-rotation-to-90-degrees-for-all-shapes-on-page-three-to-create-vertical-labels.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/set-text-rotation-to-90-degrees-for-all-shapes-on-page-three-to-create-vertical-labels.cs) | `Diagram`, `Pages`, `Save` | Set text rotation to 90 degrees for all shapes on page three to create vertical labels |
 | [set-watermark-transparency-to-match-corporate-branding-guidelines-for-consistent-appearance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/set-watermark-transparency-to-match-corporate-branding-guidelines-for-consistent-appearance.cs) | `Diagram`, `Pages`, `Save` | Set watermark transparency to match corporate branding guidelines for consistent appearance |
 | [update-the-watermark-text-dynamically-based-on-metadata-stored-in-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/update-the-watermark-text-dynamically-based-on-metadata-stored-in-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Update the watermark text dynamically based on metadata stored in the diagram |
-| [use-a-diagonal-watermark-pattern-that-repeats-across-the-page-background.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/use-a-diagonal-watermark-pattern-that-repeats-across-the-page-background.cs) | `Diagram`, `Page`, `Pages` | Use a diagonal watermark pattern that repeats across the page background |
+| [use-a-diagonal-watermark-pattern-that-repeats-across-the-page-background.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/use-a-diagonal-watermark-pattern-that-repeats-across-the-page-background.cs) | `Diagram`, `Pages`, `Save` | Use a diagonal watermark pattern that repeats across the page background |
 | [validate-that-the-watermark-appears-correctly-on-every-page-after-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/validate-that-the-watermark-appears-correctly-on-every-page-after-saving.cs) | `Diagram`, `Pages`, `Save` | Validate that the watermark appears correctly on every page after saving |
 | [verify-that-the-watermark-does-not-increase-file-size-beyond-a-specified-limit.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text/verify-that-the-watermark-does-not-increase-file-size-beyond-a-specified-limit.cs) | `Diagram`, `Pages`, `Save` | Verify that the watermark does not increase file size beyond a specified limit |
 
@@ -293,15 +277,17 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `AddShape`
 - `Diagram`
 - `ImageSaveOptions`
-- `Page`
 - `Pages`
 - `PdfSaveOptions`
 - `Save`
 - `Shapes`
 - `StyleSheet`
 - `StyleSheets`
+- `Window`
+- `Windows`
 - `diagram`
 - `page`
+- `stylesheet`
 
 ## Real-World Use Cases
 
@@ -317,7 +303,7 @@ Frequently asked questions about **Working With Text** in **Aspose.Diagram for .
 
 **Q: How do I get started with Working With Text in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -354,4 +340,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-09-24 | Examples: 89 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-22 | Examples: 89 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

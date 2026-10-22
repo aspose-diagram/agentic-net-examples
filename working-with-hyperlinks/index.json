@@ -1,11 +1,11 @@
 {
   "category": "working-with-hyperlinks",
   "display_name": "Working With Hyperlinks",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -18,11 +18,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -31,7 +31,6 @@
       "task": "Add a new hyperlink to the selected shape pointing to an external website with a descriptive name",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -66,8 +65,8 @@
       "task": "Apply conditional logic to add hyperlinks only to shapes that meet a specific custom property value",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -84,7 +83,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -101,6 +99,7 @@
       "task": "Clone an existing hyperlink and attach it to another shape with a modified description",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -108,6 +107,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -117,7 +117,8 @@
       "task": "Compare two diagrams and list shapes where hyperlink targets differ outputting differences to the console",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -129,7 +130,8 @@
       "task": "Configure the hyperlink s subaddress property to navigate to a specific page within the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -145,7 +147,8 @@
       "task": "Create a batch process adding identical navigation hyperlinks to multiple shapes across all pages",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -162,15 +165,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Text.Json"
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -179,15 +181,15 @@
       "task": "Create a hyperlink that opens a pdf document in a new browser window",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -196,14 +198,15 @@
       "task": "Create a unit test verifying hyperlink addition correctly updates the hyperlinkcollection count",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -252,9 +255,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -265,7 +268,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -281,7 +285,8 @@
       "task": "Implement a rollback mechanism that restores original hyperlink settings if an update error occurs",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -298,7 +303,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -322,7 +328,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -332,13 +337,13 @@
       "task": "Implement pagination logic that adds page specific hyperlinks to navigate sequentially through diagram pages",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -354,9 +359,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -382,7 +387,8 @@
       "task": "Load the visio diagram from file and access a shape using its unique identifier",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -417,8 +423,8 @@
       "task": "Programmatically set the hyperlink s target frame to open in the same window",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -434,9 +440,8 @@
       "task": "Remove a hyperlink from a shape by matching its name and save the updated diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -452,6 +457,7 @@
       "task": "Replace an existing hyperlink s target url with a new address while preserving its description",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -470,7 +476,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -488,6 +495,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
+        "System.IO",
         "System.Text.Json"
       ],
       "key_apis": [
@@ -504,8 +512,8 @@
       "task": "Set the hyperlink s description property to provide tooltip text on mouse hover",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -538,7 +546,6 @@
       "task": "Use asynchronous i o to load the diagram modify hyperlinks and save without blocking the ui thread",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Threading.Tasks"
@@ -561,11 +568,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -591,7 +598,8 @@
       "task": "Validate that each shape with a hyperlink has a non empty description property",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

@@ -1,67 +1,80 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-
-                // Input and output file paths
-                string inputPath = "input.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Ensure the diagram has at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    throw new Exception("The diagram contains no pages.");
-                }
-
-                // Work with the first page
-                Page page = diagram.Pages[0];
-
-                // Find the first non-deleted shape on the page
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Del == BOOL.False)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    throw new Exception("No suitable shape found on the page.");
-                }
-
-                // Create a new hyperlink (or use an existing one)
-                Hyperlink link = new Hyperlink();
-                link.Name = "SampleLink";
-                link.Address.Value = "https://example.com";
-                link.Description.Value = "Open Example.com";
-
-                // Set the hyperlink to open in the same window (NewWindow = false)
-                link.NewWindow.Value = BOOL.False;
-
-                // Add the hyperlink to the shape's collection
-                targetShape.Hyperlinks.Add(link);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Hyperlink target set to open in the same window and diagram saved successfully.");
-
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Work with the first page in the diagram.
+            Page page = diagram.Pages[0];
+
+            // Ensure the page contains at least one shape.
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
             }
+
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes[0];
+
+            // Verify that the shape has a Hyperlinks collection.
+            if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+            {
+                // Iterate over each hyperlink and set it to open in the same window.
+                for (int i = 0; i < shape.Hyperlinks.Count; i++)
+                {
+                    Hyperlink link = shape.Hyperlinks[i];
+
+                    // The NewWindow property is a cell; set its value to FALSE.
+                    link.NewWindow.Value = BOOL.False;
+                }
+
+                Console.WriteLine($"Updated {shape.Hyperlinks.Count} hyperlink(s) on shape ID {shape.ID} to open in the same window.");
+            }
+            else
+            {
+                Console.WriteLine("No hyperlinks found on the selected shape.");
+            }
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

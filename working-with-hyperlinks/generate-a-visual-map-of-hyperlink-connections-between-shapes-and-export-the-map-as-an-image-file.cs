@@ -1,79 +1,92 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputImagePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
-
-                // Load the source diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Use the first page for processing
+                // Work with the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Iterate all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Create a hub shape that will serve as the central node for hyperlink connections
+                // Coordinates (5,5) are arbitrary; adjust as needed
+                long hubId = page.AddShape(5.0, 5.0, "Rectangle");
+                Shape hubShape = page.Shapes.GetShape(hubId);
+
+                // Set a visible label on the hub shape
+                hubShape.Text.Value.Clear();
+                hubShape.Text.Value.Add(new Txt("Hyperlink Hub"));
+
+                // Iterate over all shapes on the page
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Skip shapes without hyperlinks
-                    if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
+                    Shape shape = page.Shapes[i];
+
+                    // Skip the hub shape itself
+                    if (shape.ID == hubId)
                         continue;
 
-                    // Process each hyperlink attached to the shape
-                    foreach (Hyperlink link in shape.Hyperlinks)
+                    // Check if the shape contains any hyperlinks
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                     {
-                        // Only handle internal links (SubAddress) that point to another shape
-                        string subAddress = link.SubAddress?.Value;
-                        if (string.IsNullOrEmpty(subAddress))
-                            continue; // external URL – ignore for visual map
-
-                        // Attempt to locate the target shape by its universal name (NameU)
-                        Shape targetShape = null;
-                        foreach (Shape candidate in page.Shapes)
-                        {
-                            if (candidate.NameU == subAddress)
-                            {
-                                targetShape = candidate;
-                                break;
-                            }
-                        }
-
-                        // If target not found, skip this link
-                        if (targetShape == null)
-                            continue;
-
-                        // Create a dynamic connector shape (master name "Dynamic connector")
-                        long connectorId = diagram.AddShape(0, 0, "Dynamic connector", 0);
+                        // Create a connector shape (Dynamic connector master)
+                        long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
                         Shape connector = page.Shapes.GetShape(connectorId);
 
-                        // Connect the source shape to the target shape using the connector
-                        // Use right side of source and left side of target as connection points
+                        // Connect the shape to the hub using the connector
                         page.ConnectShapesViaConnector(
-                            shape.ID,
-                            ConnectionPointPlace.Right,
-                            targetShape.ID,
-                            ConnectionPointPlace.Left,
-                            connectorId);
+                            shape.ID,                     // source shape ID
+                            ConnectionPointPlace.Bottom, // source connection point
+                            hubId,                       // target shape ID (hub)
+                            ConnectionPointPlace.Top,    // target connection point
+                            connectorId);                // connector shape ID
+
+                        // Set arrowheads for better visual indication
+                        connector.Line.BeginArrow.Value = 4; // Arrow style
+                        connector.Line.EndArrow.Value = 4;   // Arrow style
                     }
                 }
 
-                // Export the resulting diagram (with connectors) as a PNG image
+                // Prepare image save options for PNG export
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                diagram.Save("hyperlink_map.png", saveOptions);
+                saveOptions.PageIndex = 0;   // Export first page
+                saveOptions.PageCount = 1;   // Single page
+                saveOptions.Resolution = 300f; // Optional: higher resolution
 
-                Console.WriteLine("Hyperlink connection map has been generated and saved as 'hyperlink_map.png'.");
-
+                // Save the visual map as an image file
+                diagram.Save(outputPath, saveOptions);
+                Console.WriteLine($"Hyperlink connection map saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

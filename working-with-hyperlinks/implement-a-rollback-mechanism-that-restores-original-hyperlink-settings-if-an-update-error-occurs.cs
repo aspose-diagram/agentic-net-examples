@@ -1,129 +1,92 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-namespace HyperlinkRollbackDemo
+class Program
 {
-    // Simple DTO to store hyperlink data for rollback
-    public class HyperlinkInfo
+    static void Main(string[] args)
     {
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string SubAddress { get; set; }
-        public string Description { get; set; }
-    }
-
-    public class Program
-    {
-        static void Main()
+        // Validate input arguments
+        if (args.Length == 0)
         {
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the source file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Create a backup copy for rollback purposes
+        string backupPath = inputPath + ".bak";
+        try
+        {
+            File.Copy(inputPath, backupPath, true);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create backup file: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to update hyperlinks
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the shape has a Hyperlinks collection
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    {
+                        // Update each hyperlink's address
+                        for (int i = 0; i < shape.Hyperlinks.Count; i++)
+                        {
+                            Hyperlink link = shape.Hyperlinks[i];
+                            // Example update: prepend "https://example.com/updated?orig=" to the original address
+                            string originalAddress = link.Address?.Value ?? string.Empty;
+                            link.Address.Value = $"https://example.com/updated?orig={originalAddress}";
+                        }
+                    }
+                }
+            }
+
+            // Save the updated diagram
+            diagram.Save(inputPath, SaveFileFormat.Vsdx);
+
+            // If everything succeeded, delete the backup
             try
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Store original hyperlink settings for each shape
-                var originalHyperlinks = new System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<HyperlinkInfo>>();
-
-                // Capture current hyperlink data
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                        {
-                            var list = new System.Collections.Generic.List<HyperlinkInfo>();
-                            foreach (Hyperlink link in shape.Hyperlinks)
-                            {
-                                list.Add(new HyperlinkInfo
-                                {
-                                    Name = link.Name,
-                                    Address = link.Address?.Value,
-                                    SubAddress = link.SubAddress?.Value,
-                                    Description = link.Description?.Value
-                                });
-                            }
-                            originalHyperlinks[shape.ID] = list;
-                        }
-                    }
-                }
-
-                try
-                {
-                    // Example update: add or modify a hyperlink on each shape
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Create a new hyperlink
-                            Hyperlink newLink = new Hyperlink();
-                            newLink.Name = "UpdatedLink";
-                            newLink.Address.Value = "https://newexample.com";
-                            newLink.Description.Value = "Updated hyperlink";
-
-                            // Add the new hyperlink to the shape
-                            shape.Hyperlinks.Add(newLink);
-                        }
-                    }
-
-                    // Save the updated diagram
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error during hyperlink update: {ex.Message}");
-                    Console.WriteLine("Rolling back to original hyperlink settings...");
-
-                    // Restore original hyperlinks
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Remove all current hyperlinks if any
-                            if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                            {
-                                shape.Hyperlinks.Clear();
-                            }
-
-                            // Re‑add saved hyperlinks
-                            if (originalHyperlinks.TryGetValue(shape.ID, out var savedLinks))
-                            {
-                                foreach (var info in savedLinks)
-                                {
-                                    Hyperlink link = new Hyperlink();
-                                    link.Name = info.Name;
-                                    link.Address.Value = info.Address;
-                                    link.SubAddress.Value = info.SubAddress;
-                                    link.Description.Value = info.Description;
-                                    shape.Hyperlinks.Add(link);
-                                }
-                            }
-                        }
-                    }
-
-                    // Attempt to save the rolled‑back diagram
-                    try
-                    {
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                        Console.WriteLine("Rollback successful. Diagram saved with original hyperlinks.");
-                    }
-                    catch (Exception saveEx)
-                    {
-                        Console.WriteLine($"Failed to save after rollback: {saveEx.Message}");
-                        throw; // Re‑throw as the operation cannot be recovered
-                    }
-                }
-
+                File.Delete(backupPath);
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Warning: could not delete backup file: {ex.Message}");
             }
-    }
+        }
+        catch (Exception ex)
+        {
+            // An error occurred during update; attempt rollback
+            Console.Error.WriteLine($"Error during hyperlink update: {ex.Message}");
+            try
+            {
+                // Reload the backup diagram and overwrite the original file
+                Diagram backupDiagram = new Diagram(backupPath);
+                backupDiagram.Save(inputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine("Rollback successful: original hyperlink settings restored.");
+            }
+            catch (Exception rollbackEx)
+            {
+                Console.Error.WriteLine($"Rollback failed: {rollbackEx.Message}");
+            }
+        }
     }
 }

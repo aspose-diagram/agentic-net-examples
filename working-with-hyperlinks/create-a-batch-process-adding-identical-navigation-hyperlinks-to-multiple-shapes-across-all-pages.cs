@@ -1,56 +1,111 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder> <hyperlinkAddress> [shapeName]");
+            return;
+        }
+
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+        string hyperlinkAddress = args[2];
+        string targetShapeName = args.Length >= 4 ? args[3] : null;
+
+        // Verify input folder exists.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Verify (or create) output folder.
+        if (!Directory.Exists(outputFolder))
         {
             try
             {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
+        }
 
-                // Input and output file paths (can be passed as command‑line arguments)
-                string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-                string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Get all Visio files in the input folder (common extensions).
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in visioFiles)
+        {
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vssx" && extension != ".vstx")
+            {
+                // Skip non‑Visio files.
+                continue;
+            }
 
-                // Load the Visio diagram
-                using (Diagram diagram = new Diagram(inputPath))
+            // Guard against missing file (should not happen after GetFiles, but keep per rules).
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
+            try
+            {
+                // Load the diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Iterate through every page
+                    // Iterate through all pages.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through every shape on the page
+                        // Iterate through all shapes on the page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.False)
-                            {
-                                // Ensure the Hyperlinks collection exists
-                                if (shape.Hyperlinks != null)
-                                {
-                                    // Create a new hyperlink pointing to the desired URL
-                                    Hyperlink link = new Hyperlink
-                                    {
-                                        Name = "NavLink"
-                                    };
-                                    link.Address.Value = "https://example.com";
+                            // Skip deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                                    // Add the hyperlink to the shape
-                                    shape.Hyperlinks.Add(link);
-                                }
+                            // If a specific shape name is provided, filter by NameU.
+                            if (!string.IsNullOrEmpty(targetShapeName))
+                            {
+                                if (shape.NameU == null || !shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
+                                    continue;
                             }
+
+                            // Create a new hyperlink instance.
+                            Hyperlink link = new Hyperlink();
+
+                            // Set hyperlink properties using the cell‑based .Value accessors.
+                            link.Description.Value = "Navigation Link";
+                            link.Address.Value = hyperlinkAddress;
+                            link.NewWindow.Value = BOOL.True;
+
+                            // Add the hyperlink to the shape's collection.
+                            shape.Hyperlinks.Add(link);
                         }
                     }
 
-                    // Save the modified diagram
+                    // Prepare output file path.
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                    // Save the modified diagram preserving the original format.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine($"Hyperlinks added and diagram saved to '{outputPath}'.");
-
+                Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                // Report any errors that occur during processing.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
+        }
     }
-    }
+}

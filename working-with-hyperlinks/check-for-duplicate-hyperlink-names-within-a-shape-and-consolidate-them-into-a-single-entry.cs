@@ -1,67 +1,81 @@
-using System.IO;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
 
-class HyperlinkConsolidator
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path (optional second argument or auto-generated)
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_dedup.vsdx");
+
         try
         {
-
-            // Load the diagram (replace with your actual file path)
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has hyperlinks
-                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has a Hyperlinks collection
+                    if (shape.Hyperlinks == null || shape.Hyperlinks.Count <= 1)
+                        continue;
+
+                    // Dictionary to track first occurrence of each hyperlink name
+                    var seenNames = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                    // Iterate backwards to safely remove duplicates
+                    for (int i = shape.Hyperlinks.Count - 1; i >= 0; i--)
                     {
-                        // Track first occurrence of each hyperlink name
-                        var firstByName = new Dictionary<string, Hyperlink>(StringComparer.OrdinalIgnoreCase);
-                        // Collect duplicates to remove after iteration
-                        var duplicates = new List<Hyperlink>();
+                        Hyperlink link = shape.Hyperlinks[i];
+                        string name = link.Name ?? string.Empty;
 
-                        foreach (Hyperlink hl in shape.Hyperlinks)
+                        if (seenNames.ContainsKey(name))
                         {
-                            // Skip hyperlinks without a name
-                            if (string.IsNullOrEmpty(hl.Name))
-                                continue;
-
-                            if (firstByName.ContainsKey(hl.Name))
-                            {
-                                // Duplicate name found – mark for removal
-                                duplicates.Add(hl);
-                            }
-                            else
-                            {
-                                // First time we see this name – keep it
-                                firstByName[hl.Name] = hl;
-                            }
+                            // Duplicate found – remove this hyperlink
+                            shape.Hyperlinks.RemoveAt(i);
                         }
-
-                        // Remove duplicate hyperlink entries from the shape
-                        foreach (Hyperlink dup in duplicates)
+                        else
                         {
-                            shape.Hyperlinks.Remove(dup);
+                            // First occurrence – remember its index
+                            seenNames[name] = i;
                         }
                     }
                 }
             }
 
-            // Save the modified diagram (replace with your desired output path)
-            string outputPath = "output.vsdx";
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

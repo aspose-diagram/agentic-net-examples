@@ -1,60 +1,72 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate arguments: input file, output file, page index
+        if (args.Length < 3)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <pageIndex>");
+            return;
+        }
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Name of the page from which hyperlinks will be removed
-                string targetPageName = "Page-1";
-                // Output Visio file path
-                string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string pageIndexArg = args[2];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Remove all hyperlinks from shapes on the specified page
-                RemoveHyperlinksFromPage(diagram, targetPageName);
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Removes every hyperlink from all shapes on a given page.
-        /// </summary>
-        /// <param name="diagram">The loaded Diagram instance.</param>
-        /// <param name="pageName">The universal name of the page to process.</param>
-        private static void RemoveHyperlinksFromPage(Diagram diagram, string pageName)
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
         {
-            // Retrieve the page by its universal name
-            Page page = diagram.Pages.GetPage(pageName);
-            if (page == null)
-            {
-                throw new Exception($"Page '{pageName}' not found in the diagram.");
-            }
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            // Iterate through all shapes on the page
-            foreach (Shape shape in page.Shapes)
+        // Parse page index
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
+        {
+            Console.Error.WriteLine($"Invalid page index: {pageIndexArg}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the Hyperlinks collection exists and contains items
-                if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                // Validate page index range
+                if (pageIndex >= diagram.Pages.Count)
                 {
-                    // Clear all hyperlinks from the shape
-                    shape.Hyperlinks.Clear();
+                    Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                    return;
                 }
+
+                // Retrieve the specified page
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the Hyperlinks collection exists and contains items
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    {
+                        // Remove all hyperlinks from the shape
+                        shape.Hyperlinks.Clear();
+                    }
+                }
+
+                // Save the modified diagram to the output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Hyperlinks removed from page {pageIndex} and diagram saved to: {outputPath}");
             }
         }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
+}

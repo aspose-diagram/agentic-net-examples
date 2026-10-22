@@ -1,77 +1,96 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-namespace HyperlinkExport
+class Program
 {
-    // DTO for JSON serialization of hyperlink properties
-    public class HyperlinkInfo
+    static void Main(string[] args)
     {
-        public string? Name { get; set; }
-        public string? Address { get; set; }
-        public string? SubAddress { get; set; }
-        public string? Description { get; set; }
-    }
-
-    public class Program
-    {
-        public static void Main()
+        // Expect the Visio file path as the first command‑line argument.
+        if (args.Length == 0)
         {
-            try
+            Console.Error.WriteLine("Please provide the path to the Visio file as a command-line argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Verify that the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-                // Path to the Visio file
-                string diagramPath = "input.vsdx";
+            // Retrieve the first page.
+            Page page = diagram.Pages[0];
 
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
+            // Find the first shape on the page.
+            Shape shape = null;
+            foreach (Shape s in page.Shapes)
+            {
+                shape = s;
+                break;
+            }
 
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
+            if (shape == null)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
 
-                // Find the first shape that contains hyperlinks
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+            // Prepare a list to hold hyperlink information.
+            List<object> hyperlinkData = new List<object>();
+
+            // Check whether the shape has any hyperlinks.
+            if (shape.Hyperlinks != null)
+            {
+                // Iterate through each hyperlink in the collection.
+                foreach (Hyperlink link in shape.Hyperlinks)
                 {
-                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No shape with hyperlinks found in the diagram.");
-                    return;
-                }
-
-                // Collect hyperlink data
-                List<HyperlinkInfo> hyperlinkData = new List<HyperlinkInfo>();
-                foreach (Hyperlink link in targetShape.Hyperlinks)
-                {
-                    HyperlinkInfo info = new HyperlinkInfo
+                    // Build an anonymous object with the desired hyperlink properties.
+                    var linkInfo = new
                     {
                         Name = link.Name,
-                        Address = link.Address?.Value,
-                        SubAddress = link.SubAddress?.Value,
-                        Description = link.Description?.Value
+                        Description = link.Description != null ? link.Description.Value : null,
+                        Address = link.Address != null ? link.Address.Value : null,
+                        SubAddress = link.SubAddress != null ? link.SubAddress.Value : null,
+                        NewWindow = link.NewWindow != null ? (link.NewWindow.Value == BOOL.True) : (bool?)null
                     };
-                    hyperlinkData.Add(info);
+
+                    // Add the object to the result list.
+                    hyperlinkData.Add(linkInfo);
                 }
-
-                // Serialize to JSON
-                string json = JsonSerializer.Serialize(hyperlinkData, new JsonSerializerOptions { WriteIndented = true });
-
-                // Output JSON to console (or write to a file if desired)
-                Console.WriteLine(json);
-
             }
-            catch (System.IO.FileNotFoundException ex)
+
+            // Serialize the list to formatted JSON.
+            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+                WriteIndented = true
+            };
+            string jsonOutput = JsonSerializer.Serialize(hyperlinkData, jsonOptions);
+
+            // Output the JSON to the console.
+            Console.WriteLine(jsonOutput);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

@@ -1,40 +1,83 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Verify that the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Create a new diagram instance
-            Diagram diagram = new Diagram();
+                // Get the first page
+                Page page = diagram.Pages[0];
 
-            // Access the first page of the diagram
-            Page page = diagram.Pages[0];
+                // Locate the first shape on the page
+                Shape targetShape = null;
+                foreach (Shape shp in page.Shapes)
+                {
+                    targetShape = shp;
+                    break; // only need the first shape
+                }
 
-            // Add a rectangle shape to the page
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
-            Shape shape = page.Shapes.GetShape(shapeId);
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine("No shape found on the first page.");
+                    return;
+                }
 
-            // Create a hyperlink that uses a mailto: address
-            Hyperlink link = new Hyperlink();
-            link.Name = "EmailLink";
-            link.Address.Value = "mailto:someone@example.com";
-            link.Description.Value = "Send Email";
+                // Ensure the shape can hold hyperlinks (collection should be non‑null)
+                if (targetShape.Hyperlinks == null)
+                {
+                    Console.Error.WriteLine("The shape does not support hyperlinks.");
+                    return;
+                }
 
-            // Attach the hyperlink to the shape
-            shape.Hyperlinks.Add(link);
+                // Create a new hyperlink that uses a mailto: address
+                Hyperlink link = new Hyperlink();
+                link.Name = "EmailLink";
+                link.Address.Value = "mailto:someone@example.com";
+                link.Description.Value = "Send email";
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Add the hyperlink to the shape's collection
+                targetShape.Hyperlinks.Add(link);
 
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine($"Hyperlink added successfully. Diagram saved to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,54 +6,74 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate input arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path (optional). If not provided, use a default name.
+        string outputPath = args.Length > 1 ? args[1] : "updated_output.vsdx";
+
         try
         {
-
-            // Example: assume we have a byte array containing a Visio diagram (VSDX format)
-            // In a real scenario this could come from a database, network stream, etc.
-            byte[] diagramData = File.ReadAllBytes("input.vsdx");
-
-            // Load the diagram from the memory stream.
-            // Aspose.Diagram does not support direct loading from a Stream, so we write the bytes to a temporary file first.
-            string tempInputPath = Path.GetTempFileName();
-            File.WriteAllBytes(tempInputPath, diagramData);
-            Diagram diagram = new Diagram(tempInputPath);
-
-            // Iterate through all pages and shapes to modify hyperlink targets.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram bytes into a memory stream.
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
+            using (MemoryStream memoryStream = new MemoryStream(fileBytes))
             {
-                foreach (Shape shape in page.Shapes)
+                // Load diagram from the memory stream.
+                Diagram diagram = new Diagram(memoryStream);
+
+                // Iterate through all pages.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    if (shape.Hyperlinks != null)
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all shapes on the page.
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        foreach (Hyperlink link in shape.Hyperlinks)
+                        Shape shape = page.Shapes[shapeIndex];
+
+                        // Ensure the shape has a Hyperlinks collection.
+                        if (shape.Hyperlinks != null)
                         {
-                            // Set a new address for each hyperlink.
-                            // Replace with the desired target URL.
-                            link.Address.Value = "https://newexample.com";
+                            // Iterate through each hyperlink and modify its target address.
+                            for (int linkIndex = 0; linkIndex < shape.Hyperlinks.Count; linkIndex++)
+                            {
+                                Hyperlink link = shape.Hyperlinks[linkIndex];
+                                // Set a new address for the hyperlink.
+                                link.Address.Value = "https://example.com/modified";
+                            }
                         }
                     }
                 }
+
+                // Reset the memory stream to overwrite with the updated diagram.
+                memoryStream.Position = 0;
+                memoryStream.SetLength(0);
+
+                // Save the updated diagram back into the memory stream in VSDX format.
+                diagram.Save(memoryStream, SaveFileFormat.Vsdx);
+
+                // Write the updated diagram from the memory stream to the output file.
+                File.WriteAllBytes(outputPath, memoryStream.ToArray());
             }
 
-            // Save the updated diagram back into a memory stream.
-            using (MemoryStream outputStream = new MemoryStream())
-            {
-                diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                // Reset the stream position if it will be read later.
-                outputStream.Position = 0;
-
-                // Example: write the updated diagram to a file for verification.
-                File.WriteAllBytes("output.vsdx", outputStream.ToArray());
-            }
-
-            // Clean up the temporary file.
-            File.Delete(tempInputPath);
-
+            Console.WriteLine($"Diagram updated and saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

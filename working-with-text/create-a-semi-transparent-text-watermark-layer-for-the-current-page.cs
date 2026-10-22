@@ -7,81 +7,95 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the source file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (current page)
-            Page page = diagram.Pages[0];
-
-            // Retrieve page dimensions (in inches)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Watermark text and style settings
-            string watermarkText = "CONFIDENTIAL";
-            string fontName = "Calibri";
-            string fontColor = "#808080"; // Light gray
-            double fontSizePoints = 72;   // 72 points
-            double fontSizeInches = fontSizePoints / 72.0; // Convert points to inches
-
-            // Center position for the watermark
-            double pinX = pageWidth / 2.0;
-            double pinY = pageHeight / 2.0;
-
-            // Add a full‑page text shape; AddText returns a Shape object directly
-            Shape watermarkShape = page.AddText(pinX, pinY, pageWidth, pageHeight,
-                                                watermarkText, fontName, fontColor, fontSizeInches);
-
-            // Make the shape fill semi‑transparent (white with 80% transparency)
-            watermarkShape.Fill.FillForegnd.Value = "#FFFFFF";
-            watermarkShape.Fill.FillForegndTrans.Value = 80;
-
-            // Remove any outline by setting line pattern to None and weight to zero
-            watermarkShape.Line.LinePattern.Value = LinePatternValue.None;
-            watermarkShape.Line.LineWeight.Value = 0;
-
-            // Rotate the watermark diagonally (-45 degrees)
-            double angleDeg = -45;
-            double angleRad = (Math.PI / 180.0) * angleDeg;
-            watermarkShape.TextXForm.TxtAngle.Value = angleRad;
-
-            // Ensure a dedicated layer for watermarks exists
-            string watermarkLayerName = "WatermarkLayer";
-            Layer watermarkLayer = null;
-            foreach (Layer layer in page.PageSheet.Layers)
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (layer.Name.Value == watermarkLayerName)
-                {
-                    watermarkLayer = layer;
-                    break;
-                }
-            }
-            if (watermarkLayer == null)
-            {
-                watermarkLayer = new Layer();
-                watermarkLayer.Name.Value = watermarkLayerName;
-                watermarkLayer.Visible.Value = BOOL.True;
+                // Retrieve the first page (current page)
+                Page page = diagram.Pages[0];
+
+                // -----------------------------------------------------------------
+                // Create a new layer for the watermark
+                // -----------------------------------------------------------------
+                Layer watermarkLayer = new Layer();
+                watermarkLayer.Name.Value = "WatermarkLayer";
+                watermarkLayer.Visible.Value = BOOL.True;   // Make layer visible
+                watermarkLayer.Print.Value = BOOL.False;    // Do not print by default
+                // Add the layer to the page's layer collection
                 page.PageSheet.Layers.Add(watermarkLayer);
+
+                // -----------------------------------------------------------------
+                // Determine page dimensions to cover the full page
+                // -----------------------------------------------------------------
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Position the watermark at the top-left corner (0,0) and span full page
+                double pinX = 0;
+                double pinY = 0;
+                double width = pageWidth;
+                double height = pageHeight;
+
+                // Watermark text and appearance
+                string watermarkText = "CONFIDENTIAL";
+                string fontName = "Calibri";
+                string fontColor = "#808080"; // Light gray
+                double fontSizePoints = 72;    // 72 points = 1 inch
+                double fontSizeInches = fontSizePoints / 72.0;
+
+                // Add the text shape to the page
+                Shape watermarkShape = page.AddText(pinX, pinY, width, height, watermarkText, fontName, fontColor, fontSizeInches);
+
+                // Assign the shape to the watermark layer
+                watermarkShape.LayerMem.LayerMember.Value = watermarkLayer.IX.ToString();
+
+                // -----------------------------------------------------------------
+                // Set semi‑transparent fill for the shape (background of the text)
+                // -----------------------------------------------------------------
+                // FillForegndTrans: 0.0 = opaque, 1.0 = fully transparent
+                watermarkShape.Fill.FillForegndTrans.Value = 0.5; // 50% transparency
+                // Ensure a solid fill pattern
+                watermarkShape.Fill.FillPattern.Value = 1;
+
+                // -----------------------------------------------------------------
+                // Ensure the text character formatting matches the desired style
+                // -----------------------------------------------------------------
+                if (watermarkShape.Chars.Count > 0)
+                {
+                    // Set font name, color, and size for the first character run
+                    watermarkShape.Chars[0].FontName.Value = fontName;
+                    watermarkShape.Chars[0].Color.Value = fontColor;
+                    watermarkShape.Chars[0].Size.Value = fontSizeInches;
+                }
+
+                // -----------------------------------------------------------------
+                // Save the modified diagram
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Watermark added and diagram saved to: {outputPath}");
             }
-
-            // Assign the shape to the watermark layer (single layer index as string)
-            watermarkShape.LayerMem.LayerMember.Value = watermarkLayer.IX.ToString();
-
-            // Save the modified diagram
-            string outputPath = "output_with_watermark.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

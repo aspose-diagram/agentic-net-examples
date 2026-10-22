@@ -1,62 +1,51 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Output SVG file path
+        string outputSvg = "GroupedDiamonds.svg";
+
         try
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the first page (use indexer, not ActivePage)
-            Page page = diagram.Pages[0];
+            // Get the active page (first page)
+            Page page = diagram.ActivePage;
 
-            // Helper to create a diamond shape using DrawPolyline (expects a flat double array)
-            Shape CreateDiamond(double centerX, double centerY, double width, double height)
-            {
-                // Calculate half dimensions
-                double halfW = width / 2.0;
-                double halfH = height / 2.0;
+            // Define positions for the diamond shapes
+            double startX = 1.0;
+            double startY = 1.0;
+            double offsetX = 2.0;
 
-                // Define the diamond vertices as a flat double array (x1, y1, x2, y2, ...)
-                double[] points = new double[]
-                {
-                    centerX, centerY - halfH,               // top
-                    centerX + halfW, centerY,               // right
-                    centerX, centerY + halfH,               // bottom
-                    centerX - halfW, centerY,               // left
-                    centerX, centerY - halfH                // close polygon
-                };
+            // Add first diamond shape
+            long id1 = page.AddShape(startX, startY, "Diamond", false);
+            Shape diamond1 = page.Shapes.GetShape(id1);
 
-                // Draw the diamond; returns a long shape ID
-                long shapeId = page.DrawPolyline(points);
+            // Add second diamond shape
+            long id2 = page.AddShape(startX + offsetX, startY, "Diamond", false);
+            Shape diamond2 = page.Shapes.GetShape(id2);
 
-                // Retrieve the Shape object (cast long to int for GetShape)
-                Shape shape = page.Shapes.GetShape((int)shapeId);
-                return shape;
-            }
+            // Add third diamond shape
+            long id3 = page.AddShape(startX + 2 * offsetX, startY, "Diamond", false);
+            Shape diamond3 = page.Shapes.GetShape(id3);
 
-            // Create multiple diamonds at different positions
-            Shape diamond1 = CreateDiamond(2.0, 2.0, 1.5, 1.5);
-            Shape diamond2 = CreateDiamond(5.0, 2.0, 1.5, 1.5);
-            Shape diamond3 = CreateDiamond(3.5, 4.5, 1.5, 1.5);
+            // Group the three diamond shapes into a single group
+            Shape groupShape = page.Shapes.Group(new Shape[] { diamond1, diamond2, diamond3 });
 
-            // Group the diamonds together
-            Shape[] diamonds = new Shape[] { diamond1, diamond2, diamond3 };
-            Shape groupShape = page.Shapes.Group(diamonds);
-
-            // Export the group as a single SVG file
+            // Export the group as a single SVG document
             SVGSaveOptions svgOptions = new SVGSaveOptions();
-            groupShape.ToSvg("diamonds.svg", svgOptions);
+            groupShape.ToSvg(outputSvg, svgOptions);
 
-            Console.WriteLine("Diamond group exported to diamonds.svg");
+            Console.WriteLine($"Grouped diamonds exported to SVG: {outputSvg}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

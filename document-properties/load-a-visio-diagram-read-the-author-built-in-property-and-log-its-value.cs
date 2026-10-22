@@ -7,31 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file (replace with your actual file path)
-        string inputPath = "example.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
 
-        // Guard to ensure the file exists before proceeding
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – '{inputPath}'.");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Read the built‑in Author property (mapped to Creator in Aspose.Diagram)
-            string author = diagram.DocumentProps.Creator;
+            // Access the built‑in Creator (Author) property from the document properties.
+            // The Creator property holds the author name; it may be null or empty if not set.
+            string author = diagram.DocumentProps.Creator; // Changed from Author to Creator
 
-            // Log the Author value to the console
-            Console.WriteLine($"Author: {author}");
+            // Log the Author value (or indicate if it is missing).
+            if (string.IsNullOrWhiteSpace(author))
+            {
+                Console.WriteLine("Author property is not set or is empty.");
+            }
+            else
+            {
+                Console.WriteLine($"Author: {author}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or property access
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any exceptions to the error stream.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

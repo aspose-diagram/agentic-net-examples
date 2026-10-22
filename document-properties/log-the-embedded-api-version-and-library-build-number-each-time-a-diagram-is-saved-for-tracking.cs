@@ -1,46 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Save with logging
-            SaveDiagram(diagram, outputPath);
+            // Log the embedded API version
+            Console.WriteLine($"Diagram API Version: {diagram.Version}");
 
+            // Log the library build numbers (created and edited)
+            Console.WriteLine($"Build Number Created: {diagram.DocumentProps.BuildNumberCreated}");
+            Console.WriteLine($"Build Number Edited (before save): {diagram.DocumentProps.BuildNumberEdited}");
+
+            // Save the diagram to the specified output path using VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // After saving, log the edited build number again to track changes
+            Console.WriteLine($"Build Number Edited (after save): {diagram.DocumentProps.BuildNumberEdited}");
+
+            // Clean up resources
+            diagram.Dispose();
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Saves the diagram and logs version/build information
-    static void SaveDiagram(Diagram diagram, string outputPath)
-    {
-        // Retrieve API version and build numbers
-        string apiVersion = diagram.Version;
-        string buildCreated = diagram.DocumentProps.BuildNumberCreated;
-        string buildEdited = diagram.DocumentProps.BuildNumberEdited;
-
-        // Log the information
-        Console.WriteLine($"Saving diagram:");
-        Console.WriteLine($"  API Version       : {apiVersion}");
-        Console.WriteLine($"  Build Number (Created) : {buildCreated}");
-        Console.WriteLine($"  Build Number (Edited)  : {buildEdited}");
-
-        // Perform the save operation
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
     }
 }

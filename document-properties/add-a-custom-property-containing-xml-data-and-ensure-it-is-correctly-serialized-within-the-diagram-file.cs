@@ -1,42 +1,72 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file (must exist)
-            string inputPath = "input.vsdx";
-            // Output file with the custom XML property
-            string outputPath = "output_with_customprop.vsdx";
-
-            // Load the diagram
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // XML data to store in the custom property
-            string xmlData = "<root><item id=\"1\">Value</item></root>";
+            // Ensure there is at least one page to work with
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Create a new custom property
-            CustomProp customProp = new CustomProp();
-            customProp.Name = "XmlData";
-            customProp.PropType = PropType.String;
-            customProp.CustomValue.ValueString = xmlData;
+            // Use the first page
+            Page page = diagram.Pages[0];
 
-            // Add the custom property to the document's custom properties collection
-            diagram.DocumentProps.CustomProps.Add(customProp);
+            // Add a simple rectangle shape to the page
+            // Parameters: pinX, pinY (position), master name, isCalculate flag
+            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Save the diagram, ensuring the custom property is serialized
+            // Retrieve the newly added shape object
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Prepare XML data to store in the custom property
+            string xmlData = "<Root><Item id=\"1\">Value</Item></Root>";
+
+            // Create a new custom property (Prop) for the shape
+            Prop prop = new Prop();
+            prop.Name = "XmlData";                     // Internal name of the property
+            prop.Label.Value = "XML Data";             // Display label
+            prop.Value.Val = xmlData;                  // Store the XML string
+            prop.Type.Value = TypePropValue.String;   // Define the property type as string
+
+            // Add the custom property to the shape's property collection
+            shape.Props.Add(prop);
+
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

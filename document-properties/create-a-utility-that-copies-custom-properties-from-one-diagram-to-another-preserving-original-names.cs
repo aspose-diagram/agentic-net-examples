@@ -1,80 +1,84 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Diagram.Properties;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: source diagram path, target diagram path, output diagram path
+        if (args.Length != 3)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: CopyCustomProps <source.vsdx> <target.vsdx> <output.vsdx>");
+            return;
+        }
 
-                // Paths to the source diagram (with custom properties) and the target diagram.
-                string sourcePath = "source.vsdx";
-                string targetPath = "target.vsdx";
-                string outputPath = "target_with_copied_props.vsdx";
+        string sourcePath = args[0];
+        string targetPath = args[1];
+        string outputPath = args[2];
 
-                // Load the diagrams.
-                Diagram sourceDiagram = new Diagram(sourcePath);
-                Diagram targetDiagram = new Diagram(targetPath);
-
-                // Copy custom properties from source to target.
-                CopyCustomProperties(sourceDiagram, targetDiagram);
-
-                // Save the updated target diagram.
-                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Custom properties copied successfully to '{outputPath}'.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Copies all custom document properties from the source diagram to the target diagram.
-        /// Existing properties with the same name are updated; missing ones are added.
-        /// </summary>
-        /// <param name="source">Diagram containing the original custom properties.</param>
-        /// <param name="target">Diagram that will receive the copied properties.</param>
-        private static void CopyCustomProperties(Diagram source, Diagram target)
+        // Guard against missing files
+        if (!File.Exists(sourcePath))
         {
-            // Iterate over each custom property in the source diagram.
-            foreach (CustomProp srcProp in source.DocumentProps.CustomProps)
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            return;
+        }
+
+        if (!File.Exists(targetPath))
+        {
+            Console.Error.WriteLine($"Target file not found: {targetPath}");
+            return;
+        }
+
+        try
+        {
+            // Load source and target diagrams
+            Diagram sourceDiagram = new Diagram(sourcePath);
+            Diagram targetDiagram = new Diagram(targetPath);
+
+            // Iterate over each custom property in the source diagram
+            foreach (CustomProp srcProp in sourceDiagram.DocumentProps.CustomProps)
             {
-                // Try to find a property with the same name in the target diagram.
-                CustomProp existingProp = null;
-                foreach (CustomProp tgtProp in target.DocumentProps.CustomProps)
+                // Search for a property with the same name in the target diagram
+                CustomProp targetProp = null;
+                foreach (CustomProp tp in targetDiagram.DocumentProps.CustomProps)
                 {
-                    if (tgtProp.Name == srcProp.Name)
+                    if (tp.Name == srcProp.Name)
                     {
-                        existingProp = tgtProp;
+                        targetProp = tp;
                         break;
                     }
                 }
 
-                if (existingProp != null)
+                if (targetProp != null)
                 {
-                    // Update the value of the existing property.
-                    existingProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
-                    // Preserve the original property type.
-                    existingProp.PropType = srcProp.PropType;
+                    // Property exists – update its type and value
+                    targetProp.PropType = srcProp.PropType;
+                    targetProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
                 }
                 else
                 {
-                    // Create a new custom property and copy all relevant fields.
-                    CustomProp newProp = new CustomProp
-                    {
-                        Name = srcProp.Name,
-                        PropType = srcProp.PropType,
-                        CustomValue = { ValueString = srcProp.CustomValue.ValueString }
-                    };
+                    // Property does not exist – create a new one preserving name, type, and value
+                    CustomProp newProp = new CustomProp();
+                    newProp.Name = srcProp.Name;
+                    newProp.PropType = srcProp.PropType;
+                    newProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
 
-                    // Add the new property to the target diagram.
-                    target.DocumentProps.CustomProps.Add(newProp);
+                    // Add the new custom property to the target diagram
+                    targetDiagram.DocumentProps.CustomProps.Add(newProp);
                 }
             }
+
+            // Save the modified target diagram to the specified output path
+            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Custom properties copied successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

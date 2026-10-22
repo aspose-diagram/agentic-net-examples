@@ -1,73 +1,99 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
+            Console.Error.WriteLine("Usage: Program <diagrams_folder_path>");
+            return;
+        }
 
-            // Define the folder containing the Visio files
-            string inputFolder = @"C:\VisioFiles\Input";
-            string outputFolder = @"C:\VisioFiles\Output";
+        string folderPath = args[0];
 
-            // Ensure the output folder exists
-            if (!Directory.Exists(outputFolder))
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Get all Visio diagram files (VSDX) in the folder.
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
+
+        foreach (string diagramPath in diagramFiles)
+        {
+            // Guard: ensure the file exists (redundant after GetFiles, but required by rules).
+            if (!File.Exists(diagramPath))
             {
-                Directory.CreateDirectory(outputFolder);
+                Console.Error.WriteLine($"File not found: {diagramPath}");
+                continue;
             }
 
-            // Get all Visio files (VSDX, VDX, VSD) in the input folder
-            string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-            List<string> supportedExtensions = new List<string> { ".vsdx", ".vsd", ".vdx" };
-
-            foreach (string filePath in visioFiles)
+            try
             {
-                if (!supportedExtensions.Contains(Path.GetExtension(filePath).ToLower()))
-                    continue; // Skip non‑Visio files
+                // Load the diagram.
+                Diagram diagram = new Diagram(diagramPath);
 
-                try
+                // ---------- Remove document-level custom property named "DeprecatedFlag" ----------
+                var docCustomProps = diagram.DocumentProps.CustomProps;
+                List<CustomProp> docPropsToRemove = new List<CustomProp>();
+
+                foreach (CustomProp cp in docCustomProps)
                 {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Remove custom properties named "DeprecatedFlag"
-                    var customProps = diagram.DocumentProps.CustomProps;
-                    // Collect properties to remove to avoid modifying the collection while iterating
-                    List<CustomProp> propsToRemove = new List<CustomProp>();
-                    foreach (CustomProp prop in customProps)
+                    if (cp.Name == "DeprecatedFlag")
                     {
-                        if (prop.Name == "DeprecatedFlag")
+                        docPropsToRemove.Add(cp);
+                    }
+                }
+
+                foreach (CustomProp cp in docPropsToRemove)
+                {
+                    docCustomProps.Remove(cp);
+                }
+
+                // ---------- Remove shape-level custom properties named "DeprecatedFlag" ----------
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape has a Props collection.
+                        if (shape.Props == null)
+                            continue;
+
+                        List<Prop> shapePropsToRemove = new List<Prop>();
+
+                        foreach (Prop prop in shape.Props)
                         {
-                            propsToRemove.Add(prop);
+                            // Prop.Name holds the property name.
+                            if (prop.Name == "DeprecatedFlag")
+                            {
+                                shapePropsToRemove.Add(prop);
+                            }
+                        }
+
+                        foreach (Prop prop in shapePropsToRemove)
+                        {
+                            shape.Props.Remove(prop);
                         }
                     }
-
-                    foreach (CustomProp prop in propsToRemove)
-                    {
-                        customProps.Remove(prop);
-                    }
-
-                    // Save the modified diagram to the output folder (overwrite if exists)
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
+
+                // Save the modified diagram, overwriting the original file.
+                diagram.Save(diagramPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Processed and saved: {diagramPath}");
             }
-
-            Console.WriteLine("Processing completed.");
-
-        }
-        catch (System.IO.DirectoryNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing.
+                Console.Error.WriteLine($"Error processing file '{diagramPath}': {ex.Message}");
+            }
         }
     }
 }

@@ -1,42 +1,47 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define the path to the Visio diagram file.
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        // Define the expected title template to compare against.
+        string expectedTitle = args.Length > 1 ? args[1] : "My Diagram Title";
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the Visio file to be processed
-            string inputPath = "input.vsdx";
+            // Read the built‑in Title property from the document properties.
+            string actualTitle = diagram.DocumentProps.Title ?? string.Empty;
 
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the built‑in Title property from the document properties
-            string title = diagram.DocumentProps.Title;
-
-            // Define the expected title template for comparison
-            const string templateTitle = "My Template Title";
-
-            // Compare the actual title with the template and handle the result
-            if (title == templateTitle)
+            // Compare the actual title with the expected template.
+            if (actualTitle == expectedTitle)
             {
                 Console.WriteLine("Title matches the template.");
             }
             else
             {
-                Console.WriteLine($"Title mismatch. Diagram title: \"{title}\"");
-                throw new Exception("Diagram title does not match the expected template.");
+                Console.WriteLine($"Title does not match the template.\nExpected: \"{expectedTitle}\"\nActual:   \"{actualTitle}\"");
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

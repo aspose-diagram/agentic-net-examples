@@ -1,37 +1,60 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Generate a long string (e.g., 5000 characters)
-        string longValue = new string('A', 5000);
-
-        // Create a custom property
-        CustomProp customProp = new CustomProp();
-        customProp.Name = "LongStringProperty";
-        customProp.PropType = PropType.String;
-        customProp.CustomValue.ValueString = longValue;
-
-        // Add the custom property to the diagram's custom properties collection
-        diagram.DocumentProps.CustomProps.Add(customProp);
-
-        // Verify that the property was added
-        if (diagram.DocumentProps.CustomProps.Count == 0)
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            throw new Exception("Failed to add custom property.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
         }
 
-        // Save the diagram to a VSDX file
-        string outputPath = "DiagramWithLongCustomProp.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Create a very long string value (e.g., 10,000 characters).
+            string longValue = new string('A', 10000);
+
+            // Create a new custom property.
+            CustomProp customProp = new CustomProp
+            {
+                // Set a unique name for the property.
+                Name = "LongStringProperty",
+                // Define the property type as string.
+                PropType = PropType.String,
+                // Assign the long string to the property's value.
+                CustomValue = new CustomValue { ValueString = longValue }
+            };
+
+            // Add the custom property to the document's custom properties collection.
+            diagram.DocumentProps.CustomProps.Add(customProp);
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Custom property added and diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

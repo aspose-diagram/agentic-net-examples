@@ -1,89 +1,141 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect exactly four arguments: input diagram path, output diagram path, shape ID, desired theme name
+        if (args.Length != 4)
+        {
+            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <shapeId> <desiredTheme>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+        string desiredThemeName = args[3];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: parse shape ID
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        // Guard: parse desired theme enum (case‑insensitive)
+        if (!Enum.TryParse<PresetThemeValue>(desiredThemeName, true, out var desiredTheme))
+        {
+            Console.Error.WriteLine($"Invalid theme name: {desiredThemeName}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path to the output Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Desired preset theme
-            PresetThemeValue desiredTheme = PresetThemeValue.Bubble;
-            // Desired theme name for tracking (must match the enum name)
-            string desiredThemeName = "Bubble";
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                    // Determine if the shape already has the desired theme applied
-                    bool themeMatches = false;
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on the first page.");
+                    return;
+                }
+
+                // Determine whether the shape already has the desired theme recorded in a custom property
+                bool themeAlreadyApplied = false;
+                if (shape.Props != null)
+                {
                     foreach (Prop prop in shape.Props)
                     {
-                        if (prop.Name == "AppliedTheme" && prop.Value.Val == desiredThemeName)
+                        if (prop.Name == "AppliedTheme")
                         {
-                            themeMatches = true;
+                            // Compare the stored value (string) with the desired theme name
+                            if (prop.Value != null && prop.Value.Val == desiredTheme.ToString())
+                            {
+                                themeAlreadyApplied = true;
+                            }
                             break;
                         }
                     }
+                }
 
-                    // Apply the theme only if it does not match
-                    if (!themeMatches)
+                if (themeAlreadyApplied)
+                {
+                    Console.WriteLine($"Shape ID {shapeId} already has the theme '{desiredTheme}'. No changes made.");
+                }
+                else
+                {
+                    // Apply the desired preset theme to the shape (write‑only property)
+                    shape.PresetTheme = desiredTheme;
+
+                    // Update or add the custom property to record the applied theme
+                    bool propFound = false;
+                    if (shape.Props != null)
                     {
-                        // Apply the preset theme to the shape
-                        shape.PresetTheme = desiredTheme;
-                        // Optionally set a variant (using Variant1 as example)
-                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                        // Record the applied theme in a custom property for future checks
-                        Prop themeProp = null;
                         foreach (Prop prop in shape.Props)
                         {
                             if (prop.Name == "AppliedTheme")
                             {
-                                themeProp = prop;
+                                // Ensure the Value cell exists before assigning
+                                if (prop.Value != null)
+                                {
+                                    prop.Value.Val = desiredTheme.ToString();
+                                }
+                                // Ensure the Label cell exists before assigning
+                                if (prop.Label != null)
+                                {
+                                    prop.Label.Value = "Applied Theme";
+                                }
+                                propFound = true;
                                 break;
                             }
                         }
-
-                        if (themeProp == null)
-                        {
-                            // Create a new custom property if it does not exist
-                            themeProp = new Prop();
-                            themeProp.Name = "AppliedTheme";
-                            shape.Props.Add(themeProp);
-                        }
-
-                        // Store the theme name
-                        themeProp.Value.Val = desiredThemeName;
                     }
+
+                    if (!propFound)
+                    {
+                        // Create a new custom property to store the applied theme
+                        Prop newProp = new Prop();
+                        newProp.Name = "AppliedTheme";
+                        // The constructor initializes Value and Label, so we can set their contents directly
+                        newProp.Value.Val = desiredTheme.ToString();
+                        newProp.Label.Value = "Applied Theme";
+                        shape.Props.Add(newProp);
+                    }
+
+                    Console.WriteLine($"Applied theme '{desiredTheme}' to shape ID {shapeId}.");
                 }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any Aspose or runtime errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

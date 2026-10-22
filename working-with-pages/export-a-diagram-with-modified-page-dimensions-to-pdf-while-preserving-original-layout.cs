@@ -1,48 +1,63 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Define new page dimensions (in inches). Adjust as needed.
+                double newPageWidth = 11.0;   // example: 11 inches
+                double newPageHeight = 8.5;   // example: 8.5 inches (landscape)
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-
-                // Output PDF file path
-                string outputPath = "output.pdf";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Desired page size in inches (example: A4 size)
-                double targetWidthInches = 8.27;
-                double targetHeightInches = 11.69;
-
-                // Adjust each page's dimensions while keeping the existing layout unchanged
+                // Iterate through all pages and set the new dimensions.
                 foreach (Page page in diagram.Pages)
                 {
-                    page.PageSheet.PageProps.PageWidth.Value = targetWidthInches;
-                    page.PageSheet.PageProps.PageHeight.Value = targetHeightInches;
+                    // Modify page width and height while keeping existing shapes unchanged.
+                    page.PageSheet.PageProps.PageWidth.Value = newPageWidth;
+                    page.PageSheet.PageProps.PageHeight.Value = newPageHeight;
                 }
 
-                // Configure PDF save options
+                // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format
-                pdfOptions.DefaultFont = "Arial"; // Fallback font if needed
+                // Explicitly set the format tracker.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Example: do not export hidden pages.
+                pdfOptions.ExportHiddenPage = false;
 
-                // Save the diagram as PDF with the modified page size
+                // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine("Diagram exported to PDF with updated page dimensions.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine($"Diagram exported successfully to PDF: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+        }
     }
-    }
+}

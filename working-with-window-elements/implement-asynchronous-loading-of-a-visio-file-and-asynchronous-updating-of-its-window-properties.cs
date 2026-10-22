@@ -1,69 +1,123 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Asynchronously loads a Visio diagram from the specified file path.
-        private static async Task<Diagram> LoadDiagramAsync(string filePath)
+        // Expect input file path as first argument
+        if (args.Length == 0)
         {
-            // Aspose.Diagram does not provide native async methods, so wrap the constructor in Task.Run.
-            return await Task.Run(() => new Diagram(filePath));
+            Console.Error.WriteLine("Please provide the input Visio file path as an argument.");
+            return;
         }
 
-        // Asynchronously updates window properties for the given diagram.
-        private static async Task UpdateWindowPropertiesAsync(Diagram diagram)
+        string inputPath = args[0];
+
+        // Guard: verify the input file exists
+        if (!File.Exists(inputPath))
         {
-            await Task.Run(() =>
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Define output path (same folder, suffix "_updated.vsdx")
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
+
+        try
+        {
+            // Asynchronously load the diagram
+            Diagram diagram = LoadDiagramAsync(inputPath).GetAwaiter().GetResult();
+
+            // Asynchronously update window properties
+            UpdateWindowPropertiesAsync(diagram).GetAwaiter().GetResult();
+
+            // Asynchronously save the modified diagram
+            SaveDiagramAsync(diagram, outputPath).GetAwaiter().GetResult();
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+
+    // Asynchronously loads a Visio diagram from the specified file path
+    private static async Task<Diagram> LoadDiagramAsync(string path)
+    {
+        return await Task.Run(() =>
+        {
+            try
             {
-                // Ensure there is at least one window; if not, create a default drawing window.
+                // Load the diagram using Aspose.Diagram constructor
+                Diagram diagram = new Diagram(path);
+                return diagram;
+            }
+            catch (Exception ex)
+            {
+                // Propagate loading errors
+                throw new Exception($"Failed to load diagram: {ex.Message}", ex);
+            }
+        });
+    }
+
+    // Asynchronously updates window properties of the loaded diagram
+    private static async Task UpdateWindowPropertiesAsync(Diagram diagram)
+    {
+        await Task.Run(() =>
+        {
+            try
+            {
+                // Ensure there is at least one window; add one if none exist
                 if (diagram.Windows.Count == 0)
                 {
-                    var newWindow = new Window
-                    {
-                        WindowType = WindowTypeValue.Drawing,
-                        WindowState = WindowStateValue.Maximized,
-                        WindowWidth = 1100,
-                        WindowHeight = 700
-                    };
+                    Window newWindow = new Window();
+                    newWindow.WindowType = WindowTypeValue.Drawing;
+                    newWindow.WindowState = WindowStateValue.Maximized;
+                    newWindow.WindowWidth = 1200;
+                    newWindow.WindowHeight = 800;
                     diagram.Windows.Add(newWindow);
                 }
 
-                // Update properties of the first window.
+                // Access the first window
                 Window window = diagram.Windows[0];
+
+                // Update visibility and grid settings using BOOL values
                 window.ShowGrid = BOOL.True;
                 window.ShowGuides = BOOL.True;
                 window.ShowRulers = BOOL.True;
                 window.ShowPageBreaks = BOOL.True;
                 window.DynamicGridEnabled = BOOL.True;
                 window.ShowConnectionPoints = BOOL.True;
-            });
-        }
+            }
+            catch (Exception ex)
+            {
+                // Propagate update errors
+                throw new Exception($"Failed to update window properties: {ex.Message}", ex);
+            }
+        });
+    }
 
-        // Entry point of the console application.
-        static async Task Main(string[] args)
+    // Asynchronously saves the diagram to the specified output path in VSDX format
+    private static async Task SaveDiagramAsync(Diagram diagram, string outputPath)
+    {
+        await Task.Run(() =>
         {
             try
             {
-
-                // Example file path; replace with actual path or pass as a command‑line argument.
-                string inputPath = args.Length > 0 ? args[0] : "example.vsdx";
-
-                // Load the diagram asynchronously.
-                Diagram diagram = await LoadDiagramAsync(inputPath);
-                Console.WriteLine("Diagram loaded successfully.");
-
-                // Update window properties asynchronously.
-                await UpdateWindowPropertiesAsync(diagram);
-                Console.WriteLine("Window properties updated.");
-
-                // Optionally, save the modified diagram.
-                // diagram.Save("modified.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the diagram using the VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (Aspose.Diagram.DiagramException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+                // Propagate saving errors
+                throw new Exception($"Failed to save diagram: {ex.Message}", ex);
             }
+        });
     }
-    }
+}

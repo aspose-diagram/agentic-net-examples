@@ -1,41 +1,108 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
-        // Create an empty diagram
-        Diagram diagram = new Diagram();
-
-        // Ensure there is at least one window to work with
-        Window window = new Window();
-        window.WindowType = WindowTypeValue.Drawing;
-        window.WindowState = WindowStateValue.Maximized;
-        window.WindowWidth = 800;
-        window.WindowHeight = 600;
-        diagram.Windows.Add(window);
-
-        // Randomly flip ShowGrid and ShowGuides flags multiple times
-        Random rnd = new Random();
-        int iterations = 20;
-
-        for (int i = 0; i < iterations; i++)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            // Randomly choose TRUE or FALSE for each flag
-            BOOL gridValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
-            BOOL guidesValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
-
-            // Apply the random values
-            window.ShowGrid = gridValue;
-            window.ShowGuides = guidesValue;
-
-            // Output the current state
-            Console.WriteLine($"Iteration {i + 1}: ShowGrid = {window.ShowGrid}, ShowGuides = {window.ShowGuides}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputFolder] [iterations]");
+            return;
         }
 
-        // Optional: Save the diagram to verify that changes persist (not required for the stress test)
-        // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+        string inputPath = args[0];
+        string outputFolder = args.Length >= 2 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "Output");
+        int iterations = args.Length >= 3 && int.TryParse(args[2], out int it) ? it : 10;
+
+        // Guard: input file must exist
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Ensure output folder exists
+        if (!Directory.Exists(outputFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
+        }
+
+        // Load the diagram inside a try/catch block
+        Diagram diagram;
+        try
+        {
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Ensure there is at least one window to manipulate
+        if (diagram.Windows.Count == 0)
+        {
+            try
+            {
+                Window defaultWindow = new Window();
+                defaultWindow.WindowType = WindowTypeValue.Drawing;
+                defaultWindow.WindowState = WindowStateValue.Maximized;
+                defaultWindow.WindowWidth = 1100;
+                defaultWindow.WindowHeight = 700;
+                diagram.Windows.Add(defaultWindow);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error adding default window: {ex.Message}");
+                return;
+            }
+        }
+
+        // Use the first window for flag manipulation
+        Window targetWindow = diagram.Windows[0];
+        Random rnd = new Random();
+
+        // Stress‑test loop: randomly flip ShowGrid and ShowGuides
+        for (int i = 0; i < iterations; i++)
+        {
+            try
+            {
+                // Randomly decide the flag values
+                BOOL gridValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
+                BOOL guidesValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
+
+                // Apply the random values
+                targetWindow.ShowGrid = gridValue;
+                targetWindow.ShowGuides = guidesValue;
+
+                // Log current iteration state
+                Console.WriteLine($"Iteration {i + 1}/{iterations}: ShowGrid = {gridValue}, ShowGuides = {guidesValue}");
+
+                // Save the diagram to a new file for each iteration
+                string outputPath = Path.Combine(outputFolder, $"output_{i + 1}.vsdx");
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error during iteration {i + 1}: {ex.Message}");
+                // Continue with next iteration instead of aborting
+            }
+        }
+
+        // Cleanup
+        diagram?.Dispose();
+        Console.WriteLine("Stress test completed.");
     }
 }

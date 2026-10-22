@@ -6,8 +6,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Folder to process – use first argument or current directory if none provided
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+        // Validate input folder argument
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the folder containing Visio files as the first argument.");
+            return;
+        }
+
+        string folderPath = args[0];
 
         if (!Directory.Exists(folderPath))
         {
@@ -15,53 +21,55 @@ class Program
             return;
         }
 
-        // Get all files in the folder (filter later by Visio extensions)
-        string[] allFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in allFiles)
+        // Supported Visio extensions
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".vss", ".vst" };
+
+        // Iterate over each file in the folder
+        foreach (string filePath in Directory.GetFiles(folderPath))
         {
-            // Guard to ensure the file still exists before processing
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+
+            if (Array.IndexOf(supportedExtensions, extension) < 0)
+            {
+                // Skip unsupported files
+                continue;
+            }
+
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (!IsVisioExtension(ext))
-                continue; // skip non‑Visio files
-
             try
             {
-                // Load the diagram
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Ensure at least one window exists (ShowRulers is a window property)
+                // Ensure there is at least one window; create one if none exist
                 if (diagram.Windows.Count == 0)
                 {
-                    Window newWindow = new Window
-                    {
-                        WindowType = WindowTypeValue.Drawing,
-                        WindowState = WindowStateValue.Maximized,
-                        WindowWidth = 1100,
-                        WindowHeight = 700,
-                        ShowRulers = BOOL.True // initial value
-                    };
+                    Window newWindow = new Window();
+                    // Initialize with default ShowRulers value (set to True)
+                    newWindow.ShowRulers = BOOL.True;
                     diagram.Windows.Add(newWindow);
                 }
 
-                // Toggle ShowRulers for each window in the diagram
-                foreach (Window win in diagram.Windows)
+                // Toggle ShowRulers on the first window
+                Window window = diagram.Windows[0];
+                window.ShowRulers = (window.ShowRulers == BOOL.True) ? BOOL.False : BOOL.True;
+
+                // Determine the appropriate SaveFileFormat based on file extension
+                SaveFileFormat format = GetSaveFileFormat(extension);
+                if (format == 0)
                 {
-                    win.ShowRulers = (win.ShowRulers == BOOL.True) ? BOOL.False : BOOL.True;
+                    Console.Error.WriteLine($"Unsupported file format for saving: {filePath}");
+                    continue;
                 }
 
-                // Determine the appropriate SaveFileFormat based on the original extension
-                SaveFileFormat format = GetSaveFileFormat(ext);
-
-                // Save the diagram back, overwriting the original file
+                // Save the diagram, overwriting the original file
                 diagram.Save(filePath, format);
-
-                Console.WriteLine($"Processed: {Path.GetFileName(filePath)} – ShowRulers toggled.");
+                Console.WriteLine($"Toggled ShowRulers for: {Path.GetFileName(filePath)}");
             }
             catch (Exception ex)
             {
@@ -70,45 +78,30 @@ class Program
         }
     }
 
-    // Returns true if the extension corresponds to a supported Visio format
-    private static bool IsVisioExtension(string ext)
+    /// <summary>
+    /// Maps file extensions to the corresponding SaveFileFormat enum value.
+    /// Returns 0 if the extension is not recognized.
+    /// </summary>
+    private static SaveFileFormat GetSaveFileFormat(string extension)
     {
-        return ext switch
+        switch (extension)
         {
-            ".vsdx" => true,
-            ".vsd"  => true,
-            ".vdx"  => true,
-            ".vsx"  => true,
-            ".vtx"  => true,
-            ".vssx" => true,
-            ".vstx" => true,
-            ".vsdm" => true,
-            ".vstm" => true,
-            ".vssm" => true,
-            ".vst"  => true,
-            ".vss"  => true,
-            _       => false,
-        };
-    }
-
-    // Maps a file extension to the corresponding SaveFileFormat enum value
-    private static SaveFileFormat GetSaveFileFormat(string ext)
-    {
-        return ext switch
-        {
-            ".vsdx" => SaveFileFormat.Vsdx,
-            ".vsd"  => SaveFileFormat.Vsd,
-            ".vdx"  => SaveFileFormat.Vdx,
-            ".vsx"  => SaveFileFormat.Vsx,
-            ".vtx"  => SaveFileFormat.Vtx,
-            ".vssx" => SaveFileFormat.Vssx,
-            ".vstx" => SaveFileFormat.Vstx,
-            ".vsdm" => SaveFileFormat.Vsdm,
-            ".vstm" => SaveFileFormat.Vstm,
-            ".vssm" => SaveFileFormat.Vssm,
-            ".vst"  => SaveFileFormat.Vst,
-            ".vss"  => SaveFileFormat.Vss,
-            _       => SaveFileFormat.Vsdx, // fallback
-        };
+            case ".vsdx":
+                return SaveFileFormat.Vsdx;
+            case ".vsd":
+                return SaveFileFormat.Vsd;
+            case ".vdx":
+                return SaveFileFormat.Vdx;
+            case ".vssx":
+                return SaveFileFormat.Vssx;
+            case ".vstx":
+                return SaveFileFormat.Vstx;
+            case ".vss":
+                return SaveFileFormat.Vss;
+            case ".vst":
+                return SaveFileFormat.Vst;
+            default:
+                return 0; // Unknown format
+        }
     }
 }

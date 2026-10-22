@@ -1,28 +1,48 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define the output file path for the diagram
+        string outputPath = "output.vsdx";
 
-        // Create a new window instance
-        Window window = new Window();
+        // Ensure the output directory exists (if a directory is specified)
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
 
-        // Enable the grid display for this window
-        window.ShowGrid = BOOL.True;
+        try
+        {
+            // Create a new empty diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram())
+            {
+                // Create a new Window instance
+                Window window = new Window();
 
-        // Disable the guides display for this window
-        window.ShowGuides = BOOL.False;
+                // Enable the grid visibility in the window
+                window.ShowGrid = BOOL.True;
 
-        // Add the configured window to the diagram
-        diagram.Windows.Add(window);
+                // Disable the guides visibility in the window
+                window.ShowGuides = BOOL.False;
 
-        // The diagram now contains the new window with the specified settings.
-        // If you need to persist the diagram, uncomment the following line:
-        // diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                // Add the configured window to the diagram's window collection
+                diagram.Windows.Add(window);
+
+                // Save the diagram to a VSDX file (requires a SaveFileFormat argument)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

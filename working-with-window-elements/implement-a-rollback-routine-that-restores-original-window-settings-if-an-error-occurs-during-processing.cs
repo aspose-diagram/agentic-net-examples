@@ -1,58 +1,57 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Snapshot of window settings to allow rollback
-    class WindowSnapshot
+    // Helper class to store original window settings for rollback
+    private class WindowStateSnapshot
     {
-        public int ID;
-        public WindowTypeValue Type;
-        public long Height;
-        public long Width;
-        public WindowStateValue State;
-        public BOOL ShowGrid;
-        public BOOL ShowGuides;
-        public BOOL ShowRulers;
-        public BOOL ShowPageBreaks;
-        public BOOL DynamicGridEnabled;
-        public BOOL ShowConnectionPoints;
+        public int Index { get; set; }
+        public BOOL ShowGrid { get; set; }
+        public BOOL ShowGuides { get; set; }
+        public BOOL ShowRulers { get; set; }
+        public BOOL ShowPageBreaks { get; set; }
+        public BOOL DynamicGridEnabled { get; set; }
+        public BOOL ShowConnectionPoints { get; set; }
     }
 
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        Diagram diagram = null;
+        // List to hold original window settings for rollback
+        List<WindowStateSnapshot> originalSettings = new List<WindowStateSnapshot>();
+
         try
         {
+            // Load the diagram
+            diagram = new Diagram(inputPath);
 
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one window; if not, create a default one
-            if (diagram.Windows.Count == 0)
+            // Capture original settings for each window
+            for (int i = 0; i < diagram.Windows.Count; i++)
             {
-                Window defaultWindow = new Window();
-                defaultWindow.WindowType = WindowTypeValue.Drawing;
-                defaultWindow.WindowState = WindowStateValue.Maximized;
-                defaultWindow.WindowWidth = 1100;
-                defaultWindow.WindowHeight = 700;
-                diagram.Windows.Add(defaultWindow);
-            }
-
-            // Capture original window settings
-            var originalSettings = new System.Collections.Generic.List<WindowSnapshot>();
-            foreach (Window win in diagram.Windows)
-            {
-                originalSettings.Add(new WindowSnapshot
+                Window win = diagram.Windows[i];
+                originalSettings.Add(new WindowStateSnapshot
                 {
-                    ID = win.ID,
-                    Type = win.WindowType,
-                    Height = win.WindowHeight,
-                    Width = win.WindowWidth,
-                    State = win.WindowState,
+                    Index = i,
                     ShowGrid = win.ShowGrid,
                     ShowGuides = win.ShowGuides,
                     ShowRulers = win.ShowRulers,
@@ -62,57 +61,66 @@ class Program
                 });
             }
 
-            try
+            // Example processing: modify window visibility settings
+            // Here we set all visibility flags to FALSE for demonstration
+            for (int i = 0; i < diagram.Windows.Count; i++)
             {
-                // Example processing that modifies window settings
-                foreach (Window win in diagram.Windows)
-                {
-                    win.ShowGrid = BOOL.False;
-                    win.ShowGuides = BOOL.False;
-                    win.ShowRulers = BOOL.False;
-                    win.ShowPageBreaks = BOOL.False;
-                    win.DynamicGridEnabled = BOOL.False;
-                    win.ShowConnectionPoints = BOOL.False;
-                    win.WindowState = WindowStateValue.Minimized;
-                }
-
-                // Simulate an error (remove this line in production)
-                int triggerError = 0;
-                int fail = 10 / triggerError; // This will throw DivideByZeroException
-            }
-            catch (Exception ex)
-            {
-                // Rollback to original settings
-                for (int i = 0; i < diagram.Windows.Count && i < originalSettings.Count; i++)
-                {
-                    Window win = diagram.Windows[i];
-                    WindowSnapshot snap = originalSettings[i];
-
-                    win.ID = snap.ID;
-                    win.WindowType = snap.Type;
-                    win.WindowHeight = snap.Height;
-                    win.WindowWidth = snap.Width;
-                    win.WindowState = snap.State;
-                    win.ShowGrid = snap.ShowGrid;
-                    win.ShowGuides = snap.ShowGuides;
-                    win.ShowRulers = snap.ShowRulers;
-                    win.ShowPageBreaks = snap.ShowPageBreaks;
-                    win.DynamicGridEnabled = snap.DynamicGridEnabled;
-                    win.ShowConnectionPoints = snap.ShowConnectionPoints;
-                }
-
-                Console.WriteLine("An error occurred: " + ex.Message);
-                Console.WriteLine("Window settings have been restored to their original values.");
+                Window win = diagram.Windows[i];
+                win.ShowGrid = BOOL.False;
+                win.ShowGuides = BOOL.False;
+                win.ShowRulers = BOOL.False;
+                win.ShowPageBreaks = BOOL.False;
+                win.DynamicGridEnabled = BOOL.False;
+                win.ShowConnectionPoints = BOOL.False;
             }
 
-            // Save the diagram (whether modified or rolled back)
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved to " + outputPath);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log the error
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+
+            // Rollback: restore original window settings if diagram was loaded
+            if (diagram != null && originalSettings.Count > 0)
+            {
+                try
+                {
+                    foreach (var snapshot in originalSettings)
+                    {
+                        // Ensure the window still exists at the expected index
+                        if (snapshot.Index < diagram.Windows.Count)
+                        {
+                            Window win = diagram.Windows[snapshot.Index];
+                            win.ShowGrid = snapshot.ShowGrid;
+                            win.ShowGuides = snapshot.ShowGuides;
+                            win.ShowRulers = snapshot.ShowRulers;
+                            win.ShowPageBreaks = snapshot.ShowPageBreaks;
+                            win.DynamicGridEnabled = snapshot.DynamicGridEnabled;
+                            win.ShowConnectionPoints = snapshot.ShowConnectionPoints;
+                        }
+                    }
+
+                    // Attempt to save the rolled-back diagram to a separate file
+                    string rollbackPath = Path.Combine(
+                        Path.GetDirectoryName(outputPath) ?? "",
+                        Path.GetFileNameWithoutExtension(outputPath) + "_rollback" + Path.GetExtension(outputPath));
+
+                    diagram.Save(rollbackPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Rollback completed. Diagram saved to: {rollbackPath}");
+                }
+                catch (Exception rollbackEx)
+                {
+                    Console.Error.WriteLine($"Rollback failed: {rollbackEx.Message}");
+                }
+            }
+        }
+        finally
+        {
+            // Dispose diagram if needed
+            diagram?.Dispose();
         }
     }
 }

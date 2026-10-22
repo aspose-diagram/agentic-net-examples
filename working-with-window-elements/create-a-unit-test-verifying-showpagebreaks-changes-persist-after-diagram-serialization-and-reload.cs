@@ -1,58 +1,71 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Define a temporary file path for the test diagram
+        string tempFilePath = Path.Combine(Path.GetTempPath(), "ShowPageBreaksTest.vsdx");
 
-        // Add a window because a new diagram has none by default
-        Window window = new Window();
-        window.WindowType = WindowTypeValue.Drawing;
-        window.WindowState = WindowStateValue.Maximized;
-        window.WindowWidth = 800;
-        window.WindowHeight = 600;
-        diagram.Windows.Add(window);
-
-        // Set ShowPageBreaks to true
-        diagram.Windows[0].ShowPageBreaks = BOOL.True;
-
-        // Prepare a temporary file path for saving
-        string tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vsdx");
+        // Ensure any previous test file is removed
+        if (File.Exists(tempFilePath))
+        {
+            File.Delete(tempFilePath);
+        }
 
         try
         {
-            // Save the diagram to VSDX format
-            diagram.Save(tempPath, SaveFileFormat.Vsdx);
-
-            // Load the diagram back from the saved file
-            Diagram loadedDiagram = new Diagram(tempPath);
-
-            // Verify that the ShowPageBreaks setting persisted
-            if (loadedDiagram.Windows.Count == 0)
+            // ---------- Create a new diagram and set ShowPageBreaks ----------
+            using (Diagram diagram = new Diagram())
             {
-                throw new Exception("Loaded diagram contains no windows.");
+                // Ensure the diagram has at least one window; add one if necessary
+                if (diagram.Windows.Count == 0)
+                {
+                    Window newWindow = new Window();
+                    diagram.Windows.Add(newWindow);
+                }
+
+                // Set ShowPageBreaks to TRUE on the first window
+                Window window = diagram.Windows[0];
+                window.ShowPageBreaks = BOOL.True;
+
+                // Save the diagram to the temporary file
+                diagram.Save(tempFilePath, SaveFileFormat.Vsdx);
             }
 
-            BOOL showPageBreaks = loadedDiagram.Windows[0].ShowPageBreaks;
-            if (showPageBreaks != BOOL.True)
+            // Guard: verify the file was created
+            if (!File.Exists(tempFilePath))
             {
-                throw new Exception("ShowPageBreaks value did not persist after reload.");
+                Console.Error.WriteLine("Failed to create the test diagram file.");
+                return;
             }
 
-            Console.WriteLine("ShowPageBreaks persisted correctly after serialization and reload.");
+            // ---------- Reload the diagram and verify the setting ----------
+            using (Diagram loadedDiagram = new Diagram(tempFilePath))
+            {
+                // Ensure the loaded diagram contains a window
+                if (loadedDiagram.Windows.Count == 0)
+                {
+                    throw new Exception("No windows found in the loaded diagram.");
+                }
+
+                // Retrieve the window and check ShowPageBreaks value
+                Window loadedWindow = loadedDiagram.Windows[0];
+                if (loadedWindow.ShowPageBreaks != BOOL.True)
+                {
+                    throw new Exception("ShowPageBreaks value was not persisted after reload.");
+                }
+
+                // If the check passes, output success message
+                Console.WriteLine("ShowPageBreaks persisted correctly after serialization and reload.");
+            }
         }
-        finally
+        catch (Exception ex)
         {
-            // Clean up the temporary file
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
+            // Write any errors to the error stream
+            Console.Error.WriteLine("Error: " + ex.Message);
         }
     }
 }

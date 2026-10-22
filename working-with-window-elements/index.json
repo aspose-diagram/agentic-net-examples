@@ -1,11 +1,11 @@
 {
   "category": "working-with-window-elements",
   "display_name": "Working With Window Elements",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-09-24",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,16 +14,15 @@
       "task": "Add unit tests to ensure showpagebreaks remains true after saving and reloading the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
-        "Pages",
         "Save",
-        "Window"
+        "Window",
+        "Windows",
+        "diagram"
       ]
     },
     {
@@ -33,12 +32,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.Diagnostics",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Save",
         "Window",
         "Windows",
         "diagram"
@@ -50,6 +49,7 @@
       "task": "Create a custom ui panel that reflects the current showgrid state of the active window",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -101,7 +101,6 @@
       "task": "Create a unit test verifying showpagebreaks changes persist after diagram serialization and reload",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -138,7 +137,6 @@
       "key_apis": [
         "Diagram",
         "Save",
-        "Window",
         "Windows",
         "diagram"
       ]
@@ -165,15 +163,15 @@
       "task": "Develop a plugin that automatically sets showguides to false when a diagram exceeds a specified page count",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Window",
-        "Windows"
+        "Windows",
+        "diagram"
       ]
     },
     {
@@ -182,6 +180,7 @@
       "task": "Develop a test harness that randomly flips showgrid and showguides flags to stress test the api",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -207,8 +206,8 @@
         "Diagram",
         "PdfSaveOptions",
         "Save",
-        "Window",
-        "Windows"
+        "Windows",
+        "diagram"
       ]
     },
     {
@@ -218,12 +217,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Reflection"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Windows",
         "diagram"
       ]
     },
@@ -234,7 +233,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic"
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -249,7 +249,6 @@
       "task": "Implement a command line tool that accepts a visio file path and toggles showrulers based on user input",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -267,13 +266,13 @@
       "task": "Implement a rollback routine that restores original window settings if an error occurs during processing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Save",
-        "Window",
         "Windows",
         "diagram"
       ]
@@ -285,6 +284,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -333,6 +333,7 @@
       "task": "Load a visio diagram and retrieve all window objects from its windowcollection",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -348,6 +349,7 @@
       "task": "Log before and after states of each window property when applying bulk visibility changes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -381,7 +383,6 @@
       "task": "Save the modified visio diagram to a new file after updating window visibility properties",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -399,12 +400,12 @@
       "task": "Set showrulers to true and showpagebreaks to false on the first retrieved window",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Save",
-        "Window",
         "Windows",
         "diagram"
       ]
@@ -423,7 +424,6 @@
       "key_apis": [
         "Diagram",
         "Save",
-        "Window",
         "Windows",
         "diagram"
       ]
@@ -434,16 +434,13 @@
       "task": "Validate that window visibility settings apply globally by confirming multiple pages share identical configurations",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Save",
-        "Window",
-        "Windows"
+        "Windows",
+        "diagram"
       ]
     },
     {
@@ -458,10 +455,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Window"
+        "Windows",
+        "diagram"
       ]
     },
     {
@@ -470,12 +467,12 @@
       "task": "Write a function that toggles showgrid for all open windows in a visio session",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Save",
-        "Window",
         "Windows",
         "diagram"
       ]
@@ -503,8 +500,8 @@
       "task": "Write documentation comments explaining the purpose of each window property used in the project",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

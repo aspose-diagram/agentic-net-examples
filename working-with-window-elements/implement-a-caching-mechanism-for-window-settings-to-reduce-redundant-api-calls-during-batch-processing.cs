@@ -1,16 +1,13 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
-namespace DiagramWindowCacheExample
+class Program
 {
-    // Represents the settings of a diagram window that we want to cache.
-    public class WindowSettings
+    // Simple DTO to hold window visibility settings
+    private class WindowSettings
     {
-        public WindowStateValue State { get; set; }
-        public long Height { get; set; }
-        public long Width { get; set; }
-        public WindowTypeValue Type { get; set; }
         public BOOL ShowGrid { get; set; }
         public BOOL ShowGuides { get; set; }
         public BOOL ShowRulers { get; set; }
@@ -19,100 +16,86 @@ namespace DiagramWindowCacheExample
         public BOOL ShowConnectionPoints { get; set; }
     }
 
-    // Simple cache that stores window settings keyed by window ID.
-    public class WindowSettingsCache
+    static void Main(string[] args)
     {
-        private readonly Dictionary<int, WindowSettings> _cache = new();
-
-        // Capture settings from a Window instance and store them in the cache.
-        public void AddOrUpdate(Window window)
+        // Validate that at least one file path is provided
+        if (args.Length == 0)
         {
-            if (window == null) throw new ArgumentNullException(nameof(window));
-
-            var settings = new WindowSettings
-            {
-                State = window.WindowState,
-                Height = window.WindowHeight,
-                Width = window.WindowWidth,
-                Type = window.WindowType,
-                ShowGrid = window.ShowGrid,
-                ShowGuides = window.ShowGuides,
-                ShowRulers = window.ShowRulers,
-                ShowPageBreaks = window.ShowPageBreaks,
-                DynamicGridEnabled = window.DynamicGridEnabled,
-                ShowConnectionPoints = window.ShowConnectionPoints
-            };
-
-            _cache[window.ID] = settings;
+            Console.Error.WriteLine("Please provide at least one Visio file path as an argument.");
+            return;
         }
 
-        // Apply cached settings to a Window instance if a matching entry exists.
-        public void Apply(Window window)
-        {
-            if (window == null) throw new ArgumentNullException(nameof(window));
+        // Cache to store window settings keyed by window ID
+        Dictionary<int, WindowSettings> windowCache = new Dictionary<int, WindowSettings>();
 
-            if (_cache.TryGetValue(window.ID, out var settings))
-            {
-                window.WindowState = settings.State;
-                window.WindowHeight = settings.Height;
-                window.WindowWidth = settings.Width;
-                window.WindowType = settings.Type;
-                window.ShowGrid = settings.ShowGrid;
-                window.ShowGuides = settings.ShowGuides;
-                window.ShowRulers = settings.ShowRulers;
-                window.ShowPageBreaks = settings.ShowPageBreaks;
-                window.DynamicGridEnabled = settings.DynamicGridEnabled;
-                window.ShowConnectionPoints = settings.ShowConnectionPoints;
-            }
-            else
-            {
-                // No cached settings for this window; optionally handle this case.
-                Console.WriteLine($"No cached settings found for window ID {window.ID}.");
-            }
-        }
-    }
-
-    class Program
-    {
-        static void Main()
+        foreach (string inputPath in args)
         {
+            // Guard: ensure the file exists before processing
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                continue;
+            }
+
             try
             {
-
-                // Load an existing diagram (replace with actual file path).
-                string inputPath = "input.vsdx";
+                // Load the diagram from the file
                 Diagram diagram = new Diagram(inputPath);
 
-                // Initialize the cache and capture current window settings.
-                var cache = new WindowSettingsCache();
-                foreach (Window win in diagram.Windows)
+                // If the diagram has no windows, skip processing
+                if (diagram.Windows.Count == 0)
                 {
-                    cache.AddOrUpdate(win);
+                    Console.WriteLine($"Diagram '{inputPath}' contains no windows. Skipping.");
+                    continue;
                 }
 
-                // Example modification: change some window properties for demonstration.
-                foreach (Window win in diagram.Windows)
+                // Process each window in the diagram
+                foreach (Window window in diagram.Windows)
                 {
-                    win.WindowState = WindowStateValue.Maximized;
-                    win.ShowGrid = BOOL.False;
-                    win.ShowGuides = BOOL.False;
+                    // Use the window's ID as the cache key
+                    int windowId = window.ID;
+
+                    // If settings for this window ID are not cached, capture them
+                    if (!windowCache.ContainsKey(windowId))
+                    {
+                        WindowSettings settings = new WindowSettings
+                        {
+                            ShowGrid = window.ShowGrid,
+                            ShowGuides = window.ShowGuides,
+                            ShowRulers = window.ShowRulers,
+                            ShowPageBreaks = window.ShowPageBreaks,
+                            DynamicGridEnabled = window.DynamicGridEnabled,
+                            ShowConnectionPoints = window.ShowConnectionPoints
+                        };
+                        windowCache[windowId] = settings;
+                    }
+
+                    // Retrieve cached settings
+                    WindowSettings cached = windowCache[windowId];
+
+                    // Apply cached settings to the current window
+                    window.ShowGrid = cached.ShowGrid;
+                    window.ShowGuides = cached.ShowGuides;
+                    window.ShowRulers = cached.ShowRulers;
+                    window.ShowPageBreaks = cached.ShowPageBreaks;
+                    window.DynamicGridEnabled = cached.DynamicGridEnabled;
+                    window.ShowConnectionPoints = cached.ShowConnectionPoints;
                 }
 
-                // Later in the batch process we may want to restore the original settings.
-                foreach (Window win in diagram.Windows)
-                {
-                    cache.Apply(win);
-                }
+                // Prepare output path (same directory with "_out" suffix)
+                string directory = Path.GetDirectoryName(inputPath);
+                string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_out.vsdx");
 
-                // Save the diagram after processing.
-                string outputPath = "output.vsdx";
+                // Save the modified diagram using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Processed and saved: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Log any errors that occur during processing
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
-    }
+        }
     }
 }

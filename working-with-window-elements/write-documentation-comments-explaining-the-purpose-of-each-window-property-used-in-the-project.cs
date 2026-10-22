@@ -1,99 +1,163 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
-/// <summary>
-    /// Demonstrates accessing and configuring Window properties in an Aspose.Diagram document.
-    /// Each property is documented with its purpose.
+class Program
+{
+    /// <summary>
+    /// Application entry point.
     /// </summary>
-    public class Program
+    static void Main(string[] args)
     {
-        public static void Main()
+        // Expect the first argument to be the path of the Visio diagram.
+        if (args.Length == 0)
         {
-            // Create an empty diagram. New diagrams have no windows by default.
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Please provide the path to a Visio diagram file as the first argument.");
+            return;
+        }
 
-            // Ensure at least one window exists before accessing the collection.
+        string diagramPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Ensure at least one Window exists; create a default one if necessary.
             if (diagram.Windows.Count == 0)
             {
-                // Create a new window and add it to the diagram.
-                Window initialWindow = new Window();
+                // Create a new Window instance.
+                Window defaultWindow = new Window();
 
-                // WindowTypeValue.Drawing – indicates the window displays a drawing (the main canvas).
-                initialWindow.WindowType = WindowTypeValue.Drawing;
+                /// <summary>
+                /// WindowType defines the kind of window (Drawing, Stencil, Sheet, Icon).
+                /// </summary>
+                defaultWindow.WindowType = WindowTypeValue.Drawing;
 
-                // WindowStateValue.Maximized – opens the window maximized on the screen.
-                initialWindow.WindowState = WindowStateValue.Maximized;
+                /// <summary>
+                /// WindowWidth sets the initial width of the window in pixels.
+                /// </summary>
+                defaultWindow.WindowWidth = 800;
 
-                // Set default size for the window (in internal units).
-                // WindowHeight – height of the window.
-                initialWindow.WindowHeight = 800;
-                // WindowWidth – width of the window.
-                initialWindow.WindowWidth = 1200;
+                /// <summary>
+                /// WindowHeight sets the initial height of the window in pixels.
+                /// </summary>
+                defaultWindow.WindowHeight = 600;
 
-                diagram.Windows.Add(initialWindow);
+                /// <summary>
+                /// WindowState determines the visual state of the window (Maximized, Minimized, or Normal via cast).
+                /// </summary>
+                defaultWindow.WindowState = WindowStateValue.Maximized;
+
+                // Add the newly created window to the diagram.
+                diagram.Windows.Add(defaultWindow);
             }
 
-            // Iterate through all windows in the diagram.
-            foreach (Window window in diagram.Windows)
-            {
-                // ID – unique identifier of the window within the document.
-                Console.WriteLine($"Window ID: {window.ID}");
+            // Retrieve the first window for demonstration purposes.
+            Window window = diagram.Windows[0];
 
-                // WindowType – defines the kind of window (Drawing, Stencil, Sheet, Icon).
-                Console.WriteLine($"Window Type: {window.WindowType}");
+            /// <summary>
+            /// ID is the unique identifier of the window within the diagram.
+            /// </summary>
+            int windowId = window.ID;
 
-                // WindowState – current visual state of the window (Maximized, Minimized).
-                Console.WriteLine($"Window State: {window.WindowState}");
+            /// <summary>
+            /// WindowType indicates the category of the window (Drawing, Stencil, Sheet, Icon).
+            /// </summary>
+            WindowTypeValue windowType = window.WindowType;
 
-                // WindowHeight – height of the window in internal units.
-                Console.WriteLine($"Window Height: {window.WindowHeight}");
+            /// <summary>
+            /// WindowWidth represents the width of the window in pixels.
+            /// </summary>
+            long windowWidth = window.WindowWidth;
 
-                // WindowWidth – width of the window in internal units.
-                Console.WriteLine($"Window Width: {window.WindowWidth}");
+            /// <summary>
+            /// WindowHeight represents the height of the window in pixels.
+            /// </summary>
+            long windowHeight = window.WindowHeight;
 
-                // DynamicGridEnabled – when TRUE, the dynamic grid feature is active, helping with shape alignment.
-                Console.WriteLine($"Dynamic Grid Enabled: {window.DynamicGridEnabled}");
+            /// <summary>
+            /// WindowState reflects the current state of the window (Maximized, Minimized, or Normal via cast).
+            /// </summary>
+            WindowStateValue windowState = window.WindowState;
 
-                // ShowConnectionPoints – when TRUE, connection points on shapes are displayed.
-                Console.WriteLine($"Show Connection Points: {window.ShowConnectionPoints}");
+            /// <summary>
+            /// ShowGrid determines whether the grid is displayed in the window.
+            /// </summary>
+            BOOL showGrid = window.ShowGrid;
 
-                // ShowGrid – when TRUE, the drawing grid is visible.
-                Console.WriteLine($"Show Grid: {window.ShowGrid}");
+            /// <summary>
+            /// ShowGuides determines whether alignment guides are displayed in the window.
+            /// </summary>
+            BOOL showGuides = window.ShowGuides;
 
-                // ShowGuides – when TRUE, guide lines are displayed to assist alignment.
-                Console.WriteLine($"Show Guides: {window.ShowGuides}");
+            /// <summary>
+            /// ShowRulers determines whether rulers are displayed in the window.
+            /// </summary>
+            BOOL showRulers = window.ShowRulers;
 
-                // ShowRulers – when TRUE, rulers are displayed along the top and left edges of the window.
-                Console.WriteLine($"Show Rulers: {window.ShowRulers}");
+            /// <summary>
+            /// ShowPageBreaks determines whether page break lines are displayed in the window.
+            /// </summary>
+            BOOL showPageBreaks = window.ShowPageBreaks;
 
-                // ShowPageBreaks – when TRUE, page break indicators are shown.
-                Console.WriteLine($"Show Page Breaks: {window.ShowPageBreaks}");
+            /// <summary>
+            /// DynamicGridEnabled enables or disables the dynamic grid feature for shape placement.
+            /// </summary>
+            BOOL dynamicGridEnabled = window.DynamicGridEnabled;
 
-                Console.WriteLine(new string('-', 40));
-            }
+            /// <summary>
+            /// ShowConnectionPoints toggles the visibility of connection points on shapes.
+            /// </summary>
+            BOOL showConnectionPoints = window.ShowConnectionPoints;
 
-            // Example: modify properties of the first window.
-            Window firstWindow = diagram.Windows[0];
+            // Output the retrieved window property values.
+            Console.WriteLine($"Window ID: {windowId}");
+            Console.WriteLine($"Window Type: {windowType}");
+            Console.WriteLine($"Size (W x H): {windowWidth} x {windowHeight}");
+            Console.WriteLine($"Window State: {windowState}");
+            Console.WriteLine($"Show Grid: {showGrid}");
+            Console.WriteLine($"Show Guides: {showGuides}");
+            Console.WriteLine($"Show Rulers: {showRulers}");
+            Console.WriteLine($"Show Page Breaks: {showPageBreaks}");
+            Console.WriteLine($"Dynamic Grid Enabled: {dynamicGridEnabled}");
+            Console.WriteLine($"Show Connection Points: {showConnectionPoints}");
 
-            // Enable dynamic grid.
-            // DynamicGridEnabled accepts BOOL values, not plain bool.
-            firstWindow.DynamicGridEnabled = BOOL.True;
+            // Example modifications to some BOOL properties.
+            /// <summary>
+            /// Hide the grid by setting ShowGrid to FALSE.
+            /// </summary>
+            window.ShowGrid = BOOL.False;
 
-            // Show connection points.
-            firstWindow.ShowConnectionPoints = BOOL.True;
+            /// <summary>
+            /// Ensure guides are visible by setting ShowGuides to TRUE.
+            /// </summary>
+            window.ShowGuides = BOOL.True;
 
-            // Show grid, guides, rulers, and page breaks.
-            firstWindow.ShowGrid = BOOL.True;
-            firstWindow.ShowGuides = BOOL.True;
-            firstWindow.ShowRulers = BOOL.True;
-            firstWindow.ShowPageBreaks = BOOL.True;
+            /// <summary>
+            /// Enable the dynamic grid feature.
+            /// </summary>
+            window.DynamicGridEnabled = BOOL.True;
 
-            // Change window size.
-            firstWindow.WindowHeight = 900;
-            firstWindow.WindowWidth = 1300;
+            // Save the modified diagram to a new file.
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                "Modified_" + Path.GetFileName(diagramPath));
 
-            // Save the diagram to a VDX file (Visio 2003 format) as an example.
-            diagram.Save("output.vdx", SaveFileFormat.Vdx);
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

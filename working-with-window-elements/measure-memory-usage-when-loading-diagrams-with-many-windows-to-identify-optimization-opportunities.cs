@@ -1,69 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 
-class MemoryUsageMeasurement
+class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio diagram that contains many windows.
-        // Adjust the file name as needed.
-        string diagramPath = "LargeDiagram.vsdx";
-
-        // Ensure the file exists.
-        if (!System.IO.File.Exists(diagramPath))
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            Console.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
             return;
         }
 
-        // Get the current process to read memory statistics.
-        Process currentProcess = Process.GetCurrentProcess();
+        string diagramPath = args[0];
 
-        // Force a full garbage collection before measurement to get a clean baseline.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
 
-        // Record memory usage before loading the diagram.
-        long memoryBeforeGC = GC.GetTotalMemory(forceFullCollection: true);
-        long privateBytesBefore = currentProcess.PrivateMemorySize64;
+        try
+        {
+            // Force a full garbage collection to get a clean baseline memory measurement.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
 
-        Console.WriteLine("Memory usage BEFORE loading diagram:");
-        Console.WriteLine($"  GC.GetTotalMemory: {memoryBeforeGC:N0} bytes");
-        Console.WriteLine($"  Process.PrivateMemorySize64: {privateBytesBefore:N0} bytes");
+            // Record memory usage before loading the diagram.
+            long memoryBefore = GC.GetTotalMemory(true);
+            Console.WriteLine($"Memory before loading: {memoryBefore / 1024.0 / 1024.0:F2} MB");
 
-        // Load the diagram.
-        Diagram diagram = new Diagram(diagramPath);
+            // Optional: measure load time.
+            Stopwatch sw = Stopwatch.StartNew();
 
-        // Force a garbage collection again to stabilize memory after loading.
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
+            // Load the diagram from the specified file.
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                sw.Stop();
+                Console.WriteLine($"Diagram loaded in {sw.ElapsedMilliseconds} ms");
 
-        // Record memory usage after loading the diagram.
-        long memoryAfterGC = GC.GetTotalMemory(forceFullCollection: true);
-        long privateBytesAfter = currentProcess.PrivateMemorySize64;
+                // Output information about each window in the diagram.
+                Console.WriteLine($"Total windows: {diagram.Windows.Count}");
+                foreach (Window window in diagram.Windows)
+                {
+                    Console.WriteLine($"Window ID: {window.ID}, Type: {window.WindowType}, Width: {window.WindowWidth}, Height: {window.WindowHeight}, State: {window.WindowState}");
+                }
+            }
 
-        Console.WriteLine("\nMemory usage AFTER loading diagram:");
-        Console.WriteLine($"  GC.GetTotalMemory: {memoryAfterGC:N0} bytes");
-        Console.WriteLine($"  Process.PrivateMemorySize64: {privateBytesAfter:N0} bytes");
+            // Record memory usage after the diagram has been loaded and processed.
+            long memoryAfter = GC.GetTotalMemory(true);
+            Console.WriteLine($"Memory after loading: {memoryAfter / 1024.0 / 1024.0:F2} MB");
 
-        // Calculate differences.
-        long gcMemoryDiff = memoryAfterGC - memoryBeforeGC;
-        long privateMemoryDiff = privateBytesAfter - privateBytesBefore;
-
-        Console.WriteLine("\nMemory increase due to loading:");
-        Console.WriteLine($"  GC.GetTotalMemory increase: {gcMemoryDiff:N0} bytes");
-        Console.WriteLine($"  Process.PrivateMemorySize64 increase: {privateMemoryDiff:N0} bytes");
-
-        // Optional: iterate through windows to ensure they are loaded.
-        Console.WriteLine($"\nNumber of windows in the diagram: {diagram.Windows.Count}");
-
-        // Cleanup.
-        diagram = null;
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
+            // Calculate and display the memory delta.
+            long memoryDelta = memoryAfter - memoryBefore;
+            Console.WriteLine($"Memory increase due to loading: {memoryDelta / 1024.0 / 1024.0:F2} MB");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or general exceptions and report them.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

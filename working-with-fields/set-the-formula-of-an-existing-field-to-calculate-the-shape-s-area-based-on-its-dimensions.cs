@@ -1,54 +1,74 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the existing Visio file
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Assume we work with the first page
-            Page page = diagram.Pages[0];
-
-            // Find the target shape (example: shape with ID 1)
-            // Adjust the ID or selection logic as needed
-            Shape shape = page.Shapes.GetShape(1);
-
-            // Ensure the shape contains at least one field
-            if (shape.Fields.Count > 0)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Get the first field
-                Field field = shape.Fields[0];
+                bool fieldUpdated = false;
 
-                // Set the formula to calculate area (Width * Height)
-                field.Value.Ufev.F = "Width*Height";
+                // Iterate through all pages and shapes to find a shape with at least one custom property (Prop)
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape has a Props collection with at least one item
+                        if (shape.Props != null && shape.Props.Count > 0)
+                        {
+                            // Update the first existing property to calculate area = Width * Height
+                            // The formula is set as a Visio expression string
+                            Prop prop = shape.Props[0];
+                            prop.Value.Ufev.F = "Width*Height";
+                            // Use Undefined unit for the formula result
+                            prop.Value.Ufev.Unit = MeasureConst.Undefined;
 
-                // Optionally, clear any existing format strings
-                field.Format.Val = "";
-                field.Format.Ufev.F = "";
+                            fieldUpdated = true;
+                            // Break after updating the first found property
+                            break;
+                        }
+                    }
+
+                    if (fieldUpdated)
+                        break;
+                }
+
+                if (!fieldUpdated)
+                {
+                    Console.Error.WriteLine("No shape with an existing custom property (Prop) was found in the diagram.");
+                }
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            else
-            {
-                Console.WriteLine("The selected shape does not contain any fields.");
-            }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,11 +1,11 @@
 {
   "category": "diagram-vba",
   "display_name": "Diagram Vba",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -76,6 +76,7 @@
       "task": "Check whether the vba project in the diagram is digitally signed with a certificate",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -90,7 +91,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -118,7 +120,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -153,7 +154,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -195,14 +197,13 @@
       "task": "Execute a specific macro programmatically and capture its output for verification",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "Diagram",
-        "Save",
-        "diagram"
+        "Diagram"
       ]
     },
     {
@@ -213,8 +214,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -240,9 +240,9 @@
       "task": "Generate a consolidated csv report summarizing vba module counts across all processed diagrams",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram"
@@ -272,7 +272,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text.RegularExpressions"
       ],
@@ -300,6 +299,7 @@
       "task": "Load a visio diagram from file and access its vba project for manipulation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -316,7 +316,6 @@
       "task": "Log detailed vba project metadata to a json file for auditing purposes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "Aspose.Diagram.Vba",
         "System",
         "System.Collections.Generic",
@@ -348,7 +347,6 @@
       "task": "Remove password protection from a vba project after verifying user credentials successfully",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -379,9 +377,9 @@
       "task": "Rename a vba module to a more descriptive identifier within the same diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -396,7 +394,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -424,8 +423,6 @@
       "task": "Save a diagram containing vba macros to a memory stream for network transmission",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -441,6 +438,8 @@
       "task": "Save the diagram preserving its vba project to a new visio file format",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -456,7 +455,6 @@
       "task": "Save the diagram without including the vba project to reduce file size",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -503,8 +501,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.IO",
-        "System.Security.Cryptography.X509Certificates"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",

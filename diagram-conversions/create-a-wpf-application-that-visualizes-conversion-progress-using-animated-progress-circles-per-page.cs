@@ -1,128 +1,80 @@
 using System;
 using System.IO;
-using System.Threading;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Simple spinner animation that runs on a separate thread.
-    private static void ShowSpinner(string message, Func<bool> stopCondition)
-    {
-        // Characters to rotate for the spinner.
-        char[] sequence = new[] { '|', '/', '-', '\\' };
-        int idx = 0;
-
-        // Continue looping until the stop condition returns true.
-        while (!stopCondition())
-        {
-            // Write the spinner character with the provided message.
-            Console.Write($"\r{message} {sequence[idx++ % sequence.Length]}");
-            Thread.Sleep(100);
-        }
-
-        // Clear the spinner line after completion.
-        Console.Write("\r" + new string(' ', Console.WindowWidth) + "\r");
-    }
-
+    // Entry point of the console application.
     static void Main(string[] args)
     {
-        // Prompt for the Visio file path if not supplied via arguments.
-        string inputPath = args.Length > 0 ? args[0] : "";
-        if (string.IsNullOrWhiteSpace(inputPath))
-        {
-            Console.Write("Enter the path to the Visio file: ");
-            inputPath = Console.ReadLine()?.Trim() ?? "";
-        }
-
-        // Guard: ensure the input file exists.
+        // Resolve input Visio file path.
+        string inputPath = args.Length > 0 ? args[0] : PromptFilePath("Enter the path to the Visio file to convert:");
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Prompt for the output directory if not supplied via arguments.
-        string outputDir = args.Length > 1 ? args[1] : "";
-        if (string.IsNullOrWhiteSpace(outputDir))
+        // Resolve output PDF file path.
+        string outputPath = args.Length > 1 ? args[1] : PromptFilePath("Enter the desired output PDF file path:");
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
         {
-            Console.Write("Enter the output directory for exported images: ");
-            outputDir = Console.ReadLine()?.Trim() ?? "";
+            Console.Error.WriteLine($"Error: Output directory \"{outputDir}\" does not exist.");
+            return;
         }
 
-        // Guard: ensure the output directory exists (create if missing).
-        if (!Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
-        }
-
-        // Load the Visio diagram inside a using block to ensure disposal.
         try
         {
-            using Diagram diagram = new Diagram(inputPath);
-            int pageCount = diagram.Pages.Count;
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            Console.WriteLine($"Diagram loaded. Total pages: {pageCount}");
+            // Configure PDF save options with a page‑saving callback to report progress.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.ExportHiddenPage = false;               // Do not export hidden pages. (Changed from BOOL.False to bool)
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;        // Explicitly set the format.
+            pdfOptions.DefaultFont = "Arial";                  // Fallback font.
+            pdfOptions.PageSavingCallback = new PageProgressCallback();
 
-            // Iterate over each page and export it as a PNG image.
-            for (int i = 0; i < pageCount; i++)
-            {
-                // Prepare the output file name for the current page.
-                string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
+            // Save the diagram to PDF while the callback reports per‑page progress.
+            diagram.Save(outputPath, pdfOptions);
 
-                // Flag to signal the spinner thread when export finishes.
-                bool exportDone = false;
+            // Clean up resources.
+            diagram.Dispose();
 
-                // Start the spinner animation on a background thread.
-                Thread spinnerThread = new Thread(() =>
-                    ShowSpinner($"Exporting page {i + 1}/{pageCount}", () => exportDone));
-                spinnerThread.Start();
-
-                try
-                {
-                    // Configure image save options for a single page export.
-                    ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        // Export only the current page.
-                        PageIndex = i,
-                        PageCount = 1,
-                        // Do not export hidden pages (optional).
-                        ExportHiddenPage = false
-                    };
-
-                    // Perform the actual save operation.
-                    diagram.Save(outputPath, options);
-                }
-                catch (Exception ex)
-                {
-                    // Write any export errors to the error stream.
-                    Console.Error.WriteLine($"Error exporting page {i + 1}: {ex.Message}");
-                }
-                finally
-                {
-                    // Signal the spinner to stop and wait for the thread to finish.
-                    exportDone = true;
-                    spinnerThread.Join();
-                }
-
-                // Inform the user that the page has been exported.
-                Console.WriteLine($"Page {i + 1} exported to: {outputPath}");
-            }
-
-            Console.WriteLine("All pages have been processed.");
+            Console.WriteLine("Conversion completed successfully.");
         }
         catch (Exception ex)
         {
-            // Catch any errors that occur while loading the diagram.
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
+    }
+
+    // Helper method to read a file path from the console.
+    private static string PromptFilePath(string message)
+    {
+        Console.WriteLine(message);
+        return Console.ReadLine()?.Trim() ?? string.Empty;
+    }
+}
+
+// Implementation of IPageSavingCallback to report per‑page progress.
+class PageProgressCallback : IPageSavingCallback
+{
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        // Simple animated circle using Unicode characters.
+        Console.WriteLine($"[Page {args.PageIndex + 1}/{args.PageCount}] Starting export... ◐");
+    }
+
+    // Called after a page has finished saving.
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        // Indicate completion of the page.
+        Console.WriteLine($"[Page {args.PageIndex + 1}/{args.PageCount}] Completed. ✔");
+        // Example of stopping further processing (not used here):
+        // args.HasMorePages = false;
     }
 }

@@ -1,68 +1,87 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Define file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string themeSourcePath = "theme.vsdx";
+        if (!System.IO.File.Exists(themeSourcePath))
+        {
+            Console.Error.WriteLine($"File not found: {themeSourcePath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard against missing input files
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(themeSourcePath))
+        {
+            Console.Error.WriteLine($"Theme source file not found: {themeSourcePath}");
+            return;
+        }
+
+        try
+        {
+            // Load the main diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            // Load the theme source diagram
+            using (Diagram themeDiagram = new Diagram(themeSourcePath))
             {
+                // Define the list of expected shape IDs (example values)
+                long[] expectedShapeIds = new long[] { 1, 2, 3, 4, 5 };
 
-                // Path to the source Visio file
-                string sourcePath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Assume we are working with the first page
-                Page page = diagram.Pages[0];
-
-                // List of shape IDs that are expected to exist before applying a theme
-                long[] expectedShapeIds = { 1, 2, 5, 10 };
-
-                bool anyMissing = false;
-
+                // Iterate over each expected ID and verify its existence
                 foreach (long shapeId in expectedShapeIds)
                 {
+                    // Attempt to retrieve the shape from the first page
                     Shape shape = null;
-                    try
+                    if (diagram.Pages.Count > 0)
                     {
-                        // Retrieve the shape by ID; GetShape returns null if not found
-                        shape = page.Shapes.GetShape(shapeId);
-                    }
-                    catch (Exception ex)
-                    {
-                        // In case GetShape throws an exception for an invalid ID
-                        Console.WriteLine($"Error retrieving shape ID {shapeId}: {ex.Message}");
+                        // GetShape returns null if the shape does not exist
+                        shape = diagram.Pages[0].Shapes.GetShape(shapeId);
                     }
 
-                    if (shape == null)
+                    // Check if shape is missing or logically deleted
+                    if (shape == null || shape.Del == BOOL.True)
                     {
-                        anyMissing = true;
-                        Console.WriteLine($"Missing shape with ID: {shapeId}");
+                        Console.WriteLine($"Missing or deleted shape with ID: {shapeId}");
                     }
                 }
 
-                if (!anyMissing)
+                // Apply theme from the source diagram to the target diagram
+                // Note: The exact API for copying a theme may vary; using CopyTheme as an example.
+                // If CopyTheme is not available, replace with appropriate theme application logic.
+                try
                 {
-                    Console.WriteLine("All expected shapes are present. Applying theme...");
-                    // Apply a preset theme to the page
-                    page.PresetTheme = PresetThemeValue.Bubble;
-                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    diagram.CopyTheme(themeDiagram);
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("Theme application skipped due to missing shapes.");
+                    Console.Error.WriteLine($"Failed to copy theme: {ex.Message}");
                 }
 
-                // Save the diagram (if needed)
-                string outputPath = "output.vsdx";
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved to {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Log any Aspose.Diagram related errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

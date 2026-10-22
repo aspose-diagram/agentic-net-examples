@@ -1,31 +1,47 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the Visio file path as the first command‑line argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found – \"{inputPath}\"");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram into memory.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the Visio diagram from file
-            Diagram diagram = new Diagram("sample.vsdx");
+            // Verify that the diagram was parsed by checking page collection.
+            int pageCount = diagram.Pages.Count;
+            Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
 
-            // Verify that the diagram was parsed successfully
-            if (diagram != null && diagram.Pages.Count > 0)
+            // Optionally, iterate pages and report shape counts.
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                Console.WriteLine("Diagram loaded successfully. Page count: " + diagram.Pages.Count);
+                int shapeCount = page.Shapes.Count;
+                Console.WriteLine($"Page \"{page.Name}\" contains {shapeCount} shape(s).");
             }
-            else
-            {
-                Console.WriteLine("Failed to load diagram or diagram contains no pages.");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occurred during loading or processing.
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

@@ -1,5 +1,5 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,38 +7,56 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXpsPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file path
-            string inputPath = "input.vsdx";
-
-            // Output XPS file path
-            string outputPath = "output.xps";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Set orientation of every non‑background page to Landscape
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (page.Background != BOOL.True)
+                // Iterate over all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
+                    // Skip background pages (Background == BOOL.True).
+                    if (page.Background == BOOL.True)
+                    {
+                        continue;
+                    }
+
+                    // Set the page orientation to Landscape.
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
+
+                // Configure XPS save options.
+                XPSSaveOptions xpsOptions = new XPSSaveOptions
+                {
+                    // Do not export hidden pages.
+                    ExportHiddenPage = false // BOOL.False cannot be assigned; use native bool.
+                };
+
+                // Save the diagram as XPS using the configured options.
+                diagram.Save(outputPath, xpsOptions);
             }
-
-            // Configure XPS save options (do not export hidden pages)
-            XPSSaveOptions options = new XPSSaveOptions();
-            options.ExportHiddenPage = false;
-
-            // Save the diagram as XPS
-            diagram.Save(outputPath, options);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

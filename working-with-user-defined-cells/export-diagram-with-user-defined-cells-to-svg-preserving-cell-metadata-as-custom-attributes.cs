@@ -1,68 +1,108 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Paths for input Visio file and output SVG
-            string inputPath = "input.vsdx";
-            string outputSvgPath = "output.svg";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure SVG export options
-            SVGSaveOptions svgOptions = new SVGSaveOptions
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                ExportHiddenPage = false,
-                ExportGuideShapes = false,
-                SVGFitToViewPort = true
-            };
+                // Configure SVG save options
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    ExportHiddenPage = false,      // Do not export hidden pages
+                    ExportGuideShapes = false,    // Do not export guide shapes
+                    SVGFitToViewPort = true,      // Preserve viewbox
+                    PageIndex = 0                 // Export first page
+                    // PageCount property is not available in this version; omitted
+                };
 
-            // Export the diagram to SVG
-            diagram.Save(outputSvgPath, svgOptions);
+                // Save diagram to SVG
+                diagram.Save(outputPath, svgOptions);
+            }
 
             // Load the generated SVG for post‑processing
-            XDocument svgDoc = XDocument.Load(outputSvgPath);
+            XDocument svgDoc = XDocument.Load(outputPath);
 
-            // Iterate through all shapes and embed user‑defined cells as custom attributes
-            foreach (Page page in diagram.Pages)
+            // Re‑load the diagram to access user‑defined cells
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Find the SVG element that corresponds to the shape ID
-                    var element = svgDoc.Descendants()
-                        .FirstOrDefault(e => (string)e.Attribute("id") == shape.ID.ToString());
-
-                    if (element != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Add each user‑defined cell as an attribute on the SVG element
-                        foreach (User userCell in shape.Users)
+                        // Process each user‑defined cell (User row)
+                        foreach (User userField in shape.Users)
                         {
-                            // Use the cell name as attribute name and its value as attribute value
-                            element.SetAttributeValue(userCell.Name, userCell.Value.Val);
+                            // Shape IDs are used as the 'id' attribute in the SVG
+                            string shapeId = shape.ID.ToString();
+
+                            // Find the SVG element with matching id
+                            XElement element = FindElementById(svgDoc.Root, shapeId);
+                            if (element != null)
+                            {
+                                // Create a custom attribute name prefixed with 'data-'
+                                string attributeName = $"data-{userField.NameU}";
+
+                                // Assign the cell value as the attribute value
+                                element.SetAttributeValue(attributeName, userField.Value.Val);
+                            }
                         }
                     }
                 }
             }
 
-            // Save the modified SVG with custom attributes
-            svgDoc.Save(outputSvgPath);
-
-            Console.WriteLine($"Diagram exported to SVG with custom attributes at: {outputSvgPath}");
-
+            // Save the modified SVG back to the same file
+            svgDoc.Save(outputPath);
+            Console.WriteLine($"SVG exported successfully with custom attributes: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    // Recursive helper to locate an element with a specific id attribute
+    private static XElement FindElementById(XElement root, string id)
+    {
+        if (root == null) return null;
+
+        XAttribute idAttr = root.Attribute("id");
+        if (idAttr != null && idAttr.Value == id)
+            return root;
+
+        foreach (XElement child in root.Elements())
+        {
+            XElement result = FindElementById(child, id);
+            if (result != null)
+                return result;
+        }
+
+        return null;
     }
 }

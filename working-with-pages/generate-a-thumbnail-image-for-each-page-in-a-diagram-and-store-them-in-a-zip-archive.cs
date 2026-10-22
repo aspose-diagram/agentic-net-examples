@@ -8,54 +8,66 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output ZIP file path (second argument or default)
+        string outputZipPath = args.Length > 1 ? args[1] : "thumbnails.zip";
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Input diagram file path and output zip file path
-            string diagramPath = @"C:\Diagrams\sample.vsdx";
-            string zipPath = @"C:\Diagrams\thumbnails.zip";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Create a zip archive for the thumbnails
-            using (FileStream zipFileStream = new FileStream(zipPath, FileMode.Create))
-            using (ZipArchive zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Create))
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                int pageCount = diagram.Pages.Count;
+
+                // Create the ZIP archive for thumbnails
+                using (FileStream zipFs = new FileStream(outputZipPath, FileMode.Create))
+                using (ZipArchive zip = new ZipArchive(zipFs, ZipArchiveMode.Create))
                 {
-                    // Configure image save options for the current page
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    // Iterate over each page and generate a thumbnail
+                    for (int i = 0; i < pageCount; i++)
                     {
-                        PageIndex = i,   // zero‑based page index
-                        PageCount = 1    // export only this page
-                    };
+                        // Configure image export options for a single page thumbnail
+                        ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
+                        options.PageIndex = i;          // Export only the current page
+                        options.PageCount = 1;          // Single page
+                        options.Scale = 0.2f;           // Reduce size for thumbnail (20%)
 
-                    // Save the page to a memory stream
-                    using (MemoryStream imageStream = new MemoryStream())
-                    {
-                        diagram.Save(imageStream, saveOptions);
-                        imageStream.Position = 0; // reset stream position for reading
+                        // Temporary file to hold the exported image
+                        string tempImagePath = Path.Combine(Path.GetTempPath(),
+                            $"page_{i + 1}_{Guid.NewGuid()}.png");
 
-                        // Add the image as an entry in the zip archive
-                        string entryName = $"Page_{i + 1}.png"; // human‑readable page number
-                        ZipArchiveEntry entry = zipArchive.CreateEntry(entryName, CompressionLevel.Optimal);
+                        // Export the page to the temporary PNG file
+                        diagram.Save(tempImagePath, options);
+
+                        // Add the PNG file to the ZIP archive
+                        string entryName = $"page_{i + 1}.png";
+                        ZipArchiveEntry entry = zip.CreateEntry(entryName);
+                        using (FileStream imgFs = new FileStream(tempImagePath, FileMode.Open, FileAccess.Read))
                         using (Stream entryStream = entry.Open())
                         {
-                            imageStream.CopyTo(entryStream);
+                            imgFs.CopyTo(entryStream);
                         }
+
+                        // Clean up the temporary image file
+                        File.Delete(tempImagePath);
                     }
                 }
             }
 
-            // Optional: inform the user
-            Console.WriteLine($"Thumbnails for {diagram.Pages.Count} pages saved to '{zipPath}'.");
-
+            Console.WriteLine($"Thumbnails successfully saved to: {outputZipPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

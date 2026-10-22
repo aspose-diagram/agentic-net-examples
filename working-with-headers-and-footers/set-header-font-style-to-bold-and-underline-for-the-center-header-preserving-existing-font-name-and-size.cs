@@ -1,35 +1,49 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram (replace with actual file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the global header/footer font settings
+            // Access the global header/footer font settings.
             HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
 
-            // Preserve existing font name (FaceName) and size (Height)
-            // and set the style to bold and underline
-            headerFont.Weight = 700;          // 700 = Bold
-            headerFont.Underline = BOOL.True; // Enable underline
+            // Preserve existing font name (FaceName) and size (Height) – no changes needed.
 
-            // Optionally, you can set or keep the center header text
-            // diagram.HeaderFooter.HeaderCenter = "Your Center Header Text";
+            // Set font weight to bold (700) and enable underline.
+            headerFont.Weight = 700;               // 700 = bold, 400 = regular
+            headerFont.Underline = BOOL.True;      // Use BOOL.True as required by the API
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

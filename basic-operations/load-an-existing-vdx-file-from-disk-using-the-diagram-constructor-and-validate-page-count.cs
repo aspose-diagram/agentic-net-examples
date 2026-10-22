@@ -1,40 +1,53 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect the first command‑line argument to be the path of the VDX file.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to a VDX file as a command‑line argument.");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load it.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram using the Diagram constructor.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Path to the VDX file to load
-            string filePath = "input.vdx";
-
-            // Load the diagram using the Diagram constructor
-            Diagram diagram = new Diagram(filePath);
-
-            // Get the number of pages in the diagram
+            // Retrieve and display the number of pages in the diagram.
             int pageCount = diagram.Pages.Count;
+            Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
 
-            // Output the page count for validation
-            Console.WriteLine($"Page count: {pageCount}");
-
-            // Example validation: ensure the diagram has at least one page
-            if (pageCount < 1)
+            // Simple validation: check that the diagram contains at least one page.
+            if (pageCount == 0)
             {
-                Console.WriteLine("Validation failed: The diagram contains no pages.");
+                Console.Error.WriteLine("Validation failed: Diagram contains no pages.");
             }
             else
             {
-                Console.WriteLine("Validation succeeded: The diagram contains pages.");
+                Console.WriteLine("Validation passed: Diagram contains pages.");
             }
 
+            // Release resources held by the Diagram object.
+            diagram.Dispose();
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Output any errors that occur during loading or validation.
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

@@ -1,43 +1,49 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Define the standardized disclaimer text.
+                string disclaimer = "Confidential – Do not distribute.";
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+                // Clear existing footer texts and assign the disclaimer to each region.
+                diagram.HeaderFooter.FooterLeft = disclaimer;
+                diagram.HeaderFooter.FooterCenter = disclaimer;
+                diagram.HeaderFooter.FooterRight = disclaimer;
 
-            // Path where the modified file will be saved
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Clear any existing footer text
-            diagram.HeaderFooter.FooterLeft = "";
-            diagram.HeaderFooter.FooterCenter = "";
-            diagram.HeaderFooter.FooterRight = "";
-
-            // Standardized disclaimer to apply to all footer regions
-            string disclaimer = "Confidential - Do not distribute";
-
-            // Assign the disclaimer to each footer region
-            diagram.HeaderFooter.FooterLeft = disclaimer;
-            diagram.HeaderFooter.FooterCenter = disclaimer;
-            diagram.HeaderFooter.FooterRight = disclaimer;
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // Save the modified diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

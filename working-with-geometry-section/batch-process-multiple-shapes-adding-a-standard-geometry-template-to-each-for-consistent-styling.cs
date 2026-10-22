@@ -1,82 +1,120 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        try
+        // Expect two arguments: input folder and output folder
+        if (args.Length < 2)
         {
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
+            return;
+        }
 
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
+        string inputFolder = args[0];
+        string outputFolder = args[1];
 
-            // Load the diagram (uses the standard load lifecycle)
-            Diagram diagram = new Diagram(inputPath);
+        // Validate input folder
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
 
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+        // Ensure output folder exists
+        if (!Directory.Exists(outputFolder))
+        {
+            try
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
+        }
 
-                    // Remove any existing geometry definitions
-                    shape.Geoms.Clear();
-
-                    // Create a new geometry that represents a rectangle matching the shape's size
-                    // Move to the origin (0,0)
-                    MoveTo move = new MoveTo();
-                    move.X.Value = 0;
-                    move.Y.Value = 0;
-
-                    // Line to the top‑right corner
-                    LineTo line1 = new LineTo();
-                    line1.X.Value = shape.XForm.Width.Value;
-                    line1.Y.Value = 0;
-
-                    // Line to the bottom‑right corner
-                    LineTo line2 = new LineTo();
-                    line2.X.Value = shape.XForm.Width.Value;
-                    line2.Y.Value = shape.XForm.Height.Value;
-
-                    // Line to the bottom‑left corner
-                    LineTo line3 = new LineTo();
-                    line3.X.Value = 0;
-                    line3.Y.Value = shape.XForm.Height.Value;
-
-                    // Close the rectangle by returning to the origin
-                    LineTo line4 = new LineTo();
-                    line4.X.Value = 0;
-                    line4.Y.Value = 0;
-
-                    // Assemble the geometry segment collection
-                    Geom geom = new Geom();
-                    geom.CoordinateCol.Add(move);
-                    geom.CoordinateCol.Add(line1);
-                    geom.CoordinateCol.Add(line2);
-                    geom.CoordinateCol.Add(line3);
-                    geom.CoordinateCol.Add(line4);
-
-                    // Assign the new geometry to the shape
-                    shape.Geoms.Add(geom);
-                }
+        // Process each Visio file in the input folder
+        string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
+        foreach (string filePath in files)
+        {
+            // Guard against missing file (should not happen after GetFiles, but added per rules)
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
             }
 
-            // Path for the updated Visio file
-            string outputPath = "output.vsdx";
+            try
+            {
+                // Load the diagram inside a using block as required
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // Iterate through all pages
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through all shapes on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-            // Save the modified diagram using the standard save lifecycle
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                            // Create a new geometry template (simple rectangle matching shape size)
+                            Geom geom = new Geom();
 
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                            // Move to the top‑left corner (0,0)
+                            MoveTo move = new MoveTo();
+                            move.X.Value = 0;
+                            move.Y.Value = 0;
+                            geom.CoordinateCol.Add(move);
+
+                            // Line to top‑right corner (Width,0)
+                            LineTo lineTopRight = new LineTo();
+                            lineTopRight.X.Value = shape.XForm.Width.Value;
+                            lineTopRight.Y.Value = 0;
+                            geom.CoordinateCol.Add(lineTopRight);
+
+                            // Line to bottom‑right corner (Width,Height)
+                            LineTo lineBottomRight = new LineTo();
+                            lineBottomRight.X.Value = shape.XForm.Width.Value;
+                            lineBottomRight.Y.Value = shape.XForm.Height.Value;
+                            geom.CoordinateCol.Add(lineBottomRight);
+
+                            // Line to bottom‑left corner (0,Height)
+                            LineTo lineBottomLeft = new LineTo();
+                            lineBottomLeft.X.Value = 0;
+                            lineBottomLeft.Y.Value = shape.XForm.Height.Value;
+                            geom.CoordinateCol.Add(lineBottomLeft);
+
+                            // Close the path by returning to the start point (0,0)
+                            LineTo closeLine = new LineTo();
+                            closeLine.X.Value = 0;
+                            closeLine.Y.Value = 0;
+                            geom.CoordinateCol.Add(closeLine);
+
+                            // Add the new geometry to the shape
+                            shape.Geoms.Add(geom);
+                        }
+                    }
+
+                    // Prepare output file path
+                    string fileName = Path.GetFileName(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileName);
+
+                    // Save the modified diagram in VSDX format
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Processed and saved: {outputPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
 }

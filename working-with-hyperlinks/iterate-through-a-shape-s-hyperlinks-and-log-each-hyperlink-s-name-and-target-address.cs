@@ -1,35 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load an existing Visio diagram (replace with your file path)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access a specific page and shape (example uses the first page and first shape)
-            Page page = diagram.Pages[0];
-            Shape shape = page.Shapes[0];
-
-            // Iterate through all hyperlinks attached to the shape
-            foreach (Hyperlink hyperlink in shape.Hyperlinks)
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-                // Log the hyperlink's name and its target address
-                Console.WriteLine($"Name: {hyperlink.Name}, Address: {hyperlink.Address}");
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has a Hyperlinks collection.
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    {
+                        // Iterate through each hyperlink of the shape.
+                        foreach (Hyperlink link in shape.Hyperlinks)
+                        {
+                            // Log shape identifier, hyperlink name and target address.
+                            Console.WriteLine(
+                                $"Shape ID {shape.ID}, Name \"{shape.Name}\": " +
+                                $"Hyperlink Name = \"{link.Name}\", " +
+                                $"Address = \"{link.Address.Value}\"");
+                        }
+                    }
+                }
             }
-
-            // Save the diagram if any changes were made (optional)
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

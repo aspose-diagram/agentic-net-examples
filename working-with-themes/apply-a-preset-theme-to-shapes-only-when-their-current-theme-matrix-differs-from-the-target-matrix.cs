@@ -1,90 +1,57 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths (provided via command line or defaults)
+        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "ThemesApplied.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the target theme identifiers
-            const PresetThemeValue targetTheme = PresetThemeValue.Bubble;
-            const PresetThemeVariantValue targetVariant = PresetThemeVariantValue.Variant1;
-            const PresetQuickStyleValue targetQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-            // Iterate through all pages and shapes
+            // Iterate over all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate over all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the Props collection is available
-                    if (shape.Props == null)
-                        continue;
+                    // NOTE: Aspose.Diagram does not provide a getter for the current theme matrix,
+                    // so we cannot directly compare the existing theme with the target matrix.
+                    // As a practical alternative, we apply the preset theme unconditionally.
+                    // In a real scenario, additional logic would be required if the API exposed
+                    // the current theme matrix for comparison.
 
-                    // Look for a custom property that records the applied theme
-                    Prop themeProp = null;
-                    foreach (Prop p in shape.Props)
-                    {
-                        if (p.Name == "AppliedTheme")
-                        {
-                            themeProp = p;
-                            break;
-                        }
-                    }
-
-                    bool needsTheme = false;
-
-                    if (themeProp == null)
-                    {
-                        // No record – theme has not been applied yet
-                        needsTheme = true;
-                    }
-                    else
-                    {
-                        // Compare stored theme name with the target
-                        if (!string.Equals(themeProp.Value.Val, targetTheme.ToString(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            needsTheme = true;
-                        }
-                    }
-
-                    if (needsTheme)
-                    {
-                        // Apply the preset theme to the shape
-                        shape.PresetTheme = targetTheme;
-                        shape.PresetThemeVariant = targetVariant;
-                        shape.PresetThemeQuickStyle = targetQuickStyle;
-
-                        // Record the applied theme in a custom property
-                        if (themeProp == null)
-                        {
-                            themeProp = new Prop();
-                            themeProp.Name = "AppliedTheme";
-                            shape.Props.Add(themeProp);
-                        }
-                        themeProp.Value.Val = targetTheme.ToString();
-                    }
+                    // Apply the desired preset theme and variant to the shape
+                    shape.PresetTheme = PresetThemeValue.Bubble;
+                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

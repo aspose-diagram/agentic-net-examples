@@ -1,65 +1,87 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Get the first shape on the first page
-            Shape targetShape = null;
-            foreach (Shape shp in diagram.Pages[0].Shapes)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                targetShape = shp;
-                break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.WriteLine("No shape found in the diagram.");
-                return;
-            }
-
-            // Retrieve plain text of the shape
-            string plainText = targetShape.Text.Value.ToString();
-
-            // Clear any existing character formatting
-            targetShape.Chars.Clear();
-
-            // Iterate through each character and apply underline to vowels
-            for (int i = 0; i < plainText.Length; i++)
-            {
-                char c = plainText[i];
-                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                ch.IX = i; // character index
-
-                // Check if the character is a vowel (case‑insensitive)
-                if ("AEIOUaeiou".IndexOf(c) >= 0)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    ch.Style.Value = StyleValue.Underline;
-                }
-                else
-                {
-                    ch.Style.Value = StyleValue.Undefined;
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has a Text object with a value.
+                        if (shape.Text == null || shape.Text.Value == null)
+                            continue;
+
+                        // Retrieve the plain text of the shape.
+                        string plainText = shape.Text.Value.Text;
+                        if (string.IsNullOrEmpty(plainText))
+                            continue;
+
+                        // Ensure the shape has character formatting cells.
+                        if (shape.Chars == null || shape.Chars.Count == 0)
+                            continue;
+
+                        // Determine the number of characters we can process.
+                        int processCount = Math.Min(plainText.Length, shape.Chars.Count);
+
+                        // Iterate over each character position.
+                        for (int i = 0; i < processCount; i++)
+                        {
+                            char c = plainText[i];
+                            bool isVowel = "AEIOUaeiou".IndexOf(c) >= 0;
+
+                            if (isVowel)
+                            {
+                                // Apply underline style to the vowel character.
+                                Aspose.Diagram.Char charFormat = shape.Chars[i];
+                                // Preserve existing style bits and add underline.
+                                charFormat.Style.Value = charFormat.Style.Value | StyleValue.Underline;
+                            }
+                            // Consonants are left unchanged.
+                        }
+                    }
                 }
 
-                targetShape.Chars.Add(ch);
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved with underlined vowels.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

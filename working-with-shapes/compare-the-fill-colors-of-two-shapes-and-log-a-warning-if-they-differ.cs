@@ -6,61 +6,94 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio diagram file (adjust as needed)
-        string diagramPath = "input.vsdx";
-
-        // Guard: ensure the diagram file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Validate arguments: expected <diagramPath> <shapeId1> <shapeId2>
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId1> <shapeId2>");
             return;
         }
 
-        // IDs of the two shapes to compare (adjust as needed)
-        long shapeId1 = 1;
-        long shapeId2 = 2;
+        string diagramPath = args[0];
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse shape IDs
+        if (!long.TryParse(args[1], out long shapeId1) || !long.TryParse(args[2], out long shapeId2))
+        {
+            Console.Error.WriteLine("Error: Shape IDs must be valid integers.");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Retrieve the first page (assuming shapes are on the first page)
+            // Use the first page (or you could select by name if needed)
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                return;
+            }
+
             Page page = diagram.Pages[0];
 
-            // Get the first shape by its ID
+            // Retrieve the first shape
             Shape shape1 = page.Shapes.GetShape(shapeId1);
             if (shape1 == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId1} not found.");
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId1} not found.");
                 return;
             }
 
-            // Get the second shape by its ID
+            // Retrieve the second shape
             Shape shape2 = page.Shapes.GetShape(shapeId2);
             if (shape2 == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId2} not found.");
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId2} not found.");
                 return;
             }
 
-            // Extract the fill foreground color values (hex strings) from both shapes
-            string fillColor1 = shape1.Fill.FillForegnd.Value;
-            string fillColor2 = shape2.Fill.FillForegnd.Value;
+            // Ensure shapes are not deleted
+            if (shape1.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Warning: Shape {shapeId1} is marked as deleted and will be ignored.");
+                return;
+            }
+            if (shape2.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Warning: Shape {shapeId2} is marked as deleted and will be ignored.");
+                return;
+            }
 
-            // Compare the fill colors and log a warning if they differ
+            // Access fill foreground colors (hex string like "#FF0000")
+            string fillColor1 = shape1.Fill?.FillForegnd?.Value;
+            string fillColor2 = shape2.Fill?.FillForegnd?.Value;
+
+            // If either fill color is null, treat it as undefined
+            if (string.IsNullOrEmpty(fillColor1) || string.IsNullOrEmpty(fillColor2))
+            {
+                Console.WriteLine("Info: One or both shapes do not have a defined fill foreground color.");
+                return;
+            }
+
+            // Compare the fill colors (case-insensitive)
             if (!string.Equals(fillColor1, fillColor2, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Warning: Fill colors differ – Shape {shapeId1} = {fillColor1}, Shape {shapeId2} = {fillColor2}");
+                Console.WriteLine($"Warning: Fill colors differ. Shape {shapeId1} has {fillColor1}, Shape {shapeId2} has {fillColor2}.");
             }
             else
             {
-                Console.WriteLine($"Info: Fill colors are identical – both are {fillColor1}");
+                Console.WriteLine($"Info: Fill colors are identical ({fillColor1}).");
             }
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors that occur during processing
+            // Log any unexpected errors
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

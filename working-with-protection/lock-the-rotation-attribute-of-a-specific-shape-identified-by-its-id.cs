@@ -1,51 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: input file, output file, shape ID
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <shapeId>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdText = args[2];
+
+        // Guard: input file must exist
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Parse shape ID as long
+        if (!long.TryParse(shapeIdText, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Unable to parse shape ID \"{shapeIdText}\" as a number.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the modified Visio file
-            string outputPath = "output_locked.vsdx";
-
-            // ID of the shape whose rotation should be locked
-            long targetShapeId = 12345; // TODO: replace with the actual shape ID
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Assume the shape is on the first page; adjust if necessary
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-
-            if (shape != null)
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                // Lock the rotation attribute
-                shape.Protection.LockRotate.Value = BOOL.True;
-                Console.WriteLine($"Rotation locked for shape ID {targetShapeId}.");
-            }
-            else
-            {
-                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
+                // GetShape expects an int; cast the long ID safely
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+                if (shape != null)
+                {
+                    targetShape = shape;
+                    break;
+                }
             }
 
-            // Save the updated diagram
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} was not found in the diagram.");
+                return;
+            }
+
+            // Ensure the shape is not already deleted
+            if (targetShape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} is marked as deleted.");
+                return;
+            }
+
+            // Lock the rotation attribute of the shape
+            targetShape.Protection.LockRotate.Value = BOOL.True;
+
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
 
+            Console.WriteLine($"Successfully locked rotation for shape ID {shapeId} and saved to \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

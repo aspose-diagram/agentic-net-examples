@@ -1,93 +1,89 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using Aspose.Diagram;
 
-namespace HyperlinkDemo
+class Program
 {
-    // Configuration class matching the JSON structure for default hyperlink properties
-    public class HyperlinkConfig
+    // Simple class to hold default hyperlink settings
+    private class HyperlinkDefaults
     {
-        public string? Address { get; set; }
-        public string? SubAddress { get; set; }
-        public string? Description { get; set; }
-        public string? Name { get; set; }
+        public string Name { get; set; } = "DefaultLink";
+        public string Address { get; set; } = "https://example.com";
+        public string SubAddress { get; set; } = "";
+        public string Description { get; set; } = "Default hyperlink description";
     }
 
-    class Program
+    static void Main(string[] args)
     {
-        static void Main()
+        // Paths to the source and destination Visio files
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            // Path to the JSON configuration file
-            const string configPath = "hyperlinkConfig.json";
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
 
-            // Guard: ensure the configuration file exists before proceeding
-            if (!File.Exists(configPath))
+        // Guard: ensure the source file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure there is at least one page and one shape to work with
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine($"File not found: {configPath}");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Load default hyperlink settings from the configuration file
-            string json = File.ReadAllText(configPath);
-            HyperlinkConfig? defaultConfig = JsonSerializer.Deserialize<HyperlinkConfig>(json);
-            if (defaultConfig == null)
+            Page page = diagram.Pages[0];
+
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine("Failed to deserialize hyperlink configuration.");
+                Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            try
+            // Use the first shape on the first page as the target for the hyperlink
+            Shape targetShape = page.Shapes[0];
+
+            // Define default hyperlink properties
+            HyperlinkDefaults defaults = new HyperlinkDefaults();
+
+            // Create a new hyperlink instance and apply default values
+            Hyperlink link = new Hyperlink();
+            link.Name = defaults.Name;
+            link.Address.Value = defaults.Address;
+            link.SubAddress.Value = defaults.SubAddress;
+            link.Description.Value = defaults.Description;
+
+            // Add the hyperlink to the shape's Hyperlinks collection
+            if (targetShape.Hyperlinks != null)
             {
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Ensure there is at least one page (a new diagram contains a default page)
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape to the page (using the built‑in "Rectangle" master)
-                // Parameters: pinX, pinY, width, height, masterName, pageIndex
-                long shapeId = diagram.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", 0);
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Create a new hyperlink and apply the default properties from the config
-                Hyperlink link = new Hyperlink();
-
-                // Apply each property only if it is provided in the configuration
-                if (!string.IsNullOrWhiteSpace(defaultConfig.Address))
-                {
-                    link.Address.Value = defaultConfig.Address;
-                }
-
-                if (!string.IsNullOrWhiteSpace(defaultConfig.SubAddress))
-                {
-                    link.SubAddress.Value = defaultConfig.SubAddress;
-                }
-
-                if (!string.IsNullOrWhiteSpace(defaultConfig.Description))
-                {
-                    link.Description.Value = defaultConfig.Description;
-                }
-
-                if (!string.IsNullOrWhiteSpace(defaultConfig.Name))
-                {
-                    link.Name = defaultConfig.Name;
-                }
-
-                // Add the hyperlink to the shape's collection
-                shape.Hyperlinks.Add(link);
-
-                // Save the diagram to a VSDX file
-                const string outputPath = "HyperlinkedDiagram.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Diagram saved to '{outputPath}' with a shape containing the default hyperlink.");
+                targetShape.Hyperlinks.Add(link);
+                Console.WriteLine("Hyperlink added to shape successfully.");
             }
-            catch (Exception ex)
+            else
             {
-                // Write any Aspose.Diagram errors to the error stream
-                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+                Console.Error.WriteLine("The shape's Hyperlinks collection is null.");
+                return;
             }
+
+            // Save the modified diagram to the output file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

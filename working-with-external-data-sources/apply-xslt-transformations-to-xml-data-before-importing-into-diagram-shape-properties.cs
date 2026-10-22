@@ -3,76 +3,92 @@ using System.IO;
 using System.Xml;
 using System.Xml.Xsl;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect four arguments: diagram file, input XML, XSLT file, output diagram
+        if (args.Length != 4)
         {
-            try
-            {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <xmlPath> <xsltPath> <outputPath>");
+            return;
+        }
 
-                // Paths to the source files
-                string xmlInputPath = "input.xml";
-                string xsltPath = "transform.xslt";
-                string diagramPath = "template.vsdx";
-                string outputDiagramPath = "output.vsdx";
+        string diagramPath = args[0];
+        string xmlPath = args[1];
+        string xsltPath = args[2];
+        string outputPath = args[3];
 
-                // Validate input files exist
-                if (!File.Exists(xmlInputPath))
-                    throw new FileNotFoundException($"XML input file not found: {xmlInputPath}");
-                if (!File.Exists(xsltPath))
-                    throw new FileNotFoundException($"XSLT file not found: {xsltPath}");
-                if (!File.Exists(diagramPath))
-                    throw new FileNotFoundException($"Diagram template file not found: {diagramPath}");
-
-                // Apply XSLT transformation to the XML data
-                string transformedXml = TransformXml(xmlInputPath, xsltPath);
-
-                // Load the existing Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Get the first page (pages are 0‑based)
-                Page page = diagram.Pages[0];
-
-                // Find the first shape on the page to update
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    targetShape = shape;
-                    break;
-                }
-
-                if (targetShape == null)
-                    throw new InvalidOperationException("No shapes found on the first page of the diagram.");
-
-                // Replace the shape's text with the transformed XML content
-                targetShape.Text.Value.Clear();
-                targetShape.Text.Value.Add(new Txt(transformedXml));
-
-                // Save the modified diagram
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Performs XSLT transformation and returns the resulting string
-        private static string TransformXml(string xmlPath, string xsltPath)
+        // Guard clauses for input files
+        if (!File.Exists(diagramPath))
         {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(xmlPath))
+        {
+            Console.Error.WriteLine($"XML file not found: {xmlPath}");
+            return;
+        }
+        if (!File.Exists(xsltPath))
+        {
+            Console.Error.WriteLine($"XSLT file not found: {xsltPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Load the source XML document
+            XmlDocument sourceXml = new XmlDocument();
+            sourceXml.Load(xmlPath);
+
+            // Prepare the XSLT transformation
             XslCompiledTransform xslt = new XslCompiledTransform();
             xslt.Load(xsltPath);
 
+            // Perform transformation into a string
+            string transformedXml;
             using (StringWriter stringWriter = new StringWriter())
             {
-                using (XmlReader xmlReader = XmlReader.Create(xmlPath))
+                using (XmlWriter xmlWriter = XmlWriter.Create(stringWriter, xslt.OutputSettings))
                 {
-                    xslt.Transform(xmlReader, null, stringWriter);
+                    xslt.Transform(sourceXml, xmlWriter);
                 }
-                return stringWriter.ToString();
+                transformedXml = stringWriter.ToString();
             }
+
+            // Apply the transformed XML to each shape's Data1 property
+            foreach (Page page in diagram.Pages)
+            {
+                // Ensure the page has shapes
+                if (page.Shapes == null) continue;
+
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Shape shape = page.Shapes[i];
+                    if (shape != null)
+                    {
+                        // Store the transformed XML in the shape's Data1 field
+                        shape.Data1 = transformedXml;
+                    }
+                }
+            }
+
+            // Optionally store the transformed XML at the document level as SolutionXML
+            // (If the property exists; otherwise this line can be omitted safely)
+            // diagram.SolutionXML = transformedXml;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

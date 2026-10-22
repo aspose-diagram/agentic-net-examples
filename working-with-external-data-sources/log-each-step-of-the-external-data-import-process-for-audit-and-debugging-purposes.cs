@@ -5,104 +5,89 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard to ensure the input file exists
+        // Input diagram path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output paths
+        string outputPdfPath = "output.pdf";
+        string outputVsdxPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
             return;
         }
 
-        // Path to the output Visio file after processing
-        string outputPath = "output.vsdx";
-
-        Console.WriteLine("=== External Data Import Process Started ===");
-
-        Diagram diagram = null;
         try
         {
-            // Step 1: Load the diagram
-            Console.WriteLine("Loading diagram from: " + inputPath);
-            diagram = new Diagram(inputPath);
-            Console.WriteLine("Diagram loaded successfully. Pages: " + diagram.Pages.Count);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Error loading diagram: " + ex.Message);
-            return;
-        }
+            // Load the Visio diagram
+            Console.WriteLine($"Loading diagram from '{inputPath}'...");
+            Diagram diagram = new Diagram(inputPath);
+            Console.WriteLine($"Diagram loaded. Page count: {diagram.Pages.Count}");
 
-        // Step 2: List existing external data connections
-        Console.WriteLine("Enumerating external data connections...");
-        if (diagram.DataConnections.Count == 0)
-        {
-            Console.WriteLine("No external data connections found.");
-        }
-        else
-        {
-            for (int i = 0; i < diagram.DataConnections.Count; i++)
+            // Log external data connections before modification
+            Console.WriteLine($"External data connections count: {diagram.DataConnections.Count}");
+
+            if (diagram.DataConnections.Count > 0)
             {
-                var conn = diagram.DataConnections[i];
-                Console.WriteLine($"Connection {i}:");
-                // DataConnection does not expose a Name property; omit it
-                Console.WriteLine($"  ConnectionString: {conn.ConnectionString}");
-                Console.WriteLine($"  Command: {conn.Command}");
+                // Update the first data connection as an example
+                var dataConn = diagram.DataConnections[0];
+                Console.WriteLine("Updating first external data connection...");
+
+                // Example connection string and command (replace with real values as needed)
+                string newConnectionString = "Data Source=ServerName;Initial Catalog=DatabaseName;Integrated Security=True";
+                string newCommand = "SELECT * FROM SampleTable";
+
+                Console.WriteLine($"Setting ConnectionString to: {newConnectionString}");
+                dataConn.ConnectionString = newConnectionString;
+
+                Console.WriteLine($"Setting Command to: {newCommand}");
+                dataConn.Command = newCommand;
             }
-        }
+            else
+            {
+                Console.WriteLine("No external data connections found to update.");
+            }
 
-        // Step 3: Update a specific data connection (example: first connection)
-        if (diagram.DataConnections.Count > 0)
-        {
-            int targetIndex = 0; // modify as needed
-            var targetConn = diagram.DataConnections[targetIndex];
-
-            Console.WriteLine($"Updating connection {targetIndex}...");
-
-            // Example new connection details
-            string newConnectionString = "Data Source=MyServer;Initial Catalog=MyDatabase;Integrated Security=True";
-            string newCommand = "SELECT * FROM MyTable";
-
-            // Apply new connection details
-            targetConn.ConnectionString = newConnectionString;
-            targetConn.Command = newCommand;
-
-            Console.WriteLine("New ConnectionString set to: " + targetConn.ConnectionString);
-            Console.WriteLine("New Command set to: " + targetConn.Command);
-        }
-        else
-        {
-            Console.WriteLine("No connections to update.");
-        }
-
-        // Step 4: Refresh the diagram to import data from the updated source
-        try
-        {
-            Console.WriteLine("Refreshing diagram to import external data...");
+            // Refresh the diagram to apply data changes
+            Console.WriteLine("Refreshing diagram to synchronize record sets with updated data source...");
             diagram.Refresh();
-            Console.WriteLine("Refresh completed.");
+            Console.WriteLine("Diagram refresh completed.");
+
+            // Save to PDF with page saving callback for detailed logging
+            Console.WriteLine($"Saving diagram to PDF at '{outputPdfPath}' with page saving callback...");
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new PageSavingLogger();
+            diagram.Save(outputPdfPath, pdfOptions);
+            Console.WriteLine("PDF save completed.");
+
+            // Save the updated diagram back to VSDX format
+            Console.WriteLine($"Saving updated diagram to VSDX at '{outputVsdxPath}'...");
+            diagram.Save(outputVsdxPath, SaveFileFormat.Vsdx);
+            Console.WriteLine("VSDX save completed.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("Error during refresh: " + ex.Message);
-            return;
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
+    }
+}
 
-        // Step 5: Save the updated diagram
-        try
-        {
-            Console.WriteLine("Saving updated diagram to: " + outputPath);
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved successfully.");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Error saving diagram: " + ex.Message);
-            return;
-        }
+// Implementation of IPageSavingCallback to log page saving progress
+class PageSavingLogger : IPageSavingCallback
+{
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"Start saving page index {args.PageIndex} of pages {args.PageCount}");
+    }
 
-        Console.WriteLine("=== External Data Import Process Completed ===");
+    // Called after a page has finished saving
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"End saving page index {args.PageIndex} of pages {args.PageCount}");
     }
 }

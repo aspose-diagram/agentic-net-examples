@@ -1,72 +1,111 @@
 using System;
-using System.Data;
-using System.Linq;
+using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Load an existing Visio diagram (template.vsdx should exist in the executable directory)
-                string diagramPath = "template.vsdx";
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Simulate external data source using an in‑memory DataTable
-                DataTable externalData = new DataTable();
-                externalData.Columns.Add("ID", typeof(int));
-                externalData.Columns.Add("Name", typeof(string));
-                externalData.Columns.Add("Value", typeof(int));
-
-                // Populate sample rows
-                externalData.Rows.Add(1, "Alpha", 30);
-                externalData.Rows.Add(2, "Beta", 75);
-                externalData.Rows.Add(3, "Gamma", 55);
-                externalData.Rows.Add(4, "Delta", 20);
-                externalData.Rows.Add(5, "Epsilon", 90);
-
-                // Filter rows where Value > 50 using LINQ
-                IEnumerable<DataRow> filteredRows = externalData.Rows
-                    .Cast<DataRow>()
-                    .Where(row => Convert.ToInt32(row["Value"]) > 50);
-
-                // Positioning variables for newly added shapes
-                double startX = 1.0;   // PinX
-                double startY = 1.0;   // PinY
-                double shapeWidth = 2.0;
-                double shapeHeight = 1.0;
-                double verticalSpacing = 1.5;
-
-                // Add a rectangle shape for each filtered data row and bind the Name to the shape's text
-                foreach (DataRow row in filteredRows)
+                // ------------------------------------------------------------
+                // Simulated external data source.
+                // In a real scenario this could be read from a database or file.
+                // ------------------------------------------------------------
+                List<Person> externalData = new List<Person>
                 {
-                    // Add a rectangle master shape to the page
-                    long shapeId = page.AddShape(startX, startY, shapeWidth, shapeHeight, "Rectangle", false);
+                    new Person { Name = "Alice Johnson", Department = "Sales" },
+                    new Person { Name = "Bob Smith", Department = "Engineering" },
+                    new Person { Name = "Carol White", Department = "Sales" },
+                    new Person { Name = "David Brown", Department = "HR" }
+                };
 
-                    // Retrieve the created shape instance
-                    Shape shape = page.Shapes.GetShape(shapeId);
+                // ------------------------------------------------------------
+                // Filter the external data using LINQ to keep only Sales staff.
+                // This reduces the amount of data bound to the diagram.
+                // ------------------------------------------------------------
+                List<Person> filteredData = externalData
+                    .Where(p => string.Equals(p.Department, "Sales", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
-                    // Clear any existing text and set the shape's text to the Name field
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(row["Name"].ToString()));
+                // ------------------------------------------------------------
+                // Bind filtered data to shapes whose name starts with "DataPlaceholder".
+                // Each matching shape receives the next person's name as its text.
+                // ------------------------------------------------------------
+                int dataIndex = 0;
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                {
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape has a name to evaluate.
+                        if (shape.Name == null)
+                            continue;
 
-                    // Move to the next vertical position for the following shape
-                    startY += verticalSpacing;
+                        // Identify placeholder shapes by naming convention.
+                        if (shape.Name.StartsWith("DataPlaceholder", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // If we have run out of filtered data, stop binding.
+                            if (dataIndex >= filteredData.Count)
+                                break;
+
+                            // Clear any existing text fragments.
+                            if (shape.Text != null && shape.Text.Value != null)
+                            {
+                                shape.Text.Value.Clear();
+
+                                // Add new text containing the person's name.
+                                shape.Text.Value.Add(new Txt(filteredData[dataIndex].Name));
+                            }
+
+                            dataIndex++;
+                        }
+                    }
+
+                    // If all filtered items have been bound, exit the outer loop as well.
+                    if (dataIndex >= filteredData.Count)
+                        break;
                 }
 
-                // Save the modified diagram to a new file
-                diagram.Save("filtered_output.vsdx", SaveFileFormat.Vsdx);
+                // ------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+    // Simple POCO representing external data records.
+    private class Person
+    {
+        public string Name { get; set; }
+        public string Department { get; set; }
     }
-    }
+}

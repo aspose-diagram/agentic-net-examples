@@ -1,99 +1,119 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect two arguments: diagrams folder and CSV folder
+        if (args.Length < 2)
         {
-            // Folder containing diagram files (e.g., .vsdx) and matching CSV files
-            string diagramsFolder = @"C:\Diagrams";
-            string outputFolder = @"C:\ProcessedDiagrams";
+            Console.Error.WriteLine("Usage: Program <DiagramsFolder> <CsvFolder>");
+            return;
+        }
 
-            // Ensure output folder exists
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
+        string diagramsFolder = args[0];
+        string csvFolder = args[1];
 
-            // Get all diagram files in the folder
-            string[] diagramFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
+        // Validate diagrams folder
+        if (!Directory.Exists(diagramsFolder))
+        {
+            Console.Error.WriteLine($"Diagrams folder does not exist: {diagramsFolder}");
+            return;
+        }
 
-            foreach (string diagramPath in diagramFiles)
+        // Validate CSV folder
+        if (!Directory.Exists(csvFolder))
+        {
+            Console.Error.WriteLine($"CSV folder does not exist: {csvFolder}");
+            return;
+        }
+
+        // Collect .vsdx and .vsd files
+        string[] vsdxFiles = Directory.GetFiles(diagramsFolder, "*.vsdx");
+        string[] vsdFiles = Directory.GetFiles(diagramsFolder, "*.vsd");
+        string[] allDiagramFiles = new string[vsdxFiles.Length + vsdFiles.Length];
+        vsdxFiles.CopyTo(allDiagramFiles, 0);
+        vsdFiles.CopyTo(allDiagramFiles, vsdxFiles.Length);
+
+        foreach (string diagramPath in allDiagramFiles)
+        {
+            // Determine matching CSV file (same base name)
+            string baseName = Path.GetFileNameWithoutExtension(diagramPath);
+            string csvPath = Path.Combine(csvFolder, baseName + ".csv");
+
+            if (!File.Exists(csvPath))
             {
-                try
+                Console.Error.WriteLine($"CSV file not found for diagram '{baseName}'. Expected at: {csvPath}");
+                continue;
+            }
+
+            // Guard diagram file existence (redundant but required)
+            if (!File.Exists(diagramPath))
+            {
+                Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+                continue;
+            }
+
+            try
+            {
+                // Load diagram inside a using block as required
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Derive CSV file name (same base name, .csv extension)
-                    string csvPath = Path.ChangeExtension(diagramPath, ".csv");
-                    if (!File.Exists(csvPath))
+                    // Read all CSV lines
+                    string[] csvLines = File.ReadAllLines(csvPath);
+                    foreach (string line in csvLines)
                     {
-                        Console.WriteLine($"CSV file not found for diagram: {Path.GetFileName(diagramPath)}. Skipping.");
-                        continue;
-                    }
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue; // Skip empty lines
 
-                    // Load the diagram
-                    Diagram diagram = new Diagram(diagramPath);
+                        // Expected format: ShapeId,NewText (comma may appear in text)
+                        int firstComma = line.IndexOf(',');
+                        if (firstComma <= 0)
+                            continue; // Invalid line, skip
 
-                    // Read CSV data into a dictionary: ShapeName -> NewText
-                    Dictionary<string, string> updates = LoadCsvUpdates(csvPath);
+                        string idPart = line.Substring(0, firstComma).Trim();
+                        string textPart = line.Substring(firstComma + 1).Trim();
 
-                    // Apply updates to shapes on each page
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
+                        if (!long.TryParse(idPart, out long shapeId))
+                            continue; // Invalid shape ID, skip
+
+                        bool shapeFound = false;
+
+                        // Search all pages for the shape ID
+                        foreach (Page page in diagram.Pages)
                         {
-                            // Only process shapes that have a name and are not deleted
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            string shapeName = shape.NameU;
-                            if (updates.TryGetValue(shapeName, out string newText))
+                            // GetShape expects an int; cast safely
+                            Shape shape = page.Shapes.GetShape((int)shapeId);
+                            if (shape != null)
                             {
                                 // Clear existing text and add new text
                                 shape.Text.Value.Clear();
-                                shape.Text.Value.Add(new Txt(newText));
+                                shape.Text.Value.Add(new Txt(textPart));
+                                shapeFound = true;
+                                break; // Assuming unique IDs, stop after update
                             }
+                        }
+
+                        if (!shapeFound)
+                        {
+                            Console.Error.WriteLine($"Shape with ID {shapeId} not found in diagram '{baseName}'.");
                         }
                     }
 
-                    // Save the updated diagram to the output folder
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(diagramPath));
+                    // Save updated diagram with "_updated" suffix
+                    string outputPath = Path.Combine(diagramsFolder, baseName + "_updated.vsdx");
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed and saved: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(diagramPath)}': {ex.Message}");
+                    Console.WriteLine($"Processed and saved diagram: {outputPath}");
                 }
             }
-        }
-
-        // Reads a CSV file where each line has: ShapeName,NewText
-        // Returns a dictionary mapping shape names to the new text value.
-        private static Dictionary<string, string> LoadCsvUpdates(string csvFilePath)
-        {
-            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            using (var reader = new StreamReader(csvFilePath))
+            catch (Exception ex)
             {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    // Split by comma (basic CSV, no quoted commas handling)
-                    string[] parts = line.Split(',');
-                    if (parts.Length < 2)
-                        continue; // Invalid line, ignore
-
-                    string shapeName = parts[0].Trim();
-                    string newText = parts[1].Trim();
-
-                    if (!string.IsNullOrEmpty(shapeName))
-                        dict[shapeName] = newText;
-                }
+                // Log any errors from Aspose or IO operations
+                Console.Error.WriteLine($"Error processing diagram '{diagramPath}': {ex.Message}");
             }
-            return dict;
         }
     }
+}

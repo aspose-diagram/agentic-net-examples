@@ -1,119 +1,170 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
+using System.Text.Json;
 using Aspose.Diagram;
 
-namespace DiagramDataValidation
+class Program
 {
-    // Represents a simple field definition for validation
-    class SchemaField
+    // Simple data model matching the expected external schema
+    class DataItem
     {
+        public int Id { get; set; }
         public string Name { get; set; }
-        public Type DataType { get; set; }
-        public bool Required { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
     }
 
-    class Program
+    static void Main(string[] args)
     {
-        static void Main()
+        // ------------------------------------------------------------
+        // Validate command‑line arguments
+        // ------------------------------------------------------------
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <DiagramPath> <DataJsonPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string dataPath = args[1];
+
+        // ------------------------------------------------------------
+        // Guard input files existence
+        // ------------------------------------------------------------
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(dataPath))
+        {
+            Console.Error.WriteLine($"Data file not found: {dataPath}");
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // Load external data and validate against the schema
+        // ------------------------------------------------------------
+        List<DataItem> dataItems;
+        try
+        {
+            string json = File.ReadAllText(dataPath);
+            dataItems = JsonSerializer.Deserialize<List<DataItem>>(json);
+            if (dataItems == null)
             {
+                Console.Error.WriteLine("Failed to deserialize data file.");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading or parsing data file: {ex.Message}");
+            return;
+        }
 
-                // Paths to the template diagram and the output file
-                string templatePath = "template.vsdx";
-                string outputPath = "output.vsdx";
+        // ------------------------------------------------------------
+        // Prepare a list of valid items
+        // ------------------------------------------------------------
+        List<DataItem> validItems = new List<DataItem>();
+        foreach (DataItem item in dataItems)
+        {
+            bool isValid = true;
 
-                // Load the base diagram (must contain a "Rectangle" master)
-                Diagram diagram = new Diagram(templatePath);
+            // Id must be positive
+            if (item.Id <= 0)
+            {
+                Console.Error.WriteLine($"Invalid Id ({item.Id}) for item with Name '{item.Name}'.");
+                isValid = false;
+            }
 
-                // Define the expected schema for external data
-                List<SchemaField> schema = new List<SchemaField>
+            // Name must be non‑empty
+            if (string.IsNullOrWhiteSpace(item.Name))
+            {
+                Console.Error.WriteLine($"Name is required for item with Id {item.Id}.");
+                isValid = false;
+            }
+
+            // X and Y must be finite numbers
+            if (double.IsNaN(item.X) || double.IsInfinity(item.X))
+            {
+                Console.Error.WriteLine($"Invalid X coordinate for item Id {item.Id}.");
+                isValid = false;
+            }
+
+            if (double.IsNaN(item.Y) || double.IsInfinity(item.Y))
+            {
+                Console.Error.WriteLine($"Invalid Y coordinate for item Id {item.Id}.");
+                isValid = false;
+            }
+
+            if (isValid)
+                validItems.Add(item);
+        }
+
+        if (validItems.Count == 0)
+        {
+            Console.Error.WriteLine("No valid data items found. Exiting.");
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // Load the Visio diagram inside a using block
+        // ------------------------------------------------------------
+        try
+        {
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Ensure the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    new SchemaField { Name = "Id",   DataType = typeof(int),    Required = true },
-                    new SchemaField { Name = "Name", DataType = typeof(string), Required = true },
-                    new SchemaField { Name = "Value",DataType = typeof(double), Required = true }
-                };
-
-                // Simulated external data (could be read from a file, DB, etc.)
-                List<Dictionary<string, string>> externalData = new List<Dictionary<string, string>>
-                {
-                    new Dictionary<string, string>
-                    {
-                        { "Id", "1" },
-                        { "Name", "Alpha" },
-                        { "Value", "12.34" }
-                    },
-                    new Dictionary<string, string>
-                    {
-                        { "Id", "2" },
-                        { "Name", "Beta" },
-                        { "Value", "56.78" }
-                    },
-                    // Add more rows as needed
-                };
-
-                // Validate each data row against the schema
-                foreach (var row in externalData)
-                {
-                    foreach (var field in schema)
-                    {
-                        // Check required presence
-                        if (field.Required && !row.ContainsKey(field.Name))
-                        {
-                            throw new Exception($"Missing required field '{field.Name}'.");
-                        }
-
-                        // If the field exists, validate its type
-                        if (row.TryGetValue(field.Name, out string rawValue))
-                        {
-                            bool valid = field.DataType switch
-                            {
-                                Type t when t == typeof(int) => int.TryParse(rawValue, out _),
-                                Type t when t == typeof(double) => double.TryParse(rawValue, out _),
-                                Type t when t == typeof(string) => true, // any string is acceptable
-                                _ => false
-                            };
-
-                            if (!valid)
-                            {
-                                throw new Exception($"Field '{field.Name}' has invalid value '{rawValue}'.");
-                            }
-                        }
-                    }
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                // Mapping validated data to diagram shapes
+                // Use the first page for shape insertion
                 Page page = diagram.Pages[0];
-                double startX = 1.0;   // inches from left
-                double startY = 1.0;   // inches from top
-                double verticalSpacing = 2.0; // inches between shapes
 
-                for (int i = 0; i < externalData.Count; i++)
+                // --------------------------------------------------------
+                // Map each valid data item to a shape
+                // --------------------------------------------------------
+                foreach (DataItem item in validItems)
                 {
-                    var row = externalData[i];
-                    double pinX = startX;
-                    double pinY = startY + i * verticalSpacing;
+                    // Add a rectangle shape at the specified coordinates.
+                    // The fourth argument is a bool indicating whether to calculate geometry; set to false.
+                    long shapeId = page.AddShape(item.X, item.Y, "Rectangle", false);
 
-                    // Add a rectangle shape; the fourth parameter isCalculate must be false
-                    long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
-
-                    // Retrieve the shape object to modify its properties
+                    // Retrieve the newly added shape.
                     Shape shape = page.Shapes.GetShape(shapeId);
 
-                    // Set the shape's text to display Name and Value
-                    shape.Text.Value.Clear();
-                    string displayText = $"{row["Name"]}: {row["Value"]}";
-                    shape.Text.Value.Add(new Txt(displayText));
+                    // Store the Name in the shape's Data1 field.
+                    shape.Data1 = item.Name;
+
+                    // Set a default size for visibility.
+                    shape.XForm.Width.Value = 1.0;
+                    shape.XForm.Height.Value = 1.0;
+
+                    // Ensure the shape's position matches the data (redundant but explicit).
+                    shape.XForm.PinX.Value = item.X;
+                    shape.XForm.PinY.Value = item.Y;
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // --------------------------------------------------------
+                // Save the updated diagram
+                // --------------------------------------------------------
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(diagramPath) ?? "",
+                    Path.GetFileNameWithoutExtension(diagramPath) + "_mapped.vsdx");
 
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
+            return;
+        }
     }
 }

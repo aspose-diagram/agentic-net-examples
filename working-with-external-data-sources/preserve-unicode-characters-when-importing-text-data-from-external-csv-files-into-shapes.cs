@@ -1,64 +1,107 @@
 using System;
 using System.IO;
-using System.Text;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the CSV file containing Unicode text (one entry per line)
-        string csvPath = "data.csv";
-
-        // Verify the CSV file exists
-        if (!File.Exists(csvPath))
+        // Define file paths
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            Console.WriteLine($"CSV file not found: {csvPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+        string csvPath = "data.csv";
+        string outputPath = "output.vsdx";
+
+        // Guard against missing diagram file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        // Read all lines using UTF-8 encoding to preserve Unicode characters
-        string[] lines = File.ReadAllLines(csvPath, Encoding.UTF8);
-
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Use the first page (created by default)
-        Page page = diagram.Pages[0];
-
-        // Layout parameters for placing shapes
-        double startX = 1.0;   // inches from left
-        double startY = 1.0;   // inches from top
-        double offsetX = 2.5;  // horizontal spacing between shapes
-        double offsetY = 1.5;  // vertical spacing between rows
-        int shapesPerRow = 5;  // number of shapes before moving to next row
-
-        int index = 0;
-        foreach (string line in lines)
+        // Guard against missing CSV file
+        if (!File.Exists(csvPath))
         {
-            // Calculate position for the current shape
-            double pinX = startX + (index % shapesPerRow) * offsetX;
-            double pinY = startY + (index / shapesPerRow) * offsetY;
-
-            // Add a rectangle shape; the fourth parameter isCalculate must be false
-            long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
-
-            // Retrieve the shape object using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Clear any existing text (should be empty for a new shape)
-            shape.Text.Value.Clear();
-
-            // Add the Unicode text from the CSV line
-            shape.Text.Value.Add(new Txt(line));
-
-            index++;
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
+            return;
         }
 
-        // Save the diagram preserving Unicode text
-        string outputPath = "output.vsdx";
-        diagram.Save(outputPath, SaveFileFormat.Csv);
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-        Console.WriteLine($"Diagram saved to {outputPath}");
+            // Read all lines from the CSV file using UTF-8 encoding (preserves Unicode)
+            string[] csvLines = File.ReadAllLines(csvPath, System.Text.Encoding.UTF8);
+
+            // Process each CSV line (expected format: ShapeId,Text)
+            foreach (string line in csvLines)
+            {
+                // Skip empty lines
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                // Split only on the first comma to allow commas inside the text
+                int firstComma = line.IndexOf(',');
+                if (firstComma == -1)
+                {
+                    Console.Error.WriteLine($"Invalid CSV line (no comma found): {line}");
+                    continue;
+                }
+
+                string idPart = line.Substring(0, firstComma).Trim();
+                string textPart = line.Substring(firstComma + 1).Trim();
+
+                // Parse shape ID
+                if (!int.TryParse(idPart, out int shapeId))
+                {
+                    Console.Error.WriteLine($"Invalid shape ID '{idPart}' in line: {line}");
+                    continue;
+                }
+
+                // Retrieve the shape from the first page (adjust if needed)
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("Diagram contains no pages.");
+                    break;
+                }
+
+                Page page = diagram.Pages[0];
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    continue;
+                }
+
+                // Clear existing text (if possible)
+                try
+                {
+                    shape.Text.Value.Clear();
+                }
+                catch
+                {
+                    // If Clear is not supported, ignore and proceed to add new text
+                }
+
+                // Add new Unicode text to the shape
+                Txt txt = new Txt(textPart);
+                shape.Text.Value.Add(txt);
+            }
+
+            // Save the modified diagram preserving Unicode characters
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

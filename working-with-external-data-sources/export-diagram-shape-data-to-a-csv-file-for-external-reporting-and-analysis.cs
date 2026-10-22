@@ -3,68 +3,95 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare the CSV file for writing.
+            using (StreamWriter writer = new StreamWriter(outputPath))
             {
+                // Write CSV header.
+                writer.WriteLine("PageIndex,ShapeId,NameU,MasterName,Text,Data1,Data2,Data3");
 
-                // Input Visio file path (adjust as needed)
-                string visioPath = "input.vsdx";
-
-                // Output CSV file path
-                string csvPath = "shape_data.csv";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Prepare the CSV file
-                using (StreamWriter writer = new StreamWriter(csvPath, false, System.Text.Encoding.UTF8))
+                // Iterate through each page in the diagram.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Write CSV header
-                    writer.WriteLine(
-                        "\"PageName\",\"ShapeID\",\"ShapeName\",\"MasterName\",\"Text\",\"Data1\",\"Data2\",\"Data3\",\"PinX\",\"PinY\",\"Width\",\"Height\"");
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through each shape on the current page.
+                    for (int i = 0; i < page.Shapes.Count; i++)
                     {
-                        // Iterate through all shapes on the page
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip deleted shapes
-                            if (shape.Del == BOOL.True)
-                                continue;
+                        Shape shape = page.Shapes[i];
 
-                            // Retrieve basic shape information
-                            string pageName = page.NameU ?? "";
-                            string shapeId = shape.ID.ToString();
-                            string shapeName = shape.NameU ?? "";
-                            string masterName = shape.Master != null ? shape.Master.Name : "";
-                            string text = shape.Text.Value.Text ?? "";
-                            string data1 = shape.Data1 ?? "";
-                            string data2 = shape.Data2 ?? "";
-                            string data3 = shape.Data3 ?? "";
-                            string pinX = shape.XForm.PinX.Value.ToString();
-                            string pinY = shape.XForm.PinY.Value.ToString();
-                            string width = shape.XForm.Width.Value.ToString();
-                            string height = shape.XForm.Height.Value.ToString();
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Escape fields for CSV (wrap in quotes and double any internal quotes)
-                            string Escape(string s) => $"\"{s.Replace("\"", "\"\"")}\"";
+                        // Retrieve shape properties safely.
+                        long shapeId = shape.ID; // Shape.ID is a long.
+                        string nameU = shape.NameU ?? string.Empty;
+                        string masterName = shape.Master != null ? shape.Master.Name : string.Empty;
+                        string text = shape.Text != null && shape.Text.Value != null ? shape.Text.Value.Text : string.Empty;
+                        string data1 = shape.Data1 ?? string.Empty;
+                        string data2 = shape.Data2 ?? string.Empty;
+                        string data3 = shape.Data3 ?? string.Empty;
 
-                            // Write the CSV line
-                            writer.WriteLine(
-                                $"{Escape(pageName)},{Escape(shapeId)},{Escape(shapeName)},{Escape(masterName)},{Escape(text)},{Escape(data1)},{Escape(data2)},{Escape(data3)},{Escape(pinX)},{Escape(pinY)},{Escape(width)},{Escape(height)}");
-                        }
+                        // Escape fields for CSV compliance.
+                        string csvLine = string.Join(",",
+                            EscapeCsv(pageIndex.ToString()),
+                            EscapeCsv(shapeId.ToString()),
+                            EscapeCsv(nameU),
+                            EscapeCsv(masterName),
+                            EscapeCsv(text),
+                            EscapeCsv(data1),
+                            EscapeCsv(data2),
+                            EscapeCsv(data3));
+
+                        writer.WriteLine(csvLine);
                     }
                 }
-
-                Console.WriteLine($"Shape data exported to '{csvPath}'.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            Console.WriteLine($"Shape data successfully exported to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
+
+    /// <summary>
+    /// Escapes a CSV field by wrapping it in double quotes and escaping internal quotes.
+    /// </summary>
+    private static string EscapeCsv(string field)
+    {
+        if (field.Contains("\"") || field.Contains(",") || field.Contains("\n") || field.Contains("\r"))
+        {
+            field = field.Replace("\"", "\"\"");
+            return $"\"{field}\"";
+        }
+        return field;
     }
+}

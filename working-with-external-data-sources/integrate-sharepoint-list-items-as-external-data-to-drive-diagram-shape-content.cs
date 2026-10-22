@@ -1,87 +1,100 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-public class Program
+class Program
 {
-    public static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio template (must exist in the execution folder)
-            string sourcePath = "Template.vsdx";
-            // Path for the generated diagram
-            string outputPath = "Result.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // ------------------------------------------------------------
-            // Simulate SharePoint list items using an in‑memory DataTable.
-            // In a real scenario you would retrieve the list via SharePoint
-            // client APIs and fill the DataTable accordingly.
-            // ------------------------------------------------------------
-            DataTable sharePointData = new DataTable();
-            sharePointData.Columns.Add("Title", typeof(string));
-            sharePointData.Columns.Add("Description", typeof(string));
-
-            // Sample rows – replace with actual SharePoint data retrieval.
-            sharePointData.Rows.Add("Project Alpha", "Initial phase of the project.");
-            sharePointData.Rows.Add("Project Beta", "Design and development stage.");
-            sharePointData.Rows.Add("Project Gamma", "Testing and QA.");
-
-            // ------------------------------------------------------------
-            // Iterate through all pages and shapes. For each shape that
-            // is a regular shape (not a connector) we will populate its
-            // text with the corresponding SharePoint item.
-            // ------------------------------------------------------------
-            int dataIndex = 0; // tracks the current row in the DataTable
-
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // ------------------------------------------------------------
+                // Simulate SharePoint list items using an in‑memory DataTable.
+                // In a real scenario this data would be retrieved via SharePoint APIs.
+                // ------------------------------------------------------------
+                DataTable sharePointData = new DataTable();
+                sharePointData.Columns.Add("Title", typeof(string));
+                sharePointData.Columns.Add("Description", typeof(string));
+
+                // Sample rows – replace with actual SharePoint data retrieval logic.
+                sharePointData.Rows.Add("Shape A", "Description for Shape A");
+                sharePointData.Rows.Add("Shape B", "Description for Shape B");
+                sharePointData.Rows.Add("Shape C", "Description for Shape C");
+
+                // ------------------------------------------------------------
+                // Iterate through all pages and shapes, updating shape content
+                // based on matching SharePoint list items.
+                // ------------------------------------------------------------
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip connectors and deleted shapes
-                    if (shape.OneD || shape.Del == BOOL.True)
-                        continue;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Only process shapes that have a master (i.e., visible shapes).
+                        if (shape.Master == null)
+                            continue;
 
-                    // If we have exhausted the data rows, stop updating.
-                    if (dataIndex >= sharePointData.Rows.Count)
-                        break;
+                        // Retrieve the current shape text (if any).
+                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
-                    DataRow row = sharePointData.Rows[dataIndex];
+                        // Attempt to find a matching SharePoint row where Title equals the shape text.
+                        foreach (DataRow row in sharePointData.Rows)
+                        {
+                            string title = row["Title"]?.ToString() ?? string.Empty;
+                            if (string.Equals(title, shapeText, StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Update the shape's text to include the description.
+                                string description = row["Description"]?.ToString() ?? string.Empty;
 
-                    // Build the text content for the shape.
-                    string title = row["Title"]?.ToString() ?? string.Empty;
-                    string description = row["Description"]?.ToString() ?? string.Empty;
-                    string shapeText = $"{title}\n{description}";
+                                // Clear existing text and add new text runs.
+                                shape.Text.Value.Clear();
+                                shape.Text.Value.Add(new Txt($"{title}\n{description}"));
 
-                    // Clear any existing text and add the new content.
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(shapeText));
+                                // Optionally store the description in a custom data field.
+                                shape.Data1 = description;
 
-                    dataIndex++;
+                                // Refresh the shape to apply changes to geometry and connections.
+                                shape.RefreshData();
+
+                                // Break after the first match.
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                // If all data rows have been assigned, exit the outer loop as well.
-                if (dataIndex >= sharePointData.Rows.Count)
-                    break;
+                // ------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // ------------------------------------------------------------
-            // Save the updated diagram to the desired format.
-            // ------------------------------------------------------------
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,27 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the saved diagram file
-            Diagram diagram = new Diagram("input.vsdx");
+            // Retrieve and display the automatically embedded API version information.
+            Console.WriteLine($"Diagram API Version: {diagram.Version}");
 
-            // Retrieve the embedded Aspose.Diagram API version information
-            string apiVersion = diagram.Version;
-
-            // Output the version for audit purposes
-            Console.WriteLine("Embedded Aspose.Diagram version: " + apiVersion);
-
+            // Additional document properties that may be useful for audit purposes.
+            Console.WriteLine($"Build Number Created: {diagram.DocumentProps.BuildNumberCreated}");
+            Console.WriteLine($"Build Number Edited: {diagram.DocumentProps.BuildNumberEdited}");
+            Console.WriteLine($"Time Created: {diagram.DocumentProps.TimeCreated}");
+            Console.WriteLine($"Time Edited: {diagram.DocumentProps.TimeEdited}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during loading or property access.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

@@ -1,61 +1,66 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Read inherited fill properties
+                    // ----- Read inherited fill colors -----
+                    // Inherited foreground (fill) color.
                     string inheritedForeColor = shape.InheritFill.FillForegnd.Value;
+                    // Inherited background color (if any).
                     string inheritedBackColor = shape.InheritFill.FillBkgnd.Value;
-                    int inheritedPattern = shape.InheritFill.FillPattern.Value;
 
-                    // Example: output inherited values to console
-                    Console.WriteLine($"Shape ID {shape.ID} - Inherited ForeColor: {inheritedForeColor}, BackColor: {inheritedBackColor}, Pattern: {inheritedPattern}");
+                    Console.WriteLine($"Shape ID {shape.ID}: Inherited FillForegnd = {inheritedForeColor}, Inherited FillBkgnd = {inheritedBackColor}");
 
-                    // Customize the shape's fill based on inherited values
-                    // Here we simply set a solid fill with a new foreground color
-                    shape.Fill.FillPattern.Value = 1; // Solid fill
-                    shape.Fill.FillForegnd.Value = "#00FF00"; // New foreground color (green)
-                    shape.Fill.FillBkgnd.Value = "#FFFFFF"; // Optional background color (white)
+                    // ----- Customize the shape's fill -----
+                    // Example: set a solid red foreground fill.
+                    shape.Fill.FillForegnd.Value = "#FF0000";
 
-                    // If the shape originally used a gradient, you could enable gradient fill instead
-                    // shape.Fill.FillPattern.Value = 25; // Gradient pattern
-                    // shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-                    // shape.Fill.GradientFill.GradientDir.Value = 0;
-                    // shape.Fill.GradientFill.GradientStops.Clear();
-                    // shape.Fill.GradientFill.GradientStops.Add(new DoubleValue(0, MeasureConst.NUM), new ColorValue("#00FF00", MeasureConst.Undefined));
-                    // shape.Fill.GradientFill.GradientStops.Add(new DoubleValue(1, MeasureConst.NUM), new ColorValue("#FFFFFF", MeasureConst.Undefined));
+                    // Optionally, set a solid blue background fill.
+                    shape.Fill.FillBkgnd.Value = "#0000FF";
+
+                    // Ensure the fill pattern is solid (value 1).
+                    shape.Fill.FillPattern.Value = 1;
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("Diagram saved to " + outputPath);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

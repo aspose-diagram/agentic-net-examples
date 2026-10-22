@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,66 +8,98 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate arguments: at least the input diagram path is required.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [shapeId1 shapeId2 ...]");
             return;
         }
 
-        // Optional output folder (second argument or same folder as input)
-        string outputFolder = args.Length > 1 ? args[1] : Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
-        // Guard: ensure the output folder exists (create if missing)
-        if (!Directory.Exists(outputFolder))
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Parse optional shape IDs from the command line.
+        HashSet<long> selectedShapeIds = new HashSet<long>();
+        for (int i = 1; i < args.Length; i++)
+        {
+            if (long.TryParse(args[i], out long id))
             {
-                Directory.CreateDirectory(outputFolder);
+                selectedShapeIds.Add(id);
             }
-            catch (Exception ex)
+            else
             {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
+                Console.Error.WriteLine($"Warning: Invalid shape ID '{args[i]}' ignored.");
             }
+        }
+
+        // Prepare output directory.
+        string outputDir = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "ExportedSvg");
+        try
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error creating output directory: {ex.Message}");
+            return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Configure SVG save options (default settings can be adjusted if needed).
+                SVGSaveOptions svgOptions = new SVGSaveOptions
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True) continue;
+                    // Fit the exported SVG to the viewport.
+                    SVGFitToViewPort = true,
+                    // Do not export guide shapes.
+                    ExportGuideShapes = false,
+                    // Do not export comments.
+                    IsExportComments = false
+                    // PageIndex and PageCount are omitted because they are not required for shape export
+                };
 
-                    // NOTE: Aspose.Diagram does not expose a 'Selected' property on Shape.
-                    // Therefore, we export all non‑deleted shapes. Adjust the filter as needed.
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Build the SVG file name using the shape's ID
-                    string svgFileName = $"{shape.ID}.svg";
-                    string svgPath = Path.Combine(outputFolder, svgFileName);
+                        // If specific shape IDs were provided, filter accordingly.
+                        if (selectedShapeIds.Count > 0 && !selectedShapeIds.Contains(shape.ID))
+                            continue;
 
-                    // Configure SVG save options (default options are sufficient)
-                    SVGSaveOptions svgOptions = new SVGSaveOptions();
+                        // Build the output file name using the shape's ID.
+                        string outputPath = Path.Combine(outputDir, $"{shape.ID}.svg");
 
-                    // Export the shape to an SVG file
-                    shape.ToSvg(svgPath, svgOptions);
-
-                    // Log successful export
-                    Console.WriteLine($"Exported shape ID {shape.ID} to {svgPath}");
+                        try
+                        {
+                            // Export the shape to SVG.
+                            shape.ToSvg(outputPath, svgOptions);
+                            Console.WriteLine($"Exported shape ID {shape.ID} to {outputPath}");
+                        }
+                        catch (Exception exportEx)
+                        {
+                            Console.Error.WriteLine($"Error exporting shape ID {shape.ID}: {exportEx.Message}");
+                        }
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

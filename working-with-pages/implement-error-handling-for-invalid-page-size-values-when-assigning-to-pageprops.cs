@@ -1,59 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Paths to the source and destination Visio files
-        const string inputPath = "input.vsdx";
-        const string outputPath = "output.vsdx";
+        // Expecting: inputPath outputPath width height
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <widthInInches> <heightInInches>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string widthArg = args[2];
+        string heightArg = args[3];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse width and height
+        if (!double.TryParse(widthArg, out double pageWidth) || pageWidth <= 0)
+        {
+            Console.Error.WriteLine($"Invalid page width value: {widthArg}. Width must be a positive number.");
+            return;
+        }
+
+        if (!double.TryParse(heightArg, out double pageHeight) || pageHeight <= 0)
+        {
+            Console.Error.WriteLine($"Invalid page height value: {heightArg}. Height must be a positive number.");
+            return;
+        }
 
         try
         {
-            // Read desired page dimensions from the console
-            double newWidth = ReadPositiveDouble("Enter new page width (in inches): ");
-            double newHeight = ReadPositiveDouble("Enter new page height (in inches): ");
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(inputPath))
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
             {
-                // Apply the new dimensions to each page
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
-                }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine("Diagram saved successfully.");
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
-        }
-        catch (ArgumentException ex)
-        {
-            // Handle validation errors for page size values
-            Console.WriteLine($"Validation error: {ex.Message}");
+
+            // Modify the first page's size
+            Page page = diagram.Pages[0];
+
+            // Assign validated width and height to PageProps
+            page.PageSheet.PageProps.PageWidth.Value = pageWidth;
+            page.PageSheet.PageProps.PageHeight.Value = pageHeight;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Handle any other unexpected errors
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
-    }
-
-    // Reads a positive double value from the console; throws if invalid
-    static double ReadPositiveDouble(string prompt)
-    {
-        Console.Write(prompt);
-        string input = Console.ReadLine();
-
-        if (double.TryParse(input, out double value) && value > 0)
-        {
-            return value;
-        }
-
-        throw new ArgumentException("Page size must be a positive numeric value.");
     }
 }

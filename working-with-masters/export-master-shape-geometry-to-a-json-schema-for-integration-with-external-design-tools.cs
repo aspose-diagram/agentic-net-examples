@@ -1,141 +1,153 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
 
-public class SegmentInfo
+class Program
 {
-    public string Type { get; set; } = string.Empty;
-    public double X { get; set; }
-    public double Y { get; set; }
-}
-
-public class MasterGeometry
-{
-    public string MasterName { get; set; } = string.Empty;
-    public List<SegmentInfo> Segments { get; set; } = new();
-}
-
-public class Program
-{
-    public static void Main()
+    // DTO for a point in geometry
+    private class PointDto
     {
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+
+    // DTO for a single geometry (collection of points)
+    private class GeometryDto
+    {
+        public List<PointDto> Points { get; set; } = new();
+    }
+
+    // DTO for a master shape (its name and all geometries)
+    private class MasterGeometryDto
+    {
+        public string? MasterName { get; set; }
+        public List<GeometryDto> Geometries { get; set; } = new();
+    }
+
+    static void Main(string[] args)
+    {
+        // Expect two arguments: input Visio file and output JSON file
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string visioPath = "input.vsdx";
-            // Path for the exported JSON schema
-            string jsonOutputPath = "master_geometry.json";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            var masterGeometries = new List<MasterGeometry>();
-
-            // Iterate through all masters in the diagram
-            foreach (Master master in diagram.Masters)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Skip masters without shapes
-                if (master.Shapes.Count == 0)
-                    continue;
+                // List to hold geometry data for all masters
+                List<MasterGeometryDto> mastersData = new();
 
-                // Typically a master contains a single shape that defines its geometry
-                Shape masterShape = master.Shapes[0];
-
-                var masterInfo = new MasterGeometry
+                // Iterate over each master in the diagram
+                foreach (Aspose.Diagram.Master master in diagram.Masters)
                 {
-                    MasterName = master.Name
-                };
-
-                // Extract geometry segments from each Geom section
-                foreach (Geom geom in masterShape.Geoms)
-                {
-                    foreach (object coord in geom.CoordinateCol)
+                    // Prepare DTO for the current master
+                    MasterGeometryDto masterDto = new MasterGeometryDto
                     {
-                        if (coord is MoveTo move)
+                        MasterName = master.Name ?? "UnnamedMaster"
+                    };
+
+                    // Iterate over shapes that belong to the master
+                    for (int sIdx = 0; sIdx < master.Shapes.Count; sIdx++)
+                    {
+                        Aspose.Diagram.Shape shape = master.Shapes[sIdx];
+
+                        // Iterate over each geometry section of the shape
+                        for (int gIdx = 0; gIdx < shape.Geoms.Count; gIdx++)
                         {
-                            masterInfo.Segments.Add(new SegmentInfo
+                            Aspose.Diagram.Geom geom = shape.Geoms[gIdx];
+                            GeometryDto geometryDto = new GeometryDto();
+
+                            // Iterate over each coordinate object in the geometry
+                            for (int cIdx = 0; cIdx < geom.CoordinateCol.Count; cIdx++)
                             {
-                                Type = "MoveTo",
-                                X = move.X.Value,
-                                Y = move.Y.Value
-                            });
-                        }
-                        else if (coord is LineTo line)
-                        {
-                            masterInfo.Segments.Add(new SegmentInfo
-                            {
-                                Type = "LineTo",
-                                X = line.X.Value,
-                                Y = line.Y.Value
-                            });
-                        }
-                        else if (coord is ArcTo arc)
-                        {
-                            masterInfo.Segments.Add(new SegmentInfo
-                            {
-                                Type = "ArcTo",
-                                X = arc.X.Value,
-                                Y = arc.Y.Value
-                            });
-                        }
-                        else if (coord is EllipticalArcTo eArc)
-                        {
-                            masterInfo.Segments.Add(new SegmentInfo
-                            {
-                                Type = "EllipticalArcTo",
-                                X = eArc.X.Value,
-                                Y = eArc.Y.Value
-                            });
-                        }
-                        else if (coord is SplineStart splineStart)
-                        {
-                            masterInfo.Segments.Add(new SegmentInfo
-                            {
-                                Type = "SplineStart",
-                                X = splineStart.X.Value,
-                                Y = splineStart.Y.Value
-                            });
-                        }
-                        else if (coord is SplineKnot splineKnot)
-                        {
-                            masterInfo.Segments.Add(new SegmentInfo
-                            {
-                                Type = "SplineKnot",
-                                X = splineKnot.X.Value,
-                                Y = splineKnot.Y.Value
-                            });
-                        }
-                        else if (coord is PolylineTo polyline)
-                        {
-                            masterInfo.Segments.Add(new SegmentInfo
-                            {
-                                Type = "PolylineTo",
-                                X = polyline.X.Value,
-                                Y = polyline.Y.Value
-                            });
+                                object coordObj = geom.CoordinateCol[cIdx];
+                                double xVal = 0;
+                                double yVal = 0;
+                                bool hasPoint = false;
+
+                                // Handle supported coordinate types
+                                if (coordObj is Aspose.Diagram.MoveTo move)
+                                {
+                                    xVal = move.X.Value;
+                                    yVal = move.Y.Value;
+                                    hasPoint = true;
+                                }
+                                else if (coordObj is Aspose.Diagram.LineTo line)
+                                {
+                                    xVal = line.X.Value;
+                                    yVal = line.Y.Value;
+                                    hasPoint = true;
+                                }
+                                else if (coordObj is Aspose.Diagram.ArcTo arc)
+                                {
+                                    xVal = arc.X.Value;
+                                    yVal = arc.Y.Value;
+                                    hasPoint = true;
+                                }
+                                else if (coordObj is Aspose.Diagram.EllipticalArcTo ell)
+                                {
+                                    xVal = ell.X.Value;
+                                    yVal = ell.Y.Value;
+                                    hasPoint = true;
+                                }
+                                else if (coordObj is Aspose.Diagram.SplineKnot knot)
+                                {
+                                    xVal = knot.X.Value;
+                                    yVal = knot.Y.Value;
+                                    hasPoint = true;
+                                }
+                                else if (coordObj is Aspose.Diagram.PolylineTo poly)
+                                {
+                                    xVal = poly.X.Value;
+                                    yVal = poly.Y.Value;
+                                    hasPoint = true;
+                                }
+
+                                // Add the point if a supported coordinate was found
+                                if (hasPoint)
+                                {
+                                    geometryDto.Points.Add(new PointDto { X = xVal, Y = yVal });
+                                }
+                            }
+
+                            // Add the geometry DTO to the master DTO
+                            masterDto.Geometries.Add(geometryDto);
                         }
                     }
+
+                    // Add the master DTO to the overall collection
+                    mastersData.Add(masterDto);
                 }
 
-                masterGeometries.Add(masterInfo);
+                // Serialize the collected data to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string jsonString = JsonSerializer.Serialize(mastersData, jsonOptions);
+
+                // Write JSON to the specified output file
+                File.WriteAllText(outputPath, jsonString);
+                Console.WriteLine($"Master geometry exported successfully to: {outputPath}");
             }
-
-            // Serialize the collected geometry to JSON
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(masterGeometries, jsonOptions);
-
-            // Write JSON to file
-            File.WriteAllText(jsonOutputPath, json);
-
-            Console.WriteLine($"Master geometry exported to: {jsonOutputPath}");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any errors from Aspose.Diagram operations or file I/O
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

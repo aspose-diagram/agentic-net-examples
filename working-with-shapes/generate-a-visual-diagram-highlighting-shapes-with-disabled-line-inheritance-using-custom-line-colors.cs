@@ -1,65 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine input file path (first argument) or use a default placeholder.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Verify that the input file exists before proceeding.
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Determine output file path (second argument) or use a default name.
-        string outputPath = args.Length > 1 ? args[1] : "output_highlighted.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Determine if the shape's line properties are not inherited.
-                    // Compare the current line color with the inherited line color.
-                    bool lineColorInherited = string.Equals(
-                        shape.Line.LineColor.Value,
-                        shape.InheritLine.LineColor.Value,
-                        StringComparison.OrdinalIgnoreCase);
-
-                    // If the line color differs from the inherited value, inheritance is disabled.
-                    if (!lineColorInherited)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply a custom highlight color (bright red) to the shape's line.
-                        shape.Line.LineColor.Value = "#FF0000";
-
-                        // Optionally increase line weight for better visibility.
-                        shape.Line.LineWeight.Value = 0.05; // thickness in inches
+                        // Compare the shape's line color with its inherited line color.
+                        // If they differ, line inheritance is disabled (custom line color is set).
+                        if (shape.Line.LineColor.Value != shape.InheritLine.LineColor.Value)
+                        {
+                            // Highlight the shape by setting a distinct custom line color (red).
+                            shape.Line.LineColor.Value = "#FF0000";
+                        }
                     }
                 }
+
+                // Save the modified diagram to the specified output path using VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram to the output path using VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with highlighted shapes to: {outputPath}");
+            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

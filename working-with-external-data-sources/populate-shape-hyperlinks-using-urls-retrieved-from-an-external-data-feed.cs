@@ -1,66 +1,106 @@
-using System.IO;
 using System;
-using System.Data;
+using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input Visio file, data feed file, output Visio file
+        if (args.Length != 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <dataFeedPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputVisioPath = args[0];
+        string dataFeedPath = args[1];
+        string outputVisioPath = args[2];
+
+        // Guard: verify input Visio file exists
+        if (!File.Exists(inputVisioPath))
+        {
+            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
+            return;
+        }
+
+        // Guard: verify data feed file exists
+        if (!File.Exists(dataFeedPath))
+        {
+            Console.Error.WriteLine($"Data feed file not found: {dataFeedPath}");
+            return;
+        }
+
+        // Load external data feed (CSV format: ShapeName,Url)
+        Dictionary<string, string> urlMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Simulate external data feed with shape names and corresponding URLs
-            DataTable urlTable = new DataTable();
-            urlTable.Columns.Add("ShapeName", typeof(string));
-            urlTable.Columns.Add("Url", typeof(string));
-
-            // Sample data – in a real scenario this would come from an external source
-            urlTable.Rows.Add("Process", "https://example.com/process");
-            urlTable.Rows.Add("Decision", "https://example.com/decision");
-            urlTable.Rows.Add("Start", "https://example.com/start");
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            foreach (string line in File.ReadAllLines(dataFeedPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Skip empty lines
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                string[] parts = line.Split(new char[] { ',' }, 2);
+                if (parts.Length == 2)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Find a matching URL for the shape based on its universal name
-                    string shapeName = shape.NameU;
-                    DataRow[] matches = urlTable.Select($"ShapeName = '{shapeName}'");
-                    if (matches.Length == 0)
-                        continue; // No URL for this shape
-
-                    string url = matches[0]["Url"].ToString();
-
-                    // Create a new hyperlink and assign the URL
-                    Hyperlink link = new Hyperlink();
-                    link.Name = $"{shapeName}_Link";
-                    link.Address.Value = url;
-                    link.Description.Value = $"Link to {shapeName}";
-
-                    // Add the hyperlink to the shape's collection
-                    shape.Hyperlinks.Add(link);
+                    string shapeName = parts[0].Trim();
+                    string url = parts[1].Trim();
+                    if (!string.IsNullOrEmpty(shapeName) && !string.IsNullOrEmpty(url))
+                    {
+                        // Store mapping; later shapes with matching NameU will receive this URL
+                        urlMap[shapeName] = url;
+                    }
                 }
             }
-
-            // Save the updated diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error reading data feed: {ex.Message}");
+            return;
+        }
+
+        // Process the Visio diagram and populate hyperlinks
+        try
+        {
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputVisioPath))
+            {
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Ensure the shape has a NameU and that a URL exists for this name
+                        if (!string.IsNullOrEmpty(shape.NameU) && urlMap.TryGetValue(shape.NameU, out string url))
+                        {
+                            // Create a new Hyperlink instance
+                            Hyperlink link = new Hyperlink();
+
+                            // Set the address of the hyperlink to the external URL
+                            link.Address.Value = url;
+
+                            // Optionally, set a description (visible on hover in Visio)
+                            link.Description.Value = "External link";
+
+                            // Add the hyperlink to the shape's collection
+                            shape.Hyperlinks.Add(link);
+                        }
+                    }
+                }
+
+                // Refresh the diagram to apply changes
+                diagram.Refresh();
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

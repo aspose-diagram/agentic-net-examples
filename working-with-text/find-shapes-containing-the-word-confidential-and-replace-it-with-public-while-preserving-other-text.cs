@@ -1,50 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Define the output file path
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_public.vsdx");
+
         try
         {
-
-            // Input and output file paths
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Get the plain concatenated text of the shape
-                    string originalText = shape.Text.Value.Text;
-
-                    // Check if the text contains the target word
-                    if (!string.IsNullOrEmpty(originalText) && originalText.Contains("Confidential"))
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Replace 'Confidential' with 'Public'
-                        string updatedText = originalText.Replace("Confidential", "Public");
+                        // Ensure the shape has a Text object
+                        if (shape.Text == null || shape.Text.Value == null)
+                            continue;
 
-                        // Clear existing text runs and add the updated text
-                        shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt(updatedText));
+                        // Iterate through each text run within the shape
+                        foreach (FormatTxt fmt in shape.Text.Value)
+                        {
+                            // Cast the format item to Txt (actual text run)
+                            Txt txt = fmt as Txt;
+                            if (txt != null && txt.Text != null && txt.Text.Contains("Confidential"))
+                            {
+                                // Replace only the target word, preserving surrounding text
+                                txt.Text = txt.Text.Replace("Confidential", "Public");
+                            }
+                        }
                     }
                 }
+
+                // Save the modified diagram to the output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram processed successfully. Output saved to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

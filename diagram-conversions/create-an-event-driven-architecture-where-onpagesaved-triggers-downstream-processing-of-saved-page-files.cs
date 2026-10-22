@@ -3,83 +3,91 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-namespace DiagramPageProcessing
+class Program
 {
-    // Callback that is invoked after each page is saved during PDF export.
-    class PageSavedCallback : IPageSavingCallback
+    static void Main(string[] args)
     {
-        private readonly string _outputDirectory;
-        private readonly string _baseFileName;
-
-        public PageSavedCallback(string outputDirectory, string baseFileName)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            _outputDirectory = outputDirectory;
-            _baseFileName = baseFileName;
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            return;
         }
 
-        // Called before a page starts saving – not used here.
-        public void PageStartSaving(PageStartSavingArgs args)
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
         {
-            // No pre‑processing required.
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
-        // Called after a page has been saved.
-        public void PageEndSaving(PageEndSavingArgs args)
+        try
         {
-            int pageIndex = args.PageIndex; // zero‑based index
-            int totalPages = args.PageCount;
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Example downstream processing: log and define a per‑page file name.
-            string pageFileName = $"{_baseFileName}_Page{pageIndex + 1}.pdf";
-            string pageFilePath = Path.Combine(_outputDirectory, pageFileName);
+            // Configure PDF save options and assign the page‑saving callback.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;               // Explicitly set the format.
+            pdfOptions.PageSavingCallback = new MyPageSavingCallback(); // Event‑driven processing.
 
-            Console.WriteLine($"Page {pageIndex + 1}/{totalPages} saved. Downstream processing can use: {pageFilePath}");
-
-            // Insert custom downstream logic here (e.g., move the file, upload, etc.).
+            // Save the diagram as PDF; the callback will be invoked per page.
+            diagram.Save(outputPath, pdfOptions);
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}
 
-    class Program
+/// <summary>
+/// Implements IPageSavingCallback to receive notifications before and after each page is saved.
+/// </summary>
+class MyPageSavingCallback : IPageSavingCallback
+{
+    /// <summary>
+    /// Called before a page starts saving. Here we simply log the start.
+    /// </summary>
+    /// <param name="args">Information about the page being saved.</param>
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        static void Main(string[] args)
-        {
-            try
-            {
-
-                // Input Visio file path (adjust as needed).
-                string inputPath = "input.vsdx";
-
-                // Directory where downstream files will be referenced.
-                string outputDir = "ProcessedPages";
-                Directory.CreateDirectory(outputDir);
-
-                // Output PDF file that contains the whole diagram.
-                string outputPdfPath = Path.Combine(outputDir, "FullDiagram.pdf");
-
-                // Load the diagram.
-                using (Diagram diagram = new Diagram(inputPath))
-                {
-                    // Configure PDF save options.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions
-                    {
-                        // Example: set a default font to avoid missing font warnings.
-                        DefaultFont = "Arial"
-                    };
-
-                    // Attach the page‑saved callback.
-                    pdfOptions.PageSavingCallback = new PageSavedCallback(outputDir, "FullDiagram");
-
-                    // Save the diagram as PDF; the callback will be invoked per page.
-                    diagram.Save(outputPdfPath, pdfOptions);
-                }
-
-                Console.WriteLine("Diagram export completed.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        Console.WriteLine($"Start saving page index {args.PageIndex} of {args.PageCount}");
     }
+
+    /// <summary>
+    /// Called after a page has been saved. Triggers downstream processing for the saved page.
+    /// </summary>
+    /// <param name="args">Information about the page that was saved.</param>
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"End saving page index {args.PageIndex} of {args.PageCount}");
+
+        // Downstream processing: for demonstration, create a simple text file per page.
+        ProcessSavedPage(args.PageIndex);
+    }
+
+    /// <summary>
+    /// Example downstream processing logic for a saved page.
+    /// </summary>
+    /// <param name="pageIndex">Zero‑based index of the page that was saved.</param>
+    private void ProcessSavedPage(int pageIndex)
+    {
+        try
+        {
+            // Create a marker file indicating that the page has been processed.
+            string fileName = $"Processed_Page_{pageIndex}.txt";
+            File.WriteAllText(fileName, $"Page {pageIndex} processed at {DateTime.Now}");
+            Console.WriteLine($"Downstream processing completed for page {pageIndex}, marker file created: {fileName}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during downstream processing.
+            Console.Error.WriteLine($"Error processing page {pageIndex}: {ex.Message}");
+        }
     }
 }

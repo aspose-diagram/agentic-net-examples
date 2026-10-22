@@ -1,45 +1,59 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio diagram from a file.
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Loop over shapes using indexer (shape collection is zero‑based).
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Shape shape = page.Shapes[i];
 
-                    // Adjust the text block width (TxtWidth) to be proportional to the shape's width.
-                    // This keeps the text scaling uniform while preserving the original TxtHeight.
-                    double shapeWidth = shape.XForm.Width.Value;
-                    shape.TextXForm.TxtWidth.Value = shapeWidth;
-
-                    // TxtHeight is left unchanged to maintain its constant value.
+                    // Ensure the shape has a TextXForm section before adjusting.
+                    if (shape.TextXForm != null && shape.XForm != null)
+                    {
+                        // Keep TxtHeight unchanged; adjust TxtWidth to match the shape's width.
+                        shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
+                        // TxtHeight remains as is (no assignment needed).
+                    }
                 }
             }
 
-            // Save the modified diagram.
-            string outputPath = "output.vsdx";
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,43 +1,69 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the plain text of the shape
-                    string plainText = shape.Text.Value.ToString();
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // If the shape contains multiline text, adjust the default tab stop
-                    if (plainText.Contains("\n") || plainText.Contains("\r"))
+                    // Ensure the shape has a TextBlock (required for tab stop).
+                    if (shape.TextBlock == null)
+                        continue;
+
+                    // Retrieve plain text from the shape.
+                    string text = shape.Text?.Value?.ToString() ?? string.Empty;
+
+                    // Check if the text contains line breaks (multiline).
+                    if (text.Contains("\n") || text.Contains("\r"))
                     {
-                        // Set a larger default tab stop (e.g., 0.5 inches) for better readability
+                        // Apply a custom default tab stop (e.g., 0.5 inches).
+                        // The Value property expects a double representing inches.
                         shape.TextBlock.DefaultTabStop.Value = 0.5;
                     }
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,50 +1,85 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments: input file, output file, shape ID
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <shapeId>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID (Visio shape IDs are long)
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Access the first page
+            // Assume the shape is on the first page; adjust if needed
             Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
-            {
-                shape = s;
-                break;
-            }
-
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
             if (shape == null)
             {
-                Console.WriteLine("No shapes found on the page.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
                 return;
             }
 
-            // Align the shape's text to the right side
-            // Set the local pin of the text block to the left edge (0)
-            shape.TextXForm.TxtLocPinX.Value = 0;
-            // Position the text block's pin at the shape's right edge
+            // -----------------------------------------------------------------
+            // Align the shape's text to the right side of the shape.
+            // This is achieved by:
+            //   1. Setting the text block's right‑hand pin (TxtPinX) to the shape's width.
+            //   2. Positioning the text block's location pin (TxtLocPinX) at the same X coordinate.
+            //   3. Ensuring the text orientation angle is zero (horizontal).
+            //   4. Setting paragraph horizontal alignment to RightAlign.
+            // -----------------------------------------------------------------
+
+            // 1. Set the right‑hand pin of the text block to the shape's width
             shape.TextXForm.TxtPinX.Value = shape.XForm.Width.Value;
 
-            // Ensure no rotation is applied to the text
-            shape.TextXForm.TxtAngle.Value = 0;
+            // 2. Align the location pin of the text block with the right edge
+            shape.TextXForm.TxtLocPinX.Value = shape.XForm.Width.Value;
 
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // 3. Ensure the text orientation is horizontal (angle = 0 degrees)
+            shape.TextXForm.TxtAngle.Value = 0.0;
 
+            // 4. Set paragraph alignment to right, if at least one paragraph exists
+            if (shape.Paras != null && shape.Paras.Count > 0)
+            {
+                // Access the first paragraph (Visio stores formatting per paragraph)
+                shape.Paras[0].HorzAlign.Value = HorzAlignValue.RightAlign;
+            }
+
+            // Save the modified diagram to the specified output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

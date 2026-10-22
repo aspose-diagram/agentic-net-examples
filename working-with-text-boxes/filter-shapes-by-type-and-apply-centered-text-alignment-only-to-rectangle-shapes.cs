@@ -6,52 +6,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over each shape on the current page
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Process only rectangle shapes identified by master name
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    // Filter: process only rectangle shapes (identified by master name "Rectangle")
+                    // Also ensure the shape has a text block
+                    if (shape.NameU != null && shape.NameU.Equals("Rectangle", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(shape.Text?.Value?.Text))
                     {
-                        // Ensure the shape contains at least one paragraph for text alignment
-                        if (shape.Paras != null && shape.Paras.Count > 0)
+                        // Iterate through all paragraphs in the shape's text
+                        for (int i = 0; i < shape.Paras.Count; i++)
                         {
-                            // Apply centered horizontal alignment to the first paragraph
-                            shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+                            // Apply centered horizontal alignment
+                            shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
                         }
                     }
                 }
             }
 
-            // Path for the modified Visio file
-            string outputPath = "output.vsdx";
-            // Save the updated diagram using the Vsdx format
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

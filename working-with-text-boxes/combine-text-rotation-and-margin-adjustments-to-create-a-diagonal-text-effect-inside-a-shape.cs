@@ -1,46 +1,84 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Ensure there is at least one page
-        if (diagram.Pages.Count == 0)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            diagram.Pages.Add(new Page());
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
         }
 
-        // Get the first page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Add a rectangle shape (pinX, pinY, width, height)
-        long shapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Retrieve the shape object
-        Shape shape = page.Shapes.GetShape(shapeId);
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure there is at least one page; create a new one if necessary
+                Page page;
+                if (diagram.Pages.Count > 0)
+                {
+                    page = diagram.Pages[0];
+                }
+                else
+                {
+                    // Add a blank page and use it
+                    diagram.Pages.Add(new Page());
+                    page = diagram.Pages[0];
+                }
 
-        // Set the shape text
-        shape.Text.Value.Clear();
-        shape.Text.Value.Add(new Txt("Diagonal Text"));
+                // Define rectangle geometry (center position in inches)
+                double pinX = 5.0;   // horizontal center
+                double pinY = 5.0;   // vertical center
+                double width = 3.0;  // rectangle width
+                double height = 2.0; // rectangle height
 
-        // Rotate the text 45 degrees (convert to radians)
-        double angleDeg = 45.0;
-        double angleRad = (Math.PI / 180.0) * angleDeg;
-        shape.TextXForm.TxtAngle.Value = angleRad;
+                // Add a rectangle shape; DrawRectangle returns the shape ID (long)
+                long shapeId = page.DrawRectangle(pinX, pinY, width, height);
 
-        // Adjust text block margins (0.1 inch on each side)
-        shape.TextBlock.LeftMargin = new DoubleValue(0.1, MeasureConst.IN);
-        shape.TextBlock.RightMargin = new DoubleValue(0.1, MeasureConst.IN);
-        shape.TextBlock.TopMargin = new DoubleValue(0.1, MeasureConst.IN);
-        shape.TextBlock.BottomMargin = new DoubleValue(0.1, MeasureConst.IN);
+                // Retrieve the newly added shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-        // Save the diagram to VSDX format
-        diagram.Save("DiagonalText.vsdx", SaveFileFormat.Vsdx);
+                // Clear any existing text and add the desired diagonal text
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Diagonal Text"));
+
+                // Rotate the text 45 degrees (TxtAngle expects radians)
+                double angleDeg = 45.0;
+                double angleRad = (Math.PI / 180.0) * angleDeg;
+                shape.TextXForm.TxtAngle.Value = angleRad;
+
+                // Create a margin of 4 points and apply to all sides of the text block
+                DoubleValue margin = new DoubleValue(4, MeasureConst.PT);
+                shape.TextBlock.LeftMargin = margin;
+                shape.TextBlock.RightMargin = margin;
+                shape.TextBlock.TopMargin = margin;
+                shape.TextBlock.BottomMargin = margin;
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

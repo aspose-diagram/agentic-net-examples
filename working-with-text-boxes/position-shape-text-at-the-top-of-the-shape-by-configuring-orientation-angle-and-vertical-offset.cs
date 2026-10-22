@@ -1,48 +1,84 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and output Visio file path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the source Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new blank diagram
-            Diagram diagram = new Diagram();
+            // For demonstration, target the first shape on the first page.
+            // Adjust the selection logic as needed (e.g., by shape name or ID).
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Get the first (and only) page
             Page page = diagram.Pages[0];
 
-            // Add a rectangle shape to the page
-            // Parameters: PinX, PinY, master name, isCalculate (false)
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
 
-            // Retrieve the shape object using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Retrieve the first shape (ID is a long).
+            Shape shape = page.Shapes[0];
 
-            // Clear any existing text and add new text
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Sample Text"));
+            // Ensure the shape is not deleted.
+            if (shape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine("The selected shape is marked as deleted.");
+                return;
+            }
 
-            // Position the text at the top of the shape
-            // TxtLocPinY = 0 aligns the text block's local pin to the top edge of the text block
-            // TxtPinY = shape height places the text block at the top edge of the shape
+            // ------------------------------
+            // Position text at the top of the shape.
+            // ------------------------------
+
+            // Set vertical offset: locate the text block's local pin at Y = 0 (top)
             shape.TextXForm.TxtLocPinY.Value = 0;
+
+            // Position the text block's pin so that its bottom aligns with the shape's top.
+            // This uses the shape's height to place the text block correctly.
             shape.TextXForm.TxtPinY.Value = shape.XForm.Height.Value;
 
-            // Set text orientation angle (0 radians = no rotation)
+            // Set text orientation angle to 0 radians (no rotation).
             shape.TextXForm.TxtAngle.Value = 0;
 
-            // Save the diagram to a VSDX file
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+            // Optionally, you can also reset any existing text rotation on the shape itself.
+            shape.XForm.Angle.Value = 0;
 
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

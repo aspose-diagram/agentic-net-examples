@@ -1,70 +1,90 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file to be analyzed
-        string inputPath = "input.vsdx";
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input file path provided.");
+            return;
+        }
 
-        // Guard: ensure the input file exists before proceeding
+        string inputPath = args[0];
+
+        // Guard: verify the file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the style guide: expected horizontal alignment per shape name (NameU)
-            var styleGuide = new Dictionary<string, HorzAlignValue>(StringComparer.OrdinalIgnoreCase)
+            // Load the diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                { "Title", HorzAlignValue.Center },      // Center alignment
-                { "Subtitle", HorzAlignValue.Center },   // Center alignment
-                { "Header", HorzAlignValue.LeftAlign },  // Left alignment
-                { "Footer", HorzAlignValue.RightAlign }  // Right alignment
-                // Add more shape name → expected alignment mappings as needed
-            };
+                // Define the style guide expectations.
+                // Example guide: Horizontal alignment should be Center, vertical alignment should be Middle.
+                HorzAlignValue expectedHorz = HorzAlignValue.Center;
+                VerticalAlignValue expectedVert = VerticalAlignValue.Middle;
 
-            // Iterate through all pages and shapes in the diagram
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes without any paragraph (text) entries
-                    if (shape.Paras == null || shape.Paras.Count == 0)
-                        continue;
-
-                    // Use the first paragraph's horizontal alignment as the shape's alignment
-                    HorzAlignValue currentAlignment = shape.Paras[0].HorzAlign.Value;
-
-                    // Determine expected alignment from the style guide (if defined)
-                    if (styleGuide.TryGetValue(shape.NameU, out HorzAlignValue expectedAlignment))
+                    // Iterate through all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Log mismatch when current alignment differs from the expected one
-                        if (currentAlignment != expectedAlignment)
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve shape identifier and name for logging.
+                        string shapeId = shape.ID.ToString();
+                        string shapeName = shape.NameU ?? "(no name)";
+
+                        bool horzMismatch = false;
+                        bool vertMismatch = false;
+
+                        // ----- Horizontal Alignment Check -----
+                        HorzAlignValue actualHorz = expectedHorz; // default to expected to avoid uninitialized warning
+                        if (shape.Paras != null && shape.Paras.Count > 0)
                         {
-                            Console.WriteLine($"Mismatch on page '{page.NameU}', shape '{shape.NameU}' (ID: {shape.ID}): " +
-                                              $"Current alignment = {currentAlignment}, Expected = {expectedAlignment}");
+                            // Use the first paragraph's alignment as representative.
+                            actualHorz = shape.Paras[0].HorzAlign.Value;
+                            if (actualHorz != expectedHorz)
+                                horzMismatch = true;
                         }
-                    }
-                    else
-                    {
-                        // No rule defined for this shape; optionally report or ignore
-                        Console.WriteLine($"No style guide entry for shape '{shape.NameU}' (ID: {shape.ID}).");
+                        else
+                        {
+                            // No paragraph defined; treat as mismatch.
+                            horzMismatch = true;
+                        }
+
+                        // ----- Vertical Alignment Check -----
+                        VerticalAlignValue actualVert = shape.TextBlock.VerticalAlign.Value;
+                        if (actualVert != expectedVert)
+                            vertMismatch = true;
+
+                        // Log mismatches.
+                        if (horzMismatch || vertMismatch)
+                        {
+                            Console.WriteLine($"Shape ID: {shapeId}, Name: {shapeName}");
+                            if (horzMismatch)
+                                Console.WriteLine($"  Horizontal alignment mismatch. Actual: {actualHorz}, Expected: {expectedHorz}");
+                            if (vertMismatch)
+                                Console.WriteLine($"  Vertical alignment mismatch. Actual: {actualVert}, Expected: {expectedVert}");
+                        }
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Log any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

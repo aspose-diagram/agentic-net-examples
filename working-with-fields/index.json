@@ -1,11 +1,11 @@
 {
   "category": "working-with-fields",
   "display_name": "Working With Fields",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 33,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-22",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,15 +31,14 @@
       "task": "Assign a static string value to a field to display custom text on the shape",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -67,8 +66,8 @@
       "task": "Catch exceptions when a specified field does not exist and log detailed error information",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -85,7 +84,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -101,14 +101,14 @@
       "task": "Clone an existing shape and copy its fields to the new shape to preserve metadata",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
+        "Shape",
         "Shapes"
       ]
     },
@@ -118,16 +118,15 @@
       "task": "Create a field whose formula references another shape s height to calculate proportional scaling",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -187,7 +186,8 @@
       "task": "Implement try catch blocks around field insertion code to capture and log any runtime errors",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -208,7 +208,9 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -219,7 +221,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "AddShape",
@@ -240,11 +243,11 @@
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -288,7 +291,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -321,6 +325,7 @@
       "task": "Log each field operation result to the console for real time monitoring during development",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -338,7 +343,8 @@
       "task": "Loop through every shape and update an existing field s formula only if the shape is a connector",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -354,9 +360,10 @@
       "task": "Measure execution time of batch field updates to evaluate performance improvements after code optimization",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Diagnostics"
+        "System.Collections.Generic",
+        "System.Diagnostics",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -372,8 +379,8 @@
       "task": "Perform bulk updates of field formulas across several diagrams to reflect new calculation standards",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -424,8 +431,8 @@
       "task": "Remove a field from a shape by specifying the field s name to clean up unused data",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
-        "System"
+        "System",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -441,7 +448,9 @@
       "task": "Remove all existing fields from a shape before adding a fresh set of updated fields",
       "namespaces": [
         "Aspose.Diagram",
-        "System"
+        "System",
+        "System.Collections.Generic",
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -474,7 +483,6 @@
       "task": "Save the modified visio diagram back to its original file location after completing field operations",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -509,7 +517,6 @@
       "task": "Update a field s formula to reference another shape s data for dynamic calculations",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -528,6 +535,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.IO",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -544,6 +552,7 @@
       "task": "Validate field results after modification by comparing calculated values against expected thresholds",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

@@ -1,65 +1,125 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line argument.
+        if (args.Length == 0)
         {
-            // Get directory path from command line argument or prompt the user
-            string directoryPath;
-            if (args.Length > 0 && Directory.Exists(args[0]))
+            Console.Error.WriteLine("Error: Please provide a directory path as the first argument.");
+            return;
+        }
+
+        string directoryPath = args[0];
+
+        // Guard: ensure the directory exists.
+        if (!Directory.Exists(directoryPath))
+        {
+            Console.Error.WriteLine($"Error: Directory does not exist: {directoryPath}");
+            return;
+        }
+
+        // Define Visio file extensions to process.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vsx", ".vtx", ".vss", ".vst", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
+
+        // Retrieve all Visio files in the specified directory (non‑recursive).
+        string[] visioFiles = Directory.GetFiles(directoryPath)
+            .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (visioFiles.Length == 0)
+        {
+            Console.WriteLine("No Visio files found in the specified directory.");
+            return;
+        }
+
+        foreach (string filePath in visioFiles)
+        {
+            // Guard: ensure the file still exists before processing.
+            if (!File.Exists(filePath))
             {
-                directoryPath = args[0];
+                Console.Error.WriteLine($"Warning: File not found (skipping): {filePath}");
+                continue;
             }
-            else
+
+            try
             {
-                Console.Write("Enter the directory path containing Visio files: ");
-                directoryPath = Console.ReadLine();
-                if (!Directory.Exists(directoryPath))
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // Export each page as a separate HTML file.
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    Console.WriteLine("The specified directory does not exist.");
-                    return;
-                }
-            }
+                    // Build output HTML file name.
+                    string htmlFileName = $"{Path.GetFileNameWithoutExtension(filePath)}_page{i + 1}.html";
+                    string htmlOutputPath = Path.Combine(directoryPath, htmlFileName);
 
-            // Define Visio file extensions to process
-            string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vsdm", ".vss", ".vssx", ".vssm", ".vst", ".vstx", ".vstm" };
-
-            // Get all Visio files in the directory (non‑recursive)
-            var visioFiles = Directory.GetFiles(directoryPath, "*.*", SearchOption.TopDirectoryOnly);
-            foreach (var filePath in visioFiles)
-            {
-                if (Array.IndexOf(visioExtensions, Path.GetExtension(filePath).ToLower()) < 0)
-                    continue; // Skip non‑Visio files
-
-                try
-                {
-                    // Load Visio file using a read stream
-                    using (FileStream inputStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                    // Configure HTML save options for a single page.
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                     {
-                        // Load the diagram from the stream
-                        Diagram diagram = new Diagram(inputStream);
+                        PageIndex = i,
+                        PageCount = 1,
+                        // Assign a custom stream provider to handle embedded resources.
+                        StreamProvider = new CustomStreamProvider(htmlOutputPath)
+                    };
 
-                        // Prepare output HTML file path
-                        string htmlFileName = Path.ChangeExtension(Path.GetFileName(filePath), ".html");
-                        string htmlFilePath = Path.Combine(directoryPath, htmlFileName);
-
-                        // Save diagram to HTML using a write stream
-                        using (FileStream outputStream = new FileStream(htmlFilePath, FileMode.Create, FileAccess.Write))
-                        {
-                            diagram.Save(outputStream, SaveFileFormat.Html);
-                        }
-
-                        Console.WriteLine($"Converted: {Path.GetFileName(filePath)} -> {htmlFileName}");
-                    }
+                    // Save the page to HTML using the configured options.
+                    diagram.Save(htmlOutputPath, htmlOptions);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                }
+
+                Console.WriteLine($"Successfully converted: {filePath}");
             }
-
-            Console.WriteLine("Conversion completed.");
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}
+
+/// <summary>
+/// Custom implementation of IStreamProvider to direct embedded resource streams
+/// (e.g., images) to the file system alongside the generated HTML file.
+/// </summary>
+class CustomStreamProvider : IStreamProvider
+{
+    private readonly string _htmlFilePath;
+
+    public CustomStreamProvider(string htmlFilePath)
+    {
+        _htmlFilePath = htmlFilePath;
+    }
+
+    // Called by Aspose.Diagram when a resource stream needs to be created.
+    public void InitStream(StreamProviderOptions options)
+    {
+        // Determine the directory of the HTML file.
+        string htmlDirectory = Path.GetDirectoryName(_htmlFilePath) ?? string.Empty;
+
+        // Combine the HTML directory with the relative path supplied by Aspose.
+        string resourceRelativePath = options.DefaultPath ?? string.Empty;
+        string fullResourcePath = Path.Combine(htmlDirectory, resourceRelativePath);
+
+        // Ensure the target directory exists.
+        string resourceDir = Path.GetDirectoryName(fullResourcePath);
+        if (!string.IsNullOrEmpty(resourceDir) && !Directory.Exists(resourceDir))
+        {
+            Directory.CreateDirectory(resourceDir);
+        }
+
+        // Assign a writable FileStream to the options.
+        options.Stream = new FileStream(fullResourcePath, FileMode.Create, FileAccess.Write);
+    }
+
+    // Called by Aspose.Diagram after the resource stream has been written.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // Safely close the stream if it was created.
+        options.Stream?.Close();
+    }
+}

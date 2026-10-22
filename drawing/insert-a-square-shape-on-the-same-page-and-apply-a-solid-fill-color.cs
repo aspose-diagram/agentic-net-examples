@@ -1,32 +1,60 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-            // Access the first page of the diagram
-            Aspose.Diagram.Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Define the position (PinX, PinY) and size for the square
-            double pinX = 2.0;
-            double pinY = 2.0;
-            double size = 1.0; // Width and height are equal for a square
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-            // Draw the square using DrawRectangle (width = height)
-            long shapeId = page.DrawRectangle(pinX, pinY, size, size);
+        try
+        {
+            // Load the existing Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the shape object using its ID
-            Shape squareShape = page.Shapes.GetShape(shapeId);
+            // Work with the first page of the diagram.
+            Page page = diagram.Pages[0];
 
-            // Apply a solid fill: set fill pattern to solid (1) and set foreground color
+            // Draw a square (rectangle with equal width and height) at position (1,1) with size 2x2.
+            // The method returns the shape ID (long).
+            long squareShapeId = page.DrawRectangle(1.0, 1.0, 2.0, 2.0);
+
+            // Retrieve the Shape object using the returned ID.
+            Shape squareShape = page.Shapes.GetShape(squareShapeId);
+
+            // Apply a solid fill pattern.
+            // FillPattern.Value = 1 corresponds to a solid fill.
             squareShape.Fill.FillPattern.Value = 1;
-            squareShape.Fill.FillForegnd.Value = "#FF0000"; // solid red fill
 
-            // Save the diagram to a VSDX file
-            diagram.Save("SquareDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Set the fill foreground color to a solid green (hex format).
+            squareShape.Fill.FillForegnd.Value = "#00FF00";
+
+            // Ensure the fill is fully opaque (0 = opaque, 1 = fully transparent).
+            squareShape.Fill.FillForegndTrans.Value = 0;
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

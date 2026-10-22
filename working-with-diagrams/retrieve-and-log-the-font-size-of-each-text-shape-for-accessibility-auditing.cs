@@ -1,56 +1,62 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Load the Visio diagram (replace with your file path)
-            using (Diagram diagram = new Diagram("input.vsdx"))
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Check if the shape contains visible text
-                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                        {
-                            Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                            // If the shape has character formatting, log each character's font size
-                            if (shape.Chars != null && shape.Chars.Count > 0)
-                            {
-                                int charIndex = 0;
-                                foreach (Aspose.Diagram.Char ch in shape.Chars)
-                                {
-                                    // Font size is stored in inches; convert to points (1 inch = 72 points)
-                                    double sizeInInches = ch.Size.Value;
-                                    double sizeInPoints = sizeInInches * 72.0;
-                                    Console.WriteLine($"  Char {charIndex}: Font = {ch.FontName.Value}, Size = {sizeInPoints:F2} pt");
-                                    charIndex++;
-                                }
-                            }
-                            else
-                            {
-                                // No character-level formatting; attempt to infer size from the shape's default text style
-                                // (If needed, additional logic can be added here)
-                                Console.WriteLine("  No character formatting found.");
-                            }
+                    // Check if the shape contains text
+                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                    {
+                        // Iterate over each character run to retrieve font size
+                        for (int i = 0; i < shape.Chars.Count; i++)
+                        {
+                            Aspose.Diagram.Char ch = shape.Chars[i];
+                            double fontSize = ch.Size.Value; // Font size in points
+
+                            // Log the font size information
+                            Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shape.Name}, Char Index: {i}, Font Size: {fontSize} pt");
                         }
                     }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,94 +1,97 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Uniform margin value in inches (e.g., 0.1 inch)
-        private const double UniformMarginInches = 0.1;
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: BatchParagraphMargin <inputFolder> <outputFolder>");
+            return;
+        }
 
-        static void Main(string[] args)
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+
+        // Verify input folder exists.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Verify (or create) output folder.
+        if (!Directory.Exists(outputFolder))
         {
             try
             {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
 
-                // Input folder containing diagram files
-                string inputFolder = @"C:\Diagrams\Input";
-                // Output folder for processed diagrams
-                string outputFolder = @"C:\Diagrams\Output";
+        // Get all VSDX files in the input folder.
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+        if (diagramFiles.Length == 0)
+        {
+            Console.Error.WriteLine($"No .vsdx files found in folder: {inputFolder}");
+            return;
+        }
 
-                // Ensure output folder exists
-                if (!Directory.Exists(outputFolder))
+        // Uniform margin value (in inches) to apply to each paragraph.
+        double uniformMarginInches = 0.2;
+
+        foreach (string inputPath in diagramFiles)
+        {
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                continue;
+            }
+
+            string fileName = Path.GetFileName(inputPath);
+            string outputPath = Path.Combine(outputFolder, fileName);
+
+            try
+            {
+                // Load diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    Directory.CreateDirectory(outputFolder);
-                }
-
-                // Process all supported Visio files in the input folder
-                string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx");
-                foreach (string filePath in diagramFiles)
-                {
-                    try
+                    // Iterate through each page.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Load diagram
-                        Diagram diagram = new Diagram(filePath);
-
-                        // Iterate through all pages
-                        foreach (Page page in diagram.Pages)
+                        // Iterate through each shape on the page.
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through all shapes on the page
-                            foreach (Shape shape in page.Shapes)
+                            // Iterate through each paragraph of the shape.
+                            for (int i = 0; i < shape.Paras.Count; i++)
                             {
-                                // Skip deleted shapes
-                                if (shape.Del == BOOL.True)
-                                    continue;
-
-                                // Apply uniform paragraph margins to each paragraph of the shape
-                                ApplyUniformParagraphMargins(shape, UniformMarginInches);
+                                // Set left and right indent (margin) to the uniform value.
+                                shape.Paras[i].IndLeft.Value = uniformMarginInches;
+                                shape.Paras[i].IndRight.Value = uniformMarginInches;
                             }
                         }
-
-                        // Build output file path preserving original file name
-                        string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                        // Save the modified diagram
-                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                    }
+
+                    // Save the modified diagram to the output folder, preserving VSDX format.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine("Batch processing completed.");
-
+                Console.WriteLine($"Processed and saved: {outputPath}");
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Sets uniform left, right, and first line indentation for all paragraphs of a shape.
-        /// </summary>
-        /// <param name="shape">The shape whose paragraphs will be modified.</param>
-        /// <param name="marginInches">Margin value in inches.</param>
-        private static void ApplyUniformParagraphMargins(Shape shape, double marginInches)
-        {
-            // Ensure the shape has at least one paragraph
-            if (shape.Paras == null || shape.Paras.Count == 0)
-                return;
-
-            // Iterate through each paragraph and set margins
-            foreach (Para para in shape.Paras)
-            {
-                // Indentation from left edge
-                para.IndLeft.Value = marginInches;
-                // Indentation from right edge
-                para.IndRight.Value = marginInches;
-                // First line indentation
-                para.IndFirst.Value = marginInches;
+                // Report any errors that occur during processing of this file.
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }
     }
+}

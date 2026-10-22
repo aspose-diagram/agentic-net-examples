@@ -7,14 +7,27 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt user for the Visio file path
-        Console.Write("Enter the full path to the Visio file: ");
-        string visioPath = Console.ReadLine();
-
-        // Guard: ensure the file path is not empty and the file exists
-        if (string.IsNullOrWhiteSpace(visioPath) || !File.Exists(visioPath))
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string visioPath = args[0];
+        // Guard: check if the Visio file exists
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Visio file not found: {visioPath}");
+            return;
+        }
+
+        // Optional second argument: output directory
+        string outputDir = args.Length > 1 ? args[1] : Path.GetDirectoryName(visioPath);
+        // Guard: check if the output directory exists
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
             return;
         }
 
@@ -23,48 +36,56 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(visioPath);
 
-            // Prepare output folder for the per‑page PDFs
-            string outputFolder = Path.Combine(Path.GetDirectoryName(visioPath) ?? "", "PdfPages");
-            Directory.CreateDirectory(outputFolder);
-
             // Iterate through each page in the diagram
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
                 // Retrieve the current page
-                Page page = diagram.Pages[i];
+                Page page = diagram.Pages[pageIndex];
 
-                // Build a safe file name for the page PDF
-                string pageName = string.IsNullOrWhiteSpace(page.NameU) ? $"Page_{page.ID}" : page.NameU;
-                string safePageName = string.Concat(pageName.Split(Path.GetInvalidFileNameChars()));
-                string pdfPath = Path.Combine(outputFolder, $"{safePageName}.pdf");
+                // Define the output PDF file name for this page
+                string pdfPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.pdf");
 
                 // Configure PDF save options to export only the current page
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    PageIndex = i,          // zero‑based index of the page to export
-                    PageCount = 1,          // export a single page
-                    ExportHiddenPage = false,
-                    DefaultFont = "Arial"
-                };
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageIndex = pageIndex;   // zero‑based index of the page to start saving
+                pdfOptions.PageCount = 1;           // export a single page
+                pdfOptions.ExportHiddenPage = false;
 
-                // Save the single page as PDF
+                // Save the selected page to a PDF file
                 diagram.Save(pdfPath, pdfOptions);
 
-                // NOTE: Adding bookmarks for each shape requires Aspose.Pdf's OutlineItem class.
-                // The current project does not reference Aspose.Pdf, so bookmark creation is omitted
-                // to keep the code compilable. If Aspose.Pdf is added, the bookmark logic can be
-                // re‑introduced here.
+                // Load the generated PDF to add bookmarks for each shape
+                Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(pdfPath);
 
-                Console.WriteLine($"Exported page '{pageName}' to PDF: {pdfPath}");
+                // The PDF contains only one page; retrieve it (Aspose.Pdf pages are 1‑based)
+                Aspose.Pdf.Page pdfPage = pdfDoc.Pages[1];
+
+                // Add a bookmark (outline item) for each shape on the Visio page
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                {
+                    // Use the shape's NameU if available; otherwise fall back to its ID
+                    string title = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : $"Shape {shape.ID}";
+
+                    // Create a new bookmark linked to the single PDF page
+                    Aspose.Pdf.OutlineItemCollection bookmark = new Aspose.Pdf.OutlineItemCollection(pdfDoc.Outlines)
+                    {
+                        Title = title,
+                        Action = new Aspose.Pdf.Annotations.GoToAction(pdfPage)
+                    };
+
+                    // Add the bookmark to the PDF's outline collection
+                    pdfDoc.Outlines.Add(bookmark);
+                }
+
+                // Save the PDF with the newly added bookmarks
+                pdfDoc.Save(pdfPath);
+                Console.WriteLine($"Page {pageIndex + 1} saved to {pdfPath}");
             }
-
-            Console.WriteLine("Batch conversion completed.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

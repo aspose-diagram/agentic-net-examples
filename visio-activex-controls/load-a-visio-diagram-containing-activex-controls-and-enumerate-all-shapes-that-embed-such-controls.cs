@@ -7,44 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file that contains ActiveX controls
-        string inputPath = "input.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile>");
+            return;
+        }
 
-        // Guard: ensure the input file exists before proceeding
+        string inputPath = args[0];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                bool anyActiveX = false;
+
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // If the shape embeds an ActiveX control, ActiveXControl will not be null
-                    if (shape.ActiveXControl != null)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Output relevant information about the shape and its ActiveX control
-                        Console.WriteLine(
-                            $"Page: {page.NameU}, " +               // Page name (string)
-                            $"Shape ID: {shape.ID}, " +            // Unique shape identifier
-                            $"Shape Name: {shape.NameU}, " +       // Shape name (string)
-                            $"Control Type: {shape.ActiveXControl.Type}");
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if the shape contains an ActiveX control.
+                        if (shape.ActiveXControl != null)
+                        {
+                            anyActiveX = true;
+
+                            // Output basic information about the shape.
+                            Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}, NameU: {shape.NameU}");
+
+                            // Output the type of the embedded ActiveX control.
+                            // The ControlType property is accessed via the Type member.
+                            Console.WriteLine($"  ActiveX Control Type: {shape.ActiveXControl.Type}");
+                        }
                     }
+                }
+
+                if (!anyActiveX)
+                {
+                    Console.WriteLine("No shapes with embedded ActiveX controls were found.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -3,101 +3,99 @@ using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Folder containing Visio files to benchmark
-        string inputFolder = @"C:\VisioFiles";
-        // Folder to save modified files
-        string outputFolder = @"C:\VisioFiles\Modified";
-
-        if (!Directory.Exists(outputFolder))
-            Directory.CreateDirectory(outputFolder);
-
-        string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
-        foreach (string filePath in files)
+        // Validate that at least one diagram file path is provided.
+        if (args.Length == 0)
         {
-            Console.WriteLine($"Processing: {Path.GetFileName(filePath)}");
-            ProcessDiagram(filePath, outputFolder);
+            Console.Error.WriteLine("Usage: Program <diagramPath1> [<diagramPath2> ...]");
+            return;
         }
 
-        Console.WriteLine("Benchmark completed.");
-    }
-
-    static void ProcessDiagram(string filePath, string outputFolder)
-    {
-        // Load diagram
-        Diagram diagram = new Diagram(filePath);
-
-        // Stopwatch for retrieval
-        Stopwatch retrievalSw = Stopwatch.StartNew();
-
-        // Collect all shapes that contain ActiveX controls
-        var activeXShapes = new System.Collections.Generic.List<Shape>();
-        foreach (Page page in diagram.Pages)
+        // Process each diagram file supplied on the command line.
+        foreach (string diagramPath in args)
         {
-            foreach (Shape shape in page.Shapes)
+            // Guard against missing files.
+            if (!File.Exists(diagramPath))
             {
-                if (shape.ActiveXControl != null)
+                Console.Error.WriteLine($"File not found: {diagramPath}");
+                continue;
+            }
+
+            try
+            {
+                // Load the diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    activeXShapes.Add(shape);
+                    int totalActiveXCount = 0;
+                    Stopwatch sw = Stopwatch.StartNew();
+
+                    // Iterate through all pages in the diagram.
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through all shapes on the current page.
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip logically deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Retrieve the ActiveX control attached to the shape, if any.
+                            if (shape.ActiveXControl != null)
+                            {
+                                totalActiveXCount++;
+
+                                // Enable the control (property expects a native bool, not BOOL).
+                                shape.ActiveXControl.IsEnabled = true;
+
+                                // Determine the specific control type to apply type‑specific modifications.
+                                ControlType ctrlType = shape.ActiveXControl.Type;
+                                switch (ctrlType)
+                                {
+                                    case ControlType.CommandButton:
+                                        // Cast to CommandButtonActiveXControl and modify its Caption.
+                                        CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                                        cmdBtn.Caption = "Updated Caption";
+                                        break;
+
+                                    case ControlType.TextBox:
+                                        // Cast to TextBoxActiveXControl and modify its Text.
+                                        TextBoxActiveXControl txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                                        txtBox.Text = "Updated Text";
+                                        break;
+
+                                    case ControlType.Image:
+                                        // Cast to ImageActiveXControl and clear its picture (example operation).
+                                        ImageActiveXControl imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
+                                        imgCtrl.Picture = new byte[0];
+                                        break;
+
+                                    // Additional control types can be handled here as needed.
+                                    default:
+                                        // No specific modification for unsupported control types.
+                                        break;
+                                }
+                            }
+                        }
+                    }
+
+                    sw.Stop();
+
+                    // Output benchmark results for the current file.
+                    Console.WriteLine($"File: {diagramPath}");
+                    Console.WriteLine($"ActiveX controls processed: {totalActiveXCount}");
+                    Console.WriteLine($"Elapsed time: {sw.ElapsedMilliseconds} ms");
+                    Console.WriteLine(new string('-', 40));
                 }
             }
-        }
-
-        retrievalSw.Stop();
-        Console.WriteLine($"  Retrieval time: {retrievalSw.ElapsedMilliseconds} ms (found {activeXShapes.Count} controls)");
-
-        // Stopwatch for modification
-        Stopwatch modifySw = Stopwatch.StartNew();
-
-        foreach (Shape shape in activeXShapes)
-        {
-            // Determine control type and modify a representative property
-            switch (shape.ActiveXControl.Type)
+            catch (Exception ex)
             {
-                case ControlType.CommandButton:
-                    var cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                    cmdBtn.Caption = "Modified";
-                    break;
-
-                case ControlType.CheckBox:
-                    var chkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-                    chkBox.Value = CheckValueType.Checked;
-                    break;
-
-                case ControlType.TextBox:
-                    var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
-                    txtBox.Text = "Modified";
-                    break;
-
-                case ControlType.SpinButton:
-                    var spinBtn = (SpinButtonActiveXControl)shape.ActiveXControl;
-                    spinBtn.Position = 10;
-                    break;
-
-                case ControlType.Image:
-                    var imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
-                    // Example: clear image data (set empty byte array)
-                    imgCtrl.Picture = new byte[0];
-                    break;
-
-                // Add other control types as needed
-                default:
-                    // No modification for unhandled types
-                    break;
+                // Log any errors that occur during processing of the current file.
+                Console.Error.WriteLine($"Error processing file '{diagramPath}': {ex.Message}");
             }
         }
-
-        modifySw.Stop();
-        Console.WriteLine($"  Modification time: {modifySw.ElapsedMilliseconds} ms");
-
-        // Save modified diagram
-        string outputPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + "_mod.vsdx");
-        diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        Console.WriteLine($"  Saved modified diagram to: {outputPath}");
     }
 }

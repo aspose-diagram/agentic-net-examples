@@ -6,54 +6,84 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Asynchronously loads a VSDX file into a Diagram object.
-    private static async Task<Diagram> LoadDiagramAsync(string path)
+    static void Main(string[] args)
     {
-        // Open the file with asynchronous I/O enabled.
-        using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
-        var memoryStream = new MemoryStream();
-        await fileStream.CopyToAsync(memoryStream);
-        memoryStream.Position = 0;
-
-        // Construct the Diagram from the in‑memory stream.
-        return new Diagram(memoryStream);
-    }
-
-    static async Task Main(string[] args)
-    {
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.WriteLine("Usage: <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> [output.vsdx]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_themed.vsdx");
 
         // Load the diagram asynchronously.
-        Diagram diagram = await LoadDiagramAsync(inputPath);
+        Diagram diagram = null;
         try
         {
-            // Gather pages into a typed list for Parallel.ForEach (type inference does not work directly on PageCollection).
-            var pages = new List<Page>();
-            foreach (Page p in diagram.Pages)
-                pages.Add(p);
+            diagram = LoadDiagramAsync(inputPath).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-            // Apply a preset theme to each page concurrently.
+        // Apply a preset theme to each page concurrently.
+        try
+        {
+            // Collect pages into a typed list because PageCollection is not generic.
+            List<Page> pages = new List<Page>();
+            foreach (Page p in diagram.Pages)
+            {
+                pages.Add(p);
+            }
+
+            // Use Parallel.ForEach to set the theme on each page.
             Parallel.ForEach(pages, page =>
             {
+                // Apply the Bubble preset theme.
                 page.PresetTheme = PresetThemeValue.Bubble;
-                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                // Optionally, set a variant if desired (using a known variant value).
+                // page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
             });
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
         }
-        finally
+        catch (Exception ex)
         {
-            // Ensure resources are released.
-            diagram.Dispose();
+            Console.Error.WriteLine($"Error applying theme: {ex.Message}");
+            return;
         }
+
+        // Save the modified diagram.
+        try
+        {
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+        }
+    }
+
+    // Asynchronously loads a Diagram from the specified file path.
+    private static async Task<Diagram> LoadDiagramAsync(string path)
+    {
+        return await Task.Run(() =>
+        {
+            // The Diagram constructor performs the loading.
+            return new Diagram(path);
+        });
     }
 }

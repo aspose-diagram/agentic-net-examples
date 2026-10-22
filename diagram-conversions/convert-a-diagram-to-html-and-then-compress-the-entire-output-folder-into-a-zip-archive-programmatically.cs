@@ -2,52 +2,86 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
-class DiagramToHtmlAndZip
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolderPath> <outputZipPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputFolder = args[1];
+        string zipPath = args[2];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Ensure the output folder exists.
         try
         {
-
-            // Path to the source Visio diagram file
-            string sourceDiagramPath = @"C:\Diagrams\sample.vsdx";
-
-            // Folder where HTML files will be saved
-            string htmlOutputFolder = @"C:\Diagrams\OutputHtml";
-
-            // Path for the resulting ZIP archive
-            string zipOutputPath = @"C:\Diagrams\DiagramHtml.zip";
-
-            // Ensure the output folder exists; if it does, clean it
-            if (Directory.Exists(htmlOutputFolder))
-            {
-                Directory.Delete(htmlOutputFolder, true);
-            }
-            Directory.CreateDirectory(htmlOutputFolder);
-
-            // Load the Visio diagram using Aspose.Diagram
-            Diagram diagram = new Diagram(sourceDiagramPath);
-
-            // Save the diagram as HTML. This creates an index.html file and a resources folder.
-            // The Save method with a folder path and HTML format generates all required files.
-            diagram.Save(htmlOutputFolder, SaveFileFormat.Html);
-
-            // If a previous ZIP file exists, delete it
-            if (File.Exists(zipOutputPath))
-            {
-                File.Delete(zipOutputPath);
-            }
-
-            // Compress the entire HTML output folder into a ZIP archive
-            ZipFile.CreateFromDirectory(htmlOutputFolder, zipOutputPath, CompressionLevel.Optimal, false);
-
-            Console.WriteLine("Diagram converted to HTML and zipped successfully.");
-
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
+            return;
         }
+
+        // Load the Visio diagram and export each page to HTML.
+        try
+        {
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and save each as a separate HTML file.
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Configure HTML export options for a single page.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    PageIndex = i,   // Zero‑based page index.
+                    PageCount = 1    // Export only the current page.
+                };
+
+                // Build the output HTML file name.
+                string htmlFile = Path.Combine(outputFolder, $"page_{i + 1}.html");
+
+                // Save the current page as HTML.
+                diagram.Save(htmlFile, htmlOptions);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            return;
+        }
+
+        // Compress the output folder into a ZIP archive.
+        try
+        {
+            // If a ZIP file already exists, delete it to avoid IOException.
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
+
+            ZipFile.CreateFromDirectory(outputFolder, zipPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error creating ZIP archive: {ex.Message}");
+            return;
+        }
+
+        Console.WriteLine("Conversion and compression completed successfully.");
     }
 }

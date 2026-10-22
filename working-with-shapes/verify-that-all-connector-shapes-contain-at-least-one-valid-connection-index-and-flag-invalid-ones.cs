@@ -1,71 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio file to be validated.
-                // Replace with the actual file path as needed.
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                bool hasInvalidConnectors = false;
-
-                // Iterate through all pages in the diagram.
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify connector shapes.
-                        // Connectors are 1‑D shapes (OneD == true) and typically use the "Dynamic connector" master.
-                        if (shape.OneD && shape.Master != null && shape.Master.Name != null &&
-                            shape.Master.Name.IndexOf("Dynamic connector", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Identify connector shapes (1‑D shapes).
+                        if (shape.OneD)
                         {
-                            long connectorId = shape.ID;
                             bool hasConnection = false;
 
-                            // Examine the Connect collection for any connection involving this connector.
+                            // Examine the page's Connects collection to see if this connector participates in any connection.
                             foreach (Connect conn in page.Connects)
                             {
-                                if (conn.FromSheet == connectorId || conn.ToSheet == connectorId)
+                                if (conn.FromSheet == shape.ID || conn.ToSheet == shape.ID)
                                 {
                                     hasConnection = true;
                                     break;
                                 }
                             }
 
-                            // If no connection was found, flag the connector as invalid.
+                            // Flag connectors without any connections.
                             if (!hasConnection)
                             {
-                                hasInvalidConnectors = true;
-                                Console.WriteLine($"Invalid connector found: Shape ID = {connectorId}, Name = {shape.Name}");
+                                Console.WriteLine($"Invalid connector found: Shape ID {shape.ID}, NameU \"{shape.NameU}\", on Page ID {page.ID}");
                             }
                         }
                     }
                 }
-
-                if (hasInvalidConnectors)
-                {
-                    // Optionally, throw an exception to indicate validation failure.
-                    throw new Exception("One or more connector shapes lack valid connection indexes.");
-                }
-                else
-                {
-                    Console.WriteLine("All connector shapes contain at least one valid connection index.");
-                }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

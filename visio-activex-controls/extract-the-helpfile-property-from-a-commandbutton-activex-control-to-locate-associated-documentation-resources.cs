@@ -1,44 +1,64 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard: ensure the Visio file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Path to the Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Iterate through all pages in the diagram
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                foreach (Shape shape in page.Shapes)
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate through all shapes on the current page
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                 {
-                    // Ensure the shape contains an ActiveX control of type CommandButton
-                    if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CommandButton)
-                    {
-                        // Cast to the specific CommandButton control (optional, shown for completeness)
-                        CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)shape.ActiveXControl;
+                    Shape shape = page.Shapes[shapeIndex];
 
-                        // Extract the HelpTopic value (the help file or topic associated with the control)
-                        string helpFile = shape.Help.HelpTopic.Value;
+                    // Check if the shape contains an ActiveX control
+                    if (shape.ActiveXControl == null)
+                        continue;
 
-                        Console.WriteLine($"Shape ID {shape.ID} - HelpFile: {helpFile}");
-                    }
+                    // Verify the control is a CommandButton
+                    if (shape.ActiveXControl.Type != ControlType.CommandButton)
+                        continue;
+
+                    // Retrieve the HelpTopic value (the help file/path)
+                    // Note: HelpTopic is a Str2Value; we access its .Value property to get the string.
+                    string helpTopic = shape.Help.HelpTopic.Value;
+
+                    // Output the shape ID and associated help topic
+                    Console.WriteLine($"Page {page.ID}, Shape ID {shape.ID}: HelpTopic = \"{helpTopic}\"");
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

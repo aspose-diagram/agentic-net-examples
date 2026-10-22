@@ -1,74 +1,126 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Xml.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expected arguments: diagramPath, xmlPath, outputPath
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <xmlPath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string xmlPath = args[1];
+        string outputPath = args[2];
+
+        // Guard for input files
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(xmlPath))
+        {
+            Console.Error.WriteLine($"XML file not found: {xmlPath}");
+            return;
+        }
+
+        // Load XML document containing comments
+        XDocument xDoc;
+        try
+        {
+            xDoc = XDocument.Load(xmlPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load XML file: {ex.Message}");
+            return;
+        }
+
+        // Load Visio diagram inside a using block as required
+        try
+        {
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-
-                // Paths – adjust as needed
-                string diagramPath = "input.vsdx";
-                string xmlCommentsPath = "comments.xml";
-                string outputDiagramPath = "output_with_comments.vsdx";
-
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Load the XML containing comments
-                XDocument xDoc = XDocument.Load(xmlCommentsPath);
-
-                // Build a lookup of shape ID to list of comment texts
-                var commentsByShapeId = new Dictionary<long, List<string>>();
-
-                foreach (XElement commentElem in xDoc.Root.Elements("Comment"))
+                // Iterate over each <Comment> element in the XML
+                foreach (XElement commentElement in xDoc.Root.Elements("Comment"))
                 {
-                    // Expect an attribute named "ShapeId"
-                    XAttribute idAttr = commentElem.Attribute("ShapeId");
-                    if (idAttr == null) continue;
+                    // Expected attributes: ShapeID (numeric) and Text (string)
+                    XAttribute shapeIdAttr = commentElement.Attribute("ShapeID");
+                    XAttribute textAttr = commentElement.Attribute("Text");
 
-                    if (!long.TryParse(idAttr.Value, out long shapeId)) continue;
-
-                    string commentText = commentElem.Value ?? string.Empty;
-
-                    if (!commentsByShapeId.TryGetValue(shapeId, out List<string> list))
+                    if (shapeIdAttr == null || textAttr == null)
                     {
-                        list = new List<string>();
-                        commentsByShapeId[shapeId] = list;
+                        Console.Error.WriteLine("Comment element missing ShapeID or Text attribute; skipping.");
+                        continue;
                     }
-                    list.Add(commentText);
-                }
 
-                // Iterate through all pages and shapes, attaching comments where applicable
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    if (!long.TryParse(shapeIdAttr.Value, out long shapeId))
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True) continue;
+                        Console.Error.WriteLine($"Invalid ShapeID value: {shapeIdAttr.Value}; skipping.");
+                        continue;
+                    }
 
-                        if (commentsByShapeId.TryGetValue(shape.ID, out List<string> shapeComments))
+                    string commentText = textAttr.Value;
+
+                    // Search for the shape with the given ID across all pages
+                    bool shapeFound = false;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Attempt to retrieve the shape by ID
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        if (shape != null)
                         {
-                            foreach (string txt in shapeComments)
+                            shapeFound = true;
+
+                            // Use shape's PinX and PinY as comment location
+                            double pinX = shape.XForm.PinX.Value;
+                            double pinY = shape.XForm.PinY.Value;
+
+                            // Add comment to the page at the shape's location
+                            page.AddComment(pinX, pinY, commentText);
+
+                            // Retrieve the newly added annotation (last in the collection)
+                            int annCount = page.PageSheet.Annotations.Count;
+                            if (annCount > 0)
                             {
-                                // Add a shape‑level comment
-                                page.AddComment(shape, txt);
+                                Annotation ann = page.PageSheet.Annotations[annCount - 1];
+                                // Link the annotation to the shape
+                                ann.ShapeID = (int)shapeId;
                             }
+
+                            // No need to continue searching other pages for this shape
+                            break;
                         }
                     }
+
+                    if (!shapeFound)
+                    {
+                        Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page; comment skipped.");
+                    }
                 }
 
-                // Save the updated diagram
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the output path
+                try
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+                }
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

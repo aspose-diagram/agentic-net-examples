@@ -1,53 +1,69 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: input Visio file path and output text file path
+        if (args.Length < 2)
         {
-            // Expect two arguments: input Visio file path and output text file path
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: TextExtractionExample <inputVisioFile> <outputTextFile>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputTextFile>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Collect plain text from each shape
-            List<string> extractedTexts = new List<string>();
+            // Collect plain text from all shapes
+            List<string> texts = new List<string>();
 
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Retrieve the concatenated plain text of the shape
+                    string shapeText = shape.Text?.Value?.Text;
 
-                    // Retrieve concatenated plain text of the shape
-                    string shapeText = shape.Text.Value.Text;
+                    // If the text is null, treat as empty string
+                    if (shapeText == null)
+                        shapeText = string.Empty;
 
+                    // Trim whitespace and check if the shape contains non‑empty text
                     if (!string.IsNullOrWhiteSpace(shapeText))
                     {
-                        extractedTexts.Add(shapeText.Trim());
+                        // Add the trimmed text to the collection
+                        texts.Add(shapeText.Trim());
                     }
                 }
             }
 
-            // Sort texts alphabetically (case‑insensitive)
-            extractedTexts.Sort(StringComparer.OrdinalIgnoreCase);
+            // Sort the collected texts alphabetically (case‑insensitive)
+            texts.Sort(StringComparer.OrdinalIgnoreCase);
 
-            // Write the sorted list to the output file
-            File.WriteAllLines(outputPath, extractedTexts);
-
-            Console.WriteLine($"Extracted {extractedTexts.Count} text items to '{outputPath}'.");
+            // Write the sorted texts to the output file, one per line
+            File.WriteAllLines(outputPath, texts);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

@@ -1,67 +1,96 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: input Visio file path and maximum allowed size increase in bytes
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <maxSizeIncreaseBytes>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string limitArg = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse size limit
+        if (!long.TryParse(limitArg, out long maxIncreaseBytes) || maxIncreaseBytes < 0)
+        {
+            Console.Error.WriteLine("Invalid size increase limit. It must be a non‑negative integer.");
+            return;
+        }
+
         try
         {
-
-            // Input Visio file, output file and allowed size increase (in bytes)
-            string inputPath = "input.vsdx";
-            string outputPath = "output_with_watermark.vsdx";
-            long maxAllowedIncrease = 1024; // e.g., 1 KB
-
-            // Load the diagram
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Get original file size
-                long originalSize = new FileInfo(inputPath).Length;
+                // Ensure the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                // Assume we add watermark to the first page
+                // Access the first page
                 Page page = diagram.Pages[0];
 
                 // Retrieve page dimensions (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Add a full‑page watermark text
-                // PinX and PinY are the lower‑left corner of the text box
-                double pinX = 0;
-                double pinY = 0;
-                string watermarkText = "CONFIDENTIAL";
-                string fontName = "Calibri";
-                string fontColor = "#A5A5A5"; // light gray
-                double fontSizeInPoints = 72; // 1 inch height
-                double fontSizeInInches = fontSizeInPoints / 72.0;
+                // Add a full‑page watermark using the correct AddText overload (positional arguments)
+                // Font size is specified in inches (e.g., 0.25 inches ≈ 18 points)
+                page.AddText(
+                    0,               // pinX
+                    0,               // pinY
+                    pageWidth,       // width
+                    pageHeight,      // height
+                    "Watermark",     // text
+                    "Calibri",       // fontName
+                    "#a5a5a5",       // fontColor (hex)
+                    0.25);           // fontSize (in inches)
 
-                page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSizeInInches);
+                // Save the modified diagram to a temporary file
+                string tempPath = Path.Combine(Path.GetTempPath(), $"watermarked_{Guid.NewGuid()}.vsdx");
+                diagram.Save(tempPath, SaveFileFormat.Vsdx);
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Compare file sizes
+                long originalSize = new FileInfo(inputPath).Length;
+                long newSize = new FileInfo(tempPath).Length;
+                long sizeIncrease = newSize - originalSize;
+
+                Console.WriteLine($"Original size: {originalSize} bytes");
+                Console.WriteLine($"Watermarked size: {newSize} bytes");
+                Console.WriteLine($"Size increase: {sizeIncrease} bytes");
+
+                // Verify the increase does not exceed the specified limit
+                if (sizeIncrease > maxIncreaseBytes)
+                {
+                    Console.Error.WriteLine($"Error: Size increase exceeds the allowed limit of {maxIncreaseBytes} bytes.");
+                    // Clean up the temporary file
+                    File.Delete(tempPath);
+                    return;
+                }
+
+                Console.WriteLine("Watermark added successfully within the size limit.");
+                // The watermarked file remains in the temporary folder for further use if needed
             }
-
-            // Get new file size
-            long newSize = new FileInfo(outputPath).Length;
-            long sizeIncrease = newSize - new FileInfo(inputPath).Length;
-
-            // Verify the increase does not exceed the allowed limit
-            if (sizeIncrease > maxAllowedIncrease)
-            {
-                throw new Exception($"Watermark added {sizeIncrease} bytes, which exceeds the allowed increase of {maxAllowedIncrease} bytes.");
-            }
-            else
-            {
-                Console.WriteLine($"Watermark added successfully. Size increase: {sizeIncrease} bytes (limit: {maxAllowedIncrease} bytes).");
-            }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose or IO exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

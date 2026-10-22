@@ -1,51 +1,111 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
+    {
+        // Expect at least two arguments: input diagram path and output directory.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDirectory> [shapeId]");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string outputDir = args[1];
+        long? targetShapeId = null;
+
+        // Optional third argument specifies a single shape ID to export.
+        if (args.Length >= 3 && long.TryParse(args[2], out long parsedId))
+        {
+            targetShapeId = parsedId;
+        }
+
+        // Guard: ensure the input diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            return;
+        }
+
+        // Guard: ensure the output directory exists or create it.
+        try
+        {
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error creating output directory '{outputDir}': {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // If a specific shape ID was provided, attempt to locate it on the current page.
+                if (targetShapeId.HasValue)
+                {
+                    Shape shape = page.Shapes.GetShape(targetShapeId.Value);
+                    if (shape != null)
+                    {
+                        ExportShapeText(shape, outputDir);
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"Shape with ID {targetShapeId.Value} not found on page {page.Name}.");
+                    }
+
+                    // Since a specific shape was requested, we can stop after processing the first match.
+                    break;
+                }
+                else
+                {
+                    // Export text for every shape on the page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        ExportShapeText(shape, outputDir);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Extracts the plain‑text content of a shape's text block and writes it to a .txt file.
+    /// </summary>
+    /// <param name="shape">The shape whose text is to be exported.</param>
+    /// <param name="outputDir">The directory where the text file will be saved.</param>
+    private static void ExportShapeText(Shape shape, string outputDir)
     {
         try
         {
+            // Retrieve the concatenated plain text of the shape.
+            string textContent = shape.Text.Value.ToString();
 
-            // Path to the Visio file to be processed
-            string visioPath = "input.vsdx";
+            // Use the shape's ID to create a unique filename.
+            string fileName = $"shape_{shape.ID}.txt";
+            string outputPath = Path.Combine(outputDir, fileName);
 
-            // Load the diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Access the first page (adjust index if needed)
-            Page page = diagram.Pages[0];
-
-            // Identify the shape whose text block you want to export.
-            // Here we use a known shape ID; replace with the appropriate ID or lookup logic.
-            long shapeId = 1;
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            if (shape == null)
-            {
-                Console.WriteLine($"Shape with ID {shapeId} was not found on the page.");
-                return;
-            }
-
-            // Retrieve the plain‑text content of the shape.
-            // shape.Text.Value.Text concatenates all text runs into a single string.
-            string plainText = shape.Text.Value.Text;
-
-            // Define the output file path for the exported text.
-            string outputPath = "shape_text.txt";
-
-            // Write the extracted text to the file.
-            File.WriteAllText(outputPath, plainText);
-
-            Console.WriteLine($"Shape text has been exported to '{outputPath}'.");
-
+            // Write the text content to the file.
+            File.WriteAllText(outputPath, textContent);
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Failed to export text for shape ID {shape.ID}: {ex.Message}");
         }
     }
 }

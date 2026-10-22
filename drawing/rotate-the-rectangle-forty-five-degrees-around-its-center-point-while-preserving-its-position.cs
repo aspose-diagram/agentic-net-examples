@@ -1,34 +1,55 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Define rectangle center position and size
-        double pinX = 5.0;   // X coordinate of the rectangle center
-        double pinY = 5.0;   // Y coordinate of the rectangle center
-        double width = 2.0;  // Width of the rectangle
-        double height = 1.0; // Height of the rectangle
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-        // Draw the rectangle on the page
-        long rectId = page.DrawRectangle(pinX, pinY, width, height);
+        try
+        {
+            // Load the existing diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Retrieve the shape object using its ID
-        Shape rectShape = page.Shapes.GetShape((int)rectId);
+            // Access the first page (index 0).
+            Page page = diagram.Pages[0];
 
-        // Rotate the rectangle 45 degrees around its center
-        rectShape.SetAngle(45);
+            // Add a rectangle shape to the page.
+            // Parameters: pinX, pinY, master name, isCalculate (false to skip auto‑layout).
+            long rectId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-        // Save the diagram to a VSDX file
-        diagram.Save("RotatedRectangle.vsdx", SaveFileFormat.Vsdx);
+            // Retrieve the shape object using its ID.
+            Shape rectShape = page.Shapes.GetShape((int)rectId);
+
+            // Rotate the rectangle 45 degrees around its center.
+            // SetAngle rotates about the shape's center and does not change its position.
+            rectShape.SetAngle(45);
+
+            // Save the modified diagram to the specified output path in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
 }

@@ -4,34 +4,84 @@ using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
         // Retrieve source and destination directories from environment variables
         string sourceDir = Environment.GetEnvironmentVariable("SOURCE_DIR");
-        string destDir   = Environment.GetEnvironmentVariable("DEST_DIR");
+        string destDir = Environment.GetEnvironmentVariable("DEST_DIR");
 
         // Validate that the environment variables are set
-        if (string.IsNullOrEmpty(sourceDir) || string.IsNullOrEmpty(destDir))
+        if (string.IsNullOrWhiteSpace(sourceDir))
         {
-            Console.WriteLine("Please set SOURCE_DIR and DEST_DIR environment variables.");
+            Console.Error.WriteLine("Environment variable 'SOURCE_DIR' is not set.");
             return;
         }
 
-        // Define the diagram file name (adjust as needed)
-        string diagramFileName = "example.vdx";
+        if (string.IsNullOrWhiteSpace(destDir))
+        {
+            Console.Error.WriteLine("Environment variable 'DEST_DIR' is not set.");
+            return;
+        }
 
-        // Build full paths
-        string sourcePath = Path.Combine(sourceDir, diagramFileName);
-        string destPath   = Path.Combine(destDir, diagramFileName);
+        // Verify that the source directory exists
+        if (!Directory.Exists(sourceDir))
+        {
+            Console.Error.WriteLine($"Source directory does not exist: {sourceDir}");
+            return;
+        }
 
-        // Load the diagram from the source directory (using Aspose.Diagram load rule)
-        Diagram diagram = new Diagram(sourcePath);
+        // Ensure the destination directory exists; create it if necessary
+        if (!Directory.Exists(destDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(destDir);
+                Console.WriteLine($"Created destination directory: {destDir}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create destination directory '{destDir}': {ex.Message}");
+                return;
+            }
+        }
 
-        // Perform any processing on the diagram here (if required)
+        // Get all Visio files (VSDX) in the source directory
+        string[] diagramFiles = Directory.GetFiles(sourceDir, "*.vsdx");
 
-        // Save the diagram to the destination directory (using Aspose.Diagram save rule)
-        diagram.Save(destPath, SaveFileFormat.Vdx);
+        if (diagramFiles.Length == 0)
+        {
+            Console.WriteLine("No Visio (.vsdx) files found in the source directory.");
+            return;
+        }
 
-        Console.WriteLine($"Diagram successfully copied from '{sourcePath}' to '{destPath}'.");
+        // Process each diagram file
+        foreach (string sourceFilePath in diagramFiles)
+        {
+            // Guard: ensure the file exists before processing
+            if (!File.Exists(sourceFilePath))
+            {
+                Console.Error.WriteLine($"File not found: {sourceFilePath}");
+                continue;
+            }
+
+            string fileName = Path.GetFileName(sourceFilePath);
+            string destFilePath = Path.Combine(destDir, fileName);
+
+            try
+            {
+                // Load the diagram from the source file
+                Diagram diagram = new Diagram(sourceFilePath);
+
+                // Save the diagram to the destination directory using VSDX format
+                diagram.Save(destFilePath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Successfully copied '{fileName}' to destination.");
+            }
+            catch (Exception ex)
+            {
+                // Capture any Aspose.Diagram related errors
+                Console.Error.WriteLine($"Error processing '{fileName}': {ex.Message}");
+            }
+        }
     }
 }

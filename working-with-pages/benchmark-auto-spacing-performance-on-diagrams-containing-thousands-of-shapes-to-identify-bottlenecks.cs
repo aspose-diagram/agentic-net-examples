@@ -1,55 +1,95 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Diagram.AutoLayout;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Number of shapes to create for the benchmark
-        const int shapeCount = 5000;
-
-        // Create a new empty diagram
-        Diagram diagram = new Diagram();
-
-        // Add a new page to the diagram
-        Page page = new Page();
-        diagram.Pages.Add(page);
-
-        // Measure time taken to add shapes
-        Stopwatch swAdd = Stopwatch.StartNew();
-        for (int i = 0; i < shapeCount; i++)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            // Simple grid layout for shape placement
-            double pinX = (i % 100) * 0.5 + 1.0; // 0.5 inch spacing, offset by 1 inch
-            double pinY = (i / 100) * 0.5 + 1.0;
-            double width = 0.4;
-            double height = 0.3;
-
-            // Draw a rectangle shape; returns the shape ID (long)
-            page.DrawRectangle(pinX, pinY, width, height);
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
         }
-        swAdd.Stop();
-        Console.WriteLine($"Added {shapeCount} shapes in {swAdd.ElapsedMilliseconds} ms.");
 
-        // Prepare auto‑spacing options
-        AutoSpaceOptions autoSpaceOpts = new AutoSpaceOptions
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            DistanceInHorizontal = 0.2, // inches
-            DistanceInVertical = 0.2    // inches
-        };
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
-        // Measure time taken for auto‑spacing
-        Stopwatch swAutoSpace = Stopwatch.StartNew();
-        page.AutoSpaceShapes(page.Shapes, autoSpaceOpts);
-        swAutoSpace.Stop();
-        Console.WriteLine($"Auto‑spacing completed in {swAutoSpace.ElapsedMilliseconds} ms.");
+        try
+        {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-        // Save the diagram for visual verification (optional)
-        diagram.Save("AutoSpaceBenchmark.vsdx", SaveFileFormat.Vsdx);
-        Console.WriteLine("Diagram saved as AutoSpaceBenchmark.vsdx");
+                // Use the first page for the benchmark
+                Page page = diagram.Pages[0];
+
+                // Parameters for shape creation
+                const int shapeCount = 5000;          // Number of shapes to add (thousands)
+                const double startX = 1.0;            // Starting X position (in inches)
+                const double startY = 1.0;            // Starting Y position (in inches)
+                const double offsetX = 0.5;           // Horizontal offset between shapes
+                const double offsetY = 0.5;           // Vertical offset between shapes
+                const string masterName = "Rectangle"; // Master name for the shape
+
+                // Add a large number of shapes to the page
+                for (int i = 0; i < shapeCount; i++)
+                {
+                    double x = startX + (i % 100) * offsetX;
+                    double y = startY + (i / 100) * offsetY;
+
+                    // AddShape returns a long identifier
+                    long shapeId = page.AddShape(x, y, masterName, false);
+
+                    // Retrieve the shape object to modify its text
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt($"Shape {i + 1}"));
+                }
+
+                // Prepare AutoSpaceOptions (horizontal and vertical distances)
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+                // Set spacing values (in inches)
+                autoSpaceOptions.DistanceInHorizontal = 0.2;
+                autoSpaceOptions.DistanceInVertical = 0.2;
+
+                // Benchmark the AutoSpaceShapes operation
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                // Perform auto‑spacing on the entire shape collection of the page
+                page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+
+                stopwatch.Stop();
+
+                // Output the elapsed time
+                Console.WriteLine($"Auto‑spacing of {shapeCount} shapes completed in {stopwatch.Elapsed.TotalSeconds:F3} seconds.");
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

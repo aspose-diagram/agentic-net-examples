@@ -1,69 +1,87 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Input file paths
+        string sourcePath = "source.vsdx";
+        if (!System.IO.File.Exists(sourcePath))
         {
-            // Expect three arguments: source diagram path, target diagram path, output diagram path
-            if (args.Length < 3)
-            {
-                Console.WriteLine("Usage: DiagramMergeExample <sourcePath> <targetPath> <outputPath>");
-                return;
-            }
+            Console.Error.WriteLine($"File not found: {sourcePath}");
+            return;
+        }
+        string targetPath = "target.vsdx";
+        string outputPath = "merged_output.vsdx";
 
-            string sourcePath = args[0];
-            string targetPath = args[1];
-            string outputPath = args[2];
+        // Guard clauses to ensure files exist
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            return;
+        }
+        if (!File.Exists(targetPath))
+        {
+            Console.Error.WriteLine($"Target file not found: {targetPath}");
+            return;
+        }
 
+        try
+        {
             // Load source and target diagrams
             Diagram sourceDiagram = new Diagram(sourcePath);
             Diagram targetDiagram = new Diagram(targetPath);
 
-            // Iterate through pages (assumes same page count and order)
+            // Iterate through pages by index (assumes both diagrams have the same number of pages)
             int pageCount = Math.Min(sourceDiagram.Pages.Count, targetDiagram.Pages.Count);
-            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            for (int i = 0; i < pageCount; i++)
             {
-                Page sourcePage = sourceDiagram.Pages[pageIndex];
-                Page targetPage = targetDiagram.Pages[pageIndex];
+                Page srcPage = sourceDiagram.Pages[i];
+                Page tgtPage = targetDiagram.Pages[i];
 
-                // Iterate through shapes on the source page
-                foreach (Shape sourceShape in sourcePage.Shapes)
+                // Iterate all shapes on the source page
+                foreach (Shape srcShape in srcPage.Shapes)
                 {
-                    // Find matching shape on target page by universal name (NameU)
-                    Shape targetShape = null;
-                    foreach (Shape candidate in targetPage.Shapes)
-                    {
-                        if (candidate.NameU == sourceShape.NameU)
-                        {
-                            targetShape = candidate;
-                            break;
-                        }
-                    }
-
-                    // If no matching shape, skip
-                    if (targetShape == null)
+                    // Skip deleted shapes
+                    if (srcShape.Del == BOOL.True)
                         continue;
 
-                    // Copy EventSection cells
-                    // EventXFMod
-                    targetShape.Event.EventXFMod.Ufe.F = sourceShape.Event.EventXFMod.Ufe.F;
-                    // EventDblClick
-                    targetShape.Event.EventDblClick.Ufe.F = sourceShape.Event.EventDblClick.Ufe.F;
-                    // EventDrop
-                    targetShape.Event.EventDrop.Ufe.F = sourceShape.Event.EventDrop.Ufe.F;
-                    // EventMultiDrop
-                    targetShape.Event.EventMultiDrop.Ufe.F = sourceShape.Event.EventMultiDrop.Ufe.F;
-                    // TheText
-                    targetShape.Event.TheText.Ufe.F = sourceShape.Event.TheText.Ufe.F;
-                    // TheData
-                    targetShape.Event.TheData.Ufe.F = sourceShape.Event.TheData.Ufe.F;
+                    // Find matching shape in target page by universal name (NameU)
+                    Shape tgtShape = tgtPage.Shapes.GetShapeIncludingChild(srcShape.NameU);
+                    if (tgtShape == null)
+                        continue; // No matching shape; skip
+
+                    // Copy EventDrop formula
+                    tgtShape.Event.EventDrop.Ufe.F = srcShape.Event.EventDrop.Ufe.F;
+
+                    // Copy EventDblClick formula
+                    tgtShape.Event.EventDblClick.Ufe.F = srcShape.Event.EventDblClick.Ufe.F;
+
+                    // Copy EventXFMod formula
+                    tgtShape.Event.EventXFMod.Ufe.F = srcShape.Event.EventXFMod.Ufe.F;
+
+                    // Copy EventMultiDrop formula
+                    tgtShape.Event.EventMultiDrop.Ufe.F = srcShape.Event.EventMultiDrop.Ufe.F;
+
+                    // Copy TheText formula (if needed)
+                    tgtShape.Event.TheText.Ufe.F = srcShape.Event.TheText.Ufe.F;
+
+                    // Copy TheData formula (if needed)
+                    tgtShape.Event.TheData.Ufe.F = srcShape.Event.TheData.Ufe.F;
                 }
             }
 
-            // Save the modified target diagram
+            // Save the merged diagram to the output path in VSDX format
             targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Merged diagram saved to: {outputPath}");
+            Console.WriteLine("Diagrams merged successfully. Output saved to: " + outputPath);
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error console
+            Console.Error.WriteLine("An error occurred during diagram processing:");
+            Console.Error.WriteLine(ex.Message);
         }
     }
+}

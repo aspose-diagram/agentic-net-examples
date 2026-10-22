@@ -1,51 +1,66 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
-        string outputPath = "output.vsdx";
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Counter for generating unique identifiers
+            int shapeCounter = 1;
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Retrieve each shape by its ID using the Shapes collection
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Assign a unique identifier to an event cell.
-                    // The original EventShapeAdded cell does not exist; using EventXFMod as a valid event cell.
-                    // The formula is a string literal, so it is wrapped in double quotes.
-                    shape.Event.EventXFMod.Ufe.F = $"\"ID_{shape.ID}\"";
+                    // Ensure the shape has an Event section
+                    if (shape.Event != null)
+                    {
+                        // Assign a unique identifier to the closest equivalent event cell (EventDrop)
+                        // The formula must be a quoted string, e.g., "Shape_1"
+                        shape.Event.EventDrop.Ufe.F = $"\"Shape_{shapeCounter}\"";
+                    }
+
+                    shapeCounter++;
                 }
             }
 
-            // Save the modified diagram in VSDX format
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

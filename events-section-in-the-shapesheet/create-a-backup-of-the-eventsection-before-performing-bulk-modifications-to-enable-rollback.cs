@@ -1,164 +1,111 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    // List of event cell names to backup/restore
-    private static readonly string[] EventCellNames = new[]
+    // Holds backup of event formulas for a shape
+    private class EventBackup
     {
-        "EventXFMod",
-        "EventDblClick",
-        "EventDrop",
-        "EventMultiDrop",
-        "TheText",
-        "TheData"
-    };
+        public string EventDrop;
+        public string EventDblClick;
+        public string EventXFMod;
+        public string EventMultiDrop;
+        public string TheText;
+        public string TheData;
+    }
 
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output_modified.vsdx";
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Dictionary to store backups keyed by page index and shape ID (shape.ID is long)
+        var backup = new Dictionary<(int pageIndex, long shapeId), EventBackup>();
+
         try
         {
-
             // Load the diagram
-            string inputPath = "input.vsdx";
             Diagram diagram = new Diagram(inputPath);
 
-            // Backup EventSection for all shapes on all pages
-            var eventBackup = BackupEventSections(diagram);
-
-            try
+            // ---------- Backup Phase ----------
+            // Iterate through all pages and shapes to backup event formulas
+            for (int p = 0; p < diagram.Pages.Count; p++)
             {
-                // Perform bulk modifications on EventSection
-                ApplyBulkModifications(diagram);
-
-                // Save the modified diagram
-                string modifiedPath = "modified.vsdx";
-                diagram.Save(modifiedPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved after modifications: {modifiedPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during modification: {ex.Message}");
-                // Rollback to original EventSection values
-                RestoreEventSections(diagram, eventBackup);
-                // Save the rolled‑back diagram
-                string rollbackPath = "rollback.vsdx";
-                diagram.Save(rollbackPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Rollback performed. Diagram saved: {rollbackPath}");
-            }
-
-        }
-        catch (System.IO.FileNotFoundException ex)
-        {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-        }
-    }
-
-    // Creates a deep copy of all event cell formulas for every shape
-    private static Dictionary<long, Dictionary<string, string>> BackupEventSections(Diagram diagram)
-    {
-        var backup = new Dictionary<long, Dictionary<string, string>>();
-
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                var shapeBackup = new Dictionary<string, string>();
-                foreach (string cellName in EventCellNames)
+                Page page = diagram.Pages[p];
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Access the event cell via the Event property
-                    // Use reflection-like switch because each event has a distinct property
-                    string formula = GetEventCellFormula(shape, cellName);
-                    shapeBackup[cellName] = formula;
-                }
-                backup[shape.ID] = shapeBackup;
-            }
-        }
-
-        return backup;
-    }
-
-    // Restores event cell formulas from the backup
-    private static void RestoreEventSections(Diagram diagram, Dictionary<long, Dictionary<string, string>> backup)
-    {
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                if (!backup.TryGetValue(shape.ID, out var shapeBackup))
-                    continue;
-
-                foreach (var kvp in shapeBackup)
-                {
-                    SetEventCellFormula(shape, kvp.Key, kvp.Value);
+                    var eb = new EventBackup
+                    {
+                        EventDrop = shape.Event.EventDrop?.Ufe?.F,
+                        EventDblClick = shape.Event.EventDblClick?.Ufe?.F,
+                        EventXFMod = shape.Event.EventXFMod?.Ufe?.F,
+                        EventMultiDrop = shape.Event.EventMultiDrop?.Ufe?.F,
+                        TheText = shape.Event.TheText?.Ufe?.F,
+                        TheData = shape.Event.TheData?.Ufe?.F
+                    };
+                    backup[(p, shape.ID)] = eb;
                 }
             }
-        }
-    }
 
-    // Example bulk modification: set a new formula for EventDblClick on every shape
-    private static void ApplyBulkModifications(Diagram diagram)
-    {
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // ---------- Bulk Modification Phase ----------
+            // Example modification: set a generic event formula for all shapes
+            for (int p = 0; p < diagram.Pages.Count; p++)
             {
-                // New formula example – show an alert when double‑clicked
-                SetEventCellFormula(shape, "EventDblClick", "CALLTHIS(\"ThisDocument.ShowAlert\")");
+                Page page = diagram.Pages[p];
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the event cells exist before assigning
+                    if (shape.Event.EventDrop != null) shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                    if (shape.Event.EventDblClick != null) shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                    if (shape.Event.EventXFMod != null) shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                    if (shape.Event.EventMultiDrop != null) shape.Event.EventMultiDrop.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                    if (shape.Event.TheText != null) shape.Event.TheText.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                    if (shape.Event.TheData != null) shape.Event.TheData.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                }
             }
-        }
-    }
 
-    // Helper to get the formula string of a specific event cell
-    private static string GetEventCellFormula(Shape shape, string eventName)
-    {
-        switch (eventName)
-        {
-            case "EventXFMod":
-                return shape.Event.EventXFMod.Ufe.F;
-            case "EventDblClick":
-                return shape.Event.EventDblClick.Ufe.F;
-            case "EventDrop":
-                return shape.Event.EventDrop.Ufe.F;
-            case "EventMultiDrop":
-                return shape.Event.EventMultiDrop.Ufe.F;
-            case "TheText":
-                return shape.Event.TheText.Ufe.F;
-            case "TheData":
-                return shape.Event.TheData.Ufe.F;
-            default:
-                throw new ArgumentException($"Unsupported event cell name: {eventName}");
-        }
-    }
+            // ---------- Optional Rollback Phase ----------
+            // Restore the original formulas from backup if needed
+            for (int p = 0; p < diagram.Pages.Count; p++)
+            {
+                Page page = diagram.Pages[p];
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (backup.TryGetValue((p, shape.ID), out EventBackup eb))
+                    {
+                        if (shape.Event.EventDrop != null) shape.Event.EventDrop.Ufe.F = eb.EventDrop ?? "";
+                        if (shape.Event.EventDblClick != null) shape.Event.EventDblClick.Ufe.F = eb.EventDblClick ?? "";
+                        if (shape.Event.EventXFMod != null) shape.Event.EventXFMod.Ufe.F = eb.EventXFMod ?? "";
+                        if (shape.Event.EventMultiDrop != null) shape.Event.EventMultiDrop.Ufe.F = eb.EventMultiDrop ?? "";
+                        if (shape.Event.TheText != null) shape.Event.TheText.Ufe.F = eb.TheText ?? "";
+                        if (shape.Event.TheData != null) shape.Event.TheData.Ufe.F = eb.TheData ?? "";
+                    }
+                }
+            }
 
-    // Helper to set the formula string of a specific event cell
-    private static void SetEventCellFormula(Shape shape, string eventName, string formula)
-    {
-        switch (eventName)
+            // Save the (potentially rolled back) diagram to a new file
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
         {
-            case "EventXFMod":
-                shape.Event.EventXFMod.Ufe.F = formula;
-                break;
-            case "EventDblClick":
-                shape.Event.EventDblClick.Ufe.F = formula;
-                break;
-            case "EventDrop":
-                shape.Event.EventDrop.Ufe.F = formula;
-                break;
-            case "EventMultiDrop":
-                shape.Event.EventMultiDrop.Ufe.F = formula;
-                break;
-            case "TheText":
-                shape.Event.TheText.Ufe.F = formula;
-                break;
-            case "TheData":
-                shape.Event.TheData.Ufe.F = formula;
-                break;
-            default:
-                throw new ArgumentException($"Unsupported event cell name: {eventName}");
+            // Capture any Aspose.Diagram or IO exceptions
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,95 +1,106 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Path to the template diagram that contains the source shape with Event formulas.
+        string templatePath = "template.vsdx";
+        if (!System.IO.File.Exists(templatePath))
         {
-            try
-            {
-
-                // Load the source diagram containing the template shape
-                string sourcePath = "TemplateDiagram.vsdx";
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Assume the template shape is on the first page and has a unique NameU "TemplateShape"
-                Page page = diagram.Pages[0];
-                Shape templateShape = null;
-                foreach (Shape shp in page.Shapes)
-                {
-                    if (shp.NameU == "TemplateShape")
-                    {
-                        templateShape = shp;
-                        break;
-                    }
-                }
-
-                if (templateShape == null)
-                {
-                    throw new Exception("Template shape with NameU 'TemplateShape' not found.");
-                }
-
-                // Retrieve the master name of the template shape to reuse for new shapes
-                string masterName = templateShape.Master?.Name;
-                if (string.IsNullOrEmpty(masterName))
-                {
-                    throw new Exception("Template shape does not have an associated master.");
-                }
-
-                // Batch create new shapes and copy event formulas from the template
-                int numberOfNewShapes = 5;
-                double startX = 2.0;
-                double startY = 2.0;
-                double offsetX = 2.0;
-                double offsetY = 2.0;
-
-                for (int i = 0; i < numberOfNewShapes; i++)
-                {
-                    // Add a new shape using the same master as the template
-                    double pinX = startX + i * offsetX;
-                    double pinY = startY + i * offsetY;
-                    long newShapeId = page.AddShape(pinX, pinY, masterName, false);
-                    Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                    // Copy all supported event formulas from the template shape
-                    CopyEventFormulas(templateShape, newShape);
-                }
-
-                // Save the modified diagram
-                string outputPath = "OutputDiagram.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        /// <summary>
-        /// Copies event formula cells from a source shape to a target shape.
-        /// </summary>
-        /// <param name="source">Shape containing the original event formulas.</param>
-        /// <param name="target">Shape that will receive the copied event formulas.</param>
-        static void CopyEventFormulas(Shape source, Shape target)
+            Console.Error.WriteLine($"File not found: {templatePath}");
+            return;
+        }
+        if (!File.Exists(templatePath))
         {
-            // EventXFMod
-            target.Event.EventXFMod.Ufe.F = source.Event.EventXFMod.Ufe.F;
+            Console.Error.WriteLine($"Template file not found: {templatePath}");
+            return;
+        }
 
-            // EventDblClick
-            target.Event.EventDblClick.Ufe.F = source.Event.EventDblClick.Ufe.F;
+        // Path where the resulting diagram will be saved.
+        string outputPath = "output.vsdx";
 
-            // EventDrop
-            target.Event.EventDrop.Ufe.F = source.Event.EventDrop.Ufe.F;
+        try
+        {
+            // Load the template diagram.
+            Diagram templateDiagram = new Diagram(templatePath);
 
-            // EventMultiDrop
-            target.Event.EventMultiDrop.Ufe.F = source.Event.EventMultiDrop.Ufe.F;
+            // Validate that the template has at least one page and one shape.
+            if (templateDiagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Template diagram contains no pages.");
+                return;
+            }
 
-            // TheText (shape text change event)
-            target.Event.TheText.Ufe.F = source.Event.TheText.Ufe.F;
+            if (templateDiagram.Pages[0].Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("Template diagram's first page contains no shapes.");
+                return;
+            }
 
-            // TheData (shape data change event)
-            target.Event.TheData.Ufe.F = source.Event.TheData.Ufe.F;
+            // Retrieve the first shape on the first page as the source for Event formulas.
+            Shape templateShape = templateDiagram.Pages[0].Shapes[0];
+
+            // Store the Event formulas from the template shape.
+            string eventDropFormula = templateShape.Event.EventDrop.Ufe.F;
+            string eventDblClickFormula = templateShape.Event.EventDblClick.Ufe.F;
+            string eventXFModFormula = templateShape.Event.EventXFMod.Ufe.F;
+            string eventMultiDropFormula = templateShape.Event.EventMultiDrop.Ufe.F;
+            string theTextFormula = templateShape.Event.TheText.Ufe.F;
+            string theDataFormula = templateShape.Event.TheData.Ufe.F;
+
+            // Determine the master name of the template shape (used when creating new shapes).
+            string masterName = templateShape.Master != null ? templateShape.Master.Name : "Rectangle";
+
+            // Create a new empty diagram.
+            Diagram newDiagram = new Diagram();
+
+            // Add a new page to the diagram.
+            Page newPage = new Page();
+            newDiagram.Pages.Add(newPage);
+
+            // Parameters for batch shape creation.
+            int shapeCount = 5;               // Number of shapes to create.
+            double startX = 1.0;              // Starting X coordinate.
+            double startY = 1.0;              // Starting Y coordinate.
+            double offsetX = 2.0;             // Horizontal offset between shapes.
+            double shapeWidth = 1.0;          // Width of each new shape.
+            double shapeHeight = 1.0;         // Height of each new shape.
+
+            // Loop to create shapes and copy Event formulas.
+            for (int i = 0; i < shapeCount; i++)
+            {
+                // Calculate position for the new shape.
+                double pinX = startX + i * offsetX;
+                double pinY = startY;
+
+                // Add a new shape using the identified master.
+                // The overload returns a long shape ID.
+                long shapeId = newPage.AddShape(pinX, pinY, shapeWidth, shapeHeight, masterName, false);
+
+                // Retrieve the shape instance using the returned ID.
+                Shape newShape = newPage.Shapes.GetShape(shapeId);
+
+                // Copy each Event formula from the template shape to the new shape.
+                newShape.Event.EventDrop.Ufe.F = eventDropFormula;
+                newShape.Event.EventDblClick.Ufe.F = eventDblClickFormula;
+                newShape.Event.EventXFMod.Ufe.F = eventXFModFormula;
+                newShape.Event.EventMultiDrop.Ufe.F = eventMultiDropFormula;
+                newShape.Event.TheText.Ufe.F = theTextFormula;
+                newShape.Event.TheData.Ufe.F = theDataFormula;
+            }
+
+            // Save the newly created diagram.
+            newDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

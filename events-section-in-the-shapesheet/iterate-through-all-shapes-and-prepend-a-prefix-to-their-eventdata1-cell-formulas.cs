@@ -7,52 +7,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Expect at least two arguments: input file path and output file path.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile> [prefix]");
             return;
         }
 
-        // Prefix to prepend to event formulas
-        const string prefix = "Prefix_";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        // Optional prefix argument; default to "Prefix_".
+        string prefix = args.Length >= 3 ? args[2] : "Prefix_";
+
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the Event section exists and the target event cell is available
-                    // (using EventDblClick as a representative event cell, since EventData1 is not exposed)
-                    if (shape.Event != null && shape.Event.EventDblClick != null)
-                    {
-                        // Retrieve the current formula; handle possible null
-                        string currentFormula = shape.Event.EventDblClick.Ufe.F ?? string.Empty;
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Prepend the defined prefix to the formula
-                        shape.Event.EventDblClick.Ufe.F = prefix + currentFormula;
+                    // The original task referenced an "EventData1" cell, which does not exist in the Aspose.Diagram API.
+                    // The closest available event cell is "TheData". We will prepend the prefix to this cell's formula.
+                    // Ensure the Event and TheData objects are not null before modifying.
+                    if (shape.Event != null && shape.Event.TheData != null)
+                    {
+                        // Retrieve the existing formula; if null, treat as empty string.
+                        string currentFormula = shape.Event.TheData.Ufe.F ?? string.Empty;
+
+                        // Prepend the specified prefix.
+                        shape.Event.TheData.Ufe.F = prefix + currentFormula;
                     }
                 }
             }
 
-            // Output Visio file path
-            string outputPath = "output.vsdx";
-
-            // Save the modified diagram in VSDX format
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

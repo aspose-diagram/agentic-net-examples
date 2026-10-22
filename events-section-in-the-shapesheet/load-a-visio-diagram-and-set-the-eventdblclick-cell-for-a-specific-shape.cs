@@ -1,43 +1,70 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 4)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeNameU> <eventFormula> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string shapeNameU = args[1];
+        string eventFormula = args[2];
+        string outputPath = args[3];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the modified Visio file
-            string outputPath = "output.vsdx";
-
-            // Load the diagram from the file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
+            // Locate the shape with the specified NameU across all pages.
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.NameU == shapeNameU)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null)
+                    break;
+            }
 
-            // ID of the shape whose double‑click event you want to set
-            // Replace this with the actual shape ID in your diagram
-            long shapeId = 1;
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with NameU \"{shapeNameU}\" not found.");
+                return;
+            }
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // Set the double‑click event formula using the correct API pattern.
+            // The formula should be a valid Visio expression, e.g., "CALLTHIS(\"ShowAlert\")".
+            targetShape.Event.EventDblClick.Ufe.F = eventFormula;
 
-            // Assign a Visio formula to the double‑click event cell
-            shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
-
-            // Save the updated diagram
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
+            Console.WriteLine("EventDblClick cell updated and diagram saved successfully.");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

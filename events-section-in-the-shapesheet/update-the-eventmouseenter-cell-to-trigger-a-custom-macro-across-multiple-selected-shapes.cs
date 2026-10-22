@@ -1,60 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Vba;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-        // Path to the output macro‑enabled Visio file
-        string outputPath = "output.vsdm";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure a VBA project exists (VBA project is read‑only, just verify)
-            if (diagram.VbaProject == null)
-                throw new Exception("The diagram does not contain a VBA project.");
-
-            // Add a new procedural module for the custom macro
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "CustomMacros");
-            VbaModule macroModule = diagram.VbaProject.Modules[moduleIndex];
-
-            // Define the macro code (adjust as needed)
-            macroModule.Codes = @"
-Public Sub MyMacro()
-    MsgBox ""Custom macro triggered!""
-End Sub
-";
-
-            // Iterate over all shapes on the first page (replace with your own selection logic if needed)
-            Page page = diagram.Pages[0];
-            foreach (Shape shape in page.Shapes)
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // NOTE: EventMouseEnter is not a valid event cell in Aspose.Diagram.
-                // Using EventDblClick as an example to trigger the macro on a shape event.
-                shape.Event.EventDblClick.Ufe.F = "CALLTHIS(\"MyMacro\")";
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Save the diagram in a macro‑enabled format
+            // Work with the first page (adjust as needed for other pages).
+            Page page = diagram.Pages[0];
+
+            // Iterate over all shapes on the page.
+            foreach (Shape shape in page.Shapes)
+            {
+                // Set the EventDrop cell (closest substitute for EventMouseEnter) to call a custom macro.
+                // The formula uses the CALLTHIS function to invoke a macro named "MyMacro".
+                shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"MyMacro\")";
+            }
+
+            // Save the modified diagram in a macro‑enabled format.
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

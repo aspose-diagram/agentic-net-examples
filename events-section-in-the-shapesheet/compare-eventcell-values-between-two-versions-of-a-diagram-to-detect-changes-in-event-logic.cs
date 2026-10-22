@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 
@@ -7,26 +6,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two file paths: old version and new version
+        // Expect two arguments: old diagram path and new diagram path
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: DiagramEventComparer <oldDiagramPath> <newDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <oldDiagramPath> <newDiagramPath>");
             return;
         }
 
         string oldPath = args[0];
-        // Guard: ensure the old diagram file exists
-        if (!File.Exists(oldPath)) { Console.Error.WriteLine($"File not found: {oldPath}"); return; }
-
         string newPath = args[1];
-        // Guard: ensure the new diagram file exists
-        if (!File.Exists(newPath)) { Console.Error.WriteLine($"File not found: {newPath}"); return; }
 
-        Diagram oldDiagram;
-        Diagram newDiagram;
+        // Guard against missing files
+        if (!File.Exists(oldPath))
+        {
+            Console.Error.WriteLine($"File not found: {oldPath}");
+            return;
+        }
+        if (!File.Exists(newPath))
+        {
+            Console.Error.WriteLine($"File not found: {newPath}");
+            return;
+        }
+
+        Diagram oldDiagram = null;
+        Diagram newDiagram = null;
+
         try
         {
-            // Load the two diagrams (wrapped in try/catch for safety)
+            // Load both diagram versions
             oldDiagram = new Diagram(oldPath);
             newDiagram = new Diagram(newPath);
         }
@@ -36,92 +43,79 @@ class Program
             return;
         }
 
-        // List of event cell names to compare
-        List<string> eventNames = new List<string>
+        try
         {
-            "EventXFMod",
-            "EventDblClick",
-            "EventDrop",
-            "EventMultiDrop",
-            "TheText",
-            "TheData"
-        };
+            // Determine the number of pages to compare (use the smaller count)
+            int pageCount = Math.Min(oldDiagram.Pages.Count, newDiagram.Pages.Count);
 
-        bool anyChanges = false;
-
-        // Iterate pages by index (assuming same page order)
-        int pageCount = Math.Min(oldDiagram.Pages.Count, newDiagram.Pages.Count);
-        for (int p = 0; p < pageCount; p++)
-        {
-            Page oldPage = oldDiagram.Pages[p];
-            Page newPage = newDiagram.Pages[p];
-
-            // Iterate shapes in the old page
-            foreach (Shape oldShape in oldPage.Shapes)
+            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
             {
-                // Shape IDs are of type long; use long to avoid conversion errors
-                long shapeId = oldShape.ID;
-                Shape newShape = null;
-                try
-                {
-                    // Retrieve the shape with the same ID from the new page
-                    newShape = newPage.Shapes.GetShape(shapeId);
-                }
-                catch
-                {
-                    // Shape not found in new diagram; skip comparison
-                    continue;
-                }
+                Page oldPage = oldDiagram.Pages[pageIndex];
+                Page newPage = newDiagram.Pages[pageIndex];
 
-                // Compare each event cell value between the two shapes
-                foreach (string evName in eventNames)
+                // Iterate over shapes in the old page
+                foreach (Shape oldShape in oldPage.Shapes)
                 {
-                    string oldFormula = GetEventFormula(oldShape, evName);
-                    string newFormula = GetEventFormula(newShape, evName);
-
-                    // Normalize nulls to empty strings for comparison
-                    string oldVal = oldFormula ?? string.Empty;
-                    string newVal = newFormula ?? string.Empty;
-
-                    if (!oldVal.Equals(newVal, StringComparison.Ordinal))
+                    // Attempt to locate the corresponding shape in the new diagram by ID
+                    Shape newShape = null;
+                    try
                     {
-                        anyChanges = true;
-                        Console.WriteLine($"Page '{oldPage.Name}' Shape ID {shapeId} Event '{evName}' changed:");
-                        Console.WriteLine($"    Old: \"{oldVal}\"");
-                        Console.WriteLine($"    New: \"{newVal}\"");
+                        // Shape IDs are unique within a page; use GetShape(id) to retrieve
+                        newShape = newPage.Shapes.GetShape(oldShape.ID);
                     }
+                    catch
+                    {
+                        // If GetShape throws, the shape does not exist in the new version
+                        newShape = null;
+                    }
+
+                    if (newShape == null)
+                    {
+                        Console.WriteLine($"Shape ID {oldShape.ID} missing in new diagram (Page {pageIndex + 1}).");
+                        continue;
+                    }
+
+                    // Compare each supported event cell
+                    CompareEventCell("EventDrop", oldShape.Event.EventDrop?.Ufe?.F, newShape.Event.EventDrop?.Ufe?.F, oldShape.ID, pageIndex);
+                    CompareEventCell("EventDblClick", oldShape.Event.EventDblClick?.Ufe?.F, newShape.Event.EventDblClick?.Ufe?.F, oldShape.ID, pageIndex);
+                    CompareEventCell("EventXFMod", oldShape.Event.EventXFMod?.Ufe?.F, newShape.Event.EventXFMod?.Ufe?.F, oldShape.ID, pageIndex);
+                    CompareEventCell("EventMultiDrop", oldShape.Event.EventMultiDrop?.Ufe?.F, newShape.Event.EventMultiDrop?.Ufe?.F, oldShape.ID, pageIndex);
+                    CompareEventCell("TheText", oldShape.Event.TheText?.Ufe?.F, newShape.Event.TheText?.Ufe?.F, oldShape.ID, pageIndex);
+                    CompareEventCell("TheData", oldShape.Event.TheData?.Ufe?.F, newShape.Event.TheData?.Ufe?.F, oldShape.ID, pageIndex);
                 }
             }
         }
-
-        if (!anyChanges)
+        catch (Exception ex)
         {
-            Console.WriteLine("No event cell changes detected between the two diagrams.");
+            Console.Error.WriteLine($"Error during comparison: {ex.Message}");
+        }
+        finally
+        {
+            // Ensure resources are released
+            oldDiagram?.Dispose();
+            newDiagram?.Dispose();
         }
     }
 
-    // Retrieves the formula string of a specific event cell, or null if not present
-    private static string GetEventFormula(Shape shape, string eventName)
+    /// <summary>
+    /// Compares two event cell formulas and writes a message if they differ.
+    /// </summary>
+    /// <param name="cellName">Name of the event cell (e.g., EventDrop).</param>
+    /// <param name="oldFormula">Formula from the old diagram (may be null).</param>
+    /// <param name="newFormula">Formula from the new diagram (may be null).</param>
+    /// <param name="shapeId">Identifier of the shape being compared.</param>
+    /// <param name="pageIndex">Zero‑based page index.</param>
+    private static void CompareEventCell(string cellName, string oldFormula, string newFormula, long shapeId, int pageIndex)
     {
-        if (shape?.Event == null)
-            return null;
+        // Normalize nulls to empty strings for comparison
+        string oldVal = oldFormula ?? string.Empty;
+        string newVal = newFormula ?? string.Empty;
 
-        switch (eventName)
+        if (!oldVal.Equals(newVal, StringComparison.Ordinal))
         {
-            case "EventXFMod":
-                return shape.Event.EventXFMod?.Ufe?.F;
-            case "EventDblClick":
-                return shape.Event.EventDblClick?.Ufe?.F;
-            case "EventDrop":
-                return shape.Event.EventDrop?.Ufe?.F;
-            case "EventMultiDrop":
-                return shape.Event.EventMultiDrop?.Ufe?.F;
-            case "TheText":
-                return shape.Event.TheText?.Ufe?.F;
-            case "TheData":
-                return shape.Event.TheData?.Ufe?.F;
-            default:
-                return null;
+            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shapeId}, Cell {cellName} changed:");
+            Console.WriteLine($"  Old: {oldVal}");
+            Console.WriteLine($"  New: {newVal}");
         }
     }
 }

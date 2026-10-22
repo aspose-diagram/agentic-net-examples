@@ -1,97 +1,79 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using System.Reflection;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputReportPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output report path (optional second argument)
+        string outputPath = args.Length > 1 ? args[1] : "MissingEventMouseDownReport.txt";
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            // Create directory for the report if it does not exist
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-
-            // Path to the Visio file to be inspected
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            using (StreamWriter writer = new StreamWriter(outputPath))
             {
-                Page page = diagram.Pages[pageIndex];
+                // Write CSV header
+                writer.WriteLine("PageIndex,ShapeID,ShapeName,MasterName");
 
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Use reflection to safely access the EventMouseDown cell (if it exists)
-                    PropertyInfo mouseDownProp = shape.Event?.GetType().GetProperty("EventMouseDown");
-                    bool missingEvent = false;
-
-                    if (mouseDownProp != null)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the event cell object
-                        object eventCell = mouseDownProp.GetValue(shape.Event);
-                        if (eventCell != null)
+                        // Guard against null Event object
+                        if (shape.Event == null)
+                            continue;
+
+                        // Use EventDrop as the closest substitute for EventMouseDown
+                        string mouseDownFormula = shape.Event.EventDrop?.Ufe?.F;
+
+                        // If the formula is null or empty, consider the EventMouseDown definition missing
+                        if (string.IsNullOrWhiteSpace(mouseDownFormula))
                         {
-                            // Access the Ufe.F property which holds the formula/value
-                            PropertyInfo ufeProp = eventCell.GetType().GetProperty("Ufe");
-                            if (ufeProp != null)
-                            {
-                                object ufeObj = ufeProp.GetValue(eventCell);
-                                if (ufeObj != null)
-                                {
-                                    PropertyInfo fProp = ufeObj.GetType().GetProperty("F");
-                                    if (fProp != null)
-                                    {
-                                        string formula = fProp.GetValue(ufeObj) as string;
-                                        if (string.IsNullOrWhiteSpace(formula))
-                                        {
-                                            missingEvent = true;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // If the 'F' property is missing, treat as missing definition
-                                        missingEvent = true;
-                                    }
-                                }
-                                else
-                                {
-                                    missingEvent = true;
-                                }
-                            }
-                            else
-                            {
-                                missingEvent = true;
-                            }
-                        }
-                        else
-                        {
-                            missingEvent = true;
-                        }
-                    }
-                    else
-                    {
-                        // If the EventMouseDown cell does not exist at all, consider it missing
-                        missingEvent = true;
-                    }
+                            string shapeName = shape.Name ?? "N/A";
+                            string masterName = shape.Master?.Name ?? "N/A";
 
-                    if (missingEvent)
-                    {
-                        Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape.ID}, NameU \"{shape.NameU}\" is missing EventMouseDown definition.");
+                            // Write shape information to the report
+                            writer.WriteLine($"{pageIndex},{shape.ID},{shapeName},{masterName}");
+                        }
                     }
                 }
             }
 
+            Console.WriteLine($"Report generated successfully at: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

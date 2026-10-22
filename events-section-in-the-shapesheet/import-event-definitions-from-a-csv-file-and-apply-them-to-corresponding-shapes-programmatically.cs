@@ -2,155 +2,157 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect three arguments: diagram file, CSV file with events, output diagram file
+        if (args.Length < 3)
         {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <csvPath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string csvPath = args[1];
+        string outputPath = args[2];
+
+        // Guard: ensure diagram file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: ensure CSV file exists
+        if (!File.Exists(csvPath))
+        {
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
+            return;
+        }
+
+        Diagram diagram;
+        try
+        {
+            // Load the Visio diagram
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Read all lines from the CSV file
+        string[] csvLines;
+        try
+        {
+            csvLines = File.ReadAllLines(csvPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to read CSV file: {ex.Message}");
+            return;
+        }
+
+        // Process each CSV line (skip empty lines and optional header)
+        foreach (string rawLine in csvLines)
+        {
+            if (string.IsNullOrWhiteSpace(rawLine))
+                continue;
+
+            // Simple CSV split – assumes no commas inside quoted fields
+            string[] parts = rawLine.Split(',');
+
+            // Expect at least three columns: ShapeId, EventName, Formula
+            if (parts.Length < 3)
+            {
+                Console.Error.WriteLine($"Invalid CSV line (expected at least 3 columns): {rawLine}");
+                continue;
+            }
+
+            // Trim whitespace from each part
+            string shapeIdStr = parts[0].Trim();
+            string eventName = parts[1].Trim();
+            string formula = parts[2].Trim();
+
+            // Parse shape ID (supports int or long)
+            if (!long.TryParse(shapeIdStr, out long shapeId))
+            {
+                Console.Error.WriteLine($"Invalid ShapeId '{shapeIdStr}' in line: {rawLine}");
+                continue;
+            }
+
+            // Retrieve the shape from the first page (adjust if needed)
+            Shape shape = null;
             try
             {
-
-                // Path to the Visio diagram to modify
-                string diagramPath = "input.vsdx";
-
-                // Path to the CSV file containing event definitions
-                // Expected CSV columns: ShapeName,EventName,Formula
-                string csvPath = "events.csv";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Read all event definitions from the CSV file
-                List<EventDefinition> events = LoadEventDefinitions(csvPath);
-
-                // Apply each event definition to the matching shape
-                foreach (EventDefinition ev in events)
+                // Ensure the page index exists
+                if (diagram.Pages.Count == 0)
                 {
-                    bool shapeFound = false;
-
-                    // Search through all pages and shapes for the target shape name
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (string.Equals(shape.NameU, ev.ShapeName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                ApplyEventToShape(shape, ev);
-                                shapeFound = true;
-                                break;
-                            }
-                        }
-
-                        if (shapeFound) break;
-                    }
-
-                    if (!shapeFound)
-                    {
-                        Console.WriteLine($"Warning: Shape \"{ev.ShapeName}\" not found in diagram.");
-                    }
+                    Console.Error.WriteLine("Diagram contains no pages.");
+                    break;
                 }
 
-                // Save the modified diagram
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Csv);
-                Console.WriteLine($"Diagram saved to {outputPath}");
-
+                // Use the first page for lookup
+                shape = diagram.Pages[0].Shapes.GetShape(shapeId);
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
-
-        // Represents a single event definition from the CSV file
-        private class EventDefinition
-        {
-            public string ShapeName { get; set; } = string.Empty;
-            public string EventName { get; set; } = string.Empty;
-            public string Formula { get; set; } = string.Empty;
-        }
-
-        // Loads event definitions from a CSV file
-        private static List<EventDefinition> LoadEventDefinitions(string csvPath)
-        {
-            var list = new List<EventDefinition>();
-
-            if (!File.Exists(csvPath))
-            {
-                Console.WriteLine($"Error: CSV file \"{csvPath}\" not found.");
-                return list;
+                Console.Error.WriteLine($"Error retrieving shape ID {shapeId}: {ex.Message}");
+                continue;
             }
 
-            using (var reader = new StreamReader(csvPath))
+            if (shape == null)
             {
-                bool isFirstLine = true;
-                while (!reader.EndOfStream)
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                continue;
+            }
+
+            // Apply the formula to the appropriate event cell
+            try
+            {
+                switch (eventName.ToLowerInvariant())
                 {
-                    string line = reader.ReadLine();
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    // Skip header line
-                    if (isFirstLine)
-                    {
-                        isFirstLine = false;
-                        continue;
-                    }
-
-                    // Simple CSV split (no quoted commas handling)
-                    string[] parts = line.Split(',');
-
-                    if (parts.Length < 3)
-                        continue; // malformed line
-
-                    var ev = new EventDefinition
-                    {
-                        ShapeName = parts[0].Trim(),
-                        EventName = parts[1].Trim(),
-                        Formula   = parts[2].Trim()
-                    };
-                    list.Add(ev);
+                    case "eventdrop":
+                        shape.Event.EventDrop.Ufe.F = formula;
+                        break;
+                    case "eventdblclick":
+                        shape.Event.EventDblClick.Ufe.F = formula;
+                        break;
+                    case "eventxfmod":
+                        shape.Event.EventXFMod.Ufe.F = formula;
+                        break;
+                    case "eventmultidrop":
+                        shape.Event.EventMultiDrop.Ufe.F = formula;
+                        break;
+                    case "thetext":
+                        shape.Event.TheText.Ufe.F = formula;
+                        break;
+                    case "thedata":
+                        shape.Event.TheData.Ufe.F = formula;
+                        break;
+                    default:
+                        Console.Error.WriteLine($"Unsupported event name '{eventName}' for shape ID {shapeId}.");
+                        break;
                 }
             }
-
-            return list;
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to set event '{eventName}' on shape ID {shapeId}: {ex.Message}");
+            }
         }
 
-        // Applies the specified event to the given shape
-        private static void ApplyEventToShape(Shape shape, EventDefinition ev)
+        // Save the modified diagram
+        try
         {
-            // Ensure the shape's Event section is available
-            if (shape.Event == null)
-            {
-                Console.WriteLine($"Error: Shape \"{shape.NameU}\" does not have an Event section.");
-                return;
-            }
-
-            // Map the event name from CSV to the corresponding property
-            switch (ev.EventName.ToLowerInvariant())
-            {
-                case "eventdblclick":
-                    shape.Event.EventDblClick.Ufe.F = ev.Formula;
-                    break;
-                case "eventdrop":
-                    shape.Event.EventDrop.Ufe.F = ev.Formula;
-                    break;
-                case "eventmultidrop":
-                    shape.Event.EventMultiDrop.Ufe.F = ev.Formula;
-                    break;
-                case "eventxfmod":
-                    shape.Event.EventXFMod.Ufe.F = ev.Formula;
-                    break;
-                case "thetext":
-                    shape.Event.TheText.Ufe.F = ev.Formula;
-                    break;
-                case "thedata":
-                    shape.Event.TheData.Ufe.F = ev.Formula;
-                    break;
-                default:
-                    Console.WriteLine($"Warning: Unsupported event name \"{ev.EventName}\" for shape \"{shape.NameU}\".");
-                    break;
-            }
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
+}

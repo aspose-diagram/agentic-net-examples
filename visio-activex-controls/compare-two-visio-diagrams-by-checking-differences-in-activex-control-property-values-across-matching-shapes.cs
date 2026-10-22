@@ -7,248 +7,176 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two file paths as command‑line arguments.
+        // Expect two file paths as arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: VisioActiveXComparer <DiagramPath1> <DiagramPath2>");
+            Console.Error.WriteLine("Usage: Program <DiagramPath1> <DiagramPath2>");
             return;
         }
 
         string diagramPath1 = args[0];
-        // Guard to ensure the first file exists.
+        string diagramPath2 = args[1];
+
+        // Guard against missing files.
         if (!File.Exists(diagramPath1))
         {
             Console.Error.WriteLine($"File not found: {diagramPath1}");
             return;
         }
-
-        string diagramPath2 = args[1];
-        // Guard to ensure the second file exists.
         if (!File.Exists(diagramPath2))
         {
             Console.Error.WriteLine($"File not found: {diagramPath2}");
             return;
         }
 
-        Diagram diagram1;
-        Diagram diagram2;
         try
         {
-            // Load the two Visio diagrams.
-            diagram1 = new Diagram(diagramPath1);
-            diagram2 = new Diagram(diagramPath2);
+            // Load both diagrams inside using blocks (required pattern).
+            using (Diagram diagram1 = new Diagram(diagramPath1))
+            using (Diagram diagram2 = new Diagram(diagramPath2))
+            {
+                // Determine the number of pages to compare (use the smaller count for safety).
+                int pageCount = Math.Min(diagram1.Pages.Count, diagram2.Pages.Count);
+
+                for (int p = 0; p < pageCount; p++)
+                {
+                    Page page1 = diagram1.Pages[p];
+                    Page page2 = diagram2.Pages[p];
+
+                    // Iterate all shapes on the first page.
+                    foreach (Shape shape1 in page1.Shapes)
+                    {
+                        // Retrieve the universal name of the shape (may be null).
+                        string shapeName = shape1.NameU ?? string.Empty;
+
+                        // Find a shape with the same NameU on the second page.
+                        Shape shape2 = FindShapeByName(page2, shapeName);
+                        if (shape2 == null)
+                        {
+                            Console.WriteLine($"Shape '{shapeName}' exists in diagram1 but not in diagram2 (Page {p + 1}).");
+                            continue;
+                        }
+
+                        // Compare ActiveX controls on the matching shapes.
+                        CompareActiveXControls(shape1, shape2, shapeName, p + 1);
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {
-            // Report any loading errors.
-            Console.Error.WriteLine($"Error loading diagrams: {ex.Message}");
-            return;
-        }
-
-        // Assume both diagrams have the same number of pages and matching page order.
-        int pageCount = Math.Min(diagram1.Pages.Count, diagram2.Pages.Count);
-
-        for (int i = 0; i < pageCount; i++)
-        {
-            Page page1 = diagram1.Pages[i];
-            Page page2 = diagram2.Pages[i];
-
-            // Output page comparison info (Name is a plain string, not a cell).
-            Console.WriteLine($"Comparing Page {i + 1}: \"{page1.Name}\" vs \"{page2.Name}\"");
-
-            // Iterate all shapes on the first page.
-            foreach (Shape shape1 in page1.Shapes)
-            {
-                // Find a shape with the same universal name on the second page.
-                Shape shape2 = FindShapeByNameU(page2, shape1.NameU);
-
-                if (shape2 == null)
-                {
-                    Console.WriteLine($"  Shape \"{shape1.NameU}\" exists only in Diagram 1.");
-                    continue;
-                }
-
-                // Both shapes exist – compare their ActiveX controls.
-                CompareActiveXControls(shape1, shape2);
-            }
-
-            // Detect shapes that exist only in Diagram 2.
-            foreach (Shape shape2 in page2.Shapes)
-            {
-                Shape shape1 = FindShapeByNameU(page1, shape2.NameU);
-                if (shape1 == null)
-                {
-                    Console.WriteLine($"  Shape \"{shape2.NameU}\" exists only in Diagram 2.");
-                }
-            }
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 
-    // Finds a shape on a page by its universal name (NameU). Returns null if not found.
-    private static Shape FindShapeByNameU(Page page, string nameU)
+    // Helper to locate a shape by its NameU on a given page.
+    private static Shape? FindShapeByName(Page page, string name)
     {
-        foreach (Shape shape in page.Shapes)
+        foreach (Shape shp in page.Shapes)
         {
-            // NameU is a plain string; compare directly.
-            if (shape.NameU == nameU)
-            {
-                return shape;
-            }
+            string shpName = shp.NameU ?? string.Empty;
+            if (shpName.Equals(name, StringComparison.OrdinalIgnoreCase))
+                return shp;
         }
         return null;
     }
 
-    // Compares the ActiveX control properties of two matching shapes.
-    private static void CompareActiveXControls(Shape shape1, Shape shape2)
+    // Compare ActiveX controls of two shapes and report differences.
+    private static void CompareActiveXControls(Shape s1, Shape s2, string shapeName, int pageNumber)
     {
-        // If neither shape has an ActiveX control, nothing to compare.
-        if (shape1.ActiveXControl == null && shape2.ActiveXControl == null)
+        // Retrieve the ActiveX controls (may be null).
+        ActiveXControl? ctrl1 = s1.ActiveXControl;
+        ActiveXControl? ctrl2 = s2.ActiveXControl;
+
+        // Cases where only one shape has an ActiveX control.
+        if (ctrl1 == null && ctrl2 != null)
         {
+            Console.WriteLine($"Shape '{shapeName}' on page {pageNumber} has no ActiveX control in diagram1 but has one in diagram2.");
+            return;
+        }
+        if (ctrl1 != null && ctrl2 == null)
+        {
+            Console.WriteLine($"Shape '{shapeName}' on page {pageNumber} has an ActiveX control in diagram1 but not in diagram2.");
+            return;
+        }
+        if (ctrl1 == null && ctrl2 == null)
+        {
+            // Neither shape has an ActiveX control – nothing to compare.
             return;
         }
 
-        // One shape has a control while the other does not.
-        if (shape1.ActiveXControl == null || shape2.ActiveXControl == null)
+        // Both shapes have ActiveX controls – compare their types first.
+        if (ctrl1.Type != ctrl2.Type)
         {
-            Console.WriteLine($"  Shape \"{shape1.NameU}\": ActiveX control presence differs between diagrams.");
+            Console.WriteLine($"Shape '{shapeName}' on page {pageNumber} has different ActiveX control types: {ctrl1.Type} vs {ctrl2.Type}.");
             return;
         }
 
-        // Both have ActiveX controls – ensure they are of the same type.
-        if (shape1.ActiveXControl.Type != shape2.ActiveXControl.Type)
+        // Compare properties specific to each control type.
+        switch (ctrl1.Type)
         {
-            Console.WriteLine($"  Shape \"{shape1.NameU}\": Control type differs (Diagram1={shape1.ActiveXControl.Type}, Diagram2={shape2.ActiveXControl.Type}).");
-            return;
-        }
-
-        // Compare based on the specific control type.
-        switch (shape1.ActiveXControl.Type)
-        {
-            case ControlType.CommandButton:
-                CompareCommandButton(shape1, shape2);
-                break;
-            case ControlType.TextBox:
-                CompareTextBox(shape1, shape2);
-                break;
             case ControlType.CheckBox:
-                CompareCheckBox(shape1, shape2);
-                break;
-            case ControlType.Image:
-                CompareImage(shape1, shape2);
-                break;
-            // Add other control types as needed.
-            default:
-                Console.WriteLine($"  Shape \"{shape1.NameU}\": Control type {shape1.ActiveXControl.Type} is not explicitly handled.");
-                break;
-        }
-    }
-
-    private static void CompareCommandButton(Shape s1, Shape s2)
-    {
-        var btn1 = (CommandButtonActiveXControl)s1.ActiveXControl;
-        var btn2 = (CommandButtonActiveXControl)s2.ActiveXControl;
-
-        if (btn1.Caption != btn2.Caption)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" CommandButton Caption differs: \"{btn1.Caption}\" vs \"{btn2.Caption}\"");
-        }
-
-        if (Math.Abs(btn1.Width - btn2.Width) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" CommandButton Width differs: {btn1.Width} vs {btn2.Width}");
-        }
-
-        if (Math.Abs(btn1.Height - btn2.Height) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" CommandButton Height differs: {btn1.Height} vs {btn2.Height}");
-        }
-    }
-
-    private static void CompareTextBox(Shape s1, Shape s2)
-    {
-        var txt1 = (TextBoxActiveXControl)s1.ActiveXControl;
-        var txt2 = (TextBoxActiveXControl)s2.ActiveXControl;
-
-        if (txt1.Text != txt2.Text)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" TextBox Text differs: \"{txt1.Text}\" vs \"{txt2.Text}\"");
-        }
-
-        if (Math.Abs(txt1.Width - txt2.Width) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" TextBox Width differs: {txt1.Width} vs {txt2.Width}");
-        }
-
-        if (Math.Abs(txt1.Height - txt2.Height) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" TextBox Height differs: {txt1.Height} vs {txt2.Height}");
-        }
-    }
-
-    private static void CompareCheckBox(Shape s1, Shape s2)
-    {
-        var chk1 = (CheckBoxActiveXControl)s1.ActiveXControl;
-        var chk2 = (CheckBoxActiveXControl)s2.ActiveXControl;
-
-        if (chk1.Value != chk2.Value)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" CheckBox Value differs: {chk1.Value} vs {chk2.Value}");
-        }
-
-        if (Math.Abs(chk1.Width - chk2.Width) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" CheckBox Width differs: {chk1.Width} vs {chk2.Width}");
-        }
-
-        if (Math.Abs(chk1.Height - chk2.Height) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" CheckBox Height differs: {chk1.Height} vs {chk2.Height}");
-        }
-    }
-
-    private static void CompareImage(Shape s1, Shape s2)
-    {
-        var img1 = (ImageActiveXControl)s1.ActiveXControl;
-        var img2 = (ImageActiveXControl)s2.ActiveXControl;
-
-        // Compare image byte arrays.
-        byte[] pic1 = img1.Picture;
-        byte[] pic2 = img2.Picture;
-
-        bool imagesEqual = true;
-        if (pic1 == null || pic2 == null)
-        {
-            imagesEqual = pic1 == pic2;
-        }
-        else if (pic1.Length != pic2.Length)
-        {
-            imagesEqual = false;
-        }
-        else
-        {
-            for (int i = 0; i < pic1.Length; i++)
-            {
-                if (pic1[i] != pic2[i])
+                var cb1 = (CheckBoxActiveXControl)ctrl1;
+                var cb2 = (CheckBoxActiveXControl)ctrl2;
+                if (cb1.IsEnabled != cb2.IsEnabled)
                 {
-                    imagesEqual = false;
-                    break;
+                    Console.WriteLine($"CheckBox '{shapeName}' on page {pageNumber} IsEnabled differs: {cb1.IsEnabled} vs {cb2.IsEnabled}.");
                 }
-            }
-        }
+                break;
 
-        if (!imagesEqual)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" Image content differs.");
-        }
+            case ControlType.TextBox:
+                var tb1 = (TextBoxActiveXControl)ctrl1;
+                var tb2 = (TextBoxActiveXControl)ctrl2;
+                string text1 = tb1.Text ?? string.Empty;
+                string text2 = tb2.Text ?? string.Empty;
+                if (!text1.Equals(text2, StringComparison.Ordinal))
+                {
+                    Console.WriteLine($"TextBox '{shapeName}' on page {pageNumber} Text differs: \"{text1}\" vs \"{text2}\".");
+                }
+                break;
 
-        if (Math.Abs(img1.Width - img2.Width) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" Image Width differs: {img1.Width} vs {img2.Width}");
-        }
+            case ControlType.CommandButton:
+                var btn1 = (CommandButtonActiveXControl)ctrl1;
+                var btn2 = (CommandButtonActiveXControl)ctrl2;
+                string cap1 = btn1.Caption ?? string.Empty;
+                string cap2 = btn2.Caption ?? string.Empty;
+                if (!cap1.Equals(cap2, StringComparison.Ordinal))
+                {
+                    Console.WriteLine($"CommandButton '{shapeName}' on page {pageNumber} Caption differs: \"{cap1}\" vs \"{cap2}\".");
+                }
+                break;
 
-        if (Math.Abs(img1.Height - img2.Height) > 0.0001)
-        {
-            Console.WriteLine($"  Shape \"{s1.NameU}\" Image Height differs: {img1.Height} vs {img2.Height}");
+            case ControlType.Image:
+                var img1 = (ImageActiveXControl)ctrl1;
+                var img2 = (ImageActiveXControl)ctrl2;
+                byte[]? pic1 = img1.Picture;
+                byte[]? pic2 = img2.Picture;
+                int len1 = pic1?.Length ?? 0;
+                int len2 = pic2?.Length ?? 0;
+                if (len1 != len2)
+                {
+                    Console.WriteLine($"Image control '{shapeName}' on page {pageNumber} picture size differs: {len1} bytes vs {len2} bytes.");
+                }
+                break;
+
+            case ControlType.SpinButton:
+                var sp1 = (SpinButtonActiveXControl)ctrl1;
+                var sp2 = (SpinButtonActiveXControl)ctrl2;
+                if (sp1.Position != sp2.Position)
+                {
+                    Console.WriteLine($"SpinButton '{shapeName}' on page {pageNumber} Position differs: {sp1.Position} vs {sp2.Position}.");
+                }
+                break;
+
+            // Additional control types can be added here following the same pattern.
+
+            default:
+                // For unhandled control types, compare the generic IsEnabled property.
+                if (ctrl1.IsEnabled != ctrl2.IsEnabled)
+                {
+                    Console.WriteLine($"{ctrl1.Type} control '{shapeName}' on page {pageNumber} IsEnabled differs: {ctrl1.IsEnabled} vs {ctrl2.IsEnabled}.");
+                }
+                break;
         }
     }
 }

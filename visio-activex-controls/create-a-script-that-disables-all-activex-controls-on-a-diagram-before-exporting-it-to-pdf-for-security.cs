@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.ActiveXControls;
@@ -9,52 +8,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio diagram
-        string inputPath = "input.vsdx";
-        // Verify the input file exists
-        if (!File.Exists(inputPath)) { Console.Error.WriteLine($"File not found: {inputPath}"); return; }
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect IDs of shapes that contain ActiveX controls
-                List<long> activeXShapeIds = new List<long>();
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes to locate ActiveX controls.
+                foreach (Page page in diagram.Pages)
                 {
-                    // ActiveXControl is read‑only; we only need to know if it exists
-                    if (shape.ActiveXControl != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        activeXShapeIds.Add(shape.ID);
+                        // If the shape hosts an ActiveX control, disable it.
+                        if (shape.ActiveXControl != null)
+                        {
+                            // The IsEnabled property expects a native bool.
+                            shape.ActiveXControl.IsEnabled = false;
+                        }
                     }
                 }
 
-                // Remove shapes that host ActiveX controls to disable them
-                foreach (long shapeId in activeXShapeIds)
-                {
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    // Remove the shape from the page (deleting the ActiveX control)
-                    page.Shapes.Remove(shape);
-                }
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Save the modified diagram as PDF.
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Export the sanitized diagram to PDF
-            string outputPath = "output.pdf";
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // Set a fallback font for any missing fonts during PDF export
-                DefaultFont = "Arial"
-            };
-            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

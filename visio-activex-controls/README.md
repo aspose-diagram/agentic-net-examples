@@ -1,6 +1,6 @@
 # Visio Activex Controls — Aspose.Diagram for .NET C# Examples
 
-> Compiler-validated C# code examples for **Visio Activex Controls** using [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.9.0. Every example in this folder passes both `dotnet build` and `dotnet run` on `net8.0`.
+> Compiler-validated C# code examples for **Visio Activex Controls** using [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.10.0. Every example in this folder passes both `dotnet build` and `dotnet run` on `net8.0`.
 
 ## Statistics
 
@@ -8,9 +8,9 @@
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.9.0 |
+| Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-09-24 |
+| Last Updated | 2026-10-22 |
 
 ## What This Category Covers
 
@@ -34,7 +34,7 @@ dotnet build && dotnet run
 ## Prerequisites
 
 - .NET SDK (net8.0 or later)
-- [Aspose.Diagram for .NET 26.9.0](https://releases.aspose.com/diagram/net/)
+- [Aspose.Diagram for .NET 26.10.0](https://releases.aspose.com/diagram/net/)
 - `Aspose.Diagram.dll` referenced in your `.csproj` via `HintPath`
 
 ## Examples in This Category
@@ -55,7 +55,7 @@ dotnet build && dotnet run
 | [extract-the-helpfile-property-from-a-commandbutton-activex-control-to-locate-associated-documentation-resources.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/extract-the-helpfile-property-from-a-commandbutton-activex-control-to-locate-associated-documentation-resources.cs) | Extract the helpfile property from a commandbutton activex control to locate ass |
 | [handle-invalidcastexception-when-attempting-to-cast-an-activexcontrol-to-an-incompatible-control-class-type.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/handle-invalidcastexception-when-attempting-to-cast-an-activexcontrol-to-an-incompatible-control-class-type.cs) | Handle invalidcastexception when attempting to cast an activexcontrol to an inco |
 | [implement-a-safeguard-that-prevents-modifying-read-only-properties-of-an-activex-control-and-logs-a-warning.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/implement-a-safeguard-that-prevents-modifying-read-only-properties-of-an-activex-control-and-logs-a-warning.cs) | Implement a safeguard that prevents modifying read only properties of an activex |
-| [implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissio.cs) | Implement error handling to catch comexception when accessing activex control pr |
+| [implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/implement-error-handling-to-catch-comexception-when-accessing-activex-control-properties-that-require-specific-permissions.cs) | Implement error handling to catch comexception when accessing activex control pr |
 | [integrate-activex-control-manipulation-into-an-asp-net-mvc-application-to-dynamically-update-diagram-visuals.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/integrate-activex-control-manipulation-into-an-asp-net-mvc-application-to-dynamically-update-diagram-visuals.cs) | Integrate activex control manipulation into an asp net mvc application to dynami |
 | [iterate-over-all-shapes-in-a-diagram-processing-only-those-that-contain-an-activexcontrol-object.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/iterate-over-all-shapes-in-a-diagram-processing-only-those-that-contain-an-activexcontrol-object.cs) | Iterate over all shapes in a diagram processing only those that contain an activ |
 | [load-a-visio-diagram-containing-activex-controls-and-enumerate-all-shapes-that-embed-such-controls.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/visio-activex-controls/load-a-visio-diagram-containing-activex-controls-and-enumerate-all-shapes-that-embed-such-controls.cs) | Load a visio diagram containing activex controls and enumerate all shapes that e |
@@ -67,7 +67,7 @@ dotnet build && dotnet run
 
 **How do I get started with Visio Activex Controls in Aspose.Diagram for .NET?**
 
-Add a reference to `Aspose.Diagram.dll` (v26.9.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
@@ -96,4 +96,4 @@ Aspose.Diagram uses its own `BOOL` enumeration type, not C# `bool`. Use `BOOL.Tr
 
 ---
 
-*30 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.9.0 | Updated: 2026-09-24*
+*30 compiler-validated C# examples | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) 26.10.0 | Updated: 2026-10-22*

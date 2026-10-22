@@ -5,80 +5,88 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Assume visioBytes contains the binary content of a Visio file.
-            // In a real scenario this could come from a database, network stream, etc.
-            byte[] visioBytes = File.ReadAllBytes("input.vsdx"); // placeholder source
-            using (MemoryStream inputStream = new MemoryStream(visioBytes))
+            // Load the Visio file into a memory stream.
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
+            using (MemoryStream inputStream = new MemoryStream(fileBytes))
             {
                 // Load the diagram from the memory stream.
-                Diagram diagram = new Diagram(inputStream);
-
-                // Iterate through all pages and shapes to find ActiveX controls.
-                foreach (Page page in diagram.Pages)
+                using (Diagram diagram = new Diagram(inputStream))
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all pages in the diagram.
+                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                     {
-                        // Only shapes that contain an ActiveX control have a non‑null ActiveXControl property.
-                        if (shape.ActiveXControl == null)
-                            continue;
+                        Page page = diagram.Pages[pageIndex];
 
-                        // Identify the control type and cast to the specific control class.
-                        switch (shape.ActiveXControl.Type)
+                        // Iterate through all shapes on the current page.
+                        for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                         {
-                            case ControlType.CommandButton:
-                                var cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                                // Update properties of the command button.
-                                cmdBtn.Caption = "Updated Button";
-                                cmdBtn.Width = 2.0;   // inches
-                                cmdBtn.Height = 0.5;  // inches
-                                break;
+                            Shape shape = page.Shapes[shapeIndex];
 
-                            case ControlType.TextBox:
-                                var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
-                                // Update the displayed text.
-                                txtBox.Text = "New text content";
-                                break;
+                            // Check whether the shape contains an ActiveX control.
+                            if (shape.ActiveXControl != null)
+                            {
+                                // Determine the type of the ActiveX control.
+                                ControlType ctrlType = shape.ActiveXControl.Type;
 
-                            case ControlType.CheckBox:
-                                var chkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-                                // Set the checkbox to checked.
-                                chkBox.Value = CheckValueType.Checked;
-                                break;
+                                // Update properties based on the specific control type.
+                                if (ctrlType == ControlType.CommandButton)
+                                {
+                                    // Cast to the concrete CommandButtonActiveXControl class.
+                                    CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
 
-                            case ControlType.Image:
-                                var imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
-                                // Replace the image with a new picture loaded from a byte array.
-                                byte[] newImage = File.ReadAllBytes("newImage.png"); // placeholder image source
-                                imgCtrl.Picture = newImage;
-                                break;
+                                    // Set a new caption for the command button.
+                                    button.Caption = "Updated Caption";
 
-                            // Add handling for other control types as needed.
-                            default:
-                                // For unhandled control types you may log or ignore.
-                                break;
+                                    Console.WriteLine($"CommandButton caption updated on shape ID {shape.ID}.");
+                                }
+                                else if (ctrlType == ControlType.TextBox)
+                                {
+                                    // Cast to the concrete TextBoxActiveXControl class.
+                                    TextBoxActiveXControl textBox = (TextBoxActiveXControl)shape.ActiveXControl;
+
+                                    // Set new text content for the text box.
+                                    textBox.Text = "New Text Content";
+
+                                    Console.WriteLine($"TextBox text updated on shape ID {shape.ID}.");
+                                }
+                                // Additional control types can be handled here as needed.
+                            }
                         }
                     }
-                }
 
-                // Optionally save the modified diagram back to a memory stream (no disk I/O).
-                using (MemoryStream outputStream = new MemoryStream())
-                {
-                    diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                    // At this point outputStream contains the updated Visio file.
-                    // It can be returned, sent over a network, or stored as needed.
-                    Console.WriteLine($"Diagram updated. Output size: {outputStream.Length} bytes.");
+                    // Optionally save the modified diagram back to a memory stream (no disk I/O).
+                    using (MemoryStream outputStream = new MemoryStream())
+                    {
+                        diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                        Console.WriteLine($"Diagram processed successfully. Output size: {outputStream.Length} bytes.");
+                    }
                 }
             }
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

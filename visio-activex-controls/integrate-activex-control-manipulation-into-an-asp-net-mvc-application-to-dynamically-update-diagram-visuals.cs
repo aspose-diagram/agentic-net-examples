@@ -1,113 +1,87 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Prompt user for the input Visio diagram path (VSDX)
+        Console.Write("Enter the full path to the input Visio diagram (VSDX): ");
+        string inputPath = Console.ReadLine() ?? "";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            // Input diagram file path (existing Visio file)
-            Console.Write("Enter the path to the source Visio file: ");
-            string sourcePath = Console.ReadLine();
-
-            // Validate input
-            if (string.IsNullOrWhiteSpace(sourcePath))
-            {
-                Console.WriteLine("Source path is required.");
-                return;
-            }
-
-            // Load the diagram
-            Diagram diagram;
-            try
-            {
-                diagram = new Diagram(sourcePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load diagram: {ex.Message}");
-                return;
-            }
-
-            // Use the first page (or create one if none exist)
-            Page page;
-            if (diagram.Pages.Count > 0)
-            {
-                page = diagram.Pages[0];
-            }
-            else
-            {
-                page = new Page(1);
-                diagram.Pages.Add(page);
-            }
-
-            // Prompt user for ActiveX CommandButton properties
-            Console.Write("Enter button caption: ");
-            string caption = Console.ReadLine();
-
-            Console.Write("Enter button X position (in inches): ");
-            double posX = ReadDoubleFromConsole();
-
-            Console.Write("Enter button Y position (in inches): ");
-            double posY = ReadDoubleFromConsole();
-
-            Console.Write("Enter button width (in inches): ");
-            double width = ReadDoubleFromConsole();
-
-            Console.Write("Enter button height (in inches): ");
-            double height = ReadDoubleFromConsole();
-
-            // Add a CommandButton ActiveX control to the page
-            long controlId = page.AddActiveXControl(ControlType.CommandButton, posX, posY, width, height);
-
-            // Retrieve the shape that hosts the ActiveX control
-            Shape controlShape = page.Shapes.GetShape(controlId);
-
-            // Cast the ActiveXControl to the specific type
-            CommandButtonActiveXControl button = (CommandButtonActiveXControl)controlShape.ActiveXControl;
-
-            // Set visual properties
-            button.Caption = caption;
-            button.Width = width;
-            button.Height = height;
-
-            // Optionally, update shape text to reflect the caption
-            controlShape.Text.Value.Clear();
-            controlShape.Text.Value.Add(new Txt(caption));
-
-            // Save the updated diagram
-            Console.Write("Enter the output path for the updated diagram (e.g., output.vsdx): ");
-            string outputPath = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(outputPath))
-            {
-                Console.WriteLine("Output path is required.");
-                return;
-            }
-
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to save diagram: {ex.Message}");
-            }
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
         }
 
-        // Helper method to read a double value from console with validation
-        private static double ReadDoubleFromConsole()
+        // Prompt user for the output Visio diagram path (VSDX)
+        Console.Write("Enter the full path for the output Visio diagram (VSDX): ");
+        string outputPath = Console.ReadLine() ?? "";
+
+        // Prompt user for the caption to set on the CommandButton ActiveX control
+        Console.Write("Enter the caption text for the CommandButton ActiveX control: ");
+        string buttonCaption = Console.ReadLine() ?? "";
+
+        try
         {
-            while (true)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                string input = Console.ReadLine();
-                if (double.TryParse(input, out double result))
+                // Ensure the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    return result;
+                    Console.Error.WriteLine("Error: The diagram contains no pages.");
+                    return;
                 }
-                Console.Write("Invalid number. Please enter a valid numeric value: ");
+
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Define position and size for the new CommandButton ActiveX control (in inches)
+                double posX = 2.0;   // X coordinate
+                double posY = 2.0;   // Y coordinate
+                double width = 1.5;  // Width
+                double height = 0.5; // Height
+
+                // Insert a CommandButton ActiveX control onto the page.
+                // AddActiveXControl returns the shape ID (long), so retrieve the Shape object.
+                long controlShapeId = page.AddActiveXControl(ControlType.CommandButton, posX, posY, width, height);
+                Shape controlShape = page.Shapes.GetShape(controlShapeId);
+
+                // Retrieve the ActiveX control from the shape and cast to the specific type
+                CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)controlShape.ActiveXControl;
+
+                // Set properties of the CommandButton ActiveX control
+                commandButton.Caption = buttonCaption;   // Set displayed caption
+                commandButton.Width = width;             // Set control width
+                commandButton.Height = height;           // Set control height
+
+                // Enable the control if the IsEnabled property is available
+                // (If the property does not exist, this line will be ignored at runtime)
+                try
+                {
+                    commandButton.IsEnabled = true; // BOOL not required for this property
+                }
+                catch (Exception)
+                {
+                    // Property not supported in this version; continue without setting it.
+                }
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors that occur during Aspose operations to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

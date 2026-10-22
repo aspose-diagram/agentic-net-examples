@@ -7,36 +7,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        try
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
-
-            // Add a SpinButton ActiveX control (used as a slider) to the page
-            // Parameters: ControlType, PinX, PinY, Width, Height
-            long controlShapeId = page.AddActiveXControl(ControlType.SpinButton, 2.0, 2.0, 1.5, 0.5);
-
-            // Retrieve the shape that hosts the ActiveX control
-            Shape controlShape = page.Shapes.GetShape(controlShapeId);
-
-            // Cast the generic ActiveXControl to the specific SpinButton type
-            SpinButtonActiveXControl spinButton = (SpinButtonActiveXControl)controlShape.ActiveXControl;
-
-            // Initialize the control's range and current value
-            spinButton.Min = 0;        // Minimum value (property name is Min)
-            spinButton.Max = 100;      // Maximum value (property name is Max)
-            spinButton.Position = 50;  // Current value
-
-            // Save the diagram to a VSDX file
-            diagram.Save("SliderControlDiagram.vsdx", SaveFileFormat.Vsdx);
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
         }
-        catch (Exception ex)
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Load the Visio diagram inside a using block.
+        using (Diagram diagram = new Diagram(inputPath))
+        {
+            try
+            {
+                // Access the first page of the diagram.
+                Page page = diagram.Pages[0];
+
+                // Insert a SpinButton ActiveX control (used as a slider alternative).
+                // Parameters: control type, pinX, pinY, width, height (all in inches).
+                long shapeId = page.AddActiveXControl(ControlType.SpinButton, 2.0, 2.0, 2.0, 0.5);
+
+                // Retrieve the newly added shape by its structural ID.
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Cast the generic ActiveXControl to the specific SpinButton control.
+                SpinButtonActiveXControl spinButton = shape.ActiveXControl as SpinButtonActiveXControl;
+                if (spinButton == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve SpinButtonActiveXControl from the shape.");
+                    return;
+                }
+
+                // Set the current value (position) of the control.
+                spinButton.Position = 50;
+
+                // TODO: If the SpinButtonActiveXControl exposes Minimum and Maximum properties,
+                // initialize them here (e.g., spinButton.Minimum = 0; spinButton.Maximum = 100;).
+                // The current API documentation does not list such members.
+
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+            catch (Exception ex)
+            {
+                // Write any errors that occur during processing.
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
         }
     }
 }

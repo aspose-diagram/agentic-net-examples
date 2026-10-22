@@ -7,63 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
-        string inputPath = "input.vsdx";
-        // Verify the input file exists before proceeding
+        // Validate command‑line arguments.
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Process only shapes that contain an ActiveX control
-                    if (shape.ActiveXControl != null)
+                    // Iterate through each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Output basic shape information (ID and universal name)
-                        Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
-
-                        // Retrieve the control type of the ActiveX control
-                        ControlType ctrlType = shape.ActiveXControl.Type;
-                        Console.WriteLine($"ActiveX Control Type: {ctrlType}");
-
-                        // Example handling based on specific control types
-                        if (ctrlType == ControlType.CommandButton)
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
                         {
-                            // Cast to the concrete command button control
-                            CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                            Console.WriteLine($"Button Caption: {btn.Caption}");
+                            continue;
                         }
-                        else if (ctrlType == ControlType.CheckBox)
+
+                        // Process only shapes that contain an ActiveX control.
+                        if (shape.ActiveXControl != null)
                         {
-                            // Cast to the concrete checkbox control
-                            CheckBoxActiveXControl chk = (CheckBoxActiveXControl)shape.ActiveXControl;
-                            string value = chk.Value == CheckValueType.Checked ? "Checked" : "Unchecked";
-                            Console.WriteLine($"CheckBox Value: {value}");
+                            // Retrieve the type of the ActiveX control.
+                            ControlType controlType = shape.ActiveXControl.Type;
+
+                            // Example processing: output shape and control information.
+                            Console.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" contains ActiveX control of type {controlType}.");
+
+                            // Additional processing for specific control types can be added here.
+                            // Example:
+                            // if (controlType == ControlType.CommandButton)
+                            // {
+                            //     CommandButtonActiveXControl btn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                            //     // Perform operations on btn...
+                            // }
                         }
-                        // Additional control-specific processing can be added here
                     }
                 }
             }
-
-            // Save the diagram after processing (optional)
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors encountered during processing to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

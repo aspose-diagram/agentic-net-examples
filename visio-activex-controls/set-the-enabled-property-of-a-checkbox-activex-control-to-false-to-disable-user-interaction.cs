@@ -5,51 +5,80 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Define input file path
-        string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load an existing Visio diagram
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to find the CheckBox ActiveX control
+            bool checkBoxFound = false;
+
+            // Iterate through all pages and shapes to locate CheckBox ActiveX controls.
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Shapes collection is zero‑based; iterate by index.
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Ensure the shape contains an ActiveX control of type CheckBox
-                    if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CheckBox)
+                    Shape shape = page.Shapes[i];
+
+                    // Skip shapes that do not contain an ActiveX control.
+                    if (shape.ActiveXControl == null)
+                        continue;
+
+                    // Identify CheckBox controls via the ControlType enumeration.
+                    if (shape.ActiveXControl.Type == ControlType.CheckBox)
                     {
-                        // Cast to the specific CheckBox control type
+                        // Cast to the specific CheckBoxActiveXControl class.
                         CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
 
-                        // Disable user interaction by setting the value to unchecked (no Enabled property exists)
-                        checkBox.Value = (CheckValueType)0; // 0 corresponds to unchecked state
+                        // Disable user interaction. The IsEnabled property is a plain bool,
+                        // so assign the C# literal false (not BOOL.False).
+                        checkBox.IsEnabled = false;
 
-                        // Optionally break after first match if only one checkbox is expected
-                        // break;
+                        Console.WriteLine($"Disabled CheckBox on page {page.ID}, shape index {i}.");
+                        checkBoxFound = true;
+
+                        // Break out of the inner loop if only the first checkbox should be disabled.
+                        // Remove the break statements to disable all checkboxes.
+                        break;
                     }
                 }
+
+                if (checkBoxFound)
+                    break;
             }
 
-            // Define output file path
-            string outputPath = "output.vsdx";
-            // Save the modified diagram
+            if (!checkBoxFound)
+            {
+                Console.WriteLine("No CheckBox ActiveX control found in the diagram.");
+            }
+
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

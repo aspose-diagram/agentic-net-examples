@@ -1,75 +1,111 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate arguments: source diagram, output diagram, master shape name, comma‑separated target shape names
+        if (args.Length < 4)
         {
-            try
+            Console.Error.WriteLine("Usage: <source.vsdx> <output.vsdx> <masterShapeName> <targetShapeName1,targetShapeName2,...>");
+            return;
+        }
+
+        string sourcePath = args[0];
+        string outputPath = args[1];
+        string masterShapeName = args[2];
+        string[] targetShapeNames = args[3].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+        // Guard: source file must exist
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            return;
+        }
+
+        try
+        {
+            // Load the source diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(sourcePath))
             {
-
-                // Paths to the source diagram and the output diagram
-                string sourcePath = "source.vsdx";
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(sourcePath);
-
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
-
-                // Identify the master template shape by its universal name (NameU)
-                // Change "TemplateShape" to the actual NameU of your template shape
+                // Locate the master/template shape by its NameU (case‑insensitive)
                 Shape? masterShape = null;
-                foreach (Shape shape in page.Shapes)
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.NameU == "TemplateShape")
+                    foreach (Shape shape in page.Shapes)
                     {
-                        masterShape = shape;
-                        break;
+                        if (string.Equals(shape.NameU, masterShapeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            masterShape = shape;
+                            break;
+                        }
                     }
+                    if (masterShape != null) break;
                 }
 
                 if (masterShape == null)
                 {
-                    throw new Exception("Master template shape not found.");
+                    Console.Error.WriteLine($"Master shape \"{masterShapeName}\" not found in the diagram.");
+                    return;
                 }
 
-                // Iterate over all shapes on the page and copy geometry to target shapes
-                // Here we consider shapes whose NameU starts with "Target" as the shapes to update
-                foreach (Shape targetShape in page.Shapes)
+                // Iterate over each target shape name and copy geometry from the master shape
+                foreach (string targetName in targetShapeNames)
                 {
-                    if (targetShape == masterShape) continue; // skip the master itself
-
-                    if (targetShape.NameU != null && targetShape.NameU.StartsWith("Target"))
+                    bool found = false;
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Clear existing geometry of the target shape
-                        targetShape.Geoms.Clear();
-
-                        // Copy each geometry section from the master shape
-                        foreach (Geom masterGeom in masterShape.Geoms)
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Clone the geometry object (deep copy)
-                            Geom clonedGeom = (Geom)masterGeom.Clone();
+                            if (string.Equals(shape.NameU, targetName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Copy XForm geometry (position, size, rotation)
+                                if (masterShape.XForm != null && shape.XForm != null)
+                                {
+                                    shape.XForm.PinX.Value = masterShape.XForm.PinX.Value;
+                                    shape.XForm.PinY.Value = masterShape.XForm.PinY.Value;
+                                    shape.XForm.Width.Value = masterShape.XForm.Width.Value;
+                                    shape.XForm.Height.Value = masterShape.XForm.Height.Value;
+                                    shape.XForm.Angle.Value = masterShape.XForm.Angle.Value;
+                                }
 
-                            // Add the cloned geometry to the target shape
-                            targetShape.Geoms.Add(clonedGeom);
+                                // Copy TextXForm geometry (text block position, size, rotation)
+                                if (masterShape.TextXForm != null && shape.TextXForm != null)
+                                {
+                                    shape.TextXForm.TxtPinX.Value = masterShape.TextXForm.TxtPinX.Value;
+                                    shape.TextXForm.TxtPinY.Value = masterShape.TextXForm.TxtPinY.Value;
+                                    shape.TextXForm.TxtLocPinX.Value = masterShape.TextXForm.TxtLocPinX.Value;
+                                    shape.TextXForm.TxtLocPinY.Value = masterShape.TextXForm.TxtLocPinY.Value;
+                                    shape.TextXForm.TxtWidth.Value = masterShape.TextXForm.TxtWidth.Value;
+                                    shape.TextXForm.TxtHeight.Value = masterShape.TextXForm.TxtHeight.Value;
+                                    shape.TextXForm.TxtAngle.Value = masterShape.TextXForm.TxtAngle.Value;
+                                }
+
+                                Console.WriteLine($"Copied geometry from master \"{masterShapeName}\" to target \"{targetName}\" (Shape ID: {shape.ID}).");
+                                found = true;
+                                break;
+                            }
                         }
+                        if (found) break;
+                    }
 
-                        // Optionally, copy the local pin positions to keep the shape centered
-                        targetShape.XForm.LocPinX.Ufe.F = "Width*0.5";
-                        targetShape.XForm.LocPinY.Ufe.F = "Height*0.5";
+                    if (!found)
+                    {
+                        Console.Error.WriteLine($"Target shape \"{targetName}\" not found in the diagram. Skipping.");
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,76 +1,89 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the source Visio file
-                string inputPath = "source.vsdx";
-                // Path to the output Visio file
-                string outputPath = "cloned_output.vsdx";
-
-                // Load the existing diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Assume we work with the first page
-                Page page = diagram.Pages[0];
-
-                // Find the shape to clone (for example, the shape with ID 1)
-                // Adjust the ID as needed for your scenario
-                long originalShapeId = 1;
-                Shape originalShape = page.Shapes.GetShape(originalShapeId);
-
-                // Retrieve master name from the original shape
-                string masterName = originalShape.Master?.Name;
-                if (string.IsNullOrEmpty(masterName))
+                // Ensure the diagram contains at least one page.
+                if (diagram.Pages.Count == 0)
                 {
-                    throw new Exception("Original shape does not have an associated master.");
+                    Console.Error.WriteLine("The diagram does not contain any pages.");
+                    return;
                 }
 
-                // Use the same position as the original shape for the cloned shape
-                double pinX = originalShape.XForm.PinX.Value;
-                double pinY = originalShape.XForm.PinY.Value;
+                // Work with the first page.
+                Page page = diagram.Pages[0];
 
-                // Add a new shape using the same master; the fourth parameter isCalculate must be a bool
-                long newShapeId = page.AddShape(pinX + 1.0, pinY + 1.0, masterName, false); // offset slightly to avoid overlap
-                Shape clonedShape = page.Shapes.GetShape(newShapeId);
+                // Ensure the page has at least one shape to clone.
+                if (page.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("No shapes found on the first page to clone.");
+                    return;
+                }
 
-                // Copy all fields (metadata) from the original shape to the cloned shape
-                foreach (Field originalField in originalShape.Fields)
+                // Retrieve the source shape (first shape on the page).
+                Shape sourceShape = page.Shapes[0];
+
+                // Create a new shape instance and copy the source shape's data.
+                Shape clonedShape = new Shape();
+                clonedShape.Copy(sourceShape);
+
+                // Copy all fields from the source shape to the cloned shape.
+                foreach (Field field in sourceShape.Fields)
                 {
                     Field newField = new Field();
 
-                    // Copy field value
-                    newField.Value.Val = originalField.Value.Val;
+                    // Copy the field's text value.
+                    newField.Value.Val = field.Value.Val;
 
-                    // Copy field format
-                    newField.Format.Val = originalField.Format.Val;
+                    // Copy calendar and type information if present.
+                    newField.Calendar.Value = field.Calendar.Value;
+                    newField.Type.Value = field.Type.Value;
 
-                    // Copy field type
-                    newField.Type.Value = originalField.Type.Value;
-
-                    // Copy field calendar (if any)
-                    newField.Calendar.Value = originalField.Calendar.Value;
-
-                    // Copy deletion flag
-                    newField.Del = originalField.Del;
-
-                    // Add the new field to the cloned shape
+                    // Add the new field to the cloned shape.
                     clonedShape.Fields.Add(newField);
                 }
 
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Offset the cloned shape's position slightly to avoid exact overlap.
+                clonedShape.XForm.PinX.Value += 1.0;
+                clonedShape.XForm.PinY.Value += 1.0;
 
+                // Add the cloned shape to the same page.
+                page.Shapes.Add(clonedShape);
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Shape cloned successfully. Saved to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,50 +1,71 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a timestamp prefix (e.g., 20230921153045)
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            // Create a timestamp prefix (e.g., 20231127_154530).
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify OLE objects: must be a foreign shape with Object foreign type
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ForeignType == ForeignType.Object)
+                    // Identify OLE objects via the presence of ForeignData with embedded ObjectData.
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                     {
-                        // Preserve the original display name
-                        string originalName = shape.Name;
+                        // Retrieve existing display text if any.
+                        string existingText = string.Empty;
+                        if (shape.Text != null && shape.Text.Value != null && shape.Text.Value.Count > 0)
+                        {
+                            // Use the first Txt element as the current caption.
+                            existingText = shape.Text.Value[0].Value;
+                        }
 
-                        // Update the display name with the timestamp prefix
-                        shape.Name = $"{timestamp}_{originalName}";
+                        // Build the new caption with the timestamp prefix.
+                        string newCaption = string.IsNullOrEmpty(existingText)
+                            ? $"{timestamp}_{shape.NameU}"
+                            : $"{timestamp}_{existingText}";
+
+                        // Clear existing text and set the new caption.
+                        shape.Text.Value.Clear();
+                        shape.Text.Value.Add(new Txt(newCaption));
                     }
                 }
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

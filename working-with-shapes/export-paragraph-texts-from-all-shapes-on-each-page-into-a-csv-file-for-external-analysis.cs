@@ -3,64 +3,64 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio file to be processed
-                string visioPath = "input.vsdx";
-
-                // Path to the CSV file that will contain the exported texts
-                string csvPath = "output.csv";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(visioPath);
-
-                // Prepare the CSV file for writing
-                using (StreamWriter writer = new StreamWriter(csvPath))
+                // Prepare CSV writer.
+                using (StreamWriter writer = new StreamWriter(outputPath))
                 {
-                    // Write CSV header
-                    writer.WriteLine("PageName,ShapeID,ShapeName,ParagraphText");
+                    // Write CSV header.
+                    writer.WriteLine("PageIndex,ShapeID,Text");
 
-                    // Iterate through each page in the diagram
+                    int pageIndex = 0;
+
+                    // Iterate over each page in the diagram.
                     foreach (Page page in diagram.Pages)
                     {
-                        string pageName = page.Name ?? string.Empty;
-
-                        // Iterate through each shape on the current page
+                        // Iterate over each shape on the current page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            long shapeId = shape.ID;
-                            string shapeName = shape.Name ?? string.Empty;
+                            // Retrieve the plain text of the shape.
+                            string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
-                            // Retrieve the plain text of the shape
-                            string rawText = shape.Text.Value.Text ?? string.Empty;
+                            // Escape double quotes for CSV compliance.
+                            string escapedText = shapeText.Replace("\"", "\"\"");
 
-                            // Escape CSV special characters
-                            string escapedText = rawText.Replace("\"", "\"\"");
-                            if (escapedText.Contains(",") || escapedText.Contains("\"") ||
-                                escapedText.Contains("\n") || escapedText.Contains("\r"))
-                            {
-                                escapedText = $"\"{escapedText}\"";
-                            }
-
-                            // Write a CSV line for the current shape
-                            writer.WriteLine($"{pageName},{shapeId},{shapeName},{escapedText}");
+                            // Write a CSV line for the current shape.
+                            writer.WriteLine($"{pageIndex},{shape.ID},\"{escapedText}\"");
                         }
+
+                        pageIndex++;
                     }
                 }
-
-                // Clean up
-                diagram.Dispose();
-
-                Console.WriteLine($"Export completed. CSV saved to: {csvPath}");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

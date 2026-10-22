@@ -1,76 +1,73 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            // Determine the folder to process
-            string folderPath;
-            if (args.Length > 0)
+            Console.Error.WriteLine("Usage: Program <folderPath>");
+            return;
+        }
+
+        string folderPath = args[0];
+
+        // Verify that the specified folder exists.
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Set a global fallback font name before loading any diagrams.
+        FontConfigs.DefaultFontName = "Arial";
+
+        // Get all files in the folder (filter common Visio extensions).
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in diagramFiles)
+        {
+            // Simple extension filter – process only Visio files.
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsx" && ext != ".vtx")
             {
-                folderPath = args[0];
-            }
-            else
-            {
-                Console.Write("Enter the full path of the folder containing Visio files: ");
-                folderPath = Console.ReadLine();
-            }
-
-            if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
-            {
-                Console.WriteLine("Invalid folder path.");
-                return;
-            }
-
-            // Supported Visio extensions
-            string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".vsdm", ".vssm", ".vstm" };
-
-            // Process each file
-            foreach (string filePath in Directory.GetFiles(folderPath))
-            {
-                string ext = Path.GetExtension(filePath).ToLowerInvariant();
-                if (Array.IndexOf(extensions, ext) < 0)
-                    continue; // Skip non‑Visio files
-
-                try
-                {
-                    // Load the diagram
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply uniform header/footer font settings
-                    HeaderFooter headerFooter = diagram.HeaderFooter;
-                    HeaderFooterFont hfFont = headerFooter.HeaderFooterFont;
-
-                    // Font family
-                    hfFont.FaceName = "Arial";
-
-                    // Bold weight (700 = Bold, 400 = Regular)
-                    hfFont.Weight = 700;
-
-                    // Point size 12pt -> Height = -16 (12 * -1.333 ≈ -16)
-                    hfFont.Height = -16;
-
-                    // Italic and underline flags
-                    hfFont.Italic = BOOL.False;
-                    hfFont.Underline = BOOL.False;
-
-                    // Text color (black)
-                    headerFooter.HeaderFooterColor = Color.Black;
-
-                    // Save back in the same format (using Vsdx as a safe default)
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine($"Updated header/footer fonts for: {Path.GetFileName(filePath)}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-                }
+                continue;
             }
 
-            Console.WriteLine("Batch processing completed.");
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
+            try
+            {
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // Access the global header/footer font object.
+                HeaderFooterFont hfFont = diagram.HeaderFooter.HeaderFooterFont;
+
+                // Apply identical font settings.
+                hfFont.FaceName = "Arial";          // Font family name.
+                hfFont.Height = -16;                // Height calculated for ~12pt (negative mapping as required).
+                hfFont.Weight = 700;                // 700 = Bold weight.
+                hfFont.Italic = BOOL.False;         // No italic.
+                hfFont.Underline = BOOL.False;      // No underline.
+
+                // Save the diagram back in its original format (using VSDX as a safe default).
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+            }
         }
     }
+}

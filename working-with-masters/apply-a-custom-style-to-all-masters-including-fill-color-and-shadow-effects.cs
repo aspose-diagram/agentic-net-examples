@@ -1,53 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input diagram path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output diagram path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
         try
         {
-
-            // Paths to the source and destination Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the custom style values
-            string fillColor = "#FFCC00";          // Example fill color (orange)
-            string shadowColor = "#000000";        // Shadow color (black)
-            double shadowTransparency = 0.3;       // 30% transparent
-            double shadowOffsetX = 0.1;            // Horizontal offset
-            double shadowOffsetY = 0.1;            // Vertical offset
-
-            // Apply the style to every master and each shape within the master
+            // Iterate over all masters in the diagram
             foreach (Master master in diagram.Masters)
             {
+                // Iterate over each shape within the master
                 foreach (Shape shape in master.Shapes)
                 {
-                    // Set solid fill pattern
-                    shape.Fill.FillPattern.Value = 1;               // Solid fill
-                    shape.Fill.FillForegnd.Value = fillColor;       // Fill foreground color
+                    // Apply a solid fill pattern
+                    shape.Fill.FillPattern.Value = 1; // 1 = solid
 
-                    // Configure simple shadow
+                    // Set the fill foreground color (example: orange)
+                    shape.Fill.FillForegnd.Value = "#FFCC00";
+
+                    // Configure simple drop shadow
                     shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                    shape.Fill.ShdwForegnd.Value = shadowColor;     // Shadow color
-                    shape.Fill.ShdwForegndTrans.Value = shadowTransparency; // Transparency
-                    shape.Fill.ShapeShdwOffsetX.Value = shadowOffsetX; // X offset
-                    shape.Fill.ShapeShdwOffsetY.Value = shadowOffsetY; // Y offset
+                    shape.Fill.ShdwForegnd.Value = "#000000";      // Shadow color: black
+                    shape.Fill.ShdwForegndTrans.Value = 0.3;       // 30% transparency
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

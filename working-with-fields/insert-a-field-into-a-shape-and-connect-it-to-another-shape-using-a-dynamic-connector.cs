@@ -1,52 +1,87 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the source Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Create a new empty diagram
-                Diagram diagram = new Diagram();
-
-                // Get the first (default) page
+                // Access the first page (index 0).
                 Page page = diagram.Pages[0];
 
-                // Add first shape (Rectangle) at position (2,2)
-                long shapeId1 = page.AddShape(2.0, 2.0, "Rectangle", false);
-                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                // -----------------------------------------------------------------
+                // 1. Add two rectangle shapes to the page.
+                // -----------------------------------------------------------------
+                // Add first rectangle.
+                long rect1Id = page.AddShape(2.0, 5.0, "Rectangle", false);
+                Shape rect1 = page.Shapes.GetShape(rect1Id);
 
-                // Add second shape (Rectangle) at position (6,2)
-                long shapeId2 = page.AddShape(6.0, 2.0, "Rectangle", false);
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
+                // Add second rectangle.
+                long rect2Id = page.AddShape(6.0, 5.0, "Rectangle", false);
+                Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-                // Insert a custom field into the first shape
+                // -----------------------------------------------------------------
+                // 2. Insert a custom text field into the first rectangle.
+                // -----------------------------------------------------------------
                 Field field = new Field();
-                field.Value.Val = "CustomFieldValue";
-                shape1.Fields.Add(field);
+                // Set the displayed value of the field.
+                field.Value.Val = "Sample Field";
+                // Initialise the formula (UFEV) – empty formula with undefined unit.
+                field.Value.Ufev.Unit = MeasureConst.Undefined;
+                field.Value.Ufev.F = "";
+                // Add the field to the shape's field collection.
+                rect1.Fields.Add(field);
 
-                // Add a dynamic connector shape (will be used to connect the two rectangles)
-                long connectorId = page.AddShape(4.0, 2.0, "Dynamic connector", false);
+                // -----------------------------------------------------------------
+                // 3. Add a dynamic connector shape.
+                // -----------------------------------------------------------------
+                long connectorId = page.AddShape(4.0, 5.0, "Dynamic connector", false);
                 Shape connector = page.Shapes.GetShape(connectorId);
 
-                // Connect shape1 (bottom) to shape2 (top) using the dynamic connector
+                // -----------------------------------------------------------------
+                // 4. Connect the two rectangles via the dynamic connector.
+                // -----------------------------------------------------------------
                 page.ConnectShapesViaConnector(
-                    shapeId1,
-                    ConnectionPointPlace.Bottom,
-                    shapeId2,
-                    ConnectionPointPlace.Top,
+                    rect1.ID,
+                    ConnectionPointPlace.Right,
+                    rect2.ID,
+                    ConnectionPointPlace.Left,
                     connectorId);
 
-                // Save the diagram to a VSDX file
-                diagram.Save("OutputDiagram.vsdx", SaveFileFormat.Vsdx);
-
+                // -----------------------------------------------------------------
+                // 5. Save the modified diagram.
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (Aspose.Diagram.DiagramException ex)
-            {
-                Console.Error.WriteLine($"[DiagramException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
     }
-    }
+}

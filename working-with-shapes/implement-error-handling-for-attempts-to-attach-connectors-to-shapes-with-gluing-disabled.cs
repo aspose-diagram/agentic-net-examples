@@ -1,81 +1,120 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Work with the first page.
+            Page page = diagram.Pages[0];
+
+            // -----------------------------------------------------------------
+            // Retrieve two non‑connector shapes to be linked.
+            // -----------------------------------------------------------------
+            long firstShapeId = -1;
+            long secondShapeId = -1;
+
+            foreach (Shape shape in page.Shapes)
+            {
+                // Skip connector shapes (OneD == true).
+                if (shape.OneD == true)
+                    continue;
+
+                if (firstShapeId == -1)
+                    firstShapeId = shape.ID;
+                else if (secondShapeId == -1)
+                {
+                    secondShapeId = shape.ID;
+                    break;
+                }
+            }
+
+            // If not enough shapes exist, create them.
+            if (firstShapeId == -1)
+            {
+                long id = page.AddShape(2, 2, "Rectangle", false);
+                firstShapeId = id;
+            }
+
+            if (secondShapeId == -1)
+            {
+                long id = page.AddShape(5, 5, "Rectangle", false);
+                secondShapeId = id;
+            }
+
+            // -----------------------------------------------------------------
+            // Add a dynamic connector shape that will be used to connect the two shapes.
+            // -----------------------------------------------------------------
+            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
+
+            // -----------------------------------------------------------------
+            // Attempt to attach the connector. If gluing is disabled, the operation
+            // will throw an exception which we catch and report.
+            // -----------------------------------------------------------------
             try
             {
+                // Connect the first shape's Bottom to the second shape's Top using the connector.
+                page.ConnectShapesViaConnector(
+                    firstShapeId,
+                    ConnectionPointPlace.Bottom,
+                    secondShapeId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
 
-                // Path to a stencil that contains the required masters (e.g., "Rectangle" and "Dynamic connector").
-                // Replace with an actual .vss file path when running the code.
-                string stencilPath = "basic.vss";
-
-                // Load the stencil as a diagram (the stencil itself acts as a diagram containing masters).
-                Diagram diagram = new Diagram(stencilPath);
-
-                // Use the first page (created automatically) for shape operations.
-                Page page = diagram.Pages[0];
-
-                // Add a rectangle shape.
-                long rectShapeId = page.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", false);
-                Shape rectShape = page.Shapes.GetShape(rectShapeId);
-
-                // Add a second rectangle shape.
-                long rectShape2Id = page.AddShape(6.0, 2.0, 2.0, 1.0, "Rectangle", false);
-                Shape rectShape2 = page.Shapes.GetShape(rectShape2Id);
-
-                // Add a dynamic connector shape (1‑D connector).
-                long connectorId = page.AddShape(0.0, 0.0, 0.0, 0.0, "Dynamic connector", false);
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
-
-                // Verify that both endpoint shapes allow dynamic gluing.
-                // GlueTypeValue.AllowDynamicGlue means gluing is enabled.
-                // GlueTypeValue.NoAllowDynamicGlue means gluing is disabled.
-                bool rectCanGlue = rectShape.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-                bool rect2CanGlue = rectShape2.Misc.GlueType.Value == GlueTypeValue.AllowDynamicGlue;
-
-                if (!rectCanGlue || !rect2CanGlue)
-                {
-                    // Provide detailed error information.
-                    if (!rectCanGlue)
-                    {
-                        Console.WriteLine($"Error: Shape ID {rectShapeId} ('{rectShape.Master?.Name}') has gluing disabled.");
-                    }
-                    if (!rect2CanGlue)
-                    {
-                        Console.WriteLine($"Error: Shape ID {rectShape2Id} ('{rectShape2.Master?.Name}') has gluing disabled.");
-                    }
-                    Console.WriteLine("Connector attachment aborted due to disabled gluing on one or more shapes.");
-                    // Optionally, you could throw an exception to halt execution.
-                    // throw new InvalidOperationException("Cannot attach connector because gluing is disabled.");
-                }
-                else
-                {
-                    // Both shapes allow gluing – proceed with connector attachment.
-                    // Connect the first rectangle's right side to the second rectangle's left side.
-                    page.ConnectShapesViaConnector(
-                        rectShapeId,
-                        ConnectionPointPlace.Right,
-                        rectShape2Id,
-                        ConnectionPointPlace.Left,
-                        connectorId);
-
-                    Console.WriteLine("Connector successfully attached between the two rectangles.");
-                }
-
-                // Save the diagram to a VSDX file.
-                string outputPath = "output.vsdx";
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to '{outputPath}'.");
-
+                Console.WriteLine("Connector attached successfully.");
             }
-            catch (System.IO.FileNotFoundException ex)
+            catch (Exception attachEx)
             {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+                // Handle errors that arise due to gluing being disabled or other issues.
+                Console.Error.WriteLine("Failed to attach connector. Possible cause: gluing is disabled for the target shapes.");
+                Console.Error.WriteLine($"Error details: {attachEx.Message}");
+                // Optionally, remove the connector shape to keep the diagram clean.
+                // Note: Deleting a shape is done by setting its Delete flag.
+                Shape connectorShape = page.Shapes.GetShape(connectorId);
+                connectorShape.Del = BOOL.True;
             }
+
+            // -----------------------------------------------------------------
+            // Save the modified diagram.
+            // -----------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // General error handling for loading, saving, or unexpected failures.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

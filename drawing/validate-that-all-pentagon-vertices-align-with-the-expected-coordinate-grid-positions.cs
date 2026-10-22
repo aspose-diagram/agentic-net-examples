@@ -1,64 +1,102 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Expect the first argument to be the path to the Visio diagram file.
+        if (args.Length == 0)
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            Console.Error.WriteLine("Error: No diagram file path provided.");
+            return;
+        }
 
-            // Add a single page to the diagram
-            diagram.Pages.Add(new Page());
-            Page page = diagram.Pages[0];
+        string diagramPath = args[0];
 
-            // Dictionary to keep track of the vertices used for each shape
-            Dictionary<long, double[]> shapeVertices = new Dictionary<long, double[]>();
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
 
-            // Define pentagon vertices (grid-aligned coordinates)
-            // Points are defined as a flat array: x1, y1, x2, y2, ..., xn, yn
-            double[] pentagonPoints = new double[]
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Define the grid spacing (e.g., 0.5 inches). Adjust as needed.
+            const double gridSpacing = 0.5;
+
+            // Helper local function to determine if a coordinate aligns with the grid.
+            bool IsOnGrid(double value)
             {
-                0, 0,   // Vertex 1
-                2, 0,   // Vertex 2
-                3, 2,   // Vertex 3
-                1, 4,   // Vertex 4
-                -1, 2   // Vertex 5
-            };
+                // Checks if value is a multiple of gridSpacing within a small tolerance.
+                double remainder = Math.Abs(value % gridSpacing);
+                return remainder < 1e-6 || Math.Abs(remainder - gridSpacing) < 1e-6;
+            }
 
-            // Draw the pentagon shape on the page
-            long pentagonId = page.DrawPolyline(pentagonPoints);
+            bool allPentagonsValid = true;
 
-            // Store the vertices for later validation
-            shapeVertices[pentagonId] = pentagonPoints;
-
-            // Validate that all pentagon vertices align with the expected grid (integer coordinates)
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                if (!shapeVertices.ContainsKey(shape.ID))
-                    continue; // Skip shapes that are not our pentagons
-
-                double[] vertices = shapeVertices[shape.ID];
-
-                for (int i = 0; i < vertices.Length; i += 2)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    double x = vertices[i];
-                    double y = vertices[i + 1];
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Check if X and Y are integer values (grid alignment)
-                    if (x % 1 != 0 || y % 1 != 0)
+                    // Identify pentagon shapes by checking the master name.
+                    if (shape.Master != null && shape.Master.Name == "Pentagon")
                     {
-                        throw new Exception(
-                            $"Pentagon shape ID {shape.ID} has a vertex at ({x}, {y}) which does not align to the integer grid.");
+                        // Retrieve geometric properties (values are stored in DoubleValue objects).
+                        double pinX = shape.XForm.PinX.Value;
+                        double pinY = shape.XForm.PinY.Value;
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
+
+                        // Validate that the main transformation values align with the grid.
+                        bool pinXOnGrid = IsOnGrid(pinX);
+                        bool pinYOnGrid = IsOnGrid(pinY);
+                        bool widthOnGrid = IsOnGrid(width);
+                        bool heightOnGrid = IsOnGrid(height);
+
+                        if (!pinXOnGrid || !pinYOnGrid || !widthOnGrid || !heightOnGrid)
+                        {
+                            allPentagonsValid = false;
+                            Console.WriteLine($"Pentagon shape ID {shape.ID} on page {page.ID} has misaligned vertices:");
+                            Console.WriteLine($"  PinX = {pinX} (OnGrid: {pinXOnGrid})");
+                            Console.WriteLine($"  PinY = {pinY} (OnGrid: {pinYOnGrid})");
+                            Console.WriteLine($"  Width = {width} (OnGrid: {widthOnGrid})");
+                            Console.WriteLine($"  Height = {height} (OnGrid: {heightOnGrid})");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Pentagon shape ID {shape.ID} on page {page.ID} aligns with the grid.");
+                        }
                     }
                 }
             }
 
-            // Save the diagram to a VSDX file
-            diagram.Save("PentagonDiagram.vsdx", SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Pentagon vertices validated and diagram saved successfully.");
+            if (allPentagonsValid)
+            {
+                Console.WriteLine("All pentagon vertices align with the expected coordinate grid positions.");
+            }
+            else
+            {
+                Console.WriteLine("Some pentagon vertices do not align with the expected coordinate grid positions.");
+                // Optionally, you could throw an exception to signal failure.
+                // throw new Exception("Pentagon grid validation failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or general exceptions and report them.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

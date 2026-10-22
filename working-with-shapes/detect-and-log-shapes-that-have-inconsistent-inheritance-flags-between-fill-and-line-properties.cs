@@ -6,103 +6,79 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least one argument: the path to the Visio file.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: DetectInheritanceInconsistency <inputVisioFile> [outputLogFile]");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        // Input Visio file path.
-        string inputPath = args[0];
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        string diagramPath = args[0];
 
-        // Optional output log file path; if omitted, logs are written only to console.
-        string? logPath = args.Length > 1 ? args[1] : null;
-        StreamWriter? logWriter = null;
-        if (logPath != null)
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
         {
-            try
-            {
-                // Create (or overwrite) the log file.
-                logWriter = new StreamWriter(logPath, false);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create log file '{logPath}': {ex.Message}");
-                // Continue with console-only logging.
-                logWriter = null;
-            }
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
         }
 
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through each page in the diagram.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through each shape on the current page.
+                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted.
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Determine if the fill properties are inherited.
-                    bool fillInherited = false;
+                    // Determine if fill is inherited by comparing current fill foreground with inherited fill foreground
+                    bool isFillInherited = false;
                     try
                     {
-                        // Compare a representative fill cell (foreground color) with its inherited counterpart.
-                        fillInherited = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+                        isFillInherited = string.Equals(
+                            shape.Fill.FillForegnd.Value,
+                            shape.InheritFill.FillForegnd.Value,
+                            StringComparison.OrdinalIgnoreCase);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // If any fill cell is unavailable, treat as not inherited.
-                        fillInherited = false;
+                        // If any property is unavailable, treat as not inherited and log the issue
+                        Console.Error.WriteLine($"Warning: Unable to evaluate fill inheritance for shape ID {shape.ID} on page '{page.Name}'. {ex.Message}");
                     }
 
-                    // Determine if the line properties are inherited.
-                    bool lineInherited = false;
+                    // Determine if line is inherited by comparing current line color with inherited line color
+                    bool isLineInherited = false;
                     try
                     {
-                        // Compare a representative line cell (line color) with its inherited counterpart.
-                        lineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+                        isLineInherited = string.Equals(
+                            shape.Line.LineColor.Value,
+                            shape.InheritLine.LineColor.Value,
+                            StringComparison.OrdinalIgnoreCase);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // If any line cell is unavailable, treat as not inherited.
-                        lineInherited = false;
+                        // If any property is unavailable, treat as not inherited and log the issue
+                        Console.Error.WriteLine($"Warning: Unable to evaluate line inheritance for shape ID {shape.ID} on page '{page.Name}'. {ex.Message}");
                     }
 
-                    // Log shapes where fill and line inheritance statuses differ.
-                    if (fillInherited != lineInherited)
+                    // Log shapes where inheritance status differs between fill and line
+                    if (isFillInherited != isLineInherited)
                     {
-                        string message = $"Page {pageIndex + 1}, Shape ID {shape.ID}, NameU '{shape.NameU}': " +
-                                         $"FillInherited={fillInherited}, LineInherited={lineInherited}";
-                        Console.WriteLine(message);
-                        logWriter?.WriteLine(message);
+                        Console.WriteLine($"Inconsistent inheritance detected - Page: '{page.Name}', Shape ID: {shape.ID}, NameU: '{shape.NameU}', FillInherited: {isFillInherited}, LineInherited: {isLineInherited}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
+            // Log any unexpected errors during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-        finally
-        {
-            // Ensure the log file is properly closed.
-            logWriter?.Close();
         }
     }
 }

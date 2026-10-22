@@ -1,35 +1,54 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new blank diagram
-        Diagram diagram = new Diagram();
+        // Define output file path
+        string outputPath = "GroupedDiagram.vsdx";
 
-        // Access the first (default) page
-        Page page = diagram.Pages[0];
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
-        // Draw a rectangle (pinX, pinY, width, height)
-        long rectId = page.DrawRectangle(2.0, 2.0, 2.0, 1.0);
+        try
+        {
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-        // Draw an ellipse (pinX, pinY, width, height)
-        long ellipseId = page.DrawEllipse(5.0, 2.0, 2.0, 1.0);
+            // Access the first page (index 0)
+            Page page = diagram.Pages[0];
 
-        // Retrieve the shape objects using their IDs
-        Shape rectShape = page.Shapes.GetShape(rectId);
-        Shape ellipseShape = page.Shapes.GetShape(ellipseId);
+            // Draw a rectangle at (2,2) with width 3 and height 2 inches
+            long rectId = page.DrawRectangle(2.0, 2.0, 3.0, 2.0);
 
-        // Group the rectangle and ellipse together
-        Shape groupShape = page.Shapes.Group(new Shape[] { rectShape, ellipseShape });
+            // Draw an ellipse at (6,2) with width 3 and height 2 inches
+            long ellipseId = page.DrawEllipse(6.0, 2.0, 3.0, 2.0);
 
-        // Assign a common name to the group
-        groupShape.NameU = "MyGroup";
-        groupShape.Name = "MyGroup";
+            // Retrieve the shape objects using their IDs
+            Shape rectShape = page.Shapes.GetShape(rectId);
+            Shape ellipseShape = page.Shapes.GetShape(ellipseId);
 
-        // Save the diagram to a VSDX file
-        diagram.Save("GroupedDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Group the rectangle and ellipse together
+            Shape[] shapesToGroup = new Shape[] { rectShape, ellipseShape };
+            Shape groupShape = page.Shapes.Group(shapesToGroup);
+
+            // Assign a common name to the group
+            groupShape.Name = "MyRectangleEllipseGroup";
+
+            // Save the diagram to VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

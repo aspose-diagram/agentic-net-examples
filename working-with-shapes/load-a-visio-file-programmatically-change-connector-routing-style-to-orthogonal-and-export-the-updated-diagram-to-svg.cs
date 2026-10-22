@@ -1,50 +1,58 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument) or default.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output SVG file path (second argument) or default.
+        string outputPath = args.Length > 1 ? args[1] : "output.svg";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to find connector shapes
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate over all pages in the diagram.
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
                 {
-                    // Connectors are 1‑D shapes (dynamic connectors)
-                    if (shape.OneD)
+                    Page page = diagram.Pages[pageIdx];
+
+                    // Iterate over all shapes on the current page.
+                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
                     {
-                        // Set routing style to orthogonal (right‑angle)
+                        Shape shape = page.Shapes[shapeIdx];
+
+                        // Set connector routing style to orthogonal (right‑angle).
+                        // This property is applicable to connector shapes.
                         shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
                     }
                 }
+
+                // Configure SVG save options.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                // Save the modified diagram as SVG.
+                diagram.Save(outputPath, svgOptions);
             }
 
-            // Prepare SVG export options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            // Optional: do not export hidden pages
-            svgOptions.ExportHiddenPage = false;
-
-            // Export the updated diagram to SVG
-            string outputPath = "output.svg";
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine("Diagram exported to SVG successfully.");
-
+            Console.WriteLine($"Diagram successfully saved as SVG to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

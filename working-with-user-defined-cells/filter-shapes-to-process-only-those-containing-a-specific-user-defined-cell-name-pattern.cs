@@ -1,60 +1,119 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // ------------------------------------------------------------
+        // Get diagram file path from arguments or prompt the user.
+        // ------------------------------------------------------------
+        string diagramPath;
+        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
         {
-            try
+            diagramPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the full path to the Visio diagram file: ");
+            diagramPath = Console.ReadLine();
+        }
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // Get the user-defined cell name pattern to filter shapes.
+        // ------------------------------------------------------------
+        string pattern;
+        if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+        {
+            pattern = args[1];
+        }
+        else
+        {
+            Console.Write("Enter the user-defined cell name pattern to filter (case-insensitive): ");
+            pattern = Console.ReadLine();
+        }
+
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            Console.Error.WriteLine("Error: No pattern provided.");
+            return;
+        }
+
+        try
+        {
+            // ------------------------------------------------------------
+            // Load the Visio diagram.
+            // ------------------------------------------------------------
+            Diagram diagram = new Diagram(diagramPath);
+
+            // ------------------------------------------------------------
+            // Iterate through all pages and shapes, processing only those
+            // that contain a user-defined cell whose Name or NameU matches
+            // the supplied pattern.
+            // ------------------------------------------------------------
+            foreach (Page page in diagram.Pages)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file after processing
-                string outputPath = "output.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the user‑defined cell name pattern to look for
-                string cellNamePattern = "MyCell";
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    bool matchesPattern = false;
 
-                        // Check each user‑defined cell in the shape
+                    // Iterate over all user-defined cells of the shape.
+                    foreach (User userCell in shape.Users)
+                    {
+                        // Check both Name and NameU for the pattern (case-insensitive).
+                        if (!string.IsNullOrEmpty(userCell.Name) &&
+                            userCell.Name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            matchesPattern = true;
+                            break;
+                        }
+
+                        if (!string.IsNullOrEmpty(userCell.NameU) &&
+                            userCell.NameU.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            matchesPattern = true;
+                            break;
+                        }
+                    }
+
+                    // If the shape contains a matching user-defined cell, process it.
+                    if (matchesPattern)
+                    {
+                        // Example processing: output shape details to console.
+                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}");
+
+                        // Additional custom processing can be placed here.
+                        // For demonstration, we will list all matching user-defined cells.
                         foreach (User userCell in shape.Users)
                         {
-                            // Match the cell name (Name or NameU) against the pattern
-                            if (!string.IsNullOrEmpty(userCell.Name) && userCell.Name.Contains(cellNamePattern) ||
-                                !string.IsNullOrEmpty(userCell.NameU) && userCell.NameU.Contains(cellNamePattern))
+                            bool nameMatches = (!string.IsNullOrEmpty(userCell.Name) &&
+                                                userCell.Name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                                               (!string.IsNullOrEmpty(userCell.NameU) &&
+                                                userCell.NameU.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                            if (nameMatches)
                             {
-                                // Example processing: output shape information
-                                Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}, User Cell: {userCell.NameU}");
-
-                                // Example modification: set the shape fill foreground color to red
-                                shape.Fill.FillForegnd.Value = "#FF0000";
-
-                                // Once a matching user cell is found, no need to check other cells for this shape
-                                break;
+                                Console.WriteLine($"  User Cell - Name: {userCell.Name}, NameU: {userCell.NameU}, Value: {userCell.Value.Val}, Prompt: {userCell.Prompt.Value}");
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // ------------------------------------------------------------
+            // Handle any exceptions thrown by Aspose.Diagram operations.
+            // ------------------------------------------------------------
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

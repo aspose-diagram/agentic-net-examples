@@ -4,65 +4,119 @@ using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect two arguments: folder path and the field value to remove
+        if (args.Length < 2)
         {
+            Console.Error.WriteLine("Usage: Program <folderPath> <fieldValueToRemove>");
+            return;
+        }
+
+        string folderPath = args[0];
+        string targetFieldValue = args[1];
+
+        // Guard: ensure the folder exists
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Get all Visio files in the folder (common extensions)
+        string[] visioExtensions = new[] { ".vsdx", ".vsd", ".vsx", ".vtx", ".vssx", ".vss", ".vstm", ".vstx", ".vst", ".vdx" };
+        List<string> files = new List<string>();
+        foreach (string ext in visioExtensions)
+        {
+            files.AddRange(Directory.GetFiles(folderPath, "*" + ext, SearchOption.TopDirectoryOnly));
+        }
+
+        foreach (string filePath in files)
+        {
+            // Guard: ensure the file exists (redundant but per requirements)
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
+            }
+
             try
             {
+                // Load the diagram
+                Diagram diagram = new Diagram(filePath);
 
-                // Path to the shared folder containing the Visio diagrams.
-                // Adjust this path as needed or obtain it from command‑line arguments.
-                string folderPath = @"C:\SharedDiagrams";
-
-                // Name of the custom property (field) to remove from every shape.
-                const string targetFieldName = "MyCustomField";
-
-                // Get all Visio files with .vsdx extension in the folder.
-                string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-                foreach (string diagramPath in diagramFiles)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(diagramPath);
-
-                    // Iterate through each page.
-                    foreach (Page page in diagram.Pages)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Iterate through each shape on the page.
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Ensure the shape has a Props collection.
-                            if (shape.Props != null)
-                            {
-                                // Collect the properties that match the target name.
-                                List<Prop> propsToRemove = new List<Prop>();
-                                foreach (Prop prop in shape.Props)
-                                {
-                                    if (prop.Name == targetFieldName)
-                                    {
-                                        propsToRemove.Add(prop);
-                                    }
-                                }
+                        // Ensure the shape has a Fields collection
+                        if (shape.Fields == null)
+                            continue;
 
-                                // Remove the collected properties.
-                                foreach (Prop prop in propsToRemove)
-                                {
-                                    shape.Props.Remove(prop);
-                                }
+                        // Collect fields that match the target value
+                        List<Field> fieldsToRemove = new List<Field>();
+                        foreach (Field field in shape.Fields)
+                        {
+                            // Compare the field's current value
+                            if (field.Value != null && field.Value.Val == targetFieldValue)
+                            {
+                                fieldsToRemove.Add(field);
                             }
                         }
-                    }
 
-                    // Save the modified diagram back to the same file.
-                    diagram.Save(diagramPath, SaveFileFormat.Vsdx);
+                        // Remove the collected fields from the shape
+                        foreach (Field field in fieldsToRemove)
+                        {
+                            shape.Fields.Remove(field);
+                        }
+                    }
                 }
 
-                Console.WriteLine("Batch removal of field \"{0}\" completed for {1} files.", targetFieldName, diagramFiles.Length);
+                // Determine appropriate save format based on file extension
+                SaveFileFormat format = GetSaveFileFormat(Path.GetExtension(filePath));
 
+                // Save the modified diagram, overwriting the original file
+                diagram.Save(filePath, format);
+
+                Console.WriteLine($"Processed and saved: {filePath}");
             }
-            catch (System.IO.DirectoryNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
+        }
     }
+
+    // Helper method to map file extensions to SaveFileFormat enum values
+    private static SaveFileFormat GetSaveFileFormat(string extension)
+    {
+        switch (extension.ToLowerInvariant())
+        {
+            case ".vsdx":
+                return SaveFileFormat.Vsdx;
+            case ".vsd":
+                return SaveFileFormat.Vsd;
+            case ".vsx":
+                return SaveFileFormat.Vsx;
+            case ".vtx":
+                return SaveFileFormat.Vtx;
+            case ".vssx":
+                return SaveFileFormat.Vssx;
+            case ".vss":
+                return SaveFileFormat.Vss;
+            case ".vstm":
+                return SaveFileFormat.Vstm;
+            case ".vstx":
+                return SaveFileFormat.Vstx;
+            case ".vst":
+                return SaveFileFormat.Vst;
+            case ".vdx":
+                return SaveFileFormat.Vdx;
+            default:
+                // Default to Vsdx if unknown extension
+                return SaveFileFormat.Vsdx;
+        }
     }
+}

@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using System.Xml.Linq;
 
 class Program
 {
@@ -11,39 +11,67 @@ class Program
         // Validate arguments
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: <exe> <inputVisioFile> <outputXmlFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXmlPath>");
             return;
         }
 
-        string visioPath = args[0];
-        string xmlOutputPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Load the Visio diagram
-        Diagram diagram = new Diagram(visioPath);
-
-        // Access the VBA project (read‑only)
-        VbaProject vbaProject = diagram.VbaProject;
-
-        // Create the root XML element for the VBA project
-        XElement root = new XElement("VbaProject",
-            new XAttribute("Name", vbaProject.Name ?? string.Empty),
-            new XAttribute("IsSigned", vbaProject.IsSigned));
-
-        // Iterate through all VBA modules and serialize their content
-        foreach (VbaModule module in vbaProject.Modules)
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
         {
-            XElement moduleElement = new XElement("Module",
-                new XAttribute("Name", module.Name ?? string.Empty),
-                new XElement("Code", new XCData(module.Codes ?? string.Empty))
-            );
-
-            root.Add(moduleElement);
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
         }
 
-        // Build the XDocument and save to the specified XML file
-        XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
-        doc.Save(xmlOutputPath);
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-        Console.WriteLine($"VBA project serialized to XML at: {xmlOutputPath}");
+            // Access the VBA project
+            VbaProject vbaProject = diagram.VbaProject;
+            if (vbaProject == null)
+            {
+                Console.Error.WriteLine("The diagram does not contain a VBA project.");
+                return;
+            }
+
+            // Build XML representation of the VBA project
+            XElement root = new XElement("VbaProject",
+                new XAttribute("Name", vbaProject.Name ?? string.Empty),
+                new XAttribute("IsSigned", vbaProject.IsSigned));
+
+            XElement modulesElement = new XElement("Modules");
+
+            // Iterate through all VBA modules
+            foreach (VbaModule module in vbaProject.Modules)
+            {
+                XElement moduleElement = new XElement("Module",
+                    new XAttribute("Name", module.Name ?? string.Empty),
+                    new XElement("Code", new XCData(module.Codes ?? string.Empty))
+                );
+                modulesElement.Add(moduleElement);
+            }
+
+            root.Add(modulesElement);
+            XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+
+            // Ensure the output directory exists
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Save the XML to the specified file
+            doc.Save(outputPath);
+            Console.WriteLine($"VBA project serialized to XML successfully: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

@@ -1,63 +1,91 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Input diagram path, output path, and target font name
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        string outputPath = "output.vsdx";
+        string targetFontName = "Calibri";
+
+        try
+        {
+            // Configure fallback font before loading the diagram
+            FontConfigs.DefaultFontName = targetFontName;
+
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Determine the font ID for the target font within the diagram
+            int targetFontId = -1;
+            foreach (Font font in diagram.Fonts)
             {
-
-                // Path to the source Visio file
-                string inputPath = "input.vsdx";
-                // Path to the output Visio file after kerning adjustments
-                string outputPath = "output_kerning.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Define the target font name for which kerning will be adjusted
-                string targetFontName = "Calibri";
-
-                // Iterate over all pages in the diagram
-                foreach (Page page in diagram.Pages)
+                if (font.Name == targetFontName)
                 {
-                    // Iterate over all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape contains text
-                        if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
-                        {
-                            // Iterate over each character formatting entry
-                            foreach (Aspose.Diagram.Char ch in shape.Chars)
-                            {
-                                // Check if the character uses the target font
-                                if (ch.FontName != null && ch.FontName.Value == targetFontName)
-                                {
-                                    // NOTE: Aspose.Diagram does not expose a direct Kerning property.
-                                    // If a kerning cell were available, it could be set here, e.g.:
-                                    // ch.Kerning.Value = desiredKerningValue;
-                                    // Since such a property is not defined, this placeholder demonstrates where
-                                    // kerning adjustments would be applied.
+                    targetFontId = font.ID;
+                    break;
+                }
+            }
 
-                                    // Example placeholder: set a custom style flag (replace with actual kerning logic if available)
-                                    // ch.Style.Value |= StyleValue.Bold; // This line is just illustrative.
-                                }
+            // If the font is not present, add it to the diagram's font collection
+            if (targetFontId == -1)
+            {
+                // Create a new Font object, set its name, and add it to the collection
+                Font newFont = new Font();
+                newFont.Name = targetFontName;
+                diagram.Fonts.Add(newFont);
+                targetFontId = newFont.ID;
+            }
+
+            // Iterate over all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape contains text
+                    if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
+                    {
+                        // Iterate over each character formatting entry
+                        for (int i = 0; i < shape.Chars.Count; i++)
+                        {
+                            // Check if the character uses the target font
+                            if (shape.Chars[i].Font.Value == targetFontId)
+                            {
+                                // Placeholder for kerning adjustment – currently no direct kerning API.
+                                // Keeping size unchanged; replace with actual kerning logic if supported.
+                                shape.Chars[i].Size.Value = shape.Chars[i].Size.Value;
                             }
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine("Kerning adjustments (if any) have been applied and the diagram saved to: " + outputPath);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

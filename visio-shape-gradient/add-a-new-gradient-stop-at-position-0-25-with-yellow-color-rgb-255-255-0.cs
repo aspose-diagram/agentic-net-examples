@@ -1,69 +1,77 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect three arguments: input diagram path, output diagram path, shape ID to modify
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <shapeId>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
-
-            // Load an existing Visio diagram (replace with your file path)
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve the first shape on the page (replace with specific shape ID if needed)
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                shape = s;
-                break;
+                // Assume we work with the first page; adjust if needed
+                Page page = diagram.Pages[0];
+
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    return;
+                }
+
+                // Enable gradient fill and set a solid fill pattern (25 = gradient fill)
+                shape.Fill.FillPattern.Value = 25;
+                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+
+                // Optional: set gradient direction (0 = left to right)
+                shape.Fill.GradientFill.GradientDir.Value = 0;
+
+                // Clear any existing gradient stops
+                shape.Fill.GradientFill.GradientStops.Clear();
+
+                // Add new gradient stop at position 0.25 with yellow color (#FFFF00)
+                shape.Fill.GradientFill.GradientStops.Add(
+                    new DoubleValue(0.25, MeasureConst.NUM),
+                    new ColorValue("#FFFF00", MeasureConst.Undefined));
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-
-            if (shape == null)
-            {
-                Console.WriteLine("No shape found on the page.");
-                return;
-            }
-
-            // Enable gradient fill
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern
-            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-            shape.Fill.GradientFill.GradientDir.Value = 0; // Direction (0 = left to right)
-
-            // Clear existing gradient stops
-            shape.Fill.GradientFill.GradientStops.Clear();
-
-            // Add a new gradient stop at position 0.25 with yellow color (RGB 255,255,0)
-            // Position uses MeasureConst.NUM (0 to 1 range)
-            // Color uses a hex string and MeasureConst.Undefined
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.25, MeasureConst.NUM),
-                new ColorValue("#FFFF00", MeasureConst.Undefined));
-
-            // Optionally, add additional stops (e.g., start and end) to see the gradient effect
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(0.0, MeasureConst.NUM),
-                new ColorValue("#FF0000", MeasureConst.Undefined)); // Red at start
-            shape.Fill.GradientFill.GradientStops.Add(
-                new DoubleValue(1.0, MeasureConst.NUM),
-                new ColorValue("#0000FF", MeasureConst.Undefined)); // Blue at end
-
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Gradient stop added and diagram saved to " + outputPath);
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

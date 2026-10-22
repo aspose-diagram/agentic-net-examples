@@ -1,69 +1,90 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio diagram file
-        string filePath = "input.vsdx";
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> [ShapeId]");
+            return;
+        }
 
-        // Guard: ensure the input file exists before proceeding
+        string filePath = args[0];
+        // Guard: ensure the Visio file exists
         if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
             return;
+        }
+
+        // Optional shape ID argument (default to 1)
+        long shapeId = 1;
+        if (args.Length >= 2 && long.TryParse(args[1], out long parsedId))
+        {
+            shapeId = parsedId;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(filePath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory)
+            using (Diagram diagram = new Diagram(filePath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Get the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    // Retrieve the line dash pattern enum value (LinePatternValue)
-                    LinePatternValue pattern = shape.Line.LinePattern.Value;
-
-                    // Convert the enum value to a human‑readable description
-                    string description = GetLinePatternDescription(pattern);
-
-                    // Output the shape ID, page name, and line dash style description
-                    Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' has line dash style: {description}");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on the first page.");
+                    return;
                 }
+
+                // Read the line dash pattern enum value
+                // LinePattern.Value returns a LinePatternValue enum; cast to int for mapping
+                int patternCode = (int)shape.Line.LinePattern.Value;
+
+                // Map the numeric code to a descriptive string
+                string description = MapLinePatternToDescription(patternCode);
+
+                // Display the result
+                Console.WriteLine($"Shape ID: {shapeId}");
+                Console.WriteLine($"Line dash style code: {patternCode}");
+                Console.WriteLine($"Line dash style description: {description}");
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
-    // Helper method to map LinePatternValue to a readable description
-    static string GetLinePatternDescription(LinePatternValue pattern)
+    /// <summary>
+    /// Maps Visio line pattern numeric codes to human‑readable descriptions.
+    /// </summary>
+    /// <param name="code">The numeric line pattern code.</param>
+    /// <returns>A descriptive string for the dash style.</returns>
+    private static string MapLinePatternToDescription(int code)
     {
-        switch (pattern)
+        // Visio uses integer codes for line patterns; map common values
+        switch (code)
         {
-            case LinePatternValue.Solid:
+            case 0:
                 return "Solid";
-            case LinePatternValue.Dash:
+            case 1:
                 return "Dash";
-            case LinePatternValue.Dot:
+            case 2:
                 return "Dot";
-            case LinePatternValue.DashDot:
+            case 3:
                 return "DashDot";
-            case LinePatternValue.DashDotDot:
+            case 4:
                 return "DashDotDot";
-            case LinePatternValue.LongDash:
-                return "LongDash";
-            // The following patterns are not available in the current Aspose.Diagram version,
-            // so they are omitted to avoid compilation errors.
             default:
                 return "Unknown";
         }

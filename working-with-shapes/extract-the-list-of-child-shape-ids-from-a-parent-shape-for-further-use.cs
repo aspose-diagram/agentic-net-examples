@@ -7,64 +7,84 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and parent shape ID.
+        // Validate input arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <parentShapeId>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <parentShapeName>");
             return;
         }
 
-        // Assign and guard the diagram file path.
         string diagramPath = args[0];
+        string parentShapeName = args[1];
+
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-
-        // Parse and guard the parent shape ID.
-        if (!long.TryParse(args[1], out long parentShapeId))
-        {
-            Console.Error.WriteLine($"Invalid parent shape ID: {args[1]}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Prepare a list to collect child shape IDs.
-            List<long> childShapeIds = new List<long>();
-
-            // Iterate through all pages in the diagram.
+            // Locate the parent shape by its NameU.
+            Shape parentShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the parent shape of the current shape.
-                    Shape parentShape = shape.ParentShape;
+                    if (shape.NameU != null && shape.NameU.Equals(parentShapeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        parentShape = shape;
+                        break;
+                    }
+                }
+                if (parentShape != null) break;
+            }
 
-                    // If the shape has a parent and its ID matches the target, record its ID.
-                    if (parentShape != null && parentShape.ID == parentShapeId)
+            if (parentShape == null)
+            {
+                Console.Error.WriteLine($"Error: Parent shape with name '{parentShapeName}' not found.");
+                return;
+            }
+
+            long parentId = parentShape.ID;
+
+            // Collect IDs of child shapes whose ParentShape matches the found parent.
+            List<long> childShapeIds = new List<long>();
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Ensure the shape has a parent and compare IDs.
+                    if (shape.ParentShape != null && shape.ParentShape.ID == parentId)
                     {
                         childShapeIds.Add(shape.ID);
                     }
                 }
             }
 
-            // Output the collected child shape IDs.
-            Console.WriteLine($"Child shape IDs of parent shape {parentShapeId}:");
-            foreach (long id in childShapeIds)
+            // Output the list of child shape IDs.
+            Console.WriteLine($"Parent Shape ID: {parentId}");
+            Console.WriteLine("Child Shape IDs:");
+            if (childShapeIds.Count == 0)
             {
-                Console.WriteLine(id);
+                Console.WriteLine("  (none)");
+            }
+            else
+            {
+                foreach (long childId in childShapeIds)
+                {
+                    Console.WriteLine($"  {childId}");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

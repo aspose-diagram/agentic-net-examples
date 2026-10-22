@@ -1,54 +1,76 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: input file must exist
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Ensure the output directory exists
+        if (!Directory.Exists(outputFolder))
+        {
+            Directory.CreateDirectory(outputFolder);
+        }
+
         try
         {
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Apply a simple drop shadow to every shape on every page
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate over pages by index to obtain a valid PageIndex value
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
                 {
-                    // Ensure the shape has a Fill section before setting shadow properties
-                    if (shape.Fill != null)
+                    Page page = diagram.Pages[pageIdx];
+
+                    // Apply a simple drop shadow to every shape on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Enable simple shadow
+                        // Enable simple shadow type
                         shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
                         // Shadow color (black)
                         shape.Fill.ShdwForegnd.Value = "#000000";
-                        // Shadow transparency (30% transparent)
+                        // 30% transparency (0.0 = opaque, 1.0 = fully transparent)
                         shape.Fill.ShdwForegndTrans.Value = 0.3;
-                        // Shadow offset (horizontal and vertical)
+                        // Small offset to make the shadow visible
                         shape.Fill.ShapeShdwOffsetX.Value = 0.1;
                         shape.Fill.ShapeShdwOffsetY.Value = 0.1;
                     }
+
+                    // Configure PNG export options for the current page
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    pngOptions.PageIndex = pageIdx; // Export only this page
+                    pngOptions.PageCount = 1;
+
+                    // Build the output file path (e.g., Page_1.png)
+                    string outputPath = Path.Combine(outputFolder, $"Page_{pageIdx + 1}.png");
+
+                    // Export the page as PNG with the configured shadow effect
+                    diagram.Save(outputPath, pngOptions);
                 }
             }
-
-            // Export each page as a PNG image with the applied shadow effect
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.PageIndex = i; // Export the specific page
-                string outputPath = $"output_page_{i + 1}.png";
-                diagram.Save(outputPath, pngOptions);
-            }
-
-            Console.WriteLine("Export completed with drop shadows applied.");
-
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

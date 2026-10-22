@@ -6,58 +6,83 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file (VSDX)
-        string inputPath = "input.vsdx";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVsdxPath> <shapeId>");
+            return;
+        }
 
-        // Guard: ensure the file exists before proceeding
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: check if the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the VSDX diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Assume the shape we are interested in is on the first page
-            Page page = diagram.Pages[0];
+            // Locate the shape by ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                // Attempt to retrieve the shape; GetShape returns null if not found
+                Shape shape = page.Shapes.GetShape(targetShapeId);
+                if (shape != null && shape.ID == targetShapeId)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
 
-            // ID of the sub‑shape (replace with the actual ID)
-            long subShapeId = 12345;
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Error: Shape with ID {targetShapeId} not found in the diagram.");
+                return;
+            }
 
-            // Retrieve the shape by its ID
-            Shape subShape = page.Shapes.GetShape(subShapeId);
-
-            // Calculate the absolute PinX coordinate of the sub‑shape
-            double absolutePinX = GetAbsolutePinX(subShape);
-
-            // Output the result
-            Console.WriteLine($"Absolute PinX of shape ID {subShapeId}: {absolutePinX}");
+            // Calculate absolute PinX coordinate (recursive for nested groups)
+            double absolutePinX = GetAbsolutePinX(targetShape);
+            Console.WriteLine($"Absolute PinX for shape ID {targetShapeId}: {absolutePinX}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
-    // Recursively computes the absolute PinX by adding parent offsets.
-    // This simple implementation adds the PinX of each ancestor shape.
-    // For complex groups with rotation, a full matrix transformation would be required.
+    /// <summary>
+    /// Recursively calculates the absolute PinX coordinate of a shape,
+    /// taking into account parent group transformations.
+    /// </summary>
+    /// <param name="shape">The shape whose absolute PinX is required.</param>
+    /// <returns>Absolute PinX value.</returns>
     private static double GetAbsolutePinX(Shape shape)
     {
-        double pinX = shape.XForm.PinX.Value; // Base PinX of the shape
-
-        // Traverse up the hierarchy, adding each parent shape's PinX
-        Shape? parent = shape.ParentShape;
-        while (parent != null)
+        // If the shape has no parent, its PinX is already absolute
+        if (shape.ParentShape == null)
         {
-            pinX += parent.XForm.PinX.Value;
-            parent = parent.ParentShape;
+            return shape.XForm.PinX.Value;
         }
 
-        return pinX;
+        // Recursively get the parent's absolute PinX
+        double parentAbsolutePinX = GetAbsolutePinX(shape.ParentShape);
+
+        // Adjust for the parent's local origin (LocPinX)
+        double absolutePinX = parentAbsolutePinX + shape.XForm.PinX.Value - shape.ParentShape.XForm.LocPinX.Value;
+        return absolutePinX;
     }
 }

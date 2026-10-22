@@ -1,29 +1,57 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
-class ListMasterShapes
+class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
+        }
+
+        string visioPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
+
         try
         {
-
-            // Load the Visio file
-            // (Assumes the file "input.vsdx" is in the same directory as the executable)
-            Diagram diagram = new Diagram("input.vsdx");
-
-            // Iterate through all master shapes in the document
-            foreach (Master master in diagram.Masters)
+            // Load the Visio diagram inside a using block as required by Aspose.Diagram.
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Each master has a unique identifier (ID) and a name (NameU)
-                Console.WriteLine($"Master ID: {master.ID}, Name: {master.NameU}");
-            }
+                // Check if any masters are present.
+                if (diagram.Masters == null || diagram.Masters.Count == 0)
+                {
+                    Console.WriteLine("No master shapes found in the diagram.");
+                    return;
+                }
 
+                Console.WriteLine("Master Shapes in the diagram:");
+                Console.WriteLine("--------------------------------");
+
+                // Iterate over all masters and output their identifiers.
+                foreach (Master master in diagram.Masters)
+                {
+                    // UniqueID is a Guid; convert to string for display.
+                    string uniqueId = master.UniqueID.ToString();
+
+                    // Output master name and its unique identifier.
+                    Console.WriteLine($"Name: {master.Name}, UniqueID: {uniqueId}");
+                }
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

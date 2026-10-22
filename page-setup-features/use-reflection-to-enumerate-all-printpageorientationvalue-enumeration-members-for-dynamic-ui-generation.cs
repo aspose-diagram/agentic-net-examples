@@ -1,27 +1,36 @@
-using System.IO;
 using System;
+using System.IO;
 using System.Reflection;
 using Aspose.Diagram;
+using Aspose.Diagram.Printing;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Obtain the Type object for the PrintPageOrientationValue enumeration
-        Type enumType = typeof(PrintPageOrientationValue);
+        // No input files are required for this task, so no file existence checks are needed.
 
-        // Use reflection to get all public static fields (the enum members)
-        FieldInfo[] fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
-
-        // Iterate through the fields and output their names and underlying values
-        foreach (FieldInfo field in fields)
+        try
         {
-            string name = field.Name;
-            object rawValue = field.GetValue(null);
-            int intValue = Convert.ToInt32(rawValue);
-            Console.WriteLine($"{name} = {intValue}");
-        }
+            // Obtain the Type object for the PrintPageOrientationValue enum using reflection.
+            Type enumType = typeof(PrintPageOrientationValue);
 
-        // The above list can be used to dynamically populate UI elements such as dropdowns.
+            // Retrieve all public static fields of the enum (these represent the enum members).
+            FieldInfo[] fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
+
+            Console.WriteLine("PrintPageOrientationValue members:");
+
+            // Iterate over each field and output its name.
+            foreach (FieldInfo field in fields)
+            {
+                // The Name property gives the enum member name.
+                Console.WriteLine($"- {field.Name}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

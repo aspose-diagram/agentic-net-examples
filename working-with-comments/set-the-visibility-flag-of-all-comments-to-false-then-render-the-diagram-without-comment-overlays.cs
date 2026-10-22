@@ -1,49 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputImageFile]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Determine output path. If not supplied, create a PNG file beside the input.
+        string outputPath = args.Length >= 2
+            ? args[1]
+            : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? "",
+                Path.GetFileNameWithoutExtension(inputPath) + "_no_comments.png");
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-            // Path for the rendered image without comment overlays
-            string outputPath = "output.png";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and their annotations (comments)
-            foreach (Page page in diagram.Pages)
+            // Load the diagram.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Annotations collection holds the comments
-                foreach (Annotation comment in page.PageSheet.Annotations)
+                // Iterate through all pages and attempt to hide comments.
+                foreach (Page page in diagram.Pages)
                 {
-                    // There is no explicit visibility flag on Annotation in Aspose.Diagram.
-                    // To ensure comments are not rendered, we rely on the save option below.
-                    // (If a visibility property existed, it would be set here.)
+                    // Access page-level annotations (comments).
+                    foreach (Annotation ann in page.PageSheet.Annotations)
+                    {
+                        // If a visibility property existed, it would be set here.
+                        // The API does not expose a visibility flag for Annotation.
+                    }
                 }
+
+                // Configure image export options to exclude comment overlays.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // IsExportComments expects a bool, so assign false directly.
+                saveOptions.IsExportComments = false;
+
+                // Save the rendered diagram as an image without comments.
+                diagram.Save(outputPath, saveOptions);
             }
 
-            // Configure image export options to exclude comments
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Do not export comments (overlays)
-            saveOptions.IsExportComments = false;
-
-            // Render the diagram to PNG without comment overlays
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Diagram rendered to '{outputPath}' without comments.");
-
+            Console.WriteLine($"Diagram rendered successfully without comments: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,53 +1,74 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-            // Access the first page of the diagram
+            // Work with the first page (you can adapt this to other pages as needed).
             Page page = diagram.Pages[0];
 
-            // Add two rectangle shapes to the page
-            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle", false);
-            long rect2Id = page.AddShape(6.0, 2.0, "Rectangle", false);
+            // Find the first connector shape (OneD == true) on the page.
+            Shape connectorShape = null;
+            for (int i = 0; i < page.Shapes.Count; i++)
+            {
+                Shape shape = page.Shapes[i];
+                if (shape.OneD) // One‑dimensional shapes are connectors.
+                {
+                    connectorShape = shape;
+                    break;
+                }
+            }
 
-            // Retrieve the shape objects for further customization
-            Shape rect1 = page.Shapes.GetShape(rect1Id);
-            Shape rect2 = page.Shapes.GetShape(rect2Id);
+            if (connectorShape == null)
+            {
+                Console.Error.WriteLine("No connector shape found on the first page.");
+                return;
+            }
 
-            // Set fill colors so the shapes are visible
-            rect1.Fill.FillForegnd.Value = "#FFCC00";
-            rect2.Fill.FillForegnd.Value = "#00CCFF";
+            // Change the connector appearance to a curved style.
+            // Valid values: StraightLines, RightAngle, CurvedLines.
+            connectorShape.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
 
-            // Add a dynamic connector shape (initially straight)
-            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
-            Shape connector = page.Shapes.GetShape(connectorId);
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            // Change the connector style to a curved line
-            connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
-
-            // Connect the two rectangles using the curved connector
-            page.ConnectShapesViaConnector(rect1Id, ConnectionPointPlace.Right, rect2Id, ConnectionPointPlace.Left, connectorId);
-
-            // Save the diagram as a PNG image to observe the curved connector
-            diagram.Save("ConnectorCurved.png", new ImageSaveOptions(SaveFileFormat.Png));
-
-            Console.WriteLine("Diagram saved with a curved connector.");
-
+            Console.WriteLine($"Connector style updated and diagram saved to: {outputPath}");
         }
-        catch (Aspose.Diagram.DiagramException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DiagramException] {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

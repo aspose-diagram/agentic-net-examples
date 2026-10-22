@@ -3,57 +3,65 @@ using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio file into a memory stream.
+            using (FileStream fileStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            using (MemoryStream memoryStream = new MemoryStream())
             {
+                fileStream.CopyTo(memoryStream);
+                memoryStream.Position = 0; // Reset position for reading.
 
-                // Assume diagramBytes contains the raw bytes of a Visio file (e.g., VSDX).
-                // In a real scenario these bytes could come from a database, network stream, etc.
-                byte[] diagramBytes = GetDiagramBytes();
+                // Create a Diagram instance from the memory stream.
+                Diagram diagram = new Diagram(memoryStream);
 
-                // Load the diagram from a memory stream.
-                using (MemoryStream inputStream = new MemoryStream(diagramBytes))
+                // Apply a preset theme to each page in the diagram.
+                // The Bubble theme is used as an example.
+                foreach (Page page in diagram.Pages)
                 {
-                    Diagram diagram = new Diagram(inputStream);
-
-                    // Apply a preset theme to every page in the diagram.
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Set the theme and a variant. Both properties are write‑only.
-                        page.PresetTheme = PresetThemeValue.Bubble;
-                        page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                    }
-
-                    // Save the themed diagram back to a memory stream (no disk I/O).
-                    using (MemoryStream outputStream = new MemoryStream())
-                    {
-                        diagram.Save(outputStream, SaveFileFormat.Vsdx);
-
-                        // At this point outputStream contains the themed diagram.
-                        // It can be returned, sent over a network, or written to a file later.
-                        Console.WriteLine($"Themed diagram saved to memory stream ({outputStream.Length} bytes).");
-                    }
+                    page.PresetTheme = PresetThemeValue.Bubble;
                 }
 
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
+                // Optionally, apply the same theme to all shapes on each page.
+                // Uncomment the following block if shape‑level theming is required.
+                /*
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                    }
+                }
+                */
 
-        // Placeholder method to obtain diagram bytes.
-        // Replace with actual logic to retrieve the Visio file content.
-        static byte[] GetDiagramBytes()
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+        }
+        catch (Exception ex)
         {
-            // For demonstration, read from a file path.
-            // In production, replace this with the appropriate source.
-            const string path = "input.vsdx";
-            if (!File.Exists(path))
-                throw new FileNotFoundException($"Diagram file not found: {path}");
-
-            return File.ReadAllBytes(path);
+            // Write any errors that occur during Aspose operations to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}

@@ -1,36 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <program> <input VSD file path> <output HTML file path>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file (VSD)
-            string inputPath = "sample.vsd";
-
-            // Path for the generated HTML file
-            string outputPath = "sample.html";
-
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified VSD file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML export options (default PNG images are used)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Save the diagram as HTML. The second argument must be a valid SaveFileFormat.
+            diagram.Save(outputPath, SaveFileFormat.Html);
 
-            // Save the diagram as HTML
-            diagram.Save(outputPath, htmlOptions);
+            // Release resources held by the Diagram object.
+            diagram.Dispose();
 
-            Console.WriteLine($"Diagram successfully converted to HTML: {outputPath}");
-
+            Console.WriteLine($"Successfully converted \"{inputPath}\" to HTML at \"{outputPath}\".");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

@@ -1,46 +1,52 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Define the output file path for the generated diagram
+        string outputPath = "output.vsdx";
+
         try
         {
+            // Create a new empty diagram instance
+            Diagram diagram = new Diagram();
 
-            // Path to a stencil that contains the required masters (e.g., "Rectangle" and "Dynamic connector")
-            string stencilPath = @"C:\Stencils\basic.vss";
-
-            // Load the diagram with the stencil
-            Diagram diagram = new Diagram(stencilPath);
-
-            // Get the first page (default page)
+            // Add a single blank page to the diagram
+            diagram.Pages.Add(new Page());
             Page page = diagram.Pages[0];
 
-            // Add two rectangle shapes
-            long shapeId1 = page.AddShape(1.0, 1.0, "Rectangle", false);
-            long shapeId2 = page.AddShape(3.0, 1.0, "Rectangle", false);
+            // Add the first rectangle shape (source) at position (2,2)
+            // The fourth parameter 'isCalculate' must be a native bool, not BOOL
+            long sourceShapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Add a dynamic connector shape
-            long connectorId = page.AddShape(2.0, 1.0, "Dynamic connector", false);
+            // Add the second rectangle shape (target) at position (5,5)
+            long targetShapeId = page.AddShape(5.0, 5.0, "Rectangle", false);
 
-            // Connect the first rectangle to the second rectangle using the connector
-            page.ConnectShapesViaConnector(
-                shapeId1,
-                ConnectionPointPlace.Right,
-                shapeId2,
-                ConnectionPointPlace.Left,
-                connectorId);
+            // Add a dynamic connector shape that will be used to link the two rectangles
+            long connectorShapeId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
 
-            // Save the resulting diagram
-            diagram.Save("ConnectedDiagram.vsdx", SaveFileFormat.Vsdx);
+            // Connect the source shape to the target shape using connection indexes.
+            // Here we use connection index 1 for both shapes (default first connection point).
+            page.ConnectShapesViaConnectorIndex(
+                sourceShapeId,   // ID of the source shape
+                1,               // Connection index on the source shape
+                targetShapeId,   // ID of the target shape
+                1,               // Connection index on the target shape
+                connectorShapeId // ID of the connector shape
+            );
 
+            // Save the diagram to a VSDX file using the correct SaveFileFormat enum member
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
-        catch (System.IO.DirectoryNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[DirectoryNotFoundException] {ex.Message}");
+            // Output any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

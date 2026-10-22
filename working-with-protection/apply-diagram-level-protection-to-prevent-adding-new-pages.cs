@@ -1,34 +1,51 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Apply global document protection settings
+                // These protect backgrounds, masters, shapes, and styles.
+                // Aspose.Diagram does not expose a direct property to prevent adding new pages,
+                // so we apply all available document-level protections as the closest alternative.
+                diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
+                diagram.DocumentSettings.ProtectMasters = BOOL.True;
+                diagram.DocumentSettings.ProtectShapes = BOOL.True;
+                diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
-            // Load an existing Visio diagram
-            string inputPath = "input.vsdx";
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply global protection to the diagram.
-            // These protection flags restrict modifications and also prevent adding new pages.
-            diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
-            diagram.DocumentSettings.ProtectMasters = BOOL.True;
-            diagram.DocumentSettings.ProtectShapes = BOOL.True;
-            diagram.DocumentSettings.ProtectStyles = BOOL.True;
-
-            // Save the protected diagram
-            string outputPath = "protected_output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                // Save the protected diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with protection to: {outputPath}");
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

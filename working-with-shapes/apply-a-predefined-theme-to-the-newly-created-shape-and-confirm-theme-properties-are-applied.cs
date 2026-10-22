@@ -1,43 +1,78 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Create a new blank diagram
-        Diagram diagram = new Diagram();
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Access the first page (a new diagram always contains at least one page)
-        Page page = diagram.Pages[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Define rectangle geometry
-        double pinX = 2.0;   // X coordinate of the shape's center
-        double pinY = 2.0;   // Y coordinate of the shape's center
-        double width = 2.0;  // Width of the rectangle
-        double height = 1.0; // Height of the rectangle
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
-        // Add a rectangle shape to the page
-        long shapeId = page.DrawRectangle(pinX, pinY, width, height);
+        try
+        {
+            // Load the source Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Retrieve the Shape object using the returned ID
-        Shape shape = page.Shapes.GetShape((int)shapeId);
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
 
-        // Apply a predefined theme to the shape
-        shape.PresetTheme = PresetThemeValue.Bubble;
-        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+            // Get the first page where the new shape will be added.
+            Page page = diagram.Pages[0];
 
-        // Log the applied theme settings (properties are write‑only, so we log the values we set)
-        Console.WriteLine($"Applied theme to shape ID {shape.ID}");
-        Console.WriteLine("PresetTheme set to Bubble");
-        Console.WriteLine("PresetThemeVariant set to Variant1");
-        Console.WriteLine("PresetThemeQuickStyle set to VariantStyle1");
+            // Define position for the new shape (in inches).
+            double pinX = 2.0;
+            double pinY = 2.0;
 
-        // Save the diagram to VSDX format
-        diagram.Save("ThemedShape.vsdx", SaveFileFormat.Vsdx);
-        Console.WriteLine("Diagram saved as ThemedShape.vsdx");
+            // Use a built‑in master name. "Rectangle" is commonly available.
+            string masterName = "Rectangle";
+
+            // Add the shape to the page. The fourth argument isCalculate is a bool.
+            long shapeId = page.AddShape(pinX, pinY, masterName, false);
+
+            // Retrieve the newly added shape instance.
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                return;
+            }
+
+            // Apply a predefined theme to the shape.
+            // All three properties are write‑only; they cannot be read back.
+            shape.PresetTheme = PresetThemeValue.Bubble;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+
+            // Confirmation message – we cannot read back the values, but we know the assignment succeeded.
+            Console.WriteLine($"Applied theme 'Bubble' with variant 'Variant1' and quick style 'VariantStyle1' to shape ID {shapeId}.");
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 }

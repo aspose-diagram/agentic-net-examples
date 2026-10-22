@@ -1,72 +1,140 @@
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class CustomStreamProvider : IStreamProvider
 {
-    // Called before each resource (HTML, images, CSS) is written
+    // This method is called by Aspose.Diagram when it needs to write an external resource (e.g., image) during HTML export.
     public void InitStream(StreamProviderOptions options)
     {
-        // Use a memory stream to capture the output; you could also direct to a custom folder
-        options.Stream = new MemoryStream();
+        // Set a custom base URL that will be used in the generated HTML.
+        // The property name is CustomPath according to the documentation.
+        try
+        {
+            options.CustomPath = "http://example.com/resources/";
+        }
+        catch
+        {
+            // If the property does not exist in the current version, ignore silently.
+        }
+
+        // Determine a file system path where the resource will be saved.
+        // options.DefaultPath contains the relative file name (e.g., "image1.png").
+        string resourcesFolder = Path.Combine(Directory.GetCurrentDirectory(), "custom_resources");
+        Directory.CreateDirectory(resourcesFolder);
+
+        string filePath = Path.Combine(resourcesFolder, options.DefaultPath ?? "resource.bin");
+
+        // Assign a writable stream to the options so Aspose can write the resource data.
+        options.Stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
     }
 
-    // Called after the resource has been written
+    // Called after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Clean up the stream
-        options.Stream?.Dispose();
+        if (options.Stream != null)
+        {
+            options.Stream.Close();
+            options.Stream = null;
+        }
     }
 }
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input Visio file path (first argument or a default placeholder).
+        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output directories for the two conversion scenarios.
+        string defaultOutputDir = Path.Combine(Directory.GetCurrentDirectory(), "output_default");
+        string customOutputDir = Path.Combine(Directory.GetCurrentDirectory(), "output_custom");
+        Directory.CreateDirectory(defaultOutputDir);
+        Directory.CreateDirectory(customOutputDir);
+
+        // --------------------------------------------------------------------
+        // Measure HTML conversion without a custom IStreamProvider (default behavior).
+        // --------------------------------------------------------------------
+        long defaultElapsedMs = 0;
         try
         {
-
-            // Input Visio file (adjust the path as needed)
-            string inputPath = "input.vsdx";
-
-            // Output files for the two scenarios
-            string outputDefault = "output_default.html";
-            string outputCustom = "output_custom.html";
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // ------------------------------
-            // Export HTML without custom IStreamProvider
-            // ------------------------------
             Stopwatch swDefault = Stopwatch.StartNew();
 
-            HTMLSaveOptions defaultOptions = new HTMLSaveOptions();
-            diagram.Save(outputDefault, defaultOptions);
+            // Load the diagram.
+            Diagram diagramDefault = new Diagram(inputPath);
+
+            // Export each page as a separate HTML file (HTMLSaveOptions does not support multi‑page export).
+            for (int i = 0; i < diagramDefault.Pages.Count; i++)
+            {
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    PageIndex = i,
+                    PageCount = 1
+                };
+
+                string outPath = Path.Combine(defaultOutputDir, $"page_{i + 1}.html");
+                diagramDefault.Save(outPath, htmlOptions);
+            }
 
             swDefault.Stop();
+            defaultElapsedMs = swDefault.ElapsedMilliseconds;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during default HTML conversion: {ex.Message}");
+            return;
+        }
 
-            // ------------------------------
-            // Export HTML with custom IStreamProvider
-            // ------------------------------
+        // --------------------------------------------------------------------
+        // Measure HTML conversion with a custom IStreamProvider.
+        // --------------------------------------------------------------------
+        long customElapsedMs = 0;
+        try
+        {
             Stopwatch swCustom = Stopwatch.StartNew();
 
-            HTMLSaveOptions customOptions = new HTMLSaveOptions();
-            customOptions.StreamProvider = new CustomStreamProvider();
-            diagram.Save(outputCustom, customOptions);
+            // Load the diagram again to ensure a fair comparison.
+            Diagram diagramCustom = new Diagram(inputPath);
+
+            // Export each page using a custom stream provider.
+            for (int i = 0; i < diagramCustom.Pages.Count; i++)
+            {
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    PageIndex = i,
+                    PageCount = 1,
+                    StreamProvider = new CustomStreamProvider()
+                };
+
+                string outPath = Path.Combine(customOutputDir, $"page_{i + 1}.html");
+                diagramCustom.Save(outPath, htmlOptions);
+            }
 
             swCustom.Stop();
-
-            // Report timings
-            Console.WriteLine($"Default HTML export time: {swDefault.ElapsedMilliseconds} ms");
-            Console.WriteLine($"Custom IStreamProvider HTML export time: {swCustom.ElapsedMilliseconds} ms");
-
+            customElapsedMs = swCustom.ElapsedMilliseconds;
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            Console.Error.WriteLine($"Error during custom HTML conversion: {ex.Message}");
+            return;
         }
+
+        // --------------------------------------------------------------------
+        // Output the performance comparison.
+        // --------------------------------------------------------------------
+        Console.WriteLine("HTML conversion performance:");
+        Console.WriteLine($"- Default provider: {defaultElapsedMs} ms");
+        Console.WriteLine($"- Custom IStreamProvider: {customElapsedMs} ms");
+        Console.WriteLine($"- Difference: {Math.Abs(customElapsedMs - defaultElapsedMs)} ms");
     }
 }

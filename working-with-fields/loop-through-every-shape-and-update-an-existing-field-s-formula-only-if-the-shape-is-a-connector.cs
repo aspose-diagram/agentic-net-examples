@@ -1,45 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            // Expect input and output file paths as command‑line arguments.
-            if (args.Length < 2)
-            {
-                Console.WriteLine("Usage: DiagramConnectorFieldUpdater <input.vsdx> <output.vsdx>");
-                return;
-            }
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
 
-            string inputPath = args[0];
-            string outputPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-            // Load the Visio diagram.
+        // Guard: ensure the input file exists before proceeding.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify connector shapes (1‑D shapes).
+                    // Skip shapes that are marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify connector shapes: One‑dimensional (OneD) shapes are connectors.
                     if (shape.OneD)
                     {
-                        // Ensure the shape has at least one field.
+                        // Ensure the shape has at least one field to update.
                         if (shape.Fields != null && shape.Fields.Count > 0)
                         {
-                            // Update the formula of the first field.
-                            Field field = shape.Fields[0];
-                            // Example formula – replace with the desired expression.
-                            field.Value.Ufev.F = "Width*Height";
+                            // Update the formula/value of each existing field.
+                            foreach (Field field in shape.Fields)
+                            {
+                                // Set a new formula (example: a static string formula).
+                                field.Value.Val = "=\"UpdatedFormula\"";
+                            }
                         }
                     }
                 }
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
+}

@@ -1,42 +1,65 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-            // Load an existing Visio diagram
-            Diagram diagram = new Diagram("input.vsdx");
+                        // Example calculation: scale PinX and PinY by 1.1
+                        double calculatedPinX = shape.XForm.PinX.Value * 1.1;
+                        double calculatedPinY = shape.XForm.PinY.Value * 1.1;
 
-            // Access the first page
-            Page page = diagram.Pages[0];
+                        // Round to two decimal places
+                        double roundedPinX = Math.Round(calculatedPinX, 2);
+                        double roundedPinY = Math.Round(calculatedPinY, 2);
 
-            // Retrieve a shape by its ID (example ID = 1)
-            Shape shape = page.Shapes.GetShape(1);
+                        // Apply rounded values back to the shape
+                        shape.XForm.PinX.Value = roundedPinX;
+                        shape.XForm.PinY.Value = roundedPinY;
+                    }
+                }
 
-            // Apply rounded position values
-            SetShapePosition(shape, 2.3456, 3.789);
-
-            // Save the modified diagram
-            diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    // Rounds PinX and PinY to two decimal places before assigning them to the shape
-    static void SetShapePosition(Shape shape, double pinX, double pinY)
-    {
-        double roundedPinX = Math.Round(pinX, 2);
-        double roundedPinY = Math.Round(pinY, 2);
-        shape.XForm.PinX.Value = roundedPinX;
-        shape.XForm.PinY.Value = roundedPinY;
     }
 }

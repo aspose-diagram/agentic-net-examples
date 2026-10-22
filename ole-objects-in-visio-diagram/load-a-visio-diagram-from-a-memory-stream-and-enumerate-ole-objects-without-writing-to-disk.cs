@@ -6,58 +6,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure a file path argument is provided.
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: <program> <VisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
-        // Retrieve the Visio file path from the first argument.
-        string visioFilePath = args[0];
-        // Guard: verify the file exists before proceeding.
-        if (!File.Exists(visioFilePath))
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {visioFilePath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
-        // Load the Visio file bytes from disk (simulating an external source).
-        byte[] visioFileBytes = GetVisioFileBytes(visioFilePath);
-
-        // Wrap Aspose operations in a try/catch to handle potential errors gracefully.
         try
         {
-            // Load the diagram from a memory stream without writing to disk.
-            using (MemoryStream stream = new MemoryStream(visioFileBytes))
-            {
-                Diagram diagram = new Diagram(stream);
+            // Read the Visio file into a byte array.
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
 
-                // Iterate through all pages and shapes to locate OLE (foreign) objects.
-                foreach (Page page in diagram.Pages)
+            // Load the diagram from a memory stream (no disk I/O for loading).
+            using (MemoryStream memoryStream = new MemoryStream(fileBytes))
+            {
+                // The Diagram constructor that accepts a Stream is valid.
+                Diagram diagram = new Diagram(memoryStream);
+
+                // Enumerate all pages in the diagram.
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Enumerate all shapes on the current page.
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Verify the shape is a foreign (OLE) shape and has foreign data.
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null)
+                        // OLE objects are represented by foreign data.
+                        if (shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
                         {
-                            // Ensure the foreign data represents an embedded OLE object.
-                            if (shape.ForeignData.ForeignType == ForeignType.Object)
-                            {
-                                // Retrieve the OLE binary data.
-                                byte[] oleData = shape.ForeignData.ObjectData;
-                                if (oleData != null && oleData.Length > 0)
-                                {
-                                    // Wrap the binary data in a MemoryStream for further processing if needed.
-                                    using (MemoryStream oleStream = new MemoryStream(oleData))
-                                    {
-                                        Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}");
-                                        Console.WriteLine($"OLE Object Size: Width={shape.ForeignData.ObjectWidth}, Height={shape.ForeignData.ObjectHeight}");
-                                        Console.WriteLine($"OLE Data Length: {oleData.Length} bytes");
-                                        // Additional processing of oleStream can be performed here.
-                                    }
-                                }
-                            }
+                            // Output basic information about the OLE object.
+                            Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, OLE Data Size: {shape.ForeignData.ObjectData.Length} bytes");
                         }
                     }
                 }
@@ -65,15 +53,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during diagram processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during loading or enumeration.
+            Console.Error.WriteLine($"Error processing Visio diagram: {ex.Message}");
         }
-    }
-
-    // Reads the Visio file from the specified path and returns its byte array.
-    static byte[] GetVisioFileBytes(string path)
-    {
-        // ReadAllBytes may throw, but the caller already verified the file exists.
-        return File.ReadAllBytes(path);
     }
 }

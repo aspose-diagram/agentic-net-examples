@@ -1,67 +1,98 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                int pageCount = diagram.Pages.Count;
 
-                // Input Visio file path
-                string inputPath = "input.vsdx";
-                // Output Visio file path
-                string outputPath = "output_paginated.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Iterate over all pages to add navigation hyperlinks.
+                for (int i = 0; i < pageCount; i++)
                 {
-                    Page page = diagram.Pages[i];
-                    // Determine the target page for navigation (next page, wrap to first)
-                    int targetIndex = (i + 1) % diagram.Pages.Count;
-                    Page targetPage = diagram.Pages[targetIndex];
+                    Page currentPage = diagram.Pages[i];
+                    // Fixed: Page.Name is a string, not a cell with .Value
+                    string currentPageName = currentPage.Name ?? $"Page-{i + 1}";
 
-                    // Add a simple rectangle shape that will act as the navigation button
-                    // Position: top‑right corner of the page (adjust as needed)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-                    double rectWidth = 1.0;   // inches
-                    double rectHeight = 0.5; // inches
-                    double pinX = pageWidth - rectWidth / 2 - 0.2; // 0.2 inch margin from right edge
-                    double pinY = pageHeight - rectHeight / 2 - 0.2; // 0.2 inch margin from top edge
+                    // ----- Add "Next Page" hyperlink (if not the last page) -----
+                    if (i < pageCount - 1)
+                    {
+                        Page nextPage = diagram.Pages[i + 1];
+                        // Fixed: Page.Name is a string, not a cell with .Value
+                        string nextPageName = nextPage.Name ?? $"Page-{i + 2}";
 
-                    long shapeId = page.DrawRectangle(pinX, pinY, rectWidth, rectHeight);
-                    Shape navShape = page.Shapes.GetShape(shapeId);
+                        // Add a rectangle shape that will act as the "Next" button.
+                        // Position it near the bottom‑right corner of the page.
+                        long nextShapeId = currentPage.AddShape(8.0, 0.5, "Rectangle", false);
+                        Shape nextShape = currentPage.Shapes.GetShape(nextShapeId);
 
-                    // Set visible text on the shape
-                    navShape.Text.Value.Clear();
-                    navShape.Text.Value.Add(new Txt("Next Page"));
+                        // Create and configure the hyperlink to the next page.
+                        Hyperlink nextLink = new Hyperlink();
+                        nextLink.Description.Value = "Go to next page";
+                        nextLink.Address.Value = ""; // Internal link, no external address.
+                        nextLink.SubAddress.Value = nextPageName;
+                        nextLink.NewWindow.Value = BOOL.False;
 
-                    // Style the shape (optional)
-                    navShape.Fill.FillForegnd.Value = "#DDEEFF";
-                    navShape.Line.LineColor.Value = "#0000FF";
+                        // Attach the hyperlink to the shape.
+                        nextShape.Hyperlinks.Add(nextLink);
+                    }
 
-                    // Create a hyperlink that points to the target page
-                    Hyperlink link = new Hyperlink();
-                    link.Name = "NavLink";
-                    link.Description.Value = $"Navigate to page \"{targetPage.Name}\"";
-                    // SubAddress is used for internal page navigation; leave Address empty
-                    link.SubAddress.Value = targetPage.Name;
+                    // ----- Add "Previous Page" hyperlink (if not the first page) -----
+                    if (i > 0)
+                    {
+                        Page prevPage = diagram.Pages[i - 1];
+                        // Fixed: Page.Name is a string, not a cell with .Value
+                        string prevPageName = prevPage.Name ?? $"Page-{i}";
 
-                    // Add the hyperlink to the shape
-                    navShape.Hyperlinks.Add(link);
+                        // Add a rectangle shape that will act as the "Previous" button.
+                        // Position it near the bottom‑left corner of the page.
+                        long prevShapeId = currentPage.AddShape(0.5, 0.5, "Rectangle", false);
+                        Shape prevShape = currentPage.Shapes.GetShape(prevShapeId);
+
+                        // Create and configure the hyperlink to the previous page.
+                        Hyperlink prevLink = new Hyperlink();
+                        prevLink.Description.Value = "Go to previous page";
+                        prevLink.Address.Value = "";
+                        prevLink.SubAddress.Value = prevPageName;
+                        prevLink.NewWindow.Value = BOOL.False;
+
+                        // Attach the hyperlink to the shape.
+                        prevShape.Hyperlinks.Add(prevLink);
+                    }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

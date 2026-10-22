@@ -1,27 +1,50 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Determine the input file path from command-line arguments.
+        string inputPath;
+        if (args.Length > 0)
+        {
+            inputPath = args[0];
+        }
+        else
+        {
+            Console.Error.WriteLine("Please provide the path to a .vsdx file as a command-line argument.");
+            return;
+        }
+
+        // Guard: ensure the specified file exists before attempting to load.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Diagram loaded successfully. Output basic information.
+                Console.WriteLine($"Diagram loaded successfully. Total pages: {diagram.Pages.Count}");
 
-            // Path to the Visio .vsdx file
-            string filePath = "sample.vsdx";
-
-            // Load the Visio diagram into memory
-            Diagram diagram = new Diagram(filePath);
-
-            // Example usage: output the number of pages in the diagram
-            Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-
+                // Iterate through pages and display their names.
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    Page page = diagram.Pages[i];
+                    Console.WriteLine($"Page {i + 1}: NameU = {page.NameU}");
+                }
+            }
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any loading errors to the error output.
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

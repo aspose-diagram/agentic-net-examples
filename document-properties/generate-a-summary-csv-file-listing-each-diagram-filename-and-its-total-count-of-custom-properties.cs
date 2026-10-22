@@ -1,50 +1,79 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length == 0)
         {
-            // Determine the folder to scan. Use the first argument if provided; otherwise, use the current directory.
-            string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+            Console.Error.WriteLine("Usage: Program <input_folder_path> [output_csv_path]");
+            return;
+        }
 
-            // Prepare CSV content with a header row.
-            List<string> csvLines = new List<string>();
-            csvLines.Add("Filename,CustomPropertyCount");
+        string inputFolder = args[0];
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
 
-            // Retrieve all files in the specified folder.
-            string[] files = Directory.GetFiles(folderPath);
+        // Determine output CSV file path.
+        string outputCsv = args.Length > 1 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "summary.csv");
 
-            foreach (string filePath in files)
+        try
+        {
+            // Prepare CSV writer.
+            using (var writer = new StreamWriter(outputCsv, false))
             {
-                try
+                // Write CSV header.
+                writer.WriteLine("Filename,CustomPropertyCount");
+
+                // Define Visio file extensions to process.
+                string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vsx", "*.vssx", "*.vss", "*.vstx", "*.vst" };
+
+                // Iterate over each matching file in the folder (non‑recursive).
+                foreach (string ext in extensions)
                 {
-                    // Load the Visio diagram.
-                    Diagram diagram = new Diagram(filePath);
+                    foreach (string filePath in Directory.GetFiles(inputFolder, ext))
+                    {
+                        // Guard: ensure the file still exists.
+                        if (!File.Exists(filePath))
+                        {
+                            Console.Error.WriteLine($"File not found (skipped): {filePath}");
+                            continue;
+                        }
 
-                    // Count the custom properties in the document.
-                    int customPropCount = diagram.DocumentProps.CustomProps.Count;
+                        try
+                        {
+                            // Load the Visio diagram.
+                            using (var diagram = new Diagram(filePath))
+                            {
+                                // Retrieve the count of custom document properties.
+                                int customPropCount = diagram.DocumentProps.CustomProps.Count;
 
-                    // Extract just the file name for the CSV.
-                    string fileName = Path.GetFileName(filePath);
-
-                    // Add the result line to the CSV collection.
-                    csvLines.Add($"{fileName},{customPropCount}");
-                }
-                catch (Exception ex)
-                {
-                    // If the file cannot be processed, note the error in the CSV and write a message to the console.
-                    string fileName = Path.GetFileName(filePath);
-                    csvLines.Add($"{fileName},Error");
-                    Console.WriteLine($"Error processing '{fileName}': {ex.Message}");
+                                // Write a CSV line with the file name and count.
+                                string fileName = Path.GetFileName(filePath);
+                                writer.WriteLine($"{fileName},{customPropCount}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Report loading or processing errors but continue with other files.
+                            Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                        }
+                    }
                 }
             }
 
-            // Write the CSV file to the same folder.
-            string outputPath = Path.Combine(folderPath, "DiagramCustomPropertiesSummary.csv");
-            File.WriteAllLines(outputPath, csvLines);
-            Console.WriteLine($"Summary CSV created at: {outputPath}");
+            Console.WriteLine($"Summary CSV created at: {outputCsv}");
+        }
+        catch (Exception ex)
+        {
+            // Report any unexpected errors (e.g., file I/O issues).
+            Console.Error.WriteLine($"Fatal error: {ex.Message}");
         }
     }
+}

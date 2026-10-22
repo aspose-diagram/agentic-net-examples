@@ -7,10 +7,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio diagram file.
-        string diagramPath = "input.vsdx";
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
 
-        // Verify that the diagram file exists before proceeding.
+        string diagramPath = args[0];
+
+        // Guard against missing file
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
@@ -19,36 +25,43 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Use LINQ to collect shapes that inherit both fill and line formatting from their masters.
-            var inheritedShapes =
-                from page in diagram.Pages.Cast<Page>()                     // Enumerate all pages.
-                from shape in page.Shapes.Cast<Shape>()                     // Enumerate all shapes on each page.
-                // Exclude deleted shapes.
-                where shape.Del == BOOL.False
-                // Ensure both InheritFill and InheritLine are available.
-                where shape.InheritFill != null && shape.InheritLine != null
-                // Compare a representative fill property (foreground color) with its inherited value.
-                where shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value
-                // Compare a representative line property (line color) with its inherited value.
-                where shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value
-                // Project both the shape and its page index for later reporting.
-                select new { Shape = shape, PageIndex = diagram.Pages.IndexOf(page) };
+            // Use LINQ to filter shapes that inherit both fill and line formatting from masters
+            var inheritedShapes = diagram.Pages
+                .SelectMany(page => page.Shapes.Cast<Shape>()) // Flatten all shapes across pages
+                .Where(shape => shape.Del == BOOL.False) // Exclude deleted shapes
+                .Where(shape =>
+                    // Ensure required cells are present
+                    shape.Fill != null &&
+                    shape.Fill.FillForegnd != null &&
+                    shape.Fill.FillForegnd.Ufe != null &&
+                    shape.Line != null &&
+                    shape.Line.LineColor != null &&
+                    shape.Line.LineColor.Ufe != null &&
+                    // Check inheritance flags (both must be "INHERITED()")
+                    shape.Fill.FillForegnd.Ufe.F == "INHERITED()" &&
+                    shape.Line.LineColor.Ufe.F == "INHERITED()")
+                .ToList();
 
-            // Output the results.
-            Console.WriteLine("Shapes inheriting both fill and line formatting from masters:");
-            foreach (var item in inheritedShapes)
+            // Output the results
+            Console.WriteLine($"Total shapes inheriting both fill and line from masters: {inheritedShapes.Count}");
+            foreach (var shape in inheritedShapes)
             {
-                // Retrieve shape details and its page index.
-                Console.WriteLine($"Page {item.PageIndex + 1}, Shape ID: {item.Shape.ID}, NameU: {item.Shape.NameU}");
+                // Shape ID is a long value
+                Console.WriteLine($"Shape ID: {shape.ID}");
             }
+
+            // Optionally, save a copy of the diagram (demonstration of saving)
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "FilteredOutput.vsdx");
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

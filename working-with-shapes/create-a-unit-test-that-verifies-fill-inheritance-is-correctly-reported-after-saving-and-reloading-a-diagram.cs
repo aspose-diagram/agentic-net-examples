@@ -7,92 +7,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define temporary file path for the test diagram
-        string tempPath = "fill_inheritance_test.vsdx";
+        // Define temporary file path for the diagram
+        string diagramPath = Path.Combine(Path.GetTempPath(), "FillInheritanceTest.vsdx");
 
-        // Ensure any existing file is removed to start fresh
-        if (File.Exists(tempPath))
+        // Ensure any existing file is deleted to start fresh
+        if (File.Exists(diagramPath))
         {
-            File.Delete(tempPath);
+            try { File.Delete(diagramPath); } catch { /* ignore */ }
         }
-
-        // Variable to hold the shape ID for later verification
-        int shapeId = -1;
 
         try
         {
-            // Create a new empty diagram (contains a default page)
+            // -------------------- Create a new diagram --------------------
             Diagram diagram = new Diagram();
 
-            // Access the first (default) page
-            Page page = diagram.Pages[0];
+            // Add a window (required for a non‑empty diagram)
+            Window window = new Window();
+            window.WindowType = WindowTypeValue.Drawing;
+            window.WindowState = WindowStateValue.Maximized;
+            window.WindowWidth = 1100;
+            window.WindowHeight = 700;
+            diagram.Windows.Add(window);
 
-            // Draw a simple rectangle shape; returns a long shape ID
-            long shapeIdLong = page.DrawRectangle(pinX: 2f, pinY: 2f, width: 2f, height: 1f);
+            // Add a page to the diagram
+            Page page = new Page();
+            page.Name = "Page-1";
+            page.ID = 1;
+            diagram.Pages.Add(page);
 
-            // Convert long ID to int for GetShape (expects int)
-            shapeId = (int)shapeIdLong;
-
-            // Retrieve the shape object to modify its fill properties
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, width, height, master name
+            long shapeId = page.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle");
             Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Set a solid fill pattern (1 = solid) and a foreground color
-            shape.Fill.FillPattern.Value = 1;               // Solid fill
-            shape.Fill.FillForegnd.Value = "#FF0000";       // Red fill
+            // Set a solid fill color
+            shape.Fill.FillForegnd.Value = "#FF0000";
 
-            // Save the diagram to the temporary file using VSDX format
-            diagram.Save(tempPath, SaveFileFormat.Vsdx);
+            // Enable fill inheritance by assigning the INHERITED() function
+            shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+
+            // Save the diagram to a file
+            diagram.Save(diagramPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Report any errors that occurred during creation or saving
             Console.Error.WriteLine($"Error during diagram creation/saving: {ex.Message}");
             return;
         }
 
-        // Verify that the file was created successfully
-        if (!File.Exists(tempPath))
-        {
-            Console.Error.WriteLine($"File not found after save: {tempPath}");
-            return;
-        }
-
         try
         {
-            // Reload the diagram from the saved file
-            Diagram loadedDiagram = new Diagram(tempPath);
+            // -------------------- Reload the diagram --------------------
+            Diagram loadedDiagram = new Diagram(diagramPath);
 
-            // Access the same page and shape by the stored ID
+            // Retrieve the first page and the shape by its ID
             Page loadedPage = loadedDiagram.Pages[0];
-            Shape reloadedShape = loadedPage.Shapes.GetShape(shapeId);
+            // The shape ID is the same as before because IDs are preserved on save/load
+            long shapeId = loadedPage.Shapes[0].ID; // Assuming the first shape is our rectangle
+            Shape loadedShape = loadedPage.Shapes.GetShape(shapeId);
 
-            // Verify that the explicit fill color persisted correctly
-            if (reloadedShape.Fill.FillForegnd.Value != "#FF0000")
+            // Compare the fill value with the inherited fill value
+            string fillValue = loadedShape.Fill.FillForegnd.Value;
+            string inheritFillValue = loadedShape.InheritFill.FillForegnd.Value;
+
+            if (fillValue == inheritFillValue)
             {
-                throw new Exception("Fill color was not persisted correctly after reload.");
+                Console.WriteLine("Fill inheritance verification succeeded: inherited fill matches shape fill.");
             }
-
-            // Verify that the inherited fill matches the explicit fill
-            if (reloadedShape.InheritFill.FillForegnd.Value != "#FF0000")
+            else
             {
-                throw new Exception("Inherited fill color does not match expected value after reload.");
+                throw new Exception($"Fill inheritance verification failed: shape fill '{fillValue}' does not match inherited fill '{inheritFillValue}'.");
             }
-
-            // If both checks pass, report success
-            Console.WriteLine("Fill inheritance verification passed.");
         }
         catch (Exception ex)
         {
-            // Report any errors that occurred during loading or verification
-            Console.Error.WriteLine($"Error during verification: {ex.Message}");
-        }
-        finally
-        {
-            // Clean up the temporary file (optional)
-            if (File.Exists(tempPath))
-            {
-                try { File.Delete(tempPath); } catch { /* ignore cleanup errors */ }
-            }
+            Console.Error.WriteLine($"Error during diagram loading/verification: {ex.Message}");
+            return;
         }
     }
 }

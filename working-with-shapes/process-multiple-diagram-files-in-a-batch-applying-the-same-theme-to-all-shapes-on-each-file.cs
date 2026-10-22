@@ -1,60 +1,70 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate that at least one file path is provided.
+        if (args.Length == 0)
         {
-            // Input folder containing Visio files (VSDX). Use first argument if provided, otherwise default to "InputDiagrams".
-            string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
+            Console.Error.WriteLine("Usage: Program <diagramFile1> [<diagramFile2> ...]");
+            return;
+        }
 
-            // Output folder where themed diagrams will be saved. Use second argument if provided, otherwise default to "OutputDiagrams".
-            string outputFolder = args.Length > 1 ? args[1] : "OutputDiagrams";
-
-            // Ensure the output directory exists.
-            if (!Directory.Exists(outputFolder))
+        // Process each diagram file supplied via command line arguments.
+        foreach (string inputPath in args)
+        {
+            // Guard: ensure the file exists before attempting to load.
+            if (!File.Exists(inputPath))
             {
-                Directory.CreateDirectory(outputFolder);
+                Console.Error.WriteLine($"File not found: {inputPath}");
+                continue;
             }
 
-            // Process each VSDX file in the input folder.
-            foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsdx"))
+            try
             {
-                try
+                // Load the diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Apply the theme to every non-deleted shape on each page.
+                    // Iterate over all pages in the diagram.
                     foreach (Page page in diagram.Pages)
                     {
+                        // Iterate over all shapes on the current page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip shapes that are marked for deletion.
-                            if (shape.Del == BOOL.False)
-                            {
-                                // Apply a preset theme to the shape.
-                                shape.PresetTheme = PresetThemeValue.Bubble;
-                                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-                            }
+                            // Skip shapes that are marked as deleted.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Apply a preset theme to the shape.
+                            // PresetThemeValue and PresetThemeVariantValue are write‑only properties.
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            // Optionally, a quick style can be set if desired:
+                            // shape.PresetThemeQuickStyle = PresetThemeQuickStyleValue.Style1;
                         }
                     }
 
-                    // Determine the output file path (same file name in the output folder).
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                    // Determine output file path (original name with "_themed" suffix).
+                    string directory = Path.GetDirectoryName(inputPath);
+                    string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                    string extension = Path.GetExtension(inputPath);
+                    string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_themed{extension}");
 
                     // Save the modified diagram in VSDX format.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    // Log any errors for the current file and continue processing the rest.
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+
+                    Console.WriteLine($"Processed and saved: {outputPath}");
                 }
             }
-
-            Console.WriteLine("Batch processing completed.");
+            catch (Exception ex)
+            {
+                // Write any errors to the error stream.
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
+            }
         }
     }
+}

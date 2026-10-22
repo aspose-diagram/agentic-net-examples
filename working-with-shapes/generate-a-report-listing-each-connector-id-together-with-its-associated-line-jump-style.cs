@@ -1,39 +1,60 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-
-                // Path to the Visio file (replace with your actual file path)
-                string diagramPath = "input.vsdx";
-
-                // Load the diagram
-                Diagram diagram = new Diagram(diagramPath);
-
-                // Iterate through all pages and shapes to find connectors
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Connectors are 1‑D shapes (OneD == true)
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes (1‑D shapes). shape.OneD returns a bool.
                         if (shape.OneD)
                         {
-                            long connectorId = shape.ID;
-                            // Retrieve the line jump style from the layout sub‑object
+                            // Retrieve the connector's line jump style from its layout.
+                            // ConLineJumpStyleValue enum provides the style.
                             var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-                            Console.WriteLine($"Connector ID: {connectorId}, Line Jump Style: {jumpStyle}");
+
+                            // Output connector ID and its jump style.
+                            Console.WriteLine($"Connector ID: {shape.ID}, Jump Style: {jumpStyle}");
                         }
                     }
                 }
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

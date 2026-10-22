@@ -1,131 +1,202 @@
 using System;
+using System.IO;
+using System.Xml;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
+{
+    // Simple representation of a shape extracted from SolutionXML
+    class ShapeInfo
     {
-        static void Main(string[] args)
-        {
-            try
-            {
-
-                // Paths to the two Visio files containing SolutionXML data
-                string filePathOld = "oldDiagram.vsdx";
-                string filePathNew = "newDiagram.vsdx";
-
-                // Load the diagrams
-                Diagram oldDiagram = new Diagram(filePathOld);
-                Diagram newDiagram = new Diagram(filePathNew);
-
-                // Build dictionaries of shapes keyed by PageIndex + Shape NameU
-                var oldShapes = BuildShapeDictionary(oldDiagram);
-                var newShapes = BuildShapeDictionary(newDiagram);
-
-                // Identify added shapes
-                foreach (var key in newShapes.Keys)
-                {
-                    if (!oldShapes.ContainsKey(key))
-                    {
-                        Console.WriteLine($"Added Shape: Page {newShapes[key].PageIndex}, NameU = {newShapes[key].Shape.NameU}");
-                    }
-                }
-
-                // Identify removed shapes
-                foreach (var key in oldShapes.Keys)
-                {
-                    if (!newShapes.ContainsKey(key))
-                    {
-                        Console.WriteLine($"Removed Shape: Page {oldShapes[key].PageIndex}, NameU = {oldShapes[key].Shape.NameU}");
-                    }
-                }
-
-                // Identify modified shapes (present in both but with differing properties)
-                foreach (var key in oldShapes.Keys)
-                {
-                    if (newShapes.TryGetValue(key, out var newInfo))
-                    {
-                        var oldInfo = oldShapes[key];
-                        if (!ShapeSignaturesEqual(oldInfo.Shape, newInfo.Shape))
-                        {
-                            Console.WriteLine($"Modified Shape: Page {oldInfo.PageIndex}, NameU = {oldInfo.Shape.NameU}");
-                            Console.WriteLine($"  Old: {GetShapeSignature(oldInfo.Shape)}");
-                            Console.WriteLine($"  New: {GetShapeSignature(newInfo.Shape)}");
-                        }
-                    }
-                }
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public Dictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>();
     }
 
-        // Helper to collect shapes from all pages into a dictionary
-        private static Dictionary<string, ShapeInfo> BuildShapeDictionary(Diagram diagram)
+    static void Main(string[] args)
+    {
+        // Expect exactly two file paths: oldSolutionXml and newSolutionXml
+        if (args.Length != 2)
         {
-            var dict = new Dictionary<string, ShapeInfo>(StringComparer.OrdinalIgnoreCase);
-            for (int p = 0; p < diagram.Pages.Count; p++)
-            {
-                Page page = diagram.Pages[p];
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True) continue;
-
-                    // Use page index and universal name as a composite key
-                    string key = $"{p}|{shape.NameU}";
-                    dict[key] = new ShapeInfo { PageIndex = p, Shape = shape };
-                }
-            }
-            return dict;
+            Console.Error.WriteLine("Usage: Program <oldSolutionXmlPath> <newSolutionXmlPath>");
+            return;
         }
 
-        // Simple comparison of selected shape properties
-        private static bool ShapeSignaturesEqual(Shape a, Shape b)
+        string oldPath = args[0];
+        string newPath = args[1];
+
+        // Guard against missing files
+        if (!File.Exists(oldPath))
         {
-            if (a == null || b == null) return false;
+            Console.Error.WriteLine($"File not found: {oldPath}");
+            return;
+        }
+        if (!File.Exists(newPath))
+        {
+            Console.Error.WriteLine($"File not found: {newPath}");
+            return;
+        }
 
-            // Compare master name
-            string masterA = a.Master?.Name ?? string.Empty;
-            string masterB = b.Master?.Name ?? string.Empty;
-            if (!masterA.Equals(masterB, StringComparison.OrdinalIgnoreCase)) return false;
+        try
+        {
+            // Load both XML documents
+            XmlDocument oldDoc = new XmlDocument();
+            oldDoc.Load(oldPath);
+            XmlDocument newDoc = new XmlDocument();
+            newDoc.Load(newPath);
 
-            // Compare text content
-            string textA = a.Text?.Value?.Text ?? string.Empty;
-            string textB = b.Text?.Value?.Text ?? string.Empty;
-            if (!textA.Equals(textB, StringComparison.Ordinal)) return false;
+            // Parse shapes from each document
+            var oldShapes = ParseShapes(oldDoc);
+            var newShapes = ParseShapes(newDoc);
 
-            // Compare position and size
-            if (a.XForm.PinX.Value != b.XForm.PinX.Value) return false;
-            if (a.XForm.PinY.Value != b.XForm.PinY.Value) return false;
-            if (a.XForm.Width.Value != b.XForm.Width.Value) return false;
-            if (a.XForm.Height.Value != b.XForm.Height.Value) return false;
+            // Determine added, removed, and modified shapes
+            var added = new List<ShapeInfo>();
+            var removed = new List<ShapeInfo>();
+            var modified = new List<(ShapeInfo OldShape, ShapeInfo NewShape)>();
 
-            // Compare fill and line colors (foreground)
-            string fillA = a.Fill?.FillForegnd?.Value ?? string.Empty;
-            string fillB = b.Fill?.FillForegnd?.Value ?? string.Empty;
-            if (!fillA.Equals(fillB, StringComparison.OrdinalIgnoreCase)) return false;
+            // Shapes present in new but not in old -> added
+            foreach (var kvp in newShapes)
+            {
+                if (!oldShapes.ContainsKey(kvp.Key))
+                {
+                    added.Add(kvp.Value);
+                }
+                else
+                {
+                    // Present in both -> check for modifications
+                    if (IsShapeModified(oldShapes[kvp.Key], kvp.Value))
+                    {
+                        modified.Add((oldShapes[kvp.Key], kvp.Value));
+                    }
+                }
+            }
 
-            string lineA = a.Line?.LineColor?.Value ?? string.Empty;
-            string lineB = b.Line?.LineColor?.Value ?? string.Empty;
-            if (!lineA.Equals(lineB, StringComparison.OrdinalIgnoreCase)) return false;
+            // Shapes present in old but not in new -> removed
+            foreach (var kvp in oldShapes)
+            {
+                if (!newShapes.ContainsKey(kvp.Key))
+                {
+                    removed.Add(kvp.Value);
+                }
+            }
 
+            // Output results
+            Console.WriteLine("=== Added Shapes ===");
+            foreach (var shape in added)
+            {
+                Console.WriteLine($"ID: {shape.Id}, Name: {shape.Name}");
+            }
+
+            Console.WriteLine("\n=== Removed Shapes ===");
+            foreach (var shape in removed)
+            {
+                Console.WriteLine($"ID: {shape.Id}, Name: {shape.Name}");
+            }
+
+            Console.WriteLine("\n=== Modified Shapes ===");
+            foreach (var pair in modified)
+            {
+                Console.WriteLine($"ID: {pair.OldShape.Id}, Name: {pair.OldShape.Name}");
+                Console.WriteLine("  Changes:");
+                foreach (var attr in GetChangedAttributes(pair.OldShape, pair.NewShape))
+                {
+                    Console.WriteLine($"    {attr.Key}: '{attr.Value.oldValue}' => '{attr.Value.newValue}'");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Catch any unexpected errors, including Aspose related ones
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    // Parses all <Shape> elements in the provided XmlDocument
+    static Dictionary<string, ShapeInfo> ParseShapes(XmlDocument doc)
+    {
+        var dict = new Dictionary<string, ShapeInfo>();
+        // Select any element named "Shape" regardless of namespace
+        XmlNodeList shapeNodes = doc.SelectNodes("//*[local-name()='Shape']");
+
+        foreach (XmlNode node in shapeNodes)
+        {
+            var shape = new ShapeInfo();
+
+            // Prefer ID attribute; fallback to Name attribute as key
+            var idAttr = node.Attributes["ID"] ?? node.Attributes["Id"] ?? node.Attributes["Id"];
+            var nameAttr = node.Attributes["Name"] ?? node.Attributes["NameU"];
+
+            shape.Id = idAttr?.Value ?? Guid.NewGuid().ToString(); // generate temporary ID if missing
+            shape.Name = nameAttr?.Value ?? string.Empty;
+
+            // Capture all attributes for comparison
+            if (node.Attributes != null)
+            {
+                foreach (XmlAttribute attr in node.Attributes)
+                {
+                    shape.Attributes[attr.Name] = attr.Value;
+                }
+            }
+
+            // Use ID as the dictionary key; if ID missing, use Name
+            string key = shape.Id;
+            if (string.IsNullOrEmpty(key))
+                key = shape.Name;
+
+            if (!string.IsNullOrEmpty(key) && !dict.ContainsKey(key))
+                dict[key] = shape;
+        }
+
+        return dict;
+    }
+
+    // Determines if two ShapeInfo objects differ in any attribute (excluding ID and Name)
+    static bool IsShapeModified(ShapeInfo oldShape, ShapeInfo newShape)
+    {
+        // Compare attribute counts first for quick exit
+        if (oldShape.Attributes.Count != newShape.Attributes.Count)
             return true;
+
+        foreach (var kvp in oldShape.Attributes)
+        {
+            if (!newShape.Attributes.TryGetValue(kvp.Key, out string newVal))
+                return true;
+            if (kvp.Value != newVal)
+                return true;
         }
 
-        // Produce a readable signature for a shape
-        private static string GetShapeSignature(Shape shape)
-        {
-            string master = shape.Master?.Name ?? "None";
-            string text = shape.Text?.Value?.Text ?? "";
-            return $"Master={master}, Text=\"{text}\", PinX={shape.XForm.PinX.Value}, PinY={shape.XForm.PinY.Value}, Width={shape.XForm.Width.Value}, Height={shape.XForm.Height.Value}, Fill={shape.Fill?.FillForegnd?.Value}, Line={shape.Line?.LineColor?.Value}";
-        }
-
-        // Simple holder for shape with its page index
-        private class ShapeInfo
-        {
-            public int PageIndex { get; set; }
-            public Shape Shape { get; set; }
-        }
+        return false;
     }
+
+    // Returns a dictionary of changed attributes between two shapes
+    static Dictionary<string, (string oldValue, string newValue)> GetChangedAttributes(ShapeInfo oldShape, ShapeInfo newShape)
+    {
+        var changes = new Dictionary<string, (string, string)>();
+        foreach (var kvp in oldShape.Attributes)
+        {
+            if (newShape.Attributes.TryGetValue(kvp.Key, out string newVal))
+            {
+                if (kvp.Value != newVal)
+                {
+                    changes[kvp.Key] = (kvp.Value, newVal);
+                }
+            }
+            else
+            {
+                changes[kvp.Key] = (kvp.Value, "<missing>");
+            }
+        }
+
+        // Detect new attributes added in the new shape
+        foreach (var kvp in newShape.Attributes)
+        {
+            if (!oldShape.Attributes.ContainsKey(kvp.Key))
+            {
+                changes[kvp.Key] = ("<missing>", kvp.Value);
+            }
+        }
+
+        return changes;
+    }
+}

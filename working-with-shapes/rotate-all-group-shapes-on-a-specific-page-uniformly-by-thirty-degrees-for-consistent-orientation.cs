@@ -1,53 +1,67 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments: input file, page name, output file
+        if (args.Length < 3)
         {
-            // Expect three arguments: input Visio file, target page name, output Visio file
-            if (args.Length < 3)
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <pageName> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string pageName = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Usage: DiagramGroupRotation <inputFile> <pageName> <outputFile>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string targetPageName = args[1];
-            string outputPath = args[2];
-
-            try
-            {
-                // Load the diagram
-                Diagram diagram = new Diagram(inputPath);
-
-                // Retrieve the specified page; if not found, fall back to the first page
-                Page page = diagram.Pages.GetPage(targetPageName);
+                // Retrieve the specified page; GetPage returns null if not found
+                Page page = diagram.Pages.GetPage(pageName);
                 if (page == null)
                 {
-                    Console.WriteLine($"Page \"{targetPageName}\" not found. Using the first page instead.");
-                    page = diagram.Pages[0];
+                    Console.Error.WriteLine($"Page \"{pageName}\" not found in the diagram.");
+                    return;
                 }
 
-                // Rotate each group shape on the page by 30 degrees
+                // Iterate over all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify group shapes using the Type property (IsGroup does not exist)
                     if (shape.Type == TypeValue.Group)
                     {
-                        // Add 30 degrees to the existing rotation angle
+                        // Rotate the group by adding 30 degrees to its current angle
                         double currentAngle = shape.XForm.Angle.Value;
-                        double newAngle = (currentAngle + 30) % 360;
-                        shape.XForm.Angle.Value = newAngle;
+                        shape.XForm.Angle.Value = currentAngle + 30.0;
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the output path using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to \"{outputPath}\" with group shapes rotated.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
+}

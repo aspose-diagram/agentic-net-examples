@@ -1,61 +1,68 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        // Path to the existing Visio file
-        string inputPath = "input.vsdx";
+        // Determine input and output file paths
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdm";
 
-        // Load the diagram
-        Diagram diagram;
-        try
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
             return;
         }
 
-        // Access the VBA project
-        VbaProject vbaProject = diagram.VbaProject;
-        Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
-        Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
-
-        // List existing modules
-        Console.WriteLine("Existing VBA Modules:");
-        foreach (VbaModule mod in vbaProject.Modules)
+        try
         {
-            Console.WriteLine($"- {mod.Name}");
-        }
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-        // Add a new procedural module
-        int newModuleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "MyModule");
-        VbaModule newModule = vbaProject.Modules[newModuleIndex];
+            // Access the VBA project (read‑only property)
+            VbaProject vbaProject = diagram.VbaProject;
 
-        // Set VBA code for the new module
-        newModule.Codes = @"Attribute VB_Name = ""MyModule""
-Sub HelloWorld()
+            if (vbaProject == null)
+            {
+                Console.WriteLine("The diagram does not contain a VBA project.");
+            }
+            else
+            {
+                // Output basic VBA project information
+                Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+                Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
+
+                // List existing VBA modules
+                Console.WriteLine("Existing VBA Modules:");
+                foreach (VbaModule module in vbaProject.Modules)
+                {
+                    Console.WriteLine($"- Module Name: {module.Name}");
+                    Console.WriteLine($"  Code Length: {module.Codes?.Length ?? 0} characters");
+                }
+
+                // Add a new procedural VBA module
+                int newModuleIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, "NewModule");
+                VbaModule newModule = vbaProject.Modules[newModuleIndex];
+                newModule.Codes = @"Sub HelloWorld()
     MsgBox ""Hello from Aspose.Diagram!""
 End Sub";
 
-        Console.WriteLine($"Added new VBA module: {newModule.Name}");
+                Console.WriteLine($"Added new VBA module: {newModule.Name}");
+            }
 
-        // Save the diagram in a macro‑enabled format to preserve VBA
-        string outputPath = "output.vsdm";
-        try
-        {
+            // Save the modified diagram in a macro‑enabled format (VSDM)
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
-            Console.WriteLine($"Diagram saved with VBA to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to save diagram: {ex.Message}");
+            // Write any errors that occur during Aspose operations
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

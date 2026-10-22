@@ -1,51 +1,66 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
-
-            // Path to the source Visio file
-            string inputPath = "input.vsdx";
-
-            // Path for the exported PNG image
-            string outputPath = "output.png";
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to adjust fill opacity
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate over all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate over all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Set foreground and background fill transparency to 20%
-                    // (100% - 80% opacity = 20% transparency)
-                    shape.Fill.FillForegndTrans.Value = 20;
-                    shape.Fill.FillBkgndTrans.Value = 20;
+                        // Ensure the shape has a Fill object before accessing it.
+                        if (shape.Fill != null)
+                        {
+                            // Set fill foreground transparency to 0.20 (80% opacity).
+                            shape.Fill.FillForegndTrans.Value = 0.20;
+                        }
+                    }
                 }
+
+                // Prepare PNG export options.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+
+                // Export the modified diagram to PNG.
+                diagram.Save(outputPath, pngOptions);
             }
 
-            // Configure PNG export options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.ExportHiddenPage = false; // export only visible pages
-
-            // Save the diagram as a PNG image
-            diagram.Save(outputPath, pngOptions);
-
+            Console.WriteLine($"Diagram processed and saved to PNG: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

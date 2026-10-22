@@ -4,67 +4,96 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Expect three arguments: input Visio file, logo image file, output PNG file
+        if (args.Length != 3)
         {
-            // Expect three arguments: input Visio file, logo image file, output PNG file
-            if (args.Length != 3)
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <logoImagePath> <outputPngPath>");
+            return;
+        }
+
+        string inputVisioPath = args[0];
+        string logoImagePath = args[1];
+        string outputPngPath = args[2];
+
+        // Guard: verify input Visio file exists
+        if (!File.Exists(inputVisioPath))
+        {
+            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
+            return;
+        }
+
+        // Guard: verify logo image file exists
+        if (!File.Exists(logoImagePath))
+        {
+            Console.Error.WriteLine($"Logo image file not found: {logoImagePath}");
+            return;
+        }
+
+        // Load logo image bytes once
+        byte[] logoBytes;
+        try
+        {
+            logoBytes = File.ReadAllBytes(logoImagePath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to read logo image: {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram inside a using block
+        try
+        {
+            using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                Console.WriteLine("Usage: VisioLogoReplacer <input.vsdx> <logo.png> <output.png>");
-                return;
-            }
-
-            string inputPath = args[0];
-            string logoPath = args[1];
-            string outputPath = args[2];
-
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to find placeholders
-            foreach (Page page in diagram.Pages)
-            {
-                // Collect shapes to process to avoid modifying collection during iteration
-                var shapesToReplace = new System.Collections.Generic.List<Shape>();
-
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify placeholder shapes by name (adjust condition as needed)
-                    if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.Contains("Placeholder"))
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        shapesToReplace.Add(shape);
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify placeholder shapes.
+                        // This example treats any shape whose NameU contains "Placeholder"
+                        // (case‑insensitive) as a placeholder to be replaced.
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.IndexOf("Placeholder", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // Replace the foreign image data with the logo bytes.
+                            // Ensure the shape is of type Foreign (image) before assigning.
+                            if (shape.Type == TypeValue.Foreign)
+                            {
+                                shape.ForeignData.Value = logoBytes;
+                            }
+                            else
+                            {
+                                // If the shape is not a foreign image, optionally convert it.
+                                // For simplicity, we only replace existing foreign image shapes.
+                                Console.WriteLine($"Shape '{shape.NameU}' is marked as placeholder but is not a foreign image. Skipping.");
+                            }
+                        }
                     }
                 }
 
-                // Replace each placeholder with the logo image
-                foreach (Shape placeholder in shapesToReplace)
-                {
-                    double pinX = placeholder.XForm.PinX.Value;
-                    double pinY = placeholder.XForm.PinY.Value;
-                    double width = placeholder.XForm.Width.Value;
-                    double height = placeholder.XForm.Height.Value;
+                // Prepare high‑resolution PNG export options.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Note: Aspose.Diagram.ImageSaveOptions does not expose a DPI property in this version.
+                // The default export resolution is used.
 
-                    // Hide the original placeholder shape
-                    placeholder.XForm.Width.Value = 0;
-                    placeholder.XForm.Height.Value = 0;
-
-                    // Insert the logo image at the same position and size
-                    using (FileStream logoStream = new FileStream(logoPath, FileMode.Open, FileAccess.Read))
-                    {
-                        // AddShape returns the new shape ID (long)
-                        page.AddShape(pinX, pinY, width, height, logoStream);
-                    }
-                }
+                // Save the modified diagram as PNG.
+                diagram.Save(outputPngPath, pngOptions);
+                Console.WriteLine($"Diagram exported successfully to: {outputPngPath}");
             }
-
-            // Configure high‑resolution PNG export
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            pngOptions.Resolution = 300f;               // 300 DPI for high quality
-            pngOptions.ExportHiddenPage = false;        // Do not export hidden pages
-
-            // Save the modified diagram as PNG
-            diagram.Save(outputPath, pngOptions);
-
-            Console.WriteLine($"Diagram saved to '{outputPath}' with high‑resolution PNG.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
+}

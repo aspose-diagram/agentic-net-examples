@@ -1,67 +1,86 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram from the specified file
+            Diagram diagram = new Diagram(inputPath);
 
-            // Paths for input and output Visio files
-            string inputPath = "input.vsdx";
-            string outputPath = "output.vsdx";
-
-            // Load the diagram using the standard constructor
-            using (Diagram diagram = new Diagram(inputPath))
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
             {
-                // Work with the first page of the diagram
-                Page page = diagram.Pages[0];
-
-                // Apply a preset theme to the page to change its visual style
-                page.PresetTheme = PresetThemeValue.Bubble;
-                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                // Retrieve the page dimensions (in inches)
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // Locate a shape that needs geometry adjustment (example: first Rectangle master)
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape != null)
-                {
-                    // Center the shape on the page after the theme change
-                    targetShape.XForm.PinX.Value = pageWidth / 2.0;
-                    targetShape.XForm.PinY.Value = pageHeight / 2.0;
-
-                    // Optionally, keep the original size (no changes needed for width/height)
-                }
-                else
-                {
-                    Console.WriteLine("Target shape not found.");
-                }
-
-                // Save the modified diagram using a valid overload
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            Console.WriteLine("Diagram processing completed.");
+            // Work with the first page
+            Page page = diagram.Pages[0];
 
+            // Find the first shape on the page (skip master shapes)
+            Shape targetShape = null;
+            foreach (Shape s in page.Shapes)
+            {
+                // Ensure the shape is not a master placeholder
+                if (s.Master != null)
+                {
+                    targetShape = s;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No suitable shape found on the page.");
+                return;
+            }
+
+            // Store original geometry values before applying the theme
+            double originalPinX = targetShape.XForm.PinX.Value;
+            double originalPinY = targetShape.XForm.PinY.Value;
+            double originalWidth = targetShape.XForm.Width.Value;
+            double originalHeight = targetShape.XForm.Height.Value;
+
+            // Apply a preset theme to the page
+            // Note: PresetTheme and PresetThemeVariant are write‑only properties
+            page.PresetTheme = PresetThemeValue.Bubble;
+            page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+            // After the theme change, re‑apply the original geometry to keep alignment
+            targetShape.XForm.PinX.Value = originalPinX;
+            targetShape.XForm.PinY.Value = originalPinY;
+            targetShape.XForm.Width.Value = originalWidth;
+            targetShape.XForm.Height.Value = originalHeight;
+
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

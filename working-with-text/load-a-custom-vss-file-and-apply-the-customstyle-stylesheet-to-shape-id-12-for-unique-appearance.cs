@@ -1,29 +1,45 @@
-using System.IO;
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
+        // Expect two arguments: path to the diagram file and path to the custom .vss stencil file.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <DiagramPath> <StencilPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string stencilPath = args[1];
+
+        // Guard against missing files.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        if (!File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"Stencil file not found: {stencilPath}");
+            return;
+        }
+
         try
         {
-
-            // File paths (adjust as needed)
-            string diagramPath = "input.vsdx";
-            string stencilPath = "custom.vss";
-            string outputPath = "output.vsdx";
-
-            // Load the main diagram
+            // Load the main diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Load the custom stencil (.vss) file – required by the task
-            Diagram stencil = new Diagram(stencilPath);
+            // Load the stencil (VSS) file.
+            Diagram stencil = new Diagram(stencilPath, LoadFileFormat.Vss);
 
-            // Locate the stylesheet named "CustomStyle" in the diagram
+            // Find the stylesheet named "CustomStyle" in the stencil.
             StyleSheet customStyle = null;
-            foreach (StyleSheet ss in diagram.StyleSheets)
+            foreach (StyleSheet ss in stencil.StyleSheets)
             {
                 if (ss.Name == "CustomStyle")
                 {
@@ -32,49 +48,46 @@ class Program
                 }
             }
 
-            // If the stylesheet does not exist, create a simple one
             if (customStyle == null)
             {
-                Console.WriteLine("CustomStyle stylesheet not found. Creating a new one.");
-                customStyle = new StyleSheet();
-                customStyle.Name = "CustomStyle";
-
-                // Example style settings
-                customStyle.Line.LineColor.Value = "#FF0000";          // Red line
-                customStyle.Fill.FillForegnd.Value = "#00FF00";       // Green fill
-
-                // Character formatting (e.g., blue text)
-                var ch = new Aspose.Diagram.Char();
-                ch.IX = 0;
-                ch.Color.Value = "#0000FF";
-                customStyle.Chars.Add(ch);
-
-                diagram.StyleSheets.Add(customStyle);
+                Console.Error.WriteLine("Stylesheet 'CustomStyle' not found in the stencil file.");
+                return;
             }
 
-            // Retrieve shape with ID 12 from the first page
+            // Add the found stylesheet to the main diagram's stylesheet collection.
+            // Ensure the ID is unique within the diagram.
+            customStyle.ID = diagram.StyleSheets.Count + 1;
+            diagram.StyleSheets.Add(customStyle);
+
+            // Retrieve shape with ID 12 from the first page.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
             Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(12L);
+            Shape shape = page.Shapes.GetShape(12);
             if (shape == null)
             {
-                Console.WriteLine("Shape with ID 12 not found.");
-            }
-            else
-            {
-                // Apply the stylesheet to the shape
-                shape.TextStyle = customStyle;
-                shape.LineStyle = customStyle;
-                shape.FillStyle = customStyle;
+                Console.Error.WriteLine("Shape with ID 12 not found on the first page.");
+                return;
             }
 
-            // Save the modified diagram
+            // Apply the custom stylesheet to the shape's text, fill, and line styles.
+            shape.TextStyle = customStyle;
+            shape.FillStyle = customStyle;
+            shape.LineStyle = customStyle;
+
+            // Save the modified diagram.
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "output.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
-
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
-        catch (System.IO.FileNotFoundException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

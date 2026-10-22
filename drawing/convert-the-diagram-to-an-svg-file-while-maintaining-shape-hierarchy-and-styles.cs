@@ -1,33 +1,53 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure SVG save options to preserve hierarchy and styles.
+            SVGSaveOptions svgOptions = new SVGSaveOptions
             {
+                // Preserve guide shapes and comments (if any) in the output SVG.
+                ExportGuideShapes = true,
+                IsExportComments = true,
+                // Explicitly set the format (required by the API).
+                SaveFormat = SaveFileFormat.Svg
+            };
 
-                // Input Visio diagram file path (can be .vsdx, .vsd, etc.)
-                string inputPath = @"C:\Diagrams\sample.vsdx";
+            // Save the entire diagram as an SVG file.
+            diagram.Save(outputPath, svgOptions);
 
-                // Output SVG file path
-                string outputPath = @"C:\Diagrams\sample.svg";
-
-                // Load the Visio diagram using Aspose.Diagram
-                // This utilizes the standard load rule for Diagram objects.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Save the diagram as SVG.
-                // Aspose.Diagram preserves shape hierarchy and styles during SVG export.
-                diagram.Save(outputPath, SaveFileFormat.Svg);
-
-                Console.WriteLine("Diagram successfully converted to SVG.");
-
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+            Console.WriteLine($"Diagram successfully converted to SVG: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
+        }
     }
-    }
+}

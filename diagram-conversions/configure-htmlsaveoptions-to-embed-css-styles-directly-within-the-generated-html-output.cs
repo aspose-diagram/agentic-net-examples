@@ -7,32 +7,42 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio file
+        // Input Visio file path (modify as needed)
         string inputPath = "input.vsdx";
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(inputPath))
+        if (!System.IO.File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output HTML file path
+        string outputPath = "output.html";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML save options
+            // Create HTML save options
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            // By default Aspose.Diagram embeds CSS; no explicit property is required.
-            htmlOptions.ExportHiddenPage = false; // Do not export hidden pages
 
-            // Save the diagram as an HTML file using the configured options
-            diagram.Save("output.html", htmlOptions);
+            // TODO: Configure htmlOptions to embed CSS styles directly within the HTML output
+            // (Aspose.Diagram may embed CSS by default; if a specific property exists, set it here.)
+
+            // Save the diagram as HTML using the configured options
+            diagram.Save(outputPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error during HTML export: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

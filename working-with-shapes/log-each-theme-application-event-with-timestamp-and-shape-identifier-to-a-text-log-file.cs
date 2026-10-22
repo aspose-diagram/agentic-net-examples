@@ -1,61 +1,63 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        // Path to the input Visio file
-        private const string InputFilePath = "input.vsdx";
-        // Path to the output Visio file after theme application
-        private const string OutputFilePath = "output.vsdx";
-        // Path to the log file where theme application events are recorded
-        private const string LogFilePath = "theme_application_log.txt";
-
-        static void Main()
+        // Input Visio file path (modify as needed)
+        string inputPath = "Themes1.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            try
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output Visio file path
+        string outputPath = "Themes1_Themed.vsdx";
+        // Log file path
+        string logPath = "ThemeApplicationLog.txt";
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page
+            foreach (Page page in diagram.Pages)
             {
-
-                // Ensure the log file exists and is empty at start
-                File.WriteAllText(LogFilePath, string.Empty);
-
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(InputFilePath);
-
-                // Iterate through all pages and shapes to apply a theme
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Apply a preset theme to the shape
-                        shape.PresetTheme = PresetThemeValue.Bubble;
-                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Log the theme application event
-                        LogThemeApplication(shape.ID);
-                    }
+                    // Apply a preset theme to the shape
+                    // Note: PresetTheme and PresetThemeVariant are write‑only properties
+                    shape.PresetTheme = PresetThemeValue.Bubble;
+                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                    // Log the theme application event
+                    string logEntry = $"{DateTime.Now:O}\tShapeID:{shape.ID}";
+                    File.AppendAllText(logPath, logEntry + Environment.NewLine);
                 }
-
-                // Save the modified diagram using the appropriate SaveFileFormat
-                diagram.Save(OutputFilePath, SaveFileFormat.Vsdx);
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
-    }
 
-        /// <summary>
-        /// Writes a log entry with the current timestamp and the shape identifier.
-        /// </summary>
-        /// <param name="shapeId">The unique identifier of the shape.</param>
-        private static void LogThemeApplication(long shapeId)
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+        }
+        catch (Exception ex)
         {
-            string timestamp = DateTime.Now.ToString("o"); // ISO 8601 format
-            string logEntry = $"{timestamp} - Theme applied to shape ID: {shapeId}";
-            // Append the log entry to the log file
-            File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}

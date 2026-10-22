@@ -7,52 +7,87 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        string outputPath = "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to validate event formulas
+            bool allValid = true;
+
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // The EventValidate cell is not directly exposed; use a generic check for the Event section
-                    // Ensure the Event object exists before accessing its members
-                    if (shape.Event != null)
-                    {
-                        // Example validation: check that the EventDblClick formula is not empty
-                        // (Replace with the appropriate event cell if EventValidate becomes available)
-                        string formula = shape.Event.EventDblClick?.Ufe?.F ?? string.Empty;
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                        // Throw an exception if the formula is empty or whitespace
-                        if (string.IsNullOrWhiteSpace(formula))
+                    bool hasEventValidate = false;
+
+                    // Examine user‑defined cells for a cell named "EventValidate".
+                    foreach (User userCell in shape.Users)
+                    {
+                        // Compare both Name and NameU (localized and universal names).
+                        if (string.Equals(userCell.Name, "EventValidate", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(userCell.NameU, "EventValidate", StringComparison.OrdinalIgnoreCase))
                         {
-                            throw new Exception(
-                                $"Shape ID {shape.ID} on page \"{page.Name}\" has an empty EventDblClick formula.");
+                            hasEventValidate = true;
+                            string formula = userCell.Value.Val;
+
+                            // Validate that the formula is not empty or whitespace.
+                            if (string.IsNullOrWhiteSpace(formula))
+                            {
+                                Console.Error.WriteLine($"Error: Shape ID {shape.ID} on Page ID {page.ID} has an empty EventValidate formula.");
+                                allValid = false;
+                            }
+
+                            // No need to check further user cells for this shape.
+                            break;
                         }
+                    }
+
+                    // If the EventValidate cell was not found, report it.
+                    if (!hasEventValidate)
+                    {
+                        Console.Error.WriteLine($"Error: Shape ID {shape.ID} on Page ID {page.ID} is missing an EventValidate cell.");
+                        allValid = false;
                     }
                 }
             }
 
-            // Save the diagram after successful validation
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // If all shapes passed validation, save the diagram.
+            if (allValid)
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            }
+            else
+            {
+                Console.Error.WriteLine("Diagram not saved due to validation errors.");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O exceptions.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

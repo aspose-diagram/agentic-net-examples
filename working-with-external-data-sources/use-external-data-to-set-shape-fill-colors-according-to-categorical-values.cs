@@ -1,82 +1,118 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
-using System.Data;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <diagramPath> <csvPath> <outputPath>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        string csvPath = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing input files.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+        if (!File.Exists(csvPath))
+        {
+            Console.Error.WriteLine($"CSV data file not found: {csvPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Prepare a simple category‑to‑color map.
+            var categoryColors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
+                { "A", "#FF0000" }, // Red
+                { "B", "#00FF00" }, // Green
+                { "C", "#0000FF" }  // Blue
+            };
+            // Default color if category is not in the map.
+            const string defaultColor = "#FFFFFF";
 
-                // Load an existing Visio diagram
-                Diagram diagram = new Diagram("input.vsdx");
+            // Read all lines from the CSV file.
+            // Expected format (including header): ShapeId,Category
+            string[] csvLines = File.ReadAllLines(csvPath);
+            for (int i = 1; i < csvLines.Length; i++) // Skip header line (index 0)
+            {
+                string line = csvLines[i].Trim();
+                if (string.IsNullOrEmpty(line))
+                    continue; // Skip empty lines
 
-                // Simulate external data source (e.g., a database or CSV)
-                // Here we create a DataTable with Category and Color columns
-                DataTable categoryTable = new DataTable();
-                categoryTable.Columns.Add("Category", typeof(string));
-                categoryTable.Columns.Add("ColorHex", typeof(string));
-                categoryTable.Rows.Add("Finance", "#FF5733");   // orange
-                categoryTable.Rows.Add("HR", "#33FF57");       // green
-                categoryTable.Rows.Add("IT", "#3357FF");       // blue
-
-                // Build a lookup dictionary from the DataTable
-                Dictionary<string, string> categoryColorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (DataRow row in categoryTable.Rows)
+                string[] parts = line.Split(',');
+                if (parts.Length < 2)
                 {
-                    string cat = row["Category"]?.ToString() ?? string.Empty;
-                    string color = row["ColorHex"]?.ToString() ?? "#FFFFFF";
-                    if (!string.IsNullOrEmpty(cat))
-                    {
-                        categoryColorMap[cat] = color;
-                    }
+                    Console.Error.WriteLine($"Invalid CSV line at {i + 1}: {line}");
+                    continue;
                 }
 
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Parse shape ID.
+                if (!long.TryParse(parts[0].Trim(), out long shapeId))
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape has custom properties (Props) collection
-                        if (shape.Props == null)
-                            continue;
-
-                        // Find a custom property named "Category"
-                        string shapeCategory = null;
-                        foreach (Prop prop in shape.Props)
-                        {
-                            if (prop.Name.Equals("Category", StringComparison.OrdinalIgnoreCase))
-                            {
-                                shapeCategory = prop.Value.Val;
-                                break;
-                            }
-                        }
-
-                        // If the shape has a category and a matching color, apply the fill
-                        if (!string.IsNullOrEmpty(shapeCategory) && categoryColorMap.TryGetValue(shapeCategory, out string fillColor))
-                        {
-                            // Set solid fill pattern
-                            shape.Fill.FillPattern.Value = 1; // Solid
-                            // Apply the foreground fill color (hex string)
-                            shape.Fill.FillForegnd.Value = fillColor;
-                        }
-                    }
+                    Console.Error.WriteLine($"Invalid ShapeId at line {i + 1}: {parts[0]}");
+                    continue;
                 }
 
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
+                string category = parts[1].Trim();
 
+                // Determine the fill color.
+                string fillColor;
+                if (!categoryColors.TryGetValue(category, out fillColor))
+                {
+                    fillColor = defaultColor;
+                }
+
+                // Retrieve the shape from the active page.
+                Shape shape = null;
+                try
+                {
+                    shape = diagram.ActivePage.Shapes.GetShape(shapeId);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to get shape with ID {shapeId}: {ex.Message}");
+                    continue;
+                }
+
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                    continue;
+                }
+
+                // Apply solid fill pattern.
+                shape.Fill.FillPattern.Value = 1; // Solid fill
+
+                // Set foreground fill color.
+                shape.Fill.FillForegnd.Value = fillColor;
+
+                // Ensure fill is fully opaque.
+                shape.Fill.FillForegndTrans.Value = 0.0; // 0 = fully opaque
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
-    }
+}

@@ -1,65 +1,84 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        // Determine the folder containing diagram files.
+        string folderPath;
+        if (args.Length > 0)
         {
-            // Input and output directories can be passed as arguments; otherwise use defaults.
-            string inputFolder = args.Length > 0 ? args[0] : "InputDiagrams";
-            string outputFolder = args.Length > 1 ? args[1] : "OutputDiagrams";
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the folder path containing Visio diagrams: ");
+            folderPath = Console.ReadLine();
+        }
 
-            // Ensure the output directory exists.
-            if (!Directory.Exists(outputFolder))
+        // Validate the folder path.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
+            return;
+        }
+
+        // Get all Visio files (VSDX) in the folder.
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
+        if (diagramFiles.Length == 0)
+        {
+            Console.WriteLine("No .vsdx files found in the specified folder.");
+            return;
+        }
+
+        foreach (string filePath in diagramFiles)
+        {
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(filePath))
             {
-                Directory.CreateDirectory(outputFolder);
+                Console.Error.WriteLine("File not found: " + filePath);
+                continue;
             }
 
-            // Process all Visio files (VSDX) in the input folder.
-            string[] diagramFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-            foreach (string filePath in diagramFiles)
+            try
             {
-                try
+                // Load the diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Load the diagram.
-                    Diagram diagram = new Diagram(filePath);
-
-                    // Iterate through all pages and shapes.
+                    // Iterate through each page.
                     foreach (Page page in diagram.Pages)
                     {
+                        // Iterate through each shape on the page.
                         foreach (Shape shape in page.Shapes)
                         {
+                            // Skip logically deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
                             // Identify title shapes by their universal name.
-                            if (!string.IsNullOrEmpty(shape.NameU) &&
-                                shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(shape.NameU, "Title", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Ensure the TextXForm object exists.
-                                if (shape.TextXForm != null)
-                                {
-                                    // Rotate the text by 180 degrees (π radians).
-                                    shape.TextXForm.TxtAngle.Value = Math.PI;
-                                }
+                                // Rotate the text within the shape by 180 degrees.
+                                // TxtAngle is a DoubleValue expressed in radians.
+                                double angleRadians = Math.PI; // 180 degrees = π radians
+                                shape.TextXForm.TxtAngle.Value = angleRadians;
                             }
                         }
                     }
 
-                    // Build the output file path.
-                    string outputFileName = Path.GetFileNameWithoutExtension(filePath) + "_rotated.vsdx";
-                    string outputPath = Path.Combine(outputFolder, outputFileName);
-
-                    // Save the modified diagram.
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                    Console.WriteLine($"Processed and saved: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    // Save the modified diagram, overwriting the original file.
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Processed and saved: {filePath}");
                 }
             }
-
-            Console.WriteLine("Batch processing completed.");
+            catch (Exception ex)
+            {
+                // Log any errors that occur during processing of the current file.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
+}

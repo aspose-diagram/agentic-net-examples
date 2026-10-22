@@ -1,67 +1,83 @@
 using System;
+using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
+{
+    static void Main(string[] args)
     {
-        static void Main()
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            try
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the built‑in 'Subtitle' style sheet
+            StyleSheet subtitleStyle = null;
+            foreach (StyleSheet ss in diagram.StyleSheets)
             {
-
-                // Load the Visio diagram (replace with your actual file path)
-                Diagram diagram = new Diagram("input.vsdx");
-
-                // Locate the built‑in style sheet named "Subtitle"
-                StyleSheet subtitleStyle = null;
-                foreach (StyleSheet ss in diagram.StyleSheets)
+                if (ss.Name == "Subtitle")
                 {
-                    if (ss.Name == "Subtitle")
-                    {
-                        subtitleStyle = ss;
-                        break;
-                    }
+                    subtitleStyle = ss;
+                    break;
                 }
+            }
 
-                if (subtitleStyle == null)
-                {
-                    Console.WriteLine("Subtitle style sheet not found. No changes will be applied.");
-                    return;
-                }
-
+            if (subtitleStyle == null)
+            {
+                Console.Error.WriteLine("Warning: 'Subtitle' style sheet not found in the diagram. No styles will be applied.");
+            }
+            else
+            {
                 // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Retrieve plain text of the shape
+                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
-                        // Get the plain text of the shape
-                        string plainText = shape.Text.Value.Text;
+                        // Trim leading whitespace for accurate prefix check
+                        string trimmedText = shapeText.TrimStart();
 
-                        // Check if the text starts with a numeric character (ignoring leading whitespace)
-                        if (!string.IsNullOrWhiteSpace(plainText))
+                        // Check if the text starts with a numeric character
+                        if (!string.IsNullOrEmpty(trimmedText) && char.IsDigit(trimmedText[0]))
                         {
-                            string trimmed = plainText.TrimStart();
-                            if (trimmed.Length > 0 && char.IsDigit(trimmed[0]))
-                            {
-                                // Apply the "Subtitle" style to the shape's text
-                                shape.TextStyle = subtitleStyle;
-                            }
+                            // Apply the 'Subtitle' style to the shape's text
+                            shape.TextStyle = subtitleStyle;
                         }
                     }
                 }
-
-                // Save the modified diagram
-                diagram.Save("output.vsdx", SaveFileFormat.Vsdx);
-                Console.WriteLine("Processing complete. Diagram saved as output.vsdx.");
-
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Console.Error.WriteLine($"[FileNotFoundException] {ex.Message}");
-            }
+
+            // Prepare output path (same directory with a suffix)
+            string outputDir = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
+            string outputPath = Path.Combine(outputDir, "output_subtitle.vsdx");
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
-    }
+}

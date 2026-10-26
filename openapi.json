@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Aspose.Diagram Examples Generator Agent API",
-    "description": "REST API for the Aspose.Diagram Examples Generator Agent \u2014 generates, validates, and publishes C# examples for Aspose.Diagram for .NET.",
+    "title": "Aspose Diagram .NET MCP Agent API",
+    "description": "REST API for the Aspose Diagram .NET MCP Agent \u2014 generates, validates, and publishes C# examples for Aspose.Diagram for .NET.",
     "version": "2.0.0",
     "contact": {
       "url": "https://github.com/aspose-diagram/agentic-net-examples"

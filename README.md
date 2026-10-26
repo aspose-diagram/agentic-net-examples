@@ -11,7 +11,7 @@
 | Overall Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## Repository Structure
 
@@ -259,9 +259,9 @@ Diagram diagram = new Diagram("input.vsdx");
 diagram.Save("output.pdf", new PdfSaveOptions());
 ```
 
-**Why does `using (Diagram diagram = ...)` cause a compiler error?**
+**Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
 
-`Diagram` does not implement `IDisposable`. Remove the `using` statement: `Diagram diagram = new Diagram("input.vsdx");`
+`Diagram` does not implement `IDisposable` in Aspose.Diagram for .NET. Remove the `using` statement and declare the variable normally: `Diagram diagram = new Diagram("input.vsdx");`
 
 **Why does `SaveFileFormat.VSDX` cause CS0117?**
 
@@ -307,4 +307,4 @@ To trigger validation:
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-10-22*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) · [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) · 2026-10-26*

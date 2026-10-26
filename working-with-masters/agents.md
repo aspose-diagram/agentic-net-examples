@@ -7,7 +7,7 @@ package: Aspose.Diagram
 version: 26.10.0
 examples: 29
 pass_rate: 100.0
-generated: 2026-10-22
+generated: 2026-10-26
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -23,7 +23,7 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 | Pass Rate | 100.0% |
 | Aspose.Diagram Version | 26.10.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## Persona
 
@@ -51,7 +51,7 @@ You always use explicit types (never `var`), include all required `using` direct
 ### Never
 
 - Use `var` for any variable declaration
-- Use `using (Diagram diagram = ...)` — Diagram does not implement IDisposable
+- Use `using (Diagram diagram = ...)` — Diagram does not implement IDisposable; causes CS1674
 - Use `SaveFileFormat.VSDX` or other ALL_CAPS enum values
 - Use `System.Windows.Forms` — not available in net8.0 console project
 - Use NUnit `Assert` — not available, use `Console.WriteLine` and manual checks
@@ -275,4 +275,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-22 | Examples: 29 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-10-26 | Examples: 29 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

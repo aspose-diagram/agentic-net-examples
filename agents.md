@@ -49,7 +49,6 @@ You are a C# developer specializing in Visio diagram processing using Aspose.Dia
 ### Never
 
 - Use `var` for any variable
-- Use `using (Diagram diagram = ...)` — Diagram does not implement IDisposable; causes CS1674
 - Use ALL_CAPS SaveFileFormat values (`VSDX`, `PDF`, `PNG`)
 - Use `System.Windows.Forms` — not available in net8.0 console
 - Use NUnit `Assert` — not available, use manual checks

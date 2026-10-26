@@ -70,9 +70,9 @@ dotnet build && dotnet run
 
 Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
-**Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
+**Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
-`Diagram` does not implement `IDisposable` in Aspose.Diagram for .NET. Remove the `using` statement and declare the variable normally: `Diagram diagram = new Diagram("input.vsdx");`
+`Diagram` implements `IDisposable` in Aspose.Diagram for .NET, so the `using` statement is valid and recommended for automatic resource cleanup: `using (Diagram diagram = new Diagram("input.vsdx")) { /* work */ }`. You can also call `diagram.Dispose()` explicitly when done.
 
 **Why does my code fail with CS0117 on `SaveFileFormat.VSDX`?**
 

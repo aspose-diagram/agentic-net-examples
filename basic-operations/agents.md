@@ -51,7 +51,6 @@ You always use explicit types (never `var`), include all required `using` direct
 ### Never
 
 - Use `var` for any variable declaration
-- Use `using (Diagram diagram = ...)` — Diagram does not implement IDisposable; causes CS1674
 - Use `SaveFileFormat.VSDX` or other ALL_CAPS enum values
 - Use `System.Windows.Forms` — not available in net8.0 console project
 - Use NUnit `Assert` — not available, use `Console.WriteLine` and manual checks
@@ -209,7 +208,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - See [root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) for repository-wide boundaries, anti-patterns, domain knowledge, and testing guidelines
 - Always check `rules/rules.json` for the latest API correction rules
 - SaveFileFormat enum must always be PascalCase: `Vsdx`, `Pdf`, `Png`, `Jpeg`, `Svg`, `Html` — never ALL_CAPS
-- Diagram class does NOT implement IDisposable — never use `using (Diagram ...)`
+- Diagram class implements IDisposable — `using (Diagram ...)` is valid and encouraged for resource cleanup
 
 ## Key API Surface
 
@@ -248,9 +247,9 @@ Frequently asked questions about **Basic Operations** in **Aspose.Diagram for .N
 
 A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
-**Q: Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
+**Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
-A: `Diagram` does not implement `IDisposable` in Aspose.Diagram for .NET. Remove the `using` statement and declare the variable normally: `Diagram diagram = new Diagram("input.vsdx");`
+A: `Diagram` implements `IDisposable` in Aspose.Diagram for .NET, so the `using` statement is valid and recommended for automatic resource cleanup: `using (Diagram diagram = new Diagram("input.vsdx")) { /* work */ }`. You can also call `diagram.Dispose()` explicitly when done.
 
 **Q: Why does my code fail with CS0117 on `SaveFileFormat.VSDX`?**
 

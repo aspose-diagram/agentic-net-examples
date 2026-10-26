@@ -259,9 +259,9 @@ Diagram diagram = new Diagram("input.vsdx");
 diagram.Save("output.pdf", new PdfSaveOptions());
 ```
 
-**Why do I get CS1674 when using `using (Diagram diagram = ...)`?**
+**Can I use `using (Diagram diagram = ...)` for automatic resource cleanup?**
 
-`Diagram` does not implement `IDisposable` in Aspose.Diagram for .NET. Remove the `using` statement and declare the variable normally: `Diagram diagram = new Diagram("input.vsdx");`
+`Diagram` implements `IDisposable` in Aspose.Diagram for .NET, so the `using` statement is fully supported and recommended: `using (Diagram diagram = new Diagram("input.vsdx")) { /* work */ }`. You may also call `diagram.Dispose()` explicitly.
 
 **Why does `SaveFileFormat.VSDX` cause CS0117?**
 

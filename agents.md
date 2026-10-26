@@ -5,7 +5,7 @@ framework: net8.0
 version: 26.10.0
 total_examples: 1840
 categories: 31
-generated: 2026-10-22
+generated: 2026-10-26
 ---
 
 # Aspose.Diagram for .NET — Agentic Examples
@@ -23,7 +23,7 @@ generated: 2026-10-22
 | Framework | net8.0 |
 | Total Examples | 1840 |
 | Categories | 31 |
-| Last Updated | 2026-10-22 |
+| Last Updated | 2026-10-26 |
 
 ## Persona
 
@@ -49,7 +49,7 @@ You are a C# developer specializing in Visio diagram processing using Aspose.Dia
 ### Never
 
 - Use `var` for any variable
-- Use `using (Diagram diagram = ...)` — Diagram is not IDisposable
+- Use `using (Diagram diagram = ...)` — Diagram does not implement IDisposable; causes CS1674
 - Use ALL_CAPS SaveFileFormat values (`VSDX`, `PDF`, `PNG`)
 - Use `System.Windows.Forms` — not available in net8.0 console
 - Use NUnit `Assert` — not available, use manual checks
@@ -187,4 +187,4 @@ Covers all 31 Aspose.Diagram for .NET task categories: basic operations, shapes,
 
 ---
 
-*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-10-22*
+*Maintained by [agent-aspose-diagram-examples](https://github.com/agent-aspose-diagram-examples) | Examples: 1840 | Categories: 31 | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/) | Updated: 2026-10-26*

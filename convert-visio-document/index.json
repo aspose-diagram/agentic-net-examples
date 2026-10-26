@@ -1,11 +1,11 @@
 {
   "category": "convert-visio-document",
   "display_name": "Convert Visio Document",
-  "version": "26.9.0",
+  "version": "26.10.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-09-23",
+  "generated": "2026-10-26",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -15,15 +15,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Prop",
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -32,6 +31,7 @@
       "task": "After conversion read the csv content and verify that the first row contains expected column headers",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Linq"
@@ -48,13 +48,11 @@
       "task": "Catch library specific exceptions and rethrow them with additional useful context information",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -97,13 +95,11 @@
       "task": "Convert a vsd file to html format using diagram save with saveformat html",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "HTMLSaveOptions",
         "Save",
         "diagram"
       ]
@@ -143,11 +139,15 @@
       "file": "create-a-memorystream-to-capture-csv-data-in-memory-without-writing-to-disk.cs",
       "task": "Create a memorystream to capture csv data in memory without writing to disk",
       "namespaces": [
+        "Aspose.Diagram",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
-      "key_apis": []
+      "key_apis": [
+        "Diagram",
+        "Save",
+        "diagram"
+      ]
     },
     {
       "slug": "export-a-vsd-diagram-to-jpeg-image-by-specifying-saveformat-jpeg-in-diagram-save",
@@ -161,6 +161,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -171,11 +172,13 @@
       "task": "Export a vsd diagram to png image using diagram save with saveformat png",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -216,6 +219,7 @@
       "task": "Generate output filenames by appending a timestamp to the original vsd name before saving csv",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -277,6 +281,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.Diagnostics",
         "System.IO"
       ],
@@ -307,6 +312,7 @@
       "task": "Resolve relative source paths to absolute paths before loading each vsd diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -375,10 +381,8 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "Shapes",
-        "diagram",
-        "page"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -421,7 +425,6 @@
       "task": "Verify that the generated csv includes the required header row defined by the library specification",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -438,7 +441,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Reflection"
       ],
       "key_apis": [
         "Diagram",
@@ -452,11 +456,13 @@
       "task": "Wrap the conversion call in a try catch block and ensure the filestream is closed in finally",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -467,7 +473,6 @@
       "task": "Write a unit test that asserts the csv file contains a row for each shape in the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

@@ -78,7 +78,7 @@ jobs:
             fi
 
             if grep -q 'using (Diagram' "$file"; then
-              echo "  ⚠️  Warning: Diagram used with using() — Diagram is not IDisposable"
+              echo "  ✅  Note: Diagram used with using() — Diagram implements IDisposable, this is valid"
             fi
 
             PASS=$((PASS + 1))

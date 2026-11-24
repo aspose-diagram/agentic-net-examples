@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
@@ -24,44 +24,56 @@ class Program
             return;
         }
 
-        // Load the Visio diagram inside a using block.
-        using (Diagram diagram = new Diagram(inputPath))
+        try
         {
-            try
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page of the diagram.
-                Page page = diagram.Pages[0];
-
-                // Insert a SpinButton ActiveX control (used as a slider alternative).
-                // Parameters: control type, pinX, pinY, width, height (all in inches).
-                long shapeId = page.AddActiveXControl(ControlType.SpinButton, 2.0, 2.0, 2.0, 0.5);
-
-                // Retrieve the newly added shape by its structural ID.
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Cast the generic ActiveXControl to the specific SpinButton control.
-                SpinButtonActiveXControl spinButton = shape.ActiveXControl as SpinButtonActiveXControl;
-                if (spinButton == null)
+                // Ensure there is at least one page.
+                if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("Failed to retrieve SpinButtonActiveXControl from the shape.");
-                    return;
+                    // Add a new blank page.
+                    diagram.Pages.Add(new Page());
                 }
 
-                // Set the current value (position) of the control.
-                spinButton.Position = 50;
+                // Use the first page.
+                Page page = diagram.Pages[0];
 
-                // TODO: If the SpinButtonActiveXControl exposes Minimum and Maximum properties,
-                // initialize them here (e.g., spinButton.Minimum = 0; spinButton.Maximum = 100;).
-                // The current API documentation does not list such members.
+                // Define position and size for the ActiveX control (in inches).
+                double posX = 2.0;   // X position
+                double posY = 2.0;   // Y position
+                double width = 3.0;  // Width
+                double height = 0.5; // Height
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Insert a SpinButton ActiveX control (closest to a slider).
+                long controlShapeId = page.AddActiveXControl(ControlType.SpinButton, posX, posY, width, height);
+
+                // Retrieve the shape that hosts the ActiveX control.
+                Shape controlShape = page.Shapes.GetShape(controlShapeId);
+
+                // Cast the generic ActiveXControl to the specific SpinButton type.
+                SpinButtonActiveXControl spinButton = controlShape.ActiveXControl as SpinButtonActiveXControl;
+                if (spinButton == null)
+                {
+                    Console.Error.WriteLine("Failed to cast the ActiveX control to SpinButtonActiveXControl.");
+                }
+                else
+                {
+                    // Set the current value of the spin button.
+                    spinButton.Position = 50;
+
+                    // NOTE: The SpinButtonActiveXControl does not expose Minimum/Maximum properties
+                    // in the current Aspose.Diagram API, so only the Position (value) can be set.
+                }
+
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (Exception ex)
-            {
-                // Write any errors that occur during processing.
-                Console.Error.WriteLine($"Error: {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

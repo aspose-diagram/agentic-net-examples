@@ -6,47 +6,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the fill transparency (0 = opaque, 1 = fully transparent)
+                    // Ensure the shape has a TextBlock section; otherwise skip.
+                    if (shape.TextBlock == null)
+                        continue;
+
+                    // Retrieve the fill foreground transparency (0.0‑1.0 range).
                     double fillTransparency = shape.Fill.FillForegndTrans.Value;
 
-                    // Convert fill transparency to a percentage (0‑100) for text background transparency
-                    double textTransparency = fillTransparency * 100.0;
+                    // Convert to percentage for TextBlock background transparency (0‑100).
+                    double textBackgroundTransparency = fillTransparency * 100.0;
 
-                    // Apply the calculated transparency to the shape's text block background
-                    shape.TextBlock.TextBkgndTrans.Value = textTransparency;
+                    // Apply the calculated transparency to the text background.
+                    shape.TextBlock.TextBkgndTrans.Value = textBackgroundTransparency;
                 }
             }
 
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,78 +1,69 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input diagram path (first argument or default) and validate its existence.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Construct the output path by inserting "_centered" before the file extension.
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_centered" + Path.GetExtension(inputPath));
+        // Determine output path (optional second argument or default suffix)
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_centered.vsdx");
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through pages
+            foreach (Page page in diagram.Pages)
             {
-                bool shapeModified = false;
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                // Iterate through shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // ----- Modify vertical alignment to middle -----
+                    // TextBlock.VerticalAlign controls vertical alignment of the text block
+                    shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+
+                    // ----- Modify horizontal alignment to center for each paragraph -----
+                    // Horizontal alignment is set per paragraph via HorzAlign
+                    for (int i = 0; i < shape.Paras.Count; i++)
                     {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape has a TextBlock (most shapes do).
-                        if (shape.TextBlock == null)
-                            continue;
-
-                        // ----- Set vertical alignment to middle (centered vertically) -----
-                        shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-                        // ----- Set horizontal alignment to center for each paragraph -----
-                        for (int i = 0; i < shape.Paras.Count; i++)
-                        {
-                            shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
-                        }
-
-                        // Mark that a shape has been processed and exit loops.
-                        shapeModified = true;
-                        break;
+                        shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
                     }
 
-                    if (shapeModified)
-                        break;
+                    // Refresh shape data after modifications
+                    shape.RefreshData();
                 }
-
-                if (!shapeModified)
-                {
-                    Console.Error.WriteLine("No suitable shape found to modify.");
-                    return;
-                }
-
-                // Save the modified diagram to a new file in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved with centered text alignment to: {outputPath}");
             }
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with centered text alignment to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing.
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

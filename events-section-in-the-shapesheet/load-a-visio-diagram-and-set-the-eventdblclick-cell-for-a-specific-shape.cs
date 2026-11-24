@@ -14,14 +14,14 @@ class Program
         }
 
         string inputPath = args[0];
-        string shapeNameU = args[1];
+        string targetShapeNameU = args[1];
         string eventFormula = args[2];
         string outputPath = args[3];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -36,34 +36,34 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.NameU == shapeNameU)
+                    // Shape.NameU holds the universal name of the shape.
+                    if (shape.NameU != null && shape.NameU.Equals(targetShapeNameU, StringComparison.OrdinalIgnoreCase))
                     {
                         targetShape = shape;
                         break;
                     }
                 }
-                if (targetShape != null)
-                    break;
+                if (targetShape != null) break;
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with NameU \"{shapeNameU}\" not found.");
+                Console.Error.WriteLine($"Shape with NameU \"{targetShapeNameU}\" not found in the diagram.");
                 return;
             }
 
-            // Set the double‑click event formula using the correct API pattern.
-            // The formula should be a valid Visio expression, e.g., "CALLTHIS(\"ShowAlert\")".
+            // Set the EventDblClick cell formula using the Ufe.F property.
+            // This defines the action that will be executed when the shape is double‑clicked.
             targetShape.Event.EventDblClick.Ufe.F = eventFormula;
 
             // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine("EventDblClick cell updated and diagram saved successfully.");
+            Console.WriteLine($"Successfully updated EventDblClick for shape \"{targetShapeNameU}\" and saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

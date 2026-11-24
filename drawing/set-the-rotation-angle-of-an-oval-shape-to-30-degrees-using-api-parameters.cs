@@ -21,48 +21,53 @@ class Program
             return;
         }
 
-        // Determine output path (optional argument or default)
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "RotatedOval.vsdx");
+        // Determine output path
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_rotated.vsdx");
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure there is at least one page
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                bool ovalFound = false;
+
+                // Iterate through all pages and shapes to locate the first oval shape
+                foreach (Page page in diagram.Pages)
+                {
+                    // Shapes collection is indexed; use for loop to avoid LINQ
+                    for (int i = 0; i < page.Shapes.Count; i++)
+                    {
+                        Shape shape = page.Shapes[i];
+
+                        // Ensure the shape has a master and check its name
+                        if (shape.Master != null && shape.Master.NameU == "Oval")
+                        {
+                            // Set rotation angle to 30 degrees using the SetAngle method
+                            shape.SetAngle(30.0);
+                            ovalFound = true;
+                            break; // Exit inner loop after rotating the first oval
+                        }
+                    }
+
+                    if (ovalFound)
+                        break; // Exit outer loop once the oval has been processed
+                }
+
+                if (!ovalFound)
+                {
+                    Console.Error.WriteLine("No oval shape was found in the diagram.");
+                }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Use the first page
-            Page page = diagram.Pages[0];
-
-            // Add an oval shape at position (2,2) using the master name "Oval"
-            // The AddShape method returns the shape ID (long)
-            long ovalShapeId = page.AddShape(2.0, 2.0, "Oval");
-
-            // Retrieve the shape object from the page's shape collection
-            Shape ovalShape = page.Shapes.GetShape((int)ovalShapeId);
-            if (ovalShape == null)
-            {
-                Console.Error.WriteLine("Failed to retrieve the newly added oval shape.");
-                return;
-            }
-
-            // Set the rotation angle of the oval shape to 30 degrees
-            // Shape rotation is controlled via XForm.Angle.Value (degrees)
-            ovalShape.XForm.Angle.Value = 30.0;
-
-            // Save the modified diagram to the output file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Oval shape rotated to 30 degrees and saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

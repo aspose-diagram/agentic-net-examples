@@ -1,42 +1,37 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect a diagram file path as the first argument.
-        if (args.Length == 0)
+        // Determine the diagram file path (argument or user input)
+        string diagramPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Please provide the path to a Visio diagram file as an argument.");
+            diagramPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the Visio diagram file: ");
+            diagramPath = Console.ReadLine()?.Trim() ?? string.Empty;
+        }
+
+        // Guard: ensure the file exists
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        string inputPath = args[0];
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-
-        // Load the diagram inside a try/catch to handle any Aspose.Diagram exceptions.
-        Diagram diagram;
         try
         {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-        // Ensure there is at least one window; if not, create a default drawing window.
-        if (diagram.Windows.Count == 0)
-        {
-            try
+            // Ensure there is at least one window; if not, create a default one
+            if (diagram.Windows.Count == 0)
             {
                 Window defaultWindow = new Window();
                 defaultWindow.WindowType = WindowTypeValue.Drawing;
@@ -45,48 +40,50 @@ class Program
                 defaultWindow.WindowHeight = 700;
                 diagram.Windows.Add(defaultWindow);
             }
-            catch (Exception ex)
+
+            // Use the first window as the active window
+            Window activeWindow = diagram.Windows[0];
+
+            // Interactive console UI panel
+            while (true)
             {
-                Console.Error.WriteLine($"Error creating default window: {ex.Message}");
-                return;
+                // Reflect current ShowGrid state
+                string gridState = activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled";
+                Console.WriteLine("\n--- ShowGrid UI Panel ---");
+                Console.WriteLine($"Current ShowGrid state: {gridState}");
+                Console.WriteLine("Options:");
+                Console.WriteLine("  T - Toggle ShowGrid");
+                Console.WriteLine("  Q - Quit");
+                Console.Write("Select an option: ");
+                string input = Console.ReadLine()?.Trim().ToUpperInvariant();
+
+                if (input == "Q")
+                {
+                    break;
+                }
+                else if (input == "T")
+                {
+                    // Toggle the ShowGrid property
+                    activeWindow.ShowGrid = activeWindow.ShowGrid == BOOL.True ? BOOL.False : BOOL.True;
+                    Console.WriteLine($"ShowGrid has been {(activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled")}.");
+
+                    // Save the updated diagram to a new file
+                    string outputPath = Path.Combine(
+                        Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                        Path.GetFileNameWithoutExtension(diagramPath) + "_updated.vsdx");
+
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to: {outputPath}");
+                }
+                else
+                {
+                    Console.WriteLine("Invalid option. Please enter 'T' to toggle or 'Q' to quit.");
+                }
             }
-        }
-
-        // Use the first window as the "active" window for this example.
-        Window activeWindow = diagram.Windows[0];
-
-        // Display the current ShowGrid state.
-        Console.WriteLine($"Current ShowGrid state: {(activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled")}");
-
-        // Prompt the user to toggle the ShowGrid setting.
-        Console.Write("Toggle ShowGrid? (y/n): ");
-        string response = Console.ReadLine()?.Trim().ToLowerInvariant();
-
-        if (response == "y" || response == "yes")
-        {
-            // Toggle the ShowGrid property.
-            activeWindow.ShowGrid = (activeWindow.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
-            Console.WriteLine($"ShowGrid has been set to: {(activeWindow.ShowGrid == BOOL.True ? "Enabled" : "Disabled")}");
-        }
-        else
-        {
-            Console.WriteLine("No changes made to ShowGrid.");
-        }
-
-        // Prepare output path.
-        string directory = Path.GetDirectoryName(inputPath) ?? "";
-        string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-        string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_updated.vsdx");
-
-        // Save the diagram with the updated window settings.
-        try
-        {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

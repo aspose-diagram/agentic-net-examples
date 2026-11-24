@@ -1,73 +1,61 @@
 using System;
 using System.IO;
+using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
-using System.Xml.Linq;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXmlPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputXmlFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".xml");
 
-        // Guard: check input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the VBA project
+            // Access the VBA project.
             VbaProject vbaProject = diagram.VbaProject;
-            if (vbaProject == null)
-            {
-                Console.Error.WriteLine("The diagram does not contain a VBA project.");
-                return;
-            }
 
-            // Build XML representation of the VBA project
+            // Build XML representation of the VBA project.
             XElement root = new XElement("VbaProject",
                 new XAttribute("Name", vbaProject.Name ?? string.Empty),
-                new XAttribute("IsSigned", vbaProject.IsSigned));
+                new XAttribute("IsSigned", vbaProject.IsSigned ? BOOL.True.ToString() : BOOL.False.ToString()));
 
             XElement modulesElement = new XElement("Modules");
 
-            // Iterate through all VBA modules
-            foreach (VbaModule module in vbaProject.Modules)
+            // Iterate through all VBA modules.
+            for (int i = 0; i < vbaProject.Modules.Count; i++)
             {
+                VbaModule module = vbaProject.Modules[i];
                 XElement moduleElement = new XElement("Module",
                     new XAttribute("Name", module.Name ?? string.Empty),
-                    new XElement("Code", new XCData(module.Codes ?? string.Empty))
-                );
+                    new XElement("Code", new XCData(module.Codes ?? string.Empty)));
                 modulesElement.Add(moduleElement);
             }
 
             root.Add(modulesElement);
             XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
 
-            // Ensure the output directory exists
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            // Save the XML to the specified file
+            // Save the XML to the specified output path.
             doc.Save(outputPath);
-            Console.WriteLine($"VBA project serialized to XML successfully: {outputPath}");
+            Console.WriteLine($"VBA project structure has been serialized to \"{outputPath}\".");
         }
         catch (Exception ex)
         {

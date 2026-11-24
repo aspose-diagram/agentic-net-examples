@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file, shape ID, output file
+        // Expect three arguments: input diagram path, shape ID, output diagram path
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeId> <outputDiagramPath>");
@@ -17,14 +17,14 @@ class Program
         string shapeIdArg = args[1];
         string outputPath = args[2];
 
-        // Guard: check input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse shape ID as long
+        // Parse shape ID (must be a long)
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
             Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
@@ -40,18 +40,6 @@ class Program
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // Attempt direct retrieval if ID fits into int range
-                if (shapeId >= int.MinValue && shapeId <= int.MaxValue)
-                {
-                    Shape shape = page.Shapes.GetShape((int)shapeId);
-                    if (shape != null)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                // Fallback: iterate all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
                     if (shape.ID == shapeId)
@@ -60,7 +48,6 @@ class Program
                         break;
                     }
                 }
-
                 if (targetShape != null)
                     break;
             }
@@ -74,13 +61,13 @@ class Program
             // Lock the width attribute of the shape
             targetShape.Protection.LockWidth.Value = BOOL.True;
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Shape width locked and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path and output PDF path as arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -17,22 +17,22 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (ensures proper disposal).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Batch apply a preset theme to every page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Apply a preset theme (e.g., Bubble) and a variant.
+                    // Example preset theme – adjust as needed for your custom look.
                     page.PresetTheme = PresetThemeValue.Bubble;
                     page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                 }
@@ -41,19 +41,19 @@ class Program
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 // Explicitly set the format tracker.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                // Enable text compression to reduce file size.
-                pdfOptions.TextCompression = PdfTextCompression.Flate;
+                // Optional: set a fallback font for missing fonts.
+                pdfOptions.DefaultFont = "Arial";
 
-                // Save the themed diagram as PDF.
+                // Export the themed diagram to PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Successfully saved themed PDF to: {outputPath}");
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

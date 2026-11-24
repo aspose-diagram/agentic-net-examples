@@ -1,22 +1,22 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Cells;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file, spreadsheet file, output diagram file
-        if (args.Length < 3)
+        // Expect three arguments: diagram file, spreadsheet (CSV) file, output diagram file
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <excelPath> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <diagram.vsdx> <data.csv> <output.vsdx>");
             return;
         }
 
         string diagramPath = args[0];
-        string excelPath = args[1];
+        string csvPath = args[1];
         string outputPath = args[2];
 
         // Guard against missing files
@@ -25,119 +25,110 @@ class Program
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
-
-        if (!File.Exists(excelPath))
+        if (!File.Exists(csvPath))
         {
-            Console.Error.WriteLine($"Excel file not found: {excelPath}");
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block
+            // Load the Visio diagram
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Load the Excel workbook
-                Workbook workbook = new Workbook(excelPath);
-                Worksheet sheet = workbook.Worksheets[0];
-                Cells cells = sheet.Cells;
-
-                // Determine used range dimensions (zero‑based indices)
-                int maxRow = cells.MaxDataRow;      // last row with data
-                int maxCol = cells.MaxDataColumn;   // last column with data
-
-                if (maxRow < 1 || maxCol < 0)
+                // Read all lines from the CSV file
+                string[] allLines = File.ReadAllLines(csvPath);
+                if (allLines.Length < 2)
                 {
-                    Console.Error.WriteLine("Excel sheet does not contain enough data.");
+                    Console.Error.WriteLine("CSV file does not contain data rows.");
                     return;
                 }
 
-                // Read header row (first row) to get user‑defined cell names
-                // Header column 0 is expected to contain the shape identifier
-                var headerNames = new string[maxCol + 1];
-                for (int col = 0; col <= maxCol; col++)
+                // Parse header
+                string[] headers = SplitCsvLine(allLines[0]);
+                int shapeNameIndex = Array.IndexOf(headers, "ShapeName");
+                if (shapeNameIndex == -1)
                 {
-                    headerNames[col] = cells[0, col].StringValue?.Trim() ?? string.Empty;
+                    Console.Error.WriteLine("CSV must contain a 'ShapeName' column.");
+                    return;
                 }
 
-                // Iterate over each data row (starting from row 1)
-                for (int row = 1; row <= maxRow; row++)
+                // Build a lookup of shapes by their NameU for quick access
+                Dictionary<string, Shape> shapeLookup = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
+                foreach (Page page in diagram.Pages)
                 {
-                    // First column contains the shape universal name (NameU)
-                    string shapeName = cells[row, 0].StringValue?.Trim();
-                    if (string.IsNullOrEmpty(shapeName))
-                        continue; // Skip rows without a shape identifier
-
-                    // Find the shape with matching NameU across all pages
-                    Shape targetShape = null;
-                    foreach (Page page in diagram.Pages)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Shape shape in page.Shapes)
+                        if (!string.IsNullOrEmpty(shape.NameU))
                         {
-                            if (!string.IsNullOrEmpty(shape.NameU) &&
-                                shape.NameU.Equals(shapeName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                targetShape = shape;
-                                break;
-                            }
+                            if (!shapeLookup.ContainsKey(shape.NameU))
+                                shapeLookup.Add(shape.NameU, shape);
                         }
-                        if (targetShape != null)
-                            break;
+                    }
+                }
+
+                // Process each data row
+                for (int i = 1; i < allLines.Length; i++)
+                {
+                    string[] fields = SplitCsvLine(allLines[i]);
+                    if (fields.Length != headers.Length)
+                    {
+                        Console.Error.WriteLine($"Row {i + 1} column count does not match header.");
+                        continue;
                     }
 
-                    if (targetShape == null)
+                    string shapeName = fields[shapeNameIndex];
+                    if (!shapeLookup.TryGetValue(shapeName, out Shape targetShape))
                     {
                         Console.Error.WriteLine($"Shape with NameU '{shapeName}' not found in diagram.");
                         continue;
                     }
 
-                    // Map each column value to the corresponding user‑defined cell
-                    for (int col = 1; col <= maxCol; col++)
+                    // Map each column (except ShapeName) to a user-defined cell with the same name
+                    for (int col = 0; col < headers.Length; col++)
                     {
-                        string cellName = headerNames[col];
-                        if (string.IsNullOrEmpty(cellName))
-                            continue; // Skip empty header cells
+                        if (col == shapeNameIndex) continue; // skip the key column
 
-                        string cellValue = cells[row, col].StringValue ?? string.Empty;
+                        string userCellName = headers[col];
+                        string cellValue = fields[col];
 
-                        // Search for an existing user‑defined cell with the same NameU
-                        User existingUser = null;
+                        // Find the user-defined cell in the shape
+                        User matchingUser = null;
                         foreach (User user in targetShape.Users)
                         {
-                            if (!string.IsNullOrEmpty(user.NameU) &&
-                                user.NameU.Equals(cellName, StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(user.NameU, userCellName, StringComparison.OrdinalIgnoreCase))
                             {
-                                existingUser = user;
+                                matchingUser = user;
                                 break;
                             }
                         }
 
-                        if (existingUser != null)
+                        if (matchingUser != null)
                         {
-                            // Update the existing cell value
-                            existingUser.Value.Val = cellValue;
+                            // Assign the value to the user-defined cell
+                            matchingUser.Value.Val = cellValue;
                         }
                         else
                         {
-                            // Create a new user‑defined cell and add it to the shape
-                            User newUser = new User();
-                            newUser.NameU = cellName;          // universal row name
-                            newUser.Name = cellName;           // row name (optional)
-                            newUser.Value.Val = cellValue;     // cell value
-                            newUser.Prompt.Value = string.Empty; // optional prompt
-                            targetShape.Users.Add(newUser);
+                            Console.Error.WriteLine($"User-defined cell '{userCellName}' not found in shape '{shapeName}'.");
                         }
                     }
                 }
 
-                // Save the updated diagram to the specified output path
+                // Save the updated diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    // Simple CSV line splitter handling commas; does not handle quoted commas for brevity
+    private static string[] SplitCsvLine(string line)
+    {
+        return line.Split(new char[] { ',' }, StringSplitOptions.None);
     }
 }

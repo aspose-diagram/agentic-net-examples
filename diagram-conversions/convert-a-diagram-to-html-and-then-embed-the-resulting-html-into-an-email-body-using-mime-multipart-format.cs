@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,43 +9,40 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio diagram path (first argument or default)
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output HTML file path
-        string htmlPath = "output.html";
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            return;
+        }
+
+        string diagramPath = args[0];
 
         // Guard: ensure the diagram file exists
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
 
-        // Convert Visio diagram to HTML
+        // Define temporary paths for HTML output and the generated email file
+        string tempHtmlPath = Path.Combine(Path.GetTempPath(), "diagram.html");
+        string emailOutputDir = Path.Combine(Directory.GetCurrentDirectory(), "GeneratedEmails");
+        string emailFilePath = Path.Combine(emailOutputDir, "DiagramEmail.eml");
+
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Set up HTML save options (default PNG images)
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // Save the diagram as HTML
-            diagram.Save(htmlPath, htmlOptions);
-
-            // Release resources
-            diagram.Dispose();
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Export the entire diagram to a single HTML file
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                diagram.Save(tempHtmlPath, htmlOptions);
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error converting diagram to HTML: {ex.Message}");
-            return;
-        }
-
-        // Guard: ensure the HTML file was created
-        if (!File.Exists(htmlPath))
-        {
-            Console.Error.WriteLine($"HTML file was not created: {htmlPath}");
+            Console.Error.WriteLine($"Error during diagram conversion: {ex.Message}");
             return;
         }
 
@@ -53,28 +50,27 @@ class Program
         string htmlContent;
         try
         {
-            htmlContent = File.ReadAllText(htmlPath);
+            htmlContent = File.ReadAllText(tempHtmlPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading HTML file: {ex.Message}");
+            Console.Error.WriteLine($"Error reading generated HTML file: {ex.Message}");
             return;
         }
 
-        // Email parameters (subsequent arguments or defaults)
-        string smtpHost = args.Length > 1 ? args[1] : "smtp.example.com";
-        string fromAddress = args.Length > 2 ? args[2] : "sender@example.com";
-        string toAddress = args.Length > 3 ? args[3] : "recipient@example.com";
-
-        // Create the email message with HTML body
-        MailMessage mail = new MailMessage();
+        // Prepare the email message with HTML body
+        MailMessage message = new MailMessage();
         try
         {
-            mail.From = new MailAddress(fromAddress);
-            mail.To.Add(toAddress);
-            mail.Subject = "Visio Diagram as HTML";
-            mail.Body = htmlContent;
-            mail.IsBodyHtml = true;
+            // Set basic email fields (replace with actual addresses as needed)
+            message.From = new MailAddress("sender@example.com");
+            message.To.Add(new MailAddress("recipient@example.com"));
+            message.Subject = "Visio Diagram as HTML";
+
+            // Create an alternate view for HTML content
+            AlternateView htmlView = AlternateView.CreateAlternateViewFromString(htmlContent, null, MediaTypeNames.Text.Html);
+            message.AlternateViews.Add(htmlView);
+            message.IsBodyHtml = true;
         }
         catch (Exception ex)
         {
@@ -82,23 +78,46 @@ class Program
             return;
         }
 
-        // Send the email using SMTP
+        // Ensure the output directory exists
         try
         {
-            using (SmtpClient client = new SmtpClient(smtpHost))
-            {
-                // Optional: configure port and credentials if needed
-                // client.Port = 587;
-                // client.Credentials = new NetworkCredential("username", "password");
-                // client.EnableSsl = true;
-
-                client.Send(mail);
-                Console.WriteLine("Email sent successfully.");
-            }
+            if (!Directory.Exists(emailOutputDir))
+                Directory.CreateDirectory(emailOutputDir);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error sending email: {ex.Message}");
+            Console.Error.WriteLine($"Error creating email output directory: {ex.Message}");
+            return;
+        }
+
+        // Use SmtpClient with SpecifiedPickupDirectory to generate a .eml file (no actual sending)
+        try
+        {
+            using (SmtpClient client = new SmtpClient())
+            {
+                client.DeliveryMethod = SmtpDeliveryMethod.SpecifiedPickupDirectory;
+                client.PickupDirectoryLocation = emailOutputDir;
+                client.Send(message);
+            }
+
+            Console.WriteLine($"Email with embedded HTML saved to: {emailFilePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error generating email file: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up temporary HTML file
+            try
+            {
+                if (File.Exists(tempHtmlPath))
+                    File.Delete(tempHtmlPath);
+            }
+            catch
+            {
+                // Suppress any cleanup errors
+            }
         }
     }
 }

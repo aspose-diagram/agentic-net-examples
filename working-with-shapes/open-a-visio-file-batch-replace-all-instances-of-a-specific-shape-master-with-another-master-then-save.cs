@@ -10,7 +10,7 @@ class Program
         // Validate arguments: input file, source master name, target master name, output file
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <sourceMasterName> <targetMasterName> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <sourceMasterName> <targetMasterName> <outputVisioPath>");
             return;
         }
 
@@ -31,13 +31,35 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Verify that the target master exists in the diagram
+            bool targetMasterExists = false;
+            foreach (Master master in diagram.Masters)
+            {
+                if (master.Name == targetMasterName)
+                {
+                    targetMasterExists = true;
+                    break;
+                }
+            }
+
+            if (!targetMasterExists)
+            {
+                Console.Error.WriteLine($"Target master \"{targetMasterName}\" not found in the diagram.");
+                return;
+            }
+
+            // Iterate through each page and replace shapes that use the source master
             foreach (Page page in diagram.Pages)
             {
-                // Collect IDs of shapes that use the source master
+                // Collect IDs of shapes that need to be replaced to avoid modifying the collection during iteration
                 List<long> shapesToReplace = new List<long>();
+
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
                     // Ensure the shape has a master and compare its name
                     if (shape.Master != null && shape.Master.Name == sourceMasterName)
                     {
@@ -45,34 +67,28 @@ class Program
                     }
                 }
 
-                // Replace each identified shape with a new shape based on the target master
+                // Perform replacement for each collected shape
                 foreach (long shapeId in shapesToReplace)
                 {
                     // Retrieve the original shape
-                    Shape originalShape = page.Shapes.GetShape(shapeId);
-                    if (originalShape == null)
-                        continue; // Safety check
+                    Shape oldShape = page.Shapes.GetShape(shapeId);
 
-                    // Store position and size of the original shape
-                    double pinX = originalShape.XForm.PinX.Value;
-                    double pinY = originalShape.XForm.PinY.Value;
-                    double width = originalShape.XForm.Width.Value;
-                    double height = originalShape.XForm.Height.Value;
+                    // Preserve geometric properties
+                    double pinX = oldShape.XForm.PinX.Value;
+                    double pinY = oldShape.XForm.PinY.Value;
+                    double width = oldShape.XForm.Width.Value;
+                    double height = oldShape.XForm.Height.Value;
 
-                    // Mark the original shape as deleted
-                    originalShape.Del = BOOL.True;
+                    // Mark the old shape as deleted
+                    oldShape.Del = BOOL.True;
 
-                    // Add a new shape using the target master at the same position
-                    // The fourth parameter 'isCalculate' is set to false as per API requirements
+                    // Add a new shape using the target master at the same location
                     long newShapeId = page.AddShape(pinX, pinY, targetMasterName, false);
-
-                    // Retrieve the newly added shape to copy size (optional)
                     Shape newShape = page.Shapes.GetShape(newShapeId);
-                    if (newShape != null)
-                    {
-                        newShape.XForm.Width.Value = width;
-                        newShape.XForm.Height.Value = height;
-                    }
+
+                    // Apply the original size to the new shape
+                    newShape.XForm.Width.Value = width;
+                    newShape.XForm.Height.Value = height;
                 }
             }
 

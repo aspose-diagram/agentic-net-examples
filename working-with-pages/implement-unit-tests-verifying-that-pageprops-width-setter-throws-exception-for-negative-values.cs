@@ -6,36 +6,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Run the test that verifies setting a negative page width throws an exception.
-        TestNegativePageWidth();
-    }
+        // No external file inputs are required for this test, so no file existence checks are needed.
 
-    /// <summary>
-    /// Creates a new diagram, accesses its first page, and attempts to set a negative width.
-    /// The test passes if an exception is thrown; otherwise it fails.
-    /// </summary>
-    static void TestNegativePageWidth()
-    {
         try
         {
-            // Create an empty diagram. The default constructor creates a diagram with a single page.
+            // Create a new empty diagram inside a using block as required by the API guidelines.
             using (Diagram diagram = new Diagram())
             {
-                // Access the first (and only) page.
+                // Ensure the diagram has at least one page. A newly created diagram contains a default page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("FAIL: Diagram does not contain any pages.");
+                    return;
+                }
+
+                // Retrieve the first page.
                 Page page = diagram.Pages[0];
 
-                // Attempt to set a negative width. According to Aspose.Diagram API,
-                // this should raise an ArgumentException (or a derived exception).
-                page.PageSheet.PageProps.PageWidth.Value = -5.0;
+                // Test 1: Setting a negative width should throw an exception.
+                bool negativeWidthExceptionThrown = false;
+                try
+                {
+                    // Attempt to set a negative page width.
+                    page.PageSheet.PageProps.PageWidth.Value = -5.0;
+                }
+                catch (Exception ex)
+                {
+                    // Expected path: an exception is thrown for invalid negative width.
+                    negativeWidthExceptionThrown = true;
+                    Console.WriteLine($"PASS: Caught expected exception for negative width: {ex.Message}");
+                }
 
-                // If no exception is thrown, the test has failed.
-                Console.Error.WriteLine("TestNegativePageWidth FAILED: No exception was thrown for negative width.");
+                if (!negativeWidthExceptionThrown)
+                {
+                    Console.Error.WriteLine("FAIL: No exception thrown when setting a negative page width.");
+                }
+
+                // Test 2: Setting a valid positive width should succeed without exception.
+                bool positiveWidthSet = false;
+                try
+                {
+                    // Set a valid positive width (e.g., 8.5 inches).
+                    page.PageSheet.PageProps.PageWidth.Value = 8.5;
+                    positiveWidthSet = true;
+                    Console.WriteLine("PASS: Positive width set successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"FAIL: Exception thrown when setting a positive width: {ex.Message}");
+                }
+
+                // Verify that the width was actually updated.
+                if (positiveWidthSet && Math.Abs(page.PageSheet.PageProps.PageWidth.Value - 8.5) > 0.0001)
+                {
+                    Console.Error.WriteLine("FAIL: Page width value does not match the expected value after setting.");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Expected path: an exception should be thrown for negative width.
-            Console.WriteLine("TestNegativePageWidth PASSED: Caught expected exception -> " + ex.Message);
+            // Catch any unexpected exceptions from Aspose operations.
+            Console.Error.WriteLine($"ERROR: Unexpected exception occurred: {ex.Message}");
         }
     }
 }

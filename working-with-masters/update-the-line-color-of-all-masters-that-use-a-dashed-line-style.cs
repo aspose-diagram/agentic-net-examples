@@ -6,17 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, output diagram path, new line color (hex string, e.g., "#FF0000")
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <newLineColorHex>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string newLineColor = args[2];
 
-        // Guard: check input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -31,7 +32,9 @@ class Program
                 // Iterate through all masters in the diagram
                 foreach (Master master in diagram.Masters)
                 {
-                    // Iterate through shapes that belong to the master definition
+                    bool hasDashedLine = false;
+
+                    // First pass: determine if any shape in the master uses a dashed line pattern
                     for (int i = 0; i < master.Shapes.Count; i++)
                     {
                         Shape shape = master.Shapes[i];
@@ -43,17 +46,31 @@ class Program
                         // Check if the shape's line pattern is dashed
                         if (shape.Line.LinePattern.Value == LinePatternValue.Dash)
                         {
-                            // Update the line color to red (hex format)
-                            shape.Line.LineColor.Value = "#FF0000";
+                            hasDashedLine = true;
+                            break;
                         }
                     }
 
-                    // Refresh the master icon to reflect visual changes
-                    master.IconUpdate = BOOL.True;
+                    // If the master uses a dashed line style, update the line color of all its shapes
+                    if (hasDashedLine)
+                    {
+                        for (int i = 0; i < master.Shapes.Count; i++)
+                        {
+                            Shape shape = master.Shapes[i];
+
+                            // Skip logically deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Update the line color to the specified hex value
+                            shape.Line.LineColor.Value = newLineColor;
+                        }
+                    }
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format
+                // Save the modified diagram to the output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)

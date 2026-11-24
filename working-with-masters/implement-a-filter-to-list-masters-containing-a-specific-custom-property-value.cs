@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and the custom property value to filter by.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <customPropertyValue>");
@@ -16,7 +16,7 @@ class Program
         string diagramPath = args[0];
         string targetValue = args[1];
 
-        // Guard: ensure the diagram file exists.
+        // Guard against missing input file.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -28,50 +28,45 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            bool anyMatch = false;
-
             // Iterate through all masters in the diagram.
             foreach (Master master in diagram.Masters)
             {
-                bool masterMatches = false;
+                bool containsTarget = false;
 
-                // Iterate through shapes that belong to the master.
+                // Each master can contain one or more shapes that define its custom properties.
+                // Iterate through the shapes of the master.
                 foreach (Shape shape in master.Shapes)
                 {
-                    // Ensure the shape has a Props collection before iterating.
-                    if (shape.Props == null) continue;
+                    // Guard against null Props collection.
+                    if (shape.Props == null)
+                        continue;
 
-                    // Iterate through custom properties of the shape.
+                    // Examine each custom property (Prop) of the shape.
                     foreach (Prop prop in shape.Props)
                     {
-                        // Compare the property's value with the target value (case‑insensitive).
-                        if (string.Equals(prop.Value.Val, targetValue, StringComparison.OrdinalIgnoreCase))
+                        // Ensure the property value object is not null before accessing Val.
+                        if (prop.Value != null && prop.Value.Val == targetValue)
                         {
-                            masterMatches = true;
+                            containsTarget = true;
                             break;
                         }
                     }
 
-                    if (masterMatches) break;
+                    if (containsTarget)
+                        break;
                 }
 
-                if (masterMatches)
+                // If the master has a matching custom property, output its name.
+                if (containsTarget)
                 {
-                    // Output matching master information.
-                    Console.WriteLine($"Master Name: {master.Name}, Master ID: {master.ID}");
-                    anyMatch = true;
+                    Console.WriteLine($"Master Name: {master.Name}");
                 }
-            }
-
-            if (!anyMatch)
-            {
-                Console.WriteLine("No masters found with the specified custom property value.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

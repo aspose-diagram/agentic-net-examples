@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -26,81 +26,67 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram inside a using block as required.
+            // Load the existing diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // ------------------------------------------------------------
-                // Create a new master shape from scratch.
+                // Create a new master shape from scratch
                 // ------------------------------------------------------------
-                Master customMaster = new Master();
+                Master newMaster = new Master();
 
-                // Assign a unique numeric ID for the master.
-                customMaster.ID = diagram.Masters.Count + 1;
+                // Set master identifiers
+                newMaster.NameU = "CustomRect";
+                newMaster.Name = "CustomRect";
 
-                // Set master identifiers.
-                customMaster.NameU = "CustomRect";
-                customMaster.Name = "CustomRect";
+                // Optional master properties
+                newMaster.Hidden = BOOL.False;
+                newMaster.MatchByName = BOOL.True;
+                newMaster.IconUpdate = BOOL.True;
 
-                // Assign GUIDs for uniqueness.
-                customMaster.UniqueID = Guid.NewGuid();
-                customMaster.BaseID = Guid.NewGuid();
-
-                // Ensure the master is visible and name‑matching is enabled.
-                customMaster.Hidden = BOOL.False;
-                customMaster.MatchByName = BOOL.True;
-                customMaster.IconUpdate = BOOL.True;
-
-                // ------------------------------------------------------------
-                // Define the visual geometry of the master by adding a shape.
-                // ------------------------------------------------------------
+                // Create a shape that will define the visual appearance of the master
                 Shape masterShape = new Shape();
 
-                // Set the shape type to a regular shape.
-                masterShape.Type = TypeValue.Shape;
+                // Set geometry for the master shape (2 cm width, 1 cm height)
+                // Width, Height, PinX, PinY expect double values (in inches). Using direct double literals.
+                masterShape.XForm.Width.Value = 2.0;   // width
+                masterShape.XForm.Height.Value = 1.0;  // height
+                masterShape.XForm.PinX.Value = 0.0;    // pin X
+                masterShape.XForm.PinY.Value = 0.0;    // pin Y
 
-                // Define geometry: width = 2 inches, height = 1 inch.
-                masterShape.XForm.Width.Value = 2.0;
-                masterShape.XForm.Height.Value = 1.0;
+                // Add the shape to the master's shape collection
+                newMaster.Shapes.Add(masterShape);
 
-                // Position the shape at the origin of the master.
-                masterShape.XForm.PinX.Value = 0.0;
-                masterShape.XForm.PinY.Value = 0.0;
-
-                // Add the shape to the master's shape collection.
-                customMaster.Shapes.Add(masterShape);
-
-                // ------------------------------------------------------------
-                // Add the new master to the diagram's master collection.
-                // ------------------------------------------------------------
-                diagram.Masters.Add(customMaster);
+                // Add the master to the diagram's master collection
+                diagram.Masters.Add(newMaster);
 
                 // ------------------------------------------------------------
-                // Add an instance of the newly created master to the first page.
+                // Add an instance of the newly created master to page 0
                 // ------------------------------------------------------------
-                if (diagram.Pages.Count == 0)
+                double pinX = 5.0; // 5 cm from the left
+                double pinY = 5.0; // 5 cm from the top
+
+                // AddShape returns a long identifier for the new shape
+                long shapeId = diagram.AddShape(pinX, pinY, 2.0, 1.0, newMaster.NameU, 0);
+
+                // Retrieve the shape object from the first page's shape collection
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+
+                if (shape == null)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
+                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
                     return;
                 }
 
-                // Use the overload that specifies position, size, master name and page index.
-                long shapeId = diagram.AddShape(
-                    5.0,          // X position on the page
-                    5.0,          // Y position on the page
-                    2.0,          // Width of the shape instance
-                    1.0,          // Height of the shape instance
-                    customMaster.NameU,
-                    0);           // First page (index 0)
+                // Set some visual properties on the shape instance
+                shape.Fill.FillForegnd.Value = "#FF5733"; // orange fill
+                shape.Line.LineColor.Value = "#000000";   // black border
 
-                // Retrieve the concrete Shape object.
-                Shape shapeInstance = diagram.Pages[0].Shapes.GetShape(shapeId);
-
-                // Optional: set some text on the shape to verify it was added.
-                shapeInstance.Text.Value.Clear();
-                shapeInstance.Text.Value.Add(new Txt("Custom Master Shape"));
+                // Set shape text
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Hello Master"));
 
                 // ------------------------------------------------------------
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path
                 // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
@@ -108,8 +94,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose.Diagram related errors
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

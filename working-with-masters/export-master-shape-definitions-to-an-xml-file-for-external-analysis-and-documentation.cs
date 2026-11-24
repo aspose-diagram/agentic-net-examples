@@ -1,72 +1,54 @@
 using System;
 using System.IO;
-using System.Xml.Linq;
 using Aspose.Diagram;
+using System.Xml.Linq;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputXmlFile>");
-            return;
-        }
+        // Determine input and output file paths from command‑line arguments or use defaults.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "masters.xml";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: check input file exists
+        // Guard: ensure the input Visio file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create XML document root
-            XDocument xmlDoc = new XDocument(new XElement("Masters"));
+            // Create the root XML element.
+            XElement root = new XElement("Masters");
 
-            // Iterate over all masters in the diagram
+            // Iterate over each master in the diagram.
             foreach (Master master in diagram.Masters)
             {
-                // Build XML element for each master
+                // Build an XML element for the current master.
                 XElement masterElement = new XElement("Master",
-                    new XAttribute("ID", master.ID),
-                    new XAttribute("Name", master.Name ?? string.Empty),
-                    new XAttribute("NameU", master.NameU ?? string.Empty),
-                    new XAttribute("UniqueID", master.UniqueID.ToString())
+                    new XElement("ID", master.ID),
+                    new XElement("Name", master.Name),
+                    new XElement("UniqueID", master.UniqueID.ToString())
                 );
 
-                // Optionally include count of shapes defined in the master
-                if (master.Shapes != null)
-                {
-                    masterElement.Add(new XAttribute("ShapeCount", master.Shapes.Count));
-                }
-
-                // Append master element to root
-                xmlDoc.Root.Add(masterElement);
+                // Add the master element to the root.
+                root.Add(masterElement);
             }
 
-            // Ensure output directory exists
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
+            // Create the XDocument and save it to the specified output path.
+            XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+            doc.Save(outputPath);
 
-            // Save XML to file
-            xmlDoc.Save(outputPath);
-            Console.WriteLine($"Master definitions exported successfully to: {outputPath}");
+            Console.WriteLine($"Master definitions exported successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

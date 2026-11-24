@@ -7,121 +7,98 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string diagramPath = "input.vsdx";
-        if (!System.IO.File.Exists(diagramPath))
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <backgroundImagePath> <outputVisioPath>");
             return;
         }
-        // Background image file path
-        string imagePath = "background.png";
-        // Output Visio file path
-        string outputPath = "output.vsdx";
 
-        // Guard against missing files
-        if (!File.Exists(diagramPath))
+        string inputVisioPath = args[0];
+        string backgroundImagePath = args[1];
+        string outputVisioPath = args[2];
+
+        // Guard against missing files.
+        if (!File.Exists(inputVisioPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
             return;
         }
-        if (!File.Exists(imagePath))
+        if (!File.Exists(backgroundImagePath))
         {
-            Console.Error.WriteLine($"Background image file not found: {imagePath}");
+            Console.Error.WriteLine($"Background image file not found: {backgroundImagePath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                // Load image bytes once – they will be stored in the master
-                byte[] imageBytes = File.ReadAllBytes(imagePath);
-
-                // -----------------------------------------------------------------
-                // Create a custom master that contains the background image
-                // -----------------------------------------------------------------
+                // ------------------------------------------------------------
+                // 1. Create a new master that will hold the background image.
+                // ------------------------------------------------------------
                 Master bgMaster = new Master();
 
-                // Assign a unique ID and name for the master
+                // Assign a unique ID and name for the master.
                 bgMaster.ID = diagram.Masters.Count + 1;
                 bgMaster.Name = "BackgroundMaster";
                 bgMaster.UniqueID = Guid.NewGuid();
                 bgMaster.BaseID = Guid.NewGuid();
+                bgMaster.Hidden = BOOL.False;
 
-                // Create a shape that holds the image as a foreign bitmap
-                Shape masterShape = new Shape();
+                // Create a shape that contains the image as foreign data.
+                Shape imgShape = new Shape();
+                imgShape.Type = TypeValue.Foreign;                     // Mark as foreign (image) shape.
+                imgShape.ForeignData.ForeignType = ForeignType.Bitmap; // Specify bitmap image type.
+                imgShape.ForeignData.Value = File.ReadAllBytes(backgroundImagePath); // Embed image bytes.
 
-                // Mark the shape as a foreign (image) shape
-                masterShape.Type = TypeValue.Foreign;
+                // Set placeholder geometry; actual size will be defined when the shape is placed on a page.
+                imgShape.XForm.Width.Value = 1.0;
+                imgShape.XForm.Height.Value = 1.0;
+                imgShape.XForm.PinX.Value = 0.0;
+                imgShape.XForm.PinY.Value = 0.0;
 
-                // Set foreign data to the loaded image bytes (PNG format)
-                masterShape.ForeignData.ForeignType = ForeignType.Bitmap;
-                masterShape.ForeignData.CompressionType = CompressionType.PNG;
-                masterShape.ForeignData.Value = imageBytes;
+                // Add the image shape to the master.
+                bgMaster.Shapes.Add(imgShape);
 
-                // Initialize size – will be resized per page later
-                masterShape.XForm.Width.Value = 1.0;
-                masterShape.XForm.Height.Value = 1.0;
-                masterShape.XForm.PinX.Value = 0.0;
-                masterShape.XForm.PinY.Value = 0.0;
-
-                // Add the shape to the master’s shape collection
-                bgMaster.Shapes.Add(masterShape);
-
-                // Add the master to the diagram
+                // Add the master to the diagram's master collection.
                 diagram.Masters.Add(bgMaster);
 
-                // -----------------------------------------------------------------
-                // Apply the background master to every page in the diagram
-                // -----------------------------------------------------------------
+                // ------------------------------------------------------------
+                // 2. Apply the background master to every page.
+                // ------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve page dimensions (in inches)
+                    // Retrieve page dimensions (in inches).
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Center position for the background shape
-                    double centerX = pageWidth / 2.0;
-                    double centerY = pageHeight / 2.0;
+                    // Center coordinates for the shape.
+                    double pinX = pageWidth / 2.0;
+                    double pinY = pageHeight / 2.0;
 
-                    // Add a shape based on the custom master to the current page
-                    // The AddShape method returns the shape ID (long)
-                    long shapeId = diagram.AddShape(centerX, centerY, bgMaster.Name, page.ID);
+                    // Add the master shape to the page with the page size.
+                    long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, bgMaster.Name, false); // isCalculate expects bool
 
-                    // Retrieve the shape object from the page
+                    // Retrieve the newly added shape to adjust its properties.
                     Shape bgShape = page.Shapes.GetShape(shapeId);
-
-                    // Resize the shape to cover the entire page
-                    bgShape.XForm.Width.Value = pageWidth;
-                    bgShape.XForm.Height.Value = pageHeight;
-                    bgShape.XForm.PinX.Value = centerX;
-                    bgShape.XForm.PinY.Value = centerY;
-
-                    // Send the shape to back so it appears behind other content
-                    bgShape.SendToBack();
-
-                    // Make the background non‑selectable
-                    bgShape.Protection.LockSelect.Value = BOOL.True;
-
-                    // Optional: remove outline by setting line pattern to none
-                    bgShape.Line.LinePattern.Value = 0;
-
-                    // Optional: ensure solid fill (pattern 1) – can be customized as needed
-                    bgShape.Fill.FillPattern.Value = 1;
+                    bgShape.SendToBack();                                 // Ensure it is behind other content.
+                    bgShape.Protection.LockSelect.Value = BOOL.True;     // Make the background non‑selectable.
                 }
 
-                // Save the modified diagram to the output file in VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // ------------------------------------------------------------
+                // 3. Save the modified diagram.
+                // ------------------------------------------------------------
+                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
             }
 
             Console.WriteLine("Background master applied to all pages successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

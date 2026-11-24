@@ -1,33 +1,32 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expecting four arguments: input diagram path, output diagram path, tag to match, rotation angle in degrees
-        if (args.Length < 4)
+        // Expected arguments: <inputPath> <outputPath> <tagName> [rotationAngle]
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <masterTag> <rotationAngle>");
+            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <tagName> [rotationAngle]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string targetTag = args[2];
-        double rotationAngle;
-        if (!double.TryParse(args[3], out rotationAngle))
+        string tagName = args[2];
+        double rotationAngle = 45.0; // default rotation angle
+
+        if (args.Length >= 4 && double.TryParse(args[3], out double parsedAngle))
         {
-            Console.Error.WriteLine("Invalid rotation angle.");
-            return;
+            rotationAngle = parsedAngle;
         }
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -36,33 +35,37 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all masters in the diagram
+                // Iterate through all masters in the diagram
                 foreach (Master master in diagram.Masters)
                 {
-                    // NOTE: Aspose.Diagram does not expose a Tag collection on Master.
-                    // As a practical substitute, we treat the master Name as the tag identifier.
-                    if (master != null && master.Name != null && master.Name.Equals(targetTag, StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        // Apply rotation to each shape contained in the master.
-                        // Masters themselves do not have an XForm; rotation is applied to their constituent shapes.
-                        foreach (Shape shape in master.Shapes)
+                        // Use the master name as the tag identifier (since Master.Props is not available)
+                        if (!string.IsNullOrEmpty(master.Name) && master.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Set the 2D rotation angle (in degrees) for the shape.
-                            shape.XForm.Angle.Value = rotationAngle;
+                            // Iterate over each shape that belongs to the master
+                            foreach (Shape shape in master.Shapes)
+                            {
+                                // Apply 2‑D rotation by setting the Angle cell (value in degrees)
+                                shape.XForm.Angle.Value = rotationAngle;
+                            }
                         }
-
-                        Console.WriteLine($"Applied rotation of {rotationAngle}° to all shapes in master '{master.Name}'.");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any issues processing the tag for this master and continue
+                        Console.Error.WriteLine($"Warning: Could not process master '{master.Name}'. Details: {ex.Message}");
                     }
                 }
 
                 // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Capture any Aspose.Diagram related errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

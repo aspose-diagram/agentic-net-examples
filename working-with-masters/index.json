@@ -1,11 +1,11 @@
 {
   "category": "working-with-masters",
   "display_name": "Working With Masters",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 29,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -18,8 +18,8 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Pages",
         "Save",
         "Shapes",
         "diagram"
@@ -47,7 +47,6 @@
       "task": "Apply a rotation transformation to all masters that have a specific tag attribute",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -64,14 +63,16 @@
       "task": "Batch process a folder of visio files to remove unused masters and reduce file size",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Masters",
+        "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -122,7 +123,7 @@
         "Diagram",
         "Master",
         "Masters",
-        "Page"
+        "Pages"
       ]
     },
     {
@@ -273,7 +274,7 @@
       "key_apis": [
         "Diagram",
         "Masters",
-        "Save",
+        "Pages",
         "diagram"
       ]
     },
@@ -285,7 +286,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Xml"
       ],
@@ -293,6 +293,7 @@
         "AddMaster",
         "Diagram",
         "Save",
+        "SolutionXMLs",
         "diagram"
       ]
     },
@@ -302,17 +303,15 @@
       "task": "Load a diagram change the master of a group shape and preserve its subshape layout",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Masters",
-        "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -357,7 +356,8 @@
         "System.IO"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "diagram"
       ]
     },
     {
@@ -403,15 +403,16 @@
       "task": "Set a default master for newly added shapes when creating diagrams programmatically",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddMaster",
-        "AddShape",
         "Diagram",
-        "Masters",
-        "Pages"
+        "Save",
+        "diagram",
+        "shape"
       ]
     },
     {
@@ -436,7 +437,6 @@
       "task": "Synchronize master definitions across multiple visio files to ensure consistent branding organization wide",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

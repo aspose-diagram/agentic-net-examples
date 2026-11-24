@@ -9,7 +9,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
@@ -19,32 +19,28 @@ class Program
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Starting value for custom master IDs.
+                // Assign a custom numeric ID to each master.
+                // Starting from 1000 to avoid colliding with existing IDs.
                 int customId = 1000;
-
-                // Iterate through all masters in the diagram.
-                foreach (Master master in diagram.Masters)
+                foreach (Aspose.Diagram.Master master in diagram.Masters)
                 {
-                    // Assign a new custom ID to the master.
+                    // Set the master ID to the custom value.
                     master.ID = customId;
 
-                    // Ensure the master is visible (optional).
-                    master.Hidden = BOOL.False;
-
-                    // Increment the custom ID for the next master.
+                    // Increment for the next master.
                     customId++;
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the updated diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved with updated master IDs to: {outputPath}");
             }

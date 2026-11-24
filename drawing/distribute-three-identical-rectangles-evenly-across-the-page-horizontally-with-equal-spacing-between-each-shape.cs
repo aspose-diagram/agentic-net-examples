@@ -10,28 +10,12 @@ class Program
         // Define the output file path
         string outputPath = "output.vsdx";
 
-        // Guard: ensure the output directory exists and is writable
-        try
-        {
-            string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-            if (!Directory.Exists(outputDir))
-            {
-                Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to validate output path: {ex.Message}");
-            return;
-        }
-
         try
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Access the first (and only) page
+            // Access the first page (index 0)
             Page page = diagram.Pages[0];
 
             // Retrieve page dimensions (in inches)
@@ -39,44 +23,52 @@ class Program
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
             // Define rectangle size (in inches)
-            double rectWidth = 1.0;
-            double rectHeight = 0.5;
+            double rectWidth = 1.5;
+            double rectHeight = 1.0;
 
-            // Calculate equal horizontal spacing:
-            // spacing = (pageWidth - 3 * rectWidth) / 4
-            double spacing = (pageWidth - 3 * rectWidth) / 4.0;
-            if (spacing < 0)
-            {
-                Console.Error.WriteLine("Page width is too small to fit three rectangles with the desired size.");
-                return;
-            }
+            // Number of rectangles to distribute
+            int shapeCount = 3;
 
-            // Y coordinate (center) for all rectangles
+            // Calculate horizontal spacing so that rectangles are evenly distributed:
+            // spacing = (pageWidth - totalRectWidth) / (shapeCount + 1)
+            double totalRectWidth = rectWidth * shapeCount;
+            double spacing = (pageWidth - totalRectWidth) / (shapeCount + 1);
+
+            // Vertical position (center of the page)
             double centerY = pageHeight / 2.0;
 
-            // Add three identical rectangles and position them evenly
-            for (int i = 0; i < 3; i++)
+            // Master name for a rectangle shape (default Visio master)
+            string rectangleMasterName = "Rectangle";
+
+            // Add and position each rectangle
+            for (int i = 0; i < shapeCount; i++)
             {
-                // Calculate center X for the current rectangle
-                double centerX = spacing * (i + 1) + rectWidth * (i + 0.5);
+                // Calculate the center X coordinate for the current rectangle
+                double centerX = spacing * (i + 1) + rectWidth / 2.0 + rectWidth * i;
 
-                // Add shape using the built‑in "Rectangle" master; isCalculate set to false (plain bool)
-                long shapeId = page.AddShape(centerX, centerY, "Rectangle", false);
+                // Add the shape to the page; the fourth argument indicates whether to calculate geometry (false)
+                long shapeId = page.AddShape(centerX, centerY, rectangleMasterName, false);
 
-                // Retrieve the shape object to set its dimensions
+                // Retrieve the shape object using its ID
                 Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Set the shape's width and height
                 shape.XForm.Width.Value = rectWidth;
                 shape.XForm.Height.Value = rectHeight;
+
+                // Ensure the shape's PinX and PinY are set to the calculated center positions
+                shape.XForm.PinX.Value = centerX;
+                shape.XForm.PinY.Value = centerY;
             }
 
-            // Save the diagram to VSDX format (requires a SaveFileFormat argument)
+            // Save the diagram to the specified file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -3,28 +3,49 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
+class PageSavingCallback : IPageSavingCallback
+{
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        Console.WriteLine($"[Info] Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+    }
+
+    // Called after a page has been saved.
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"[Info] Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+
+        // Example: stop processing further pages if needed.
+        // args.HasMorePages = false;
+    }
+}
+
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Determine the input folder containing Visio files.
+        string inputFolder;
+        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
         {
-            Console.Error.WriteLine("Usage: Program <inputFolder> [outputFolder]");
-            return;
+            inputFolder = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the folder containing Visio files: ");
+            inputFolder = Console.ReadLine()?.Trim() ?? string.Empty;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args.Length >= 2 ? args[1] : inputFolder;
-
-        // Guard: input folder must exist
+        // Validate input folder existence.
         if (!Directory.Exists(inputFolder))
         {
-            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            Console.Error.WriteLine($"[Error] Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Ensure output folder exists
+        // Determine (or create) the output folder for converted PDFs.
+        string outputFolder = Path.Combine(inputFolder, "ConvertedPdf");
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -33,94 +54,69 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                Console.Error.WriteLine($"[Error] Failed to create output folder: {outputFolder}. Exception: {ex.Message}");
                 return;
             }
         }
 
-        // Supported Visio extensions
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vss", ".vst", ".vssx", ".vstx" };
-
-        // Gather all files with supported extensions
-        string[] allFiles = Directory.GetFiles(inputFolder);
-        var visioFiles = new System.Collections.Generic.List<string>();
-        foreach (var file in allFiles)
+        // Gather Visio files (common extensions) from the input folder.
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vsd", ".vsx", ".vtx", ".vssx", ".vstx", ".vss", ".vst", ".vdx", ".vsx", ".vtx", ".mmd" };
+        var filesToProcess = new System.Collections.Generic.List<string>();
+        foreach (var file in visioFiles)
         {
-            if (Array.Exists(extensions, ext => ext.Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase)))
+            if (Array.Exists(supportedExtensions, ext => ext.Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase)))
             {
-                visioFiles.Add(file);
+                filesToProcess.Add(file);
             }
         }
 
-        int totalFiles = visioFiles.Count;
-        if (totalFiles == 0)
+        if (filesToProcess.Count == 0)
         {
-            Console.WriteLine("No Visio files found to process.");
+            Console.WriteLine("[Info] No Visio files found in the specified folder.");
             return;
         }
 
-        Console.WriteLine($"Found {totalFiles} Visio file(s) to convert.");
+        Console.WriteLine($"[Info] Found {filesToProcess.Count} Visio file(s) to process.");
 
-        // Process each Visio file
-        for (int i = 0; i < totalFiles; i++)
+        // Process each Visio file.
+        int fileIndex = 0;
+        foreach (var inputPath in filesToProcess)
         {
-            string inputPath = visioFiles[i];
-            string fileName = Path.GetFileNameWithoutExtension(inputPath);
-            string outputPath = Path.Combine(outputFolder, fileName + ".pdf");
+            fileIndex++;
+            Console.WriteLine($"[Info] Processing file {fileIndex}/{filesToProcess.Count}: {Path.GetFileName(inputPath)}");
 
-            // Guard: input file must exist
+            // Guard against missing file (should not happen as we enumerated them).
             if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"File not found: {inputPath}");
+                Console.Error.WriteLine($"[Error] File not found: {inputPath}");
                 continue;
             }
 
-            Console.WriteLine($"[{i + 1}/{totalFiles}] Converting '{fileName}' to PDF...");
+            // Prepare output PDF path.
+            string outputFileName = Path.GetFileNameWithoutExtension(inputPath) + ".pdf";
+            string outputPath = Path.Combine(outputFolder, outputFileName);
 
             try
             {
-                // Load the Visio diagram
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Configure PDF save options with a page-saving callback for progress tracking
+                // Configure PDF save options with a page-saving callback for progress tracking.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new PageProgressCallback(fileName);
+                pdfOptions.PageSavingCallback = new PageSavingCallback();
 
-                // Save the diagram as PDF
+                // Save the diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
 
-                Console.WriteLine($"[{i + 1}/{totalFiles}] Successfully saved PDF: {outputPath}");
+                Console.WriteLine($"[Success] Converted to PDF: {outputFileName}");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
+                Console.Error.WriteLine($"[Error] Failed to convert '{inputPath}'. Exception: {ex.Message}");
             }
         }
 
-        Console.WriteLine("Batch conversion completed.");
-    }
-}
-
-// Implementation of IPageSavingCallback to track per-page progress during PDF export
-class PageProgressCallback : IPageSavingCallback
-{
-    private readonly string _documentName;
-
-    public PageProgressCallback(string documentName)
-    {
-        _documentName = documentName;
-    }
-
-    // Called before a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"[{_documentName}] Starting page {args.PageIndex + 1} of {args.PageCount}.");
-    }
-
-    // Called after a page has been saved
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"[{_documentName}] Finished page {args.PageIndex + 1} of {args.PageCount}.");
-        // No need to modify args.HasMorePages unless you want to stop early
+        Console.WriteLine("[Info] Batch conversion completed.");
     }
 }

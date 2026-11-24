@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
             return;
         }
 
@@ -19,61 +19,54 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Load the Visio diagram inside a using block as required.
         try
         {
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                try
+                // Iterate through pages to find the first non‑deleted shape.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Access the first page of the diagram.
-                    Page page = diagram.Pages[0];
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Iterate through shapes on the page.
-                    foreach (Shape shape in page.Shapes)
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
+                        Shape shape = page.Shapes[shapeIndex];
+
                         // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the shape again via GetShape as mandated.
-                        long shapeId = shape.ID;
-                        Shape targetShape = page.Shapes.GetShape(shapeId);
-
-                        // Enable gradient fill (pattern 25 corresponds to gradient).
-                        targetShape.Fill.FillPattern.Value = 25;
-
-                        // Turn on the gradient.
-                        targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                        // Enable gradient fill and set fill pattern to gradient.
+                        shape.Fill.FillPattern.Value = 25; // Gradient fill pattern.
+                        shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
                         // Clear any existing gradient stops.
-                        targetShape.Fill.GradientFill.GradientStops.Clear();
+                        shape.Fill.GradientFill.GradientStops.Clear();
 
-                        // Add a new gradient stop at position 0.75 with blue color (#0000FF).
-                        targetShape.Fill.GradientFill.GradientStops.Add(
+                        // Add a new gradient stop at position 0.75 with blue color (RGB 0,0,255).
+                        shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(0.75, MeasureConst.NUM),
                             new ColorValue("#0000FF", MeasureConst.Undefined));
 
-                        // Process only the first applicable shape.
-                        break;
+                        // Gradient stop added – exit loops after first applicable shape.
+                        goto SaveDiagram;
                     }
+                }
 
-                    // Save the modified diagram to the specified output path.
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-                }
+            SaveDiagram:
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

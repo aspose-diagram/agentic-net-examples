@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
+        // Input Visio file path (modify as needed)
         string inputPath = "input.vsdx";
         if (!System.IO.File.Exists(inputPath))
         {
@@ -35,20 +35,18 @@ class Program
             // Set PDF/A-1b conformance level
             pdfOptions.Compliance = PdfCompliance.PdfA1b;
 
-            // Specify the output format explicitly
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Note: Aspose.Diagram's PdfSaveOptions does not provide an explicit
+            // property to embed all fonts. Font embedding is handled automatically
+            // based on the selected compliance level and available fonts.
 
-            // Set a default fallback font (embedding is handled automatically)
+            // Optionally set a default fallback font
             pdfOptions.DefaultFont = "Arial";
 
             // Save the diagram as PDF with the configured options
             diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

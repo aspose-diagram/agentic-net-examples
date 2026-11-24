@@ -6,44 +6,39 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the output Visio file path.
+        // Define output file path
         string outputPath = "output.vsdx";
 
         try
         {
-            // Create a new empty diagram. This automatically contains a default page.
+            // Create a new blank diagram (contains a default page)
             Diagram diagram = new Diagram();
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram does not contain any pages.");
-                return;
-            }
+            // Get the first (active) page
+            Page page = diagram.ActivePage;
 
-            // Get the first page (index 0).
-            Page firstPage = diagram.Pages[0];
-
-            // Convert centimeters to inches (Aspose.Diagram uses inches for geometry).
-            double cmToInch = 0.393701;
-            double pinX = 2.0 * cmToInch;   // X coordinate (2 cm)
-            double pinY = 2.0 * cmToInch;   // Y coordinate (2 cm)
+            // Convert centimeters to inches (Aspose.Diagram uses inches for geometry)
+            double cmToInch = 1.0 / 2.54;
+            double pinX = 2.0 * cmToInch; // X coordinate (2 cm)
+            double pinY = 2.0 * cmToInch; // Y coordinate (2 cm)
             double widthInches = 3.0 * cmToInch; // Width (3 cm)
 
-            // Add a rectangle shape to the first page.
-            // The AddShape method returns the shape ID (long).
-            long shapeId = firstPage.AddShape(pinX, pinY, "Rectangle", false);
+            // Add a rectangle shape using the built‑in "Rectangle" master.
+            // The fourth argument 'isCalculate' must be a bool; false means no immediate recalculation.
+            long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
 
-            // Retrieve the newly added shape using its ID.
-            Shape rectangle = firstPage.Shapes.GetShape(shapeId);
-            if (rectangle == null)
+            // Retrieve the newly added shape to modify its dimensions.
+            Shape rectShape = page.Shapes.GetShape(shapeId);
+            if (rectShape != null)
+            {
+                // Set the width to 3 cm (converted to inches). Height remains default.
+                rectShape.XForm.Width.Value = widthInches;
+            }
+            else
             {
                 Console.Error.WriteLine("Failed to retrieve the newly added rectangle shape.");
                 return;
             }
-
-            // Set the width of the rectangle. Height is left as default.
-            rectangle.XForm.Width.Value = widthInches;
 
             // Save the diagram to a VSDX file.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
@@ -51,8 +46,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

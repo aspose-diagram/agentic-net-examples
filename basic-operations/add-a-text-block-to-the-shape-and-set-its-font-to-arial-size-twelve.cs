@@ -1,21 +1,19 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expect the input Visio file path as the first argument.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
@@ -24,48 +22,63 @@ class Program
             return;
         }
 
+        // Define the output file path (saved alongside the input file).
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output_with_text.vsdx");
+
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first page (or create one if the diagram has no pages).
-            Page page;
-            if (diagram.Pages.Count > 0)
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                page = diagram.Pages[0];
+                // Ensure the diagram contains at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page.
+                Page page = diagram.Pages[0];
+
+                // Ensure the page contains at least one shape.
+                if (page.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("The first page contains no shapes.");
+                    return;
+                }
+
+                // Retrieve the first shape on the page.
+                Shape shape = page.Shapes[0];
+
+                // Clear any existing text in the shape.
+                shape.Text.Value.Clear();
+
+                // Add a new text block to the shape.
+                shape.Text.Value.Add(new Txt("Sample Text"));
+
+                // Verify that a character run was created.
+                if (shape.Chars.Count > 0)
+                {
+                    // Set the font name to Arial.
+                    shape.Chars[0].FontName.Value = "Arial";
+
+                    // Set the font size to 12 points (converted to inches: points / 72).
+                    shape.Chars[0].Size.Value = 12.0 / 72.0;
+                }
+                else
+                {
+                    Console.Error.WriteLine("No character runs were created after adding text.");
+                }
+
+                // Save the modified diagram to the output path using VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            else
-            {
-                // Create a new blank page and add it to the diagram.
-                Page newPage = new Page();
-                diagram.Pages.Add(newPage); // PageCollection.Add requires a Page instance.
-                page = newPage;
-            }
 
-            // Add a rectangle shape to the page using DrawRectangle.
-            // Parameters: pinX, pinY, width, height (all in inches).
-            long shapeId = page.DrawRectangle(2.0, 2.0, 2.0, 1.0);
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Clear any existing text and add new text to the shape.
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Sample Text"));
-
-            // Create a character formatting object and set font to Arial, size 12 pt.
-            // Font size is expressed in inches (points / 72).
-            Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-            ch.IX = 0; // Index of the character run.
-            ch.FontName.Value = "Arial";
-            ch.Size.Value = 12.0 / 72.0; // Convert 12 points to inches.
-            shape.Chars.Add(ch);
-
-            // Save the modified diagram to the specified output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

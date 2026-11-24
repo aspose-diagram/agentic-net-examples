@@ -1,11 +1,11 @@
 {
   "category": "basic-operations",
   "display_name": "Basic Operations",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,16 +31,15 @@
       "task": "Add a text block to the shape and set its font to arial size twelve",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Page",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -66,15 +65,16 @@
       "task": "Apply a custom fill color to the inserted shape using rgb values for teal shade",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -117,6 +117,7 @@
       "task": "Convert a visio file to swf format and confirm playback works in a web browser",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -169,7 +170,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -273,9 +273,10 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -286,7 +287,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -301,6 +301,7 @@
       "task": "Load a single stencil from a vss file and add a master shape to the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -365,7 +366,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -427,16 +429,15 @@
       "task": "Set the default font for the entire diagram to times new roman before adding shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Page",
         "Pages",
-        "Save",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -505,9 +506,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     }
   ]

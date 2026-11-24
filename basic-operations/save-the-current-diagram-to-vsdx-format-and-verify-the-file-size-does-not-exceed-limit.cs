@@ -6,70 +6,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least input and output file paths.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputVsdxPath> [maxSizeInBytes]");
-            return;
-        }
+        // Define default file paths (can be overridden by command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: verify input file exists.
+        // Guard: ensure the source diagram file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Optional size limit argument; default to 5 MB.
-        long maxSizeBytes = 5 * 1024 * 1024;
-        if (args.Length >= 3 && long.TryParse(args[2], out long parsedLimit) && parsedLimit > 0)
-        {
-            maxSizeBytes = parsedLimit;
-        }
+        // Define a maximum allowed file size (e.g., 5 MB)
+        const long maxFileSizeBytes = 5 * 1024 * 1024; // 5 MiB
 
         try
         {
-            // Load the diagram from the specified input file.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the output directory exists.
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            // Save the diagram in VSDX format to the output path
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            // Verify that the saved file exists
+            if (!File.Exists(outputPath))
             {
-                Directory.CreateDirectory(outputDir);
+                Console.Error.WriteLine($"Error: Failed to create output file: {outputPath}");
+                return;
             }
 
-            // Save the diagram to VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
-            return;
-        }
+            // Get the size of the saved file
+            long fileSize = new FileInfo(outputPath).Length;
 
-        // Verify the saved file size does not exceed the specified limit.
-        try
-        {
-            FileInfo info = new FileInfo(outputPath);
-            long fileSize = info.Length;
+            // Output the file size information
+            Console.WriteLine($"Saved VSDX file size: {fileSize} bytes");
 
-            if (fileSize > maxSizeBytes)
+            // Check against the defined limit
+            if (fileSize > maxFileSizeBytes)
             {
-                Console.Error.WriteLine($"Saved file size ({fileSize} bytes) exceeds the limit of {maxSizeBytes} bytes.");
+                Console.Error.WriteLine($"Error: File size exceeds the limit of {maxFileSizeBytes} bytes.");
+                // Optionally, you could delete the oversized file or take other actions here
             }
             else
             {
-                Console.WriteLine($"File saved successfully: {outputPath}");
-                Console.WriteLine($"File size: {fileSize} bytes (within limit).");
+                Console.WriteLine("File size is within the acceptable limit.");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error checking file size: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O exceptions and report them
+            Console.Error.WriteLine($"Exception occurred: {ex.Message}");
         }
     }
 }

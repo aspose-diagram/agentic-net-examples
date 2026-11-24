@@ -7,40 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output PDF file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+        // Expect input Visio file path and output PDF file path as arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Set the format tracker explicitly
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Export hidden pages? false to keep only visible pages (does not affect shape colors)
-            pdfOptions.ExportHiddenPage = false;
-            // Optional: set a default font to avoid missing font warnings
-            pdfOptions.DefaultFont = "Arial";
+                // Explicitly set the format tracker.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Save the diagram as PDF with the specified options
-            diagram.Save(outputPath, pdfOptions);
+                // No additional color settings are required; Aspose.Diagram preserves original shape colors by default.
+
+                // Save the diagram as PDF.
+                diagram.Save(outputPath, pdfOptions);
+            }
 
             Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error during PDF export: {ex.Message}");
         }
     }

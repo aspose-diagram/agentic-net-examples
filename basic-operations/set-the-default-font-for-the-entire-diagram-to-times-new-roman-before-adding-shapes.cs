@@ -1,70 +1,65 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the output file path for the generated diagram
+        // Define the output file path
         string outputPath = "output.vsdx";
 
-        // Ensure the output directory exists
+        // Guard: ensure the directory for the output exists
         string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
         if (!Directory.Exists(outputDir))
         {
-            Directory.CreateDirectory(outputDir);
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
         }
 
         try
         {
-            // -----------------------------------------------------------------
-            // Configure font handling before any diagram operations
-            // -----------------------------------------------------------------
-            // Set the fallback/default font to Times New Roman
+            // Configure the default font for the entire diagram
             FontConfigs.DefaultFontName = "Times New Roman";
 
-            // Add the system font folder (non‑recursive) so the renderer can locate fonts
+            // Optionally add the system font folder to the font search paths
             FontConfigs.SetFontFolder(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), false);
 
-            // -----------------------------------------------------------------
-            // Create a new empty diagram
-            // -----------------------------------------------------------------
-            Diagram diagram = new Diagram();
-
-            // -----------------------------------------------------------------
-            // Add a new blank page to the diagram
-            // -----------------------------------------------------------------
-            Page newPage = new Page();
-            // Assign a unique page ID (Visio IDs start from 1)
-            newPage.ID = diagram.Pages.Count > 0 ? diagram.Pages[diagram.Pages.Count - 1].ID + 1 : 1;
-            diagram.Pages.Add(newPage);
-
-            // -----------------------------------------------------------------
-            // Add a rectangle shape to the new page
-            // -----------------------------------------------------------------
-            // Parameters: pinX, pinY, masterName, isCalculate (bool)
-            long shapeId = newPage.AddShape(2.0, 2.0, "Rectangle", false);
-
-            // Retrieve the shape object for further modifications (optional)
-            Shape shape = newPage.Shapes.GetShape(shapeId);
-            if (shape != null)
+            // Create a new empty diagram inside a using block
+            using (Diagram diagram = new Diagram())
             {
-                // Example: set the shape's text to "Hello"
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt("Hello"));
+                // Ensure there is at least one page; add a blank page if none exist
+                if (diagram.Pages.Count == 0)
+                {
+                    diagram.Pages.Add(new Page());
+                }
+
+                // Get the first page to work with
+                Page page = diagram.Pages[0];
+
+                // Add a rectangle shape (master name "Rectangle") at position (2,2)
+                // The fourth parameter (isCalculate) is a boolean flag
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+
+                // Retrieve the shape object using the returned identifier
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Add sample text to the shape; the default font will be Times New Roman
+                if (shape != null)
+                {
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt("Sample"));
+                }
+
+                // Save the diagram with the default font applied
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // -----------------------------------------------------------------
-            // Save the diagram with the default font applied
-            // -----------------------------------------------------------------
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

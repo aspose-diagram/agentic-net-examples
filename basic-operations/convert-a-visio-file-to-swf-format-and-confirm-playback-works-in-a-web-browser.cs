@@ -1,105 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputDirectory]");
-            return;
-        }
+        // Determine input Visio file path
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        // Guard: ensure the input Visio file exists.
+        // Verify the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
             return;
         }
 
-        // Determine output directory.
-        string outputDir = args.Length >= 2 ? args[1] : Path.GetDirectoryName(inputPath);
-        if (string.IsNullOrEmpty(outputDir))
-        {
-            outputDir = Directory.GetCurrentDirectory();
-        }
+        // Determine output directory (default to current directory)
+        string outputDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
 
-        // Ensure the output directory exists.
+        // Ensure the output directory exists
         if (!Directory.Exists(outputDir))
         {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error: Unable to create output directory '{outputDir}'. {ex.Message}");
-                return;
-            }
+            Console.Error.WriteLine($"Error: Output directory does not exist at '{outputDir}'.");
+            return;
         }
 
-        // Build output file paths.
-        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-        string swfPath = Path.Combine(outputDir, fileNameWithoutExt + ".swf");
-        string htmlPath = Path.Combine(outputDir, fileNameWithoutExt + ".html");
+        // Define output SWF and HTML file paths
+        string swfPath = Path.Combine(outputDir, "output.swf");
+        string htmlPath = Path.Combine(outputDir, "preview.html");
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Export the diagram to SWF format.
+            // Save the diagram as SWF
             diagram.Save(swfPath, SaveFileFormat.Swf);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
-            return;
-        }
+            Console.WriteLine($"SWF file saved to: {swfPath}");
 
-        // Verify that the SWF file was created.
-        if (!File.Exists(swfPath))
-        {
-            Console.Error.WriteLine($"Error: SWF file was not created at {swfPath}");
-            return;
-        }
-
-        // Generate a simple HTML page that embeds the SWF for browser playback verification.
-        try
-        {
-            string relativeSwf = Path.GetFileName(swfPath); // Use relative path for HTML.
-            string htmlContent = $@"<!DOCTYPE html>
+            // Generate a simple HTML page to embed the SWF for browser playback
+            string htmlContent = $@"
+<!DOCTYPE html>
 <html>
 <head>
-    <meta charset=""utf-8"" />
-    <title>SWF Playback Test - {fileNameWithoutExt}</title>
+    <meta charset=""UTF-8"">
+    <title>SWF Preview</title>
 </head>
 <body>
-    <h2>SWF Playback Test</h2>
-    <object data=""{relativeSwf}"" type=""application/x-shockwave-flash"" width=""800"" height=""600"">
-        <param name=""movie"" value=""{relativeSwf}"" />
-        <embed src=""{relativeSwf}"" width=""800"" height=""600"" type=""application/x-shockwave-flash""></embed>
+    <h2>SWF Preview</h2>
+    <object width=""800"" height=""600"" data=""{Path.GetFileName(swfPath)}"" type=""application/x-shockwave-flash"">
+        <embed src=""{Path.GetFileName(swfPath)}"" width=""800"" height=""600"" type=""application/x-shockwave-flash""></embed>
         Your browser does not support SWF playback.
     </object>
-    <p>If the SWF does not display, ensure that your browser has Flash support enabled.</p>
 </body>
 </html>";
             File.WriteAllText(htmlPath, htmlContent);
+            Console.WriteLine($"HTML preview file saved to: {htmlPath}");
+            Console.WriteLine("Open the HTML file in a web browser to verify SWF playback.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error creating HTML file: {ex.Message}");
-            return;
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
-
-        // Inform the user of successful conversion and where to view the result.
-        Console.WriteLine($"Conversion successful.");
-        Console.WriteLine($"SWF file: {swfPath}");
-        Console.WriteLine($"HTML test page: {htmlPath}");
-        Console.WriteLine("Open the HTML file in a web browser to verify SWF playback.");
     }
 }

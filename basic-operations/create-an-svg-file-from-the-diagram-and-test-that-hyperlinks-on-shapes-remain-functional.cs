@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -18,81 +17,68 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Ensure the output directory exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
-        }
+        // List to store hyperlink addresses found in the diagram.
+        System.Collections.Generic.List<string> hyperlinkAddresses = new System.Collections.Generic.List<string>();
 
-        Diagram diagram;
         try
         {
-            // Load the Visio diagram.
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Collect all hyperlink addresses from the diagram.
-        List<string> hyperlinkAddresses = new List<string>();
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (shape.Hyperlinks != null)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    foreach (Hyperlink link in shape.Hyperlinks)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (link != null && link.Address != null && link.Address.Value != null)
+                        // Ensure the shape has a Hyperlinks collection.
+                        if (shape.Hyperlinks != null)
                         {
-                            hyperlinkAddresses.Add(link.Address.Value);
+                            // Iterate through each hyperlink.
+                            foreach (Hyperlink link in shape.Hyperlinks)
+                            {
+                                // Store the address (URL) for later verification.
+                                if (link != null && link.Address != null && !string.IsNullOrEmpty(link.Address.Value))
+                                {
+                                    hyperlinkAddresses.Add(link.Address.Value);
+                                }
+                            }
                         }
                     }
                 }
+
+                // Configure SVG save options.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                svgOptions.SaveFormat = SaveFileFormat.Svg;   // Explicitly set the format.
+                svgOptions.PageIndex = 0;                     // Export the first page.
+                // SVGFitToViewPort expects a plain bool, not BOOL.
+                svgOptions.SVGFitToViewPort = true;           // Preserve viewbox.
+
+                // Save the diagram as SVG.
+                diagram.Save(outputPath, svgOptions);
             }
-        }
-
-        // Export the diagram to SVG using SVGSaveOptions.
-        try
-        {
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            // Export the first page only; adjust as needed.
-            svgOptions.PageIndex = 0;
-            // Set the format explicitly.
-            svgOptions.SaveFormat = SaveFileFormat.Svg;
-            // Optional: fit SVG to viewport.
-            svgOptions.SVGFitToViewPort = true;
-            // Export comments if needed.
-            svgOptions.IsExportComments = false;
-
-            diagram.Save(outputPath, svgOptions);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving SVG: {ex.Message}");
+            Console.Error.WriteLine($"Error during diagram processing or SVG export: {ex.Message}");
             return;
         }
 
-        // Verify that the generated SVG contains the hyperlink addresses.
+        // Verify that the SVG file was created.
+        if (!File.Exists(outputPath))
+        {
+            Console.Error.WriteLine($"Failed to create SVG file: {outputPath}");
+            return;
+        }
+
+        // Read the generated SVG content.
         string svgContent;
         try
         {
@@ -100,27 +86,29 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading generated SVG: {ex.Message}");
+            Console.Error.WriteLine($"Error reading SVG file: {ex.Message}");
             return;
         }
 
-        bool allLinksFound = true;
+        // Test that each hyperlink address appears in the SVG output.
+        bool allLinksPresent = true;
         foreach (string address in hyperlinkAddresses)
         {
             if (!svgContent.Contains(address))
             {
                 Console.Error.WriteLine($"Hyperlink address not found in SVG: {address}");
-                allLinksFound = false;
+                allLinksPresent = false;
             }
         }
 
-        if (allLinksFound)
+        if (!allLinksPresent)
         {
-            Console.WriteLine("SVG export completed successfully. All hyperlinks are present.");
+            Console.Error.WriteLine("One or more hyperlinks were not exported correctly to the SVG file.");
+            return;
         }
-        else
-        {
-            Console.Error.WriteLine("SVG export completed, but some hyperlinks are missing.");
-        }
+
+        // Success message.
+        Console.WriteLine($"SVG file created successfully at: {outputPath}");
+        Console.WriteLine("All hyperlinks were verified in the SVG output.");
     }
 }

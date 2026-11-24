@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect the input MMD file path and the output Visio file path as arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.mmd> <output.vsdx>");
@@ -16,27 +16,27 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the MMD source file exists.
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Mermaid (MMD) file into a Diagram object.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Save the diagram as a Visio VSDX file.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Successfully converted \"{inputPath}\" to Visio format at \"{outputPath}\".");
+            // Load the MMD file into a Diagram object inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Save the loaded diagram as a Visio VSDX file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram successfully saved to {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
-            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
+            // Write any errors that occur during loading or saving to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

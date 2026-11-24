@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -26,52 +26,48 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to add a hyperlink to each non-deleted shape.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the page.
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate over each shape on the page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate over all pages.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Skip logically deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Ensure the Hyperlinks collection is available.
-                    if (shape.Hyperlinks == null)
-                        continue;
+                    // Iterate over all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Create a new hyperlink instance.
-                    Hyperlink link = new Hyperlink();
-                    link.Name = "ExternalLink";
-                    // Set the external URL. Adjust as needed.
-                    link.Address.Value = "https://example.com";
+                        // Ensure the Hyperlinks collection is available.
+                        if (shape.Hyperlinks == null)
+                            continue;
 
-                    // Add the hyperlink to the shape's collection.
-                    shape.Hyperlinks.Add(link);
+                        // Create a new hyperlink that points to an external URL.
+                        Hyperlink link = new Hyperlink();
+                        link.Name = "ExternalLink";
+                        link.Address.Value = "https://www.example.com";
+
+                        // Add the hyperlink to the shape.
+                        shape.Hyperlinks.Add(link);
+                    }
                 }
+
+                // Configure PDF save options (default options are sufficient for hyperlinks).
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // Export the diagram to PDF with the configured options.
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            // Refresh the diagram to apply changes.
-            diagram.Refresh();
-
-            // Configure PDF save options (default options are sufficient for hyperlink preservation).
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // Save the diagram as PDF with the configured options.
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"PDF exported successfully with hyperlinks to: {outputPath}");
+            Console.WriteLine($"PDF exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

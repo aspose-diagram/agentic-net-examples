@@ -7,34 +7,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate arguments: input diagram, output diagram, number of duplicates
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile> [duplicateCount]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <duplicateCount>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        int duplicateCount = 3; // default number of duplicates
+        string duplicateCountStr = args[2];
 
-        // Optional duplicate count argument
-        if (args.Length >= 3 && !int.TryParse(args[2], out duplicateCount))
-        {
-            Console.Error.WriteLine("Invalid duplicate count. Using default value of 3.");
-            duplicateCount = 3;
-        }
-
-        // Guard: ensure input file exists
+        // Guard for input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Parse duplicate count
+        if (!int.TryParse(duplicateCountStr, out int duplicateCount) || duplicateCount <= 0)
+        {
+            Console.Error.WriteLine("Duplicate count must be a positive integer.");
+            return;
+        }
+
         try
         {
-            // Load the Visio diagram
+            // Load the source diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Ensure there is at least one page
@@ -44,95 +44,82 @@ class Program
                 return;
             }
 
-            // Use the first page as the working canvas
+            // Work with the first page
             Page page = diagram.Pages[0];
 
-            // Find a source shape that has an associated master (the "master shape")
-            Shape sourceShape = null;
-            foreach (Shape shp in page.Shapes)
+            // Ensure there is at least one shape to serve as the master source
+            if (page.Shapes.Count == 0)
             {
-                // Skip deleted shapes
-                if (shp.Del == BOOL.True)
-                    continue;
-
-                if (shp.Master != null)
-                {
-                    sourceShape = shp;
-                    break;
-                }
-            }
-
-            if (sourceShape == null)
-            {
-                Console.Error.WriteLine("No shape with a master was found on the first page.");
+                Console.Error.WriteLine("The first page contains no shapes to clone from.");
                 return;
             }
 
-            // Retrieve the master name for creating duplicates
-            string masterName = sourceShape.Master.Name;
+            // Retrieve the source shape (assumed to be based on a master)
+            Shape masterShape = page.Shapes[0];
 
-            // Store created duplicate shapes for later grouping
-            List<Shape> duplicateShapes = new List<Shape>();
-
-            // Base position for the first duplicate (offset from source shape)
-            double basePinX = sourceShape.XForm.PinX.Value;
-            double basePinY = sourceShape.XForm.PinY.Value;
-            double offsetX = 2.0; // inches offset between duplicates
-
-            // Clone event formulas from the source shape
-            string eventDropFormula = sourceShape.Event.EventDrop.Ufe.F;
-            string eventDblClickFormula = sourceShape.Event.EventDblClick.Ufe.F;
-            string eventXFModFormula = sourceShape.Event.EventXFMod.Ufe.F;
-            string eventMultiDropFormula = sourceShape.Event.EventMultiDrop.Ufe.F;
-            string theTextFormula = sourceShape.Event.TheText.Ufe.F;
-            string theDataFormula = sourceShape.Event.TheData.Ufe.F;
-
-            // Create the requested number of duplicate shapes
-            for (int i = 0; i < duplicateCount; i++)
+            // Verify the shape has an associated master
+            if (masterShape.Master == null)
             {
-                // Calculate position for this duplicate
-                double pinX = basePinX + (i + 1) * offsetX;
-                double pinY = basePinY;
-
-                // Add a new shape based on the same master; isCalculate set to false
-                long newShapeId = page.AddShape(pinX, pinY, masterName, false);
-
-                // Retrieve the Shape object from the ID
-                Shape newShape = page.Shapes.GetShape((int)newShapeId);
-                if (newShape == null)
-                {
-                    Console.Error.WriteLine($"Failed to retrieve newly added shape with ID {newShapeId}.");
-                    continue;
-                }
-
-                // Copy event formulas to the new shape
-                newShape.Event.EventDrop.Ufe.F = eventDropFormula;
-                newShape.Event.EventDblClick.Ufe.F = eventDblClickFormula;
-                newShape.Event.EventXFMod.Ufe.F = eventXFModFormula;
-                newShape.Event.EventMultiDrop.Ufe.F = eventMultiDropFormula;
-                newShape.Event.TheText.Ufe.F = theTextFormula;
-                newShape.Event.TheData.Ufe.F = theDataFormula;
-
-                // Add to collection for grouping
-                duplicateShapes.Add(newShape);
+                Console.Error.WriteLine("The selected shape does not have an associated master.");
+                return;
             }
 
-            // Include the original source shape in the group as well
-            duplicateShapes.Insert(0, sourceShape);
+            // Prepare a list to hold the duplicated shapes
+            List<Shape> duplicatedShapes = new List<Shape>();
 
-            // Group all shapes together
-            Shape groupShape = page.Shapes.Group(duplicateShapes.ToArray());
+            // Starting coordinates for duplication (adjust as needed)
+            double startX = 1.0;
+            double startY = 1.0;
+            double offsetX = 2.0; // horizontal offset between duplicates
+            double offsetY = 0.0; // vertical offset (can be changed)
 
-            // Optional: you could set a name for the group (if needed)
-            // groupShape.NameU = "ClonedEventGroup";
+            // Clone the shape multiple times
+            for (int i = 0; i < duplicateCount; i++)
+            {
+                double pinX = startX + i * offsetX;
+                double pinY = startY + i * offsetY;
 
-            // Save the modified diagram to the output path
+                // Add a new shape based on the same master as the source shape
+                long newShapeId = page.AddShape(pinX, pinY, masterShape.Master.Name, false);
+
+                // Retrieve the newly added shape object
+                Shape newShape = page.Shapes.GetShape((int)newShapeId);
+
+                // Copy EventSection formulas from the master shape to the new shape
+                // EventDrop
+                newShape.Event.EventDrop.Ufe.F = masterShape.Event.EventDrop.Ufe.F;
+                // EventDblClick
+                newShape.Event.EventDblClick.Ufe.F = masterShape.Event.EventDblClick.Ufe.F;
+                // EventXFMod
+                newShape.Event.EventXFMod.Ufe.F = masterShape.Event.EventXFMod.Ufe.F;
+                // EventMultiDrop
+                newShape.Event.EventMultiDrop.Ufe.F = masterShape.Event.EventMultiDrop.Ufe.F;
+                // TheText
+                newShape.Event.TheText.Ufe.F = masterShape.Event.TheText.Ufe.F;
+                // TheData
+                newShape.Event.TheData.Ufe.F = masterShape.Event.TheData.Ufe.F;
+
+                // Add to collection for later grouping
+                duplicatedShapes.Add(newShape);
+            }
+
+            // Group all duplicated shapes into a single group shape
+            if (duplicatedShapes.Count > 0)
+            {
+                Shape groupShape = page.Shapes.Group(duplicatedShapes.ToArray());
+
+                // Optional: you can set a name for the group (if needed)
+                // groupShape.NameU = "ClonedEventGroup";
+            }
+
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

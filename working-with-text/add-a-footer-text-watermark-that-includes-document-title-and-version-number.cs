@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Drawing;
 
 class Program
 {
@@ -16,10 +17,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -32,29 +33,31 @@ class Program
                 string title = diagram.DocumentProps.Title ?? string.Empty;
                 string version = diagram.Version ?? string.Empty;
 
-                // Build the footer watermark text.
-                string footerText = $"{title} v{version}";
+                // Compose the footer watermark text.
+                string footerText = $"{title} - {version}";
 
-                // Set the footer text (centered).
+                // Set the footer text (centered) for the whole document.
                 diagram.HeaderFooter.FooterCenter = footerText;
 
-                // Configure footer font appearance.
-                var footerFont = diagram.HeaderFooter.HeaderFooterFont;
-                footerFont.FaceName = "Arial";          // Font face.
-                footerFont.Height = 12;                 // Font size (points).
+                // Optional: configure footer font appearance.
+                HeaderFooterFont footerFont = diagram.HeaderFooter.HeaderFooterFont;
+                footerFont.FaceName = "Arial";          // Font family.
+                footerFont.Height = 12;                 // Font size in points.
                 footerFont.Weight = 700;                // Bold weight.
                 footerFont.Underline = BOOL.False;      // No underline.
 
-                // Optionally adjust the footer margin (in inches from page edge).
-                diagram.HeaderFooter.FooterMargin.Value = 0.5;
+                // Optional: set footer text color (black).
+                diagram.HeaderFooter.HeaderFooterColor = Color.FromArgb(0, 0, 0);
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram. Using VSDX format for broad compatibility.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("Footer watermark added successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -9,7 +9,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
@@ -25,52 +25,40 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            bool rectangleFound = false;
-
-            // Iterate through pages and shapes to locate a rectangle.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check that the shape has a master named "Rectangle".
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
+                    // Iterate through all shapes on the current page.
+                    for (int i = 0; i < page.Shapes.Count; i++)
                     {
-                        // Set line dash pattern to dash‑dot.
-                        shape.Line.LinePattern.Value = LinePatternValue.DashDot;
+                        Shape shape = page.Shapes[i];
 
-                        // Set line thickness to two points (2/72 inches).
-                        shape.Line.LineWeight.Value = 2.0 / 72.0;
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        rectangleFound = true;
-                        // Assuming only one rectangle needs modification.
-                        break;
+                        // Identify rectangle shapes by their master name.
+                        if (shape.Master != null && shape.Master.Name == "Rectangle")
+                        {
+                            // Set line dash pattern to dash‑dot using the enum.
+                            shape.Line.LinePattern.Value = LinePatternValue.DashDot;
+
+                            // Set line thickness to two points (2/72 inches).
+                            shape.Line.LineWeight.Value = 2.0 / 72.0;
+                        }
                     }
                 }
 
-                if (rectangleFound)
-                    break;
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            if (!rectangleFound)
-            {
-                Console.Error.WriteLine("No rectangle shape was found in the diagram.");
-                return;
-            }
-
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

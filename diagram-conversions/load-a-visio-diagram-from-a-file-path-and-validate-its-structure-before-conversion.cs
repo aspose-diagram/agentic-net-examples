@@ -7,15 +7,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPath>");
+            Console.Error.WriteLine("Please provide the input Visio file path as an argument.");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
@@ -24,116 +23,84 @@ class Program
             return;
         }
 
-        Diagram diagram = null;
-
-        // Load the Visio diagram inside a try/catch block.
         try
         {
-            diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Validate the diagram structure before any conversion.
+                if (!ValidateDiagram(diagram))
+                {
+                    Console.Error.WriteLine("Diagram validation failed. Conversion aborted.");
+                    return;
+                }
+
+                // Define the output PDF file path (same name with .pdf extension).
+                string outputPath = Path.ChangeExtension(inputPath, ".pdf");
+
+                // Save the diagram as PDF using the correct overload.
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
+                Console.WriteLine($"Diagram successfully converted and saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Performs basic structural validation on the loaded diagram.
+    /// Checks for presence of pages, shapes, and ensures shapes are not marked as deleted.
+    /// </summary>
+    /// <param name="diagram">The loaded Diagram instance.</param>
+    /// <returns>True if validation passes; otherwise false.</returns>
+    private static bool ValidateDiagram(Diagram diagram)
+    {
+        // Ensure the diagram has at least one page.
+        if (diagram.Pages == null || diagram.Pages.Count == 0)
+        {
+            Console.Error.WriteLine("Validation error: Diagram contains no pages.");
+            return false;
         }
 
-        bool isValid = true;
-
-        // Validate the diagram structure.
-        try
+        // Iterate through each page explicitly typing the loop variable.
+        foreach (Page page in diagram.Pages)
         {
-            // Ensure the diagram contains at least one page.
-            if (diagram.Pages == null || diagram.Pages.Count == 0)
+            // Ensure the page has at least one shape.
+            if (page.Shapes == null || page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine("Validation error: Diagram contains no pages.");
-                isValid = false;
+                Console.Error.WriteLine($"Validation warning: Page '{page.NameU}' contains no shapes.");
+                // Not a fatal error; continue checking other pages.
+                continue;
             }
-            else
+
+            // Iterate through each shape on the page.
+            foreach (Shape shape in page.Shapes)
             {
-                // Iterate over each page explicitly typed as Aspose.Diagram.Page.
-                foreach (Page page in diagram.Pages)
+                // Guard against null shape reference (should not happen).
+                if (shape == null)
                 {
-                    // Validate that the page has a Shapes collection.
-                    if (page.Shapes == null || page.Shapes.Count == 0)
-                    {
-                        Console.Error.WriteLine($"Validation warning: Page '{page.NameU}' contains no shapes.");
-                        // Not a fatal error; continue checking other pages.
-                    }
+                    continue;
+                }
 
-                    // Iterate over each shape on the page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape == null)
-                            continue; // Defensive check.
+                // Check if the shape is marked as deleted (Del cell equals BOOL.True).
+                if (shape.Del == BOOL.True)
+                {
+                    Console.Error.WriteLine($"Validation error: Shape ID {shape.ID} on page '{page.NameU}' is marked as deleted.");
+                    return false;
+                }
 
-                        // Check if the shape is marked as deleted (shape.Del is of type BOOL).
-                        if (shape.Del == BOOL.True)
-                        {
-                            Console.Error.WriteLine($"Validation error: Shape ID {shape.ID} on page '{page.NameU}' is marked as deleted.");
-                            isValid = false;
-                            // Continue checking other shapes to report all issues.
-                        }
-
-                        // Validate that width and height are positive numbers.
-                        if (shape.XForm != null && shape.XForm.Width != null && shape.XForm.Height != null)
-                        {
-                            double width = shape.XForm.Width.Value;
-                            double height = shape.XForm.Height.Value;
-                            if (width <= 0 || height <= 0)
-                            {
-                                Console.Error.WriteLine($"Validation error: Shape ID {shape.ID} on page '{page.NameU}' has non‑positive dimensions (Width={width}, Height={height}).");
-                                isValid = false;
-                            }
-                        }
-
-                        // Validate custom properties (Props collection contains Prop objects).
-                        if (shape.Props != null && shape.Props.Count > 0)
-                        {
-                            foreach (Prop prop in shape.Props)
-                            {
-                                if (prop == null)
-                                    continue;
-
-                                // Example check: property label (name) should not be empty.
-                                if (string.IsNullOrWhiteSpace(prop.Label?.Value))
-                                {
-                                    Console.Error.WriteLine($"Validation warning: Shape ID {shape.ID} has a custom property with an empty label.");
-                                }
-                            }
-                        }
-                    }
+                // Verify that the shape has an associated master (for non-group shapes).
+                if (shape.Master == null && shape.Type != TypeValue.Group)
+                {
+                    Console.Error.WriteLine($"Validation warning: Shape ID {shape.ID} on page '{page.NameU}' has no master.");
                 }
             }
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Validation failed with exception: {ex.Message}");
-            isValid = false;
-        }
 
-        if (!isValid)
-        {
-            Console.Error.WriteLine("Diagram validation failed. Conversion aborted.");
-            return;
-        }
-
-        // Conversion: save the diagram to PDF (example format).
-        try
-        {
-            // Ensure the output directory exists.
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            // Save using the appropriate SaveFileFormat.
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
-            Console.WriteLine($"Diagram successfully converted and saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
-        }
+        // If all checks passed, return true.
+        return true;
     }
 }

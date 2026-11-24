@@ -6,17 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 2)
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,45 +24,40 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page and one shape
+            // Ensure the diagram has at least one page and one shape
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Get the first page
-            Page page = diagram.Pages[0];
-
-            if (page.Shapes.Count == 0)
+            Page firstPage = diagram.Pages[0];
+            if (firstPage.Shapes.Count == 0)
             {
                 Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            // Get the first shape on the page
-            Shape shape = page.Shapes[0];
+            // Get the first shape on the first page
+            Shape shape = firstPage.Shapes[0];
 
-            // Create a new text field
+            // Create a new text field and assign a static string value
             Field field = new Field();
-
-            // Assign a static string value to the field (this will be displayed on the shape)
             field.Value.Val = "Custom Text";
 
             // Add the field to the shape's Fields collection
             shape.Fields.Add(field);
 
-            // Save the modified diagram to the specified output path in VSDX format
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors that occur during processing to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

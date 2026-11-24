@@ -7,82 +7,55 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input file path and shape name
-        if (args.Length < 2)
+        // Expect the Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeNameU>");
+            Console.Error.WriteLine("Please provide the path to the Visio file as a command‑line argument.");
             return;
         }
 
         string visioPath = args[0];
-        string targetShapeName = args[1];
 
-        // Guard: ensure the Visio file exists
+        // Guard: ensure the file exists before attempting to load.
         if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(visioPath);
 
-            // Flag to indicate if the shape was found
-            bool shapeFound = false;
+            bool buttonFound = false;
 
-            // Iterate through all pages and shapes to locate the target shape
+            // Iterate through all pages and shapes to locate a CommandButton ActiveX control.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Compare the shape's NameU with the provided name
-                    if (string.Equals(shape.NameU, targetShapeName, StringComparison.OrdinalIgnoreCase))
+                    // Check if the shape contains an ActiveX control.
+                    if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CommandButton)
                     {
-                        shapeFound = true;
+                        // Cast to the specific CommandButtonActiveXControl type.
+                        CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
 
-                        // Ensure the shape contains an ActiveX control
-                        if (shape.ActiveXControl == null)
-                        {
-                            Console.WriteLine($"Shape '{targetShapeName}' does not contain an ActiveX control.");
-                            return;
-                        }
-
-                        // Check if the ActiveX control is a CommandButton (Button) type
-                        if (shape.ActiveXControl.Type == ControlType.CommandButton)
-                        {
-                            // Cast to the specific CommandButtonActiveXControl class
-                            CommandButtonActiveXControl buttonCtrl = (CommandButtonActiveXControl)shape.ActiveXControl;
-
-                            // Read the Caption property
-                            string caption = buttonCtrl.Caption ?? string.Empty;
-
-                            // Output the caption value
-                            Console.WriteLine($"Caption of Button ActiveX control in shape '{targetShapeName}': {caption}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"ActiveX control in shape '{targetShapeName}' is not a CommandButton. Type: {shape.ActiveXControl.Type}");
-                        }
-
-                        // Since shape is found, exit loops
-                        break;
+                        // Output the Caption property of the button.
+                        Console.WriteLine($"Shape ID {shape.ID} - Button Caption: \"{button.Caption}\"");
+                        buttonFound = true;
                     }
                 }
-
-                if (shapeFound)
-                    break;
             }
 
-            if (!shapeFound)
+            if (!buttonFound)
             {
-                Console.WriteLine($"Shape with NameU '{targetShapeName}' was not found in the diagram.");
+                Console.WriteLine("No CommandButton ActiveX control was found in the diagram.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

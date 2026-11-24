@@ -6,35 +6,42 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate and retrieve input arguments
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-        string companyName = args.Length > 2 ? args[2] : "My Company";
+        // Expect three arguments: input diagram path, output diagram path, and the company name for the header.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <companyName>");
+            return;
+        }
 
-        // Guard: ensure the input diagram file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string companyName = args[2];
+
+        // Verify that the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Update the center header text with the provided company name.
+                diagram.HeaderFooter.HeaderCenter = companyName;
 
-            // Update the center header text with the custom company name
-            diagram.HeaderFooter.HeaderCenter = companyName;
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // Save the modified diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}' with updated header.");
+            Console.WriteLine("Header updated and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

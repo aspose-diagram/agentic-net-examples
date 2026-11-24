@@ -4,10 +4,10 @@ display_name: Working With Text Boxes
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,8 +63,7 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
 | `System.IO` | 35 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 10 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Linq` | 1 | LINQ queries on collections |
+| `Aspose.Diagram.Saving` | 8 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Text.Json` | 1 | JSON serialization |
 | `System.Collections.Generic` | 1 | List, Dictionary, HashSet |
 
@@ -106,7 +105,7 @@ class Program
 | [apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/apply-a-solid-background-color-to-a-shape-s-text-block-using-the-textbackgroundcolor-property.cs) | `Diagram`, `Pages`, `Save` | Apply a solid background color to a shape s text block using the textbackgroundcolor property |
 | [batch-process-multiple-visio-files-applying-a-30-degree-text-rotation-to-all-shape-texts.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/batch-process-multiple-visio-files-applying-a-30-degree-text-rotation-to-all-shape-texts.cs) | `Diagram`, `Pages`, `Save` | Batch process multiple visio files applying a 30 degree text rotation to all shape texts |
 | [calculate-the-bounding-box-of-a-shape-s-text-block-after-setting-custom-width-and-height-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/calculate-the-bounding-box-of-a-shape-s-text-block-after-setting-custom-width-and-height-values.cs) | `Diagram`, `Pages`, `Save` | Calculate the bounding box of a shape s text block after setting custom width and height values |
-| [combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs) | `Diagram`, `Page`, `Pages` | Combine text rotation and margin adjustments to create a diagonal text effect inside a shape |
+| [combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/combine-text-rotation-and-margin-adjustments-to-create-a-diagonal-text-effect-inside-a-shape.cs) | `Diagram`, `Pages`, `Save` | Combine text rotation and margin adjustments to create a diagonal text effect inside a shape |
 | [copy-text-block-formatting-from-one-shape-to-another-using-the-shape-textblock-property-clone.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/copy-text-block-formatting-from-one-shape-to-another-using-the-shape-textblock-property-clone.cs) | `Diagram`, `Pages`, `Save` | Copy text block formatting from one shape to another using the shape textblock property clone |
 | [define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/define-a-default-tab-stop-of-0-5-inches-to-control-spacing-of-tab-characters-in-shape-text.cs) | `Diagram`, `Pages`, `Save` | Define a default tab stop of 0 5 inches to control spacing of tab characters in shape text |
 | [detect-shapes-with-empty-text-blocks-and-assign-a-placeholder-background-color-for-visual-cues.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/detect-shapes-with-empty-text-blocks-and-assign-a-placeholder-background-color-for-visual-cues.cs) | `Diagram`, `Pages`, `Save` | Detect shapes with empty text blocks and assign a placeholder background color for visual cues |
@@ -129,7 +128,7 @@ class Program
 | [save-the-modified-visio-diagram-after-applying-all-text-formatting-changes-to-a-new-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/save-the-modified-visio-diagram-after-applying-all-text-formatting-changes-to-a-new-file.cs) | `Diagram`, `Pages`, `Save` | Save the modified visio diagram after applying all text formatting changes to a new file |
 | [serialize-a-shape-s-textblock-properties-to-json-for-configuration-backup-and-reuse.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/serialize-a-shape-s-textblock-properties-to-json-for-configuration-backup-and-reuse.cs) | `Diagram`, `Pages`, `Shapes` | Serialize a shape s textblock properties to json for configuration backup and reuse |
 | [set-the-text-block-width-and-height-to-match-the-shape-s-dimensions-for-full-coverage.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/set-the-text-block-width-and-height-to-match-the-shape-s-dimensions-for-full-coverage.cs) | `Diagram`, `Pages`, `Save` | Set the text block width and height to match the shape s dimensions for full coverage |
-| [use-conditional-logic-to-apply-a-transparent-background-only-to-shapes-containing-warning-messages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/use-conditional-logic-to-apply-a-transparent-background-only-to-shapes-containing-warning-messages.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Use conditional logic to apply a transparent background only to shapes containing warning messages |
+| [use-conditional-logic-to-apply-a-transparent-background-only-to-shapes-containing-warning-messages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/use-conditional-logic-to-apply-a-transparent-background-only-to-shapes-containing-warning-messages.cs) | `Diagram`, `Pages`, `Save` | Use conditional logic to apply a transparent background only to shapes containing warning messages |
 | [use-txtpin-to-anchor-shape-text-at-the-exact-center-point-of-the-shape-s-geometry.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/use-txtpin-to-anchor-shape-text-at-the-exact-center-point-of-the-shape-s-geometry.cs) | `Diagram`, `Pages`, `Save` | Use txtpin to anchor shape text at the exact center point of the shape s geometry |
 | [validate-that-each-shape-s-text-background-color-meets-a-predefined-corporate-color-palette.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-text-boxes/validate-that-each-shape-s-text-background-color-meets-a-predefined-corporate-color-palette.cs) | `Diagram`, `Pages`, `Shapes` | Validate that each shape s text background color meets a predefined corporate color palette |
 
@@ -218,9 +217,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 ## Key API Surface
 
 - `Diagram`
-- `Page`
 - `Pages`
-- `PdfSaveOptions`
 - `Save`
 - `Shapes`
 - `diagram`
@@ -239,7 +236,7 @@ Frequently asked questions about **Working With Text Boxes** in **Aspose.Diagram
 
 **Q: How do I get started with Working With Text Boxes in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -270,4 +267,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

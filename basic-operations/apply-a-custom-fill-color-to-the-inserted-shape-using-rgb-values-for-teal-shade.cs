@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path and output file path as arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -16,40 +17,51 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the existing Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Get the first page (or create one if the diagram has no pages).
+                Page page;
+                if (diagram.Pages.Count > 0)
+                {
+                    page = diagram.Pages[0];
+                }
+                else
+                {
+                    // Adding a new empty page.
+                    page = new Page();
+                    diagram.Pages.Add(page);
+                }
 
-            // Retrieve the first page (assumes at least one page exists)
-            Page page = diagram.Pages[0];
+                // Insert a new rectangle shape at position (2,2) using the built‑in "Rectangle" master.
+                // The fourth parameter (isCalculate) must be a bool.
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
 
-            // Insert a rectangle shape at position (1,1) using the "Rectangle" master
-            // AddShape returns the shape ID (long)
-            long shapeId = page.AddShape(1.0, 1.0, "Rectangle");
+                // Retrieve the shape object for further modifications.
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-            // Retrieve the newly added shape using its ID
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+                // Ensure the shape has a solid fill pattern (1 = solid).
+                shape.Fill.FillPattern.Value = 1;
 
-            // Set solid fill pattern
-            shape.Fill.FillPattern.Value = 1; // 1 = solid
+                // Apply the teal color (RGB 0,128,128) using a hex string.
+                shape.Fill.FillForegnd.Value = "#008080";
 
-            // Apply teal fill color using hex representation of RGB(0,128,128)
-            shape.Fill.FillForegnd.Value = "#008080";
-
-            // Save the modified diagram to the specified output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -1,29 +1,31 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and audit log file path
-        if (args.Length < 2)
+        // Validate input arguments: input Visio, output Visio, audit log file
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <auditLogPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <auditLogPath>");
             return;
         }
 
-        string diagramPath = args[0];
-        string auditLogPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string auditLogPath = args[2];
 
-        // Guard: ensure the input diagram file exists
-        if (!File.Exists(diagramPath))
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure the directory for the audit log exists
+        // Guard: ensure directory for audit log exists (create if necessary)
         try
         {
             string auditDir = Path.GetDirectoryName(auditLogPath);
@@ -34,100 +36,47 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error creating audit log directory: {ex.Message}");
+            Console.Error.WriteLine($"Failed to prepare audit log directory: {ex.Message}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate over all pages and shapes to configure the deletion event
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect shape IDs to avoid modifying collection while iterating
-                var shapeIds = new System.Collections.Generic.List<long>();
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    shapeIds.Add(shape.ID);
-                }
+                    Page page = diagram.Pages[pageIndex];
 
-                foreach (long shapeId in shapeIds)
-                {
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape == null) continue;
-
-                    // Add a user-defined cell to store deletion timestamp (if not already present)
-                    bool hasUserCell = false;
-                    foreach (User userCell in shape.Users)
+                    // Iterate through all shapes on the page
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        if (userCell.Name == "DeletedTimestamp")
-                        {
-                            hasUserCell = true;
-                            break;
-                        }
-                    }
+                        Shape shape = page.Shapes[shapeIndex];
 
-                    if (!hasUserCell)
-                    {
-                        User user = new User();
-                        user.Name = "DeletedTimestamp";
-                        user.Value.Val = ""; // initialize empty
-                        shape.Users.Add(user);
-                    }
+                        // Set an event formula that would be evaluated on shape deletion.
+                        // The Visio EventShapeDeleted cell does not exist in Aspose.Diagram;
+                        // EventDrop is used as the closest substitute.
+                        shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"LogDeletion\")";
 
-                    // Set the EventDrop formula to capture deletion timestamp
-                    // The formula uses SETF to assign NOW() to the user cell when the shape is deleted
-                    shape.Event.EventDrop.Ufe.F = "SETF(@User.DeletedTimestamp, NOW())";
-                }
-            }
-
-            // Save the modified diagram (overwrites the original file)
-            diagram.Save(diagramPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
-        }
-
-        // After saving, scan for shapes marked as deleted and log their timestamps
-        try
-        {
-            // Reload the diagram to reflect any deletions that may have occurred
-            Diagram diagram = new Diagram(diagramPath);
-            using (StreamWriter logWriter = new StreamWriter(auditLogPath, append: true))
-            {
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Check if the shape is marked as deleted
+                        // If the shape is already marked as deleted, log the timestamp now.
                         if (shape.Del == BOOL.True)
                         {
-                            // Retrieve the timestamp from the user-defined cell
-                            string timestamp = "";
-                            foreach (User userCell in shape.Users)
-                            {
-                                if (userCell.Name == "DeletedTimestamp")
-                                {
-                                    timestamp = userCell.Value.Val;
-                                    break;
-                                }
-                            }
-
-                            // Write an audit entry
-                            string entry = $"ShapeID={shape.ID}, PageID={page.ID}, DeletedAt={timestamp}";
-                            logWriter.WriteLine(entry);
+                            string logEntry = $"{DateTime.UtcNow:O} - Shape ID {shape.ID} was deleted.";
+                            File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
                         }
                     }
                 }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error writing audit log: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

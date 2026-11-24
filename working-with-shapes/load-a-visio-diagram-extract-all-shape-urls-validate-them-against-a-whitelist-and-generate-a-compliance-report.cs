@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
@@ -9,131 +8,90 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <WhitelistFilePath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
         string visioPath = args[0];
-        string whitelistPath = args[1];
 
-        // Guard: ensure the Visio file exists.
+        // Guard against missing input file.
         if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Visio file not found: {visioPath}");
+            Console.Error.WriteLine($"Error: File not found – {visioPath}");
             return;
         }
 
-        // Guard: ensure the whitelist file exists.
-        if (!File.Exists(whitelistPath))
+        // Define a simple whitelist of allowed URL prefixes.
+        // In a real scenario this could be read from a configuration file.
+        string[] whitelist = new string[]
         {
-            Console.Error.WriteLine($"Whitelist file not found: {whitelistPath}");
-            return;
-        }
+            "https://trusted.com",
+            "http://internal.local"
+        };
 
-        // Load whitelist URLs (one per line, ignore empty lines and whitespace).
-        List<string> whitelist = new List<string>();
-        try
-        {
-            foreach (string line in File.ReadAllLines(whitelistPath))
-            {
-                string trimmed = line.Trim();
-                if (!string.IsNullOrEmpty(trimmed))
-                {
-                    whitelist.Add(trimmed);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error reading whitelist file: {ex.Message}");
-            return;
-        }
-
-        // Prepare a StringBuilder for the compliance report.
-        StringBuilder reportBuilder = new StringBuilder();
-        reportBuilder.AppendLine("Visio URL Compliance Report");
-        reportBuilder.AppendLine($"Diagram: {Path.GetFileName(visioPath)}");
-        reportBuilder.AppendLine($"Generated: {DateTime.Now}");
-        reportBuilder.AppendLine();
-        reportBuilder.AppendLine("ShapeID\tPageName\tShapeName\tURL\tStatus");
-
-        int totalUrls = 0;
-        int compliantCount = 0;
-        int nonCompliantCount = 0;
+        // Prepare a list to hold report lines.
+        List<string> reportLines = new List<string>();
+        reportLines.Add("Shape URL Compliance Report");
+        reportLines.Add($"Source Diagram: {visioPath}");
+        reportLines.Add($"Generated: {DateTime.Now}");
+        reportLines.Add(string.Empty);
+        reportLines.Add("PageName,ShapeID,URL,Compliant");
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API.
+            // Load the Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(visioPath))
             {
-                // Iterate through each page in the diagram.
-                for (int p = 0; p < diagram.Pages.Count; p++)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[p];
-                    string pageName = page.NameU;
-
-                    // Iterate through each shape on the current page.
-                    for (int s = 0; s < page.Shapes.Count; s++)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[s];
-
                         // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve shape name (fallback to empty string if null).
-                        string shapeName = shape.NameU ?? string.Empty;
-
-                        // Guard: ensure the Hyperlinks collection is not null.
+                        // Ensure the shape has a Hyperlinks collection.
                         if (shape.Hyperlinks == null)
                             continue;
 
                         // Iterate through each hyperlink attached to the shape.
-                        for (int h = 0; h < shape.Hyperlinks.Count; h++)
+                        foreach (Hyperlink link in shape.Hyperlinks)
                         {
-                            Hyperlink hyperlink = shape.Hyperlinks[h];
+                            // Read the hyperlink address (URL).
+                            string url = link.Address.Value;
 
-                            // Read the address of the hyperlink (cell‑based property).
-                            string url = hyperlink.Address?.Value ?? string.Empty;
-                            if (string.IsNullOrWhiteSpace(url))
-                                continue; // Skip empty URLs.
+                            // Determine compliance by checking the whitelist.
+                            bool isCompliant = false;
+                            foreach (string allowedPrefix in whitelist)
+                            {
+                                if (!string.IsNullOrEmpty(url) &&
+                                    url.StartsWith(allowedPrefix, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    isCompliant = true;
+                                    break;
+                                }
+                            }
 
-                            totalUrls++;
-
-                            // Validate URL against the whitelist (case‑insensitive).
-                            bool isCompliant = whitelist.Exists(w => string.Equals(w, url, StringComparison.OrdinalIgnoreCase));
-
-                            if (isCompliant)
-                                compliantCount++;
-                            else
-                                nonCompliantCount++;
-
-                            string status = isCompliant ? "Compliant" : "Non‑Compliant";
-
-                            // Append a line to the report.
-                            reportBuilder.AppendLine($"{shape.ID}\t{pageName}\t{shapeName}\t{url}\t{status}");
+                            // Record the result.
+                            string line = $"{page.Name},{shape.ID},{url},{(isCompliant ? "Yes" : "No")}";
+                            reportLines.Add(line);
                         }
                     }
                 }
             }
 
-            // Append summary statistics.
-            reportBuilder.AppendLine();
-            reportBuilder.AppendLine($"Total URLs examined: {totalUrls}");
-            reportBuilder.AppendLine($"Compliant URLs: {compliantCount}");
-            reportBuilder.AppendLine($"Non‑Compliant URLs: {nonCompliantCount}");
-
-            // Write the report to a file in the same directory as the Visio file.
+            // Write the compliance report to a text file beside the source diagram.
             string reportPath = Path.Combine(Path.GetDirectoryName(visioPath) ?? string.Empty, "ComplianceReport.txt");
-            File.WriteAllText(reportPath, reportBuilder.ToString());
-
+            File.WriteAllLines(reportPath, reportLines);
             Console.WriteLine($"Compliance report generated: {reportPath}");
         }
         catch (Exception ex)
         {
-            // Catch any Aspose.Diagram or I/O exceptions and report them.
+            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

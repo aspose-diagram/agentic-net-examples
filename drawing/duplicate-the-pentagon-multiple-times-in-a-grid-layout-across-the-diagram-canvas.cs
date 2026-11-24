@@ -1,84 +1,103 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Output file path
-        string outputPath = "PentagonGrid.vsdx";
-
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Add a single page to the diagram
-            diagram.Pages.Add(new Page());
-            Page page = diagram.Pages[0];
-
-            // Grid configuration
-            int rows = 5;               // number of rows
-            int cols = 5;               // number of columns
-            double shapeWidth = 1.0;    // width of each pentagon (in inches)
-            double shapeHeight = 1.0;   // height of each pentagon (in inches)
-            double spacingX = 0.5;      // horizontal spacing between shapes
-            double spacingY = 0.5;      // vertical spacing between shapes
-
-            // Radius for the pentagon (inscribed circle)
-            double radius = Math.Min(shapeWidth, shapeHeight) / 2.0;
-
-            // Loop through grid positions and draw a pentagon at each cell
-            for (int row = 0; row < rows; row++)
+            // Load the existing diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                for (int col = 0; col < cols; col++)
+                // Ensure there is at least one page.
+                if (diagram.Pages.Count == 0)
                 {
-                    // Calculate the center point for the current pentagon
-                    double centerX = col * (shapeWidth + spacingX) + shapeWidth / 2.0;
-                    double centerY = row * (shapeHeight + spacingY) + shapeHeight / 2.0;
-
-                    // Generate the five vertices of the pentagon
-                    // The points are stored in a flat double array: x1, y1, x2, y2, ..., xn, yn
-                    double[] points = new double[12]; // 5 vertices + closing vertex = 6 points * 2 coordinates
-                    double startAngle = -Math.PI / 2; // start at the top vertex
-                    for (int i = 0; i < 5; i++)
-                    {
-                        double angle = startAngle + i * 2 * Math.PI / 5;
-                        double x = centerX + radius * Math.Cos(angle);
-                        double y = centerY + radius * Math.Sin(angle);
-                        points[i * 2] = x;
-                        points[i * 2 + 1] = y;
-                    }
-                    // Close the polygon by repeating the first vertex
-                    points[10] = points[0];
-                    points[11] = points[1];
-
-                    // Draw the pentagon shape on the page
-                    // DrawPolyline returns the shape ID (long)
-                    long shapeId = page.DrawPolyline(points);
-
-                    // Optional: retrieve the shape to set additional formatting (e.g., line color)
-                    // Shape pentagon = page.Shapes.GetShape(shapeId);
-                    // pentagon.Line.LineColor.Value = "#0000FF"; // blue line
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
-            }
 
-            // Save the diagram to VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Work with the first page.
+                Page page = diagram.Pages[0];
+
+                // Define the base pentagon points (centered at origin, size 1.0 units).
+                // Use Aspose.Drawing.PointF as required by DrawPolyline.
+                PointF[] basePentagon = new PointF[]
+                {
+                    new PointF(0f, -1f),
+                    new PointF(0.9511f, -0.3090f),
+                    new PointF(0.5878f, 0.8090f),
+                    new PointF(-0.5878f, 0.8090f),
+                    new PointF(-0.9511f, -0.3090f)
+                };
+
+                // Grid configuration.
+                int rows = 5;               // Number of rows.
+                int cols = 5;               // Number of columns.
+                float spacingX = 3.0f;      // Horizontal distance between pentagons.
+                float spacingY = 3.0f;      // Vertical distance between pentagons.
+
+                // Starting offset (top‑left corner of the grid).
+                float startX = 2.0f;
+                float startY = 2.0f;
+
+                // Duplicate the pentagon across the grid.
+                for (int row = 0; row < rows; row++)
+                {
+                    for (int col = 0; col < cols; col++)
+                    {
+                        // Compute translation for the current cell.
+                        float offsetX = startX + col * spacingX;
+                        float offsetY = startY + row * spacingY;
+
+                        // Create translated points for this instance.
+                        PointF[] translated = new PointF[basePentagon.Length];
+                        for (int i = 0; i < basePentagon.Length; i++)
+                        {
+                            translated[i] = new PointF(
+                                basePentagon[i].X + offsetX,
+                                basePentagon[i].Y + offsetY);
+                        }
+
+                        // Convert PointF array to a flat double array as required by DrawPolyline.
+                        double[] polylineCoords = new double[translated.Length * 2];
+                        for (int i = 0; i < translated.Length; i++)
+                        {
+                            polylineCoords[i * 2] = translated[i].X;
+                            polylineCoords[i * 2 + 1] = translated[i].Y;
+                        }
+
+                        // Draw the pentagon on the page using the correct overload.
+                        page.DrawPolyline(polylineCoords);
+                    }
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

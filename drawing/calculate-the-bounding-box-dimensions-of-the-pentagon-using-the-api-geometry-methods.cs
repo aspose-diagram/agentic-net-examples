@@ -6,128 +6,119 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Create a new empty diagram
-        Diagram diagram = null;
-        try
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            diagram = new Diagram();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error creating diagram: {ex.Message}");
+            Console.Error.WriteLine("Usage: Program <input-visio-file>");
             return;
         }
 
-        // Use the first (default) page; a new Diagram always contains one page
-        Page page = null;
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
         try
         {
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("Diagram has no pages.");
-                return;
-            }
-            page = diagram.Pages[0];
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error accessing page: {ex.Message}");
-            return;
-        }
+                bool pentagonFound = false;
 
-        // Define pentagon vertices (regular pentagon centered at (0,0) with radius 2 inches)
-        double radius = 2.0;
-        double centerX = 0.0;
-        double centerY = 0.0;
-        double angleOffset = -Math.PI / 2; // start at top vertex
-
-        double[] coords = new double[12]; // 6 points (including closing) * (x,y)
-        for (int i = 0; i < 5; i++)
-        {
-            double angle = angleOffset + i * 2 * Math.PI / 5;
-            double x = centerX + radius * Math.Cos(angle);
-            double y = centerY + radius * Math.Sin(angle);
-            coords[i * 2] = x;
-            coords[i * 2 + 1] = y;
-        }
-        // Close the polygon by repeating the first point
-        coords[10] = coords[0];
-        coords[11] = coords[1];
-
-        // Draw the pentagon on the page
-        long pentagonId = 0;
-        try
-        {
-            pentagonId = page.DrawPolyline(coords);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error drawing pentagon: {ex.Message}");
-            return;
-        }
-
-        // Retrieve the shape object for the pentagon
-        Shape pentagonShape = null;
-        try
-        {
-            pentagonShape = page.Shapes.GetShape(pentagonId);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error retrieving pentagon shape: {ex.Message}");
-            return;
-        }
-
-        // Calculate bounding box using geometry data
-        double minX = double.MaxValue;
-        double maxX = double.MinValue;
-        double minY = double.MaxValue;
-        double maxY = double.MinValue;
-
-        try
-        {
-            foreach (Geom geom in pentagonShape.Geoms)
-            {
-                // Each Geom contains a collection of geometry commands (MoveTo, LineTo, etc.)
-                foreach (object segment in geom.CoordinateCol)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    if (segment is MoveTo move)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        double x = move.X.Value;
-                        double y = move.Y.Value;
-                        if (x < minX) minX = x;
-                        if (x > maxX) maxX = x;
-                        if (y < minY) minY = y;
-                        if (y > maxY) maxY = y;
+                        // Check if the shape uses the "Pentagon" master
+                        if (shape.Master != null && shape.Master.Name == "Pentagon")
+                        {
+                            pentagonFound = true;
+
+                            // Initialize bounding box extremes
+                            double minX = double.MaxValue;
+                            double minY = double.MaxValue;
+                            double maxX = double.MinValue;
+                            double maxY = double.MinValue;
+
+                            // Iterate over all geometry sections of the shape
+                            foreach (Geom geom in shape.Geoms)
+                            {
+                                // Each coordinate collection holds geometry segment objects
+                                foreach (object coord in geom.CoordinateCol)
+                                {
+                                    double x = 0;
+                                    double y = 0;
+
+                                    // Extract X and Y values based on the concrete segment type
+                                    if (coord is MoveTo moveTo)
+                                    {
+                                        x = moveTo.X.Value;
+                                        y = moveTo.Y.Value;
+                                    }
+                                    else if (coord is LineTo lineTo)
+                                    {
+                                        x = lineTo.X.Value;
+                                        y = lineTo.Y.Value;
+                                    }
+                                    else if (coord is ArcTo arcTo)
+                                    {
+                                        x = arcTo.X.Value;
+                                        y = arcTo.Y.Value;
+                                    }
+                                    else if (coord is EllipticalArcTo ellArcTo)
+                                    {
+                                        x = ellArcTo.X.Value;
+                                        y = ellArcTo.Y.Value;
+                                    }
+                                    // Other segment types (e.g., Spline, Bezier) can be added similarly if needed
+
+                                    // Update bounding box extremes
+                                    if (x < minX) minX = x;
+                                    if (x > maxX) maxX = x;
+                                    if (y < minY) minY = y;
+                                    if (y > maxY) maxY = y;
+                                }
+                            }
+
+                            // Calculate width and height of the bounding box
+                            double width = maxX - minX;
+                            double height = maxY - minY;
+
+                            // Output the results
+                            Console.WriteLine($"Pentagon found on page ID {page.ID} (Name: {page.Name}).");
+                            Console.WriteLine("Bounding Box:");
+                            Console.WriteLine($"  MinX: {minX}");
+                            Console.WriteLine($"  MaxX: {maxX}");
+                            Console.WriteLine($"  MinY: {minY}");
+                            Console.WriteLine($"  MaxY: {maxY}");
+                            Console.WriteLine($"  Width : {width}");
+                            Console.WriteLine($"  Height: {height}");
+
+                            // Assuming only one pentagon is needed; break out of loops
+                            break;
+                        }
                     }
-                    else if (segment is LineTo line)
-                    {
-                        double x = line.X.Value;
-                        double y = line.Y.Value;
-                        if (x < minX) minX = x;
-                        if (x > maxX) maxX = x;
-                        if (y < minY) minY = y;
-                        if (y > maxY) maxY = y;
-                    }
-                    // Other segment types (ArcTo, etc.) are not used for this pentagon
+
+                    if (pentagonFound)
+                        break;
+                }
+
+                if (!pentagonFound)
+                {
+                    Console.WriteLine("No shape with master name 'Pentagon' was found in the diagram.");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error calculating bounding box: {ex.Message}");
-            return;
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        double width = maxX - minX;
-        double height = maxY - minY;
-
-        Console.WriteLine("Pentagon Bounding Box:");
-        Console.WriteLine($"  MinX: {minX}");
-        Console.WriteLine($"  MaxX: {maxX}");
-        Console.WriteLine($"  MinY: {minY}");
-        Console.WriteLine($"  MaxY: {maxY}");
-        Console.WriteLine($"  Width: {width}");
-        Console.WriteLine($"  Height: {height}");
     }
 }

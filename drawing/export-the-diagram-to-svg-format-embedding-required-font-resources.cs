@@ -19,60 +19,59 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure the output directory exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
         try
         {
-            // Configure a fallback font before loading the diagram.
-            FontConfigs.DefaultFontName = "Arial";
-
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Optional: enumerate fonts used in the diagram and warn about missing fonts.
-            InstalledFontCollection installedFonts = new InstalledFontCollection();
-            foreach (Font diagramFont in diagram.Fonts)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                bool isInstalled = installedFonts.Families
-                    .Any(f => string.Equals(f.Name, diagramFont.Name, StringComparison.OrdinalIgnoreCase));
+                // ------------------------------------------------------------
+                // Validate fonts used in the diagram against installed system fonts.
+                // ------------------------------------------------------------
+                InstalledFontCollection installedFonts = new InstalledFontCollection();
 
-                if (!isInstalled)
+                // Iterate over each font referenced by the diagram.
+                foreach (Font font in diagram.Fonts)
                 {
-                    Console.Error.WriteLine($"Warning: Font \"{diagramFont.Name}\" used in diagram is not installed. Fallback will be applied.");
+                    bool isInstalled = installedFonts.Families
+                        .Any(f => string.Equals(f.Name, font.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (!isInstalled)
+                    {
+                        Console.WriteLine($"Warning: Font \"{font.Name}\" is not installed on this system.");
+                    }
                 }
+
+                // Set a fallback default font for any missing fonts.
+                // This does not embed fonts but ensures a substitute is used.
+                FontConfigs.DefaultFontName = "Arial";
+
+                // ------------------------------------------------------------
+                // Configure SVG save options.
+                // ------------------------------------------------------------
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                svgOptions.SaveFormat = SaveFileFormat.Svg;          // Specify SVG format.
+                svgOptions.SVGFitToViewPort = true;                // Fit SVG to viewport.
+                svgOptions.ExportHiddenPage = false;               // Do not export hidden pages.
+                svgOptions.ExportGuideShapes = false;              // Do not export guide shapes.
+                svgOptions.IsExportComments = false;               // Do not export comments.
+
+                // ------------------------------------------------------------
+                // Export the diagram to SVG.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, svgOptions);
+                Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
             }
-
-            // Prepare SVG save options with font embedding enabled where possible.
-            SVGSaveOptions svgOptions = new SVGSaveOptions
-            {
-                ExportHiddenPage = false,          // Do not export hidden pages.
-                ExportGuideShapes = false,         // Do not export guide shapes.
-                IsExportComments = false,          // Do not export comments.
-                SVGFitToViewPort = true,           // Fit SVG to viewport.
-                ExportElementAsRectTag = true,     // Export elements as <rect> tags.
-                SaveFormat = SaveFileFormat.Svg   // Specify SVG format.
-            };
-
-            // Save the diagram as SVG.
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error during SVG export: {ex.Message}");
         }
     }

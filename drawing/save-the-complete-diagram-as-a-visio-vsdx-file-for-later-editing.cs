@@ -1,42 +1,35 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output VSDX file path
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVsdxPath>");
-            return;
-        }
+        // Determine input and output file paths from command‑line arguments or use defaults.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists
+        // Guard: ensure the source Visio file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified input file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Save the diagram as a VSDX file for later editing
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram successfully saved to: {outputPath}");
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Save the complete diagram as a VSDX file for later editing.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram successfully saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Report any errors that occur during loading or saving.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

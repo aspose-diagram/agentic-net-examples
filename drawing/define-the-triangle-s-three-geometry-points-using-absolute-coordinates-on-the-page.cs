@@ -8,43 +8,48 @@ class Program
     static void Main(string[] args)
     {
         // Define output file path
-        string outputPath = "Triangle.vsdx";
+        string outputPath = "TriangleDiagram.vsdx";
+
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
             // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
-
-            // Define triangle vertices using absolute coordinates (in inches)
-            // Points: (2,2), (5,2), (3.5,5) and close the shape by returning to the first point
-            double[] trianglePoints = new double[]
+            using (Diagram diagram = new Diagram())
             {
-                2.0, 2.0,   // Vertex 1
-                5.0, 2.0,   // Vertex 2
-                3.5, 5.0,   // Vertex 3
-                2.0, 2.0    // Close the polygon
-            };
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Draw the triangle as a polyline shape on the page
-            long shapeId = page.DrawPolyline(trianglePoints);
+                // Define absolute coordinates for the triangle vertices
+                // Example points: (1,1), (5,1), (3,4)
+                double x1 = 1.0, y1 = 1.0;
+                double x2 = 5.0, y2 = 1.0;
+                double x3 = 3.0, y3 = 4.0;
 
-            // Optionally, retrieve the shape to modify its properties (e.g., fill color)
-            Shape triangleShape = page.Shapes.GetShape(shapeId);
-            // Set fill color to light blue (hex format)
-            triangleShape.Fill.FillForegnd.Value = "#ADD8E6";
-            // Set line color to black
-            triangleShape.Line.LineColor.Value = "#000000";
+                // Draw the triangle using a closed polyline (repeat first point at the end)
+                double[] points = new double[]
+                {
+                    x1, y1,
+                    x2, y2,
+                    x3, y3,
+                    x1, y1 // close the shape
+                };
+                page.DrawPolyline(points);
 
-            // Save the diagram to a VSDX file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Triangle diagram saved successfully to '{outputPath}'.");
+                // Save the diagram to VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -19,64 +19,45 @@ class Program
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Load the existing Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("Error: The diagram contains no pages.");
-                return;
+                // Get the active page where the pentagon will be drawn.
+                Page page = diagram.ActivePage;
+
+                // Define pentagon vertices (centered at (5,5) with radius 2).
+                // The points are specified as a flat double array: {x1, y1, x2, y2, ..., xn, yn, x1, y1}
+                double[] pentagonPoints = new double[]
+                {
+                    5.0, 3.0,          // Vertex 1 (top)
+                    6.9022, 4.3820,   // Vertex 2
+                    6.1756, 6.6180,   // Vertex 3
+                    3.8244, 6.6180,   // Vertex 4
+                    3.0978, 4.3820,   // Vertex 5
+                    5.0, 3.0           // Close the shape by returning to Vertex 1
+                };
+
+                // Draw the pentagon on the page. The method returns the shape ID (long) but it is not needed here.
+                long pentagonShapeId = page.DrawPolyline(pentagonPoints);
+
+                // Optionally, you could modify the newly created shape (e.g., set fill color, line weight) using the shape ID.
+                // Shape pentagonShape = page.Shapes.GetShape(pentagonShapeId);
+                // pentagonShape.Line.LineWeight.Value = 0.02; // Example: set line weight.
+
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Get the first page where the pentagon will be inserted.
-            Page page = diagram.Pages[0];
-
-            // Define the vertices of a pentagon (in inches). The first point is repeated at the end to close the shape.
-            double[] pentagonPoints = new double[]
-            {
-                5.0, 3.0,   // Point 1
-                7.0, 4.5,   // Point 2
-                6.5, 6.5,   // Point 3
-                3.5, 6.5,   // Point 4
-                3.0, 4.5,   // Point 5
-                5.0, 3.0    // Close back to Point 1
-            };
-
-            // Draw the pentagon on the page. The method returns the shape ID (long).
-            long shapeId = page.DrawPolyline(pentagonPoints);
-
-            // Retrieve the newly created shape to modify its properties.
-            Shape pentagonShape = page.Shapes.GetShape((int)shapeId);
-            if (pentagonShape != null)
-            {
-                // Set fill foreground color (hex string). Values are in the format "#RRGGBB".
-                pentagonShape.Fill.FillForegnd.Value = "#D3D3D3"; // Light gray
-
-                // Ensure the shape is fully opaque (0.0 = opaque, 1.0 = transparent).
-                pentagonShape.Fill.FillForegndTrans.Value = 0.0;
-            }
-
-            // Ensure the output directory exists.
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            // Save the modified diagram back to a Visio file (VSDX format).
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Capture any Aspose.Diagram or I/O errors and write them to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

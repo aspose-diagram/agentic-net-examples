@@ -7,74 +7,70 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output PNG thumbnail path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPngFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram contains at least one page.
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("Error: The diagram does not contain any pages.");
-                return;
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Access the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve the page width (in inches)
+                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+
+                // Desired thumbnail width in pixels
+                const int targetPixelWidth = 100;
+
+                // Default DPI for image export (Aspose uses 96 DPI if not set)
+                const float defaultDpi = 96f;
+
+                // Calculate scaling factor to achieve the target pixel width
+                // Scale = targetPixels / (pageWidthInches * DPI)
+                float scale = (float)(targetPixelWidth / (pageWidthInches * defaultDpi));
+
+                // Configure image save options for PNG output
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export only the first page
+                    PageIndex = 0,
+                    PageCount = 1,
+                    // Apply the calculated scaling factor
+                    Scale = scale
+                };
+
+                // Save the thumbnail PNG
+                diagram.Save(outputPath, saveOptions);
+                Console.WriteLine($"Thumbnail saved to: {outputPath}");
             }
-
-            // Access the first page (index 0).
-            Page page = diagram.Pages[0];
-
-            // Retrieve the page width in inches.
-            double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
-
-            // Define the desired thumbnail width in pixels.
-            const int targetWidthPixels = 100;
-
-            // Use a default resolution (dots per inch). 96 DPI is common.
-            const float resolutionDpi = 96f;
-
-            // Calculate the scaling factor so that the rendered width equals the target width.
-            // Scale = targetPixels / (pageWidthInches * DPI)
-            float scale = (float)(targetWidthPixels / (pageWidthInches * resolutionDpi));
-
-            // Configure image save options for PNG output.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                // Export only the first page.
-                PageIndex = 0,
-                PageCount = 1,
-
-                // Set the resolution (optional, kept at default 96 DPI).
-                Resolution = resolutionDpi,
-
-                // Apply the calculated scaling factor.
-                Scale = scale
-            };
-
-            // Save the thumbnail PNG.
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Thumbnail saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

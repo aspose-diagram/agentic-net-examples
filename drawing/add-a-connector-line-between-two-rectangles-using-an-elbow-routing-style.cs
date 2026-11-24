@@ -8,64 +8,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define output file path
-        string outputPath = "output.vsdx";
-
-        // Ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Create a new blank diagram
-            Diagram diagram = new Diagram();
+            // Load the existing Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Get the active page where shapes will be added.
+                Page page = diagram.ActivePage;
 
-            // Get the first (active) page
-            Page page = diagram.Pages[0];
+                // Add the first rectangle shape.
+                // Parameters: pinX, pinY, width, height, master name, isCalculate.
+                long rect1Id = page.AddShape(1.0, 5.0, 2.0, 1.0, "Rectangle", false);
+                Shape rect1 = page.Shapes.GetShape(rect1Id);
 
-            // Add first rectangle shape
-            // Parameters: pinX, pinY, width, height, masterName, isCalculate
-            long rect1Id = page.AddShape(2.0, 5.0, 2.0, 1.0, "Rectangle", false);
-            Shape rect1 = page.Shapes.GetShape(rect1Id);
-            // Optional: set some text on the rectangle
-            rect1.Text.Value.Clear();
-            rect1.Text.Value.Add(new Txt("Rect 1"));
+                // Add the second rectangle shape.
+                long rect2Id = page.AddShape(5.0, 5.0, 2.0, 1.0, "Rectangle", false);
+                Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-            // Add second rectangle shape
-            long rect2Id = page.AddShape(8.0, 5.0, 2.0, 1.0, "Rectangle", false);
-            Shape rect2 = page.Shapes.GetShape(rect2Id);
-            rect2.Text.Value.Clear();
-            rect2.Text.Value.Add(new Txt("Rect 2"));
+                // Add a dynamic connector shape.
+                // Using the overload that takes pinX, pinY, master name, isCalculate.
+                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Add a dynamic connector shape (initially placed at origin)
-            long connectorId = page.AddShape(0.0, 0.0, 0.0, 0.0, "Dynamic connector", false);
-            Shape connector = page.Shapes.GetShape(connectorId);
+                // Set the connector routing style to elbow (right‑angle).
+                connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
 
-            // Set connector routing style to elbow (right-angle)
-            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-            // Also set the connector type to right-angle lines
-            connector.SetConnectorsType(ConnectorsTypeValue.RightAngle);
+                // Connect the two rectangles via the connector.
+                // Connect from the right side of the first rectangle to the left side of the second.
+                page.ConnectShapesViaConnector(
+                    rect1Id,
+                    ConnectionPointPlace.Right,
+                    rect2Id,
+                    ConnectionPointPlace.Left,
+                    connectorId);
 
-            // Connect the two rectangles via the connector
-            // Use right side of first rectangle and left side of second rectangle
-            page.ConnectShapesViaConnector(
-                rect1Id,
-                ConnectionPointPlace.Right,
-                rect2Id,
-                ConnectionPointPlace.Left,
-                connectorId);
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // Save the diagram to VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: input diagram path and output diagram path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,66 +25,58 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the existing Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Work with the first page.
+            // Work with the first page of the diagram.
             Page page = diagram.Pages[0];
 
-            // Find the first triangle shape by its master name.
-            Shape triangleShape = null;
+            // Locate the first triangle shape on the page (master name "Triangle").
+            Shape originalTriangle = null;
             foreach (Shape shape in page.Shapes)
             {
                 if (shape.Master != null && shape.Master.Name == "Triangle")
                 {
-                    triangleShape = shape;
+                    originalTriangle = shape;
                     break;
                 }
             }
 
-            if (triangleShape == null)
+            if (originalTriangle == null)
             {
-                Console.Error.WriteLine("No triangle shape found in the diagram.");
+                Console.Error.WriteLine("No triangle shape with master name 'Triangle' was found on the first page.");
                 return;
             }
 
-            // Store original geometry and text.
-            double originalPinX = triangleShape.XForm.PinX.Value;
-            double originalPinY = triangleShape.XForm.PinY.Value;
-            double originalWidth = triangleShape.XForm.Width.Value;
-            double originalHeight = triangleShape.XForm.Height.Value;
-            string originalText = triangleShape.Text.Value.Text;
+            // Retrieve original position and size.
+            double origPinX = originalTriangle.XForm.PinX.Value;
+            double origPinY = originalTriangle.XForm.PinY.Value;
+            double shapeHeight = originalTriangle.XForm.Height.Value;
+            double verticalSpacing = 0.5; // inches between duplicated shapes.
 
-            // Define vertical spacing (shape height + a small gap).
-            double verticalSpacing = originalHeight + 0.5; // 0.5 inches gap.
-
-            // Duplicate the triangle three times and arrange vertically.
+            // Duplicate the triangle three times and arrange them vertically below the original.
             for (int i = 1; i <= 3; i++)
             {
-                // New Y position for the duplicate.
-                double newPinY = originalPinY + i * verticalSpacing;
+                double newPinX = origPinX;
+                double newPinY = origPinY - i * (shapeHeight + verticalSpacing);
 
-                // Add a new shape based on the same master.
-                long newShapeId = page.AddShape(originalPinX, newPinY, triangleShape.Master.Name, false);
+                // Add a new shape using the same master name.
+                long newShapeId = page.AddShape(newPinX, newPinY, originalTriangle.Master.Name, false);
+
+                // Retrieve the newly added shape (optional: further customization can be done here).
                 Shape newShape = page.Shapes.GetShape(newShapeId);
-
-                // Copy size.
-                newShape.XForm.Width.Value = originalWidth;
-                newShape.XForm.Height.Value = originalHeight;
-
-                // Copy text.
-                newShape.Text.Value.Clear();
-                newShape.Text.Value.Add(new Txt(originalText));
+                // Example: ensure the shape is not hidden (no direct hide property, so we keep dimensions as is).
+                // Additional property copying can be performed here if needed.
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
@@ -16,51 +16,62 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the active page (the page where the triangle resides).
-            Page page = diagram.ActivePage;
+            // Flag to indicate whether a triangle was found
+            bool triangleFound = false;
 
-            // Locate the first shape whose master name is "Triangle".
-            Shape triangleShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Iterate through all pages and shapes to locate a triangle shape
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Ensure the shape has a master before accessing its name.
-                if (shape.Master != null && shape.Master.Name == "Triangle")
+                Page page = diagram.Pages[pageIndex];
+
+                // Iterate shapes using the Shapes collection
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    triangleShape = shape;
-                    break;
+                    Shape shape = page.Shapes[i];
+
+                    // Ensure the shape has a master (template) before accessing its name
+                    if (shape.Master != null && shape.Master.Name != null && shape.Master.Name.Equals("Triangle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Rotate the shape 45 degrees clockwise around its center (pin point)
+                        shape.XForm.Angle.Value = 45.0;
+
+                        triangleFound = true;
+                        // Assuming only one triangle needs rotation; break out of loops
+                        break;
+                    }
                 }
+
+                if (triangleFound)
+                    break;
             }
 
-            if (triangleShape == null)
+            if (!triangleFound)
             {
-                Console.Error.WriteLine("Triangle shape not found in the diagram.");
-                return;
+                Console.Error.WriteLine("No triangle shape was found in the diagram.");
+                // Continue to save the diagram unchanged if desired, or exit
+                // return;
             }
 
-            // Rotate the triangle 45 degrees clockwise around its center (pin point).
-            // The Angle cell expects degrees directly.
-            triangleShape.XForm.Angle.Value = 45.0;
-
-            // Save the modified diagram. Using VSDX format for broad compatibility.
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

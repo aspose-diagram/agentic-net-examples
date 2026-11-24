@@ -7,62 +7,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define output directory (current directory)
+        // Define the output directory (current working directory)
         string outputDir = Directory.GetCurrentDirectory();
+
+        // Ensure the output directory exists
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Ensure the diagram has at least one page (Aspose.Diagram creates a default page)
-            // We'll add additional pages to have a total of ten pages.
-            for (int i = 1; i <= 10; i++)
+            // Create a new empty diagram inside a using block
+            using (Diagram diagram = new Diagram())
             {
-                // Add a new page to the diagram
-                diagram.Pages.Add(new Page());
+                // Add ten pages and draw a diamond on each page
+                for (int i = 0; i < 10; i++)
+                {
+                    // Create a new page and add it to the diagram
+                    Page page = new Page();
+                    diagram.Pages.Add(page);
 
-                // Retrieve the newly added page (pages are zero‑based)
-                Page page = diagram.Pages[diagram.Pages.Count - 1];
+                    // Define diamond vertices as a flat double array:
+                    // (2,1) bottom, (3,2) right, (2,3) top, (1,2) left, back to bottom (2,1)
+                    double[] diamondPoints = new double[]
+                    {
+                        2, 1,   // Bottom point
+                        3, 2,   // Right point
+                        2, 3,   // Top point
+                        1, 2,   // Left point
+                        2, 1    // Close back to bottom
+                    };
 
-                // Optional: give the page a name for clarity
-                page.Name = $"Page_{i}";
+                    // Draw the diamond shape as a closed polyline on the current page
+                    page.DrawPolyline(diamondPoints);
+                }
 
-                // Draw a diamond shape on the current page.
-                // Using the built‑in "Diamond" master. Coordinates are in inches.
-                // PinX, PinY represent the center of the shape.
-                double pinX = 5.0;   // horizontal position
-                double pinY = 5.0;   // vertical position
-                double width = 2.0;  // width of the diamond
-                double height = 2.0; // height of the diamond
+                // Export each page as a separate PNG file
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Configure PNG save options for a single page
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    pngOptions.PageIndex = i;   // Zero‑based page index
+                    pngOptions.PageCount = 1;   // Export only this page
 
-                // Add the diamond shape to the diagram on the current page.
-                // The AddShape method returns the shape ID (long).
-                long shapeId = diagram.AddShape(pinX, pinY, width, height, "Diamond", diagram.Pages.Count - 1);
+                    // Build the output file path
+                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
 
-                // Retrieve the shape object if further manipulation is needed.
-                // GetShape expects an int ID, so cast safely.
-                Shape diamondShape = page.Shapes.GetShape((int)shapeId);
-                // Example: set the shape's fill color to light gray (optional)
-                // diamondShape.FillForegnd.Value = 0xD3D3D3; // LightGray RGB hex
-
-                // Prepare PNG export options for the current page only.
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.PageIndex = diagram.Pages.Count - 1; // zero‑based page index
-                pngOptions.PageCount = 1;                       // export only this page
-
-                // Build the output file path.
-                string outputPath = Path.Combine(outputDir, $"Diamond_Page_{i}.png");
-
-                // Save the current page as a PNG image.
-                diagram.Save(outputPath, pngOptions);
-
-                Console.WriteLine($"Saved page {i} as PNG: {outputPath}");
+                    // Save the diagram page as PNG
+                    diagram.Save(outputPath, pngOptions);
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,46 +8,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Output SVG file path
-        string outputSvg = "GroupedDiamonds.svg";
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Work with the active page
+                Page page = diagram.ActivePage;
 
-            // Get the active page (first page)
-            Page page = diagram.ActivePage;
+                // Collect all shapes whose master name is "Diamond"
+                List<Shape> diamondShapes = new List<Shape>();
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Master != null && shape.Master.Name == "Diamond")
+                    {
+                        diamondShapes.Add(shape);
+                    }
+                }
 
-            // Define positions for the diamond shapes
-            double startX = 1.0;
-            double startY = 1.0;
-            double offsetX = 2.0;
+                // If no diamonds are found, inform the user and exit
+                if (diamondShapes.Count == 0)
+                {
+                    Console.WriteLine("No diamond shapes were found in the diagram.");
+                    return;
+                }
 
-            // Add first diamond shape
-            long id1 = page.AddShape(startX, startY, "Diamond", false);
-            Shape diamond1 = page.Shapes.GetShape(id1);
+                // Group the collected diamond shapes
+                Shape groupShape = page.Shapes.Group(diamondShapes.ToArray());
 
-            // Add second diamond shape
-            long id2 = page.AddShape(startX + offsetX, startY, "Diamond", false);
-            Shape diamond2 = page.Shapes.GetShape(id2);
+                // Export the created group as a single SVG document
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                groupShape.ToSvg(outputPath, svgOptions);
 
-            // Add third diamond shape
-            long id3 = page.AddShape(startX + 2 * offsetX, startY, "Diamond", false);
-            Shape diamond3 = page.Shapes.GetShape(id3);
-
-            // Group the three diamond shapes into a single group
-            Shape groupShape = page.Shapes.Group(new Shape[] { diamond1, diamond2, diamond3 });
-
-            // Export the group as a single SVG document
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            groupShape.ToSvg(outputSvg, svgOptions);
-
-            Console.WriteLine($"Grouped diamonds exported to SVG: {outputSvg}");
+                Console.WriteLine($"Diamond group exported successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

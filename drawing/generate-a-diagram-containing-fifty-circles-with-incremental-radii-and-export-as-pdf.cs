@@ -7,61 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the output PDF file path
+        // Define output PDF file path
         string outputPath = "Circles.pdf";
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Ensure there is at least one page to draw on
-            if (diagram.Pages.Count == 0)
+            // Create a new blank diagram inside a using block as required
+            using (Diagram diagram = new Diagram())
             {
-                // Create a new page with ID = 1 and add it to the diagram
-                Page newPage = new Page(1);
-                diagram.Pages.Add(newPage);
+                // Ensure there is at least one page to draw on
+                Page page = diagram.Pages[0];
+
+                // Parameters for circle placement
+                double startX = 1.0;
+                double startY = 1.0;
+                double radiusStep = 0.5;
+
+                // Generate 50 circles with incremental radii
+                for (int i = 1; i <= 50; i++)
+                {
+                    double radius = i * radiusStep;
+
+                    // Calculate top‑left corner of the bounding box for the circle
+                    double left = startX + i * 2.0;   // offset each circle to avoid overlap
+                    double top = startY + i * 2.0;
+
+                    // Draw an ellipse where width and height are equal (a circle)
+                    // DrawEllipse(pinX, pinY, width, height)
+                    page.DrawEllipse(left, top, radius * 2, radius * 2);
+                }
+
+                // Save the diagram as PDF using the required overload
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
             }
 
-            // Use the first page for drawing
-            Page page = diagram.Pages[0];
-
-            // Define the center point for all circles (in inches)
-            double centerX = 5.0;
-            double centerY = 5.0;
-
-            // Define the incremental radius step (in inches)
-            double radiusStep = 0.2;
-
-            // Draw 50 circles with increasing radii
-            for (int i = 1; i <= 50; i++)
-            {
-                double radius = i * radiusStep;
-                double diameter = radius * 2.0;
-
-                // Calculate the lower‑left corner of the bounding rectangle
-                double pinX = centerX - radius;
-                double pinY = centerY - radius;
-
-                // Draw the circle (ellipse with equal width and height)
-                page.DrawEllipse(pinX, pinY, diameter, diameter);
-            }
-
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Explicitly set the target format
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Set a fallback font (optional)
-            pdfOptions.DefaultFont = "Arial";
-
-            // Save the diagram as PDF
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram with 50 circles saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram successfully saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

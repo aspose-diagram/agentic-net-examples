@@ -2,24 +2,18 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Drawing;
-using AsposeDrawing = Aspose.Drawing;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <imagePath> <outputPath>");
-            return;
-        }
+        // Input arguments with defaults
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string imagePath = args.Length > 1 ? args[1] : "background.png";
+        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
 
-        string diagramPath = args[0];
-        string imagePath = args[1];
-        string outputPath = args[2];
-
-        // Guard against missing files.
+        // Guard against missing files
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
@@ -33,63 +27,49 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Work with the first page (index 0).
-            Page page = diagram.Pages[0];
-
-            // Retrieve page dimensions (in inches).
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Determine the image size in inches using its resolution.
+            // Load image to obtain its dimensions (pixels)
             double tileWidth;
             double tileHeight;
-            using (FileStream imgInfoStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
-            using (AsposeDrawing.Image img = AsposeDrawing.Image.FromStream(imgInfoStream))
+            using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(imagePath))
             {
-                // Width and Height are in pixels; divide by DPI to get inches.
-                tileWidth = img.Width / img.HorizontalResolution;
-                tileHeight = img.Height / img.VerticalResolution;
+                tileWidth = img.Width;
+                tileHeight = img.Height;
             }
 
-            // If the image dimensions could not be determined, fall back to full‑page size.
-            if (tileWidth <= 0 || tileHeight <= 0)
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                tileWidth = pageWidth;
-                tileHeight = pageHeight;
-            }
+                // Work with the first (foreground) page
+                Page page = diagram.Pages[0];
 
-            // Tile the image across the entire page.
-            for (double y = 0; y < pageHeight; y += tileHeight)
-            {
-                for (double x = 0; x < pageWidth; x += tileWidth)
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Tile the image across the entire page
+                for (double y = 0; y < pageHeight; y += tileHeight)
                 {
-                    // Ensure the tile does not exceed page bounds.
-                    double currentWidth = Math.Min(tileWidth, pageWidth - x);
-                    double currentHeight = Math.Min(tileHeight, pageHeight - y);
-
-                    // Add the image shape.
-                    using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                    for (double x = 0; x < pageWidth; x += tileWidth)
                     {
-                        long shapeId = page.AddShape(x, y, currentWidth, currentHeight, imgStream);
-                        Shape shape = page.Shapes.GetShape(shapeId);
-                        // Send the shape to the back so it acts as a background.
-                        shape.SendToBack();
-                        // Make the background shape non‑selectable.
-                        shape.Protection.LockSelect.Value = BOOL.True;
+                        // Insert the image as a shape at the current tile position
+                        using (FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                        {
+                            long shapeId = page.AddShape(x, y, tileWidth, tileHeight, fs);
+                            Shape shape = page.Shapes.GetShape(shapeId);
+                            // Send the shape to the back so other content appears above it
+                            shape.SendToBack();
+                            // Make the background shape non‑selectable
+                            shape.Protection.LockSelect.Value = BOOL.True;
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with tiled background to: {outputPath}");
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,7 +9,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
@@ -26,62 +25,74 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Work with the first page.
-            Page page = diagram.Pages[0];
-
-            // Find the first diamond shape (master name "Diamond").
-            Shape originalDiamond = null;
-            foreach (Shape shape in page.Shapes)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Skip logically deleted shapes.
-                if (shape.Del == BOOL.True)
-                    continue;
+                // Locate the first shape whose master name is "Diamond".
+                Shape diamondShape = null;
+                Page diamondPage = null;
 
-                // Identify diamond by its master name.
-                if (shape.Master != null && shape.Master.Name == "Diamond")
+                foreach (Page page in diagram.Pages)
                 {
-                    originalDiamond = shape;
-                    break;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.Master != null && shape.Master.Name == "Diamond")
+                        {
+                            diamondShape = shape;
+                            diamondPage = page;
+                            break;
+                        }
+                    }
+                    if (diamondShape != null)
+                        break;
                 }
+
+                if (diamondShape == null || diamondPage == null)
+                {
+                    Console.Error.WriteLine("No diamond shape was found in the diagram.");
+                    return;
+                }
+
+                // Store original geometry.
+                double originalPinX = diamondShape.XForm.PinX.Value;
+                double originalPinY = diamondShape.XForm.PinY.Value;
+                double originalWidth = diamondShape.XForm.Width.Value;
+                double originalHeight = diamondShape.XForm.Height.Value;
+                string masterName = diamondShape.Master.Name;
+
+                // Calculate new position (0.5 inches to the right).
+                double offsetPinX = originalPinX + 0.5;
+                double offsetPinY = originalPinY; // same vertical position
+
+                // Add a duplicate shape on the same page.
+                long newShapeId = diamondPage.AddShape(offsetPinX, offsetPinY, masterName, false);
+                Shape newShape = diamondPage.Shapes.GetShape(newShapeId);
+
+                // Copy size.
+                newShape.XForm.Width.Value = originalWidth;
+                newShape.XForm.Height.Value = originalHeight;
+
+                // Copy text (if any).
+                string originalText = diamondShape.Text.Value.Text;
+                if (!string.IsNullOrWhiteSpace(originalText))
+                {
+                    newShape.Text.Value.Clear();
+                    newShape.Text.Value.Add(new Txt(originalText));
+                }
+
+                // Copy fill formatting.
+                newShape.Fill.FillForegnd.Value = diamondShape.Fill.FillForegnd.Value;
+                newShape.Fill.FillBkgnd.Value = diamondShape.Fill.FillBkgnd.Value;
+                newShape.Fill.FillPattern.Value = diamondShape.Fill.FillPattern.Value;
+
+                // Copy line formatting.
+                newShape.Line.LineColor.Value = diamondShape.Line.LineColor.Value;
+                newShape.Line.LineWeight.Value = diamondShape.Line.LineWeight.Value;
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            if (originalDiamond == null)
-            {
-                Console.Error.WriteLine("No diamond shape found in the diagram.");
-                return;
-            }
-
-            // Retrieve original geometry.
-            double origPinX = originalDiamond.XForm.PinX.Value;
-            double origPinY = originalDiamond.XForm.PinY.Value;
-            double origWidth = originalDiamond.XForm.Width.Value;
-            double origHeight = originalDiamond.XForm.Height.Value;
-
-            // Offset position 0.5 inches to the right.
-            double newPinX = origPinX + 0.5;
-            double newPinY = origPinY;
-
-            // Add a new diamond shape with the same size at the new position.
-            long newShapeId = page.AddShape(newPinX, newPinY, origWidth, origHeight, "Diamond", false);
-
-            // Retrieve the newly added shape.
-            Shape newDiamond = page.Shapes.GetShape((int)newShapeId);
-
-            // Copy text (if any) from the original diamond.
-            string originalText = originalDiamond.Text.Value.Text;
-            if (!string.IsNullOrEmpty(originalText))
-            {
-                // Clear any existing text runs.
-                newDiamond.Text.Value.Clear();
-                // Add a new text run with the original text.
-                newDiamond.Text.Value.Add(new Txt(originalText));
-            }
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {

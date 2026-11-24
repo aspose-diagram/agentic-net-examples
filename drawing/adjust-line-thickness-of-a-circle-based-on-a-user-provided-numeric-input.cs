@@ -6,74 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt user for the input Visio file path
-        Console.Write("Enter the path to the Visio file (e.g., diagram.vsdx): ");
+        // Prompt for the input Visio file path
+        Console.Write("Enter the path to the input Visio file: ");
         string inputPath = Console.ReadLine();
 
         // Guard: ensure the input file exists
-        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Error: The specified input file does not exist.");
+            Console.Error.WriteLine($"Error: The file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Prompt user for the desired line thickness (in inches)
+        // Prompt for the output Visio file path
+        Console.Write("Enter the desired output file path (e.g., output.vsdx): ");
+        string outputPath = Console.ReadLine();
+
+        // Prompt for the line thickness (in inches)
         Console.Write("Enter the line thickness (in inches, e.g., 0.03): ");
         string thicknessInput = Console.ReadLine();
 
-        // Parse the thickness value
         if (!double.TryParse(thicknessInput, out double lineThickness) || lineThickness <= 0)
         {
             Console.Error.WriteLine("Error: Invalid line thickness value.");
             return;
         }
 
-        // Prompt user for the output Visio file path
-        Console.Write("Enter the path for the output Visio file (e.g., output.vsdx): ");
-        string outputPath = Console.ReadLine();
-
-        // Guard: ensure the output directory exists
-        if (string.IsNullOrWhiteSpace(outputPath))
-        {
-            Console.Error.WriteLine("Error: Output path is empty.");
-            return;
-        }
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine("Error: The directory for the output file does not exist.");
-            return;
-        }
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Get the first page (assuming the circle is on the first page)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape with ID 1 (commonly the first shape; adjust as needed)
-            Shape shape = page.Shapes.GetShape(1);
-
-            // Ensure the shape is not deleted
-            if (shape.Del == BOOL.True)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("Error: The target shape is marked as deleted.");
-                return;
+                // Get the first page (assumes at least one page exists)
+                Page page = diagram.Pages[0];
+
+                // Define simple coordinates for the circle
+                double pinX = 1.0;   // X coordinate of the lower-left corner
+                double pinY = 1.0;   // Y coordinate of the lower-left corner
+                double width = 2.0;  // Width of the ellipse (circle)
+                double height = 2.0; // Height of the ellipse (circle)
+
+                // Draw an ellipse (circle) on the page; returns the shape ID
+                long shapeId = page.DrawEllipse(pinX, pinY, width, height);
+
+                // Retrieve the newly created shape by its ID
+                Shape circle = page.Shapes.GetShape(shapeId);
+
+                // Adjust the line thickness (weight) of the circle
+                circle.Line.LineWeight.Value = lineThickness;
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Adjust the line thickness (line weight) of the shape
-            shape.Line.LineWeight.Value = lineThickness;
-
-            // Save the modified diagram to the specified output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Line thickness updated and diagram saved successfully.");
+            Console.WriteLine("Diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
+            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

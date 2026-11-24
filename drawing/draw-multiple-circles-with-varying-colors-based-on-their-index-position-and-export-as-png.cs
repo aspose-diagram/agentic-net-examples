@@ -7,69 +7,89 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the output PNG file path
-        string outputPath = "circles.png";
+        // Input Visio file path (must exist). Provide via first argument or use default.
+        string inputPath = args.Length > 0 ? args[0] : "template.vsdx";
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output PNG file path. Provide via second argument or use default.
+        string outputPath = args.Length > 1 ? args[1] : "circles.png";
 
         try
         {
-            // Create a new empty diagram (contains a default page)
-            Diagram diagram = new Diagram();
-
-            // Access the first (and only) page in the diagram
-            Page page = diagram.Pages[0];
-
-            // Parameters for drawing circles
-            int circleCount = 5;          // total number of circles
-            double startX = 2.0;          // initial X coordinate (in inches)
-            double startY = 2.0;          // initial Y coordinate (in inches)
-            double radius = 1.0;          // radius of each circle (in inches)
-            double offset = 3.0;          // offset between successive circles (in inches)
-
-            // Define a set of fill colors (hex strings)
-            string[] colors = new string[]
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                "#FF0000", // Red
-                "#00FF00", // Green
-                "#0000FF", // Blue
-                "#FFFF00", // Yellow
-                "#FF00FF"  // Magenta
-            };
+                // Ensure there is at least one page to draw on.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Loop to create circles with varying colors
-            for (int i = 0; i < circleCount; i++)
-            {
-                // Calculate the center position for the current circle
-                double pinX = startX + i * offset;
-                double pinY = startY + i * offset;
+                // Work with the first page.
+                Page page = diagram.Pages[0];
 
-                // Draw an ellipse where width == height => circle
-                // Parameters: pinX, pinY, width, height
-                long shapeId = page.DrawEllipse(pinX, pinY, radius * 2, radius * 2);
+                // Define colors for circles (hex strings).
+                string[] colors = new string[]
+                {
+                    "#FF0000", // Red
+                    "#00FF00", // Green
+                    "#0000FF", // Blue
+                    "#FFFF00", // Yellow
+                    "#FF00FF", // Magenta
+                    "#00FFFF", // Cyan
+                    "#FFA500", // Orange
+                    "#800080"  // Purple
+                };
 
-                // Retrieve the shape object using the returned ID
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // Number of circles to draw.
+                int circleCount = 8;
 
-                // Ensure the shape has a solid fill pattern
-                shape.Fill.FillPattern.Value = 1; // 1 = solid fill
+                // Parameters for positioning.
+                double startX = 2.0;   // Starting X coordinate.
+                double startY = 5.0;   // Y coordinate (same for all circles).
+                double spacing = 3.0;  // Horizontal spacing between circles.
+                double radius = 1.0;   // Radius of each circle.
 
-                // Apply fill color based on index (cycle if more circles than colors)
-                string fillColor = colors[i % colors.Length];
-                shape.Fill.FillForegnd.Value = fillColor;
+                for (int i = 0; i < circleCount; i++)
+                {
+                    // Calculate center position for the current circle.
+                    double pinX = startX + i * spacing;
+                    double pinY = startY;
+                    double diameter = radius * 2;
+
+                    // Draw an ellipse (circle) on the page.
+                    long shapeId = page.DrawEllipse(pinX, pinY, diameter, diameter);
+
+                    // Retrieve the created shape using its ID.
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Apply fill background color based on the index.
+                    string colorHex = colors[i % colors.Length];
+                    shape.Fill.FillBkgnd.Value = colorHex;
+
+                    // Ensure the shape has a visible outline (optional).
+                    shape.Line.LineColor.Value = "#000000";
+                }
+
+                // Prepare PNG export options.
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Export only the first page.
+                saveOptions.PageIndex = 0;
+                saveOptions.PageCount = 1;
+
+                // Save the diagram as a PNG image.
+                diagram.Save(outputPath, saveOptions);
+                Console.WriteLine($"Diagram saved as PNG to: {outputPath}");
             }
-
-            // Configure PNG export options
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.PageIndex = 0;   // export the first page
-            saveOptions.PageCount = 1;   // only one page to export
-
-            // Save the diagram as a PNG image
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Diagram with circles saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

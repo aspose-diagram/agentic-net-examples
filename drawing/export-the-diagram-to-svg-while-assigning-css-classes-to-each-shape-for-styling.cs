@@ -8,104 +8,120 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
             return;
         }
 
         string inputPath = args[0];
-        string outputSvgPath = args[1];
+        string outputDir = args[1];
 
-        // Guard against missing input file
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Guard: ensure output directory exists
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Collect shape IDs to later assign CSS classes
-            var shapeIds = new List<long>();
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            if (!Directory.Exists(outputDir))
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Store the shape's unique ID
-                    shapeIds.Add(shape.ID);
-                }
+                Directory.CreateDirectory(outputDir);
             }
-
-            // Export the entire diagram to SVG using default options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            // Example option settings (adjust as needed)
-            svgOptions.SVGFitToViewPort = true;
-            svgOptions.ExportGuideShapes = false;
-            svgOptions.IsExportComments = false;
-
-            diagram.Save(outputSvgPath, svgOptions);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
             return;
         }
 
+        // Load the Visio diagram
+        Diagram diagram;
         try
         {
-            // Read the generated SVG content
-            string svgContent = File.ReadAllText(outputSvgPath);
-
-            // Inject CSS class attributes based on shape IDs
-            // This simple replacement assumes each shape element has an id attribute matching the shape ID.
-            // Example: id="5" becomes id="5" class="shape-5"
-            foreach (long id in GetShapeIdsFromSvg(svgContent))
-            {
-                string idAttribute = $"id=\"{id}\"";
-                string replacement = $"id=\"{id}\" class=\"shape-{id}\"";
-                svgContent = svgContent.Replace(idAttribute, replacement);
-            }
-
-            // Write the modified SVG back to the file
-            File.WriteAllText(outputSvgPath, svgContent);
+            diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error while adding CSS classes to SVG: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
         }
-    }
 
-    // Helper method to extract shape IDs present in the SVG file.
-    // This implementation looks for id="numeric" patterns.
-    private static IEnumerable<long> GetShapeIdsFromSvg(string svgContent)
-    {
-        var ids = new List<long>();
-        int index = 0;
-        while ((index = svgContent.IndexOf("id=\"", index, StringComparison.Ordinal)) != -1)
+        // Prepare a CSS file to hold class definitions
+        string cssFilePath = Path.Combine(outputDir, "styles.css");
+        StreamWriter cssWriter;
+        try
         {
-            int start = index + 4;
-            int end = svgContent.IndexOf('"', start);
-            if (end > start)
+            cssWriter = new StreamWriter(cssFilePath, false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create CSS file: {ex.Message}");
+            return;
+        }
+
+        // Iterate through all pages and shapes
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
             {
-                string idStr = svgContent.Substring(start, end - start);
-                if (long.TryParse(idStr, out long id))
+                // Generate a CSS class name based on shape ID
+                string cssClass = $"shape-{shape.ID}";
+
+                // Export the shape to an individual SVG file
+                string svgFileName = $"shape_{shape.ID}.svg";
+                string svgFilePath = Path.Combine(outputDir, svgFileName);
+
+                try
                 {
-                    ids.Add(id);
+                    // Configure SVG save options (basic settings)
+                    SVGSaveOptions svgOptions = new SVGSaveOptions();
+                    svgOptions.ExportHiddenPage = false;
+                    svgOptions.ExportGuideShapes = false;
+                    svgOptions.SVGFitToViewPort = true;
+
+                    // Export the shape
+                    shape.ToSvg(svgFilePath, svgOptions);
                 }
-                index = end + 1;
-            }
-            else
-            {
-                break;
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to export shape ID {shape.ID} to SVG: {ex.Message}");
+                    continue;
+                }
+
+                // Write a simple CSS rule for the shape
+                // (In a real scenario you could extract fill color, line style, etc.)
+                cssWriter.WriteLine($".{cssClass} {{");
+                cssWriter.WriteLine("    /* Add custom styling here */");
+                cssWriter.WriteLine("}");
+                cssWriter.WriteLine();
             }
         }
-        return ids;
+
+        // Close the CSS writer
+        cssWriter.Close();
+
+        // Export the whole diagram to a single SVG file (optional)
+        string diagramSvgPath = Path.Combine(outputDir, "diagram.svg");
+        try
+        {
+            SVGSaveOptions diagramSvgOptions = new SVGSaveOptions();
+            diagramSvgOptions.ExportHiddenPage = false;
+            diagramSvgOptions.ExportGuideShapes = false;
+            diagramSvgOptions.SVGFitToViewPort = true;
+
+            // Save the entire diagram as SVG
+            diagram.Save(diagramSvgPath, diagramSvgOptions);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to export entire diagram to SVG: {ex.Message}");
+        }
+
+        Console.WriteLine("Export completed successfully.");
     }
 }

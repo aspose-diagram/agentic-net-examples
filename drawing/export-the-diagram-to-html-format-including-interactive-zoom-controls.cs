@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,85 +7,47 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (command‑line args or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.html";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputHtmlFile>");
+            return;
+        }
 
-        // Guard: ensure the source Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure HTML export options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.ExportHiddenPage = false;   // Do not export hidden pages (use C# bool)
-            htmlOptions.IsExportComments = false;   // Do not export comments (use C# bool)
-
-            // Export the diagram to a single HTML file
-            diagram.Save(outputPath, htmlOptions);
-
-            // -----------------------------------------------------------------
-            // Inject simple interactive zoom controls into the generated HTML
-            // -----------------------------------------------------------------
-            string htmlContent = File.ReadAllText(outputPath, Encoding.UTF8);
-
-            // JavaScript and HTML for zoom in/out buttons
-            string zoomControls = @"
-<div style='margin:10px;'>
-    <button onclick='zoomIn()'>Zoom In</button>
-    <button onclick='zoomOut()'>Zoom Out</button>
-</div>
-<script>
-    var currentScale = 1.0;
-    function applyZoom() {
-        var imgs = document.getElementsByTagName('img');
-        for (var i = 0; i < imgs.length; i++) {
-            imgs[i].style.transform = 'scale(' + currentScale + ')';
-            imgs[i].style.transformOrigin = '0 0';
-        }
-    }
-    function zoomIn() {
-        currentScale += 0.1;
-        applyZoom();
-    }
-    function zoomOut() {
-        if (currentScale > 0.2) {
-            currentScale -= 0.1;
-            applyZoom();
-        }
-    }
-</script>
-";
-
-            // Insert the zoom controls right after the opening <body> tag
-            int bodyTagPos = htmlContent.IndexOf("<body>", StringComparison.OrdinalIgnoreCase);
-            if (bodyTagPos >= 0)
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                int insertPos = bodyTagPos + "<body>".Length;
-                htmlContent = htmlContent.Insert(insertPos, zoomControls);
-            }
-            else
-            {
-                // Fallback: prepend controls if <body> tag is not found
-                htmlContent = zoomControls + htmlContent;
+                // Configure HTML export options.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+                // Do not export hidden pages. Property expects a bool, not BOOL.
+                htmlOptions.ExportHiddenPage = false; // changed from BOOL.False
+
+                // Do not export comments. Property expects a bool, not BOOL.
+                htmlOptions.IsExportComments = false; // changed from BOOL.False
+
+                // Save the diagram as an HTML file using the configured options.
+                diagram.Save(outputPath, htmlOptions);
             }
 
-            // Write the modified HTML back to the output file
-            File.WriteAllText(outputPath, htmlContent, Encoding.UTF8);
-
-            Console.WriteLine($"Diagram successfully exported to HTML with zoom controls: {outputPath}");
+            Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during loading or saving
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

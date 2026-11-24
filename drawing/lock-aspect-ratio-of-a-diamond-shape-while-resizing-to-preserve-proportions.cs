@@ -7,51 +7,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (must exist)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the existing diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through all pages to find a diamond shape
+                bool diamondFound = false;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify diamond shape by its master name
+                        if (shape.Master != null && shape.Master.Name == "Diamond")
+                        {
+                            // Lock the aspect ratio of the diamond shape
+                            shape.Protection.LockAspect.Value = BOOL.True;
 
-            // Add a diamond shape to the active page at position (2,2)
-            // The fourth parameter 'isCalculate' is set to false
-            long shapeId = diagram.ActivePage.AddShape(2.0, 2.0, "Diamond", false);
+                            // Example resize: set new width (in inches) while preserving aspect ratio
+                            // Since aspect is locked, setting width will keep the height proportional.
+                            // Here we set both to the same value for simplicity.
+                            shape.XForm.Width.Value = 2.0;   // New width
+                            shape.XForm.Height.Value = 2.0;  // New height (matches width)
 
-            // Retrieve the newly added shape using its ID
-            Shape diamond = diagram.ActivePage.Shapes.GetShape(shapeId);
+                            diamondFound = true;
+                            break; // Assuming only one diamond needs processing
+                        }
+                    }
+                    if (diamondFound) break;
+                }
 
-            // Lock the aspect ratio of the diamond shape
-            diamond.Protection.LockAspect.Value = BOOL.True;
+                if (!diamondFound)
+                {
+                    Console.Error.WriteLine("No diamond shape found in the diagram.");
+                }
 
-            // Resize the shape while preserving the locked aspect ratio
-            // Setting one dimension will keep the other proportional due to the lock
-            // Here we set the width; height will follow the same proportion
-            diamond.XForm.Width.Value = 3.0;   // width in inches
-            // Height will automatically respect the aspect lock; however, we can also set it explicitly
-            diamond.XForm.Height.Value = 3.0;  // height in inches
-
-            // Save the modified diagram to a new file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

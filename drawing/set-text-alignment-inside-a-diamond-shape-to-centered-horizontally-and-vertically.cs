@@ -1,17 +1,15 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
-using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -27,57 +25,46 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // ------------------------------------------------------------
-            // Create a diamond shape (polyline) on the first page.
-            // ------------------------------------------------------------
-            // Define the diamond vertices as a flat double array (x1, y1, x2, y2, ...).
-            double[] diamondPoints = new double[]
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                2, 2,   // top
-                4, 4,   // right
-                2, 6,   // bottom
-                0, 4,   // left
-                2, 2    // close the shape
-            };
+                // Define points for a diamond shape using a flat double array.
+                // The points are specified as: x1, y1, x2, y2, ..., and the first point is repeated at the end to close the shape.
+                double[] diamondPoints = new double[]
+                {
+                    2, 4,   // top
+                    4, 2,   // right
+                    2, 0,   // bottom
+                    0, 2,   // left
+                    2, 4    // close back to top
+                };
 
-            // Draw the polyline and obtain its shape ID.
-            long shapeId = diagram.Pages[0].DrawPolyline(diamondPoints);
+                // Draw the diamond on the first page.
+                long shapeId = diagram.Pages[0].DrawPolyline(diamondPoints);
 
-            // Retrieve the shape object from the page.
-            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                // Retrieve the newly added shape.
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // ------------------------------------------------------------
-            // Add sample text to the shape.
-            // ------------------------------------------------------------
-            shape.Text.Value.Add(new Txt("Centered Text"));
+                // Clear any existing text and add new centered text.
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Centered Text"));
 
-            // ------------------------------------------------------------
-            // Center the text block horizontally and vertically.
-            // ------------------------------------------------------------
-            // Horizontal alignment: center.
-            if (shape.Paras != null && shape.Paras.Count > 0)
-            {
-                shape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
+                // Set horizontal alignment for each paragraph to Center.
+                for (int i = 0; i < shape.Paras.Count; i++)
+                {
+                    shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
+                }
+
+                // Set vertical alignment of the text block to Middle (centered vertically).
+                shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
+
+                // Save the modified diagram to the specified output path using VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Vertical alignment: middle.
-            shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-            // Position the text block at the center of the shape (50% width/height).
-            shape.TextXForm.TxtPinX.Value = 0.5;
-            shape.TextXForm.TxtPinY.Value = 0.5;
-
-            // ------------------------------------------------------------
-            // Save the modified diagram to the output path.
-            // ------------------------------------------------------------
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

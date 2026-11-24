@@ -6,23 +6,23 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Expect input Visio file path as first argument
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            Console.Error.WriteLine("Please provide the input Visio file path as an argument.");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists
+        // Guard: verify the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output path
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+        // Define output path (original name with suffix)
+        string outputPath = Path.Combine(
             Path.GetDirectoryName(inputPath) ?? "",
             Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
 
@@ -31,10 +31,11 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (you can adjust the page name or index as needed)
+            // Get the first page (assumes at least one page exists)
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape by its ID (replace 1 with the actual ID of the circle shape)
+            // Retrieve the shape by its ID (assumes the circle shape has ID 1)
+            // Adjust the ID as needed for your specific diagram.
             Shape shape = page.Shapes.GetShape(1);
 
             // Ensure the shape is not deleted
@@ -44,18 +45,19 @@ class Program
                 return;
             }
 
-            // Set fill pattern to solid (value 1) and fill foreground color to blue
-            shape.Fill.FillPattern.Value = 1;               // Solid fill
-            shape.Fill.FillForegnd.Value = "#0000FF";       // Blue color in hex
+            // Set fill pattern to solid (value 1) to make fill visible
+            shape.Fill.FillPattern.Value = 1;
 
-            // Set line weight to 0.5 points (Visio uses inches; 1 point = 1/72 inch)
-            double lineWeightInInches = 0.5 / 72.0;
-            shape.Line.LineWeight.Value = lineWeightInInches;
+            // Set fill foreground color to blue using hex string
+            shape.Fill.FillForegnd.Value = "#0000FF";
 
-            // Save the modified diagram to the output file in VSDX format
+            // Set line weight to 0.5 points (0.5 / 72 inches)
+            shape.Line.LineWeight.Value = 0.5 / 72.0;
+
+            // Save the modified diagram to a new file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

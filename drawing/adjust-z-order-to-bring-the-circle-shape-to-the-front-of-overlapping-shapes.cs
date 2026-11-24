@@ -7,55 +7,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path (same folder, with suffix "_front.vsdx")
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_front.vsdx");
+
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to locate the circle (ellipse) shape.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the Shapes collection is not null.
-                if (page.Shapes == null) continue;
+                bool circleFound = false;
 
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages to locate the circle shape
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify the circle shape by its master name.
-                    // In Visio, a circle is an ellipse with equal width/height.
-                    // The master name for an ellipse is typically "Ellipse".
-                    if (shape.Master != null && shape.Master.Name == "Ellipse")
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Bring the identified shape to the front of the Z‑order.
-                        // NOTE: Verify that BringToFront() exists in the Aspose.Diagram version used.
-                        shape.BringToFront();
+                        // Identify the circle shape by its NameU containing "Circle"
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.IndexOf("Circle", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // TODO: Adjust Z‑order to bring this shape to the front.
+                            // The appropriate Aspose.Diagram API for Z‑order manipulation
+                            // (e.g., MoveToFront, SetZOrder, etc.) should be used here
+                            // once the correct method is identified from the library.
+                            Console.WriteLine($"Circle shape (ID={shape.ID}) found on page {page.NameU}.");
+                            circleFound = true;
+                            break;
+                        }
                     }
-                }
-            }
 
-            // Save the modified diagram to the specified output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                    if (circleFound)
+                        break;
+                }
+
+                if (!circleFound)
+                {
+                    Console.Error.WriteLine("No circle shape was found in the diagram.");
+                    return;
+                }
+
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

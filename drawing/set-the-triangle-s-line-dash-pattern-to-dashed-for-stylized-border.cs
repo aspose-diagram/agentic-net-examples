@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,46 +25,43 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages to find a triangle shape.
-            Shape triangleShape = null;
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Identify triangle by its master name (common master name is "Triangle").
-                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    // Iterate through all shapes on the page
+                    for (int shapeId = 0; shapeId < page.Shapes.Count; shapeId++)
                     {
-                        triangleShape = shape;
-                        break;
+                        // Retrieve shape by its ID (IDs are 1‑based)
+                        Shape shape = page.Shapes.GetShape(page.Shapes[shapeId].ID);
+
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has a master (to identify its type)
+                        if (shape.Master != null && shape.Master.Name == "Triangle")
+                        {
+                            // Set the line dash pattern to dashed
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+
+                            // Optionally, you could also set line weight or color here
+                            // shape.Line.LineWeight.Value = 0.03; // example weight in inches
+                        }
                     }
                 }
-                if (triangleShape != null)
-                    break;
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            if (triangleShape == null)
-            {
-                Console.Error.WriteLine("No triangle shape found in the diagram.");
-                return;
-            }
-
-            // Set the line dash pattern to dashed.
-            // Using the LinePatternValue enumeration for clarity.
-            triangleShape.Line.LinePattern.Value = LinePatternValue.Dash;
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

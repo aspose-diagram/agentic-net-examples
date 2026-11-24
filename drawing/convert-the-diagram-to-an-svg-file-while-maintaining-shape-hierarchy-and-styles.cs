@@ -20,34 +20,25 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure SVG save options to preserve hierarchy and styles.
-            SVGSaveOptions svgOptions = new SVGSaveOptions
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Preserve guide shapes and comments (if any) in the output SVG.
-                ExportGuideShapes = true,
-                IsExportComments = true,
-                // Explicitly set the format (required by the API).
-                SaveFormat = SaveFileFormat.Svg
-            };
-
-            // Save the entire diagram as an SVG file.
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Diagram successfully converted to SVG: {outputPath}");
+                // Save the entire diagram as SVG.
+                // The SVG format preserves shape hierarchy and styles by default.
+                diagram.Save(outputPath, SaveFileFormat.Svg);
+                Console.WriteLine($"Diagram successfully converted to SVG: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

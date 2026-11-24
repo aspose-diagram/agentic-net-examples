@@ -21,25 +21,31 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Explicitly set the format tracker
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Set a default font to ensure text is rendered correctly
-            pdfOptions.DefaultFont = "Arial";
+                // Explicitly set the format tracker (required by Aspose)
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Save the diagram as a PDF preserving vector shapes and text quality
-            diagram.Save(outputPath, pdfOptions);
+                // Set a default font to ensure text is rendered correctly
+                pdfOptions.DefaultFont = "Arial";
 
-            Console.WriteLine($"Diagram successfully saved as PDF: {outputPath}");
+                // Export hidden pages if any (property expects a bool, not BOOL)
+                pdfOptions.ExportHiddenPage = true;
+
+                // Save the diagram as a PDF preserving vector shapes and text quality
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during PDF conversion: {ex.Message}");
         }
     }
 }

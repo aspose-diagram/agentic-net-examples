@@ -6,76 +6,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input diagram path and output diagram path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
+        // Define output file path
+        string outputPath = "OutputDiagram.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the directory for the output exists (if any)
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Determine the next available page ID (maximum existing ID + 1).
-            int maxPageId = 0; // Changed to int to match Page.ID type.
-            foreach (Page p in diagram.Pages)
+            // Create a new empty diagram
+            using (Diagram diagram = new Diagram())
             {
-                if (p.ID > maxPageId)
-                    maxPageId = p.ID;
+                // Determine the next available page ID (Page.ID is an int in this API version)
+                int maxPageId = 0;
+                foreach (Page existingPage in diagram.Pages)
+                {
+                    if (existingPage.ID > maxPageId)
+                        maxPageId = existingPage.ID;
+                }
+
+                // Create a new page and assign a unique ID and name
+                Page newPage = new Page();
+                newPage.ID = maxPageId + 1; // explicit int assignment
+                newPage.Name = "OvalPage";
+
+                // Add the new page to the diagram
+                diagram.Pages.Add(newPage);
+
+                // Define oval (ellipse) position and size (in inches)
+                double pinX = 1.0;   // X coordinate of the lower-left corner
+                double pinY = 1.0;   // Y coordinate of the lower-left corner
+                double width = 2.0;  // Width of the oval
+                double height = 1.0; // Height of the oval
+
+                // Draw the oval on the newly added page
+                // DrawEllipse returns the shape ID (long) but we don't need it further here
+                newPage.DrawEllipse(pinX, pinY, width, height);
+
+                // Save the diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
             }
-
-            // Create a new blank page and assign a unique ID and name.
-            Page newPage = new Page();
-            newPage.ID = maxPageId + 1; // Explicitly using int.
-            newPage.Name = "NewPage";
-
-            // Add the new page to the diagram.
-            diagram.Pages.Add(newPage);
-
-            // Define oval (ellipse) position and size.
-            // PinX and PinY specify the center of the shape.
-            // Width and Height specify the size of the ellipse.
-            double pinX = 2.0;   // X coordinate of the center (in inches)
-            double pinY = 2.0;   // Y coordinate of the center (in inches)
-            double width = 3.0;  // Horizontal diameter (in inches)
-            double height = 1.5; // Vertical diameter (in inches)
-
-            // Draw the oval on the newly added page using the non‑obsolete API.
-            // DrawOwal expects the bounding rectangle corners (x1,y1) top‑left and (x2,y2) bottom‑right.
-            double x1 = pinX - width / 2.0;
-            double y1 = pinY - height / 2.0;
-            double x2 = pinX + width / 2.0;
-            double y2 = pinY + height / 2.0;
-            newPage.DrawOwal(x1, y1, x2, y2);
-
-            // Ensure the output directory exists.
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

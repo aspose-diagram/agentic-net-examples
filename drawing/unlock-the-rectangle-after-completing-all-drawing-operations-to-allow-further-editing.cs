@@ -7,9 +7,9 @@ class Program
     static void Main(string[] args)
     {
         // Define output file path
-        string outputPath = "output.vsdx";
+        string outputPath = "UnlockedRectangle.vsdx";
 
-        // Ensure the output directory exists
+        // Guard: ensure the directory for the output exists
         string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
         if (!Directory.Exists(outputDir))
         {
@@ -19,56 +19,59 @@ class Program
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Create a new empty diagram inside a using block as required
+            using (Diagram diagram = new Diagram())
+            {
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Add a new page to the diagram (the first page is created by default)
-            // Use the first page for drawing
-            Page page = diagram.Pages[0];
+                // Draw a rectangle on the page (pinX, pinY, width, height)
+                // This method returns the shape ID of the newly created rectangle
+                long rectShapeId = page.DrawRectangle(1.0, 1.0, 2.0, 2.0);
 
-            // Define rectangle parameters (position and size in inches)
-            double pinX = 2.0;   // X coordinate of the rectangle's pin
-            double pinY = 2.0;   // Y coordinate of the rectangle's pin
-            double width = 3.0;  // Width of the rectangle
-            double height = 2.0; // Height of the rectangle
+                // Retrieve the shape object using the returned ID
+                Shape rectShape = page.Shapes.GetShape(rectShapeId);
 
-            // Draw the rectangle on the page; DrawRectangle returns the shape ID (long)
-            long rectShapeId = page.DrawRectangle(pinX, pinY, width, height);
+                // Ensure the shape is not marked as deleted before modifying
+                if (rectShape.Del == BOOL.False)
+                {
+                    // Unlock the rectangle by clearing protection flags.
+                    // Set each relevant protection property to FALSE.
+                    rectShape.Protection.LockAspect.Value = BOOL.False;
+                    rectShape.Protection.LockBegin.Value = BOOL.False;
+                    rectShape.Protection.LockCalcWH.Value = BOOL.False;
+                    rectShape.Protection.LockCrop.Value = BOOL.False;
+                    rectShape.Protection.LockCustProp.Value = BOOL.False;
+                    rectShape.Protection.LockDelete.Value = BOOL.False;
+                    rectShape.Protection.LockEnd.Value = BOOL.False;
+                    rectShape.Protection.LockFormat.Value = BOOL.False;
+                    rectShape.Protection.LockFromGroupFormat.Value = BOOL.False;
+                    rectShape.Protection.LockGroup.Value = BOOL.False;
+                    rectShape.Protection.LockHeight.Value = BOOL.False;
+                    rectShape.Protection.LockMoveX.Value = BOOL.False;
+                    rectShape.Protection.LockMoveY.Value = BOOL.False;
+                    rectShape.Protection.LockRotate.Value = BOOL.False;
+                    rectShape.Protection.LockSelect.Value = BOOL.False;
+                    rectShape.Protection.LockTextEdit.Value = BOOL.False;
+                    rectShape.Protection.LockThemeColors.Value = BOOL.False;
+                    rectShape.Protection.LockThemeEffects.Value = BOOL.False;
+                    rectShape.Protection.LockVtxEdit.Value = BOOL.False;
+                    rectShape.Protection.LockWidth.Value = BOOL.False;
+                }
+                else
+                {
+                    Console.Error.WriteLine("The rectangle shape was marked as deleted and cannot be unlocked.");
+                }
 
-            // Retrieve the shape object using the returned ID
-            Shape rectShape = page.Shapes.GetShape(rectShapeId);
-
-            // Unlock the rectangle by clearing all protection flags
-            // Each protection property uses the BOOL enum; set to BOOL.False
-            rectShape.Protection.LockAspect.Value = BOOL.False;
-            rectShape.Protection.LockBegin.Value = BOOL.False;
-            rectShape.Protection.LockCalcWH.Value = BOOL.False;
-            rectShape.Protection.LockCrop.Value = BOOL.False;
-            rectShape.Protection.LockCustProp.Value = BOOL.False;
-            rectShape.Protection.LockDelete.Value = BOOL.False;
-            rectShape.Protection.LockEnd.Value = BOOL.False;
-            rectShape.Protection.LockFormat.Value = BOOL.False;
-            rectShape.Protection.LockFromGroupFormat.Value = BOOL.False;
-            rectShape.Protection.LockGroup.Value = BOOL.False;
-            rectShape.Protection.LockHeight.Value = BOOL.False;
-            rectShape.Protection.LockMoveX.Value = BOOL.False;
-            rectShape.Protection.LockMoveY.Value = BOOL.False;
-            rectShape.Protection.LockRotate.Value = BOOL.False;
-            rectShape.Protection.LockSelect.Value = BOOL.False;
-            rectShape.Protection.LockTextEdit.Value = BOOL.False;
-            rectShape.Protection.LockThemeColors.Value = BOOL.False;
-            rectShape.Protection.LockThemeEffects.Value = BOOL.False;
-            rectShape.Protection.LockVtxEdit.Value = BOOL.False;
-            rectShape.Protection.LockWidth.Value = BOOL.False;
-
-            // Save the diagram to a VSDX file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                // Save the diagram to the specified file in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

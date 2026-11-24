@@ -7,46 +7,44 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PNG file path
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPngFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure image save options for PNG export.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Do not export hidden pages (property expects a native bool).
+                pngOptions.ExportHiddenPage = false;
 
-            // Configure image save options for PNG
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Transparent background is not explicitly supported via ImageSaveOptions in this version.
+                // If a transparent background option becomes available, it can be set here.
 
-            // Export only the first page (adjust as needed)
-            pngOptions.PageIndex = 0;
-            pngOptions.PageCount = 1;
-
-            // Do not export hidden pages (property expects a bool, not BOOL)
-            pngOptions.ExportHiddenPage = false; // corrected from BOOL.False
-
-            // Save the diagram as PNG (transparent background is the default for PNG)
-            diagram.Save(outputPath, pngOptions);
-
-            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
+                // Save the diagram as PNG using the configured options.
+                diagram.Save(outputPath, pngOptions);
+                Console.WriteLine($"Diagram exported successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }

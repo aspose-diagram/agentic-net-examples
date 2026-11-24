@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input Visio file path and output PDF file path as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -26,23 +26,23 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options with compression to reduce file size.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Configure PDF save options with compression to reduce file size.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Use Flate compression for text streams.
-            pdfOptions.TextCompression = PdfTextCompression.Flate;
-            // Explicitly set the target format.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Apply Flate text compression (ZIP‑based) for smaller PDFs while keeping quality.
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
 
-            // Save the diagram as a compressed PDF.
-            diagram.Save(outputPath, pdfOptions);
+                // Explicitly set the target format.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Release resources.
-            diagram.Dispose();
+                // Save the diagram as a PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"PDF exported successfully to: {outputPath}");
+                Console.WriteLine($"PDF exported successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {

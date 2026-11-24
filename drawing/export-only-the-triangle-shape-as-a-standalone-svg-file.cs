@@ -7,66 +7,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputSvgFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length >= 2 ? args[1] : "triangle.svg";
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Search for the first shape whose master name indicates a triangle.
-            Shape triangleShape = null;
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                Shape? triangleShape = null; // Nullable to avoid CS8600 warning
+
+                // Iterate through pages and shapes to locate a shape whose master name is "Triangle"
+                foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the shape has an associated master.
-                    if (shape.Master != null && shape.Master.Name != null)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Simple heuristic: master name contains the word "Triangle".
-                        if (shape.Master.Name.IndexOf("Triangle", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has a master and compare its name
+                        if (shape.Master != null && shape.Master.Name == "Triangle")
                         {
                             triangleShape = shape;
                             break;
                         }
                     }
+
+                    if (triangleShape != null)
+                        break;
                 }
-                if (triangleShape != null)
-                    break;
+
+                // If no triangle shape was found, report and exit
+                if (triangleShape == null)
+                {
+                    Console.Error.WriteLine("Error: No shape with master name 'Triangle' was found in the diagram.");
+                    return;
+                }
+
+                // Configure SVG save options
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    SaveFormat = SaveFileFormat.Svg,
+                    IsExportComments = false // Use native bool, not BOOL enum
+                };
+
+                // Export the identified triangle shape to SVG
+                triangleShape.ToSvg(outputPath, svgOptions);
+
+                Console.WriteLine($"Triangle shape exported successfully to: {outputPath}");
             }
-
-            if (triangleShape == null)
-            {
-                Console.Error.WriteLine("Error: No triangle shape found in the diagram.");
-                return;
-            }
-
-            // Prepare SVG save options (default options are sufficient).
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-            // Export the identified triangle shape to a standalone SVG file.
-            triangleShape.ToSvg(outputPath, svgOptions);
-
-            Console.WriteLine($"Triangle shape exported successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Write any unexpected errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

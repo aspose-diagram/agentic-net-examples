@@ -7,21 +7,25 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
+
+        // Determine output path (same folder with "_updated" suffix).
+        string directory = Path.GetDirectoryName(inputPath) ?? string.Empty;
+        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+        string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_updated.vsdx");
 
         try
         {
@@ -31,24 +35,29 @@ class Program
             // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all custom properties of the shape.
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Iterate through custom properties (Props) of the shape.
                     foreach (Prop prop in shape.Props)
                     {
-                        // Check for the custom property named "Version".
-                        if (prop.Name == "Version")
+                        // Look for a property named "Version".
+                        if (string.Equals(prop.Name, "Version", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Ensure the property value is not null.
+                            // Ensure the property has a value.
                             if (prop.Value != null && prop.Value.Val != null)
                             {
-                                // Perform the find‑and‑replace if the old text is present.
-                                if (prop.Value.Val.Contains("v1.0"))
+                                string currentValue = prop.Value.Val;
+                                // Replace 'v1.0' with 'v2.0' if present.
+                                if (currentValue.Contains("v1.0"))
                                 {
-                                    string updated = prop.Value.Val.Replace("v1.0", "v2.0");
-                                    prop.Value.Val = updated;
-                                    Console.WriteLine($"Updated shape ID {shape.ID} on page {page.ID}.");
+                                    string newValue = currentValue.Replace("v1.0", "v2.0");
+                                    prop.Value.Val = newValue;
+                                    Console.WriteLine($"Updated shape ID {shape.ID} on page {page.ID}: Version = \"{newValue}\"");
                                 }
                             }
                         }
@@ -56,13 +65,13 @@ class Program
                 }
             }
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram to the output file.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

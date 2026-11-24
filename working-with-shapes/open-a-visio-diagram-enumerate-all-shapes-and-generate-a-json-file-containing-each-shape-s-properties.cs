@@ -8,7 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output JSON file path
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
@@ -18,96 +18,114 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
+        }
+
+        // Ensure output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare a list to hold shape information for JSON serialization.
-                List<ShapeInfo> shapeInfos = new List<ShapeInfo>();
+                // List to hold information about each shape
+                List<ShapeInfo> allShapes = new List<ShapeInfo>();
 
-                // Iterate over each page in the diagram.
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over each shape on the current page.
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Extract the plain text from the shape.
-                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
-
-                        // Collect custom properties (shape.Props) into a dictionary.
-                        Dictionary<string, string> customProps = new Dictionary<string, string>();
-                        foreach (Prop prop in shape.Props)
-                        {
-                            // Prop.Value may be null; guard against it.
-                            string propValue = prop.Value?.Val ?? string.Empty;
-                            customProps[prop.Name] = propValue;
-                        }
-
-                        // Determine if the shape is a group (no IsGroup property; use Type check).
+                        // Determine if the shape is a group
                         bool isGroup = shape.Type == TypeValue.Group;
 
-                        // Build the ShapeInfo object with selected properties.
+                        // Populate basic shape information
                         ShapeInfo info = new ShapeInfo
                         {
                             Id = shape.ID,
-                            Name = shape.Name ?? string.Empty,
-                            NameU = shape.NameU ?? string.Empty,
+                            Name = shape.Name,               // Name is a plain string
+                            NameU = shape.NameU,             // Universal name, also a plain string
                             Type = shape.Type.ToString(),
-                            IsDeleted = shape.Del == BOOL.True,
                             IsGroup = isGroup,
                             PinX = shape.XForm.PinX.Value,
                             PinY = shape.XForm.PinY.Value,
                             Width = shape.XForm.Width.Value,
                             Height = shape.XForm.Height.Value,
-                            Text = shapeText,
-                            CustomProperties = customProps
+                            Text = shape.Text.Value.Text   // Plain text of the shape
                         };
 
-                        shapeInfos.Add(info);
+                        // Extract custom properties (Props collection)
+                        Dictionary<string, string> props = new Dictionary<string, string>();
+                        foreach (Prop prop in shape.Props)
+                        {
+                            if (!string.IsNullOrEmpty(prop.Name))
+                            {
+                                string propValue = prop.Value?.Val ?? string.Empty;
+                                props[prop.Name] = propValue;
+                            }
+                        }
+                        info.CustomProperties = props;
+
+                        // Extract user-defined cells (Users collection)
+                        Dictionary<string, string> users = new Dictionary<string, string>();
+                        foreach (User user in shape.Users)
+                        {
+                            if (!string.IsNullOrEmpty(user.NameU))
+                            {
+                                string userValue = user.Value?.Val ?? string.Empty;
+                                users[user.NameU] = userValue;
+                            }
+                        }
+                        info.UserFields = users;
+
+                        // Add the populated shape info to the list
+                        allShapes.Add(info);
                     }
                 }
 
-                // Serialize the list of shape information to JSON with indentation.
-                string json = JsonSerializer.Serialize(shapeInfos, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize the shape information to JSON with indentation
+                string json = JsonSerializer.Serialize(allShapes, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write JSON to the specified output file.
+                // Write the JSON output to the specified file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Shape information successfully written to: {outputPath}");
+                Console.WriteLine($"Shape information exported to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    // POCO class representing the properties we want to capture for each shape.
-    private class ShapeInfo
+    // Helper class representing the JSON structure for a shape
+    public class ShapeInfo
     {
         public long Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string NameU { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-        public bool IsDeleted { get; set; }
+        public string Name { get; set; }
+        public string NameU { get; set; }
+        public string Type { get; set; }
         public bool IsGroup { get; set; }
         public double PinX { get; set; }
         public double PinY { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
-        public string Text { get; set; } = string.Empty;
+        public string Text { get; set; }
         public Dictionary<string, string> CustomProperties { get; set; } = new();
+        public Dictionary<string, string> UserFields { get; set; } = new();
     }
 }

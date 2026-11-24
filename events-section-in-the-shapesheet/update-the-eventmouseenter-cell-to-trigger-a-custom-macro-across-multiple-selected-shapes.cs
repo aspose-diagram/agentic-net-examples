@@ -6,54 +6,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments: first argument is the diagram file, remaining are shape IDs.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId1> [<shapeId2> ...]");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        string diagramPath = args[0];
 
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the input file exists.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Iterate over each provided shape ID and update its EventXFMod cell
+            // to call a custom macro named "MyMacro".
+            for (int i = 1; i < args.Length; i++)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                if (!long.TryParse(args[i], out long shapeId))
+                {
+                    Console.Error.WriteLine($"Warning: Invalid shape ID '{args[i]}'. Skipping.");
+                    continue;
+                }
+
+                // Retrieve the shape from the first page (index 0).
+                // Note: Shapes are accessed via the GetShape method using the long ID.
+                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine($"Warning: Shape with ID {shapeId} not found. Skipping.");
+                    continue;
+                }
+
+                // Set the EventXFMod cell formula to invoke the macro.
+                // Using the Visio CALLTHIS function to run "MyMacro".
+                shape.Event.EventXFMod.Ufe.F = "CALLTHIS(\"MyMacro\", \"\")";
             }
 
-            // Work with the first page (adjust as needed for other pages).
-            Page page = diagram.Pages[0];
+            // Define output path by appending "_modified.vsdm" to the original file name.
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(diagramPath) + "_modified.vsdm");
 
-            // Iterate over all shapes on the page.
-            foreach (Shape shape in page.Shapes)
-            {
-                // Set the EventDrop cell (closest substitute for EventMouseEnter) to call a custom macro.
-                // The formula uses the CALLTHIS function to invoke a macro named "MyMacro".
-                shape.Event.EventDrop.Ufe.F = "CALLTHIS(\"MyMacro\")";
-            }
-
-            // Save the modified diagram in a macro‑enabled format.
+            // Save the modified diagram in macro-enabled format.
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
 
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Write any unexpected errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

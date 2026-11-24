@@ -8,10 +8,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file path, SolutionXML name, Base64-encoded AES key
+        // Expect three arguments: diagram file path, SolutionXML name, base64-encoded AES key
         if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <solutionXmlName> <base64Key>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <solutionXmlName> <base64Key>");
             return;
         }
 
@@ -22,11 +22,11 @@ class Program
         // Guard against missing diagram file
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
 
-        // Validate the provided key
+        // Validate key format
         byte[] keyBytes;
         try
         {
@@ -34,7 +34,7 @@ class Program
         }
         catch (FormatException)
         {
-            Console.Error.WriteLine("The provided key is not a valid Base64 string.");
+            Console.Error.WriteLine("Error: Provided key is not a valid Base64 string.");
             return;
         }
 
@@ -47,7 +47,7 @@ class Program
             SolutionXML targetXml = null;
             foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                if (solXml.Name == solutionXmlName)
+                if (string.Equals(solXml.Name, solutionXmlName, StringComparison.OrdinalIgnoreCase))
                 {
                     targetXml = solXml;
                     break;
@@ -56,35 +56,35 @@ class Program
 
             if (targetXml == null)
             {
-                Console.Error.WriteLine($"SolutionXML with name '{solutionXmlName}' not found.");
+                Console.Error.WriteLine($"Error: No SolutionXML element named '{solutionXmlName}' was found.");
                 return;
             }
 
-            // The XmlValue is expected to be Base64-encoded ciphertext (IV + Cipher)
+            // The stored XmlValue is expected to be Base64-encoded encrypted data
+            string encryptedBase64 = targetXml.XmlValue;
             byte[] encryptedData;
             try
             {
-                encryptedData = Convert.FromBase64String(targetXml.XmlValue);
+                encryptedData = Convert.FromBase64String(encryptedBase64);
             }
             catch (FormatException)
             {
-                Console.Error.WriteLine("The SolutionXML XmlValue is not a valid Base64 string.");
+                Console.Error.WriteLine("Error: SolutionXML XmlValue is not a valid Base64 string.");
                 return;
             }
 
+            // Decrypt using AES (CBC) – assume first 16 bytes are IV
             if (encryptedData.Length < 16)
             {
-                Console.Error.WriteLine("Encrypted data is too short to contain an IV.");
+                Console.Error.WriteLine("Error: Encrypted data is too short to contain an IV.");
                 return;
             }
 
-            // Extract IV (first 16 bytes) and ciphertext (remaining bytes)
             byte[] iv = new byte[16];
             Array.Copy(encryptedData, 0, iv, 0, 16);
             byte[] cipherText = new byte[encryptedData.Length - 16];
             Array.Copy(encryptedData, 16, cipherText, 0, cipherText.Length);
 
-            // Decrypt using AES CBC with PKCS7 padding
             string decryptedXml;
             using (Aes aes = Aes.Create())
             {
@@ -100,20 +100,44 @@ class Program
                 }
             }
 
-            // Output the decrypted XML
-            Console.WriteLine("Decrypted SolutionXML:");
+            Console.WriteLine("Decrypted SolutionXML content:");
             Console.WriteLine(decryptedXml);
 
-            // Compute SHA256 hash of the decrypted content for integrity verification
-            using (SHA256 sha256 = SHA256.Create())
+            // Verify integrity: look for a companion SolutionXML named "<name>_Hash"
+            string hashElementName = solutionXmlName + "_Hash";
+            string storedHashBase64 = null;
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(decryptedXml));
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in hashBytes)
+                if (string.Equals(solXml.Name, hashElementName, StringComparison.OrdinalIgnoreCase))
                 {
-                    sb.Append(b.ToString("x2"));
+                    storedHashBase64 = solXml.XmlValue;
+                    break;
                 }
-                Console.WriteLine($"SHA256 Hash: {sb}");
+            }
+
+            if (storedHashBase64 != null)
+            {
+                // Compute SHA256 of decrypted XML
+                byte[] computedHash;
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    computedHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(decryptedXml));
+                }
+
+                string computedHashBase64 = Convert.ToBase64String(computedHash);
+
+                if (computedHashBase64 == storedHashBase64)
+                {
+                    Console.WriteLine("Integrity check passed: computed hash matches stored hash.");
+                }
+                else
+                {
+                    Console.WriteLine("Integrity check FAILED: computed hash does not match stored hash.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("No integrity hash element found; skipping integrity verification.");
             }
         }
         catch (Exception ex)

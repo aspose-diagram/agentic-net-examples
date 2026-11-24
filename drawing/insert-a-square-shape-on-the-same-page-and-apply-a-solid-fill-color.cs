@@ -6,54 +6,44 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
-            return;
-        }
+        // Determine input and output file paths (use arguments if provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram.
+            // Load the existing Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Work with the first page of the diagram.
+            // Get the first page of the diagram
             Page page = diagram.Pages[0];
 
-            // Draw a square (rectangle with equal width and height) at position (1,1) with size 2x2.
-            // The method returns the shape ID (long).
-            long squareShapeId = page.DrawRectangle(1.0, 1.0, 2.0, 2.0);
+            // Draw a square (rectangle with equal width and height) on the page
+            // Parameters: pinX, pinY, width, height
+            long shapeId = page.DrawRectangle(1.0, 1.0, 2.0, 2.0);
 
-            // Retrieve the Shape object using the returned ID.
-            Shape squareShape = page.Shapes.GetShape(squareShapeId);
+            // Retrieve the newly created shape using its ID
+            Shape squareShape = page.Shapes.GetShape(shapeId);
 
-            // Apply a solid fill pattern.
-            // FillPattern.Value = 1 corresponds to a solid fill.
+            // Apply a solid fill pattern (value 1) to the shape
             squareShape.Fill.FillPattern.Value = 1;
 
-            // Set the fill foreground color to a solid green (hex format).
+            // Set the fill foreground color to a solid green (hex format)
             squareShape.Fill.FillForegnd.Value = "#00FF00";
 
-            // Ensure the fill is fully opaque (0 = opaque, 1 = fully transparent).
-            squareShape.Fill.FillForegndTrans.Value = 0;
-
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors that occur during processing to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

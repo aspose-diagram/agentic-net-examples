@@ -7,51 +7,50 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Ensure a file path argument is provided.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard: verify the file exists before attempting to load.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // HashSet to track page names and detect duplicates.
-                HashSet<string> pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                // Validate that each page has a unique name.
+                var pageNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate over each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the page name (string). If null, treat as empty.
+                    // Retrieve the page name; handle possible nulls gracefully.
                     string name = page.Name ?? string.Empty;
 
-                    // Check for duplicate names.
-                    if (!pageNames.Add(name))
+                    // If the name already exists in the set, a duplicate is found.
+                    if (pageNames.Contains(name))
                     {
-                        // Duplicate found – raise an exception.
-                        throw new Exception($"Duplicate page name detected: \"{name}\"");
+                        throw new Exception($"Duplicate page name detected: '{name}'.");
                     }
+
+                    pageNames.Add(name);
                 }
 
-                // If execution reaches here, all page names are unique.
                 Console.WriteLine("All page names are unique.");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Output any errors encountered during loading or validation.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

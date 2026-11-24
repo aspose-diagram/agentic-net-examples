@@ -6,28 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting four arguments:
-        // 0 - path to the target diagram file (existing Visio file)
-        // 1 - path to the user‑defined master (stencil) file
-        // 2 - name of the master inside the stencil to use
-        // 3 - output diagram file path
-        if (args.Length < 4)
+        // Expect three arguments: master file path, master name inside the file, output diagram path.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <diagramPath> <masterFilePath> <masterName> <outputPath>");
+            Console.Error.WriteLine("Usage: <program> <masterFilePath> <masterName> <outputDiagramPath>");
             return;
         }
 
-        string diagramPath = args[0];
-        string masterFilePath = args[1];
-        string masterName = args[2];
-        string outputPath = args[3];
+        string masterFilePath = args[0];
+        string masterName = args[1];
+        string outputDiagramPath = args[2];
 
-        // Guard input files
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
-            return;
-        }
+        // Guard: ensure the master file exists.
         if (!File.Exists(masterFilePath))
         {
             Console.Error.WriteLine($"Master file not found: {masterFilePath}");
@@ -36,40 +26,46 @@ class Program
 
         try
         {
-            // Load the existing diagram
-            Diagram diagram = new Diagram(diagramPath);
+            // Create a new empty diagram.
+            Diagram diagram = new Diagram();
 
-            // Import the custom master from the user‑defined stencil
-            // This adds the master to the diagram's Masters collection
+            // Import the user‑defined master from the specified stencil file.
+            // The AddMaster method loads the master so it can be used later.
             diagram.AddMaster(masterFilePath, masterName);
 
-            // Ensure the diagram has at least five pages (page index 4)
+            // Ensure the diagram has at least five pages (pages are zero‑based indexed).
             while (diagram.Pages.Count < 5)
             {
-                // Add a new blank page
+                // Add a new blank page.
                 diagram.Pages.Add(new Page());
             }
 
-            // Retrieve page five (zero‑based index 4)
+            // Retrieve page five (index 4).
             Page pageFive = diagram.Pages[4];
 
-            // Add a shape based on the imported master to page five
-            // PinX and PinY are set to 1.0; adjust as needed
-            long shapeId = pageFive.AddShape(1.0, 1.0, masterName, false);
+            // Add a shape based on the imported master to page five.
+            // PinX and PinY are arbitrary coordinates; adjust as needed.
+            double pinX = 2.0;
+            double pinY = 2.0;
+            // The fourth parameter indicates whether to calculate geometry; false for simple placement.
+            long shapeId = pageFive.AddShape(pinX, pinY, masterName, false);
 
-            // Retrieve the newly added shape object
+            // Retrieve the newly added shape using its ID.
             Shape shape = pageFive.Shapes.GetShape(shapeId);
 
-            // Set the shape's text label
-            shape.Text.Value.Clear();                     // Remove any existing text
-            shape.Text.Value.Add(new Txt("Custom Label")); // Add new text
+            // Set the shape's text label.
+            // First clear any existing text.
+            shape.Text.Value.Clear();
+            // Add the desired text.
+            shape.Text.Value.Add(new Txt("Custom Shape Label"));
 
-            // Save the modified diagram to the specified output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the resulting diagram to the specified output path in VSDX format.
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

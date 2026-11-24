@@ -1,14 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args == null || args.Length < 2)
+        // Expect input diagram path and output diagram path as arguments.
+        if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
@@ -17,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -29,66 +28,53 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Define a threshold for validation (example: 1000.0).
-            double threshold = 1000.0;
+            // Define validation thresholds.
+            const double MinThreshold = 0.0;
+            const double MaxThreshold = 100.0;
 
             // Iterate through all pages.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the current page.
-                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[shapeIndex];
-
                     // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the shape has a Fields collection.
-                    if (shape.Fields == null)
-                        continue;
-
                     // Iterate through all text fields of the shape.
-                    for (int fieldIndex = 0; fieldIndex < shape.Fields.Count; fieldIndex++)
+                    foreach (Field field in shape.Fields)
                     {
-                        Field field = shape.Fields[fieldIndex];
-
                         // Read the current field value as string.
                         string currentValStr = field.Value.Val;
 
-                        // Try to parse the value as a double for numeric processing.
-                        double currentVal;
-                        bool isNumeric = double.TryParse(currentValStr, out currentVal);
-
-                        if (!isNumeric)
+                        // Attempt to parse the value as a double for numeric processing.
+                        if (double.TryParse(currentValStr, out double currentVal))
                         {
-                            // Non‑numeric fields are ignored for this validation.
-                            continue;
-                        }
+                            // Example modification: increase the numeric value by 10.
+                            double modifiedVal = currentVal + 10.0;
 
-                        // Example modification: double the original numeric value.
-                        double modifiedVal = currentVal * 2.0;
+                            // Update the field with the new value.
+                            field.Value.Val = modifiedVal.ToString();
 
-                        // Update the field with the new value.
-                        field.Value.Val = modifiedVal.ToString();
-                        // Reset formula and unit to indicate a plain value.
-                        field.Value.Ufev.F = "";
-                        field.Value.Ufev.Unit = MeasureConst.Undefined;
-
-                        // Validate the modified value against the threshold.
-                        if (modifiedVal > threshold)
-                        {
-                            // Report validation failure.
-                            Console.Error.WriteLine($"Validation failed: Shape ID {shape.ID}, Field IX {field.IX} value {modifiedVal} exceeds threshold {threshold}.");
-                            // Optionally, throw to stop processing.
-                            throw new Exception($"Field value exceeds threshold on shape ID {shape.ID}.");
+                            // Validate the modified value against defined thresholds.
+                            if (modifiedVal < MinThreshold || modifiedVal > MaxThreshold)
+                            {
+                                Console.Error.WriteLine(
+                                    $"Validation failed for Shape ID {shape.ID}, Field Index {field.IX}: " +
+                                    $"value {modifiedVal} is outside the range [{MinThreshold}, {MaxThreshold}].");
+                            }
+                            else
+                            {
+                                Console.WriteLine(
+                                    $"Shape ID {shape.ID}, Field Index {field.IX} updated successfully to {modifiedVal}.");
+                            }
                         }
                         else
                         {
-                            // Report successful validation.
-                            Console.WriteLine($"Shape ID {shape.ID}, Field IX {field.IX} updated to {modifiedVal} (within threshold).");
+                            // Non-numeric fields are ignored for this validation scenario.
+                            Console.WriteLine(
+                                $"Shape ID {shape.ID}, Field Index {field.IX} contains non-numeric value '{currentValStr}'. Skipping modification.");
                         }
                     }
                 }
@@ -100,7 +86,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

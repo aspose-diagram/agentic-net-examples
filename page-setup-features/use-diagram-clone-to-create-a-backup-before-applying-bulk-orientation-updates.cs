@@ -1,82 +1,73 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <backupVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [Landscape|Portrait]");
             return;
         }
 
-        string sourcePath = args[0];
-        string backupPath = args[1];
-        string outputPath = args[2];
+        string inputPath = args[0];
 
-        // Guard: source file must exist.
-        if (!File.Exists(sourcePath))
+        // Guard: ensure the source file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Source file not found: {sourcePath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Guard: backup directory must exist.
-        string backupDir = Path.GetDirectoryName(backupPath);
-        if (!string.IsNullOrEmpty(backupDir) && !Directory.Exists(backupDir))
+        // Determine desired orientation; default to Landscape if not specified or invalid
+        string orientationArg = args.Length > 1 ? args[1] : "Landscape";
+        PrintPageOrientationValue desiredOrientation = PrintPageOrientationValue.Landscape;
+        if (string.Equals(orientationArg, "Portrait", StringComparison.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine($"Error: Backup directory does not exist: {backupDir}");
-            return;
+            desiredOrientation = PrintPageOrientationValue.Portrait;
         }
-
-        // Guard: output directory must exist.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        else if (!string.Equals(orientationArg, "Landscape", StringComparison.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine($"Error: Output directory does not exist: {outputDir}");
-            return;
+            Console.WriteLine($"Warning: Unrecognized orientation '{orientationArg}'. Defaulting to Landscape.");
         }
 
         try
         {
-            // Load the source Visio diagram.
-            Diagram diagram = new Diagram(sourcePath);
-
-            // NOTE: Diagram.Clone is not available in the current Aspose.Diagram API.
-            // As an alternative, save the loaded diagram to the backup path before modifications.
-            diagram.Save(backupPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Backup saved to: {backupPath}");
-
-            // Bulk update: set all pages to Landscape orientation.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the original diagram inside a using block (mandatory disposal pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Page page = diagram.Pages[i];
+                // Build backup file name (original name + "_backup")
+                string dir = Path.GetDirectoryName(inputPath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string backupPath = Path.Combine(dir, $"{fileNameWithoutExt}_backup.vsdx");
 
-                // Ensure the PrintProps hierarchy exists before setting orientation.
-                if (page.PageSheet != null &&
-                    page.PageSheet.PrintProps != null &&
-                    page.PageSheet.PrintProps.PrintPageOrientation != null)
+                // Save the backup before any modifications
+                diagram.Save(backupPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Backup saved to: {backupPath}");
+
+                // Apply bulk orientation update to all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Ensure the page has a PageSheet and PrintProps before accessing
+                    if (page.PageSheet != null && page.PageSheet.PrintProps != null)
+                    {
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = desiredOrientation;
+                    }
                 }
-                else
-                {
-                    Console.Error.WriteLine($"Warning: Unable to set orientation for page index {i} (missing PrintProps).");
-                }
+
+                // Save the modified diagram (original file is left untouched; a new file is created)
+                string outputPath = Path.Combine(dir, $"{fileNameWithoutExt}_updated.vsdx");
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Updated diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose.Diagram or IO exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

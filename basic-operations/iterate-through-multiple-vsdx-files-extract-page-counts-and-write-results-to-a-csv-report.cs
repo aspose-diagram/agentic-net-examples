@@ -1,13 +1,12 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input folder and output CSV file.
+        // Validate arguments: expect input folder and output CSV file path
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input_folder_path> <output_csv_path>");
@@ -15,70 +14,75 @@ class Program
         }
 
         string inputFolder = args[0];
-        string outputCsv = args[1];
+        string outputCsvPath = args[1];
 
-        // Verify the input folder exists.
+        // Guard: input folder must exist
         if (!Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Prepare a list to hold file path and page count pairs.
-        var results = new List<(string FilePath, int PageCount)>();
-
-        // Get all .vsdx files in the specified folder (non‑recursive).
-        string[] files = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
-
-        foreach (string filePath in files)
+        // Guard: output directory must exist (create if necessary)
+        string outputDir = Path.GetDirectoryName(outputCsvPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
         {
-            // Guard against missing files (should not happen after GetFiles, but added per rules).
-            if (!File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
-            }
-
             try
             {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(filePath);
-
-                // Retrieve the number of pages.
-                int pageCount = diagram.Pages.Count;
-
-                // Store the result.
-                results.Add((filePath, pageCount));
+                Directory.CreateDirectory(outputDir);
             }
             catch (Exception ex)
             {
-                // Report any errors that occur while processing this file.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output directory: {outputDir}. Error: {ex.Message}");
+                return;
             }
         }
 
+        // Prepare CSV writer
         try
         {
-            // Write results to the CSV report.
-            using (var writer = new StreamWriter(outputCsv, false))
+            using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
             {
-                // CSV header.
+                // Write CSV header
                 writer.WriteLine("FilePath,PageCount");
 
-                // Write each result line.
-                foreach (var entry in results)
+                // Get all VSDX files in the input folder (non-recursive)
+                string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+
+                foreach (string filePath in vsdxFiles)
                 {
-                    // Escape double quotes in the file path, if any.
-                    string escapedPath = entry.FilePath.Replace("\"", "\"\"");
-                    writer.WriteLine($"\"{escapedPath}\",{entry.PageCount}");
+                    // Guard: ensure the file still exists
+                    if (!File.Exists(filePath))
+                    {
+                        Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Load the Visio diagram
+                        Diagram diagram = new Diagram(filePath);
+
+                        // Retrieve page count
+                        int pageCount = diagram.Pages.Count;
+
+                        // Write result to CSV
+                        // Escape double quotes in path if any
+                        string escapedPath = filePath.Replace("\"", "\"\"");
+                        writer.WriteLine($"\"{escapedPath}\",{pageCount}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log any Aspose.Diagram errors for this file
+                        Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                    }
                 }
             }
 
-            Console.WriteLine($"Report generated successfully at: {outputCsv}");
+            Console.WriteLine($"Report generated successfully at: {outputCsvPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur while writing the CSV file.
             Console.Error.WriteLine($"Failed to write CSV report: {ex.Message}");
         }
     }

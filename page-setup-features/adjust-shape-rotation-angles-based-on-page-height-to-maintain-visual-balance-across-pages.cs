@@ -6,62 +6,65 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provided via command‑line arguments or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Expect two arguments: input diagram path and output diagram path.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Guard: ensure the source Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Reference page height (in inches) used to compute a scaling factor.
-            // Here we use 10 inches as a baseline; adjust as needed for your scenario.
+            // Reference height for scaling (in inches). Adjust as needed.
             const double referenceHeight = 10.0;
 
-            // Iterate through each page in the diagram
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Retrieve the page height (in inches)
+                // Retrieve the page height (in inches).
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Compute a rotation scaling factor based on page height
-                double heightFactor = pageHeight / referenceHeight;
+                // Compute scaling factor based on page height.
+                double scaleFactor = pageHeight / referenceHeight;
 
-                // Adjust rotation angle for every shape on the current page
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Iterate through each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[i];
+                    // Ensure the shape has a valid Angle cell before modifying.
+                    if (shape.XForm != null && shape.XForm.Angle != null)
+                    {
+                        // Original rotation angle (in degrees).
+                        double originalAngle = shape.XForm.Angle.Value;
 
-                    // Get the current rotation angle (degrees)
-                    double originalAngle = shape.XForm.Angle.Value;
+                        // Adjust the angle proportionally to the page height.
+                        double newAngle = originalAngle * scaleFactor;
 
-                    // Calculate the new angle using the height factor
-                    double newAngle = originalAngle * heightFactor;
-
-                    // Normalize the angle to the range [0, 360)
-                    newAngle = newAngle % 360.0;
-                    if (newAngle < 0) newAngle += 360.0;
-
-                    // Apply the new rotation angle
-                    shape.XForm.Angle.Value = newAngle;
+                        // Apply the new rotation angle.
+                        shape.XForm.Angle.Value = newAngle;
+                    }
                 }
             }
 
-            // Save the modified diagram to the output file in VSDX format
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

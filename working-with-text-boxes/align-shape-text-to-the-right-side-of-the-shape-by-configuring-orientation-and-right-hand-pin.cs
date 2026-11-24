@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, output file, shape ID
+        // Expect three arguments: input diagram path, output diagram path, shape ID (numeric).
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <shapeId>");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <shapeId>");
             return;
         }
 
@@ -17,14 +17,14 @@ class Program
         string outputPath = args[1];
         string shapeIdArg = args[2];
 
-        // Guard: ensure the input file exists
+        // Guard: verify input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse shape ID (Visio shape IDs are long)
+        // Parse shape ID.
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
             Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
@@ -33,52 +33,39 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Assume the shape is on the first page; adjust if needed
+            // Retrieve the first page (index 0). Adjust if needed.
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Retrieve the shape by its ID. GetShape expects an int identifier.
+            Shape shape = page.Shapes.GetShape((int)shapeId);
+
+            // Ensure the shape is not logically deleted.
+            if (shape.Del == BOOL.True)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
                 return;
             }
 
-            // -----------------------------------------------------------------
-            // Align the shape's text to the right side of the shape.
-            // This is achieved by:
-            //   1. Setting the text block's right‑hand pin (TxtPinX) to the shape's width.
-            //   2. Positioning the text block's location pin (TxtLocPinX) at the same X coordinate.
-            //   3. Ensuring the text orientation angle is zero (horizontal).
-            //   4. Setting paragraph horizontal alignment to RightAlign.
-            // -----------------------------------------------------------------
+            // Align text to the right side of the shape:
+            // - Set the text block's pin (TxtPinX) to the shape's right edge.
+            // - Set the text block's location pin (TxtLocPinX) to the left edge (0).
+            // This positions the text block so its right side aligns with the shape's right side.
+            shape.TextXForm.TxtPinX.Value = shape.XForm.Width.Value; // Right edge of shape.
+            shape.TextXForm.TxtLocPinX.Value = 0;                    // Left edge of text block.
 
-            // 1. Set the right‑hand pin of the text block to the shape's width
-            shape.TextXForm.TxtPinX.Value = shape.XForm.Width.Value;
+            // Optional: ensure no rotation is applied to the text.
+            shape.TextXForm.TxtAngle.Value = 0;
 
-            // 2. Align the location pin of the text block with the right edge
-            shape.TextXForm.TxtLocPinX.Value = shape.XForm.Width.Value;
-
-            // 3. Ensure the text orientation is horizontal (angle = 0 degrees)
-            shape.TextXForm.TxtAngle.Value = 0.0;
-
-            // 4. Set paragraph alignment to right, if at least one paragraph exists
-            if (shape.Paras != null && shape.Paras.Count > 0)
-            {
-                // Access the first paragraph (Visio stores formatting per paragraph)
-                shape.Paras[0].HorzAlign.Value = HorzAlignValue.RightAlign;
-            }
-
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

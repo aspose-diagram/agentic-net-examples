@@ -6,15 +6,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
+        // Input and output file paths (can be passed as command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
         // Guard against missing input file
         if (!File.Exists(inputPath))
@@ -34,9 +28,9 @@ class Program
                 // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Preserve existing paragraph and character formatting by NOT modifying shape.Paras or shape.Chars
+                    // Preserve existing text formatting – do not modify Paras or Chars
 
-                    // Apply gradient fill
+                    // Apply a gradient fill
                     // Set fill pattern to gradient (value 25)
                     shape.Fill.FillPattern.Value = 25;
 
@@ -49,10 +43,10 @@ class Program
                     // Clear any existing gradient stops
                     shape.Fill.GradientFill.GradientStops.Clear();
 
-                    // Add new gradient stops (blue to green)
+                    // Add new gradient stops (red at start, green at end)
                     shape.Fill.GradientFill.GradientStops.Add(
                         new DoubleValue(0, MeasureConst.NUM),
-                        new ColorValue("#0000FF", MeasureConst.Undefined));
+                        new ColorValue("#FF0000", MeasureConst.Undefined));
 
                     shape.Fill.GradientFill.GradientStops.Add(
                         new DoubleValue(1, MeasureConst.NUM),
@@ -60,14 +54,14 @@ class Program
                 }
             }
 
-            // Save the modified diagram to the specified output path in VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

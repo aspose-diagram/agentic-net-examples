@@ -1,82 +1,94 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
-    // Represents a single element from the JSON file that will be stored in SolutionXML.
-    private class DiagramElement
-    {
-        public string Name { get; set; }
-        public string XmlValue { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expected arguments: <diagramPath> <jsonPath> <outputPath>
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string jsonPath = args.Length > 1 ? args[1] : "elements.json";
-        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
-
-        // Guard: ensure the source Visio file exists.
-        if (!File.Exists(diagramPath))
+        // Expect three arguments: input diagram path, JSON file path, output diagram path
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <jsonFilePath> <outputDiagramPath>");
             return;
         }
 
-        // Guard: ensure the JSON file exists.
-        if (!File.Exists(jsonPath))
+        string inputDiagramPath = args[0];
+        string jsonFilePath = args[1];
+        string outputDiagramPath = args[2];
+
+        // Guard: verify input diagram exists
+        if (!File.Exists(inputDiagramPath))
         {
-            Console.Error.WriteLine($"JSON file not found: {jsonPath}");
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
             return;
         }
 
-        // Read and deserialize the JSON content.
-        List<DiagramElement> elements;
+        // Guard: verify JSON file exists
+        if (!File.Exists(jsonFilePath))
+        {
+            Console.Error.WriteLine($"JSON file not found: {jsonFilePath}");
+            return;
+        }
+
+        // Read JSON content and validate it is well‑formed
+        string jsonContent;
         try
         {
-            string jsonContent = File.ReadAllText(jsonPath);
-            elements = JsonSerializer.Deserialize<List<DiagramElement>>(jsonContent);
-            if (elements == null)
-            {
-                Console.Error.WriteLine("Failed to deserialize JSON: result is null.");
-                return;
-            }
+            jsonContent = File.ReadAllText(jsonFilePath);
+            // Validate JSON structure (throws if invalid)
+            using (JsonDocument.Parse(jsonContent)) { }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading or parsing JSON file: {ex.Message}");
+            Console.Error.WriteLine($"Failed to read or parse JSON file: {ex.Message}");
             return;
         }
 
-        // Load the existing Visio diagram inside a using block as required.
         try
         {
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the existing Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputDiagramPath))
             {
-                // Iterate over each element from JSON and add it to the diagram's SolutionXML collection.
-                foreach (DiagramElement elem in elements)
-                {
-                    // Create a new SolutionXML instance and set its properties.
-                    SolutionXML solXml = new SolutionXML();
-                    solXml.Name = elem.Name ?? string.Empty;
-                    solXml.XmlValue = elem.XmlValue ?? string.Empty;
+                // Define a name for the SolutionXML element that will hold the imported JSON
+                const string solutionXmlName = "ImportedJson";
 
-                    // Add the new SolutionXML element to the diagram.
-                    diagram.SolutionXMLs.Add(solXml);
+                // Search for an existing SolutionXML with the same name
+                SolutionXML existing = null;
+                foreach (SolutionXML solXml in diagram.SolutionXMLs)
+                {
+                    if (solXml.Name == solutionXmlName)
+                    {
+                        existing = solXml;
+                        break;
+                    }
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram successfully saved to: {outputPath}");
+                if (existing != null)
+                {
+                    // Update the existing element's XML value with the new JSON content
+                    existing.XmlValue = jsonContent;
+                }
+                else
+                {
+                    // Create a new SolutionXML element and add it to the diagram
+                    SolutionXML newSolXml = new SolutionXML();
+                    newSolXml.Name = solutionXmlName;
+                    newSolXml.XmlValue = jsonContent;
+                    diagram.SolutionXMLs.Add(newSolXml);
+                }
+
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("Diagram updated and saved successfully.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
+            // Capture any Aspose.Diagram related errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

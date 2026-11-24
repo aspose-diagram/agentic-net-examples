@@ -8,10 +8,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, shape NameU, output JSON path
+        // Expect three arguments: input diagram path, target shape NameU, output JSON path
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <inputDiagramPath> <shapeNameU> <outputJsonPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeNameU> <outputJsonPath>");
             return;
         }
 
@@ -19,10 +19,10 @@ class Program
         string shapeNameU = args[1];
         string outputPath = args[2];
 
-        // Guard: ensure the input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -31,18 +31,25 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Use the first page for shape lookup
-                Page page = diagram.Pages[0];
-
-                // Locate the target shape by its NameU, ignoring deleted shapes
                 Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+
+                // Iterate through all pages and shapes to find the shape with the specified NameU
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.Del == BOOL.False && shape.NameU == shapeNameU)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        targetShape = shape;
-                        break;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        if (shape.NameU == shapeNameU)
+                        {
+                            targetShape = shape;
+                            break;
+                        }
                     }
+                    if (targetShape != null)
+                        break;
                 }
 
                 if (targetShape == null)
@@ -51,57 +58,60 @@ class Program
                     return;
                 }
 
-                // Collect paragraph information into DTO objects
+                // Prepare a list to hold paragraph DTOs
                 List<ParagraphDto> paragraphs = new List<ParagraphDto>();
+
+                // Iterate over the paragraph collection using indexer as required
                 for (int i = 0; i < targetShape.Paras.Count; i++)
                 {
-                    // The paragraph type is Para (not Paragraph)
+                    // The paragraph type is 'Para' in Aspose.Diagram
                     Para para = targetShape.Paras[i];
 
+                    // Build DTO with selected properties
                     ParagraphDto dto = new ParagraphDto
                     {
-                        Index = i,
-                        HorzAlign = para.HorzAlign.Value.ToString(),
-                        IndLeft = para.IndLeft.Value,
-                        IndRight = para.IndRight.Value,
-                        IndFirst = para.IndFirst.Value,
-                        SpBefore = para.SpBefore.Value,
-                        SpAfter = para.SpAfter.Value,
-                        SpLine = para.SpLine.Value,
-                        Bullet = para.Bullet.Value.ToString(),
-                        BulletStr = para.BulletStr.Value
+                        Index = para.IX,
+                        HorizontalAlignment = para.HorzAlign.ToString(),
+                        IndentLeft = para.IndLeft?.Value,
+                        IndentRight = para.IndRight?.Value,
+                        IndentFirst = para.IndFirst?.Value,
+                        SpaceBefore = para.SpBefore?.Value,
+                        SpaceAfter = para.SpAfter?.Value,
+                        SpaceLine = para.SpLine?.Value,
+                        Bullet = para.Bullet.ToString(),
+                        BulletString = para.BulletStr?.Value
                     };
+
                     paragraphs.Add(dto);
                 }
 
-                // Serialize the DTO list to formatted JSON
-                JsonSerializerOptions jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string json = JsonSerializer.Serialize(paragraphs, jsonOptions);
+                // Serialize the paragraph list to JSON with indentation
+                string json = JsonSerializer.Serialize(paragraphs, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write the JSON string to the specified output file
+                // Write JSON to the specified output file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Paragraph collection serialized to {outputPath}");
+                Console.WriteLine($"Paragraph collection serialized to JSON successfully: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
+            // Capture any Aspose.Diagram or I/O errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
-}
 
-// DTO class representing a paragraph's serializable properties
-class ParagraphDto
-{
-    public int Index { get; set; }
-    public string HorzAlign { get; set; }
-    public double IndLeft { get; set; }
-    public double IndRight { get; set; }
-    public double IndFirst { get; set; }
-    public double SpBefore { get; set; }
-    public double SpAfter { get; set; }
-    public double SpLine { get; set; }
-    public string Bullet { get; set; }
-    public string BulletStr { get; set; }
+    // DTO class representing a paragraph's relevant properties for JSON serialization
+    private class ParagraphDto
+    {
+        public int Index { get; set; }
+        public string? HorizontalAlignment { get; set; }
+        public double? IndentLeft { get; set; }
+        public double? IndentRight { get; set; }
+        public double? IndentFirst { get; set; }
+        public double? SpaceBefore { get; set; }
+        public double? SpaceAfter { get; set; }
+        public double? SpaceLine { get; set; }
+        public string? Bullet { get; set; }
+        public string? BulletString { get; set; }
+    }
 }

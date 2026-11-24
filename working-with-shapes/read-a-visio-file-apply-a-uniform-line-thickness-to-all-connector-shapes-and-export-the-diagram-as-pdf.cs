@@ -7,51 +7,60 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
 
-        // Guard: ensure the input Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define the uniform line thickness (in inches)
-                const double uniformThickness = 0.02;
+                // Define the uniform line thickness (in inches). Adjust as needed.
+                double uniformThickness = 0.02; // Example: 0.02 inches
 
-                // Iterate through all pages and shapes to find connector (1‑D) shapes
+                // Iterate through all pages and their shapes.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Connector shapes are identified by the OneD property
+                        // Identify connector shapes (1‑D shapes).
                         if (shape.OneD)
                         {
-                            // Apply the uniform line thickness using the DoubleValue wrapper
+                            // Apply the uniform line thickness.
                             shape.Line.LineWeight.Value = uniformThickness;
                         }
                     }
                 }
 
-                // Configure PDF save options and explicitly set the format tracker
+                // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the modified diagram as PDF
+                // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
+
+            Console.WriteLine($"Diagram successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

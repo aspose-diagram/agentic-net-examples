@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -18,12 +19,14 @@ class Program
         string targetPath = args[1];
         string outputPath = args[2];
 
-        // Guard against missing files
+        // Guard: ensure source file exists
         if (!File.Exists(sourcePath))
         {
             Console.Error.WriteLine($"Source file not found: {sourcePath}");
             return;
         }
+
+        // Guard: ensure target file exists
         if (!File.Exists(targetPath))
         {
             Console.Error.WriteLine($"Target file not found: {targetPath}");
@@ -32,40 +35,47 @@ class Program
 
         try
         {
-            // Load the source diagram (the one containing the VBA project to copy)
-            Diagram sourceDiagram = new Diagram(sourcePath);
-
-            // Load the target diagram (the one that will receive the VBA project)
-            Diagram targetDiagram = new Diagram(targetPath);
-
-            // Ensure both diagrams have a VBA project (VbaProject is always present but may be empty)
-            var sourceVba = sourceDiagram.VbaProject;
-            var targetVba = targetDiagram.VbaProject;
-
-            // Iterate through each VBA module in the source diagram and clone it into the target diagram
-            foreach (VbaModule srcModule in sourceVba.Modules)
+            // Load source diagram (contains the VBA project to clone)
+            using (Diagram sourceDiagram = new Diagram(sourcePath))
+            // Load target diagram (will receive the cloned VBA project)
+            using (Diagram targetDiagram = new Diagram(targetPath))
             {
-                // Add a new module to the target diagram with the same type and name
-                int newIndex = targetVba.Modules.Add(srcModule.Type, srcModule.Name);
+                // Verify that the source diagram has a VBA project
+                if (sourceDiagram.VbaProject == null)
+                {
+                    Console.Error.WriteLine("Source diagram does not contain a VBA project.");
+                    return;
+                }
 
-                // Retrieve the newly added module and copy the VBA code
-                VbaModule newModule = targetVba.Modules[newIndex];
-                newModule.Codes = srcModule.Codes;
+                // Ensure the target diagram has a VBA project (create if null)
+                if (targetDiagram.VbaProject == null)
+                {
+                    Console.Error.WriteLine("Target diagram does not contain a VBA project. Unable to attach VBA modules.");
+                    return;
+                }
+
+                // Iterate through each VBA module in the source diagram
+                foreach (VbaModule srcModule in sourceDiagram.VbaProject.Modules)
+                {
+                    // Add a new module to the target diagram with the same type and name
+                    int newIndex = targetDiagram.VbaProject.Modules.Add(srcModule.Type, srcModule.Name);
+
+                    // Retrieve the newly added module and copy the VBA code
+                    VbaModule tgtModule = targetDiagram.VbaProject.Modules[newIndex];
+                    tgtModule.Codes = srcModule.Codes;
+                }
+
+                // Optionally copy the VBA project name (read-only property, so we only display it)
+                Console.WriteLine($"Cloned VBA project '{sourceDiagram.VbaProject.Name}' to target diagram.");
+
+                // Save the modified target diagram to the specified output path
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Target diagram saved with cloned VBA project to: {outputPath}");
             }
-
-            // Optionally, copy the VBA project name (read‑only property, cannot be set)
-            // The name is informational; we simply output it for verification
-            Console.WriteLine($"Source VBA Project Name: {sourceVba.Name}");
-            Console.WriteLine($"Target VBA Project Name (unchanged): {targetVba.Name}");
-
-            // Save the modified target diagram to the specified output path
-            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"VBA project cloned successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -3,20 +3,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Model representing a shape and its user-defined cell values from JSON
-    private class ShapeCellMapping
-    {
-        public string ShapeName { get; set; }
-        public Dictionary<string, string> Cells { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram path, JSON path, output diagram path
+        // Validate command‑line arguments.
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <jsonPath> <outputPath>");
@@ -27,25 +19,24 @@ class Program
         string jsonPath = args[1];
         string outputPath = args[2];
 
-        // Guard against missing files
+        // Guard against missing files.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
-
         if (!File.Exists(jsonPath))
         {
             Console.Error.WriteLine($"JSON file not found: {jsonPath}");
             return;
         }
 
-        // Load JSON mappings
-        List<ShapeCellMapping> mappings;
+        // Load JSON mapping of shape names to user‑defined cell values.
+        List<ShapeCellData> mappings;
         try
         {
             string jsonContent = File.ReadAllText(jsonPath);
-            mappings = JsonSerializer.Deserialize<List<ShapeCellMapping>>(jsonContent);
+            mappings = JsonSerializer.Deserialize<List<ShapeCellData>>(jsonContent);
             if (mappings == null)
             {
                 Console.Error.WriteLine("Failed to deserialize JSON content.");
@@ -58,55 +49,72 @@ class Program
             return;
         }
 
-        // Load the Visio diagram and apply user-defined cell values
+        // Load the Visio diagram and apply the user‑defined cell values.
         try
         {
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through all pages and shapes
+                // Build a quick lookup: shape name (NameU) -> Shape instance.
+                var shapeLookup = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Find a mapping that matches the shape's name
-                        foreach (ShapeCellMapping map in mappings)
+                        if (!string.IsNullOrEmpty(shape.NameU))
                         {
-                            if (shape.Name == map.ShapeName)
-                            {
-                                // Apply each user-defined cell value
-                                foreach (KeyValuePair<string, string> kvp in map.Cells)
-                                {
-                                    // Search for an existing user cell with the same name
-                                    User targetUser = null;
-                                    foreach (User user in shape.Users)
-                                    {
-                                        if (user.NameU == kvp.Key)
-                                        {
-                                            targetUser = user;
-                                            break;
-                                        }
-                                    }
-
-                                    // If not found, create a new user-defined cell
-                                    if (targetUser == null)
-                                    {
-                                        targetUser = new User();
-                                        targetUser.NameU = kvp.Key;
-                                        shape.Users.Add(targetUser);
-                                    }
-
-                                    // Assign the value to the cell
-                                    targetUser.Value.Val = kvp.Value;
-                                }
-
-                                // Once matched and processed, break to avoid duplicate work
-                                break;
-                            }
+                            // If multiple shapes share the same name, the first one is kept.
+                            if (!shapeLookup.ContainsKey(shape.NameU))
+                                shapeLookup[shape.NameU] = shape;
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path
+                // Iterate over each mapping entry from the JSON.
+                foreach (var entry in mappings)
+                {
+                    if (string.IsNullOrWhiteSpace(entry.ShapeName) || entry.Cells == null)
+                        continue; // Skip invalid entries.
+
+                    if (!shapeLookup.TryGetValue(entry.ShapeName, out Shape targetShape))
+                    {
+                        Console.Error.WriteLine($"Shape not found in diagram: {entry.ShapeName}");
+                        continue;
+                    }
+
+                    // Apply each user‑defined cell value to the shape.
+                    foreach (var cellKvp in entry.Cells)
+                    {
+                        string cellName = cellKvp.Key;
+                        string cellValue = cellKvp.Value ?? string.Empty;
+
+                        // Try to find an existing user‑defined cell.
+                        User existingUser = null;
+                        foreach (User user in targetShape.Users)
+                        {
+                            if (string.Equals(user.NameU, cellName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                existingUser = user;
+                                break;
+                            }
+                        }
+
+                        if (existingUser != null)
+                        {
+                            // Update the value of the existing cell.
+                            existingUser.Value.Val = cellValue;
+                        }
+                        else
+                        {
+                            // Create a new user‑defined cell and add it to the shape.
+                            User newUser = new User();
+                            newUser.NameU = cellName;
+                            newUser.Value.Val = cellValue;
+                            targetShape.Users.Add(newUser);
+                        }
+                    }
+                }
+
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
@@ -115,5 +123,12 @@ class Program
         {
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Helper class representing the JSON structure.
+    private class ShapeCellData
+    {
+        public string ShapeName { get; set; }
+        public Dictionary<string, string> Cells { get; set; }
     }
 }

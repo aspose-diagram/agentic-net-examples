@@ -7,41 +7,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the path to the Visio diagram file.
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(diagramPath))
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <expectedTitle>");
             return;
         }
 
-        // Define the expected title template to compare against.
-        string expectedTitle = args.Length > 1 ? args[1] : "My Diagram Title";
+        string diagramPath = args[0];
+        string expectedTitle = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Read the built‑in Title property from the document properties.
-            string actualTitle = diagram.DocumentProps.Title ?? string.Empty;
-
-            // Compare the actual title with the expected template.
-            if (actualTitle == expectedTitle)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.WriteLine("Title matches the template.");
-            }
-            else
-            {
-                Console.WriteLine($"Title does not match the template.\nExpected: \"{expectedTitle}\"\nActual:   \"{actualTitle}\"");
+                // Read the built‑in Title property from the document properties.
+                string actualTitle = diagram.DocumentProps.Title ?? string.Empty;
+
+                // Compare the actual title with the predefined template.
+                if (actualTitle == expectedTitle)
+                {
+                    Console.WriteLine("Title matches the template.");
+                }
+                else
+                {
+                    Console.WriteLine($"Title mismatch. Expected: \"{expectedTitle}\", Actual: \"{actualTitle}\"");
+                }
             }
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

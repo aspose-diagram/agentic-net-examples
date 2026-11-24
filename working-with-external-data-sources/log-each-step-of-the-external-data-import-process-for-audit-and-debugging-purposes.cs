@@ -7,87 +7,91 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output paths
-        string outputPdfPath = "output.pdf";
-        string outputVsdxPath = "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Console.WriteLine($"Loading diagram from '{inputPath}'...");
+            // Load the diagram.
+            Console.WriteLine("Loading diagram...");
             Diagram diagram = new Diagram(inputPath);
-            Console.WriteLine($"Diagram loaded. Page count: {diagram.Pages.Count}");
+            Console.WriteLine("Diagram loaded successfully.");
 
-            // Log external data connections before modification
-            Console.WriteLine($"External data connections count: {diagram.DataConnections.Count}");
+            // Log existing data connections.
+            Console.WriteLine($"Diagram contains {diagram.DataConnections.Count} data connection(s).");
 
-            if (diagram.DataConnections.Count > 0)
+            // Iterate over each data connection and update it.
+            for (int i = 0; i < diagram.DataConnections.Count; i++)
             {
-                // Update the first data connection as an example
-                var dataConn = diagram.DataConnections[0];
-                Console.WriteLine("Updating first external data connection...");
+                var dataConn = diagram.DataConnections[i];
+                Console.WriteLine($"Updating DataConnection[{i}]...");
 
-                // Example connection string and command (replace with real values as needed)
-                string newConnectionString = "Data Source=ServerName;Initial Catalog=DatabaseName;Integrated Security=True";
-                string newCommand = "SELECT * FROM SampleTable";
+                // Example: set a new connection string and command.
+                // In a real scenario, these values would come from configuration or user input.
+                string newConnectionString = "Data Source=MyServer;Initial Catalog=MyDatabase;Integrated Security=True";
+                string newCommand = "SELECT * FROM MyTable";
 
-                Console.WriteLine($"Setting ConnectionString to: {newConnectionString}");
+                Console.WriteLine($"  Old ConnectionString: {dataConn.ConnectionString}");
+                Console.WriteLine($"  Old Command: {dataConn.Command}");
+
                 dataConn.ConnectionString = newConnectionString;
-
-                Console.WriteLine($"Setting Command to: {newCommand}");
                 dataConn.Command = newCommand;
-            }
-            else
-            {
-                Console.WriteLine("No external data connections found to update.");
+
+                Console.WriteLine($"  New ConnectionString set to: {dataConn.ConnectionString}");
+                Console.WriteLine($"  New Command set to: {dataConn.Command}");
             }
 
-            // Refresh the diagram to apply data changes
-            Console.WriteLine("Refreshing diagram to synchronize record sets with updated data source...");
+            // Refresh the diagram to apply the updated data connections.
+            Console.WriteLine("Refreshing diagram to synchronize record sets...");
             diagram.Refresh();
             Console.WriteLine("Diagram refresh completed.");
 
-            // Save to PDF with page saving callback for detailed logging
-            Console.WriteLine($"Saving diagram to PDF at '{outputPdfPath}' with page saving callback...");
+            // Prepare PDF save options with a page‑saving callback for detailed logging.
+            Console.WriteLine("Preparing PDF save options with page‑saving callback...");
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new PageSavingLogger();
-            diagram.Save(outputPdfPath, pdfOptions);
-            Console.WriteLine("PDF save completed.");
+            pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
 
-            // Save the updated diagram back to VSDX format
-            Console.WriteLine($"Saving updated diagram to VSDX at '{outputVsdxPath}'...");
-            diagram.Save(outputVsdxPath, SaveFileFormat.Vsdx);
-            Console.WriteLine("VSDX save completed.");
+            // Save the diagram as PDF.
+            Console.WriteLine($"Saving diagram to \"{outputPath}\"...");
+            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine("Diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Log any exceptions that occur during processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }
 
-// Implementation of IPageSavingCallback to log page saving progress
-class PageSavingLogger : IPageSavingCallback
+// Custom callback to log page‑saving events during PDF export.
+class CustomPageSavingCallback : IPageSavingCallback
 {
-    // Called before a page starts saving
+    // Called before a page starts saving.
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        Console.WriteLine($"Start saving page index {args.PageIndex} of pages {args.PageCount}");
+        Console.WriteLine($"Start saving page index {args.PageIndex} of {args.PageCount}");
     }
 
-    // Called after a page has finished saving
+    // Called after a page has finished saving.
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        Console.WriteLine($"End saving page index {args.PageIndex} of pages {args.PageCount}");
+        Console.WriteLine($"End saving page index {args.PageIndex} of {args.PageCount}");
+        // Example: continue processing all pages (default behavior).
+        // If you needed to stop early, you could set args.HasMorePages = false;
     }
 }

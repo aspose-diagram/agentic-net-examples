@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting: inputPath outputPath width height
-        if (args.Length < 4)
+        // Expecting four arguments: input diagram path, output diagram path, page width (in inches), page height (in inches)
+        if (args.Length != 4)
         {
-            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <widthInInches> <heightInInches>");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <pageWidth> <pageHeight>");
             return;
         }
 
@@ -26,15 +26,16 @@ class Program
         }
 
         // Parse width and height
-        if (!double.TryParse(widthArg, out double pageWidth) || pageWidth <= 0)
+        if (!double.TryParse(widthArg, out double pageWidth) || !double.TryParse(heightArg, out double pageHeight))
         {
-            Console.Error.WriteLine($"Invalid page width value: {widthArg}. Width must be a positive number.");
+            Console.Error.WriteLine("Invalid page width or height. Please provide numeric values.");
             return;
         }
 
-        if (!double.TryParse(heightArg, out double pageHeight) || pageHeight <= 0)
+        // Validate page dimensions (must be positive numbers)
+        if (pageWidth <= 0 || pageHeight <= 0)
         {
-            Console.Error.WriteLine($"Invalid page height value: {heightArg}. Height must be a positive number.");
+            Console.Error.WriteLine("Page width and height must be greater than zero.");
             return;
         }
 
@@ -50,10 +51,10 @@ class Program
                 return;
             }
 
-            // Modify the first page's size
+            // Work with the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Assign validated width and height to PageProps
+            // Assign validated page size values to PageProps
             page.PageSheet.PageProps.PageWidth.Value = pageWidth;
             page.PageSheet.PageProps.PageHeight.Value = pageHeight;
 
@@ -63,6 +64,7 @@ class Program
         }
         catch (Exception ex)
         {
+            // Capture any Aspose.Diagram related errors
             Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }

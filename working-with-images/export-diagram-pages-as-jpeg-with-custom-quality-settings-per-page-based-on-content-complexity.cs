@@ -7,71 +7,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
-
-        // Determine output directory (optional second argument)
-        string outputDir = args.Length > 1 ? args[1] : Path.GetDirectoryName(inputPath);
-        if (string.IsNullOrEmpty(outputDir) || !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram using the mandatory using pattern
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
+                // Iterate over each page by index (required for PageIndex property)
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Retrieve the current page
                     Page page = diagram.Pages[i];
 
-                    // Simple complexity metric: number of shapes on the page
-                    int shapeCount = page.Shapes.Count;
+                    // Determine page complexity by counting shapes on the page
+                    int shapeCount = 0;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        shapeCount++;
+                    }
 
-                    // Determine JPEG quality based on complexity
-                    int jpegQuality;
-                    if (shapeCount > 100)
-                        jpegQuality = 95; // Very complex page
-                    else if (shapeCount > 50)
-                        jpegQuality = 85; // Moderately complex page
-                    else
-                        jpegQuality = 70; // Simple page
+                    // Set JPEG quality based on complexity
+                    // Higher complexity -> lower quality to reduce file size
+                    int jpegQuality = shapeCount > 100 ? 80 : 95;
 
-                    // Configure image save options for JPEG export
+                    // Prepare image save options for JPEG export
                     ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                    saveOptions.PageIndex = i;          // Export current page only
-                    saveOptions.PageCount = 1;
-                    saveOptions.JpegQuality = jpegQuality;
-                    // ExportHiddenPage expects a bool, not BOOL
-                    saveOptions.ExportHiddenPage = false; // Do not export hidden pages
+                    saveOptions.JpegQuality = jpegQuality;   // Custom quality (0-100)
+                    saveOptions.PageIndex = i;               // Export this specific page (zero‑based)
+                    saveOptions.PageCount = 1;               // Export only one page
 
-                    // Build output file path for the current page
-                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.jpg");
+                    // Build output file name using the page ID
+                    string outputFileName = $"Page_{page.ID}.jpg";
 
-                    // Save the page as a JPEG image
-                    diagram.Save(outputPath, saveOptions);
+                    // Save the page as JPEG using the configured options
+                    diagram.Save(outputFileName, saveOptions);
+
+                    Console.WriteLine($"Saved page {page.ID} with {shapeCount} shapes to {outputFileName} (Quality={jpegQuality})");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,55 +25,53 @@ class Program
 
         try
         {
-            // Load the source Visio diagram.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // For demonstration, target the first shape on the first page.
-            // Adjust the selection logic as needed (e.g., by shape name or ID).
+            // Ensure there is at least one page.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
+            // Work with the first page.
             Page page = diagram.Pages[0];
 
-            if (page.Shapes.Count == 0)
+            // Find the first non‑deleted shape on the page.
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine("The first page contains no shapes.");
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No visible shape found on the first page.");
                 return;
             }
 
-            // Retrieve the first shape (ID is a long).
-            Shape shape = page.Shapes[0];
+            // ------------------------------------------------------------
+            // Position the shape's text at the top of the shape.
+            // ------------------------------------------------------------
+            // Set vertical offset: locate text block at the top (Y = 0).
+            targetShape.TextXForm.TxtLocPinY.Value = 0;
 
-            // Ensure the shape is not deleted.
-            if (shape.Del == BOOL.True)
-            {
-                Console.Error.WriteLine("The selected shape is marked as deleted.");
-                return;
-            }
+            // Align the text block's pin Y to the shape's height so the text starts at the top.
+            targetShape.TextXForm.TxtPinY.Value = targetShape.XForm.Height.Value;
 
-            // ------------------------------
-            // Position text at the top of the shape.
-            // ------------------------------
+            // Set text orientation angle to 0 degrees (no rotation). The API expects radians.
+            double angleDeg = 0;
+            targetShape.TextXForm.TxtAngle.Value = (Math.PI / 180) * angleDeg;
 
-            // Set vertical offset: locate the text block's local pin at Y = 0 (top)
-            shape.TextXForm.TxtLocPinY.Value = 0;
-
-            // Position the text block's pin so that its bottom aligns with the shape's top.
-            // This uses the shape's height to place the text block correctly.
-            shape.TextXForm.TxtPinY.Value = shape.XForm.Height.Value;
-
-            // Set text orientation angle to 0 radians (no rotation).
-            shape.TextXForm.TxtAngle.Value = 0;
-
-            // Optionally, you can also reset any existing text rotation on the shape itself.
-            shape.XForm.Angle.Value = 0;
-
-            // Save the modified diagram to the specified output path.
+            // ------------------------------------------------------------
+            // Save the modified diagram.
+            // ------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)

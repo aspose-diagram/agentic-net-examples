@@ -1,13 +1,13 @@
 using System;
 using System.IO;
-using System.Text;
+using System.Net;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputHtmlFile>");
@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,70 +26,84 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare HTML output.
-                var html = new StringBuilder();
-                html.AppendLine("<!DOCTYPE html>");
-                html.AppendLine("<html lang=\"en\">");
-                html.AppendLine("<head>");
-                html.AppendLine("    <meta charset=\"UTF-8\">");
-                html.AppendLine("    <title>Visio Comments Export</title>");
-                html.AppendLine("    <style>");
-                html.AppendLine("        details { margin-bottom: 1em; }");
-                html.AppendLine("        summary { font-weight: bold; cursor: pointer; }");
-                html.AppendLine("        .metadata { font-size: 0.9em; color: #555; }");
-                html.AppendLine("    </style>");
-                html.AppendLine("</head>");
-                html.AppendLine("<body>");
-                html.AppendLine("    <h1>Comments Export</h1>");
-
-                // Iterate through each page and its annotations (comments).
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Prepare the HTML output file
+                using (StreamWriter writer = new StreamWriter(outputPath, false))
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    // Write basic HTML structure
+                    writer.WriteLine("<!DOCTYPE html>");
+                    writer.WriteLine("<html lang=\"en\">");
+                    writer.WriteLine("<head>");
+                    writer.WriteLine("    <meta charset=\"UTF-8\">");
+                    writer.WriteLine("    <title>Visio Comments Export</title>");
+                    writer.WriteLine("    <style>");
+                    writer.WriteLine("        details { margin-bottom: 1em; }");
+                    writer.WriteLine("        summary { font-weight: bold; cursor: pointer; }");
+                    writer.WriteLine("        .metadata { font-size: 0.9em; color: #555; margin-top: 0.5em; }");
+                    writer.WriteLine("        .comment { margin-top: 0.5em; }");
+                    writer.WriteLine("    </style>");
+                    writer.WriteLine("</head>");
+                    writer.WriteLine("<body>");
+                    writer.WriteLine("    <h1>Visio Comments Export</h1>");
 
-                    // Annotations are stored on the page sheet.
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Iterate through each page and its annotations (comments)
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve comment text.
-                        string commentText = annotation.Comment?.Value ?? string.Empty;
+                        // Determine whether the page contains any comments
+                        bool pageHasComments = false;
+                        foreach (Annotation ann in page.PageSheet.Annotations)
+                        {
+                            pageHasComments = true;
+                            break;
+                        }
 
-                        // Retrieve reviewer (author) ID.
-                        int reviewerId = annotation.ReviewerID?.Value ?? 0;
+                        if (!pageHasComments)
+                            continue; // Skip pages without comments
 
-                        // Retrieve creation date.
-                        DateTime date = annotation.Date?.Value ?? DateTime.MinValue;
-                        string dateString = date == DateTime.MinValue ? "N/A" : date.ToString("yyyy-MM-dd HH:mm:ss");
+                        // Write page header (page.Name is a plain string)
+                        writer.WriteLine($"    <h2>Page: {page.Name ?? "Unnamed"}</h2>");
 
-                        // Retrieve associated shape ID.
-                        int shapeId = annotation.ShapeID;
+                        // Process each annotation on the page
+                        foreach (Annotation ann in page.PageSheet.Annotations)
+                        {
+                            // Retrieve comment metadata
+                            int markerId = ann.MarkerIndex.Value;
+                            int reviewerId = ann.ReviewerID.Value;
+                            string author = $"Reviewer {reviewerId}";
+                            string commentText = ann.Comment?.Value ?? string.Empty;
+                            DateTime commentDate = ann.Date?.Value ?? DateTime.MinValue;
+                            int shapeId = ann.ShapeID; // Primitive int, no .Value needed
 
-                        // Build a collapsible section for this comment.
-                        html.AppendLine("    <details>");
-                        html.AppendLine($"        <summary>Comment on Page {pageIndex + 1} (ID: {annotation.MarkerIndex?.Value ?? 0})</summary>");
-                        html.AppendLine("        <div class=\"metadata\">");
-                        html.AppendLine($"            <p><strong>Author ID:</strong> {reviewerId}</p>");
-                        html.AppendLine($"            <p><strong>Date:</strong> {dateString}</p>");
-                        html.AppendLine($"            <p><strong>Shape ID:</strong> {shapeId}</p>");
-                        html.AppendLine("        </div>");
-                        html.AppendLine("        <p>" + System.Net.WebUtility.HtmlEncode(commentText) + "</p>");
-                        html.AppendLine("    </details>");
+                            // Escape HTML special characters in comment text
+                            string escapedComment = WebUtility.HtmlEncode(commentText);
+
+                            // Write a collapsible section for the comment
+                            writer.WriteLine("    <details>");
+                            writer.WriteLine($"        <summary>Comment #{markerId} by {author} on {commentDate:G}</summary>");
+                            writer.WriteLine("        <div class=\"metadata\">");
+                            writer.WriteLine($"            <p>Shape ID: {shapeId}</p>");
+                            writer.WriteLine($"            <p>Reviewer ID: {reviewerId}</p>");
+                            writer.WriteLine("        </div>");
+                            writer.WriteLine("        <div class=\"comment\">");
+                            writer.WriteLine($"            <p>{escapedComment}</p>");
+                            writer.WriteLine("        </div>");
+                            writer.WriteLine("    </details>");
+                        }
                     }
+
+                    // Close HTML document
+                    writer.WriteLine("</body>");
+                    writer.WriteLine("</html>");
                 }
 
-                html.AppendLine("</body>");
-                html.AppendLine("</html>");
-
-                // Write the HTML content to the output file.
-                File.WriteAllText(outputPath, html.ToString(), Encoding.UTF8);
                 Console.WriteLine($"Comments exported successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

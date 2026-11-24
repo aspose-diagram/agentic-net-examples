@@ -6,13 +6,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Determine input and output file paths
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vdx";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -20,9 +16,6 @@ class Program
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        // Output VDX file path
-        string outputPath = "output.vdx";
 
         try
         {
@@ -32,26 +25,25 @@ class Program
                 // Iterate through each page and its layers
                 foreach (Page page in diagram.Pages)
                 {
-                    // Ensure only visible layers remain visible; hidden layers stay hidden
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // No action needed because hidden layers are already marked as FALSE.
-                        // If you need to explicitly hide them, you could set:
-                        // if (layer.Visible.Value == Aspose.Diagram.BOOL.False)
-                        //     layer.Visible.Value = Aspose.Diagram.BOOL.False;
+                        // Ensure non‑visible layers are explicitly set to false
+                        if (layer.Visible.Value == BOOL.False)
+                        {
+                            layer.Visible.Value = BOOL.False;
+                        }
                     }
                 }
 
-                // Save the diagram to VDX format (legacy compatibility)
+                // Save the diagram in VDX format (legacy compatibility)
                 diagram.Save(outputPath, SaveFileFormat.Vdx);
+                Console.WriteLine($"Diagram saved to {outputPath} with only visible layers.");
             }
-
-            Console.WriteLine($"Diagram exported successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

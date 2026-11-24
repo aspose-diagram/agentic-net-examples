@@ -8,111 +8,92 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        string diagramPath = args[0];
 
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages.
+            bool controlModified = false;
+
+            // Iterate through all pages and shapes to find ActiveX controls
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page (zero‑based index).
                 for (int i = 0; i < page.Shapes.Count; i++)
                 {
                     Shape shape = page.Shapes[i];
 
-                    // Skip shapes that do not contain an ActiveX control.
-                    if (shape.ActiveXControl == null)
-                        continue;
-
-                    // Retrieve the generic ActiveX control.
-                    var activeX = shape.ActiveXControl;
-
-                    // Example 1: Enable the control (IsEnabled is a bool, not Aspose BOOL).
-                    try
+                    // Check if the shape contains an ActiveX control
+                    if (shape.ActiveXControl != null)
                     {
-                        activeX.IsEnabled = true;
-                        Console.WriteLine($"Shape ID {shape.ID}: ActiveX control enabled.");
-                    }
-                    catch (COMException comEx)
-                    {
-                        // Permission‑related COM exception.
-                        Console.Error.WriteLine($"COMException while setting IsEnabled on shape ID {shape.ID}: {comEx.Message}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Any other unexpected error.
-                        Console.Error.WriteLine($"Error while setting IsEnabled on shape ID {shape.ID}: {ex.Message}");
-                    }
-
-                    // Example 2: Access control‑specific properties safely.
-                    try
-                    {
-                        // Determine the concrete control type.
-                        if (activeX.Type == ControlType.CheckBox)
+                        try
                         {
-                            // Cast to CheckBoxActiveXControl.
-                            var checkBox = (CheckBoxActiveXControl)activeX;
-                            // Set the checkbox state to Checked.
-                            checkBox.Value = CheckValueType.Checked;
-                            Console.WriteLine($"Shape ID {shape.ID}: CheckBox set to Checked.");
+                            // Determine the type of ActiveX control
+                            if (shape.ActiveXControl.Type == ControlType.CheckBox)
+                            {
+                                // Cast to the specific control class
+                                CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+
+                                // Attempt to set the checkbox value.
+                                // This operation may require specific permissions and can throw COMException.
+                                checkBox.Value = CheckValueType.Checked;
+
+                                Console.WriteLine($"Checked CheckBox control on shape ID {shape.ID}.");
+                                controlModified = true;
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Shape ID {shape.ID} contains ActiveX control of type {shape.ActiveXControl.Type}, no action taken.");
+                            }
                         }
-                        else if (activeX.Type == ControlType.CommandButton)
+                        catch (COMException comEx)
                         {
-                            // Cast to CommandButtonActiveXControl.
-                            var button = (CommandButtonActiveXControl)activeX;
-                            // Update the button caption.
-                            button.Caption = "Processed";
-                            Console.WriteLine($"Shape ID {shape.ID}: CommandButton caption updated.");
+                            // Handle permission-related COM exceptions
+                            Console.Error.WriteLine($"COMException accessing ActiveX control on shape ID {shape.ID}: {comEx.Message}");
                         }
-                        else if (activeX.Type == ControlType.SpinButton)
+                        catch (Exception ex)
                         {
-                            // Cast to SpinButtonActiveXControl.
-                            var spin = (SpinButtonActiveXControl)activeX;
-                            // Set the spin button position.
-                            spin.Position = 10;
-                            Console.WriteLine($"Shape ID {shape.ID}: SpinButton position set to 10.");
+                            // Handle any other unexpected errors for this shape
+                            Console.Error.WriteLine($"Error processing shape ID {shape.ID}: {ex.Message}");
                         }
-                        // Additional control types can be handled here as needed.
-                    }
-                    catch (COMException comEx)
-                    {
-                        // Permission‑related COM exception for specific properties.
-                        Console.Error.WriteLine($"COMException while accessing control‑specific property on shape ID {shape.ID}: {comEx.Message}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Any other unexpected error.
-                        Console.Error.WriteLine($"Error while accessing control‑specific property on shape ID {shape.ID}: {ex.Message}");
                     }
                 }
             }
 
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            // Save the modified diagram if any control was changed
+            if (controlModified)
+            {
+                string outputDir = Path.GetDirectoryName(diagramPath);
+                string outputFileName = Path.GetFileNameWithoutExtension(diagramPath) + "_modified.vsdx";
+                string outputPath = Path.Combine(outputDir, outputFileName);
+
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
+            }
+            else
+            {
+                Console.WriteLine("No ActiveX controls were modified.");
+            }
         }
         catch (Exception ex)
         {
-            // General error handling for diagram loading/saving.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // General error handling for diagram loading/saving
+            Console.Error.WriteLine($"Failed to process diagram: {ex.Message}");
         }
     }
 }

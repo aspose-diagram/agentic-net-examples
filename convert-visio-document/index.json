@@ -1,11 +1,11 @@
 {
   "category": "convert-visio-document",
   "display_name": "Convert Visio Document",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,10 +31,8 @@
       "task": "After conversion read the csv content and verify that the first row contains expected column headers",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -95,6 +93,7 @@
       "task": "Convert a vsd file to html format using diagram save with saveformat html",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -131,7 +130,8 @@
       ],
       "key_apis": [
         "Diagram",
-        "diagram"
+        "Page",
+        "page"
       ]
     },
     {
@@ -204,13 +204,14 @@
       "task": "Export each page of a multi page vsd diagram to separate csv files using page selection",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "diagram"
+        "Page",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -219,7 +220,6 @@
       "task": "Generate output filenames by appending a timestamp to the original vsd name before saving csv",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -281,7 +281,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.Diagnostics",
         "System.IO"
       ],
@@ -297,11 +296,13 @@
       "task": "Parse command line arguments to accept input folder and output folder paths for conversion",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -318,6 +319,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -426,7 +428,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -440,12 +443,14 @@
       "task": "Verify the library version at runtime and abort conversion if it is older than the required build",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Reflection"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -456,13 +461,11 @@
       "task": "Wrap the conversion call in a try catch block and ensure the filestream is closed in finally",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "PdfSaveOptions",
         "Save",
         "diagram"
       ]

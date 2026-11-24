@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input Visio file path and output CSV file path.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
@@ -16,10 +16,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check that the input file exists.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -44,43 +44,34 @@ class Program
                     {
                         Shape shape = page.Shapes[shapeIndex];
 
-                        // Ensure the shape has a Hyperlinks collection.
+                        // Retrieve the shape identifier.
+                        long shapeId = shape.ID;
+
+                        // Ensure the Hyperlinks collection is not null.
                         if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                         {
-                            // Iterate through each hyperlink associated with the shape.
-                            foreach (Hyperlink link in shape.Hyperlinks)
+                            // Enumerate each hyperlink associated with the shape.
+                            for (int linkIndex = 0; linkIndex < shape.Hyperlinks.Count; linkIndex++)
                             {
-                                // Retrieve the address (URL) of the hyperlink.
-                                string address = link.Address?.Value ?? string.Empty;
+                                Hyperlink link = shape.Hyperlinks[linkIndex];
 
-                                // Write a CSV line with shape ID and hyperlink address.
-                                writer.WriteLine($"{shape.ID},{EscapeCsv(address)}");
+                                // Extract the address (URL) of the hyperlink.
+                                string address = link.Address != null ? link.Address.Value : string.Empty;
+
+                                // Write a CSV line for this shape‑hyperlink pair.
+                                writer.WriteLine($"{shapeId},{address}");
                             }
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"Export completed successfully. CSV saved to \"{outputPath}\".");
+            Console.WriteLine($"Export completed successfully. CSV saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any errors from Aspose.Diagram operations or file I/O.
+            // Log any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
-    }
-
-    // Helper method to escape CSV fields that may contain commas or quotes.
-    private static string EscapeCsv(string field)
-    {
-        if (field.Contains("\""))
-        {
-            field = field.Replace("\"", "\"\"");
-        }
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
-        {
-            field = $"\"{field}\"";
-        }
-        return field;
     }
 }

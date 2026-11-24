@@ -1,48 +1,50 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages.
+                // Flag to indicate whether a rectangle shape was processed
+                bool rectangleFound = false;
+
+                // Iterate through all pages and shapes to locate a rectangle master shape
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Identify rectangular shapes by master name "Rectangle".
-                        // Adjust this condition if your rectangle uses a different master.
-                        if (shape.Master != null && shape.Master.NameU == "Rectangle")
+                        // Identify rectangle shapes by master name (common master name is "Rectangle")
+                        if (shape.Master != null && shape.Master.Name == "Rectangle")
                         {
-                            // Calculate corner coordinates using LocPin, Width, Height, and Pin positions.
+                            // Calculate corner coordinates based on XForm properties
                             double pinX = shape.XForm.PinX.Value;
                             double pinY = shape.XForm.PinY.Value;
                             double width = shape.XForm.Width.Value;
@@ -50,47 +52,52 @@ class Program
                             double locPinX = shape.XForm.LocPinX.Value;
                             double locPinY = shape.XForm.LocPinY.Value;
 
-                            // Left, Right, Bottom, Top positions.
-                            double left = pinX - (width - locPinX);
-                            double right = pinX + locPinX;
-                            double bottom = pinY - locPinY;
-                            double top = pinY + (height - locPinY);
+                            // Left, Right, Top, Bottom positions
+                            double left = pinX - (width / 2.0) + locPinX;
+                            double right = pinX + (width / 2.0) + locPinX;
+                            double top = pinY + (height / 2.0) + locPinY;
+                            double bottom = pinY - (height / 2.0) + locPinY;
 
-                            // Add connection points at the four corners.
-                            // Bottom‑Left
-                            Connection cpBL = new Connection();
-                            cpBL.X.Ufe.F = "0";
-                            cpBL.Y.Ufe.F = "0";
-                            shape.Connections.Add(cpBL);
+                            // Helper to add a connection point with absolute coordinates
+                            void AddCornerConnection(double x, double y)
+                            {
+                                Connection conn = new Connection();
+                                // Use absolute numeric formulas
+                                conn.X.Ufe.F = x.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+                                conn.Y.Ufe.F = y.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+                                shape.Connections.Add(conn);
+                            }
 
-                            // Bottom‑Right
-                            Connection cpBR = new Connection();
-                            cpBR.X.Ufe.F = "Width";
-                            cpBR.Y.Ufe.F = "0";
-                            shape.Connections.Add(cpBR);
+                            // Add connection points at the four corners
+                            AddCornerConnection(left, top);     // Top‑Left
+                            AddCornerConnection(right, top);    // Top‑Right
+                            AddCornerConnection(right, bottom); // Bottom‑Right
+                            AddCornerConnection(left, bottom);  // Bottom‑Left
 
-                            // Top‑Left
-                            Connection cpTL = new Connection();
-                            cpTL.X.Ufe.F = "0";
-                            cpTL.Y.Ufe.F = "Height";
-                            shape.Connections.Add(cpTL);
-
-                            // Top‑Right
-                            Connection cpTR = new Connection();
-                            cpTR.X.Ufe.F = "Width";
-                            cpTR.Y.Ufe.F = "Height";
-                            shape.Connections.Add(cpTR);
+                            rectangleFound = true;
+                            // Assuming only one rectangle needs processing; break out of loops
+                            break;
                         }
                     }
+
+                    if (rectangleFound)
+                        break;
                 }
 
-                // Save the modified diagram.
+                if (!rectangleFound)
+                {
+                    Console.Error.WriteLine("No rectangle shape with master name \"Rectangle\" was found in the diagram.");
+                }
+
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

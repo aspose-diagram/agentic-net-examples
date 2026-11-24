@@ -18,7 +18,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – \"{inputPath}\"");
             return;
         }
 
@@ -27,37 +27,24 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Iterate through all pages and shapes to find connectors.
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the page.
-                for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[shapeIdx];
-
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Identify connector shapes (1‑D shapes).
-                    if (!shape.OneD)
-                        continue;
-
-                    // Ensure the layout cell collection is available.
-                    if (shape.Layout == null)
-                        continue;
-
-                    // Retrieve the line jump style value.
-                    var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
-
-                    // Flag connectors that use the page default or undefined style
-                    // (i.e., no explicit jump style has been set).
-                    if (jumpStyle == ConLineJumpStyleValue.PageDefault ||
-                        jumpStyle == ConLineJumpStyleValue.Undefined)
+                    // Identify 1‑D shapes (connectors).
+                    if (shape.OneD)
                     {
-                        Console.WriteLine($"Connector flagged: Page {pageIndex + 1}, Shape ID {shape.ID}");
+                        // Access the line jump style via the layout object.
+                        // If the value is PageDefault or Undefined, the connector lacks an explicit jump style.
+                        var jumpStyle = shape.Layout?.ConLineJumpStyle?.Value;
+
+                        if (jumpStyle == ConLineJumpStyleValue.PageDefault ||
+                            jumpStyle == ConLineJumpStyleValue.Undefined)
+                        {
+                            Console.WriteLine(
+                                $"Connector ID {shape.ID} on Page {page.ID} lacks explicit line jump style (Current value: {jumpStyle}).");
+                        }
                     }
                 }
             }

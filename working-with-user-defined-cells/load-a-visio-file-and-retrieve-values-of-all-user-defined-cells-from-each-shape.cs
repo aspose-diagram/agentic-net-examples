@@ -6,53 +6,70 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length == 0)
+        // Determine the input Visio file path.
+        string inputPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
-            return;
+            inputPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the Visio file: ");
+            inputPath = Console.ReadLine();
         }
 
-        string visioPath = args[0];
-
-        // Guard: ensure the input file exists.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the file exists before proceeding.
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: File not found - '{inputPath}'.");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath, LoadFileFormat.Vsdx);
-
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine($"Page ID: {page.ID}, Name: {page.NameU}");
-
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Console.WriteLine($"Page: {page.NameU}");
 
-                    Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.NameU}");
-
-                    // Ensure the Users collection is not null before iterating.
-                    if (shape.Users != null)
+                    // Iterate through all shapes on the current page.
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Iterate through each user-defined cell.
-                        foreach (User user in shape.Users)
-                        {
-                            // Retrieve the cell's name, value, and prompt (if any).
-                            string nameU = user.NameU ?? string.Empty;
-                            string value = user.Value?.Val ?? string.Empty;
-                            string prompt = user.Prompt?.Value ?? string.Empty;
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            Console.WriteLine($"    User Cell - NameU: {nameU}, Value: {value}, Prompt: {prompt}");
+                        // Basic shape information.
+                        Console.WriteLine($"  Shape ID: {shape.ID}, NameU: {shape.NameU}");
+
+                        // Master name (if the shape is based on a master).
+                        if (shape.Master != null)
+                        {
+                            Console.WriteLine($"    Master: {shape.Master.Name}");
+                        }
+
+                        // Retrieve user-defined cells via the Users collection.
+                        if (shape.Users != null && shape.Users.Count > 0)
+                        {
+                            Console.WriteLine("    User-defined cells:");
+                            foreach (Aspose.Diagram.User userCell in shape.Users)
+                            {
+                                // NameU: universal name of the user-defined cell.
+                                // Value.Val: the value stored in the cell.
+                                // Prompt.Value: optional prompt/description.
+                                string name = userCell.NameU ?? "(null)";
+                                string value = userCell.Value?.Val ?? "(null)";
+                                string prompt = userCell.Prompt?.Value ?? "(null)";
+
+                                Console.WriteLine($"      {name} = {value} (Prompt: {prompt})");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("    No user-defined cells.");
                         }
                     }
                 }

@@ -7,50 +7,45 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
             return;
         }
 
-        string visioPath = args[0];
+        string inputPath = args[0];
 
         // Guard against missing input file.
-        if (!File.Exists(visioPath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required by Aspose.Diagram.
-            using (Diagram diagram = new Diagram(visioPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Check if any masters are present.
+                // Check if the diagram contains any masters.
                 if (diagram.Masters == null || diagram.Masters.Count == 0)
                 {
                     Console.WriteLine("No master shapes found in the diagram.");
                     return;
                 }
 
-                Console.WriteLine("Master Shapes in the diagram:");
-                Console.WriteLine("--------------------------------");
-
-                // Iterate over all masters and output their identifiers.
+                Console.WriteLine("Master shapes in the diagram:");
+                // Iterate over each master and output its identifying information.
                 foreach (Master master in diagram.Masters)
                 {
-                    // UniqueID is a Guid; convert to string for display.
-                    string uniqueId = master.UniqueID.ToString();
-
-                    // Output master name and its unique identifier.
-                    Console.WriteLine($"Name: {master.Name}, UniqueID: {uniqueId}");
+                    // master.UniqueID is a Guid; it is never null.
+                    Console.WriteLine($"Name: {master.Name}, ID: {master.ID}, UniqueID: {master.UniqueID}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Report any errors that occur during loading or processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

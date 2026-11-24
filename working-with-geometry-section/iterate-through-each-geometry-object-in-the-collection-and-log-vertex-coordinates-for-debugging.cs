@@ -6,76 +6,87 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Log page name (may be null).
-                    Console.WriteLine($"Page Name: {page.Name ?? "Unnamed"}");
-
-                    // Iterate through each shape on the page.
+                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Log shape ID and name (may be null).
-                        Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.Name ?? "Unnamed"}");
+                        int geomIndex = 0;
 
-                        // Iterate through each geometry section of the shape.
+                        // Iterate through each Geometry object of the shape
                         foreach (Geom geom in shape.Geoms)
                         {
-                            // Iterate through each segment in the geometry's coordinate collection.
+                            int segmentIndex = 0;
+
+                            // Iterate through each vertex/segment in the geometry's coordinate collection
                             foreach (object segment in geom.CoordinateCol)
                             {
-                                // Handle MoveTo segment.
+                                string segmentType = segment.GetType().Name;
+                                double x = double.NaN;
+                                double y = double.NaN;
+
+                                // Extract X and Y values based on the concrete segment type
                                 if (segment is MoveTo moveTo)
                                 {
-                                    double x = moveTo.X.Value;
-                                    double y = moveTo.Y.Value;
-                                    Console.WriteLine($"    MoveTo - X: {x}, Y: {y}");
+                                    x = moveTo.X.Value;
+                                    y = moveTo.Y.Value;
                                 }
-                                // Handle LineTo segment.
                                 else if (segment is LineTo lineTo)
                                 {
-                                    double x = lineTo.X.Value;
-                                    double y = lineTo.Y.Value;
-                                    Console.WriteLine($"    LineTo - X: {x}, Y: {y}");
+                                    x = lineTo.X.Value;
+                                    y = lineTo.Y.Value;
                                 }
-                                // Handle ArcTo segment.
                                 else if (segment is ArcTo arcTo)
                                 {
-                                    double x = arcTo.X.Value;
-                                    double y = arcTo.Y.Value;
-                                    Console.WriteLine($"    ArcTo - X: {x}, Y: {y}");
+                                    x = arcTo.X.Value;
+                                    y = arcTo.Y.Value;
                                 }
-                                else
+                                else if (segment is EllipticalArcTo ellArcTo)
                                 {
-                                    // Unknown segment type – log its type name for debugging.
-                                    Console.WriteLine($"    Unknown segment type: {segment.GetType().Name}");
+                                    x = ellArcTo.X.Value;
+                                    y = ellArcTo.Y.Value;
                                 }
+                                else if (segment is SplineKnot splineKnot)
+                                {
+                                    x = splineKnot.X.Value;
+                                    y = splineKnot.Y.Value;
+                                }
+                                // Additional segment types can be handled here as needed
+
+                                // Log the vertex coordinates for debugging
+                                Console.WriteLine(
+                                    $"Page {page.ID}, Shape {shape.ID}, Geom {geomIndex}, Segment {segmentIndex} ({segmentType}) - X: {x}, Y: {y}");
+
+                                segmentIndex++;
                             }
+
+                            geomIndex++;
                         }
                     }
                 }
@@ -83,8 +94,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Log any exceptions that occur during processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

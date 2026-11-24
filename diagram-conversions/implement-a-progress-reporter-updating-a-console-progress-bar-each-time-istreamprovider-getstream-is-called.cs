@@ -5,52 +5,37 @@ using Aspose.Diagram.Saving;
 
 class ProgressStreamProvider : IStreamProvider
 {
-    private readonly string _outputDirectory;
-    private int _streamCount = 0;
+    private int _callCount = 0;
 
-    public ProgressStreamProvider(string outputDirectory)
-    {
-        _outputDirectory = outputDirectory;
-    }
-
-    // Called before a stream is created – no special initialization needed.
+    // Called before any stream is requested.
     public void InitStream(StreamProviderOptions options)
     {
-        // No initialization required for this implementation.
+        // No initialization required for this simple implementation.
     }
 
-    // Called to obtain a stream for a resource (e.g., image, CSS) during HTML export.
+    // Called each time Aspose.Diagram needs a stream to write a page.
     public Stream GetStream(StreamProviderOptions options)
     {
-        // Increment the counter and update the console progress indicator.
-        _streamCount++;
-        Console.Write($"\rStreams created: {_streamCount}");
+        _callCount++;
+        // Update console progress bar in place.
+        Console.Write($"\rGetStream called {_callCount} time(s).");
 
-        // Ensure the output directory exists.
-        if (!Directory.Exists(_outputDirectory))
+        // Ensure the directory for the target file exists.
+        string targetPath = options.DefaultPath;
+        string directory = Path.GetDirectoryName(targetPath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
-            Directory.CreateDirectory(_outputDirectory);
+            Directory.CreateDirectory(directory);
         }
 
-        // Combine the output directory with the default path provided by the options.
-        // options.DefaultPath is read‑only and contains the relative file name.
-        string filePath = Path.Combine(_outputDirectory, options.DefaultPath);
-
-        // Ensure the directory for the specific file exists (handles subfolders).
-        string fileDir = Path.GetDirectoryName(filePath);
-        if (!Directory.Exists(fileDir))
-        {
-            Directory.CreateDirectory(fileDir);
-        }
-
-        // Return a writable file stream for the resource.
-        return new FileStream(filePath, FileMode.Create, FileAccess.Write);
+        // Return a writable file stream for the requested path.
+        return new FileStream(targetPath, FileMode.Create, FileAccess.Write);
     }
 
-    // Called after the stream has been written – no special cleanup needed.
+    // Called after the stream has been used.
     public void CloseStream(StreamProviderOptions options)
     {
-        // No cleanup required for this implementation.
+        // No cleanup required for this simple implementation.
     }
 }
 
@@ -58,35 +43,23 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output directory.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputDirectory>");
-            return;
-        }
+        // Input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputDir = args[1];
+        // Output directory for HTML files (second argument or default).
+        string outputDir = args.Length > 1 ? args[1] : "HtmlOutput";
 
-        // Guard: verify the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure the output directory exists or can be created.
-        try
+        // Ensure the output directory exists.
+        if (!Directory.Exists(outputDir))
         {
-            if (!Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
-            return;
+            Directory.CreateDirectory(outputDir);
         }
 
         try
@@ -94,22 +67,32 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML export options with a custom stream provider for progress reporting.
+            // Create HTML save options and assign the custom stream provider.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new ProgressStreamProvider(outputDir);
+            htmlOptions.StreamProvider = new ProgressStreamProvider();
 
-            // Define the main HTML file path.
-            string mainHtmlPath = Path.Combine(outputDir, "index.html");
+            // Export each page as a separate HTML file.
+            for (int i = 0; i < diagram.Pages.Count; i++)
+            {
+                // Configure page-specific options.
+                htmlOptions.PageIndex = i;
+                htmlOptions.PageCount = 1;
 
-            // Save the diagram as HTML, invoking the stream provider for each resource.
-            diagram.Save(mainHtmlPath, htmlOptions);
+                // Build the output file path for the current page.
+                string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
 
-            // Move to a new line after the progress bar output.
-            Console.WriteLine("\nHTML export completed successfully.");
+                // The StreamProvider will receive the target path via options.DefaultPath.
+                // To make it available, set the DefaultPath property indirectly by using the Save method's path argument.
+                diagram.Save(outputPath, htmlOptions);
+            }
+
+            // Move to the next line after the progress bar.
+            Console.WriteLine();
+            Console.WriteLine("HTML export completed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
+            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

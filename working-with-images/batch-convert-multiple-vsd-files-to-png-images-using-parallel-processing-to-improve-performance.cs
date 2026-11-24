@@ -9,10 +9,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: input folder and output folder.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: BatchConvertVsdToPng <inputFolder> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
             return;
         }
 
@@ -26,7 +26,7 @@ class Program
             return;
         }
 
-        // Ensure output folder exists (create if necessary).
+        // Ensure output folder exists.
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -35,71 +35,59 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
                 return;
             }
         }
 
-        // Collect all VSD files in the input folder.
+        // Collect all .vsd files from the input folder (non‑recursive).
         List<string> vsdFiles = new List<string>();
-        try
+        foreach (string filePath in Directory.GetFiles(inputFolder, "*.vsd"))
         {
-            vsdFiles.AddRange(Directory.GetFiles(inputFolder, "*.vsd", SearchOption.TopDirectoryOnly));
-            // Optionally include VSDX files as well.
-            vsdFiles.AddRange(Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly));
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error enumerating files in folder {inputFolder}: {ex.Message}");
-            return;
+            vsdFiles.Add(filePath);
         }
 
         if (vsdFiles.Count == 0)
         {
-            Console.Error.WriteLine("No VSD/VSDX files found in the specified input folder.");
+            Console.WriteLine("No VSD files found to process.");
             return;
         }
 
         // Process each file in parallel to improve performance.
-        Parallel.ForEach(vsdFiles, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, filePath =>
+        Parallel.ForEach(vsdFiles, inputPath =>
         {
             // Guard: ensure the file still exists before processing.
-            if (!File.Exists(filePath))
+            if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                Console.Error.WriteLine($"File not found: {inputPath}");
                 return;
             }
+
+            string outputFileName = Path.GetFileNameWithoutExtension(inputPath) + ".png";
+            string outputPath = Path.Combine(outputFolder, outputFileName);
 
             try
             {
                 // Load the Visio diagram inside a using block as required.
-                using (Diagram diagram = new Diagram(filePath))
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Export each page of the diagram as a separate PNG image.
-                    for (int i = 0; i < diagram.Pages.Count; i++)
-                    {
-                        // Configure PNG export options.
-                        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        pngOptions.PageIndex = i;   // Zero‑based page index.
-                        pngOptions.PageCount = 1;   // Export only the current page.
+                    // Configure PNG export options.
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    // Export only the first page (optional; remove if full diagram export is desired).
+                    pngOptions.PageIndex = 0;
+                    pngOptions.PageCount = 1;
 
-                        // Build output file name: <originalName>_page<index>.png
-                        string baseName = Path.GetFileNameWithoutExtension(filePath);
-                        string outputFileName = $"{baseName}_page{i + 1}.png";
-                        string outputPath = Path.Combine(outputFolder, outputFileName);
-
-                        // Save the page as PNG.
-                        diagram.Save(outputPath, pngOptions);
-                    }
+                    // Save the diagram as PNG.
+                    diagram.Save(outputPath, pngOptions);
                 }
+
+                Console.WriteLine($"Converted: {inputPath} -> {outputPath}");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during loading or saving.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                // Report any errors that occur during loading or saving.
+                Console.Error.WriteLine($"Error processing '{inputPath}': {ex.Message}");
             }
         });
-
-        Console.WriteLine("Batch conversion completed.");
     }
 }

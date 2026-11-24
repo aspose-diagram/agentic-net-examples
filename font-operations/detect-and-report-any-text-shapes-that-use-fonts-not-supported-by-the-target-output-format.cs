@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using Aspose.Diagram;
 using Aspose.Drawing.Text;
 
@@ -12,13 +11,15 @@ class Program
         // Validate arguments
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [targetFormat]");
+            Console.Error.WriteLine("Usage: Program <diagramPath> [targetFormat]");
             return;
         }
 
         string diagramPath = args[0];
+        // Target format is kept for extensibility; not used in this example
+        string targetFormat = args.Length >= 2 ? args[1] : "Pdf";
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -27,52 +28,70 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Retrieve system-installed fonts using Aspose.Drawing.Text
-            InstalledFontCollection systemFonts = new InstalledFontCollection();
-
-            // Build a set of installed font family names for quick lookup (case‑insensitive)
-            HashSet<string> installedFontNames = new HashSet<string>(
-                systemFonts.Families.Select(f => f.Name),
-                StringComparer.OrdinalIgnoreCase);
-
-            // Collect fonts used in the diagram that are NOT installed on the system
-            List<string> missingFonts = new List<string>();
-
-            foreach (Font font in diagram.Fonts)
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Font.Name provides the font family name used in the diagram
-                string fontName = font.Name;
-
-                if (!installedFontNames.Contains(fontName))
+                // Retrieve installed system fonts using Aspose.Drawing.Text
+                InstalledFontCollection installedFonts = new InstalledFontCollection();
+                HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var family in installedFonts.Families)
                 {
-                    missingFonts.Add(fontName);
+                    // Add each font family name to the set
+                    installedFontNames.Add(family.Name);
+                }
+
+                int pageNumber = 0; // Manual page counter (Page.Index does not exist)
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    pageNumber++;
+
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has a Text object
+                        if (shape.Text == null)
+                            continue;
+
+                        // Get the plain text of the shape
+                        string plainText = shape.Text.Value.Text;
+                        if (string.IsNullOrWhiteSpace(plainText))
+                            continue; // Skip shapes without visible text
+
+                        // Inspect each character run for its font name
+                        for (int i = 0; i < shape.Chars.Count; i++)
+                        {
+                            Aspose.Diagram.Char ch = shape.Chars[i];
+                            string fontName = ch.FontName?.Value ?? string.Empty;
+
+                            // Skip if the font name is empty
+                            if (string.IsNullOrWhiteSpace(fontName))
+                                continue;
+
+                            // Report fonts that are not installed on the system
+                            if (!installedFontNames.Contains(fontName))
+                            {
+                                Console.WriteLine("Unsupported font detected:");
+                                Console.WriteLine($"  Page Number : {pageNumber}");
+                                Console.WriteLine($"  Shape ID    : {shape.ID}");
+                                Console.WriteLine($"  Shape NameU: {shape.NameU}");
+                                Console.WriteLine($"  Font Name   : {fontName}");
+                                Console.WriteLine();
+                            }
+                        }
+                    }
                 }
             }
-
-            // Report results
-            if (missingFonts.Count == 0)
-            {
-                Console.WriteLine("All fonts used in the diagram are installed on the system.");
-            }
-            else
-            {
-                Console.WriteLine("The following fonts used in text shapes are NOT installed on the system:");
-                foreach (string missing in missingFonts.Distinct())
-                {
-                    Console.WriteLine($"- {missing}");
-                }
-            }
-
-            // OPTIONAL: If a target output format is provided, you could extend the logic
-            // to check format‑specific font support. This example focuses on system font availability.
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

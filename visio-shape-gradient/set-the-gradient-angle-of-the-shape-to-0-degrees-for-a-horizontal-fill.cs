@@ -19,7 +19,7 @@ class Program
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -28,38 +28,42 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page and one shape.
+            // Ensure the diagram has at least one page.
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
                 return;
             }
 
-            // Retrieve the first shape on the first page.
-            Shape shape = diagram.Pages[0].Shapes[0];
-            if (shape == null)
+            // Get the first page.
+            Page page = diagram.Pages[0];
+
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine("No shape found on the first page.");
+                Console.Error.WriteLine("Error: First page contains no shapes.");
                 return;
             }
+
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes[0];
 
             // Enable gradient fill if not already enabled.
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set the fill pattern to a gradient (value 25 corresponds to gradient fill).
-            shape.Fill.FillPattern.Value = 25;
-
             // Set the gradient angle to 0 degrees for a horizontal fill.
             shape.Fill.GradientFill.GradientAngle.Value = 0;
 
+            // Optionally, you can set a solid fill pattern to ensure visibility.
+            shape.Fill.FillPattern.Value = 1; // Solid fill.
+
             // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

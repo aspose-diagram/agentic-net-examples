@@ -7,74 +7,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output directory for exported PNGs (second argument or default)
-        string outputDir = args.Length > 1 ? args[1] : "ExportedShapes";
-
-        // Ensure the output directory exists
-        try
+        // Ensure output directory exists
+        if (!Directory.Exists(outputFolder))
         {
-            Directory.CreateDirectory(outputDir);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error creating output directory '{outputDir}': {ex.Message}");
-            return;
-        }
-
-        // Load the Visio diagram
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Prepare PNG save options (lossless by default)
-        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-        // PNG export is lossless; no additional compression settings are required.
-
-        int totalExported = 0;
-
-        // Iterate through each page
-        for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
-        {
-            Page page = diagram.Pages[pageIndex];
-
-            // Iterate through each shape on the page
-            foreach (Shape shape in page.Shapes)
+            try
             {
-                // Build a unique file name for the shape PNG
-                string shapeFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page{pageIndex + 1}_Shape{shape.ID}.png";
-                string shapeFilePath = Path.Combine(outputDir, shapeFileName);
-
-                try
-                {
-                    // Export the shape to PNG using the prepared options
-                    shape.ToImage(shapeFilePath, pngOptions);
-                    totalExported++;
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error exporting shape ID {shape.ID} on page {pageIndex + 1}: {ex.Message}");
-                    // Continue with next shape
-                }
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
             }
         }
 
-        Console.WriteLine($"Export completed. Total shapes exported: {totalExported}");
+        try
+        {
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through each page
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                {
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through each shape on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Build a unique file name for each shape PNG
+                        string shapeFileName = Path.Combine(
+                            outputFolder,
+                            $"page{pageIndex + 1}_shape{shape.ID}.png");
+
+                        // Configure PNG export options (PNG is inherently lossless)
+                        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        // No additional compression settings are required for lossless PNG
+
+                        // Export the shape to PNG
+                        shape.ToImage(shapeFileName, pngOptions);
+                    }
+                }
+            }
+
+            Console.WriteLine("Shape export completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+        }
     }
 }

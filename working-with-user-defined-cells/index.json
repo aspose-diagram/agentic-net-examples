@@ -1,11 +1,11 @@
 {
   "category": "working-with-user-defined-cells",
   "display_name": "Working With User Defined Cells",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -33,12 +33,13 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Xml.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -48,6 +49,7 @@
       "task": "Apply a mathematical expression to a user defined cell based on other cell values and save changes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -65,6 +67,7 @@
       "task": "Apply localization by translating user defined cell text values based on the target language settings",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -135,6 +138,7 @@
       "task": "Create a template diagram with predefined user defined cells for reuse in automated document generation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -155,7 +159,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -193,15 +196,16 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Xml.Linq"
       ],
       "key_apis": [
+        "AutoSpaceOptions",
+        "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "SVGSaveOptions",
-        "Save",
-        "Shapes"
+        "SVGSaveOptions"
       ]
     },
     {
@@ -227,7 +231,6 @@
       "task": "Extract user defined cell formulas and evaluate them using the built in expression engine",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Data",
         "System.IO"
@@ -263,6 +266,7 @@
       "task": "Generate a report summarizing the count of user defined cells per shape category in the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -318,10 +322,9 @@
       "task": "Implement a versioning system that records changes to user defined cells in a separate log file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -337,8 +340,8 @@
       "task": "Implement error handling for missing user defined cells when performing calculations on diagram shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Globalization",
         "System.IO"
       ],
       "key_apis": [
@@ -354,10 +357,10 @@
       "file": "import-a-spreadsheet-and-map-its-columns-to-corresponding-user-defined-cells-in-the-diagram.cs",
       "task": "Import a spreadsheet and map its columns to corresponding user defined cells in the diagram",
       "namespaces": [
-        "Aspose.Cells",
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -365,7 +368,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "User"
+        "diagram"
       ]
     },
     {
@@ -374,7 +377,6 @@
       "task": "Import user defined cell values from a json file and assign them to matching shapes in the diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -428,7 +430,6 @@
       "task": "Set a user defined cell to read only mode to prevent further modifications during runtime",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -451,8 +452,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
+        "Shapes",
         "User",
-        "user"
+        "diagram"
       ]
     },
     {
@@ -479,6 +482,7 @@
       "task": "Use conditional formatting to change shape colors based on values of associated user defined cells",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -516,15 +520,14 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
+        "PdfSaveOptions",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {

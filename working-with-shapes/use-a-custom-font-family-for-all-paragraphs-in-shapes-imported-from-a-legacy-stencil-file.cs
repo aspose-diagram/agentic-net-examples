@@ -8,106 +8,132 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments: <stencilPath> <outputPath> <customFontName>
-        if (args.Length < 3)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <stencilPath> <outputPath> <customFontName>");
+            Console.Error.WriteLine("Usage: Program <stencilFilePath> <outputDiagramPath> [customFontName]");
             return;
         }
 
         string stencilPath = args[0];
         string outputPath = args[1];
-        string customFontName = args[2];
+        string customFont = args.Length >= 3 ? args[2] : "Arial";
 
-        // Guard: ensure the stencil file exists
+        // Guard: ensure stencil file exists
         if (!File.Exists(stencilPath))
         {
             Console.Error.WriteLine($"Stencil file not found: {stencilPath}");
             return;
         }
 
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
-
+        // Verify that the custom font is installed on the system using Aspose.Drawing.Text
+        bool fontFound = false;
         try
         {
-            // Verify that the requested custom font is installed on the system
             InstalledFontCollection fontCollection = new InstalledFontCollection();
-            bool fontFound = false;
-            foreach (var font in fontCollection.Families)
+            foreach (var fontFamily in fontCollection.Families)
             {
-                if (string.Equals(font.Name, customFontName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(fontFamily.Name, customFont, StringComparison.OrdinalIgnoreCase))
                 {
                     fontFound = true;
                     break;
                 }
             }
-
-            if (!fontFound)
-            {
-                Console.Error.WriteLine($"Warning: Font \"{customFontName}\" is not installed on the system. It may be substituted during rendering.");
-            }
-
-            // Set the default font for Aspose.Diagram (fallback handling)
-            FontConfigs.DefaultFontName = customFontName;
-
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Load the legacy stencil (master) from the provided file stream and add it to the diagram
-            using (FileStream stencilStream = new FileStream(stencilPath, FileMode.Open, FileAccess.Read))
-            {
-                string masterName = "LegacyMaster";
-                diagram.AddMaster(stencilStream, masterName);
-            }
-
-            // Ensure there is at least one page to place shapes on
-            if (diagram.Pages.Count == 0)
-            {
-                diagram.Pages.Add(new Page());
-            }
-
-            // Use the first page
-            Page page = diagram.Pages[0];
-
-            // Add a shape based on the imported master
-            // Position (1,1) with size (2,1) – adjust as needed
-            double posX = 1.0;
-            double posY = 1.0;
-            double width = 2.0;
-            double height = 1.0;
-            long shapeId = page.AddShape(posX, posY, width, height, "LegacyMaster");
-
-            // Retrieve the shape instance
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Apply the custom font to every character run in all shapes on the page
-            foreach (Shape s in page.Shapes)
-            {
-                // Skip deleted shapes
-                if (s.Del == BOOL.True)
-                    continue;
-
-                for (int c = 0; c < s.Chars.Count; c++)
-                {
-                    // Set the FontName cell value to the custom font
-                    s.Chars[c].FontName.Value = customFontName;
-                }
-            }
-
-            // Save the resulting diagram to the specified output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or IO exceptions and report them
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error while enumerating installed fonts: {ex.Message}");
+            // Continue; fallback font will be used.
         }
+
+        if (!fontFound)
+        {
+            Console.Error.WriteLine($"Warning: Font \"{customFont}\" is not installed on the system. It will be used as fallback.");
+        }
+
+        // Configure Aspose.Diagram to use the custom font as default fallback
+        FontConfigs.DefaultFontName = customFont;
+
+        try
+        {
+            // Load the legacy stencil file into a stream
+            using (FileStream stencilStream = new FileStream(stencilPath, FileMode.Open, FileAccess.Read))
+            {
+                // Create a new empty diagram
+                Diagram diagram = new Diagram();
+
+                // Derive a master name from the stencil file name
+                string masterName = Path.GetFileNameWithoutExtension(stencilPath);
+
+                // Import the master (stencil) into the diagram
+                diagram.AddMaster(stencilStream, masterName);
+
+                // Add a new page to host shapes
+                Page page = new Page();
+                diagram.Pages.Add(page);
+
+                // Add a shape based on the imported master
+                // Position (1,1) with size (2,2) – units are inches by default
+                page.AddShape(1.0, 1.0, 2.0, 2.0, masterName);
+            }
+
+            // At this point, the diagram contains shapes imported from the legacy stencil.
+            // Apply the custom font to all character runs in every shape across all pages.
+            Diagram finalDiagram = new Diagram(); // Placeholder to hold the diagram after using block
+            // Since the diagram variable is scoped inside the using block, we need to recreate loading.
+            // Instead, we will load the diagram from the saved temporary file.
+            // To avoid file I/O, we will restructure: move processing inside the using block.
+
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            return;
+        }
+
+        // Revised implementation: process within the same using block to retain diagram reference
+        try
+        {
+            // Load the stencil and create diagram, then apply font and save
+            using (FileStream stencilStream = new FileStream(stencilPath, FileMode.Open, FileAccess.Read))
+            {
+                Diagram diagram = new Diagram();
+
+                string masterName = Path.GetFileNameWithoutExtension(stencilPath);
+                diagram.AddMaster(stencilStream, masterName);
+
+                Page page = new Page();
+
+                diagram.Pages.Add(page);
+                page.AddShape(1.0, 1.0, 2.0, 2.0, masterName);
+
+                // Iterate over all pages and shapes to set the custom font on each character run
+                foreach (Page pg in diagram.Pages)
+                {
+                    foreach (Shape shp in pg.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shp.Del == BOOL.True)
+                            continue;
+
+                        // Apply font to each character in the shape
+                        for (int i = 0; i < shp.Chars.Count; i++)
+                        {
+                            shp.Chars[i].FontName.Value = customFont;
+                        }
+                    }
+                }
+
+                // Save the resulting diagram with the custom font applied
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during diagram creation or saving: {ex.Message}");
+            return;
+        }
+
+        Console.WriteLine($"Diagram saved successfully to: {outputPath}");
     }
 }

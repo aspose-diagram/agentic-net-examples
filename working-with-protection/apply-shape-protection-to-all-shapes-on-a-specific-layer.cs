@@ -1,29 +1,37 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file, target layer name, optional output file
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <layerName> [outputVisioFile]");
-            return;
-        }
+        // Prompt user for input Visio file path
+        Console.Write("Enter the path to the Visio file: ");
+        string inputPath = Console.ReadLine();
 
-        string inputPath = args[0];
-        string targetLayerName = args[1];
-        string outputPath = args.Length >= 3 ? args[2] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
-
-        // Guard against missing input file
+        // Guard: ensure the file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
+
+        // Prompt user for the target layer name
+        Console.Write("Enter the name of the layer to protect its shapes: ");
+        string targetLayerName = Console.ReadLine();
+
+        // Guard: ensure a layer name was provided
+        if (string.IsNullOrWhiteSpace(targetLayerName))
+        {
+            Console.Error.WriteLine("Error: Layer name cannot be empty.");
+            return;
+        }
+
+        // Define output path (original name with suffix)
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_protected.vsdx");
 
         try
         {
@@ -48,39 +56,40 @@ class Program
                     if (targetLayer == null)
                         continue;
 
-                    // The layer index (IX) is stored as a long; convert to string for comparison
-                    string layerIndexString = targetLayer.IX.ToString();
+                    // The layer index (IX) is used in the shape's LayerMember string
+                    string targetLayerIndex = targetLayer.IX.ToString();
 
-                    // Iterate over all shapes on the page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has layer membership information
+                        // Ensure the shape has a LayerMember value
                         if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
                             continue;
 
-                        // Retrieve the comma‑separated list of layer indices the shape belongs to
-                        string memberString = shape.LayerMem.LayerMember.Value ?? string.Empty;
-                        string[] memberIndices = memberString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        string layerMember = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue;
 
-                        // Check if the shape belongs to the target layer
-                        bool belongsToTargetLayer = false;
+                        // Determine if the shape belongs to the target layer
+                        string[] memberIndices = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        bool belongsToTarget = false;
                         foreach (string idx in memberIndices)
                         {
-                            if (idx.Trim() == layerIndexString)
+                            if (idx.Trim() == targetLayerIndex)
                             {
-                                belongsToTargetLayer = true;
+                                belongsToTarget = true;
                                 break;
                             }
                         }
 
-                        if (!belongsToTargetLayer)
+                        if (!belongsToTarget)
                             continue;
 
-                        // Apply protection to the shape – set all supported lock properties to TRUE
+                        // Apply protection to all supported properties
                         shape.Protection.LockAspect.Value = BOOL.True;
                         shape.Protection.LockBegin.Value = BOOL.True;
                         shape.Protection.LockCalcWH.Value = BOOL.True;
@@ -104,15 +113,15 @@ class Program
                     }
                 }
 
-                // Save the modified diagram to the specified output path
+                // Save the modified diagram to the output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved with protected shapes to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

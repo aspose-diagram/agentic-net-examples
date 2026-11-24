@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -19,7 +20,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -29,27 +30,27 @@ class Program
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Define the preset theme and variant to apply to every page.
-                // PresetThemeValue.Bubble is a valid theme; Variant1 is a valid variant.
+                // PresetThemeValue.Bubble is a valid theme; Variant1 is a common variant.
                 PresetThemeValue theme = PresetThemeValue.Bubble;
                 PresetThemeVariantValue variant = PresetThemeVariantValue.Variant1;
 
-                // Iterate over all pages using explicit typing (no var).
+                // Iterate through all pages and assign the theme and variant.
                 foreach (Page page in diagram.Pages)
                 {
                     // Apply the preset theme.
                     page.PresetTheme = theme;
 
-                    // Apply the preset theme variant.
+                    // Apply the preset theme variant (write‑only property).
                     page.PresetThemeVariant = variant;
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

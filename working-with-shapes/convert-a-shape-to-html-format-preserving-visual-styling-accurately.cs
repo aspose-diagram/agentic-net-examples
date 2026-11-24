@@ -7,77 +7,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Input Visio file path (change as needed)
+        string inputPath = "sample.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <pageIndex> <shapeNameU>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string diagramPath = args[0];
-        string pageIndexArg = args[1];
-        string shapeNameU = args[2];
-
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Parse page index.
-        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
-        {
-            Console.Error.WriteLine("Error: Invalid page index.");
-            return;
-        }
+        // Define output HTML file path
+        string outputHtmlPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "shape.html");
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Validate page index range.
-            if (pageIndex >= diagram.Pages.Count)
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                Console.Error.WriteLine("The diagram does not contain any pages.");
                 return;
             }
 
-            // Retrieve the requested page.
-            Page page = diagram.Pages[pageIndex];
+            // Get the first page
+            Page page = diagram.Pages[0];
 
-            // Locate the shape by its universal name (NameU).
-            Shape targetShape = null;
-            for (int i = 0; i < page.Shapes.Count; i++)
+            // Ensure the page contains at least one shape
+            if (page.Shapes.Count == 0)
             {
-                Shape shp = page.Shapes[i];
-                if (shp.NameU != null && shp.NameU.Equals(shapeNameU, StringComparison.OrdinalIgnoreCase))
-                {
-                    targetShape = shp;
-                    break;
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Error: Shape with NameU '{shapeNameU}' not found on page {pageIndex}.");
+                Console.Error.WriteLine("The selected page does not contain any shapes.");
                 return;
             }
 
-            // Prepare output HTML file path.
-            string outputDirectory = Path.GetDirectoryName(diagramPath) ?? Directory.GetCurrentDirectory();
-            string outputHtmlPath = Path.Combine(outputDirectory, $"{shapeNameU}_shape.html");
+            // Get the first shape on the page
+            Shape shape = page.Shapes[0];
 
-            // Convert the shape to HTML preserving visual styling.
+            // Convert the shape to HTML preserving visual styling
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            targetShape.ToHTML(outputHtmlPath, htmlOptions);
+            shape.ToHTML(outputHtmlPath, htmlOptions);
 
-            Console.WriteLine($"Shape '{shapeNameU}' successfully exported to HTML at '{outputHtmlPath}'.");
+            Console.WriteLine($"Shape successfully exported to HTML: {outputHtmlPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or runtime errors.
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

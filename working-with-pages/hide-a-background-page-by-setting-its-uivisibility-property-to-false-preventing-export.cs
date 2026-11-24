@@ -7,61 +7,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Output PDF file path
+        string outputPath = "output.pdf";
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern).
+            // Load the Visio diagram inside a using block (required pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Locate the background page (Background == BOOL.True).
-                Page backgroundPage = null;
+                // Iterate through all pages to find background pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Identify background pages
                     if (page.Background == BOOL.True)
                     {
-                        backgroundPage = page;
-                        break;
+                        // Hide the background page by setting UIVisibility to Hidden
+                        page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
                     }
                 }
 
-                if (backgroundPage == null)
+                // Configure PDF save options to exclude hidden pages from export
+                PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    Console.Error.WriteLine("Error: No background page found in the diagram.");
-                    return;
-                }
+                    ExportHiddenPage = false,
+                    SaveFormat = SaveFileFormat.Pdf
+                };
 
-                // Hide the background page by setting its UI visibility to hidden.
-                backgroundPage.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
-
-                // Configure save options to exclude hidden pages from export.
-                XPSSaveOptions saveOptions = new XPSSaveOptions();
-                saveOptions.ExportHiddenPage = false; // ExportHiddenPage expects a bool, not BOOL.
-
-                // Save the modified diagram using the specified options.
-                diagram.Save(outputPath, saveOptions);
+                // Save the diagram to PDF using the configured options
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

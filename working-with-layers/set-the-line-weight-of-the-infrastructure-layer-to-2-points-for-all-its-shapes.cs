@@ -1,12 +1,13 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -23,79 +24,67 @@ class Program
             return;
         }
 
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Convert 2 points to inches (Visio stores line weight in inches).
-                double lineWeightInInches = 2.0 / 72.0;
-
-                // Iterate through each page because layers are stored per page.
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Find the layer named "Infrastructure" in the current page.
-                    Layer targetLayer = null;
+                    // Find the index of the 'Infrastructure' layer on this page.
+                    int infraLayerIndex = -1;
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
                         if (layer.Name.Value == "Infrastructure")
                         {
-                            targetLayer = layer;
+                            infraLayerIndex = layer.IX;
                             break;
                         }
                     }
 
-                    // If the layer does not exist on this page, skip to the next page.
-                    if (targetLayer == null)
+                    // If the layer does not exist on this page, skip to next page.
+                    if (infraLayerIndex == -1)
                         continue;
 
-                    // The zero‑based index of the target layer.
-                    int layerIndex = targetLayer.IX;
-
-                    // Iterate over all shapes on the page.
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has layer membership information.
-                        if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
+                        // Retrieve the layer membership string (semicolon‑separated indexes).
+                        string member = shape.LayerMem?.LayerMember?.Value;
+                        if (string.IsNullOrEmpty(member))
                             continue;
 
-                        string layerMember = shape.LayerMem.LayerMember.Value;
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue;
-
-                        // Check if the shape belongs to the target layer.
-                        // The membership string is a semicolon‑separated list of indexes.
-                        string[] members = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                        bool belongsToTarget = false;
-                        foreach (string m in members)
+                        // Split the membership string and check if it contains the target layer index.
+                        var indices = member.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (indices.Contains(infraLayerIndex.ToString()))
                         {
-                            if (m == layerIndex.ToString())
-                            {
-                                belongsToTarget = true;
-                                break;
-                            }
-                        }
-
-                        if (belongsToTarget)
-                        {
-                            // Set the line weight to 2 points (converted to inches).
-                            shape.Line.LineWeight.Value = lineWeightInInches;
+                            // Set line weight to 2 points (2/72 inches).
+                            shape.Line.LineWeight.Value = 2.0 / 72.0;
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
+
+            Console.WriteLine("Line weight updated successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

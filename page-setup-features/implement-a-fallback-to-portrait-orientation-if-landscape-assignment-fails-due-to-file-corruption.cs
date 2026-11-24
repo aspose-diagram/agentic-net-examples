@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments: input and output file paths
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -17,54 +16,52 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and attempt to set Landscape orientation.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                try
+                // Iterate through all pages to set orientation
+                foreach (Page page in diagram.Pages)
                 {
-                    // Attempt to assign Landscape orientation.
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
-                }
-                catch (Exception exLandscape)
-                {
-                    // Log the failure and attempt fallback to Portrait orientation.
-                    Console.Error.WriteLine($"Warning: Failed to set Landscape orientation for page \"{page.Name}\". Reason: {exLandscape.Message}");
                     try
                     {
-                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        // Attempt to set Landscape orientation
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                     }
-                    catch (Exception exPortrait)
+                    catch (Exception exLandscape)
                     {
-                        // Log the secondary failure; continue processing other pages.
-                        Console.Error.WriteLine($"Error: Failed to set Portrait orientation for page \"{page.Name}\". Reason: {exPortrait.Message}");
+                        // Log the failure and attempt fallback to Portrait
+                        Console.Error.WriteLine($"Failed to set Landscape orientation for page '{page.Name}': {exLandscape.Message}");
+
+                        try
+                        {
+                            // Fallback: set Portrait orientation
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        }
+                        catch (Exception exPortrait)
+                        {
+                            // Log if even the fallback fails
+                            Console.Error.WriteLine($"Failed to set Portrait orientation for page '{page.Name}': {exPortrait.Message}");
+                        }
                     }
                 }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to release resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Catch any unexpected errors during loading, processing, or saving.
-            Console.Error.WriteLine($"Fatal error: {ex.Message}");
+            // General error handling for diagram loading/saving
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -25,32 +25,34 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify pentagon shapes by checking the master name.
-                    if (shape.Master != null && shape.Master.Name == "Pentagon")
+                    // Iterate through all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the current rotation angle (in degrees).
-                        double currentAngle = shape.XForm.Angle.Value;
+                        // Identify pentagon shapes by master name.
+                        if (shape.Master != null && shape.Master.Name == "Pentagon")
+                        {
+                            // Retrieve current rotation angle (degrees).
+                            double currentAngle = shape.XForm.Angle.Value;
 
-                        // Calculate the new angle by adding 30 degrees.
-                        double newAngle = currentAngle + 30.0;
+                            // Add 30 degrees to rotate around its geometric center.
+                            double newAngle = currentAngle + 30.0;
 
-                        // Apply the rotation. SetAngle expects the absolute angle in degrees.
-                        shape.SetAngle(newAngle);
+                            // Apply the new rotation angle.
+                            shape.SetAngle(newAngle);
+                        }
                     }
                 }
+
+                // Save the modified diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)

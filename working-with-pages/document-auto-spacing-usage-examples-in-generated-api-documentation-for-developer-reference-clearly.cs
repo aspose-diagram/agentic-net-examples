@@ -7,17 +7,22 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Path to the source Visio file (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-        // Verify that the input file exists
+        // Verify that the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Define output file path
+        // Path where the auto‑spaced diagram will be saved
         string outputPath = "output_auto_spaced.vsdx";
 
         try
@@ -32,30 +37,35 @@ class Program
                 return;
             }
 
-            // Get the first page of the diagram
+            // Retrieve the first page (any page can be used)
             Page page = diagram.Pages[0];
 
-            // Configure auto‑spacing options
-            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions
+            // Verify that the page has shapes to auto‑space
+            if (page.Shapes.Count == 0)
             {
-                // Horizontal distance between shapes (in inches)
-                DistanceInHorizontal = 0.5,
-                // Vertical distance between shapes (in inches)
-                DistanceInVertical = 0.5
+                Console.Error.WriteLine("The selected page does not contain any shapes to auto‑space.");
+                return;
+            }
+
+            // Configure auto‑spacing options.
+            // DistanceInHorizontal and DistanceInVertical specify the gaps (in inches) between shapes.
+            AutoSpaceOptions options = new AutoSpaceOptions
+            {
+                DistanceInHorizontal = 1.0, // 1 inch horizontal gap
+                DistanceInVertical = 1.0    // 1 inch vertical gap
             };
 
-            // Apply auto‑spacing to all shapes on the page
-            // The Page.AutoSpaceShapes method expects a ShapeCollection; we use the page's own collection.
-            page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+            // Perform auto‑spacing on all shapes of the page
+            page.AutoSpaceShapes(page.Shapes, options);
 
-            // Save the modified diagram to the output file in VSDX format
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine($"Auto‑spacing applied successfully. Output saved to: {outputPath}");
+            Console.WriteLine($"Auto‑spacing completed successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

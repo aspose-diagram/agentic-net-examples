@@ -2,50 +2,63 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Verify that input and output file paths are provided.
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputPdfFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure the output directory exists.
-        string? outputDir = Path.GetDirectoryName(outputPath); // Changed to nullable to avoid CS8600 warning
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        // Determine output PDF path.
+        string outputPath;
+        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
         {
-            Directory.CreateDirectory(outputDir);
+            outputPath = args[1];
+        }
+        else
+        {
+            // Replace original extension with .pdf in the same folder.
+            outputPath = Path.ChangeExtension(inputPath, ".pdf");
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create PDF save options.
+                // Perform auto‑spacing on each page before export.
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+                // Example spacing values; adjust as needed.
+                autoSpaceOptions.DistanceInHorizontal = 0.5;
+                autoSpaceOptions.DistanceInVertical = 0.5;
+
+                foreach (Page page in diagram.Pages)
+                {
+                    // Auto‑space all shapes on the current page.
+                    page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+                }
+
+                // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;          // Explicitly set format tracker.
+                pdfOptions.ExportHiddenPage = false;                // Do not export hidden pages.
+                pdfOptions.DefaultFont = "Arial";                   // Fallback font if needed.
 
-                // Explicitly set the format tracker.
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-                // Do not export hidden pages (use native bool).
-                pdfOptions.ExportHiddenPage = false; // Changed from BOOL.False to bool false
-
-                // Save the diagram to PDF using the options.
+                // Save the diagram as PDF using the configured options.
                 diagram.Save(outputPath, pdfOptions);
             }
 

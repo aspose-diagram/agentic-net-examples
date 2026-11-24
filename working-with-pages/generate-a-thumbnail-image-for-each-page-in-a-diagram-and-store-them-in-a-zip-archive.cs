@@ -8,56 +8,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output ZIP file path (second argument or default)
-        string outputZipPath = args.Length > 1 ? args[1] : "thumbnails.zip";
+        // Validate arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputZipPath>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputZipPath = args[1];
+
+        // Guard: ensure the input diagram file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                int pageCount = diagram.Pages.Count;
-
-                // Create the ZIP archive for thumbnails
-                using (FileStream zipFs = new FileStream(outputZipPath, FileMode.Create))
-                using (ZipArchive zip = new ZipArchive(zipFs, ZipArchiveMode.Create))
+                // Create the ZIP archive for thumbnails.
+                using (FileStream zipStream = new FileStream(outputZipPath, FileMode.Create))
+                using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
                 {
-                    // Iterate over each page and generate a thumbnail
-                    for (int i = 0; i < pageCount; i++)
+                    // Iterate over each page in the diagram.
+                    for (int i = 0; i < diagram.Pages.Count; i++)
                     {
-                        // Configure image export options for a single page thumbnail
-                        ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                        options.PageIndex = i;          // Export only the current page
-                        options.PageCount = 1;          // Single page
-                        options.Scale = 0.2f;           // Reduce size for thumbnail (20%)
+                        // Configure image export options for a single page.
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        imgOptions.PageIndex = i;      // Zero‑based page index.
+                        imgOptions.PageCount = 1;      // Export only this page.
 
-                        // Temporary file to hold the exported image
-                        string tempImagePath = Path.Combine(Path.GetTempPath(),
-                            $"page_{i + 1}_{Guid.NewGuid()}.png");
-
-                        // Export the page to the temporary PNG file
-                        diagram.Save(tempImagePath, options);
-
-                        // Add the PNG file to the ZIP archive
-                        string entryName = $"page_{i + 1}.png";
-                        ZipArchiveEntry entry = zip.CreateEntry(entryName);
-                        using (FileStream imgFs = new FileStream(tempImagePath, FileMode.Open, FileAccess.Read))
-                        using (Stream entryStream = entry.Open())
+                        // Export the page to a memory stream.
+                        using (MemoryStream imgStream = new MemoryStream())
                         {
-                            imgFs.CopyTo(entryStream);
-                        }
+                            diagram.Save(imgStream, imgOptions);
+                            imgStream.Position = 0; // Reset stream position for reading.
 
-                        // Clean up the temporary image file
-                        File.Delete(tempImagePath);
+                            // Create a ZIP entry for the thumbnail.
+                            string entryName = $"page_{i + 1}.png";
+                            ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                            using (Stream entryStream = entry.Open())
+                            {
+                                imgStream.CopyTo(entryStream);
+                            }
+                        }
                     }
                 }
             }
@@ -66,8 +64,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

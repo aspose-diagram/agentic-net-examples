@@ -7,45 +7,53 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
             return;
         }
 
-        // Output PDF file path
-        string outputPath = "output.pdf";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern)
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Configure PDF save options
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Export hidden pages for archival purposes
-                pdfOptions.ExportHiddenPage = true; // BOOL replaced with native bool
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Apply Flate compression to reduce file size (text compression)
-                pdfOptions.TextCompression = PdfTextCompression.Flate;
+            // Export hidden pages for archival purposes.
+            pdfOptions.ExportHiddenPage = true;
 
-                // Explicitly set the save format
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Compress images: set high JPEG quality and DPI.
+            pdfOptions.JpegQuality = 100;               // 0‑100, 100 = best quality.
+            pdfOptions.HorizontalResolution = 300;      // DPI
+            pdfOptions.VerticalResolution = 300;        // DPI
 
-                // Optional: set a default font to avoid missing font warnings
-                pdfOptions.DefaultFont = "Arial";
+            // Apply Flate compression to PDF text streams to reduce file size.
+            pdfOptions.TextCompression = PdfTextCompression.Flate;
 
-                // Save the diagram as PDF with the configured options
-                diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
-            }
+            // Explicitly set the format tracker (required by the API).
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+            // Save the diagram as a PDF with the configured options.
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"PDF saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -7,23 +7,24 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputDirectory]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists
+        string outputDir = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output directory (use input file directory if not provided)
-        string outputDir = args.Length > 1 ? args[1] : Path.GetDirectoryName(inputPath);
+        // Ensure the output directory exists.
         if (!Directory.Exists(outputDir))
         {
             try
@@ -39,55 +40,61 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
             // ---------- Export to HTML with hidden pages ----------
             {
-                // Create HTML save options and enable hidden page export
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.ExportHiddenPage = true;
+                // Configure HTML save options to include hidden pages.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                {
+                    ExportHiddenPage = true
+                };
 
-                // Define output file path
+                // Build output file path.
                 string htmlPath = Path.Combine(outputDir, "output.html");
 
-                // Save diagram as HTML
+                // Save the diagram as HTML.
                 diagram.Save(htmlPath, htmlOptions);
-                Console.WriteLine($"HTML saved to: {htmlPath}");
+                Console.WriteLine($"HTML exported to: {htmlPath}");
             }
 
             // ---------- Export to PNG with hidden pages ----------
             {
-                // Create image save options for PNG and enable hidden page export
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.ExportHiddenPage = true;
+                // Configure image save options for PNG format.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    ExportHiddenPage = true
+                };
 
-                // Define output file path
+                // Build output file path.
                 string pngPath = Path.Combine(outputDir, "output.png");
 
-                // Save diagram as PNG
+                // Save the diagram as PNG.
                 diagram.Save(pngPath, pngOptions);
-                Console.WriteLine($"PNG saved to: {pngPath}");
+                Console.WriteLine($"PNG exported to: {pngPath}");
             }
 
             // ---------- Export to SVG with hidden pages ----------
             {
-                // Create SVG save options and enable hidden page export
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-                svgOptions.ExportHiddenPage = true;
+                // Configure SVG save options.
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    ExportHiddenPage = true
+                };
 
-                // Define output file path
+                // Build output file path.
                 string svgPath = Path.Combine(outputDir, "output.svg");
 
-                // Save diagram as SVG
+                // Save the diagram as SVG.
                 diagram.Save(svgPath, svgOptions);
-                Console.WriteLine($"SVG saved to: {svgPath}");
+                Console.WriteLine($"SVG exported to: {svgPath}");
             }
         }
         catch (Exception ex)
         {
-            // Log any Aspose or I/O errors
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

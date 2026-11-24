@@ -26,24 +26,24 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Configure SVG save options.
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Enable export of hidden pages.
+                // Include hidden pages in the exported SVG.
                 svgOptions.ExportHiddenPage = true;
 
                 // Save the diagram as SVG using the configured options.
                 diagram.Save(outputPath, svgOptions);
             }
 
-            Console.WriteLine($"SVG file successfully saved to \"{outputPath}\".");
+            Console.WriteLine($"SVG file successfully created at \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

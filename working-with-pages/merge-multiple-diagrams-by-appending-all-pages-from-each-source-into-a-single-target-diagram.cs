@@ -1,72 +1,59 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: first argument is output file, remaining are source diagrams.
-        if (args == null || args.Length < 2)
+        // Validate arguments: at least one output path and one input diagram.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: MergeDiagrams <output.vsdx> <source1.vsdx> [<source2.vsdx> ...]");
+            Console.Error.WriteLine("Usage: MergeDiagrams <output.vsdx> <input1.vsdx> [<input2.vsdx> ...]");
             return;
         }
 
         string outputPath = args[0];
 
-        // Verify that each source file exists before proceeding.
-        for (int i = 1; i < args.Length; i++)
+        // Collect input file paths.
+        string[] inputPaths = new string[args.Length - 1];
+        Array.Copy(args, 1, inputPaths, 0, inputPaths.Length);
+
+        // Verify each input file exists.
+        foreach (string path in inputPaths)
         {
-            string srcPath = args[i];
-            if (!File.Exists(srcPath))
+            if (!File.Exists(path))
             {
-                Console.Error.WriteLine($"Source file does not exist: {srcPath}");
+                Console.Error.WriteLine($"Input file not found: {path}");
                 return;
             }
         }
 
-        // Load the first diagram as the base target diagram.
-        string firstSource = args[1];
         try
         {
-            using (Diagram targetDiagram = new Diagram(firstSource))
+            // Load the first diagram as the target diagram.
+            using (Diagram targetDiagram = new Diagram(inputPaths[0]))
             {
-                // Append pages from each additional source diagram.
-                for (int i = 2; i < args.Length; i++)
+                // Iterate over remaining source diagrams and combine them into the target.
+                for (int i = 1; i < inputPaths.Length; i++)
                 {
-                    string srcPath = args[i];
-                    try
+                    string srcPath = inputPaths[i];
+                    using (Diagram sourceDiagram = new Diagram(srcPath))
                     {
-                        using (Diagram sourceDiagram = new Diagram(srcPath))
-                        {
-                            // Combine merges masters, styles, and all pages from source into target.
-                            targetDiagram.Combine(sourceDiagram);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"Error combining '{srcPath}': {ex.Message}");
-                        // Continue with remaining files.
+                        // Combine pages and masters from sourceDiagram into targetDiagram.
+                        targetDiagram.Combine(sourceDiagram);
                     }
                 }
 
-                // Save the merged diagram to the specified output path in VSDX format.
-                try
-                {
-                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Merged diagram saved to: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error saving merged diagram: {ex.Message}");
-                }
+                // Save the merged diagram to the specified output path.
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Merged diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading base diagram '{firstSource}': {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"An error occurred during merging: {ex.Message}");
         }
     }
 }

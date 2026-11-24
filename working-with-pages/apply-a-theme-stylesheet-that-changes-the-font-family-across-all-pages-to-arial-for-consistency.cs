@@ -2,74 +2,71 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing.Text;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard against missing input file.
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output path. If not supplied, create a new file name with suffix "_Arial.vsdx".
-        string outputPath;
-        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
-        {
-            outputPath = args[1];
-        }
-        else
-        {
-            string dir = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
-            string nameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-            outputPath = Path.Combine(dir, $"{nameWithoutExt}_Arial.vsdx");
-        }
+        // Set the default fallback font to Arial before loading the diagram.
+        FontConfigs.DefaultFontName = "Arial";
 
         try
         {
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Set the global fallback font to Arial.
-                FontConfigs.DefaultFontName = "Arial";
+                // ------------------------------------------------------------
+                // Create a stylesheet that defines the desired font family.
+                // ------------------------------------------------------------
+                StyleSheet fontStyle = new StyleSheet();
 
-                // Iterate through all pages.
+                // Assign a unique ID (next available index).
+                fontStyle.ID = diagram.StyleSheets.Count + 1;
+
+                // Configure character style: set FontName to Arial.
+                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
+                ch.IX = 0; // character index
+                ch.FontName.Value = "Arial";
+                fontStyle.Chars.Add(ch);
+
+                // Add the new stylesheet to the diagram's collection.
+                diagram.StyleSheets.Add(fontStyle);
+
+                // ------------------------------------------------------------
+                // Apply the stylesheet to every page in the diagram.
+                // ------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Apply Arial font to each character run in the shape.
-                        for (int i = 0; i < shape.Chars.Count; i++)
-                        {
-                            shape.Chars[i].FontName.Value = "Arial";
-                        }
-                    }
+                    // Apply the same stylesheet for characters, lines, and fills.
+                    page.ApplyStyle(fontStyle.ID, fontStyle.ID, fontStyle.ID);
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // ------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

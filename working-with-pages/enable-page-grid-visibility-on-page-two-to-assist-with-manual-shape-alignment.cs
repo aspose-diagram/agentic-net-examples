@@ -7,14 +7,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provide via command line or use defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -23,17 +29,21 @@ class Program
             // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Verify that the diagram has at least two pages
+                // Ensure the diagram has at least two pages (zero‑based index 1)
                 if (diagram.Pages.Count < 2)
                 {
                     Console.Error.WriteLine("The diagram does not contain a second page.");
                     return;
                 }
 
+                // Access the second page (page index 1) – this is the target page
+                Page targetPage = diagram.Pages[1];
+
                 // Ensure there is at least one window; if not, create a default window
                 if (diagram.Windows.Count == 0)
                 {
                     Window newWindow = new Window();
+                    // Set basic window properties (required for a functional window)
                     newWindow.WindowType = WindowTypeValue.Drawing;
                     newWindow.WindowState = WindowStateValue.Maximized;
                     newWindow.WindowWidth = 1100;
@@ -41,19 +51,22 @@ class Program
                     diagram.Windows.Add(newWindow);
                 }
 
-                // Enable grid visibility. The ShowGrid property is on Window, not Page.
-                // This setting applies globally; page‑specific grid visibility is not supported.
+                // Use the first window to control grid visibility.
+                // According to the API, ShowGrid is a BOOL property on Window.
                 Window window = diagram.Windows[0];
                 window.ShowGrid = BOOL.True;
 
-                // Save the modified diagram to the output path in VSDX format
+                // Note: ShowGrid is a global window setting; it affects the view of pages.
+                // There is no direct per‑page grid visibility property in Aspose.Diagram.
+                // The above setting enables the grid for the diagram view, which includes page two.
+
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Grid visibility enabled (global) and diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

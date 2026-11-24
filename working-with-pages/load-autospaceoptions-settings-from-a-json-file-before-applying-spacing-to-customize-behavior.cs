@@ -5,8 +5,8 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Simple POCO to map JSON settings for auto-spacing
-    private class AutoSpaceSettings
+    // Model class matching the JSON structure for AutoSpaceOptions settings
+    private class AutoSpaceConfig
     {
         public double DistanceInHorizontal { get; set; }
         public double DistanceInVertical { get; set; }
@@ -14,10 +14,10 @@ class Program
 
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, JSON settings path, output diagram path
+        // Expect three arguments: input diagram path, JSON config path, output diagram path
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <settingsJsonPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <configJsonPath> <outputDiagramPath>");
             return;
         }
 
@@ -25,35 +25,34 @@ class Program
         string jsonPath = args[1];
         string outputPath = args[2];
 
-        // Guard: ensure the input diagram file exists
+        // Guard against missing files
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        // Guard: ensure the JSON settings file exists
         if (!File.Exists(jsonPath))
         {
-            Console.Error.WriteLine($"Error: Settings JSON file not found at '{jsonPath}'.");
+            Console.Error.WriteLine($"Configuration JSON file not found: {jsonPath}");
             return;
         }
 
-        // Load auto-space settings from JSON
-        AutoSpaceSettings settings;
+        // Load AutoSpaceOptions settings from JSON
+        AutoSpaceConfig config;
         try
         {
             string jsonContent = File.ReadAllText(jsonPath);
-            settings = JsonSerializer.Deserialize<AutoSpaceSettings>(jsonContent);
-            if (settings == null)
+            config = JsonSerializer.Deserialize<AutoSpaceConfig>(jsonContent);
+            if (config == null)
             {
-                Console.Error.WriteLine("Error: Failed to deserialize JSON settings.");
+                Console.Error.WriteLine("Failed to deserialize JSON configuration.");
                 return;
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading JSON settings: {ex.Message}");
+            Console.Error.WriteLine($"Error reading JSON configuration: {ex.Message}");
             return;
         }
 
@@ -65,28 +64,28 @@ class Program
             // Ensure the diagram has at least one page
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Get the first page (or you could iterate all pages)
-            Page page = diagram.Pages[0];
+            // Prepare AutoSpaceOptions with values from the JSON config
+            AutoSpaceOptions options = new AutoSpaceOptions
+            {
+                DistanceInHorizontal = config.DistanceInHorizontal,
+                DistanceInVertical = config.DistanceInVertical
+            };
 
-            // Configure AutoSpaceOptions using values from JSON
-            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
-            autoSpaceOptions.DistanceInHorizontal = settings.DistanceInHorizontal;
-            autoSpaceOptions.DistanceInVertical = settings.DistanceInVertical;
-
-            // Apply auto-spacing to all shapes on the page
-            page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+            // Apply auto-spacing to the first page's shape collection
+            Page firstPage = diagram.Pages[0];
+            firstPage.AutoSpaceShapes(firstPage.Shapes, options);
 
             // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Catch any Aspose.Diagram related errors
-            Console.Error.WriteLine($"Aspose.Diagram error: {ex.Message}");
+            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
         }
     }
 }

@@ -6,50 +6,42 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Input Visio file path (required)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Output Visio file path (optional)
+        string outputPath = args.Length > 1 ? args[1] : "output_fixed.vsdx";
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the fixed page dimensions (in inches).
-            double fixedWidth = 8.5;   // Example: Letter width
-            double fixedHeight = 11.0; // Example: Letter height
-
-            // Iterate through all pages and apply settings.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Disable automatic page expansion.
-                page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
+                // Iterate over all pages in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Disable automatic page expansion (auto‑expand)
+                    page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
 
-                // Assign a fixed page size.
-                page.PageSheet.PageProps.PageWidth.Value = fixedWidth;
-                page.PageSheet.PageProps.PageHeight.Value = fixedHeight;
+                    // Set a fixed page size (e.g., 8.5 x 11 inches)
+                    page.PageSheet.PageProps.PageWidth.Value = 8.5;   // width in inches
+                    page.PageSheet.PageProps.PageHeight.Value = 11.0; // height in inches
+                }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

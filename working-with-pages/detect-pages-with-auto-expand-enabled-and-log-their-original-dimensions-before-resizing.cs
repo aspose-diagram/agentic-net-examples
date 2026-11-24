@@ -6,67 +6,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: check if the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
+        // Define output path (original name with suffix)
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_resized.vsdx");
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                int pageIndex = 0;
-
-                // Iterate through all pages in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Check if the page has auto‑expand enabled.
-                    if (page.PageSheet.PageProps.DrawingResizeType != null &&
-                        page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically)
+                    // Retrieve the auto‑expand setting
+                    bool isAutoExpand = page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically;
+
+                    if (isAutoExpand)
                     {
-                        // Retrieve original dimensions (in inches).
+                        // Log original dimensions (values are in inches)
                         double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
                         double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        Console.WriteLine($"Page ID {page.ID} has Auto‑Expand enabled. Original size: {originalWidth}in x {originalHeight}in");
 
-                        // Log original dimensions.
-                        Console.WriteLine($"Page {pageIndex}: Auto‑expand enabled. Original size = {originalWidth}in x {originalHeight}in");
-
-                        // Example resizing: increase dimensions by 10%.
+                        // Example resizing: increase dimensions by 10%
                         double newWidth = originalWidth * 1.10;
                         double newHeight = originalHeight * 1.10;
 
-                        // Apply new dimensions.
+                        // Apply new dimensions
                         page.PageSheet.PageProps.PageWidth.Value = newWidth;
                         page.PageSheet.PageProps.PageHeight.Value = newHeight;
 
-                        // Log new dimensions.
-                        Console.WriteLine($"Page {pageIndex}: Resized to = {newWidth}in x {newHeight}in");
+                        // Optionally, disable auto‑expand after resizing
+                        page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
                     }
-
-                    pageIndex++;
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the output file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

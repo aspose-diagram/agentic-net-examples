@@ -19,7 +19,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -28,26 +28,27 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages in the diagram.
+                // Iterate through all pages in the diagram.
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
+                    // Explicitly type the page variable.
                     Page page = diagram.Pages[i];
 
                     // Retrieve current orientation.
-                    var currentOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                    PrintPageOrientationValue currentOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
 
-                    // If the page is Landscape, rotate it to Portrait.
+                    // If the page is landscape, change it to portrait and swap dimensions.
                     if (currentOrientation == PrintPageOrientationValue.Landscape)
                     {
-                        // Set orientation to Portrait.
+                        // Set orientation to portrait.
                         page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
                         // Swap width and height to reflect the rotation.
-                        double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
+                        double width = page.PageSheet.PageProps.PageWidth.Value;
+                        double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                        page.PageSheet.PageProps.PageWidth.Value = originalHeight;
-                        page.PageSheet.PageProps.PageHeight.Value = originalWidth;
+                        page.PageSheet.PageProps.PageWidth.Value = height;
+                        page.PageSheet.PageProps.PageHeight.Value = width;
                     }
                 }
 
@@ -57,8 +58,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

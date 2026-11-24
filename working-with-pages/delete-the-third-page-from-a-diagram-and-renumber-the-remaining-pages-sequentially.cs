@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,37 +28,31 @@ class Program
         {
             try
             {
-                // Delete the third page (index 2) if it exists.
-                if (diagram.Pages.Count >= 3)
+                // Ensure the diagram has at least three pages.
+                if (diagram.Pages.Count < 3)
                 {
-                    // Retrieve the page to remove.
-                    Page pageToRemove = diagram.Pages[2];
-                    // Remove the page from the collection.
-                    diagram.Pages.Remove(pageToRemove);
-                    Console.WriteLine("Third page removed successfully.");
-                }
-                else
-                {
-                    Console.WriteLine("Diagram contains fewer than three pages; no page removed.");
+                    Console.Error.WriteLine("The diagram contains fewer than three pages; nothing to delete.");
+                    return;
                 }
 
+                // Retrieve the third page (zero‑based index 2) and remove it.
+                Page pageToRemove = diagram.Pages[2];
+                diagram.Pages.Remove(pageToRemove);
+
                 // Renumber remaining pages sequentially starting from 1.
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                int newId = 1;
+                foreach (Page page in diagram.Pages)
                 {
-                    // Access each page explicitly.
-                    Page page = diagram.Pages[i];
-                    // Set the page ID to a sequential value.
-                    page.ID = i + 1;
+                    page.ID = newId++;
                 }
-                Console.WriteLine("Pages renumbered sequentially.");
 
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                Console.WriteLine($"Third page removed and diagram saved to: {outputPath}");
             }
             catch (Exception ex)
             {
-                // Write any errors that occur during processing.
+                // Report any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
             }
         }

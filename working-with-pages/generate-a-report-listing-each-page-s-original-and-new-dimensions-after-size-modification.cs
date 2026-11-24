@@ -1,76 +1,84 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input diagram path and output report path
-        if (args.Length < 2)
+        // Expect at least the input diagram path
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputReportPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputReportPath]");
             return;
         }
 
         string inputPath = args[0];
-        string reportPath = args[1];
+        string reportPath = args.Length >= 2 ? args[1] : null;
 
-        // Guard: ensure the input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // StringBuilder to accumulate the report
+        StringBuilder reportBuilder = new StringBuilder();
+
         try
         {
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare a list to collect report lines
-                List<string> reportLines = new List<string>();
-                reportLines.Add("Page Size Modification Report");
-                reportLines.Add("----------------------------------------------------");
-
-                // Iterate over each page in the diagram
+                // Iterate over each page with explicit type
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve original dimensions (in inches)
+                    // Capture original dimensions (in inches)
                     double originalWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double originalHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Define new dimensions (e.g., increase size by 20%)
-                    double newWidth = originalWidth * 1.2;
-                    double newHeight = originalHeight * 1.2;
+                    // Define a scaling factor (e.g., increase size by 20%)
+                    double scaleFactor = 1.2;
 
-                    // Apply the new dimensions to the page
+                    // Compute new dimensions
+                    double newWidth = originalWidth * scaleFactor;
+                    double newHeight = originalHeight * scaleFactor;
+
+                    // Apply new dimensions to the page
                     page.PageSheet.PageProps.PageWidth.Value = newWidth;
                     page.PageSheet.PageProps.PageHeight.Value = newHeight;
 
-                    // Add an entry to the report
-                    reportLines.Add(
-                        $"Page ID {page.ID}: Original (W={originalWidth:F2} in, H={originalHeight:F2} in) -> New (W={newWidth:F2} in, H={newHeight:F2} in)");
+                    // Append information for this page to the report
+                    reportBuilder.AppendLine($"Page ID: {page.ID}, Name: {page.Name}");
+                    reportBuilder.AppendLine($"  Original Size: {originalWidth:F2} in x {originalHeight:F2} in");
+                    reportBuilder.AppendLine($"  New Size: {newWidth:F2} in x {newHeight:F2} in");
+                }
+            }
+
+            // Output the report to the console
+            Console.WriteLine("Page Size Modification Report:");
+            Console.WriteLine(reportBuilder.ToString());
+
+            // If an output path is provided, write the report to a file
+            if (!string.IsNullOrEmpty(reportPath))
+            {
+                // Ensure the directory exists
+                string directory = Path.GetDirectoryName(reportPath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
                 }
 
-                // Write the report to the specified file
-                File.WriteAllLines(reportPath, reportLines);
-                Console.WriteLine($"Report successfully written to: {reportPath}");
-
-                // Save the modified diagram to a new file (optional but useful)
-                string outputDiagramPath = Path.Combine(
-                    Path.GetDirectoryName(inputPath) ?? string.Empty,
-                    Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
-
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Modified diagram saved to: {outputDiagramPath}");
+                File.WriteAllText(reportPath, reportBuilder.ToString());
+                Console.WriteLine($"Report saved to: {reportPath}");
             }
         }
         catch (Exception ex)
         {
-            // Output any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to standard error
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

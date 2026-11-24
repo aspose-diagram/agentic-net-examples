@@ -3,125 +3,146 @@ using System.Collections.Generic;
 using System.IO;
 using Aspose.Diagram;
 
-class Program
+namespace MockAutoSpaceTest
 {
-    static void Main(string[] args)
+    // Simple mock of AutoSpaceOptions (mirrors Aspose.Diagram.AutoSpaceOptions)
+    public class MockAutoSpaceOptions
     {
-        try
+        public double HorizontalSpacing { get; set; }
+        public double VerticalSpacing { get; set; }
+
+        public MockAutoSpaceOptions()
         {
-            // Create a mock diagram with a single page.
-            MockDiagram diagram = new MockDiagram();
-
-            // Add some mock shapes to the page.
-            MockPage page = diagram.Page;
-            page.Shapes.Add(new MockShape { Name = "Shape1", PinX = 1.0, PinY = 1.0 });
-            page.Shapes.Add(new MockShape { Name = "Shape2", PinX = 2.0, PinY = 1.5 });
-            page.Shapes.Add(new MockShape { Name = "Shape3", PinX = 3.0, PinY = 2.0 });
-
-            // Define auto-space options (horizontal and vertical distances).
-            AutoSpaceOptions options = new AutoSpaceOptions
-            {
-                HorizontalSpacing = 2.0,
-                VerticalSpacing = 1.0
-            };
-
-            // Perform auto-spacing on the mock shape collection.
-            page.AutoSpaceShapes(page.Shapes, options);
-
-            // Output the new positions of the shapes.
-            Console.WriteLine("Auto-spaced shape positions:");
-            foreach (MockShape shape in page.Shapes)
-            {
-                Console.WriteLine($"{shape.Name}: PinX = {shape.PinX}, PinY = {shape.PinY}");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log any unexpected errors.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            HorizontalSpacing = 1.0;
+            VerticalSpacing = 1.0;
         }
     }
-}
 
-// -----------------------------------------------------------------------------
-// Mock classes to simulate Aspose.Diagram behavior without loading real files.
-// -----------------------------------------------------------------------------
-
-/// <summary>
-/// Represents a mock diagram containing a single page.
-/// </summary>
-class MockDiagram
-{
-    public MockPage Page { get; }
-
-    public MockDiagram()
+    // Mock shape with minimal properties required for spacing
+    public class MockShape
     {
-        // Initialize the mock page.
-        Page = new MockPage();
-    }
-}
+        public double PinX { get; set; }   // X coordinate of shape center
+        public double PinY { get; set; }   // Y coordinate of shape center
+        public double Width { get; set; }
+        public double Height { get; set; }
 
-/// <summary>
-/// Represents a mock page with a collection of shapes and an AutoSpace method.
-/// </summary>
-class MockPage
-{
-    public List<MockShape> Shapes { get; }
-
-    public MockPage()
-    {
-        Shapes = new List<MockShape>();
-    }
-
-    /// <summary>
-    /// Simulates the Aspose.Diagram.Page.AutoSpaceShapes method.
-    /// It repositions shapes based on the provided spacing options.
-    /// </summary>
-    /// <param name="shapes">The collection of shapes to auto-space.</param>
-    /// <param name="options">Spacing options.</param>
-    public void AutoSpaceShapes(List<MockShape> shapes, AutoSpaceOptions options)
-    {
-        if (shapes == null) throw new ArgumentNullException(nameof(shapes));
-        if (options == null) throw new ArgumentNullException(nameof(options));
-
-        // Simple algorithm: arrange shapes in a grid based on order.
-        double startX = 0.0;
-        double startY = 0.0;
-        int columns = (int)Math.Ceiling(Math.Sqrt(shapes.Count));
-        int row = 0;
-        int col = 0;
-
-        foreach (MockShape shape in shapes)
+        public MockShape(double pinX, double pinY, double width, double height)
         {
-            shape.PinX = startX + col * options.HorizontalSpacing;
-            shape.PinY = startY + row * options.VerticalSpacing;
+            PinX = pinX;
+            PinY = pinY;
+            Width = width;
+            Height = height;
+        }
 
-            col++;
-            if (col >= columns)
+        public override string ToString()
+        {
+            return $"Shape[PinX={PinX}, PinY={PinY}, Width={Width}, Height={Height}]";
+        }
+    }
+
+    // Mock page that holds a collection of shapes and provides an AutoSpace method
+    public class MockPage
+    {
+        public List<MockShape> Shapes { get; } = new List<MockShape>();
+
+        // Adds a shape to the page and returns its index (simulating Aspose behavior)
+        public int AddShape(MockShape shape)
+        {
+            Shapes.Add(shape);
+            return Shapes.Count - 1;
+        }
+
+        // Mock implementation of AutoSpaceShapes.
+        // Arranges the provided shapes in a simple grid based on the spacing options.
+        public void AutoSpaceShapes(List<MockShape> targetShapes, MockAutoSpaceOptions options)
+        {
+            if (targetShapes == null) throw new ArgumentNullException(nameof(targetShapes));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            // Determine grid dimensions (simple square layout)
+            int count = targetShapes.Count;
+            int columns = (int)Math.Ceiling(Math.Sqrt(count));
+            int rows = (int)Math.Ceiling((double)count / columns);
+
+            double startX = 0.0;
+            double startY = 0.0;
+
+            int index = 0;
+            for (int r = 0; r < rows; r++)
             {
-                col = 0;
-                row++;
+                for (int c = 0; c < columns; c++)
+                {
+                    if (index >= count) break;
+
+                    MockShape shape = targetShapes[index];
+                    // Position shape based on its size and the spacing options
+                    shape.PinX = startX + c * (shape.Width + options.HorizontalSpacing);
+                    shape.PinY = startY + r * (shape.Height + options.VerticalSpacing);
+                    index++;
+                }
             }
         }
     }
-}
 
-/// <summary>
-/// Represents a mock shape with minimal properties needed for spacing.
-/// </summary>
-class MockShape
-{
-    public string Name { get; set; }
-    public double PinX { get; set; }
-    public double PinY { get; set; }
-    // Additional properties can be added as needed.
-}
+    // Mock diagram containing pages
+    public class MockDiagram
+    {
+        public List<MockPage> Pages { get; } = new List<MockPage>();
 
-/// <summary>
-/// Mirrors Aspose.Diagram.AutoSpaceOptions for testing purposes.
-/// </summary>
-class AutoSpaceOptions
-{
-    public double HorizontalSpacing { get; set; }
-    public double VerticalSpacing { get; set; }
+        public MockPage AddPage()
+        {
+            var page = new MockPage();
+            Pages.Add(page);
+            return page;
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // No external files are required for this mock test, but we keep the guard pattern for consistency.
+            // If a future extension adds a file path argument, the guard will protect against missing files.
+            if (args.Length > 0 && !File.Exists(args[0]))
+            {
+                Console.Error.WriteLine($"Input file not found: {args[0]}");
+                return;
+            }
+
+            try
+            {
+                // Create a mock diagram and a single page.
+                var diagram = new MockDiagram();
+                MockPage page = diagram.AddPage();
+
+                // Add a few shapes with arbitrary sizes.
+                page.AddShape(new MockShape(0, 0, 2, 1)); // Shape 0
+                page.AddShape(new MockShape(0, 0, 1.5, 1.5)); // Shape 1
+                page.AddShape(new MockShape(0, 0, 2.5, 2)); // Shape 2
+                page.AddShape(new MockShape(0, 0, 1, 1)); // Shape 3
+
+                // Prepare auto-space options.
+                var options = new MockAutoSpaceOptions
+                {
+                    HorizontalSpacing = 0.5,
+                    VerticalSpacing = 0.75
+                };
+
+                // Perform auto-spacing on all shapes in the page.
+                page.AutoSpaceShapes(page.Shapes, options);
+
+                // Output the new positions of the shapes for verification.
+                Console.WriteLine("Auto-spaced shape positions:");
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Console.WriteLine($"Shape {i}: {page.Shapes[i]}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log any unexpected errors.
+                Console.Error.WriteLine($"Error during mock auto-spacing test: {ex.Message}");
+            }
+        }
+    }
 }

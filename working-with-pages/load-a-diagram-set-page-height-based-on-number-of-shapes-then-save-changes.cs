@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -19,7 +19,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -28,24 +28,21 @@ class Program
             // Load the diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram.
+            // Count total number of shapes across all pages.
+            int totalShapeCount = 0;
             foreach (Page page in diagram.Pages)
             {
-                // Count the number of shapes on the current page.
-                int shapeCount = page.Shapes.Count;
+                totalShapeCount += page.Shapes.Count;
+            }
 
-                // Define a height per shape (in inches). Adjust as needed.
-                double heightPerShape = 1.0; // 1 inch per shape
+            // Determine new page height. Example: 0.5 inches per shape.
+            double newPageHeight = totalShapeCount * 0.5;
 
-                // Calculate the new page height.
-                double newPageHeight = shapeCount * heightPerShape;
-
-                // Set the page height using the PageProps property.
-                // PageHeight is a DoubleValue; assign to its Value member.
+            // Apply the new height to each page in the diagram.
+            foreach (Page page in diagram.Pages)
+            {
+                // Page height is stored in inches.
                 page.PageSheet.PageProps.PageHeight.Value = newPageHeight;
-
-                // Optional: keep the page width unchanged or set a default.
-                // Here we leave the existing width as is.
             }
 
             // Save the modified diagram to the output path in VSDX format.
@@ -53,8 +50,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

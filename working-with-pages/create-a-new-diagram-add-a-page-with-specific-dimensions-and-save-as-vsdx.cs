@@ -1,15 +1,16 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the output file path
-        string outputPath = "output.vsdx";
+        // Define the output file path for the new diagram
+        string outputPath = "CreatedDiagram.vsdx";
 
-        // Ensure the output directory exists
+        // Verify that the output directory exists
         string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
         if (!Directory.Exists(outputDir))
         {
@@ -19,29 +20,32 @@ class Program
 
         try
         {
-            // Create a new empty diagram inside a using block as required by the API guidelines
+            // Create a new empty diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram())
             {
-                // Retrieve the default page (a new Diagram contains one page by default)
+                // Retrieve the first (default) page
                 Page page = diagram.Pages[0];
 
-                // Optionally set a custom name for the page
+                // Assign a custom name to the page (optional)
                 page.Name = "CustomPage";
 
-                // Set page dimensions (width and height) in inches
-                // Use the PageProps collection to assign values directly to the .Value properties
-                page.PageSheet.PageProps.PageWidth.Value = 8.5;   // width in inches
-                page.PageSheet.PageProps.PageHeight.Value = 11.0; // height in inches
+                // Define desired page dimensions (e.g., 8.5 inches width x 11 inches height)
+                double widthInches = 8.5;
+                double heightInches = 11.0;
 
-                // Save the diagram as VSDX using the correct SaveFileFormat enum
+                // Set page width and height via the PageSheet cells (assign double values directly)
+                page.PageSheet.PageProps.PageWidth.Value = widthInches;
+                page.PageSheet.PageProps.PageHeight.Value = heightInches;
+
+                // Save the diagram as VSDX using the required overload (path + format)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Diagram successfully saved to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Output any errors that occur during diagram creation or saving
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

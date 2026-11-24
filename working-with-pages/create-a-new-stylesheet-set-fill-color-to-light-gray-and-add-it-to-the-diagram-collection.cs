@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,31 +25,35 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram inside a using block as required.
+            // Load the existing Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Create a new stylesheet.
                 StyleSheet styleSheet = new StyleSheet();
 
-                // Assign a unique ID for the stylesheet.
+                // Assign a unique ID (next available ID in the collection).
                 styleSheet.ID = diagram.StyleSheets.Count + 1;
 
-                // Optional: give the stylesheet a name for easier identification.
-                styleSheet.Name = "LightGrayFill";
-
-                // Set the fill pattern to solid (value 1) and the foreground color to light gray.
-                // Light gray hex code: #D3D3D3
+                // Set the fill pattern to solid (value 1) – required for visible fill.
                 styleSheet.Fill.FillPattern.Value = 1;
+
+                // Set the foreground fill color to light gray.
+                // Hex code for light gray: #D3D3D3
                 styleSheet.Fill.FillForegnd.Value = "#D3D3D3";
 
                 // Add the stylesheet to the diagram's stylesheet collection.
                 diagram.StyleSheets.Add(styleSheet);
 
+                // Optionally, you could apply the stylesheet to a page here.
+                // For example, apply to the first page:
+                // if (diagram.Pages.Count > 0)
+                // {
+                //     diagram.Pages[0].ApplyStyle(styleSheet.ID, styleSheet.ID, styleSheet.ID);
+                // }
+
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Stylesheet added and diagram saved successfully.");
         }
         catch (Exception ex)
         {

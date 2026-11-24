@@ -4,66 +4,90 @@ using Aspose.Diagram;
 
 class Program
 {
+    // Predefined template dimensions in inches (example: US Letter size)
+    private const double TemplatePageWidth = 8.5;
+    private const double TemplatePageHeight = 11.0;
+
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output log file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <logPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputLogFile>");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
         string logPath = args[1];
 
-        // Guard against missing input file.
-        if (!File.Exists(diagramPath))
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Define the template page dimensions (in inches).
-        const double templateWidth = 8.5;   // Example: Letter width
-        const double templateHeight = 11.0; // Example: Letter height
-
+        // Ensure the directory for the log file exists
         try
         {
-            // Open the diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(diagramPath))
+            string logDir = Path.GetDirectoryName(logPath);
+            if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
             {
-                // Prepare the log file (overwrite if it exists).
-                using (StreamWriter logWriter = new StreamWriter(logPath, false))
-                {
-                    // Iterate through all pages using an indexed loop (no var in foreach).
-                    int pageCount = diagram.Pages.Count;
-                    for (int i = 0; i < pageCount; i++)
-                    {
-                        Page page = diagram.Pages[i];
-
-                        // Retrieve actual page dimensions via the correct property path.
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Compare against the template dimensions (tolerance of 0.001 inch).
-                        bool widthMatches = Math.Abs(pageWidth - templateWidth) <= 0.001;
-                        bool heightMatches = Math.Abs(pageHeight - templateHeight) <= 0.001;
-
-                        if (!widthMatches || !heightMatches)
-                        {
-                            // Log any mismatches with detailed information.
-                            logWriter.WriteLine(
-                                $"Page {i + 1}: Size mismatch. " +
-                                $"Width={pageWidth} in, Height={pageHeight} in. " +
-                                $"Expected Width={templateWidth} in, Height={templateHeight} in.");
-                        }
-                    }
-                }
+                Directory.CreateDirectory(logDir);
             }
         }
         catch (Exception ex)
         {
-            // Report any exceptions that occur during processing.
+            Console.Error.WriteLine($"Failed to prepare log directory: {ex.Message}");
+            return;
+        }
+
+        // Open the diagram inside a using block as required
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Open a StreamWriter for the log file
+                using (StreamWriter logWriter = new StreamWriter(logPath, false))
+                {
+                    // Iterate over each page explicitly typing the iterator
+                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    {
+                        Page page = diagram.Pages[i];
+
+                        // Retrieve actual page dimensions (in inches)
+                        double actualWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double actualHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Compare width
+                        if (Math.Abs(actualWidth - TemplatePageWidth) > 0.001)
+                        {
+                            logWriter.WriteLine($"Page {i + 1}: Width mismatch. Actual = {actualWidth:F3} in, Expected = {TemplatePageWidth:F3} in.");
+                        }
+
+                        // Compare height
+                        if (Math.Abs(actualHeight - TemplatePageHeight) > 0.001)
+                        {
+                            logWriter.WriteLine($"Page {i + 1}: Height mismatch. Actual = {actualHeight:F3} in, Expected = {TemplatePageHeight:F3} in.");
+                        }
+
+                        // If both dimensions match, optionally note success (can be omitted)
+                        if (Math.Abs(actualWidth - TemplatePageWidth) <= 0.001 &&
+                            Math.Abs(actualHeight - TemplatePageHeight) <= 0.001)
+                        {
+                            logWriter.WriteLine($"Page {i + 1}: Dimensions match the template.");
+                        }
+                    }
+
+                    // Flush and close the writer (using statement handles this)
+                }
+            }
+
+            Console.WriteLine($"Validation completed. Log written to: {logPath}");
+        }
+        catch (Exception ex)
+        {
+            // Capture any Aspose.Diagram or IO exceptions
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

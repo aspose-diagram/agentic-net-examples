@@ -7,88 +7,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
+        // Validate arguments: input diagram path and output diagram path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Assume we work with the first page.
+                // Access the first page (assumes at least one page exists)
                 Page page = diagram.Pages[0];
 
-                // Find the first two rectangle shapes.
-                long? rectId1 = null;
-                long? rectId2 = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Rectangle")
-                    {
-                        if (rectId1 == null)
-                            rectId1 = shape.ID;
-                        else if (rectId2 == null)
-                        {
-                            rectId2 = shape.ID;
-                            break;
-                        }
-                    }
-                }
+                // Add two rectangle shapes to the page
+                // Parameters: pinX, pinY, width, height, master name, isCalculate (false)
+                long rect1Id = page.AddShape(2.0, 2.0, 1.0, 1.0, "Rectangle", false);
+                long rect2Id = page.AddShape(5.0, 2.0, 1.0, 1.0, "Rectangle", false);
 
-                if (rectId1 == null || rectId2 == null)
-                {
-                    Console.Error.WriteLine("Could not find two rectangle shapes on the page.");
-                    return;
-                }
+                // Add a dynamic connector shape (zero size is acceptable for connectors)
+                long connectorId = page.AddShape(0.0, 0.0, 0.0, 0.0, "Dynamic connector", false);
 
-                // Find a dynamic connector shape.
-                long? connectorId = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name == "Dynamic connector")
-                    {
-                        connectorId = shape.ID;
-                        break;
-                    }
-                }
-
-                if (connectorId == null)
-                {
-                    Console.Error.WriteLine("Could not find a dynamic connector shape on the page.");
-                    return;
-                }
-
-                // Connect the two rectangles via the connector.
-                // Using ConnectionPointPlace.Right for source and ConnectionPointPlace.Left for target as an example.
+                // Connect the two rectangles via the connector
+                // Use ConnectionPointPlace enum values to specify connection points
                 page.ConnectShapesViaConnector(
-                    rectId1.Value,
+                    rect1Id,
                     ConnectionPointPlace.Right,
-                    rectId2.Value,
+                    rect2Id,
                     ConnectionPointPlace.Left,
-                    connectorId.Value);
+                    connectorId);
 
-                // Save the modified diagram.
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

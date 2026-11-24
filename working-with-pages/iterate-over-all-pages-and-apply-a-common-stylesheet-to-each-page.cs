@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -23,43 +24,55 @@ class Program
             return;
         }
 
-        // Load the Visio diagram inside a using block as required.
         try
         {
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a new stylesheet that will be applied to every page.
+                // ------------------------------------------------------------
+                // Create a common stylesheet that will be applied to every page.
+                // ------------------------------------------------------------
                 StyleSheet commonStyle = new StyleSheet();
 
-                // Assign a unique ID based on the current count of stylesheets.
+                // Assign a unique ID based on the current count.
                 commonStyle.ID = diagram.StyleSheets.Count + 1;
 
-                // Configure fill style (background color) for the stylesheet.
-                commonStyle.Fill.FillForegnd.Value = "#FFCC00"; // Example fill color.
-                commonStyle.Fill.FillPattern.Value = 1;        // Solid fill pattern.
+                // Example style settings – adjust as needed.
+                // Set fill foreground color.
+                commonStyle.Fill.FillForegnd.Value = "#D3E4CD"; // light greenish
 
-                // Configure line style for the stylesheet.
-                commonStyle.Line.LineColor.Value = "#000000"; // Example line color.
-                commonStyle.Line.LineWeight.Value = 0.5;      // Example line weight.
+                // Set line color and weight.
+                commonStyle.Line.LineColor.Value = "#5B9BD5"; // blue
+                commonStyle.Line.LineWeight.Value = 0.5;      // points (in inches)
+
+                // Set character (text) color.
+                Aspose.Diagram.Char charStyle = new Aspose.Diagram.Char();
+                charStyle.IX = 0;
+                charStyle.Color.Value = "#000000"; // black
+                commonStyle.Chars.Add(charStyle);
 
                 // Add the stylesheet to the diagram's collection.
                 diagram.StyleSheets.Add(commonStyle);
 
+                // ------------------------------------------------------------
                 // Iterate over all pages and apply the common stylesheet.
+                // ------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
-                    // Apply the same style to text, line, and fill of the page.
+                    // Apply the stylesheet to characters, paragraphs, and lines.
                     page.ApplyStyle(commonStyle.ID, commonStyle.ID, commonStyle.ID);
                 }
 
+                // ------------------------------------------------------------
                 // Save the modified diagram to the specified output path.
+                // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

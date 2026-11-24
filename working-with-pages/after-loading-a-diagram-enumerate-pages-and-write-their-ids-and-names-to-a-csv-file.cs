@@ -6,50 +6,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output CSV path
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputCsvPath>");
             return;
         }
 
-        string diagramPath = args[0];
-        string csvPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard for input file existence
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {diagramPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Open a StreamWriter for CSV output
-            using (StreamWriter writer = new StreamWriter(csvPath))
+            // Prepare to write CSV output.
+            using (StreamWriter writer = new StreamWriter(outputPath, false))
             {
-                // Write CSV header
+                // Write CSV header.
                 writer.WriteLine("PageID,PageName");
 
-                // Enumerate pages explicitly typing the iterator
-                foreach (Page page in diagram.Pages)
+                // Enumerate pages explicitly using the Page type (no var).
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Write page ID and name, escaping commas if needed
-                    string id = page.ID.ToString();
-                    string name = page.Name?.Replace(",", " "); // simple escape for commas
-                    writer.WriteLine($"{id},{name}");
+                    Page page = diagram.Pages[i];
+
+                    // Retrieve page ID and name.
+                    // Page.ID is an integer; convert to string for CSV.
+                    string idString = page.ID.ToString();
+                    // Page.Name may contain commas; enclose in double quotes and escape existing quotes.
+                    string name = page.Name ?? string.Empty;
+                    string escapedName = $"\"{name.Replace("\"", "\"\"")}\"";
+
+                    // Write a CSV line.
+                    writer.WriteLine($"{idString},{escapedName}");
                 }
             }
 
-            Console.WriteLine($"Page information successfully written to {csvPath}");
+            Console.WriteLine($"Page information successfully written to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during loading or processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

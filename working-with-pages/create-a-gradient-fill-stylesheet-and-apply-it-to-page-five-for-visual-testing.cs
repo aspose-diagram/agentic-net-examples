@@ -28,15 +28,8 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least five pages.
-            if (diagram.Pages.Count < 5)
-            {
-                Console.Error.WriteLine("The diagram does not contain a fifth page.");
-                return;
-            }
-
             // ------------------------------------------------------------
-            // Create a new stylesheet with a gradient fill.
+            // Create a new stylesheet that defines a gradient fill.
             // ------------------------------------------------------------
             StyleSheet gradientStyle = new StyleSheet();
 
@@ -44,20 +37,23 @@ class Program
             gradientStyle.ID = diagram.StyleSheets.Count + 1;
             gradientStyle.Name = "GradientStyle";
 
-            // Set the fill pattern to gradient (value 25).
+            // Set the fill pattern to gradient (value 25 corresponds to gradient fill).
             gradientStyle.Fill.FillPattern.Value = 25;
 
             // Enable the gradient fill.
             gradientStyle.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set gradient direction (0 = left‑to‑right, other values are possible).
+            // Set gradient direction (0 = horizontal, 1 = vertical, etc.).
             gradientStyle.Fill.GradientFill.GradientDir.Value = 0;
 
-            // Clear any existing gradient stops and add two stops (red to blue).
+            // Clear any existing gradient stops (good practice).
             gradientStyle.Fill.GradientFill.GradientStops.Clear();
+
+            // Add two gradient stops: red at position 0, blue at position 1.
             gradientStyle.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
                 new ColorValue("#FF0000", MeasureConst.Undefined));
+
             gradientStyle.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(1, MeasureConst.NUM),
                 new ColorValue("#0000FF", MeasureConst.Undefined));
@@ -66,18 +62,25 @@ class Program
             diagram.StyleSheets.Add(gradientStyle);
 
             // ------------------------------------------------------------
-            // Apply the stylesheet to page five (index 4).
+            // Retrieve page five (index 4) and apply the gradient stylesheet.
             // ------------------------------------------------------------
+            if (diagram.Pages.Count < 5)
+            {
+                Console.Error.WriteLine("The diagram does not contain a fifth page.");
+                return;
+            }
+
             Page pageFive = diagram.Pages[4];
 
-            // Apply the same style ID for text, line, and fill.
+            // Apply the stylesheet to the page.
+            // ApplyStyle takes CharStyleID, LineStyleID, FillStyleID respectively.
             pageFive.ApplyStyle(gradientStyle.ID, gradientStyle.ID, gradientStyle.ID);
 
             // ------------------------------------------------------------
             // Save the modified diagram.
             // ------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Gradient stylesheet applied to page five and saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

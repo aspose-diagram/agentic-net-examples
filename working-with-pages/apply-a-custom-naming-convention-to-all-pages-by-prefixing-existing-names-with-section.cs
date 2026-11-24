@@ -6,51 +6,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path.
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args == null || args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Verify that the input file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages and rename them with the required prefix.
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Iterate over each page and prefix its name with "Section_".
+                foreach (Page page in diagram.Pages)
                 {
-                    // Explicitly type the page variable.
-                    Page page = diagram.Pages[i];
-
-                    // Prefix the existing page name with "Section_".
-                    // Ensure we do not create duplicate prefixes if the program is run multiple times.
-                    if (!page.Name.StartsWith("Section_"))
-                    {
-                        page.Name = "Section_" + page.Name;
-                    }
+                    // Preserve the original name and apply the custom prefix.
+                    page.Name = "Section_" + page.Name;
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format.
+                // Save the modified diagram. The format is inferred from the file extension;
+                // here we explicitly use Vsdx to ensure a valid Visio format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Diagram pages renamed and saved to: {outputPath}");
+            Console.WriteLine("Page names updated and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

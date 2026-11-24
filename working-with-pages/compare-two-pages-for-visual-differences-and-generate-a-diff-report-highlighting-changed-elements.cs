@@ -7,172 +7,166 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting 5 arguments: sourceVisioPath, targetVisioPath, sourcePageIndex, targetPageIndex, outputReportPath
-        if (args.Length != 5)
+        // Expect three arguments: first diagram path, second diagram path, page index (0‑based)
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <targetVisioPath> <sourcePageIndex> <targetPageIndex> <outputReportPath>");
+            Console.Error.WriteLine("Usage: Program <diagram1.vsdx> <diagram2.vsdx> <pageIndex>");
             return;
         }
 
-        string sourcePath = args[0];
-        string targetPath = args[1];
-        string sourcePageIndexStr = args[2];
-        string targetPageIndexStr = args[3];
-        string reportPath = args[4];
+        string diagramPath1 = args[0];
+        string diagramPath2 = args[1];
+        string pageIndexArg = args[2];
 
-        // Guard for source file existence
-        if (!File.Exists(sourcePath))
+        // Guard against missing files
+        if (!File.Exists(diagramPath1))
         {
-            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            Console.Error.WriteLine($"File not found: {diagramPath1}");
+            return;
+        }
+        if (!File.Exists(diagramPath2))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath2}");
             return;
         }
 
-        // Guard for target file existence
-        if (!File.Exists(targetPath))
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
         {
-            Console.Error.WriteLine($"Target file not found: {targetPath}");
-            return;
-        }
-
-        // Parse page indexes
-        if (!int.TryParse(sourcePageIndexStr, out int sourcePageIndex) || sourcePageIndex < 0)
-        {
-            Console.Error.WriteLine("Invalid source page index.");
-            return;
-        }
-
-        if (!int.TryParse(targetPageIndexStr, out int targetPageIndex) || targetPageIndex < 0)
-        {
-            Console.Error.WriteLine("Invalid target page index.");
+            Console.Error.WriteLine("Invalid page index. It must be a non‑negative integer.");
             return;
         }
 
         try
         {
-            // Load source diagram
-            using (Diagram sourceDiagram = new Diagram(sourcePath))
+            // Load both diagrams inside using blocks as required by the API
+            using (Diagram diagram1 = new Diagram(diagramPath1))
+            using (Diagram diagram2 = new Diagram(diagramPath2))
             {
-                // Load target diagram
-                using (Diagram targetDiagram = new Diagram(targetPath))
+                // Validate page index range for both diagrams
+                if (pageIndex >= diagram1.Pages.Count || pageIndex >= diagram2.Pages.Count)
                 {
-                    // Validate page indexes
-                    if (sourcePageIndex >= sourceDiagram.Pages.Count)
+                    Console.Error.WriteLine("Page index out of range for one of the diagrams.");
+                    return;
+                }
+
+                // Retrieve the pages to compare
+                Page page1 = diagram1.Pages[pageIndex];
+                Page page2 = diagram2.Pages[pageIndex];
+
+                // Build dictionaries of shapes keyed by their unique IDs
+                var shapes1 = new Dictionary<long, Shape>();
+                foreach (Shape shape in page1.Shapes)
+                {
+                    shapes1[shape.ID] = shape;
+                }
+
+                var shapes2 = new Dictionary<long, Shape>();
+                foreach (Shape shape in page2.Shapes)
+                {
+                    shapes2[shape.ID] = shape;
+                }
+
+                var reportLines = new List<string>();
+                const double tolerance = 0.001; // tolerance for numeric comparisons
+
+                // Detect removed or modified shapes
+                foreach (var kvp in shapes1)
+                {
+                    long shapeId = kvp.Key;
+                    Shape shape1 = kvp.Value;
+
+                    if (!shapes2.TryGetValue(shapeId, out Shape shape2))
                     {
-                        Console.Error.WriteLine("Source page index out of range.");
-                        return;
+                        // Shape exists in diagram1 but not in diagram2 → removed
+                        reportLines.Add($"Removed Shape ID {shapeId}");
+                        continue;
                     }
 
-                    if (targetPageIndex >= targetDiagram.Pages.Count)
+                    // Compare relevant visual properties
+                    var changes = new List<string>();
+
+                    // Position X (PinX)
+                    double pinX1 = shape1.XForm.PinX.Value;
+                    double pinX2 = shape2.XForm.PinX.Value;
+                    if (Math.Abs(pinX1 - pinX2) > tolerance)
+                        changes.Add($"PinX: {pinX1} → {pinX2}");
+
+                    // Position Y (PinY)
+                    double pinY1 = shape1.XForm.PinY.Value;
+                    double pinY2 = shape2.XForm.PinY.Value;
+                    if (Math.Abs(pinY1 - pinY2) > tolerance)
+                        changes.Add($"PinY: {pinY1} → {pinY2}");
+
+                    // Width
+                    double width1 = shape1.XForm.Width.Value;
+                    double width2 = shape2.XForm.Width.Value;
+                    if (Math.Abs(width1 - width2) > tolerance)
+                        changes.Add($"Width: {width1} → {width2}");
+
+                    // Height
+                    double height1 = shape1.XForm.Height.Value;
+                    double height2 = shape2.XForm.Height.Value;
+                    if (Math.Abs(height1 - height2) > tolerance)
+                        changes.Add($"Height: {height1} → {height2}");
+
+                    // Text content
+                    string text1 = shape1.Text?.Value?.Text ?? string.Empty;
+                    string text2 = shape2.Text?.Value?.Text ?? string.Empty;
+                    if (!string.Equals(text1, text2, StringComparison.Ordinal))
+                        changes.Add($"Text: \"{text1}\" → \"{text2}\"");
+
+                    // If any visual property changed, record it
+                    if (changes.Count > 0)
                     {
-                        Console.Error.WriteLine("Target page index out of range.");
-                        return;
-                    }
-
-                    // Retrieve pages
-                    Page sourcePage = sourceDiagram.Pages[sourcePageIndex];
-                    Page targetPage = targetDiagram.Pages[targetPageIndex];
-
-                    // Build dictionaries of shapes keyed by shape ID for quick lookup
-                    Dictionary<long, Shape> sourceShapes = new Dictionary<long, Shape>();
-                    foreach (Shape shape in sourcePage.Shapes)
-                    {
-                        sourceShapes[shape.ID] = shape;
-                    }
-
-                    Dictionary<long, Shape> targetShapes = new Dictionary<long, Shape>();
-                    foreach (Shape shape in targetPage.Shapes)
-                    {
-                        targetShapes[shape.ID] = shape;
-                    }
-
-                    List<string> reportLines = new List<string>();
-                    reportLines.Add($"Comparison Report for Source Page {sourcePageIndex} and Target Page {targetPageIndex}");
-                    reportLines.Add($"Generated on {DateTime.Now}");
-                    reportLines.Add(string.Empty);
-
-                    // Detect removed or modified shapes
-                    foreach (var kvp in sourceShapes)
-                    {
-                        long shapeId = kvp.Key;
-                        Shape srcShape = kvp.Value;
-
-                        if (!targetShapes.TryGetValue(shapeId, out Shape tgtShape))
+                        reportLines.Add($"Modified Shape ID {shapeId}:");
+                        foreach (string change in changes)
                         {
-                            // Shape removed in target
-                            string masterName = srcShape.Master?.Name ?? "N/A";
-                            reportLines.Add($"Shape Removed: ID={shapeId}, Master={masterName}");
-                            continue;
-                        }
-
-                        // Compare position
-                        double srcPinX = srcShape.XForm.PinX.Value;
-                        double srcPinY = srcShape.XForm.PinY.Value;
-                        double tgtPinX = tgtShape.XForm.PinX.Value;
-                        double tgtPinY = tgtShape.XForm.PinY.Value;
-
-                        if (Math.Abs(srcPinX - tgtPinX) > 0.001 || Math.Abs(srcPinY - tgtPinY) > 0.001)
-                        {
-                            reportLines.Add($"Shape Moved: ID={shapeId}, From ({srcPinX:F3}, {srcPinY:F3}) To ({tgtPinX:F3}, {tgtPinY:F3})");
-                        }
-
-                        // Compare size
-                        double srcWidth = srcShape.XForm.Width.Value;
-                        double srcHeight = srcShape.XForm.Height.Value;
-                        double tgtWidth = tgtShape.XForm.Width.Value;
-                        double tgtHeight = tgtShape.XForm.Height.Value;
-
-                        if (Math.Abs(srcWidth - tgtWidth) > 0.001 || Math.Abs(srcHeight - tgtHeight) > 0.001)
-                        {
-                            reportLines.Add($"Shape Resized: ID={shapeId}, From ({srcWidth:F3} x {srcHeight:F3}) To ({tgtWidth:F3} x {tgtHeight:F3})");
-                        }
-
-                        // Compare text
-                        string srcText = srcShape.Text?.Value?.Text ?? string.Empty;
-                        string tgtText = tgtShape.Text?.Value?.Text ?? string.Empty;
-
-                        if (!string.Equals(srcText, tgtText, StringComparison.Ordinal))
-                        {
-                            reportLines.Add($"Shape Text Changed: ID={shapeId}, From \"{srcText}\" To \"{tgtText}\"");
-                        }
-
-                        // Compare master (shape type)
-                        string srcMaster = srcShape.Master?.Name ?? "N/A";
-                        string tgtMaster = tgtShape.Master?.Name ?? "N/A";
-
-                        if (!string.Equals(srcMaster, tgtMaster, StringComparison.Ordinal))
-                        {
-                            reportLines.Add($"Shape Master Changed: ID={shapeId}, From \"{srcMaster}\" To \"{tgtMaster}\"");
+                            reportLines.Add($"  - {change}");
                         }
                     }
+                }
 
-                    // Detect added shapes in target
-                    foreach (var kvp in targetShapes)
+                // Detect added shapes (present only in diagram2)
+                foreach (var kvp in shapes2)
+                {
+                    long shapeId = kvp.Key;
+                    if (!shapes1.ContainsKey(shapeId))
                     {
-                        long shapeId = kvp.Key;
-                        if (!sourceShapes.ContainsKey(shapeId))
-                        {
-                            Shape addedShape = kvp.Value;
-                            string masterName = addedShape.Master?.Name ?? "N/A";
-                            reportLines.Add($"Shape Added: ID={shapeId}, Master={masterName}");
-                        }
+                        reportLines.Add($"Added Shape ID {shapeId}");
                     }
+                }
 
-                    // Ensure output directory exists
-                    string reportDir = Path.GetDirectoryName(reportPath);
-                    if (!string.IsNullOrEmpty(reportDir) && !Directory.Exists(reportDir))
+                // Output the diff report to console
+                Console.WriteLine("=== Visual Diff Report ===");
+                if (reportLines.Count == 0)
+                {
+                    Console.WriteLine("No visual differences detected between the pages.");
+                }
+                else
+                {
+                    foreach (string line in reportLines)
                     {
-                        Directory.CreateDirectory(reportDir);
+                        Console.WriteLine(line);
                     }
+                }
 
-                    // Write report to file
+                // Optionally write the report to a text file
+                string reportPath = "diff_report.txt";
+                try
+                {
                     File.WriteAllLines(reportPath, reportLines);
-                    Console.WriteLine($"Diff report generated at: {reportPath}");
+                    Console.WriteLine($"Diff report written to: {Path.GetFullPath(reportPath)}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to write diff report file: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            // Catch any Aspose.Diagram or I/O exceptions and report them
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 }

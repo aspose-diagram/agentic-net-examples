@@ -1,62 +1,57 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path as first argument and optional output path as second argument.
-        if (args.Length < 1)
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Please provide the path to the input Visio file as an argument.");
             return;
         }
 
         string inputPath = args[0];
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        // Determine output path; if not provided, create a new file name in the same directory.
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "AutoSpacedOutput.vsdx");
 
         try
         {
             // Load the diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Create AutoSpaceOptions with default spacing values.
+            // These defaults (2 units) provide a quick layout improvement.
+            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+            autoSpaceOptions.DistanceInHorizontal = 2.0; // Horizontal spacing
+            autoSpaceOptions.DistanceInVertical = 2.0;   // Vertical spacing
+
+            // Apply auto-spacing to each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Auto-space all shapes on the current page using the options.
+                page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
             }
 
-            // Get the first page to apply auto-spacing.
-            Page page = diagram.Pages[0];
+            // Define output path (same directory, with a suffix).
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? "",
+                Path.GetFileNameWithoutExtension(inputPath) + "_autospace.vsdx");
 
-            // Create AutoSpaceOptions with default spacing values.
-            // These defaults provide a quick layout improvement.
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            options.DistanceInHorizontal = 2; // default horizontal distance
-            options.DistanceInVertical = 2;   // default vertical distance
-
-            // Apply auto-spacing to all shapes on the page.
-            page.AutoSpaceShapes(page.Shapes, options);
-
-            // Save the modified diagram to the output path in VSDX format.
+            // Save the updated diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved with auto-spaced shapes to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
+            // Log any errors that occur during processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

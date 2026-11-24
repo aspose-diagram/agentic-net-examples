@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -25,51 +26,47 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Ensure the diagram contains at least one page.
-                if (diagram.Pages.Count == 0)
+                // Read the auto‑expand setting.
+                var resizeType = page.PageSheet.PageProps.DrawingResizeType.Value;
+
+                // Determine if auto‑expand is enabled (Automatically).
+                bool isAutoExpandEnabled = resizeType == DrawingResizeTypeValue.Automatically;
+
+                Console.WriteLine($"Page \"{page.Name}\" (ID: {page.ID}) auto‑expand enabled: {isAutoExpandEnabled}");
+
+                // Apply custom page size only when auto‑expand is enabled.
+                if (isAutoExpandEnabled)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
+                    // Example custom dimensions (in inches).
+                    double customWidth = 10.0;   // Width in inches
+                    double customHeight = 8.0;   // Height in inches
 
-                // Work with the first page (index 0). Adjust as needed for other pages.
-                Page page = diagram.Pages[0];
-
-                // Read the auto‑expand (auto‑resize) setting.
-                bool autoExpandEnabled = page.PageSheet.PageProps.DrawingResizeType.Value == DrawingResizeTypeValue.Automatically;
-
-                Console.WriteLine($"Auto‑expand is {(autoExpandEnabled ? "enabled" : "disabled")} on page \"{page.Name}\".");
-
-                // If auto‑expand is disabled, apply custom page size adjustments.
-                if (!autoExpandEnabled)
-                {
-                    // Define custom dimensions (in inches). Adjust these values as required.
-                    double customWidth = 11.0;   // e.g., 11 inches
-                    double customHeight = 8.5;   // e.g., 8.5 inches (landscape)
-
-                    // Apply the new size to the page.
+                    // Set the new page dimensions.
                     page.PageSheet.PageProps.PageWidth.Value = customWidth;
                     page.PageSheet.PageProps.PageHeight.Value = customHeight;
 
-                    Console.WriteLine($"Custom page size applied: Width = {customWidth}\" , Height = {customHeight}\".");
+                    Console.WriteLine($"  -> Custom size applied: {customWidth}\" x {customHeight}\"");
                 }
                 else
                 {
-                    Console.WriteLine("Skipping custom size adjustment because auto‑expand is enabled.");
+                    Console.WriteLine("  -> Skipping size adjustment because auto‑expand is disabled.");
                 }
-
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,14 +1,12 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
@@ -27,39 +25,34 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Ensure the diagram contains at least one page.
+                if (diagram.Pages.Count == 0)
                 {
-                    // Collect IDs of connector (1‑D) shapes on the current page.
-                    List<long> connectorIds = new List<long>();
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-                    foreach (Shape shape in page.Shapes)
+                // Work with the first page (index 0).
+                Page page = diagram.Pages[0];
+
+                // Iterate over all shapes on the page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Example filter: process only 2‑D shapes (TypeValue.Shape).
+                    // This demonstrates filtering by shape type.
+                    if (shape.Type == TypeValue.Shape)
                     {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Identify connector shapes using the OneD boolean property.
-                        if (shape.OneD)
-                        {
-                            // Shape.ID is a long primitive; add it directly.
-                            connectorIds.Add(shape.ID);
-                        }
+                        // Additional processing for non‑connector shapes could be placed here.
                     }
 
-                    // Remove the identified connector shapes from the page.
-                    foreach (long id in connectorIds)
+                    // Identify connector shapes: they are 1‑D shapes (OneD == true).
+                    if (shape.OneD)
                     {
-                        // Retrieve the shape object by its ID before removal.
-                        Shape connectorShape = page.Shapes.GetShape(id);
-                        if (connectorShape != null)
-                        {
-                            // The Remove method accepts a Shape instance.
-                            page.Shapes.Remove(connectorShape);
-                        }
+                        // Mark the connector shape for deletion.
+                        shape.Del = BOOL.True;
                     }
                 }
 
@@ -70,8 +63,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

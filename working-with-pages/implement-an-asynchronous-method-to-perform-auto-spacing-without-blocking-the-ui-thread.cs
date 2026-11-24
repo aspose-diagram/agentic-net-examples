@@ -6,74 +6,92 @@ using Aspose.Diagram.AutoLayout;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
-            return;
-        }
+        // Prompt user for input diagram path
+        Console.Write("Enter the path to the input Visio file: ");
+        string inputPath = Console.ReadLine()?.Trim() ?? string.Empty;
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
             return;
         }
 
-        // Run the auto‑spacing operation asynchronously and wait for completion
-        try
+        // Prompt user for output diagram path
+        Console.Write("Enter the desired output path (e.g., output.vsdx): ");
+        string outputPath = Console.ReadLine()?.Trim() ?? string.Empty;
+
+        // Prompt user for horizontal spacing distance
+        Console.Write("Enter horizontal spacing distance (in inches, e.g., 0.5): ");
+        if (!double.TryParse(Console.ReadLine(), out double horizDist))
         {
-            AutoSpaceAsync(inputPath, outputPath).GetAwaiter().GetResult();
-            Console.WriteLine("Auto‑spacing completed successfully.");
+            Console.Error.WriteLine("Error: Invalid horizontal distance value.");
+            return;
         }
-        catch (Exception ex)
+
+        // Prompt user for vertical spacing distance
+        Console.Write("Enter vertical spacing distance (in inches, e.g., 0.5): ");
+        if (!double.TryParse(Console.ReadLine(), out double vertDist))
         {
-            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+            Console.Error.WriteLine("Error: Invalid vertical distance value.");
+            return;
         }
+
+        // Perform auto-spacing asynchronously
+        await AutoSpaceAsync(inputPath, outputPath, horizDist, vertDist);
     }
 
     /// <summary>
-    /// Performs auto‑spacing on all pages of the diagram without blocking the calling thread.
+    /// Asynchronously loads a Visio diagram, applies auto-spacing to all shapes on the first page,
+    /// and saves the modified diagram to the specified output path.
     /// </summary>
     /// <param name="inputPath">Path to the source Visio file.</param>
-    /// <param name="outputPath">Path where the modified Visio file will be saved.</param>
+    /// <param name="outputPath">Path where the modified diagram will be saved.</param>
+    /// <param name="horizontalDistance">Horizontal spacing distance (in inches).</param>
+    /// <param name="verticalDistance">Vertical spacing distance (in inches).</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    private static async Task AutoSpaceAsync(string inputPath, string outputPath)
+    private static async Task AutoSpaceAsync(string inputPath, string outputPath, double horizontalDistance, double verticalDistance)
     {
-        await Task.Run(() =>
+        try
         {
-            try
+            // Load the diagram from the input file
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                // Load the diagram from the specified file
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through each page and apply auto‑spacing
-                foreach (Page page in diagram.Pages)
-                {
-                    // Configure auto‑spacing distances (example values)
-                    AutoSpaceOptions options = new AutoSpaceOptions
-                    {
-                        DistanceInHorizontal = 2,
-                        DistanceInVertical = 2
-                    };
-
-                    // Apply auto‑spacing to the entire shape collection of the page
-                    page.AutoSpaceShapes(page.Shapes, options);
-                }
-
-                // Save the modified diagram to the output path using VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
             }
-            catch (Exception ex)
+
+            // Use the first page for auto-spacing
+            Page page = diagram.Pages[0];
+
+            // Configure auto-spacing options
+            AutoSpaceOptions options = new AutoSpaceOptions
             {
-                // Propagate any Aspose‑Diagram exceptions to the caller
-                throw new Exception($"Auto‑spacing failed: {ex.Message}", ex);
-            }
-        });
+                DistanceInHorizontal = horizontalDistance,
+                DistanceInVertical = verticalDistance
+            };
+
+            // Run the potentially CPU‑intensive auto‑spacing on a background thread
+            await Task.Run(() =>
+            {
+                // Auto-space all shapes on the page using the configured options
+                page.AutoSpaceShapes(page.Shapes, options);
+            });
+
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Auto-spacing completed successfully. Output saved to '{outputPath}'.");
+        }
+        catch (Exception ex)
+        {
+            // Log any exceptions to the error stream
+            Console.Error.WriteLine($"An error occurred during auto-spacing: {ex.Message}");
+        }
     }
 }

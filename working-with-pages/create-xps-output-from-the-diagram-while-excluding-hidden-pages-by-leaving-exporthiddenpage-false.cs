@@ -10,39 +10,39 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputXpsFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXpsPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Configure XPS save options to exclude hidden pages.
                 XPSSaveOptions options = new XPSSaveOptions();
-                options.ExportHiddenPage = false; // Do not export hidden pages.
+                // ExportHiddenPage is a plain bool; false means hidden pages are omitted.
+                options.ExportHiddenPage = false;
 
-                // Save the diagram as XPS using the configured options.
+                // Save the diagram to XPS format using the configured options.
                 diagram.Save(outputPath, options);
+                Console.WriteLine($"Diagram successfully saved to XPS: {outputPath}");
             }
-
-            Console.WriteLine($"XPS file successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

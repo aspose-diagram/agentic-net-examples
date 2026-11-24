@@ -1,26 +1,22 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input file path (argument or prompt)
-        string inputPath;
-        if (args.Length > 0)
+        // Expect the Visio file path as the first command‑line argument
+        if (args.Length == 0)
         {
-            inputPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the path to the Visio file: ");
-            inputPath = Console.ReadLine();
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            return;
         }
 
-        // Guard: ensure the file exists
-        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
@@ -28,16 +24,26 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Example access: output the number of pages
-                Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-                // The 'diagram' object is now available for further processing
+                // Diagram successfully loaded – you can now process it
+                Console.WriteLine($"Diagram loaded. Total pages: {diagram.Pages.Count}");
+
+                // Example: iterate through pages and display their names
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    var page = diagram.Pages[i];
+                    Console.WriteLine($"Page {i + 1}: {page.Name}");
+                }
+
+                // The 'diagram' object is available here for any further processing
+                // Add your custom logic below
             }
         }
         catch (Exception ex)
         {
+            // Report any errors that occur during loading
             Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }

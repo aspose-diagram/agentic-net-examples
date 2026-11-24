@@ -9,38 +9,46 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
+            // Load the Visio diagram inside a using block (required by API guidelines).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                // Iterate through all pages in the diagram.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Iterate through all shapes on the page.
-                    foreach (Shape shape in page.Shapes)
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all shapes on the current page.
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        // Identify connector shapes (1‑D shapes). shape.OneD returns a native bool.
+                        Shape shape = page.Shapes[shapeIndex];
+
+                        // Skip shapes that are marked as deleted.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes (1‑D shapes). OneD is a native bool.
                         if (shape.OneD)
                         {
                             // Set line weight to 0.5 points (0.5 / 72 inches).
                             shape.Line.LineWeight.Value = 0.5 / 72.0;
 
-                            // Set line color to dark blue.
+                            // Set line color to dark blue (hex #00008B).
                             shape.Line.LineColor.Value = "#00008B";
                         }
                     }
@@ -52,8 +60,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

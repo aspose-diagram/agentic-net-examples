@@ -6,57 +6,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate that an output file path was provided
-        if (args.Length < 1)
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        string outputPath = args[0];
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram inside a using block as required
-            using (Diagram diagram = new Diagram())
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page (page index 0)
+                // Ensure the diagram has at least one page.
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("The diagram does not contain any pages.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Access the first page (page zero)
-                Page firstPage = diagram.Pages[0];
+                // Access the first page (page index 0).
+                Page page = diagram.Pages[0];
 
-                // Configure page margins to 0.5 inches on all sides
-                firstPage.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
-                firstPage.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
-                firstPage.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
-                firstPage.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
+                // Set all four margins to 0.5 inches.
+                // Values are in inches; assign via the .Value property.
+                page.PageSheet.PrintProps.PageLeftMargin.Value = 0.5;
+                page.PageSheet.PrintProps.PageRightMargin.Value = 0.5;
+                page.PageSheet.PrintProps.PageTopMargin.Value = 0.5;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = 0.5;
 
-                // Add a rectangle shape to the first page using DrawRectangle (pinX, pinY, width, height)
-                // Coordinates are in inches
-                long rectShapeId = firstPage.DrawRectangle(1.0, 1.0, 2.0, 1.0);
-                Shape rectShape = firstPage.Shapes.GetShape(rectShapeId);
+                // Example: add a rectangle shape after configuring margins.
+                // Parameters: page ID, master ID (1 = rectangle), shape name, and flags (0).
+                long shapeId = diagram.AddShape(page.ID, 1, "Rectangle", 0);
+                Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Set the shape's text by adding a Txt run to the FormatTxtCollection
-                rectShape.Text.Value.Clear(); // Clear any existing text runs
-                rectShape.Text.Value.Add(new Txt("Sample Rectangle"));
+                // Optionally set shape position and size (in inches).
+                shape.XForm.PinX.Value = 2.0;   // X coordinate of the shape center.
+                shape.XForm.PinY.Value = 2.0;   // Y coordinate of the shape center.
+                shape.XForm.Width.Value = 1.0;  // Width of the shape.
+                shape.XForm.Height.Value = 0.5; // Height of the shape.
 
-                // Optionally adjust the shape's size (already set by DrawRectangle, but shown for completeness)
-                rectShape.XForm.Width.Value = 2.0;
-                rectShape.XForm.Height.Value = 1.0;
-
-                // Save the diagram to the specified output path in VSDX format
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

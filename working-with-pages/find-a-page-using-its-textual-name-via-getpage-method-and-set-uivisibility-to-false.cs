@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, page name, output file
+        // Expect three arguments: input diagram path, page name, output diagram path
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <pageName> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <pageName> <outputDiagramPath>");
             return;
         }
 
@@ -17,10 +17,10 @@ class Program
         string pageName = args[1];
         string outputPath = args[2];
 
-        // Guard against missing input file
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -37,8 +37,7 @@ class Program
                     return;
                 }
 
-                // Set UIVisibility to hide the page in the UI.
-                // The UIVisibility cell expects a UIVisibilityValue; using Hidden to represent false.
+                // Set UIVisibility to hide the page in the UI
                 page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
 
                 // Save the modified diagram to the specified output path
@@ -48,7 +47,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

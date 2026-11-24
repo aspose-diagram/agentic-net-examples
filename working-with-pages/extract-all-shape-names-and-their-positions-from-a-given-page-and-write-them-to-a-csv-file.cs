@@ -24,7 +24,7 @@ class Program
             return;
         }
 
-        // Guard: parse page index.
+        // Parse the page index (zero‑based).
         if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
         {
             Console.Error.WriteLine("Error: Page index must be a non‑negative integer.");
@@ -36,45 +36,47 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Guard: ensure the requested page exists.
+            // Validate the requested page index.
             if (pageIndex >= diagram.Pages.Count)
             {
-                Console.Error.WriteLine($"Error: Diagram contains {diagram.Pages.Count} page(s); requested index {pageIndex} is out of range.");
+                Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Document contains {diagram.Pages.Count} pages.");
                 return;
             }
 
             // Retrieve the specified page.
             Page page = diagram.Pages[pageIndex];
 
-            // Prepare to write CSV output.
+            // Open a StreamWriter for the CSV output.
             using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
             {
                 // Write CSV header.
                 writer.WriteLine("ShapeName,PinX,PinY");
 
-                // Iterate over all shapes on the page.
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes.
+                    // Skip shapes that are marked as deleted.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve shape name (universal name) and position.
+                    // Retrieve shape name; fallback to empty string if null.
                     string shapeName = shape.NameU ?? string.Empty;
+
+                    // Retrieve position coordinates.
                     double pinX = shape.XForm.PinX.Value;
                     double pinY = shape.XForm.PinY.Value;
 
-                    // Write a CSV line. Use invariant culture to ensure '.' as decimal separator.
-                    writer.WriteLine($"{EscapeCsv(shapeName)},{pinX.ToString(System.Globalization.CultureInfo.InvariantCulture)},{pinY.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+                    // Write a CSV line for the shape.
+                    writer.WriteLine($"{EscapeCsv(shapeName)},{pinX},{pinY}");
                 }
             }
 
-            Console.WriteLine($"Shape information successfully written to \"{outputCsvPath}\".");
+            Console.WriteLine($"Shape data successfully written to \"{outputCsvPath}\".");
         }
         catch (Exception ex)
         {
             // Capture any Aspose or I/O errors.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 

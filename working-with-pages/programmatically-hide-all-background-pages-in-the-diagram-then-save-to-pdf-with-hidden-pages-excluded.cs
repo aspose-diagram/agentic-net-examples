@@ -20,16 +20,16 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required by the API guidelines
+            // Load the diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages and hide those that are background pages
+                // Iterate over all pages and hide those marked as background pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Identify a background page via the Background BOOL property
+                    // A background page is identified by the Background flag (BOOL)
                     if (page.Background == BOOL.True)
                     {
-                        // Hide the page by setting its UIVisibility to Hidden
+                        // Hide the page by setting UIVisibility to Hidden
                         page.PageSheet.PageProps.UIVisibility.Value = UIVisibilityValue.Hidden;
                     }
                 }
@@ -37,19 +37,23 @@ class Program
                 // Configure PDF save options to exclude hidden pages
                 PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    ExportHiddenPage = false,               // Do not export hidden pages
-                    SaveFormat = SaveFileFormat.Pdf         // Explicitly set the format tracker
+                    // Do not export hidden pages
+                    ExportHiddenPage = false,
+                    // Explicitly set the format tracker
+                    SaveFormat = SaveFileFormat.Pdf,
+                    // Optional: apply text compression for smaller PDF size
+                    TextCompression = PdfTextCompression.Flate
                 };
 
-                // Save the diagram as PDF with the configured options
+                // Save the diagram as PDF using the configured options
                 diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"Diagram saved to PDF: {outputPath}");
+                Console.WriteLine($"Diagram saved to PDF successfully: {outputPath}");
             }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

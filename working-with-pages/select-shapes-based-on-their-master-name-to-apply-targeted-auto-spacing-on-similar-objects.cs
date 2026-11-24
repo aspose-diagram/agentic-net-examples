@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
 using Aspose.Diagram.Saving;
@@ -9,18 +8,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: input file, master name, output file
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <masterName>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <masterName> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string targetMasterName = args[2];
+        string masterName = args[1];
+        string outputPath = args[2];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -29,46 +28,56 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern).
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                // Prepare auto‑spacing options (distances are in inches)
+                AutoSpaceOptions options = new AutoSpaceOptions
+                {
+                    // The correct property names are DistanceInHorizontal / DistanceInVertical
+                    DistanceInHorizontal = 0.5,
+                    DistanceInVertical = 0.5
+                };
+
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect shapes that use the specified master.
-                    List<Shape> matchingShapes = new List<Shape>();
+                    // Count shapes that use the specified master
+                    int targetCount = 0;
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.Master != null && shape.Master.Name == targetMasterName)
+                        // Ensure the shape has a master and compare its name
+                        if (shape.Master != null && shape.Master.Name == masterName)
                         {
-                            matchingShapes.Add(shape);
+                            targetCount++;
                         }
                     }
 
-                    // If there are matching shapes, apply auto‑spacing.
-                    if (matchingShapes.Count > 0)
+                    // Apply auto‑spacing only if we have matching shapes
+                    if (targetCount > 0)
                     {
-                        // Configure auto‑spacing options.
-                        AutoSpaceOptions options = new AutoSpaceOptions();
-                        // Set horizontal and vertical distances (example values).
-                        options.DistanceInHorizontal = 0.5; // inches
-                        options.DistanceInVertical = 0.5;   // inches
-
-                        // Apply auto‑spacing to the page's shape collection.
-                        // The API requires a ShapeCollection; we use the page's Shapes.
+                        // NOTE:
+                        // The AutoSpaceShapes method expects a ShapeCollection.
+                        // ShapeCollection cannot be instantiated directly, and there is no
+                        // overload that accepts a filtered list. As a workaround, we invoke
+                        // AutoSpaceShapes on the page's full shape collection. This will
+                        // auto‑space all shapes on the page. In environments where a
+                        // filtered ShapeCollection can be created, replace the call below
+                        // with the filtered collection.
                         page.AutoSpaceShapes(page.Shapes, options);
+                        Console.WriteLine($"Auto‑spaced page '{page.Name}' (found {targetCount} shape(s) with master '{masterName}').");
                     }
                 }
 
-                // Save the modified diagram to the output path.
+                // Save the modified diagram in VSDX format (second argument must be a SaveFileFormat)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

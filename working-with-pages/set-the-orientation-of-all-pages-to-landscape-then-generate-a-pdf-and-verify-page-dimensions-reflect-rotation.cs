@@ -7,86 +7,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
-            return;
-        }
+        // Determine input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputPdfPath = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure the output directory exists (create if necessary).
-        string outputDir = Path.GetDirectoryName(outputPdfPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
-        }
+        // Define output PDF path (same folder, same name with .pdf extension)
+        string outputPdfPath = Path.ChangeExtension(inputPath, ".pdf");
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages and set orientation to Landscape.
+                // Set orientation of every page to Landscape
                 foreach (Page page in diagram.Pages)
                 {
-                    // Set the print orientation to Landscape.
+                    // PrintPageOrientationValue.Landscape sets the page orientation
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
 
-                // Verify that each page now has width greater than height (Landscape).
-                bool allLandscape = true;
-                foreach (Page page in diagram.Pages)
-                {
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
-
-                    Console.WriteLine($"Page ID {page.ID}: Width = {width} inches, Height = {height} inches");
-
-                    if (width <= height)
-                    {
-                        allLandscape = false;
-                        Console.Error.WriteLine($"Page ID {page.ID} is not landscape after orientation change.");
-                    }
-                }
-
-                if (!allLandscape)
-                {
-                    Console.Error.WriteLine("One or more pages are not in landscape orientation. Aborting PDF export.");
-                    return;
-                }
-
-                // Configure PDF save options.
+                // Prepare PDF save options and explicitly set the format
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the format tracking flag.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as PDF.
+                // Save the diagram as PDF
                 diagram.Save(outputPdfPath, pdfOptions);
-                Console.WriteLine($"PDF successfully saved to: {outputPdfPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            // Open the generated PDF using Aspose.Pdf (fully qualified to avoid namespace conflicts)
+            Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(outputPdfPath);
+
+            // Verify each PDF page dimensions reflect Landscape orientation (width > height)
+            foreach (Aspose.Pdf.Page pdfPage in pdfDocument.Pages)
+            {
+                double width = pdfPage.PageInfo.Width;   // Width in points
+                double height = pdfPage.PageInfo.Height; // Height in points
+
+                Console.WriteLine($"PDF Page {pdfPage.Number}: Width = {width} pt, Height = {height} pt");
+
+                if (width <= height)
+                {
+                    Console.Error.WriteLine($"Verification failed: Page {pdfPage.Number} is not landscape (width <= height).");
+                }
+                else
+                {
+                    Console.WriteLine($"Verification passed: Page {pdfPage.Number} is landscape.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error verifying PDF file: {ex.Message}");
         }
     }
 }

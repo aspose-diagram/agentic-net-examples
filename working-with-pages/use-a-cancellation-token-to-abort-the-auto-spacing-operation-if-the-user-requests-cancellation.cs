@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -13,7 +12,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
             return;
         }
 
@@ -27,30 +26,24 @@ class Program
             return;
         }
 
-        // Prepare a cancellation token source for user‑initiated abort.
+        // Create a cancellation token source that can be triggered by the user.
         CancellationTokenSource cts = new CancellationTokenSource();
-        CancellationToken token = cts.Token;
 
         // Start a background task that waits for the user to type 'c' to cancel.
         Task.Run(() =>
         {
             Console.WriteLine("Press 'c' then Enter to cancel the auto‑spacing operation...");
             string line = Console.ReadLine();
-            if (!string.IsNullOrEmpty(line) && line.Trim().Equals("c", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(line) && line.Equals("c", StringComparison.OrdinalIgnoreCase))
             {
                 cts.Cancel();
-                Console.WriteLine("Cancellation requested.");
             }
         });
 
         try
         {
-            // Load the Visio diagram from the input file.
-            Diagram diagram;
-            using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
-            {
-                diagram = new Diagram(stream);
-            }
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
             // Ensure the diagram contains at least one page.
             if (diagram.Pages.Count == 0)
@@ -59,46 +52,45 @@ class Program
                 return;
             }
 
-            // Work with the first page.
+            // Work with the first page (adjust as needed).
             Page page = diagram.Pages[0];
 
             // Configure auto‑spacing options.
             AutoSpaceOptions options = new AutoSpaceOptions();
-            // Set horizontal and vertical distances (in inches).
+            // Set horizontal and vertical distances (example values).
             options.DistanceInHorizontal = 0.5;
             options.DistanceInVertical = 0.5;
 
-            // Run the auto‑spacing operation in a cancellable task.
-            Task autoSpaceTask = Task.Run(() =>
+            // Check for cancellation before starting the operation.
+            if (cts.Token.IsCancellationRequested)
             {
-                // Throw if cancellation was requested before starting.
-                token.ThrowIfCancellationRequested();
-
-                // Perform auto‑spacing on all shapes of the page.
-                page.AutoSpaceShapes(page.Shapes, options);
-            }, token);
-
-            // Wait for the task to complete or be cancelled.
-            try
-            {
-                autoSpaceTask.Wait(token);
-                Console.WriteLine("Auto‑spacing completed successfully.");
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine("Auto‑spacing was cancelled by the user.");
-                // Skip saving the diagram when cancelled.
+                Console.WriteLine("Operation cancelled before auto‑spacing started.");
                 return;
             }
 
-            // Save the modified diagram to the output path.
+            // Perform auto‑spacing on all shapes of the page.
+            // Aspose.Diagram does not support mid‑operation cancellation,
+            // so we only honor cancellation before the call.
+            page.AutoSpaceShapes(page.Shapes, options);
+
+            // Check for cancellation before saving.
+            if (cts.Token.IsCancellationRequested)
+            {
+                Console.WriteLine("Operation cancelled before saving the diagram.");
+                return;
+            }
+
+            // Save the modified diagram in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Auto‑spacing completed. Diagram saved to: {outputPath}");
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("Auto‑spacing operation was cancelled by the user.");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or I/O errors.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

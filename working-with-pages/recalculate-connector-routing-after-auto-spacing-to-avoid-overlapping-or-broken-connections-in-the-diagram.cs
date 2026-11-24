@@ -18,52 +18,68 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block (required pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Perform auto‑layout (auto‑spacing) using FlowChart style.
+                    // ---------- Auto‑spacing ----------
+                    // Configure auto‑spacing options (default distances).
+                    AutoSpaceOptions autoSpaceOpts = new AutoSpaceOptions
+                    {
+                        DistanceInHorizontal = 2.0,
+                        DistanceInVertical = 2.0
+                    };
+
+                    // Apply auto‑spacing to all shapes on the page.
+                    page.AutoSpaceShapes(page.Shapes, autoSpaceOpts);
+
+                    // ---------- Re‑layout (routing) ----------
+                    // Create layout options to recalculate connector routing.
                     LayoutOptions layoutOpts = new LayoutOptions
                     {
                         LayoutStyle = LayoutStyle.FlowChart,
-                        EnlargePage = true // EnlargePage expects a bool, not BOOL.
+                        Direction = LayoutDirection.TopToBottom,
+                        EnlargePage = false // EnlargePage expects a bool, not BOOL.
                     };
+
+                    // Perform layout which also routes connectors.
                     page.Layout(layoutOpts);
 
-                    // Recalculate routing for each connector (1‑D shape) on the page.
+                    // ---------- Ensure connector appearance ----------
+                    // Iterate shapes to set explicit routing style for connectors.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify connector shapes by the OneD flag.
+                        // Process only 1‑D connector shapes.
                         if (shape.OneD)
                         {
-                            // Ensure the shape has a Layout object before setting routing.
-                            if (shape.Layout != null)
-                            {
-                                // Set the routing style to RightAngle to avoid overlaps.
-                                shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-                            }
+                            // Set routing style to RightAngle to avoid overlaps.
+                            shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
+
+                            // Set connector visual type to RightAngle lines.
+                            shape.SetConnectorsType(ConnectorsTypeValue.RightAngle);
                         }
                     }
                 }
 
-                // Save the updated diagram to the specified output path in VSDX format.
+                // Save the updated diagram in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
+            // Write any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

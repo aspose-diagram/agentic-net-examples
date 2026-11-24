@@ -7,82 +7,89 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define temporary file path for the diagram
-        string diagramPath = Path.Combine(Path.GetTempPath(), "FillInheritanceTest.vsdx");
+        // Define a temporary file path for saving the diagram
+        string tempFilePath = Path.ChangeExtension(Path.GetTempFileName(), ".vsdx");
 
-        // Ensure any existing file is deleted to start fresh
-        if (File.Exists(diagramPath))
+        // Ensure any existing file at the path is removed before proceeding
+        if (File.Exists(tempFilePath))
         {
-            try { File.Delete(diagramPath); } catch { /* ignore */ }
+            try { File.Delete(tempFilePath); } catch { /* ignore */ }
         }
 
         try
         {
             // -------------------- Create a new diagram --------------------
-            Diagram diagram = new Diagram();
+            using (Diagram diagram = new Diagram())
+            {
+                // Add a window (required for a non-empty diagram)
+                Window window = new Window();
+                window.WindowType = WindowTypeValue.Drawing;
+                window.WindowState = WindowStateValue.Maximized;
+                window.WindowWidth = 1100;
+                window.WindowHeight = 700;
+                diagram.Windows.Add(window);
 
-            // Add a window (required for a non‑empty diagram)
-            Window window = new Window();
-            window.WindowType = WindowTypeValue.Drawing;
-            window.WindowState = WindowStateValue.Maximized;
-            window.WindowWidth = 1100;
-            window.WindowHeight = 700;
-            diagram.Windows.Add(window);
+                // Add a page to the diagram
+                Page page = new Page();
+                page.Name = "Page-1";
+                page.ID = 1;
+                diagram.Pages.Add(page);
 
-            // Add a page to the diagram
-            Page page = new Page();
-            page.Name = "Page-1";
-            page.ID = 1;
-            diagram.Pages.Add(page);
+                // -------------------- Add first shape with explicit fill --------------------
+                // Add a rectangle shape (master name "Rectangle") and retrieve it
+                long shapeId1 = page.AddShape(1, 1, 2, 2, "Rectangle");
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                // Set explicit fill color
+                shape1.Fill.FillForegnd.Value = "#FF0000";
 
-            // Add a rectangle shape to the page
-            // Parameters: pinX, pinY, width, height, master name
-            long shapeId = page.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle");
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // -------------------- Add second shape that inherits fill --------------------
+                long shapeId2 = page.AddShape(4, 1, 2, 2, "Rectangle");
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
+                // Enable inheritance for the fill foreground
+                shape2.Fill.FillForegnd.Ufe.F = "INHERITED()";
 
-            // Set a solid fill color
-            shape.Fill.FillForegnd.Value = "#FF0000";
+                // -------------------- Save the diagram --------------------
+                diagram.Save(tempFilePath, SaveFileFormat.Vsdx);
+            }
 
-            // Enable fill inheritance by assigning the INHERITED() function
-            shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+            // -------------------- Reload the saved diagram --------------------
+            using (Diagram loadedDiagram = new Diagram(tempFilePath))
+            {
+                // Retrieve the same page and shapes by their IDs
+                Page loadedPage = loadedDiagram.Pages[0];
+                Shape loadedShape1 = loadedPage.Shapes.GetShape(1); // shapeId1 is 1 in this simple case
+                Shape loadedShape2 = loadedPage.Shapes.GetShape(2); // shapeId2 is 2
 
-            // Save the diagram to a file
-            diagram.Save(diagramPath, SaveFileFormat.Vsdx);
+                // -------------------- Verify fill inheritance --------------------
+                string explicitFill = loadedShape1.Fill.FillForegnd.Value;
+                string inheritedFill = loadedShape2.InheritFill.FillForegnd.Value;
+
+                Console.WriteLine($"Explicit fill color: {explicitFill}");
+                Console.WriteLine($"Inherited fill color reported: {inheritedFill}");
+
+                // Check if the inherited fill matches the explicit fill
+                if (string.Equals(explicitFill, inheritedFill, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("Fill inheritance verification succeeded.");
+                }
+                else
+                {
+                    throw new Exception("Fill inheritance verification failed: inherited fill does not match explicit fill.");
+                }
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during diagram creation/saving: {ex.Message}");
-            return;
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        try
+        finally
         {
-            // -------------------- Reload the diagram --------------------
-            Diagram loadedDiagram = new Diagram(diagramPath);
-
-            // Retrieve the first page and the shape by its ID
-            Page loadedPage = loadedDiagram.Pages[0];
-            // The shape ID is the same as before because IDs are preserved on save/load
-            long shapeId = loadedPage.Shapes[0].ID; // Assuming the first shape is our rectangle
-            Shape loadedShape = loadedPage.Shapes.GetShape(shapeId);
-
-            // Compare the fill value with the inherited fill value
-            string fillValue = loadedShape.Fill.FillForegnd.Value;
-            string inheritFillValue = loadedShape.InheritFill.FillForegnd.Value;
-
-            if (fillValue == inheritFillValue)
+            // Clean up the temporary file
+            if (File.Exists(tempFilePath))
             {
-                Console.WriteLine("Fill inheritance verification succeeded: inherited fill matches shape fill.");
+                try { File.Delete(tempFilePath); } catch { /* ignore */ }
             }
-            else
-            {
-                throw new Exception($"Fill inheritance verification failed: shape fill '{fillValue}' does not match inherited fill '{inheritFillValue}'.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during diagram loading/verification: {ex.Message}");
-            return;
         }
     }
 }

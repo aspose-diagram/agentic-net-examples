@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -16,59 +16,59 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the shape has a Text object
-                    if (shape.Text == null)
-                        continue;
-
-                    // Iterate through each text element (FormatTxt) in the shape's text collection
+                    // Iterate through each text run in the shape.
                     foreach (FormatTxt fmt in shape.Text.Value)
                     {
-                        // Cast to Txt to access the actual text string
+                        // Only process actual text runs (Txt objects).
                         if (fmt is Txt txt)
                         {
-                            // Replace any line break characters with a single space
-                            string updated = txt.Text
+                            // Replace any line‑break characters with a single space.
+                            string original = txt.Text;
+                            string replaced = original
                                 .Replace("\r\n", " ")
-                                .Replace("\n", " ")
-                                .Replace("\r", " ");
+                                .Replace("\r", " ")
+                                .Replace("\n", " ");
 
-                            // Assign the modified text back to the shape
-                            txt.Text = updated;
+                            // Update the text only if a change occurred.
+                            if (!original.Equals(replaced))
+                            {
+                                txt.Text = replaced;
+                            }
                         }
                     }
                 }
             }
 
-            // Save the modified diagram to the output path in VSDX format
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

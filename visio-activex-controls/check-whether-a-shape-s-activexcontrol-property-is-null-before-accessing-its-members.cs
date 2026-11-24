@@ -7,73 +7,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input Visio file path as first argument
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : "output.vsdx";
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Determine output path (optional). If not provided, append "_out" to the input name.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_out.vsdx");
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check whether the shape contains an ActiveX control.
+                    // Check if the shape contains an ActiveX control before accessing it
                     if (shape.ActiveXControl != null)
                     {
-                        // Retrieve the base ActiveX control.
-                        var activeX = shape.ActiveXControl;
+                        // Access a member safely – for example, the control type
+                        ControlType ctrlType = shape.ActiveXControl.Type;
+                        Console.WriteLine($"Shape ID {shape.ID} contains ActiveX control of type {ctrlType}.");
 
-                        // Output basic information about the control.
-                        Console.WriteLine($"Shape ID {shape.ID} has ActiveX control of type {activeX.Type}.");
-
-                        // Example: if the control is a CommandButton, cast and read its Caption.
-                        if (activeX.Type == ControlType.CommandButton)
+                        // Example of modifying a property (if applicable). Here we just demonstrate
+                        // reading the Caption property for a CommandButton control.
+                        if (ctrlType == ControlType.CommandButton)
                         {
-                            // Safe cast because we verified the type.
-                            CommandButtonActiveXControl button = (CommandButtonActiveXControl)activeX;
-                            Console.WriteLine($"  Caption: {button.Caption}");
+                            // Cast to the specific control class
+                            CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                            // Output current caption
+                            Console.WriteLine($"  Current Caption: {cmdBtn.Caption}");
+                            // Optionally modify the caption
+                            cmdBtn.Caption = "Updated Caption";
                         }
-                        // Example: if the control is a CheckBox, cast and read its Value.
-                        else if (activeX.Type == ControlType.CheckBox)
-                        {
-                            CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)activeX;
-                            // The Value property uses the CheckValueType enum.
-                            Console.WriteLine($"  Checked: {checkBox.Value == CheckValueType.Checked}");
-                        }
-                        // Add handling for other control types as needed.
-                    }
-                    else
-                    {
-                        // Shape does not have an ActiveX control.
-                        Console.WriteLine($"Shape ID {shape.ID} has no ActiveX control.");
                     }
                 }
             }
 
-            // Save the (potentially unchanged) diagram to the output path.
+            // Save the modified diagram to the output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

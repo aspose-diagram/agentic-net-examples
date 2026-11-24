@@ -1,11 +1,11 @@
 {
   "category": "working-with-comments",
   "display_name": "Working With Comments",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -80,6 +80,7 @@
       "task": "Copy comments from one diagram to another preserving their original author and creation dates",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -100,8 +101,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "StyleSheet",
+        "StyleSheets"
       ]
     },
     {
@@ -110,7 +111,6 @@
       "task": "Create a macro that removes all comments older than a specified number of days from a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -201,7 +201,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -212,7 +211,6 @@
       "task": "Export all diagram comments to a json file including position coordinates and linked shape identifiers",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -232,7 +230,7 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
-        "System.Text"
+        "System.Net"
       ],
       "key_apis": [
         "Diagram",
@@ -263,9 +261,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -281,6 +279,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -333,6 +332,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -360,14 +360,12 @@
       "task": "Implement error handling to gracefully skip diagrams that lack comment support during batch operations",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -397,8 +395,7 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Text"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -462,11 +459,8 @@
       "task": "Read comments from a diagram translate their text using an external service and update them in place",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO",
-        "System.Net.Http"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -482,7 +476,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -572,6 +565,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "diagram"
       ]
     },

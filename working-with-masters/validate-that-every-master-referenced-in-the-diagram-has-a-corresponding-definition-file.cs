@@ -7,8 +7,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Expect the diagram file path as the first argument.
+        if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <diagramFilePath>");
             return;
@@ -23,25 +23,27 @@ class Program
             return;
         }
 
-        // Load the diagram inside a using block as required.
         try
         {
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Collect all master names referenced by shapes in the diagram.
+                // Collect all master names referenced by shapes.
                 HashSet<string> referencedMasters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate through each page.
-                foreach (Page page in diagram.Pages)
+                // Iterate over pages using a for-loop (avoid foreach on diagram.Pages).
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Iterate through each shape on the page.
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate over shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // If the shape is based on a master, record its name.
+                        // If the shape has an associated master, record its name.
                         if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
                         {
                             referencedMasters.Add(shape.Master.Name);
@@ -53,21 +55,21 @@ class Program
                 List<string> missingMasters = new List<string>();
                 foreach (string masterName in referencedMasters)
                 {
-                    // Use the IsExist(string) method to check presence.
+                    // Use Masters.IsExist(string) to check presence.
                     if (!diagram.Masters.IsExist(masterName))
                     {
                         missingMasters.Add(masterName);
                     }
                 }
 
-                // Output the validation results.
+                // Report results.
                 if (missingMasters.Count == 0)
                 {
-                    Console.WriteLine("All referenced masters have corresponding definitions.");
+                    Console.WriteLine("All referenced masters have corresponding definitions in the diagram.");
                 }
                 else
                 {
-                    Console.Error.WriteLine("The following masters are referenced but missing definitions:");
+                    Console.Error.WriteLine("The following masters are referenced but missing definition files:");
                     foreach (string missing in missingMasters)
                     {
                         Console.Error.WriteLine($"- {missing}");
@@ -77,7 +79,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Report any unexpected errors during processing.
+            // Capture any Aspose or I/O errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

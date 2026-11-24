@@ -1,48 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Output file path for the generated diagram
+        // Define the output file path
         string outputPath = "output.vsdx";
+
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
 
         try
         {
-            // Create a new empty diagram instance
-            Diagram diagram = new Diagram();
+            // Create a new blank diagram inside a using block as required
+            using (Diagram diagram = new Diagram())
+            {
+                // Access the first (default) page
+                Page page = diagram.Pages[0];
 
-            // Retrieve the first (default) page of the diagram
-            Page page = diagram.Pages[0];
+                // Convert 20 points to inches (1 point = 1/72 inch)
+                double marginInches = 20.0 / 72.0;
 
-            // Convert 20 points to inches (1 point = 1/72 inch)
-            double marginInInches = 20.0 / 72.0;
+                // Set custom margins on all sides using PrintProps
+                page.PageSheet.PrintProps.PageLeftMargin.Value = marginInches;
+                page.PageSheet.PrintProps.PageRightMargin.Value = marginInches;
+                page.PageSheet.PrintProps.PageTopMargin.Value = marginInches;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = marginInches;
 
-            // Set all four page margins via the PrintProps collection
-            page.PageSheet.PrintProps.PageTopMargin.Value = marginInInches;
-            page.PageSheet.PrintProps.PageBottomMargin.Value = marginInInches;
-            page.PageSheet.PrintProps.PageLeftMargin.Value = marginInInches;
-            page.PageSheet.PrintProps.PageRightMargin.Value = marginInInches;
+                // Draw a simple ellipse shape after setting margins
+                // Parameters: pinX, pinY, width, height (all in inches)
+                double pinX = 2.0;   // X coordinate of the ellipse center
+                double pinY = 2.0;   // Y coordinate of the ellipse center
+                double width = 1.0;  // Width of the ellipse
+                double height = 0.5; // Height of the ellipse
+                long shapeId = page.DrawEllipse(pinX, pinY, width, height);
 
-            // Draw a rectangle shape on the page (pinX, pinY, width, height) – values are in inches
-            long shapeId = page.DrawRectangle(1.0, 1.0, 2.0, 1.0);
+                // Retrieve the shape to modify its properties if needed
+                Shape shape = page.Shapes.GetShape(shapeId);
+                // Example: set a fill color for the ellipse
+                shape.Fill.FillForegnd.Value = "#FFCC00"; // Orange fill
 
-            // Retrieve the created shape to modify its properties
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Clear any existing text runs and add new text to the shape
-            shape.Text.Value.Clear();
-            shape.Text.Value.Add(new Txt("Sample Shape"));
-
-            // Save the diagram to VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                // Save the diagram to VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

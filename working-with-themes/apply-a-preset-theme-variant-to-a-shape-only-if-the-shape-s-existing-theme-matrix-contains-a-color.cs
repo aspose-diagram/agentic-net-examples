@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,39 +25,38 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate over each page and each shape within the page.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip shapes that are marked as deleted.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Check if the shape has a fill foreground color defined (as a proxy for theme matrix containing a color)
-                    // The FillForegnd cell holds the color value; an empty string means no color.
-                    string fillColor = shape.Fill?.FillForegnd?.Value?.ToString();
-                    if (!string.IsNullOrWhiteSpace(fillColor))
+                    // TODO: Implement detection of a color in the shape's existing theme matrix.
+                    // Placeholder: assume the shape does NOT have a theme color.
+                    bool hasThemeColor = false;
+
+                    // Apply a preset theme variant only when the shape's theme matrix contains a color.
+                    if (hasThemeColor)
                     {
-                        // Apply a preset theme and variant to the shape
-                        // PresetTheme and PresetThemeVariant are write‑only properties.
+                        // Example: apply the Bubble theme with Variant1 to the shape.
                         shape.PresetTheme = PresetThemeValue.Bubble;
                         shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                     }
                 }
             }
 
-            // Save the modified diagram to the output path in VSDX format
+            // Save the modified diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

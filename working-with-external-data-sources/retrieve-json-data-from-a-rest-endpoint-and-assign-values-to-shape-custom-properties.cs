@@ -7,116 +7,160 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Model representing JSON data for a shape's custom property
-    private class ShapeData
-    {
-        public int ShapeId { get; set; }
-        public string PropName { get; set; }
-        public string PropValue { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
+        // Expect three arguments: inputVisioPath, outputVisioPath, jsonEndpointUrl
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <jsonUrl> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <jsonEndpointUrl>");
             return;
         }
 
-        string diagramPath = args[0];
-        string jsonUrl = args[1];
-        string outputPath = args[2];
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string jsonUrl = args[2];
 
-        // Guard against missing diagram file
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input Visio file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         // Retrieve JSON data from the REST endpoint
-        List<ShapeData> shapeDataList = GetShapeDataFromJson(jsonUrl);
-        if (shapeDataList == null)
+        Dictionary<long, Dictionary<string, string>> shapeData = FetchJsonData(jsonUrl);
+        if (shapeData == null)
         {
-            Console.Error.WriteLine("Failed to retrieve or parse JSON data.");
+            // Error already reported inside FetchJsonData
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through all pages and shapes
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
                 {
-                    // Find matching JSON entry for the current shape ID
-                    ShapeData matchingData = shapeDataList.Find(d => d.ShapeId == shape.ID);
-                    if (matchingData == null)
-                        continue; // No data for this shape, skip
-
-                    // Check if the custom property already exists
-                    Prop existingProp = null;
-                    foreach (Prop prop in shape.Props)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (prop.Name == matchingData.PropName)
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if we have data for this shape ID
+                        if (shapeData.TryGetValue(shape.ID, out var properties))
                         {
-                            existingProp = prop;
-                            break;
+                            // Assign each property to the shape's custom properties
+                            foreach (var kvp in properties)
+                            {
+                                string propName = kvp.Key;
+                                string propValue = kvp.Value;
+
+                                // Try to find an existing custom property with the same name
+                                Prop existingProp = null;
+                                foreach (Prop p in shape.Props)
+                                {
+                                    if (p.Name == propName)
+                                    {
+                                        existingProp = p;
+                                        break;
+                                    }
+                                }
+
+                                if (existingProp != null)
+                                {
+                                    // Update the value of the existing property
+                                    existingProp.Value.Val = propValue;
+                                }
+                                else
+                                {
+                                    // Create a new custom property and add it to the shape
+                                    Prop newProp = new Prop();
+                                    newProp.Name = propName;
+                                    newProp.Label.Value = propName;               // Use the property name as label
+                                    newProp.Value.Val = propValue;                // Assign the actual value
+                                    newProp.Type.Value = TypePropValue.String;    // Set data type to string
+                                    shape.Props.Add(newProp);
+                                }
+                            }
                         }
                     }
-
-                    if (existingProp != null)
-                    {
-                        // Update existing property's value
-                        existingProp.Value.Val = matchingData.PropValue;
-                    }
-                    else
-                    {
-                        // Create a new custom property and add it to the shape
-                        Prop newProp = new Prop();
-                        newProp.Name = matchingData.PropName;
-                        newProp.Label.Value = matchingData.PropName;          // Label displayed in the Shapesheet
-                        newProp.Value.Val = matchingData.PropValue;          // Actual value
-                        newProp.Type.Value = TypePropValue.String;          // Define as string type
-                        shape.Props.Add(newProp);
-                    }
                 }
-            }
 
-            // Save the modified diagram to the specified output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Save the modified diagram to the output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio diagram: {ex.Message}");
         }
     }
 
-    // Retrieves and deserializes JSON data from the given URL
-    private static List<ShapeData> GetShapeDataFromJson(string url)
+    /// <summary>
+    /// Retrieves JSON from the specified URL and parses it into a dictionary.
+    /// Expected JSON format:
+    /// [
+    ///   {
+    ///     "shapeId": 1,
+    ///     "properties": {
+    ///       "PropA": "ValueA",
+    ///       "PropB": "ValueB"
+    ///     }
+    ///   },
+    ///   ...
+    /// ]
+    /// </summary>
+    static Dictionary<long, Dictionary<string, string>> FetchJsonData(string url)
     {
         try
         {
             using (HttpClient client = new HttpClient())
             {
-                // Synchronous call to keep Main non‑async
-                var response = client.GetAsync(url).GetAwaiter().GetResult();
+                // Synchronously get the JSON string (for simplicity in a console app)
+                HttpResponseMessage response = client.GetAsync(url).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
+                string json = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
-                var json = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                var data = JsonSerializer.Deserialize<List<ShapeData>>(json);
-                return data ?? new List<ShapeData>();
+                // Parse the JSON document
+                var result = new Dictionary<long, Dictionary<string, string>>();
+                using (JsonDocument doc = JsonDocument.Parse(json))
+                {
+                    if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                    {
+                        Console.Error.WriteLine("Unexpected JSON format: root element is not an array.");
+                        return null;
+                    }
+
+                    foreach (JsonElement element in doc.RootElement.EnumerateArray())
+                    {
+                        if (!element.TryGetProperty("shapeId", out JsonElement idElem) ||
+                            !element.TryGetProperty("properties", out JsonElement propsElem))
+                        {
+                            continue; // Skip malformed entries
+                        }
+
+                        long shapeId = idElem.GetInt64();
+                        var propDict = new Dictionary<string, string>();
+
+                        foreach (JsonProperty prop in propsElem.EnumerateObject())
+                        {
+                            propDict[prop.Name] = prop.Value.GetString();
+                        }
+
+                        result[shapeId] = propDict;
+                    }
+                }
+
+                return result;
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to fetch JSON from '{url}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to retrieve or parse JSON data: {ex.Message}");
             return null;
         }
     }

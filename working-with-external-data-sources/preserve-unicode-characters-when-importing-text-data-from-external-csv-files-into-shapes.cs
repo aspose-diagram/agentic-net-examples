@@ -7,24 +7,19 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define file paths
-        string diagramPath = "input.vsdx";
-        if (!System.IO.File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
-        string csvPath = "data.csv";
-        string outputPath = "output.vsdx";
+        // Input Visio file path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Input CSV file path (second argument or default)
+        string csvPath = args.Length > 1 ? args[1] : "data.csv";
+        // Output Visio file path (third argument or default)
+        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
 
-        // Guard against missing diagram file
+        // Guard against missing files
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
-
-        // Guard against missing CSV file
         if (!File.Exists(csvPath))
         {
             Console.Error.WriteLine($"CSV file not found: {csvPath}");
@@ -36,72 +31,72 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Read all lines from the CSV file using UTF-8 encoding (preserves Unicode)
-            string[] csvLines = File.ReadAllLines(csvPath, System.Text.Encoding.UTF8);
-
-            // Process each CSV line (expected format: ShapeId,Text)
-            foreach (string line in csvLines)
+            // Read CSV lines (UTF-8 by default, preserves Unicode)
+            using (StreamReader reader = new StreamReader(csvPath))
             {
-                // Skip empty lines
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                // Split only on the first comma to allow commas inside the text
-                int firstComma = line.IndexOf(',');
-                if (firstComma == -1)
+                while (!reader.EndOfStream)
                 {
-                    Console.Error.WriteLine($"Invalid CSV line (no comma found): {line}");
-                    continue;
-                }
+                    string line = reader.ReadLine();
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue; // Skip empty lines
 
-                string idPart = line.Substring(0, firstComma).Trim();
-                string textPart = line.Substring(firstComma + 1).Trim();
+                    // Simple CSV split – assumes commas are not part of the text.
+                    // If commas can appear in the text, a more robust parser would be needed.
+                    string[] parts = line.Split(',');
+                    if (parts.Length < 2)
+                    {
+                        Console.Error.WriteLine($"Invalid CSV line (expected at least 2 columns): {line}");
+                        continue;
+                    }
 
-                // Parse shape ID
-                if (!int.TryParse(idPart, out int shapeId))
-                {
-                    Console.Error.WriteLine($"Invalid shape ID '{idPart}' in line: {line}");
-                    continue;
-                }
+                    // Parse shape ID
+                    if (!long.TryParse(parts[0].Trim(), out long shapeId))
+                    {
+                        Console.Error.WriteLine($"Invalid shape ID in line: {line}");
+                        continue;
+                    }
 
-                // Retrieve the shape from the first page (adjust if needed)
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("Diagram contains no pages.");
-                    break;
-                }
+                    // Reconstruct the text (join remaining parts to allow commas inside text)
+                    string text = string.Join(",", parts, 1, parts.Length - 1).Trim();
 
-                Page page = diagram.Pages[0];
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
-                {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                    continue;
-                }
+                    // Find the shape across all pages
+                    Shape targetShape = null;
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Shape IDs are long, but GetShape expects int; cast safely if within range
+                        if (shapeId >= int.MinValue && shapeId <= int.MaxValue)
+                        {
+                            Shape shape = page.Shapes.GetShape((int)shapeId);
+                            if (shape != null)
+                            {
+                                targetShape = shape;
+                                break;
+                            }
+                        }
+                    }
 
-                // Clear existing text (if possible)
-                try
-                {
-                    shape.Text.Value.Clear();
-                }
-                catch
-                {
-                    // If Clear is not supported, ignore and proceed to add new text
-                }
+                    if (targetShape == null)
+                    {
+                        Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page.");
+                        continue;
+                    }
 
-                // Add new Unicode text to the shape
-                Txt txt = new Txt(textPart);
-                shape.Text.Value.Add(txt);
+                    // Replace existing text while preserving Unicode characters
+                    // Clear any existing text fragments
+                    targetShape.Text.Value.Clear();
+
+                    // Add new text fragment
+                    targetShape.Text.Value.Add(new Txt(text));
+                }
             }
 
-            // Save the modified diagram preserving Unicode characters
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

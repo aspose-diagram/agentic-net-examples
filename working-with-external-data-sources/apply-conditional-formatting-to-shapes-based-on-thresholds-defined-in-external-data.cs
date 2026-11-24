@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Globalization;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,55 +8,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and external data file path
-        if (args.Length < 2)
+        // Expect three arguments: diagramPath, dataPath, outputPath
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <dataPath>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <dataPath> <outputPath>");
             return;
         }
 
         string diagramPath = args[0];
         string dataPath = args[1];
+        string outputPath = args[2];
 
-        // Guard: ensure diagram file exists
+        // Guard against missing files
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
-
-        // Guard: ensure external data file exists
         if (!File.Exists(dataPath))
         {
             Console.Error.WriteLine($"Data file not found: {dataPath}");
             return;
         }
 
-        // Load external data into a dictionary (shape name -> numeric value)
+        // Load external data (CSV: ShapeName,Value)
         var shapeValues = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            foreach (string line in File.ReadAllLines(dataPath))
+            foreach (var line in File.ReadAllLines(dataPath))
             {
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
-                // Expected format: ShapeName,Value
-                string[] parts = line.Split(new[] { ',' }, 2);
-                if (parts.Length != 2)
-                {
-                    Console.Error.WriteLine($"Invalid data line (expected 'ShapeName,Value'): {line}");
-                    continue;
-                }
+                var parts = line.Split(',');
+                if (parts.Length < 2)
+                    continue; // malformed line
 
-                string shapeName = parts[0].Trim();
-                if (double.TryParse(parts[1].Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out double value))
+                string name = parts[0].Trim();
+                if (double.TryParse(parts[1].Trim(), out double val))
                 {
-                    shapeValues[shapeName] = value;
-                }
-                else
-                {
-                    Console.Error.WriteLine($"Unable to parse numeric value for shape '{shapeName}': {parts[1]}");
+                    shapeValues[name] = val;
                 }
             }
         }
@@ -67,12 +57,16 @@ class Program
             return;
         }
 
-        // Process the diagram
+        // Define thresholds
+        double lowThreshold = 50.0;
+        double highThreshold = 80.0;
+
+        // Load diagram and apply conditional formatting
         try
         {
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through all pages and shapes
+                // Iterate all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
@@ -81,39 +75,42 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Apply formatting only if the shape name exists in the external data
-                        if (!string.IsNullOrEmpty(shape.NameU) && shapeValues.TryGetValue(shape.NameU, out double metric))
+                        // Match shape by its universal name
+                        if (!string.IsNullOrEmpty(shape.NameU) && shapeValues.TryGetValue(shape.NameU, out double value))
                         {
-                            // Example rule: metric >= 100 => red fill, else green fill
-                            if (metric >= 100)
+                            // Determine fill color based on thresholds
+                            if (value > highThreshold)
                             {
-                                // Red fill
+                                // Red fill for high values
                                 shape.Fill.FillForegnd.Value = "#FF0000";
-                                // Thicker line for high values
-                                shape.Line.LineWeight.Value = 0.03; // inches
+                            }
+                            else if (value > lowThreshold)
+                            {
+                                // Yellow fill for medium values
+                                shape.Fill.FillForegnd.Value = "#FFFF00";
                             }
                             else
                             {
-                                // Green fill
+                                // Green fill for low values
                                 shape.Fill.FillForegnd.Value = "#00FF00";
-                                // Thinner line for lower values
-                                shape.Line.LineWeight.Value = 0.01; // inches
                             }
 
-                            // Ensure the shape is not flipped horizontally
-                            shape.XForm.FlipX.Value = BOOL.False;
+                            // Optionally make text bold for high values
+                            if (value > highThreshold && shape.Chars.Count > 0)
+                            {
+                                // Apply bold style to all characters in the shape
+                                for (int i = 0; i < shape.Chars.Count; i++)
+                                {
+                                    shape.Chars[i].Style.Value = StyleValue.Bold;
+                                }
+                            }
                         }
                     }
                 }
 
-                // Determine output path (same directory with suffix)
-                string outputPath = Path.Combine(
-                    Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                    Path.GetFileNameWithoutExtension(diagramPath) + "_formatted.vsdx");
-
-                // Save the modified diagram in VSDX format
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved with conditional formatting to: {outputPath}");
+                Console.WriteLine($"Diagram saved to {outputPath}");
             }
         }
         catch (Exception ex)

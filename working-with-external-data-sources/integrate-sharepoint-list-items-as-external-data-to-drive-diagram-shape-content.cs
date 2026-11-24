@@ -1,100 +1,108 @@
 using System;
 using System.IO;
-using System.Data;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Simple class to represent a SharePoint list item (simulated)
+    class SharePointItem
+    {
+        public string Title { get; set; }
+        public string Description { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio diagram path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+
+        // Output Visio diagram path
+        string outputPath = "output.vsdx";
+
+        // Simulate retrieval of SharePoint list items
+        List<SharePointItem> sharePointItems = GetMockSharePointItems();
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // ------------------------------------------------------------
-                // Simulate SharePoint list items using an in‑memory DataTable.
-                // In a real scenario this data would be retrieved via SharePoint APIs.
-                // ------------------------------------------------------------
-                DataTable sharePointData = new DataTable();
-                sharePointData.Columns.Add("Title", typeof(string));
-                sharePointData.Columns.Add("Description", typeof(string));
-
-                // Sample rows – replace with actual SharePoint data retrieval logic.
-                sharePointData.Rows.Add("Shape A", "Description for Shape A");
-                sharePointData.Rows.Add("Shape B", "Description for Shape B");
-                sharePointData.Rows.Add("Shape C", "Description for Shape C");
-
-                // ------------------------------------------------------------
-                // Iterate through all pages and shapes, updating shape content
-                // based on matching SharePoint list items.
-                // ------------------------------------------------------------
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Only process shapes that have a master (i.e., visible shapes).
+                        // Ensure the shape has a master (to avoid null reference)
                         if (shape.Master == null)
                             continue;
 
-                        // Retrieve the current shape text (if any).
-                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
+                        // Attempt to find a matching SharePoint item by shape name
+                        SharePointItem matchingItem = FindItemByTitle(sharePointItems, shape.NameU);
 
-                        // Attempt to find a matching SharePoint row where Title equals the shape text.
-                        foreach (DataRow row in sharePointData.Rows)
+                        if (matchingItem != null)
                         {
-                            string title = row["Title"]?.ToString() ?? string.Empty;
-                            if (string.Equals(title, shapeText, StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Update the shape's text to include the description.
-                                string description = row["Description"]?.ToString() ?? string.Empty;
+                            // Update the shape's text with the SharePoint item's description
+                            // Clear existing text runs
+                            shape.Text.Value.Clear();
 
-                                // Clear existing text and add new text runs.
-                                shape.Text.Value.Clear();
-                                shape.Text.Value.Add(new Txt($"{title}\n{description}"));
+                            // Add new text run
+                            shape.Text.Value.Add(new Txt(matchingItem.Description));
 
-                                // Optionally store the description in a custom data field.
-                                shape.Data1 = description;
-
-                                // Refresh the shape to apply changes to geometry and connections.
-                                shape.RefreshData();
-
-                                // Break after the first match.
-                                break;
-                            }
+                            // Refresh the shape's data to apply changes
+                            shape.RefreshData();
                         }
                     }
                 }
 
-                // ------------------------------------------------------------
-                // Save the modified diagram to the specified output path.
-                // ------------------------------------------------------------
+                // Save the modified diagram to the output path using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Helper method to simulate fetching SharePoint list items
+    static List<SharePointItem> GetMockSharePointItems()
+    {
+        // In a real scenario, replace this with actual SharePoint SDK calls.
+        // Here we create sample items for demonstration purposes.
+        return new List<SharePointItem>
+        {
+            new SharePointItem { Title = "Shape1", Description = "First item description" },
+            new SharePointItem { Title = "Shape2", Description = "Second item description" },
+            new SharePointItem { Title = "Shape3", Description = "Third item description" }
+        };
+    }
+
+    // Helper method to find a SharePoint item by title (case-insensitive)
+    static SharePointItem FindItemByTitle(List<SharePointItem> items, string title)
+    {
+        if (string.IsNullOrEmpty(title))
+            return null;
+
+        foreach (SharePointItem item in items)
+        {
+            if (string.Equals(item.Title, title, StringComparison.OrdinalIgnoreCase))
+                return item;
+        }
+        return null;
     }
 }

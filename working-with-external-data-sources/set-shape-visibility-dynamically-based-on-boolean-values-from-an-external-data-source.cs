@@ -7,26 +7,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: 1) path to the Visio diagram, 2) path to the CSV data file.
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, output diagram path, visibility data CSV path
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <dataCsvPath> [outputPath]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <visibilityCsvPath>");
             return;
         }
 
-        string diagramPath = args[0];
-        string dataCsvPath = args[1];
-        string outputPath = args.Length >= 3 ? args[2] : "output.vsdx";
+        string inputDiagramPath = args[0];
+        string outputDiagramPath = args[1];
+        string csvPath = args[2];
 
-        // Guard against missing files.
-        if (!File.Exists(diagramPath))
+        // Guard: verify input diagram file exists
+        if (!File.Exists(inputDiagramPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
             return;
         }
-        if (!File.Exists(dataCsvPath))
+
+        // Guard: verify CSV data file exists
+        if (!File.Exists(csvPath))
         {
-            Console.Error.WriteLine($"Data CSV file not found: {dataCsvPath}");
+            Console.Error.WriteLine($"Visibility CSV file not found: {csvPath}");
             return;
         }
 
@@ -34,71 +36,61 @@ class Program
         var visibilityMap = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            foreach (var line in File.ReadAllLines(dataCsvPath))
+            foreach (var line in File.ReadAllLines(csvPath))
             {
-                // Skip empty lines.
+                // Skip empty lines
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
                 var parts = line.Split(',');
-                if (parts.Length < 2)
-                    continue; // Invalid line, ignore.
+                if (parts.Length != 2)
+                {
+                    Console.Error.WriteLine($"Invalid CSV line (expected 2 columns): {line}");
+                    continue;
+                }
 
                 string shapeName = parts[0].Trim();
                 string boolText = parts[1].Trim();
 
-                bool isVisible = false;
-                // Accept true/false (case-insensitive) or 1/0.
-                if (bool.TryParse(boolText, out bool parsedBool))
-                {
-                    isVisible = parsedBool;
-                }
-                else if (int.TryParse(boolText, out int intVal))
-                {
-                    isVisible = intVal != 0;
-                }
-
-                if (!string.IsNullOrEmpty(shapeName))
+                if (bool.TryParse(boolText, out bool isVisible))
                 {
                     visibilityMap[shapeName] = isVisible;
+                }
+                else
+                {
+                    Console.Error.WriteLine($"Invalid boolean value in CSV line: {line}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading CSV data: {ex.Message}");
+            Console.Error.WriteLine($"Error reading CSV file: {ex.Message}");
             return;
         }
 
-        // Load the Visio diagram and apply visibility changes.
+        // Load the diagram and apply visibility changes
         try
         {
-            Diagram diagram = new Diagram(diagramPath);
+            // Load diagram from file
+            Diagram diagram = new Diagram(inputDiagramPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Use the shape's NameU as the identifier.
-                    string shapeName = shape.NameU;
-                    if (string.IsNullOrEmpty(shapeName))
-                        continue;
-
-                    if (visibilityMap.TryGetValue(shapeName, out bool shouldBeVisible))
+                    // Determine if we have a visibility rule for this shape (using NameU)
+                    if (visibilityMap.TryGetValue(shape.NameU, out bool isVisible))
                     {
-                        if (shouldBeVisible)
+                        if (isVisible)
                         {
-                            // Ensure the shape has a reasonable size if it was previously hidden.
-                            // If width or height is zero, set them to a default of 1 inch.
-                            if (shape.XForm.Width.Value == 0)
-                                shape.XForm.Width.Value = 1.0;
-                            if (shape.XForm.Height.Value == 0)
-                                shape.XForm.Height.Value = 1.0;
+                            // Show shape: set width and height to a default non-zero size (e.g., 1 inch)
+                            shape.XForm.Width.Value = 1.0;
+                            shape.XForm.Height.Value = 1.0;
                         }
                         else
                         {
-                            // Hide the shape by setting its width and height to zero.
+                            // Hide shape: set width and height to zero
                             shape.XForm.Width.Value = 0.0;
                             shape.XForm.Height.Value = 0.0;
                         }
@@ -106,13 +98,15 @@ class Program
                 }
             }
 
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            // Save the modified diagram to the output path in VSDX format
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
         }
+
+        Console.WriteLine("Diagram processing completed successfully.");
     }
 }

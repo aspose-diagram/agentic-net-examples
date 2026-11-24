@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Xsl;
 using Aspose.Diagram;
 
@@ -8,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect four arguments: diagram file, input XML, XSLT file, output diagram
+        // Expected arguments: diagramPath xmlPath xsltPath outputPath
         if (args.Length != 4)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <xmlPath> <xsltPath> <outputPath>");
@@ -28,7 +29,7 @@ class Program
         }
         if (!File.Exists(xmlPath))
         {
-            Console.Error.WriteLine($"XML file not found: {xmlPath}");
+            Console.Error.WriteLine($"XML data file not found: {xmlPath}");
             return;
         }
         if (!File.Exists(xsltPath))
@@ -39,52 +40,50 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Load the source XML document
-            XmlDocument sourceXml = new XmlDocument();
-            sourceXml.Load(xmlPath);
-
-            // Prepare the XSLT transformation
-            XslCompiledTransform xslt = new XslCompiledTransform();
-            xslt.Load(xsltPath);
-
-            // Perform transformation into a string
-            string transformedXml;
-            using (StringWriter stringWriter = new StringWriter())
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                using (XmlWriter xmlWriter = XmlWriter.Create(stringWriter, xslt.OutputSettings))
-                {
-                    xslt.Transform(sourceXml, xmlWriter);
-                }
-                transformedXml = stringWriter.ToString();
-            }
+                // Load the source XML document
+                XDocument sourceXml = XDocument.Load(xmlPath);
 
-            // Apply the transformed XML to each shape's Data1 property
-            foreach (Page page in diagram.Pages)
-            {
-                // Ensure the page has shapes
-                if (page.Shapes == null) continue;
+                // Prepare XSLT transformation
+                XslCompiledTransform xslt = new XslCompiledTransform();
+                xslt.Load(xsltPath);
 
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Perform transformation and capture the result as a string
+                string transformedXml;
+                using (StringWriter stringWriter = new StringWriter())
                 {
-                    Shape shape = page.Shapes[i];
-                    if (shape != null)
+                    using (XmlWriter xmlWriter = XmlWriter.Create(stringWriter, xslt.OutputSettings))
                     {
-                        // Store the transformed XML in the shape's Data1 field
-                        shape.Data1 = transformedXml;
+                        xslt.Transform(sourceXml.CreateReader(), xmlWriter);
+                    }
+                    transformedXml = stringWriter.ToString();
+                }
+
+                // Iterate over all pages and shapes to store the transformed XML
+                foreach (Page page in diagram.Pages)
+                {
+                    // Ensure the page contains shapes
+                    if (page.Shapes == null) continue;
+
+                    // Iterate through shapes by index (ShapeCollection is not generic)
+                    for (int i = 0; i < page.Shapes.Count; i++)
+                    {
+                        Shape shape = page.Shapes[i];
+                        if (shape == null) continue;
+
+                        // Ensure the Misc collection exists
+                        if (shape.Misc == null) continue;
+
+                        // Store the transformed XML in the shape's comment (as SolutionXML is not available per API)
+                        shape.Misc.Comment.Value = transformedXml;
                     }
                 }
+
+                // Save the modified diagram with a valid SaveFileFormat enum value
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Optionally store the transformed XML at the document level as SolutionXML
-            // (If the property exists; otherwise this line can be omitted safely)
-            // diagram.SolutionXML = transformedXml;
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

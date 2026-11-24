@@ -1,167 +1,94 @@
 using System;
 using System.IO;
 using System.Data;
+using System.Diagnostics;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: path to Visio diagram and path to a large dataset file (e.g., CSV)
-        if (args.Length < 2)
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioDiagramPath> <DatasetPath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
         string diagramPath = args[0];
-        string datasetPath = args[1];
 
-        // Guard against missing files
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        if (!File.Exists(datasetPath))
-        {
-            Console.Error.WriteLine($"Dataset file not found: {datasetPath}");
-            return;
-        }
-
-        // Record initial memory usage
-        long memoryBefore = GC.GetTotalMemory(true);
-        Console.WriteLine($"Initial memory (bytes): {memoryBefore}");
-
-        // Load the Visio diagram inside a using block as required
         try
         {
+            // Load the Visio diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.WriteLine("Diagram loaded successfully.");
+                // Capture memory usage before loading the external dataset.
+                Process currentProcess = Process.GetCurrentProcess();
+                long memoryBeforeProcess = currentProcess.PrivateMemorySize64;
+                long memoryBeforeGC = GC.GetTotalMemory(true);
 
-                // Record memory after diagram load
-                long memoryAfterDiagram = GC.GetTotalMemory(true);
-                Console.WriteLine($"Memory after diagram load (bytes): {memoryAfterDiagram}");
-                Console.WriteLine($"Diagram load memory increase (bytes): {memoryAfterDiagram - memoryBefore}");
+                Console.WriteLine("Starting large dataset simulation...");
 
-                // Save the diagram to a temporary file to ensure full processing
-                string tempOutputPath = Path.Combine(Path.GetTempPath(), "temp_output.vsdx");
-                try
+                // Simulate loading a large external dataset into memory.
+                DataTable largeTable = new DataTable("LargeData");
+
+                // Define columns (10 string columns).
+                for (int col = 0; col < 10; col++)
                 {
-                    diagram.Save(tempOutputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved to temporary file: {tempOutputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error saving temporary diagram: {ex.Message}");
+                    largeTable.Columns.Add($"Col{col}", typeof(string));
                 }
 
-                // Load the large external dataset (simulated by reading all lines into a DataTable)
-                DataTable dataTable = new DataTable("ExternalData");
-                try
+                // Populate the table with a large number of rows (e.g., 100,000 rows).
+                for (int row = 0; row < 100_000; row++)
                 {
-                    using (var reader = new StreamReader(datasetPath))
+                    DataRow dataRow = largeTable.NewRow();
+                    for (int col = 0; col < 10; col++)
                     {
-                        // Assume first line contains column headers separated by commas
-                        string headerLine = reader.ReadLine();
-                        if (headerLine == null)
-                        {
-                            Console.Error.WriteLine("Dataset file is empty.");
-                            return;
-                        }
-
-                        string[] headers = headerLine.Split(',');
-                        foreach (string header in headers)
-                        {
-                            dataTable.Columns.Add(header.Trim(), typeof(string));
-                        }
-
-                        // Read remaining lines and add rows
-                        string line;
-                        while ((line = reader.ReadLine()) != null)
-                        {
-                            string[] fields = line.Split(',');
-                            DataRow row = dataTable.NewRow();
-                            for (int i = 0; i < headers.Length && i < fields.Length; i++)
-                            {
-                                row[i] = fields[i].Trim();
-                            }
-                            dataTable.Rows.Add(row);
-                        }
+                        dataRow[col] = $"Row{row}_Col{col}";
                     }
-
-                    Console.WriteLine($"Dataset loaded: {dataTable.Rows.Count} rows, {dataTable.Columns.Count} columns.");
+                    largeTable.Rows.Add(dataRow);
                 }
-                catch (Exception ex)
+
+                // Note: In a real scenario, you would bind this DataTable to a DataConnection
+                // in the diagram. This example focuses on memory profiling only.
+
+                // Capture memory usage after the dataset has been loaded.
+                long memoryAfterProcess = currentProcess.PrivateMemorySize64;
+                long memoryAfterGC = GC.GetTotalMemory(false);
+
+                // Output memory usage statistics.
+                Console.WriteLine($"Process Private Memory Before: {memoryBeforeProcess / (1024 * 1024)} MB");
+                Console.WriteLine($"Process Private Memory After : {memoryAfterProcess / (1024 * 1024)} MB");
+                Console.WriteLine($"GC Total Memory Before      : {memoryBeforeGC / (1024 * 1024)} MB");
+                Console.WriteLine($"GC Total Memory After       : {memoryAfterGC / (1024 * 1024)} MB");
+
+                // Save the diagram to verify that it can still be saved after the dataset load.
+                string outputDirectory = Path.GetDirectoryName(diagramPath) ?? Directory.GetCurrentDirectory();
+                string outputPath = Path.Combine(outputDirectory, "output.vsdx");
+
+                // Ensure the output directory exists.
+                if (!Directory.Exists(outputDirectory))
                 {
-                    Console.Error.WriteLine($"Error loading dataset: {ex.Message}");
+                    Console.Error.WriteLine($"Error: Output directory does not exist - {outputDirectory}");
                     return;
                 }
 
-                // Record memory after dataset load
-                long memoryAfterDataset = GC.GetTotalMemory(true);
-                Console.WriteLine($"Memory after dataset load (bytes): {memoryAfterDataset}");
-                Console.WriteLine($"Dataset load memory increase (bytes): {memoryAfterDataset - memoryAfterDiagram}");
-
-                // Link the dataset to the diagram (simplified)
-                try
-                {
-                    // Ensure there is at least one data connection slot
-                    if (diagram.DataConnections.Count == 0)
-                    {
-                        // Add a new data connection (placeholder values)
-                        var conn = new DataConnection();
-                        conn.ConnectionString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={datasetPath};Extended Properties=\"text;HDR=YES;FMT=Delimited\";";
-                        conn.Command = $"SELECT * FROM [{Path.GetFileName(datasetPath)}]";
-                        // IsEnabled property does not exist; omit it
-                        diagram.DataConnections.Add(conn);
-                        Console.WriteLine("Data connection added to diagram.");
-                    }
-                    else
-                    {
-                        // Update the first existing connection to point to the new dataset
-                        var conn = diagram.DataConnections[0];
-                        conn.ConnectionString = $"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={datasetPath};Extended Properties=\"text;HDR=YES;FMT=Delimited\";";
-                        conn.Command = $"SELECT * FROM [{Path.GetFileName(datasetPath)}]";
-                        Console.WriteLine("Existing data connection updated.");
-                    }
-
-                    // Refresh the diagram to pull data from the external source
-                    diagram.Refresh();
-                    Console.WriteLine("Diagram refreshed with external data.");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error linking dataset to diagram: {ex.Message}");
-                }
-
-                // Record final memory usage
-                long finalMemory = GC.GetTotalMemory(true);
-                Console.WriteLine($"Final memory (bytes): {finalMemory}");
-                Console.WriteLine($"Total memory increase (bytes): {finalMemory - memoryBefore}");
-
-                // Clean up temporary file
-                try
-                {
-                    if (File.Exists(tempOutputPath))
-                    {
-                        File.Delete(tempOutputPath);
-                        Console.WriteLine("Temporary file deleted.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error deleting temporary file: {ex.Message}");
-                }
+                // Save the diagram using the correct overload with SaveFileFormat.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

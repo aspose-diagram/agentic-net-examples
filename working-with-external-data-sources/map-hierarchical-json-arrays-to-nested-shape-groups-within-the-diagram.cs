@@ -1,25 +1,22 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Text.Json;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Represents a node in the hierarchical JSON structure.
+    // Model representing a node in the hierarchical JSON
     private class Node
     {
-        public string? Name { get; set; }
-        public List<Node>? Children { get; set; } = new();
+        public string Name { get; set; }
+        public List<Node> Children { get; set; }
     }
-
-    // Tracks the next Y position for placing shapes to avoid overlap.
-    private static double _nextY = 0.0;
 
     static void Main(string[] args)
     {
-        // Validate arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputJsonPath> <outputDiagramPath>");
@@ -29,7 +26,7 @@ class Program
         string jsonPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(jsonPath))
         {
             Console.Error.WriteLine($"Input JSON file not found: {jsonPath}");
@@ -38,94 +35,82 @@ class Program
 
         try
         {
-            // Read and deserialize the JSON hierarchy.
+            // Read and deserialize the hierarchical JSON
             string jsonContent = File.ReadAllText(jsonPath);
-            Node? rootNode = JsonSerializer.Deserialize<Node>(jsonContent, new JsonSerializerOptions
+            List<Node> rootNodes = JsonSerializer.Deserialize<List<Node>>(jsonContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
 
-            if (rootNode == null)
+            if (rootNodes == null)
             {
-                Console.Error.WriteLine("Failed to deserialize JSON content.");
+                Console.Error.WriteLine("Failed to parse JSON or JSON is empty.");
                 return;
             }
 
-            // Create a new empty diagram.
-            Diagram diagram = new Diagram();
-
-            // Use the first page (default page) for adding shapes.
-            Page page = diagram.Pages[0];
-
-            // Recursively build shapes and groups based on the hierarchy.
-            Shape topGroup = BuildGroup(page, rootNode, 0);
-
-            // Optionally, set the name of the top-level group.
-            if (!string.IsNullOrEmpty(topGroup?.Name))
+            // Create a new empty diagram inside a using block (mandatory)
+            using (Diagram diagram = new Diagram())
             {
-                topGroup.Name = "RootGroup";
-            }
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    diagram.Pages.Add(new Page());
+                }
 
-            // Save the diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Use the first page for adding shapes
+                Page page = diagram.Pages[0];
+
+                // Process each top‑level node and create nested groups
+                foreach (Node rootNode in rootNodes)
+                {
+                    AddNodeGroup(page, rootNode);
+                }
+
+                // Save the diagram to the specified output path as VSDX
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Recursively creates a shape for the current node, processes its children,
-    /// and groups them together. Returns the group shape representing this node.
+    /// Recursively creates a rectangle shape for the given node, processes its children,
+    /// and groups the parent shape with all child groups into a single group shape.
     /// </summary>
-    /// <param name="page">The page to which shapes are added.</param>
-    /// <param name="node">The hierarchical node.</param>
-    /// <param name="depth">Current depth in the hierarchy (used for positioning).</param>
-    /// <returns>The group shape containing the node and its children.</returns>
-    private static Shape BuildGroup(Page page, Node node, int depth)
+    private static Shape AddNodeGroup(Page page, Node node)
     {
-        // Calculate position based on depth and a running Y offset.
-        double x = depth * 2.5;          // Horizontal offset per level.
-        double y = _nextY;               // Vertical position.
-        _nextY += 2.5;                   // Increment for the next shape.
+        // Add a rectangle shape for the current node (pinX, pinY, width, height)
+        long rectId = page.DrawRectangle(2.0, 2.0, 2.0, 1.0);
+        Shape rectShape = page.Shapes.GetShape(rectId);
 
-        // Create a rectangle shape for the current node.
-        // DrawRectangle returns a shape ID (long).
-        long shapeId = page.DrawRectangle(x, y, 1.5, 0.8);
-        Shape nodeShape = page.Shapes.GetShape(shapeId);
+        // Set the shape's displayed text to the node's name
+        rectShape.Text.Value.Clear();
+        rectShape.Text.Value.Add(new Txt(node.Name ?? string.Empty));
 
-        // Set the displayed text to the node's name.
-        nodeShape.Text.Value.Clear();
-        nodeShape.Text.Value.Add(new Txt(node.Name ?? string.Empty));
+        // List to hold the shapes of all child groups
+        List<Shape> childGroupShapes = new List<Shape>();
 
-        // Collect shapes to be grouped: start with the node's own shape.
-        List<Shape> shapesToGroup = new List<Shape> { nodeShape };
-
-        // Process child nodes, if any.
-        if (node.Children != null && node.Children.Count > 0)
+        // Process child nodes recursively
+        if (node.Children != null)
         {
             foreach (Node child in node.Children)
             {
-                // Recursively build the child's group.
-                Shape childGroup = BuildGroup(page, child, depth + 1);
-                if (childGroup != null)
-                {
-                    shapesToGroup.Add(childGroup);
-                }
+                Shape childGroup = AddNodeGroup(page, child);
+                childGroupShapes.Add(childGroup);
             }
         }
 
-        // Group the node shape with all its child groups.
-        // The Group method returns the new group shape.
-        Shape groupShape = page.Shapes.Group(shapesToGroup.ToArray());
+        // Prepare the collection of shapes to be grouped: parent shape + child groups
+        List<Shape> shapesToGroup = new List<Shape> { rectShape };
+        shapesToGroup.AddRange(childGroupShapes);
 
-        // Optionally, assign a name to the group for easier identification.
-        if (!string.IsNullOrEmpty(groupShape?.Name))
-        {
-            groupShape.Name = node.Name ?? "Group";
-        }
+        // Group the shapes; the Group method returns the new group shape
+        Shape groupShape = page.Shapes.Group(shapesToGroup.ToArray());
 
         return groupShape;
     }

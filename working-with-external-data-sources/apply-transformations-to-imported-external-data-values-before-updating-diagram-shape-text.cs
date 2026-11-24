@@ -1,113 +1,82 @@
 using System;
 using System.IO;
-using System.Data;
+using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path
+        // Define file paths
         string diagramPath = "input.vsdx";
         if (!System.IO.File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
+        string dataPath = "externalData.txt";
+        string outputPath = "output.vsdx";
+
+        // Guard: check diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        // Input CSV data path (external data)
-        string csvPath = "data.csv";
-        if (!File.Exists(csvPath))
+        // Guard: check external data file exists
+        if (!File.Exists(dataPath))
         {
-            Console.Error.WriteLine($"CSV data file not found: {csvPath}");
+            Console.Error.WriteLine($"External data file not found: {dataPath}");
             return;
         }
 
-        // Output diagram path
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Load external data into a DataTable (simulated CSV)
-            DataTable table = new DataTable();
-            table.Columns.Add("ShapeId", typeof(long));
-            table.Columns.Add("NewText", typeof(string));
+            // Read external data lines
+            string[] rawLines = File.ReadAllLines(dataPath);
 
-            foreach (string line in File.ReadAllLines(csvPath))
+            // Apply transformation: trim and convert to upper case
+            List<string> transformedLines = rawLines
+                .Select(line => line.Trim().ToUpperInvariant())
+                .ToList();
+
+            // Index to track which transformed line to assign
+            int lineIndex = 0;
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                // Skip empty lines
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                // Expected format: ShapeId,NewText
-                string[] parts = line.Split(',');
-                if (parts.Length < 2)
-                    continue; // malformed line
-
-                if (long.TryParse(parts[0].Trim(), out long shapeId))
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    string rawText = parts[1];
-                    // Apply transformation: trim and convert to upper case
-                    string transformedText = rawText.Trim().ToUpperInvariant();
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Add to DataTable
-                    DataRow row = table.NewRow();
-                    row["ShapeId"] = shapeId;
-                    row["NewText"] = transformedText;
-                    table.Rows.Add(row);
-                }
-            }
+                    // If we have run out of transformed lines, stop updating further shapes
+                    if (lineIndex >= transformedLines.Count)
+                        break;
 
-            // Iterate over each data row and update corresponding shape text
-            foreach (DataRow row in table.Rows)
-            {
-                long shapeId = (long)row["ShapeId"];
-                string newText = (string)row["NewText"];
+                    // Clear existing text collection
+                    shape.Text.Value.Clear();
 
-                Shape targetShape = null;
+                    // Add new transformed text
+                    shape.Text.Value.Add(new Txt(transformedLines[lineIndex]));
 
-                // Search for the shape across all pages
-                foreach (Page page in diagram.Pages)
-                {
-                    try
-                    {
-                        // GetShape throws if the ID does not exist on this page
-                        Shape shape = page.Shapes.GetShape(shapeId);
-                        if (shape != null)
-                        {
-                            targetShape = shape;
-                            break;
-                        }
-                    }
-                    catch
-                    {
-                        // Shape not on this page – continue searching
-                    }
+                    // Refresh shape data to apply changes
+                    shape.RefreshData();
+
+                    lineIndex++;
                 }
 
-                if (targetShape == null)
-                {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found in diagram.");
-                    continue;
-                }
-
-                // Clear existing text
-                targetShape.Text.Value.Clear();
-
-                // Add transformed text
-                targetShape.Text.Value.Add(new Txt(newText));
-
-                // Refresh shape data to apply changes
-                targetShape.RefreshData();
+                // If all lines have been used, exit outer loop as well
+                if (lineIndex >= transformedLines.Count)
+                    break;
             }
 
             // Save the updated diagram
@@ -115,7 +84,7 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

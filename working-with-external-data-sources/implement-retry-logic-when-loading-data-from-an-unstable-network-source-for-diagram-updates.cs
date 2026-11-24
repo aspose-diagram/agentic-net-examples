@@ -3,122 +3,103 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args == null || args.Length < 2)
+        // Configuration for the network source and retry logic
+        const string diagramUrl = "https://example.com/unstable/diagram.vsdx";
+        const string tempFilePath = "downloaded_diagram.vsdx";
+        const int maxRetryAttempts = 5;
+        const int delayBetweenRetriesMs = 2000; // 2 seconds
+
+        // Attempt to download the diagram file with retry logic
+        bool downloadSucceeded = false;
+        using (HttpClient httpClient = new HttpClient())
         {
-            Console.Error.WriteLine("Usage: Program <DiagramUrl> <OutputPath>");
+            for (int attempt = 1; attempt <= maxRetryAttempts; attempt++)
+            {
+                try
+                {
+                    Console.WriteLine($"Attempt {attempt} to download diagram from network source...");
+                    using (HttpResponseMessage response = httpClient.GetAsync(diagramUrl).Result)
+                    {
+                        response.EnsureSuccessStatusCode();
+                        using (Stream networkStream = response.Content.ReadAsStreamAsync().Result)
+                        using (FileStream fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                        {
+                            networkStream.CopyTo(fileStream);
+                        }
+                    }
+
+                    // Verify that the file was written
+                    if (File.Exists(tempFilePath))
+                    {
+                        downloadSucceeded = true;
+                        Console.WriteLine("Download succeeded.");
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Download attempt {attempt} failed: {ex.Message}");
+                    if (attempt < maxRetryAttempts)
+                    {
+                        Console.WriteLine($"Waiting {delayBetweenRetriesMs} ms before next attempt...");
+                        Thread.Sleep(delayBetweenRetriesMs);
+                    }
+                }
+            }
+        }
+
+        // Guard: ensure the file was downloaded before proceeding
+        if (!downloadSucceeded || !File.Exists(tempFilePath))
+        {
+            Console.Error.WriteLine("Failed to download the diagram after multiple attempts.");
             return;
         }
 
-        string diagramUrl = args[0];
-        string outputPath = args[1];
-
-        // Ensure the output directory exists.
-        string? outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
-        }
-
-        // Download the diagram file with retry logic.
-        byte[] diagramData;
+        // Load the diagram from the downloaded file and perform an update
         try
         {
-            diagramData = DownloadWithRetry(diagramUrl, maxAttempts: 3, initialDelayMs: 1000);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to download diagram: {ex.Message}");
-            return;
-        }
-
-        // Load the diagram from the downloaded data.
-        try
-        {
-            using (MemoryStream ms = new MemoryStream(diagramData))
+            using (FileStream diagramStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read))
+            using (Diagram diagram = new Diagram(diagramStream))
             {
-                // Load diagram from stream.
-                Diagram diagram = new Diagram(ms);
-
-                // Example update: modify the first data connection if it exists.
+                // Example update: modify the first data connection if it exists
                 if (diagram.DataConnections.Count > 0)
                 {
-                    // Set a new connection string (replace with real values as needed).
-                    diagram.DataConnections[0].ConnectionString = "Data Source=.;Initial Catalog=MyDb;Integrated Security=True";
-                    // Optionally update the command/query.
+                    // Update connection string and command (replace with real values as needed)
+                    diagram.DataConnections[0].ConnectionString = "Data Source=Server;Initial Catalog=Database;Integrated Security=True";
                     diagram.DataConnections[0].Command = "SELECT * FROM SampleTable";
+                    // Refresh the diagram to apply the data changes
+                    diagram.Refresh();
                 }
 
-                // Refresh the diagram to apply data connection changes.
-                diagram.Refresh();
-
-                // Save the updated diagram to the specified output path.
+                // Save the updated diagram to a new file
+                const string outputPath = "updated_diagram.vsdx";
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
         }
-
-        Console.WriteLine("Diagram updated and saved successfully.");
-    }
-
-    /// <summary>
-    /// Downloads data from a URL with retry and exponential back‑off.
-    /// </summary>
-    /// <param name="url">The URL to download.</param>
-    /// <param name="maxAttempts">Maximum number of attempts.</param>
-    /// <param name="initialDelayMs">Initial delay in milliseconds before retry.</param>
-    /// <returns>Byte array containing the downloaded content.</returns>
-    private static byte[] DownloadWithRetry(string url, int maxAttempts, int initialDelayMs)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            throw new ArgumentException("URL cannot be null or empty.", nameof(url));
-
-        using (HttpClient client = new HttpClient())
+        finally
         {
-            int attempt = 0;
-            int delay = initialDelayMs;
-
-            while (true)
+            // Clean up the temporary downloaded file
+            try
             {
-                attempt++;
-                try
+                if (File.Exists(tempFilePath))
                 {
-                    // Synchronous call to keep the example simple.
-                    HttpResponseMessage response = client.GetAsync(url).Result;
-                    if (!response.IsSuccessStatusCode)
-                        throw new Exception($"HTTP {(int)response.StatusCode} - {response.ReasonPhrase}");
-
-                    // Read content as byte array.
-                    return response.Content.ReadAsByteArrayAsync().Result;
+                    File.Delete(tempFilePath);
                 }
-                catch (Exception ex) when (attempt < maxAttempts)
-                {
-                    Console.Error.WriteLine($"Attempt {attempt} failed: {ex.Message}. Retrying in {delay} ms...");
-                    Thread.Sleep(delay);
-                    delay *= 2; // Exponential back‑off.
-                }
-                catch (Exception)
-                {
-                    // Rethrow after final attempt.
-                    throw;
-                }
+            }
+            catch (Exception cleanupEx)
+            {
+                Console.Error.WriteLine($"Failed to delete temporary file: {cleanupEx.Message}");
             }
         }
     }

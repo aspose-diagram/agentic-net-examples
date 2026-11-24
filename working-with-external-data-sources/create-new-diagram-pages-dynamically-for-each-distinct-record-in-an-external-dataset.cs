@@ -2,55 +2,48 @@ using System;
 using System.IO;
 using System.Data;
 using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the template Visio file (must exist)
-        string templatePath = "template.vsdx";
-        if (!System.IO.File.Exists(templatePath))
-        {
-            Console.Error.WriteLine($"File not found: {templatePath}");
-            return;
-        }
-        // Path where the resulting diagram will be saved
-        string outputPath = "output.vsdx";
-
-        // Guard against missing template file
-        if (!File.Exists(templatePath))
-        {
-            Console.Error.WriteLine($"Template file not found: {templatePath}");
-            return;
-        }
+        // Define output diagram path
+        string outputPath = "GeneratedDiagram.vsdx";
 
         // Simulate external dataset using an in‑memory DataTable
-        // In a real scenario replace this block with actual data retrieval logic
         DataTable dataTable = new DataTable();
         dataTable.Columns.Add("Category", typeof(string));
         dataTable.Columns.Add("Value", typeof(int));
 
-        // Sample rows
+        // Sample data with duplicate categories
         dataTable.Rows.Add("Finance", 100);
         dataTable.Rows.Add("HR", 50);
+        dataTable.Rows.Add("Finance", 150);
         dataTable.Rows.Add("IT", 200);
-        dataTable.Rows.Add("Finance", 150); // Duplicate category to test distinct handling
+        dataTable.Rows.Add("HR", 75);
 
-        // Extract distinct values from the "Category" column
-        HashSet<string> distinctCategories = new HashSet<string>();
-        foreach (DataRow row in dataTable.Rows)
-        {
-            if (row["Category"] != DBNull.Value)
-                distinctCategories.Add(row["Category"].ToString());
-        }
+        // Extract distinct categories
+        List<string> distinctCategories = dataTable.AsEnumerable()
+                                                   .Select(row => row.Field<string>("Category"))
+                                                   .Distinct()
+                                                   .ToList();
 
-        // Load the template diagram inside a using block as required
+        // Create a new diagram inside a using block as required
         try
         {
-            using (Diagram diagram = new Diagram(templatePath))
+            using (Diagram diagram = new Diagram())
             {
-                // Determine the current maximum Page ID to assign unique IDs to new pages
+                // Add a window to avoid errors when the diagram has no windows
+                Window window = new Window();
+                window.WindowType = WindowTypeValue.Drawing;
+                window.WindowState = WindowStateValue.Maximized;
+                window.WindowWidth = 1100;
+                window.WindowHeight = 700;
+                diagram.Windows.Add(window);
+
+                // Determine the current maximum page ID to assign unique IDs
                 int maxPageId = 0;
                 foreach (Page existingPage in diagram.Pages)
                 {
@@ -61,27 +54,31 @@ class Program
                 // Create a new page for each distinct category
                 foreach (string category in distinctCategories)
                 {
-                    // Increment the page ID for uniqueness
+                    // Increment page ID
                     maxPageId++;
 
-                    // Initialize a new Page instance
+                    // Initialize a new page and set its properties
                     Page newPage = new Page();
                     newPage.ID = maxPageId;
-                    newPage.Name = category; // Use the category name as the page name
+                    newPage.Name = category;
 
-                    // Add the newly created page to the diagram
+                    // Add the page to the diagram
                     diagram.Pages.Add(newPage);
+
+                    // Add a simple text shape to the page to identify it
+                    // Parameters: pinX, pinY, width, height, text
+                    Shape textShape = newPage.AddText(1.0, 1.0, 5.0, 1.0, $"Category: {category}");
                 }
 
-                // Save the modified diagram to the output file using VSDX format
+                // Save the resulting diagram to the specified file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram successfully saved to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error console
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

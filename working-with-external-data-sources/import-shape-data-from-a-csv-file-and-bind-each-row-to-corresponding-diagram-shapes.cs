@@ -1,24 +1,23 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expected arguments: diagramPath csvPath outputPath
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <csvPath> [outputPath]");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <csvPath> <outputPath>");
             return;
         }
 
         string diagramPath = args[0];
         string csvPath = args[1];
-        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
+        string outputPath = args[2];
 
-        // Guard against missing files.
+        // Guard against missing files
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
@@ -33,66 +32,75 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Build a lookup dictionary of shape name (NameU) to Shape instance.
-            Dictionary<string, Shape> shapeLookup = new Dictionary<string, Shape>(StringComparer.OrdinalIgnoreCase);
-            foreach (Page page in diagram.Pages)
+            // Read all lines from the CSV file
+            string[] csvLines = File.ReadAllLines(csvPath);
+
+            // Expect header: ShapeId,Data1,Data2,Data3 (case‑insensitive)
+            // Skip empty lines and the header line
+            for (int i = 1; i < csvLines.Length; i++)
             {
-                foreach (Shape shape in page.Shapes)
+                string line = csvLines[i].Trim();
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                // Split by comma – simple CSV parsing (no quoted commas handling)
+                string[] parts = line.Split(',');
+
+                if (parts.Length < 4)
                 {
-                    // Some shapes may have empty or null names; skip them.
-                    if (!string.IsNullOrEmpty(shape.NameU))
+                    Console.Error.WriteLine($"Invalid CSV format at line {i + 1}: {line}");
+                    continue;
+                }
+
+                // Parse shape ID
+                if (!long.TryParse(parts[0].Trim(), out long shapeId))
+                {
+                    Console.Error.WriteLine($"Invalid ShapeId at line {i + 1}: {parts[0]}");
+                    continue;
+                }
+
+                string data1 = parts[1].Trim();
+                string data2 = parts[2].Trim();
+                string data3 = parts[3].Trim();
+
+                // Locate the shape across all pages
+                Shape targetShape = null;
+                foreach (Page page in diagram.Pages)
+                {
+                    try
                     {
-                        // If duplicate names exist, the last one wins.
-                        shapeLookup[shape.NameU] = shape;
+                        // GetShape expects an int identifier; cast safely
+                        targetShape = page.Shapes.GetShape((int)shapeId);
+                        if (targetShape != null)
+                            break;
+                    }
+                    catch
+                    {
+                        // Shape not found on this page – continue searching
                     }
                 }
-            }
 
-            // Read CSV rows and bind data to matching shapes.
-            using (StreamReader reader = new StreamReader(csvPath))
-            {
-                string line;
-                int lineNumber = 0;
-                while ((line = reader.ReadLine()) != null)
+                if (targetShape == null)
                 {
-                    lineNumber++;
-                    // Skip empty lines.
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    // Simple CSV split – assumes no commas inside quoted fields.
-                    string[] parts = line.Split(',');
-                    if (parts.Length < 2)
-                    {
-                        Console.Error.WriteLine($"Invalid CSV format at line {lineNumber}: \"{line}\"");
-                        continue;
-                    }
-
-                    string shapeName = parts[0].Trim();
-                    string dataValue = parts[1].Trim();
-
-                    if (shapeLookup.TryGetValue(shapeName, out Shape targetShape))
-                    {
-                        // Bind the CSV value to the shape's Data1 property.
-                        targetShape.Data1 = dataValue;
-                    }
-                    else
-                    {
-                        Console.Error.WriteLine($"Shape \"{shapeName}\" not found in diagram (line {lineNumber}).");
-                    }
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found in diagram.");
+                    continue;
                 }
+
+                // Bind CSV data to shape's custom data fields
+                targetShape.Data1 = data1;
+                targetShape.Data2 = data2;
+                targetShape.Data3 = data3;
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

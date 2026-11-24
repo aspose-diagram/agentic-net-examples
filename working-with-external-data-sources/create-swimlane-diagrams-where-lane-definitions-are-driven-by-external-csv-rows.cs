@@ -1,92 +1,109 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input CSV path and output VSDX path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <csvPath> <outputVsdxPath>");
+            Console.Error.WriteLine("Usage: Program <inputCsvPath> <outputVsdxPath>");
             return;
         }
 
         string csvPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing CSV file.
+        // Guard: ensure the CSV file exists
         if (!File.Exists(csvPath))
         {
-            Console.Error.WriteLine($"CSV file not found: {csvPath}");
+            Console.Error.WriteLine($"Error: CSV file not found at '{csvPath}'.");
             return;
-        }
-
-        // Read lane definitions from the CSV file.
-        string[] lines = File.ReadAllLines(csvPath);
-        List<string> laneNames = new List<string>();
-        foreach (string line in lines)
-        {
-            string trimmed = line.Trim();
-            if (trimmed.Length == 0)
-                continue; // Skip empty lines.
-
-            // Use the first column as the lane name.
-            string[] parts = trimmed.Split(',');
-            laneNames.Add(parts[0]);
         }
 
         try
         {
-            // Create a new diagram inside a using block as required.
+            // Read all lines from the CSV file
+            string[] lines = File.ReadAllLines(csvPath);
+
+            // Each non‑empty line represents a lane name
+            var laneNames = new System.Collections.Generic.List<string>();
+            foreach (string line in lines)
+            {
+                string trimmed = line.Trim();
+                if (!string.IsNullOrEmpty(trimmed))
+                {
+                    laneNames.Add(trimmed);
+                }
+            }
+
+            // Create a new empty diagram inside a using block (mandatory)
             using (Diagram diagram = new Diagram())
             {
-                // Add a window to avoid accessing an empty Windows collection.
-                Window window = new Window();
-                window.WindowType = WindowTypeValue.Drawing;
-                window.WindowState = WindowStateValue.Maximized;
-                window.WindowWidth = 1100;
-                window.WindowHeight = 700;
-                diagram.Windows.Add(window);
-
-                // Add a single page to host the swimlane shapes.
+                // Add a single page to the diagram
                 Page page = new Page();
                 diagram.Pages.Add(page);
 
-                // Layout parameters for the lanes.
-                double startX = 5.0;          // Left margin (in inches).
-                double startY = 5.0;          // Top margin (in inches).
-                double laneWidth = 8.0;       // Width of each lane (in inches).
-                double laneHeight = 2.0;      // Height of each lane (in inches).
-                double currentY = startY + laneHeight / 2.0; // Center Y of the first lane.
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Create a rectangle shape for each lane and assign its name.
-                foreach (string laneName in laneNames)
+                // Determine lane height based on the number of lanes
+                int laneCount = laneNames.Count;
+                if (laneCount == 0)
                 {
-                    // Draw a rectangle representing the lane.
-                    long shapeId = page.DrawRectangle(startX, currentY, laneWidth, laneHeight);
-
-                    // Retrieve the shape object using the returned ID.
-                    Shape shape = page.Shapes.GetShape((int)shapeId);
-
-                    // Replace any existing text with the lane name.
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(laneName));
-
-                    // Move to the next vertical position.
-                    currentY += laneHeight;
+                    Console.Error.WriteLine("Error: No lane definitions found in CSV.");
+                    return;
                 }
 
-                // Save the diagram as VSDX.
+                double laneHeight = pageHeight / laneCount;
+
+                // Iterate over lane definitions and draw each lane as a rectangle
+                for (int i = 0; i < laneCount; i++)
+                {
+                    string laneName = laneNames[i];
+
+                    // Calculate the center Y coordinate for the current lane
+                    // Visio's Y axis grows upwards; PinY is the center of the shape
+                    double centerY = pageHeight - (i * laneHeight) - (laneHeight / 2.0);
+                    double centerX = pageWidth / 2.0; // Center horizontally
+
+                    // Draw the rectangle representing the lane
+                    // Parameters: pinX, pinY, width, height
+                    long shapeIdLong = page.DrawRectangle(centerX, centerY, pageWidth, laneHeight);
+                    int shapeId = (int)shapeIdLong;
+
+                    // Retrieve the shape object to modify its text
+                    Shape laneShape = page.Shapes.GetShape(shapeId);
+                    if (laneShape == null)
+                    {
+                        Console.Error.WriteLine($"Warning: Unable to retrieve shape for lane '{laneName}'.");
+                        continue;
+                    }
+
+                    // Clear any existing text and add the lane name
+                    laneShape.Text.Value.Clear();
+                    laneShape.Text.Value.Add(new Txt(laneName));
+
+                    // Optional: set the shape's fill color to a light gray (using the FillForegnd cell)
+                    // The FillForegnd cell expects a color value in the format "RGB(r,g,b)"
+                    laneShape.Fill.FillForegnd.Value = "RGB(200,200,200)";
+
+                    // Optional: set the shape's line weight (thickness) to 0.02 inches
+                    laneShape.Line.LineWeight.Value = 0.02;
+                }
+
+                // Save the diagram to the specified VSDX file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Swimlane diagram successfully saved to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during diagram creation or saving.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any unexpected errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

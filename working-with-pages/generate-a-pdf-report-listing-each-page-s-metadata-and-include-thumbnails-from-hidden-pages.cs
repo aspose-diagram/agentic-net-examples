@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputPdfPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length > 1 ? args[1] : "VisioReport.pdf";
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,72 +26,74 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare a list of pages for indexed access.
-                List<Page> pages = new List<Page>();
-                foreach (Page p in diagram.Pages)
-                {
-                    pages.Add(p);
-                }
-
-                // Create a new PDF document (Aspose.Pdf) using fully qualified names.
+                // Create a new PDF document (Aspose.Pdf types are fully qualified)
                 Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document();
 
-                // Iterate over each page to collect metadata and, if hidden, add a thumbnail.
-                for (int i = 0; i < pages.Count; i++)
+                // Iterate through each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    Page page = pages[i];
+                    // Retrieve the page (explicitly typed)
+                    Page page = diagram.Pages[i];
 
-                    // Determine visibility using UIVisibilityValue.
-                    string visibility = page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Visible
-                        ? "Visible"
-                        : "Hidden";
+                    // Determine hidden status (UIVisibility not equal to Visible)
+                    bool isHidden = page.PageSheet.PageProps.UIVisibility.Value != UIVisibilityValue.Visible;
 
-                    // Add a new page to the PDF report.
+                    // Gather page metadata
+                    string metadata = $"Page {i + 1}/{diagram.Pages.Count}\n" +
+                                      $"Name: {page.Name}\n" +
+                                      $"ID: {page.ID}\n" +
+                                      $"Width (in): {page.PageSheet.PageProps.PageWidth.Value}\n" +
+                                      $"Height (in): {page.PageSheet.PageProps.PageHeight.Value}\n" +
+                                      $"Hidden: {isHidden}\n";
+
+                    // Add a new page to the PDF for this diagram page
                     Aspose.Pdf.Page pdfPage = pdfDocument.Pages.Add();
 
-                    // Create a text fragment with page metadata.
-                    string metaText = $"Page {i + 1}\nName: {page.Name}\nID: {page.ID}\nVisibility: {visibility}";
-                    Aspose.Pdf.Text.TextFragment textFragment = new Aspose.Pdf.Text.TextFragment(metaText);
-                    textFragment.Margin = new Aspose.Pdf.MarginInfo { Top = 10, Bottom = 10, Left = 10, Right = 10 };
-                    pdfPage.Paragraphs.Add(textFragment);
+                    // Add metadata text to the PDF page
+                    Aspose.Pdf.Text.TextFragment metaFragment = new Aspose.Pdf.Text.TextFragment(metadata);
+                    // Position near top-left corner (10 points margin)
+                    metaFragment.Position = new Aspose.Pdf.Text.Position(10, pdfPage.PageInfo.Height - 10);
+                    pdfPage.Paragraphs.Add(metaFragment);
 
-                    // If the page is hidden, generate a PNG thumbnail and embed it.
-                    if (visibility == "Hidden")
+                    // Generate a thumbnail image (PNG) for the current page, including hidden pages
+                    using (MemoryStream imageStream = new MemoryStream())
                     {
-                        // Configure image save options for a single-page PNG export.
                         ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        imgOptions.PageIndex = i;   // Export only this page.
-                        imgOptions.PageCount = 1;   // Single page per image.
-                        imgOptions.ExportHiddenPage = true; // Ensure hidden pages are rendered.
+                        imgOptions.PageIndex = i;          // Export only this page
+                        imgOptions.PageCount = 1;
+                        imgOptions.ExportHiddenPage = true; // Ensure hidden pages are rendered
 
-                        // Render the page to a memory stream.
-                        using (MemoryStream imgStream = new MemoryStream())
-                        {
-                            diagram.Save(imgStream, imgOptions);
-                            imgStream.Position = 0; // Reset stream for reading.
+                        // Save the page as an image to the memory stream
+                        diagram.Save(imageStream, imgOptions);
+                        imageStream.Position = 0; // Reset stream position for reading
 
-                            // Create an image object for the PDF page.
-                            Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
-                            pdfImage.ImageStream = imgStream;
-                            pdfImage.FixWidth = 300; // Scale thumbnail width; height adjusts proportionally.
-                            pdfImage.Margin = new Aspose.Pdf.MarginInfo { Top = 10, Bottom = 10, Left = 10, Right = 10 };
-                            pdfPage.Paragraphs.Add(pdfImage);
-                        }
+                        // Add the thumbnail image to the PDF page
+                        Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
+                        pdfImage.ImageStream = imageStream;
+                        pdfImage.FixWidth = 200; // Scale thumbnail width
+                        pdfPage.Paragraphs.Add(pdfImage);
                     }
                 }
 
-                // Save the assembled PDF report.
+                // Ensure the output directory exists
+                string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+                if (!Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Save the assembled PDF report
                 pdfDocument.Save(outputPath);
                 Console.WriteLine($"PDF report generated successfully at: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

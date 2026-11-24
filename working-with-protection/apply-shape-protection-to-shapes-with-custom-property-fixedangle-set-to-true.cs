@@ -6,73 +6,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Determine output path (optional second argument or default suffix)
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_protected.vsdx");
-
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[i];
-
-                    // Check each custom property (Prop) of the shape
                     bool hasFixedAngleTrue = false;
-                    for (int p = 0; p < shape.Props.Count; p++)
+
+                    // Examine each custom property (Prop) of the shape.
+                    foreach (Prop prop in shape.Props)
                     {
-                        Prop prop = shape.Props[p];
-                        if (prop.Name == "FixedAngle" &&
-                            prop.Value != null &&
-                            prop.Value.Val != null &&
-                            string.Equals(prop.Value.Val, "true", StringComparison.OrdinalIgnoreCase))
+                        // Look for a property named "FixedAngle".
+                        if (prop.Name == "FixedAngle")
                         {
-                            hasFixedAngleTrue = true;
-                            break;
+                            // Ensure the value cell is present and compare its string value.
+                            if (prop.Value != null && prop.Value.Val != null &&
+                                string.Equals(prop.Value.Val, "true", StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasFixedAngleTrue = true;
+                                break;
+                            }
                         }
                     }
 
-                    // If the shape has FixedAngle set to true, apply protection
-                    if (hasFixedAngleTrue)
+                    // If the shape has FixedAngle = true, apply rotation lock protection.
+                    if (hasFixedAngleTrue && shape.Protection != null)
                     {
-                        // Lock rotation to prevent angle changes
+                        // Lock the rotation of the shape.
                         shape.Protection.LockRotate.Value = BOOL.True;
-
-                        // Optionally, you can lock other aspects here if needed
-                        // e.g., shape.Protection.LockAspect.Value = BOOL.True;
                     }
                 }
             }
 
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

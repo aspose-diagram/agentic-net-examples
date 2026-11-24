@@ -7,46 +7,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and backup file paths.
-        string inputPath;
-        string backupPath;
-
-        if (args.Length >= 2)
+        // Validate arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            inputPath = args[0];
-            backupPath = args[1];
-        }
-        else
-        {
-            Console.WriteLine("Usage: Program <inputDiagramPath> <backupDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
-        // Guard: ensure the source diagram exists.
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
+
+        // Create a backup file path by inserting "_backup" before the extension
+        string backupPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_backup" + Path.GetExtension(inputPath));
 
         try
         {
-            // Load the original diagram inside a using block as required.
+            // Load the original diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Save a backup copy before any modifications.
+                // Save a backup copy of the original diagram (same format as input)
                 diagram.Save(backupPath, SaveFileFormat.Vsdx);
 
-                // TODO: Apply watermark changes to the diagram.
-                // The specific API for adding a watermark is not defined in the provided reference.
-                // Implement the watermark logic here using Aspose.Diagram APIs when available.
+                // ------------------------------------------------------------
+                // Apply watermark changes: add a full‑page text shape as a watermark
+                // ------------------------------------------------------------
 
-                // Example placeholder for saving the modified diagram (overwrite original or new file).
-                // diagram.Save(inputPath, SaveFileFormat.Vsdx);
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages to add a watermark.");
+                    return;
+                }
+
+                // Use the first page for the watermark
+                Page page = diagram.Pages[0];
+
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Add a text shape that covers the whole page.
+                // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize (in inches)
+                page.AddText(
+                    0.0,
+                    0.0,
+                    pageWidth,
+                    pageHeight,
+                    "Watermark",
+                    "Calibri",
+                    "#A5A5A5",
+                    0.25); // 0.25 inches ≈ 18 points
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

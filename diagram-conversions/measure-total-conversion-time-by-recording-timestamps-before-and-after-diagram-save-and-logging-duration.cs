@@ -1,23 +1,16 @@
 using System;
 using System.IO;
-using System.Diagnostics;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output file path
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPath>");
-            return;
-        }
+        // Determine input and output file paths from command‑line arguments or use defaults.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists before proceeding
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,37 +19,26 @@ class Program
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-            // Ensure the diagram is properly disposed after use
-            using (diagram)
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Start timing the conversion process
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                // Record the start timestamp before the conversion.
+                DateTime startTime = DateTime.Now;
 
-                // Determine the desired output format based on the file extension
-                string extension = Path.GetExtension(outputPath).ToLowerInvariant();
-                if (extension == ".pdf")
-                {
-                    // Save as PDF
-                    diagram.Save(outputPath, SaveFileFormat.Pdf);
-                }
-                else
-                {
-                    // Default to VSDX format for other extensions
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
+                // Perform the conversion and save to the desired format.
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
 
-                // Stop the timer after saving completes
-                stopwatch.Stop();
+                // Record the end timestamp after the conversion.
+                DateTime endTime = DateTime.Now;
 
-                // Log the total conversion duration in milliseconds
-                Console.WriteLine($"Conversion completed in {stopwatch.ElapsedMilliseconds} ms.");
+                // Calculate and log the total conversion duration.
+                TimeSpan duration = endTime - startTime;
+                Console.WriteLine($"Conversion completed in {duration.TotalMilliseconds} ms.");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during loading or saving
+            // Log any errors that occur during loading or saving.
             Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }

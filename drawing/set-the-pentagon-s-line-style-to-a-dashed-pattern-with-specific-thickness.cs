@@ -6,17 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,43 +24,47 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Page page = diagram.Pages[pageIndex];
 
-                    // Identify pentagon shapes by checking the master name.
-                    if (shape.Master != null && shape.Master.Name == "Pentagon")
+                    // Iterate through all shapes on the page
+                    for (int shapeId = 0; shapeId < page.Shapes.Count; shapeId++)
                     {
-                        // Set the line dash pattern to a dashed style.
-                        // LinePatternValue.Dash corresponds to a standard dash pattern.
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        // Retrieve shape by its ID (Visio shape IDs start at 1)
+                        Shape shape = page.Shapes.GetShape(shapeId + 1);
 
-                        // Set the line thickness (weight) in inches.
-                        // Adjust the value as needed for the required thickness.
-                        shape.Line.LineWeight.Value = 0.03; // 0.03 inches
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        Console.WriteLine($"Updated pentagon shape ID {shape.ID} on page \"{page.Name}\".");
+                        // Check if the shape uses the "Pentagon" master shape
+                        if (shape.Master != null && shape.Master.Name == "Pentagon")
+                        {
+                            // Set line dash pattern to dashed
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+
+                            // Set line thickness (weight) in inches, e.g., 0.03 inches
+                            shape.Line.LineWeight.Value = 0.03;
+
+                            Console.WriteLine($"Updated pentagon shape ID {shape.ID} on page {page.Name}");
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram to the specified output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

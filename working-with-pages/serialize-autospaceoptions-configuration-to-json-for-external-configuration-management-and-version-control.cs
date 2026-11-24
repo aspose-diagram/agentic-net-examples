@@ -1,62 +1,52 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using Aspose.Diagram;
+using System.Text.Json;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output JSON file path
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> <outputJsonFilePath>");
             return;
         }
 
-        string visioPath = args[0];
-        string jsonPath = args[1];
+        string diagramPath = args[0];
+        string jsonOutputPath = args[1];
 
-        // Guard: ensure the Visio file exists
-        if (!File.Exists(visioPath))
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input Visio file not found: {visioPath}");
+            Console.Error.WriteLine($"Error: The diagram file \"{diagramPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram (Aspose.Diagram constructor)
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Create and configure AutoSpaceOptions
-            AutoSpaceOptions options = new AutoSpaceOptions();
-            // Example distances; adjust as needed or read from elsewhere
-            options.DistanceInHorizontal = 2.0;
-            options.DistanceInVertical = 2.0;
+            // Create and configure AutoSpaceOptions.
+            AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+            autoSpaceOptions.DistanceInHorizontal = 2.0; // horizontal spacing
+            autoSpaceOptions.DistanceInVertical = 2.0;   // vertical spacing
 
-            // Serialize the options to JSON
-            var jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-            string json = JsonSerializer.Serialize(options, jsonOptions);
+            // Serialize the AutoSpaceOptions configuration to JSON.
+            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(autoSpaceOptions, jsonOptions);
 
-            // Ensure the output directory exists
-            string outputDir = Path.GetDirectoryName(jsonPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
+            // Write JSON to the specified output file.
+            File.WriteAllText(jsonOutputPath, json);
 
-            // Write JSON to the specified file
-            File.WriteAllText(jsonPath, json);
-            Console.WriteLine($"AutoSpaceOptions configuration saved to: {jsonPath}");
+            Console.WriteLine($"AutoSpaceOptions configuration has been saved to \"{jsonOutputPath}\".");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

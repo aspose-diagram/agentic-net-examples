@@ -8,62 +8,47 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument.
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the path to a Visio file as an argument.");
-            return;
-        }
+        // Determine the input Visio file path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string visioPath = args[0];
-
-        // Guard: ensure the file exists before attempting to load.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at path '{diagramPath}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
-
-            // Iterate over all SolutionXML elements stored in the diagram.
-            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // The XML content is stored in the XmlValue property as a string.
-                string xmlContent = solutionXml.XmlValue;
-
-                if (string.IsNullOrWhiteSpace(xmlContent))
+                // Iterate through all SolutionXML elements in the diagram
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    continue; // Skip empty entries.
-                }
+                    // Retrieve the raw XML string stored in the SolutionXML element
+                    string xmlContent = solutionXml.XmlValue;
 
-                // Parse the XML string using LINQ to XML.
-                XDocument xDoc = XDocument.Parse(xmlContent);
+                    // Parse the XML content using LINQ to XML
+                    XDocument xDoc = XDocument.Parse(xmlContent);
 
-                // Example query: find all <Shape> elements that have an attribute named "type"
-                // with the value "process". Adjust the element/attribute names as needed for your schema.
-                var matchingShapes = xDoc.Descendants("Shape")
-                                         .Where(e => (string)e.Attribute("type") == "process")
-                                         .Select(e => new
-                                         {
-                                             Id = (string)e.Attribute("id"),
-                                             Name = (string)e.Attribute("name")
-                                         });
+                    // Query: find all <Shape> elements that have a "Name" attribute
+                    var shapeElements = xDoc.Descendants("Shape")
+                                            .Where(e => e.Attribute("Name") != null);
 
-                // Output the results.
-                foreach (var shapeInfo in matchingShapes)
-                {
-                    Console.WriteLine($"Found shape - ID: {shapeInfo.Id}, Name: {shapeInfo.Name}");
+                    // Output the queried shape attributes
+                    foreach (XElement shapeElem in shapeElements)
+                    {
+                        string shapeName = shapeElem.Attribute("Name")?.Value ?? "(no name)";
+                        Console.WriteLine($"Found Shape - Name: {shapeName}");
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or processing.
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

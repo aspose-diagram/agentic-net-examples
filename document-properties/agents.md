@@ -4,10 +4,10 @@ display_name: Document Properties
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 34
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 34 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,12 +63,12 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 34 | Core diagram API |
 | `System` | 34 | Console, Math, DateTime, Exception |
 | `System.IO` | 34 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Properties` | 22 | Supporting utilities |
+| `Aspose.Diagram.Properties` | 18 | Supporting utilities |
 | `Aspose.Diagram.Saving` | 5 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
 | `System.Linq` | 3 | LINQ queries on collections |
-| `System.Text.RegularExpressions` | 1 | Supporting utilities |
 | `System.Reflection` | 1 | Supporting utilities |
+| `System.Text.RegularExpressions` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -99,12 +99,12 @@ class Program
 
 | File | Key APIs | Task |
 |------|----------|------|
-| [add-a-custom-property-containing-xml-data-and-ensure-it-is-correctly-serialized-within-the-diagram-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/add-a-custom-property-containing-xml-data-and-ensure-it-is-correctly-serialized-within-the-diagram-file.cs) | `AddShape`, `Diagram`, `Pages` | Add a custom property containing xml data and ensure it is correctly serialized within the diagram file |
+| [add-a-custom-property-containing-xml-data-and-ensure-it-is-correctly-serialized-within-the-diagram-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/add-a-custom-property-containing-xml-data-and-ensure-it-is-correctly-serialized-within-the-diagram-file.cs) | `Diagram`, `Save`, `diagram` | Add a custom property containing xml data and ensure it is correctly serialized within the diagram file |
 | [add-a-custom-property-named-projectid-with-numeric-value-12345-to-the-loaded-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/add-a-custom-property-named-projectid-with-numeric-value-12345-to-the-loaded-diagram.cs) | `Diagram`, `Save`, `diagram` | Add a custom property named projectid with numeric value 12345 to the loaded diagram |
 | [add-a-custom-property-with-a-date-value-formatted-as-iso-8601-and-verify-correct-storage.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/add-a-custom-property-with-a-date-value-formatted-as-iso-8601-and-verify-correct-storage.cs) | `Diagram`, `Save`, `diagram` | Add a custom property with a date value formatted as iso 8601 and verify correct storage |
 | [add-a-custom-property-with-a-long-string-value-exceeding-typical-length-to-test-storage-limits.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/add-a-custom-property-with-a-long-string-value-exceeding-typical-length-to-test-storage-limits.cs) | `Diagram`, `Save`, `diagram` | Add a custom property with a long string value exceeding typical length to test storage limits |
 | [after-saving-read-back-the-diagram-to-confirm-that-newly-added-custom-properties-persist-correctly.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/after-saving-read-back-the-diagram-to-confirm-that-newly-added-custom-properties-persist-correctly.cs) | `Diagram`, `Save`, `diagram` | After saving read back the diagram to confirm that newly added custom properties persist correctly |
-| [apply-a-conditional-update-to-custom-property-priority-setting-it-to-high-when-current-value-is-low.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/apply-a-conditional-update-to-custom-property-priority-setting-it-to-high-when-current-value-is-low.cs) | `Diagram`, `Save`, `diagram` | Apply a conditional update to custom property priority setting it to high when current value is low |
+| [apply-a-conditional-update-to-custom-property-priority-setting-it-to-high-when-current-value-is-low.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/apply-a-conditional-update-to-custom-property-priority-setting-it-to-high-when-current-value-is-low.cs) | `Diagram`, `Pages`, `Save` | Apply a conditional update to custom property priority setting it to high when current value is low |
 | [batch-process-a-folder-of-visio-files-adding-a-uniform-custom-property-batchid-to-each-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/batch-process-a-folder-of-visio-files-adding-a-uniform-custom-property-batchid-to-each-diagram.cs) | `Diagram`, `Save`, `diagram` | Batch process a folder of visio files adding a uniform custom property batchid to each diagram |
 | [clone-the-original-diagram-into-a-new-diagram-object-while-preserving-all-custom-properties-intact.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/clone-the-original-diagram-into-a-new-diagram-object-while-preserving-all-custom-properties-intact.cs) | `Diagram` | Clone the original diagram into a new diagram object while preserving all custom properties intact |
 | [compare-two-diagrams-custom-property-sets-to-identify-differences-for-version-control-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/compare-two-diagrams-custom-property-sets-to-identify-differences-for-version-control-purposes.cs) | `Diagram` | Compare two diagrams custom property sets to identify differences for version control purposes |
@@ -119,11 +119,11 @@ class Program
 | [implement-a-feature-to-prevent-adding-duplicate-custom-property-names-by-checking-existing-collection-first.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/implement-a-feature-to-prevent-adding-duplicate-custom-property-names-by-checking-existing-collection-first.cs) | `Diagram`, `Save`, `diagram` | Implement a feature to prevent adding duplicate custom property names by checking existing collection first |
 | [implement-a-method-to-retrieve-all-custom-property-names-sorted-alphabetically-for-display-in-ui.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/implement-a-method-to-retrieve-all-custom-property-names-sorted-alphabetically-for-display-in-ui.cs) | `Diagram` | Implement a method to retrieve all custom property names sorted alphabetically for display in ui |
 | [implement-error-handling-to-catch-exceptions-when-attempting-to-modify-read-only-built-in-properties.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/implement-error-handling-to-catch-exceptions-when-attempting-to-modify-read-only-built-in-properties.cs) | `Diagram`, `Save`, `diagram` | Implement error handling to catch exceptions when attempting to modify read only built in properties |
-| [iterate-through-diagrams-in-a-collection-removing-any-custom-property-named-deprecatedflag-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/iterate-through-diagrams-in-a-collection-removing-any-custom-property-named-deprecatedflag-before-saving.cs) | `Diagram`, `Pages`, `Save` | Iterate through diagrams in a collection removing any custom property named deprecatedflag before saving |
+| [iterate-through-diagrams-in-a-collection-removing-any-custom-property-named-deprecatedflag-before-saving.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/iterate-through-diagrams-in-a-collection-removing-any-custom-property-named-deprecatedflag-before-saving.cs) | `Diagram`, `Save`, `diagram` | Iterate through diagrams in a collection removing any custom property named deprecatedflag before saving |
 | [load-a-diagram-add-a-timestamp-custom-property-using-current-utc-time-and-save-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/load-a-diagram-add-a-timestamp-custom-property-using-current-utc-time-and-save-changes.cs) | `Diagram`, `Save`, `diagram` | Load a diagram add a timestamp custom property using current utc time and save changes |
 | [load-a-diagram-read-the-built-in-title-property-and-compare-it-against-a-predefined-template.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/load-a-diagram-read-the-built-in-title-property-and-compare-it-against-a-predefined-template.cs) | `Diagram` | Load a diagram read the built in title property and compare it against a predefined template |
 | [load-a-visio-diagram-read-the-author-built-in-property-and-log-its-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/load-a-visio-diagram-read-the-author-built-in-property-and-log-its-value.cs) | `Diagram` | Load a visio diagram read the author built in property and log its value |
-| [log-the-embedded-api-version-and-library-build-number-each-time-a-diagram-is-saved-for-tracking.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/log-the-embedded-api-version-and-library-build-number-each-time-a-diagram-is-saved-for-tracking.cs) | `Diagram`, `Save`, `diagram` | Log the embedded api version and library build number each time a diagram is saved for tracking |
+| [log-the-embedded-api-version-and-library-build-number-each-time-a-diagram-is-saved-for-tracking.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/log-the-embedded-api-version-and-library-build-number-each-time-a-diagram-is-saved-for-tracking.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Log the embedded api version and library build number each time a diagram is saved for tracking |
 | [remove-all-custom-properties-whose-values-are-null-to-clean-up-the-diagram-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/remove-all-custom-properties-whose-values-are-null-to-clean-up-the-diagram-metadata.cs) | `Diagram`, `Save`, `diagram` | Remove all custom properties whose values are null to clean up the diagram metadata |
 | [remove-the-custom-property-reviewdate-from-the-diagram-to-clean-up-outdated-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/remove-the-custom-property-reviewdate-from-the-diagram-to-clean-up-outdated-metadata.cs) | `Diagram`, `Save`, `diagram` | Remove the custom property reviewdate from the diagram to clean up outdated metadata |
 | [retrieve-the-automatically-embedded-api-version-information-from-the-saved-diagram-file-for-audit-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/document-properties/retrieve-the-automatically-embedded-api-version-information-from-the-saved-diagram-file-for-audit-purposes.cs) | `Diagram` | Retrieve the automatically embedded api version information from the saved diagram file for audit purposes |
@@ -218,11 +218,9 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ## Key API Surface
 
-- `AddShape`
 - `Diagram`
 - `Pages`
 - `PdfSaveOptions`
-- `Prop`
 - `SVGSaveOptions`
 - `Save`
 - `Shapes`
@@ -243,7 +241,7 @@ Frequently asked questions about **Document Properties** in **Aspose.Diagram for
 
 **Q: How do I get started with Document Properties in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -275,4 +273,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 34 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 34 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

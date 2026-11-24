@@ -6,11 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provided via command‑line arguments or defaults)
+        // Input diagram path (first argument or default)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output diagram path (second argument or default)
         string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Custom property name to evaluate
+        string targetPropName = args.Length > 2 ? args[2] : "MyProp";
+        // Expected value of the custom property
+        string targetPropValue = args.Length > 3 ? args[3] : "AddLink";
+        // Hyperlink URL to add when condition is met
+        string hyperlinkUrl = args.Length > 4 ? args[4] : "https://example.com";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -22,60 +29,46 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the custom property name and the value that qualifies a shape for hyperlink addition
-            const string targetPropName = "TargetProperty";
-            const string targetPropValue = "DesiredValue";
-
-            // Iterate through all pages and shapes
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Determine whether the shape contains the target custom property with the required value
-                    bool shouldAddLink = false;
+                    // Determine whether the shape has the target custom property with the required value
+                    bool matchesCondition = false;
                     foreach (Prop prop in shape.Props)
                     {
                         if (prop.Name == targetPropName && prop.Value != null && prop.Value.Val == targetPropValue)
                         {
-                            shouldAddLink = true;
+                            matchesCondition = true;
                             break;
                         }
                     }
 
-                    // If condition met, add a hyperlink to the shape
-                    if (shouldAddLink)
+                    // If condition is satisfied, add a hyperlink to the shape
+                    if (matchesCondition)
                     {
-                        // Create a new hyperlink instance
                         Hyperlink link = new Hyperlink();
-                        link.Name = "MyLink";
-                        link.Address.Value = "https://example.com";
-
-                        // Ensure the Hyperlinks collection exists and add the new link
-                        if (shape.Hyperlinks == null)
-                        {
-                            // The Hyperlinks collection is normally initialized by the API,
-                            // but this guard protects against unexpected null references.
-                            // If null, we cannot add a hyperlink, so we skip this shape.
-                            Console.Error.WriteLine($"Shape ID {shape.ID} has a null Hyperlinks collection; skipping hyperlink addition.");
-                            continue;
-                        }
-
+                        link.Name = "Link";
+                        link.Address.Value = hyperlinkUrl;
+                        // Add the hyperlink to the shape's collection
                         shape.Hyperlinks.Add(link);
                     }
                 }
             }
 
-            // Save the modified diagram to the output path in VSDX format
+            // Save the modified diagram to the output file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -7,79 +7,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
+        // Determine input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // -----------------------------------------------------------------
-                    // Retrieve the formula from an event cell.
-                    // The original requirement mentions "EventCalc", which is not
-                    // exposed in the Aspose.Diagram API. As a closest substitute we
-                    // use the EventDrop cell (shape.Event.EventDrop.Ufe.F). This
-                    // contains the raw formula string.
-                    // -----------------------------------------------------------------
-                    string eventFormula = shape.Event.EventDrop.Ufe.F ?? string.Empty;
-
-                    // Simple condition: treat the shape as "true" when the formula
-                    // contains the word TRUE (case‑insensitive). Real evaluation of
-                    // Visio formulas is not supported by the library.
-                    bool conditionMet = eventFormula.IndexOf("TRUE", StringComparison.OrdinalIgnoreCase) >= 0;
-
-                    if (conditionMet)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Apply conditional formatting for the "true" case
-                        // Set fill foreground color to red
-                        shape.Fill.FillForegnd.Value = "#FF0000";
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Set line pattern to dashed
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
-                    }
-                    else
-                    {
-                        // Apply default formatting for the "false" case
-                        // Set fill foreground color to white
-                        shape.Fill.FillForegnd.Value = "#FFFFFF";
+                        // Retrieve the formula from the EventXFMod cell (closest substitute for EventCalc)
+                        string formula = shape.Event?.EventXFMod?.Ufe?.F;
 
-                        // Set line pattern to solid
-                        shape.Line.LinePattern.Value = LinePatternValue.Solid;
+                        // Simple evaluation: treat the formula as true if it contains "TRUE" or equals "1"
+                        bool condition = false;
+                        if (!string.IsNullOrEmpty(formula))
+                        {
+                            string trimmed = formula.Trim().ToUpperInvariant();
+                            if (trimmed.Contains("TRUE") || trimmed == "1")
+                                condition = true;
+                        }
+
+                        // Apply conditional formatting based on the evaluation result
+                        if (condition)
+                        {
+                            // Highlight shape with a red dashed border and red fill foreground
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                            shape.Line.LineWeight.Value = 0.03; // thickness in inches
+                            shape.Line.BeginArrow.Value = 4;    // arrow style
+                            shape.Line.EndArrow.Value = 4;
+                            shape.Fill.FillForegnd.Value = "#FF0000"; // red fill foreground
+                        }
+                        else
+                        {
+                            // Set a green solid border and green fill foreground
+                            shape.Line.LinePattern.Value = LinePatternValue.Solid;
+                            shape.Line.LineWeight.Value = 0.02;
+                            shape.Line.BeginArrow.Value = 0;
+                            shape.Line.EndArrow.Value = 0;
+                            shape.Fill.FillForegnd.Value = "#00FF00"; // green fill foreground
+                        }
                     }
                 }
-            }
 
-            // Save the modified diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Determine output path (same directory with a suffix)
+                string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output.vsdx");
+
+                // Save the modified diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors to the error console
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

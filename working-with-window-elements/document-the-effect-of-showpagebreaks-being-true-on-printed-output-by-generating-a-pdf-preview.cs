@@ -7,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
             return;
         }
-        // Output PDF preview path
-        string outputPath = "output_showpagebreaks_true.pdf";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,37 +26,35 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there is at least one window (Visio always has a default window)
+                // Enable the display of page breaks in the first window (if any).
                 if (diagram.Windows.Count > 0)
                 {
-                    // Enable page breaks visibility in the window
-                    diagram.Windows[0].ShowPageBreaks = BOOL.True;
+                    Window window = diagram.Windows[0];
+                    window.ShowPageBreaks = BOOL.True; // Show page breaks on the UI.
                 }
                 else
                 {
-                    Console.Error.WriteLine("No windows found in the diagram.");
-                    return;
+                    Console.Error.WriteLine("The diagram contains no windows.");
                 }
 
-                // Configure PDF save options
+                // Configure PDF save options for preview generation.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the format tracker
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                // Apply text compression to reduce file size (optional)
-                pdfOptions.TextCompression = PdfTextCompression.Flate;
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;               // Explicitly set format tracker.
+                pdfOptions.TextCompression = PdfTextCompression.Flate;   // Apply flate compression to reduce size.
 
-                // Save the diagram as a PDF preview
+                // Save the diagram as a PDF preview.
                 diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"PDF preview saved to: {outputPath}");
             }
+
+            Console.WriteLine($"PDF preview generated successfully at: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

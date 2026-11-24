@@ -7,93 +7,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting four arguments: input diagram path, shape name, user-defined cell name, new formula
-        if (args.Length < 4)
+        // Input diagram path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeNameU> <userCellNameU> <newFormula>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output diagram path (VDX format)
+        string outputPath = "output.vdx";
+        // Name of the user-defined cell to update
+        string targetCellName = "MyUserCell";
+        // New formula to assign to the cell
+        string newFormula = "\"Updated Value\"";
 
-        string inputPath = args[0];
-        string targetShapeNameU = args[1];
-        string targetUserCellNameU = args[2];
-        string newFormula = args[3];
-
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        // Prepare output path (same folder, suffix "_updated.vdx")
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_updated.vdx");
 
         try
         {
-            // Load diagram inside a using block as required
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                bool shapeFound = false;
-                bool userCellFound = false;
+                bool cellFound = false;
 
-                // Iterate through all pages and shapes to locate the target shape
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Compare shape's NameU with the provided shape name
-                        if (string.Equals(shape.NameU, targetShapeNameU, StringComparison.OrdinalIgnoreCase))
+                        // Iterate through user-defined cells of the shape
+                        foreach (User userCell in shape.Users)
                         {
-                            shapeFound = true;
-
-                            // Iterate through user-defined cells (Users collection)
-                            foreach (User userCell in shape.Users)
+                            // Match by Name or NameU (case-sensitive)
+                            if (userCell.Name == targetCellName || userCell.NameU == targetCellName)
                             {
-                                // Compare user cell's NameU with the provided cell name
-                                if (string.Equals(userCell.NameU, targetUserCellNameU, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    userCellFound = true;
-
-                                    // Update the cell's value with the new formula
-                                    userCell.Value.Val = newFormula;
-
-                                    // No need to continue searching after update
-                                    break;
-                                }
+                                // Update the formula/value of the user-defined cell
+                                userCell.Value.Val = newFormula;
+                                Console.WriteLine($"Updated cell '{targetCellName}' in shape ID {shape.ID} on page {page.ID}.");
+                                cellFound = true;
+                                // If only one occurrence is expected, break out of loops
+                                break;
                             }
-
-                            // Exit shape loop after processing the target shape
-                            break;
                         }
+
+                        if (cellFound) break;
                     }
 
-                    if (shapeFound)
-                        break;
+                    if (cellFound) break;
                 }
 
-                if (!shapeFound)
+                if (!cellFound)
                 {
-                    Console.Error.WriteLine($"Shape with NameU '{targetShapeNameU}' not found.");
-                    return;
+                    Console.Error.WriteLine($"User-defined cell '{targetCellName}' not found in the diagram.");
                 }
 
-                if (!userCellFound)
-                {
-                    Console.Error.WriteLine($"User-defined cell with NameU '{targetUserCellNameU}' not found in shape '{targetShapeNameU}'.");
-                    return;
-                }
-
-                // Save the updated diagram in VDX format
+                // Save the modified diagram in VDX format
                 diagram.Save(outputPath, SaveFileFormat.Vdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

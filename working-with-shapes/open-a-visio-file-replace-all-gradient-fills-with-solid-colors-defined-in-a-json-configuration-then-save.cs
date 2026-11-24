@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Text.Json;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,49 +10,67 @@ class Program
     static void Main(string[] args)
     {
         // Expect three arguments: input Visio file, JSON config file, output Visio file
-        if (args.Length < 3)
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <configJsonPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisio> <configJson> <outputVisio>");
             return;
         }
 
         string inputPath = args[0];
-        string configPath = args[1];
+        string jsonPath = args[1];
         string outputPath = args[2];
 
-        // Guard against missing input file
+        // Guard against missing files
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input Visio file not found: {inputPath}");
             return;
         }
-
-        // Guard against missing JSON configuration file
-        if (!File.Exists(configPath))
+        if (!File.Exists(jsonPath))
         {
-            Console.Error.WriteLine($"Configuration JSON file not found: {configPath}");
+            Console.Error.WriteLine($"JSON configuration file not found: {jsonPath}");
             return;
         }
 
-        // Load color mapping from JSON (shape ID as string -> hex color)
-        Dictionary<string, string> colorMap;
+        // Load JSON configuration into a dictionary of ShapeId -> ColorHex
+        Dictionary<long, string> colorMap = new Dictionary<long, string>();
         try
         {
-            string jsonContent = File.ReadAllText(configPath);
-            colorMap = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent);
-            if (colorMap == null)
+            string jsonContent = File.ReadAllText(jsonPath);
+            using (JsonDocument doc = JsonDocument.Parse(jsonContent))
             {
-                Console.Error.WriteLine("Failed to deserialize JSON configuration.");
-                return;
+                if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    Console.Error.WriteLine("JSON configuration must be an array of objects.");
+                    return;
+                }
+
+                foreach (JsonElement element in doc.RootElement.EnumerateArray())
+                {
+                    if (element.TryGetProperty("ShapeId", out JsonElement idElem) &&
+                        element.TryGetProperty("Color", out JsonElement colorElem))
+                    {
+                        long shapeId = idElem.GetInt64();
+                        string colorHex = colorElem.GetString();
+                        if (!string.IsNullOrWhiteSpace(colorHex))
+                        {
+                            // Ensure the color string starts with '#'
+                            colorHex = colorHex.Trim();
+                            if (!colorHex.StartsWith("#"))
+                                colorHex = "#" + colorHex;
+                            colorMap[shapeId] = colorHex;
+                        }
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading JSON configuration: {ex.Message}");
+            Console.Error.WriteLine($"Error parsing JSON configuration: {ex.Message}");
             return;
         }
 
-        // Load the Visio diagram and process gradient fills
+        // Load the Visio diagram and process shapes
         try
         {
             using (Diagram diagram = new Diagram(inputPath))
@@ -67,42 +85,35 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has a Fill and GradientFill defined
-                        if (shape.Fill == null || shape.Fill.GradientFill == null)
-                            continue;
-
-                        // Check if gradient fill is enabled
-                        if (shape.Fill.GradientFill.GradientEnabled != null &&
-                            shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                        // Check if the shape currently has a gradient fill (pattern value 25)
+                        if (shape.Fill.FillPattern.Value == 25)
                         {
-                            // Determine the solid color to apply based on shape ID
-                            string shapeIdKey = shape.ID.ToString();
-                            if (colorMap.TryGetValue(shapeIdKey, out string hexColor))
+                            // Determine the replacement color: use config if present
+                            if (!colorMap.TryGetValue(shape.ID, out string replacementColor))
                             {
-                                // Set solid fill pattern (1 = solid)
-                                shape.Fill.FillPattern.Value = 1;
-
-                                // Apply the solid foreground color
-                                shape.Fill.FillForegnd.Value = hexColor;
-
-                                // Disable gradient fill
-                                shape.Fill.GradientFill.GradientEnabled.Value = BOOL.False;
-
-                                // Clear any existing gradient stops
-                                shape.Fill.GradientFill.GradientStops.Clear();
+                                // No specific color defined for this shape; skip replacement
+                                continue;
                             }
+
+                            // Set solid fill pattern
+                            shape.Fill.FillPattern.Value = 1; // Solid fill
+
+                            // Apply the solid color (hex string)
+                            shape.Fill.FillForegnd.Value = replacementColor;
                         }
                     }
                 }
 
                 // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error processing Visio diagram: {ex.Message}");
+            return;
         }
+
+        Console.WriteLine("Gradient fills have been replaced successfully.");
     }
 }

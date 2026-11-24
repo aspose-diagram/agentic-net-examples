@@ -2,84 +2,87 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    // DTO matching the expected JSON structure.
-    private class Metadata
-    {
-        public string? PageTitle { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, metadata JSON file, output Visio file.
-        if (args.Length != 3)
+        // Input arguments: diagram file, JSON metadata file, optional output file
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string jsonPath = args.Length > 1 ? args[1] : "metadata.json";
+        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
+
+        // Guard: ensure diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <metadataJsonPath> <outputVisioPath>");
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        string visioPath = args[0];
-        string jsonPath = args[1];
-        string outputPath = args[2];
-
-        // Guard against missing files.
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"Visio file not found: {visioPath}");
-            return;
-        }
-
+        // Guard: ensure JSON metadata file exists
         if (!File.Exists(jsonPath))
         {
-            Console.Error.WriteLine($"JSON metadata file not found: {jsonPath}");
+            Console.Error.WriteLine($"Metadata JSON file not found: {jsonPath}");
             return;
         }
 
-        // Load metadata from JSON.
-        Metadata? metadata;
         try
         {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Read and parse the JSON metadata
             string jsonContent = File.ReadAllText(jsonPath);
-            metadata = JsonSerializer.Deserialize<Metadata>(jsonContent);
-            if (metadata == null || string.IsNullOrWhiteSpace(metadata.PageTitle))
+            using JsonDocument doc = JsonDocument.Parse(jsonContent);
+            JsonElement root = doc.RootElement;
+
+            // Expecting an array of objects with "PageIndex" and "Title"
+            if (root.ValueKind != JsonValueKind.Array)
             {
-                Console.Error.WriteLine("Invalid or empty metadata in JSON file.");
+                Console.Error.WriteLine("Invalid JSON format: expected an array of page metadata.");
                 return;
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error reading JSON file: {ex.Message}");
-            return;
-        }
 
-        // Load the Visio diagram, update page titles, and save.
-        try
-        {
-            // Load the diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(visioPath))
+            foreach (JsonElement element in root.EnumerateArray())
             {
-                // Iterate through all pages and set the Name (title) property.
-                foreach (Page page in diagram.Pages)
+                // Extract page index
+                if (!element.TryGetProperty("PageIndex", out JsonElement pageIdxElem) ||
+                    !pageIdxElem.TryGetInt32(out int pageIndex))
                 {
-                    // Update the page name and universal name with the metadata title.
-                    page.Name = metadata.PageTitle;
-                    page.NameU = metadata.PageTitle;
+                    Console.Error.WriteLine("Skipping entry: missing or invalid PageIndex.");
+                    continue;
                 }
 
-                // Save the updated diagram to the output path in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Extract title
+                if (!element.TryGetProperty("Title", out JsonElement titleElem) ||
+                    titleElem.GetString() is not string title)
+                {
+                    Console.Error.WriteLine($"Skipping entry for page {pageIndex}: missing Title.");
+                    continue;
+                }
+
+                // Validate page index range
+                if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+                {
+                    Console.Error.WriteLine($"Page index out of range: {pageIndex}");
+                    continue;
+                }
+
+                // Update the page title (using NameU as the title property)
+                Page page = diagram.Pages[pageIndex];
+                page.NameU = title;
+                // Also update the visible name if needed
+                page.Name = title;
             }
+
+            // Save the updated diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
-            return;
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        Console.WriteLine("Page titles updated and diagram saved successfully.");
     }
 }

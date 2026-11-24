@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
@@ -26,62 +25,48 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Retrieve the plain text of the shape.
+                    string plainText = shape.Text.Value.Text;
+
+                    // Process only shapes that contain text.
+                    if (string.IsNullOrEmpty(plainText))
+                        continue;
+
+                    // Iterate over each character in the text.
+                    for (int i = 0; i < plainText.Length; i++)
                     {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        char c = plainText[i];
 
-                        // Ensure the shape has a Text object with a value.
-                        if (shape.Text == null || shape.Text.Value == null)
-                            continue;
-
-                        // Retrieve the plain text of the shape.
-                        string plainText = shape.Text.Value.Text;
-                        if (string.IsNullOrEmpty(plainText))
-                            continue;
-
-                        // Ensure the shape has character formatting cells.
-                        if (shape.Chars == null || shape.Chars.Count == 0)
-                            continue;
-
-                        // Determine the number of characters we can process.
-                        int processCount = Math.Min(plainText.Length, shape.Chars.Count);
-
-                        // Iterate over each character position.
-                        for (int i = 0; i < processCount; i++)
+                        // Check if the character is a vowel (case‑insensitive).
+                        if ("AEIOUaeiou".IndexOf(c) >= 0)
                         {
-                            char c = plainText[i];
-                            bool isVowel = "AEIOUaeiou".IndexOf(c) >= 0;
-
-                            if (isVowel)
+                            // Ensure the character index exists in the Chars collection.
+                            if (i < shape.Chars.Count)
                             {
                                 // Apply underline style to the vowel character.
-                                Aspose.Diagram.Char charFormat = shape.Chars[i];
-                                // Preserve existing style bits and add underline.
-                                charFormat.Style.Value = charFormat.Style.Value | StyleValue.Underline;
+                                shape.Chars[i].Style.Value = StyleValue.Underline;
                             }
-                            // Consonants are left unchanged.
                         }
                     }
                 }
-
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
+
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

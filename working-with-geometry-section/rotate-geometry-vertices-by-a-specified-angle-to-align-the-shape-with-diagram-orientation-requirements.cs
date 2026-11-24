@@ -7,26 +7,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, rotation angle in degrees
-        if (args.Length != 3)
+        // Validate command‑line arguments: input file path, rotation angle (degrees), optional output path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <angleDegrees>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <rotationAngleDegrees> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string angleArg = args[2];
+        string angleArg = args[1];
+        string outputPath = args.Length >= 3
+            ? args[2]
+            : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "rotated.vsdx");
 
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         // Parse rotation angle
-        if (!double.TryParse(angleArg, out double angleDegrees))
+        if (!double.TryParse(angleArg, out double angleDeg))
         {
             Console.Error.WriteLine($"Invalid rotation angle: {angleArg}");
             return;
@@ -34,90 +36,105 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Pre‑compute rotation values
-            double rad = angleDegrees * Math.PI / 180.0;
-            double cos = Math.Cos(rad);
-            double sin = Math.Sin(rad);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Convert angle to radians for trigonometric calculations
+                double angleRad = angleDeg * Math.PI / 180.0;
+                double cos = Math.Cos(angleRad);
+                double sin = Math.Sin(angleRad);
+
+                // Iterate through all pages
+                for (int p = 0; p < diagram.Pages.Count; p++)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    Page page = diagram.Pages[p];
 
-                    // Retrieve shape centre (PinX, PinY)
-                    double centerX = shape.XForm.PinX.Value;
-                    double centerY = shape.XForm.PinY.Value;
-
-                    // Rotate each geometry vertex
-                    for (int g = 0; g < shape.Geoms.Count; g++)
+                    // Iterate through all shapes on the page
+                    for (int s = 0; s < page.Shapes.Count; s++)
                     {
-                        // Cast the geometry object
-                        Geom geom = (Geom)shape.Geoms[g];
+                        Shape shape = page.Shapes[s];
 
-                        // Iterate over all coordinate objects in the geometry
-                        for (int i = 0; i < geom.CoordinateCol.Count; i++)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Determine the rotation centre (shape's PinX/PinY)
+                        double centerX = shape.XForm.PinX.Value;
+                        double centerY = shape.XForm.PinY.Value;
+
+                        // Iterate through each geometry (Geom) of the shape
+                        for (int g = 0; g < shape.Geoms.Count; g++)
                         {
-                            object segment = geom.CoordinateCol[i];
+                            Geom geom = shape.Geoms[g];
 
-                            // Handle MoveTo
-                            if (segment is MoveTo move)
+                            // Iterate through each coordinate object in the geometry
+                            for (int c = 0; c < geom.CoordinateCol.Count; c++)
                             {
-                                double x = move.X.Value;
-                                double y = move.Y.Value;
-                                double dx = x - centerX;
-                                double dy = y - centerY;
-                                double nx = dx * cos - dy * sin + centerX;
-                                double ny = dx * sin + dy * cos + centerY;
-                                move.X.Value = nx;
-                                move.Y.Value = ny;
+                                // Retrieve the current coordinate object
+                                object coordObj = geom.CoordinateCol[c];
+
+                                // Handle MoveTo geometry segment
+                                if (coordObj is MoveTo moveTo)
+                                {
+                                    double x = moveTo.X.Value;
+                                    double y = moveTo.Y.Value;
+
+                                    // Translate point to origin relative to centre
+                                    double dx = x - centerX;
+                                    double dy = y - centerY;
+
+                                    // Apply rotation
+                                    double rotatedX = dx * cos - dy * sin;
+                                    double rotatedY = dx * sin + dy * cos;
+
+                                    // Translate back to original centre
+                                    moveTo.X.Value = rotatedX + centerX;
+                                    moveTo.Y.Value = rotatedY + centerY;
+                                }
+                                // Handle LineTo geometry segment
+                                else if (coordObj is LineTo lineTo)
+                                {
+                                    double x = lineTo.X.Value;
+                                    double y = lineTo.Y.Value;
+
+                                    double dx = x - centerX;
+                                    double dy = y - centerY;
+
+                                    double rotatedX = dx * cos - dy * sin;
+                                    double rotatedY = dx * sin + dy * cos;
+
+                                    lineTo.X.Value = rotatedX + centerX;
+                                    lineTo.Y.Value = rotatedY + centerY;
+                                }
+                                // Handle other possible coordinate types (e.g., ArcTo) that also expose X/Y
+                                else if (coordObj is ArcTo arcTo)
+                                {
+                                    double x = arcTo.X.Value;
+                                    double y = arcTo.Y.Value;
+
+                                    double dx = x - centerX;
+                                    double dy = y - centerY;
+
+                                    double rotatedX = dx * cos - dy * sin;
+                                    double rotatedY = dx * sin + dy * cos;
+
+                                    arcTo.X.Value = rotatedX + centerX;
+                                    arcTo.Y.Value = rotatedY + centerY;
+                                }
+                                // Add handling for additional coordinate types if needed
                             }
-                            // Handle LineTo
-                            else if (segment is LineTo line)
-                            {
-                                double x = line.X.Value;
-                                double y = line.Y.Value;
-                                double dx = x - centerX;
-                                double dy = y - centerY;
-                                double nx = dx * cos - dy * sin + centerX;
-                                double ny = dx * sin + dy * cos + centerY;
-                                line.X.Value = nx;
-                                line.Y.Value = ny;
-                            }
-                            // Handle ArcTo (if present)
-                            else if (segment is ArcTo arc)
-                            {
-                                double x = arc.X.Value;
-                                double y = arc.Y.Value;
-                                double dx = x - centerX;
-                                double dy = y - centerY;
-                                double nx = dx * cos - dy * sin + centerX;
-                                double ny = dx * sin + dy * cos + centerY;
-                                arc.X.Value = nx;
-                                arc.Y.Value = ny;
-                            }
-                            // Additional geometry types (e.g., EllipticalArcTo) can be added here following the same pattern
                         }
                     }
-
-                    // Apply the same visual rotation to the shape itself
-                    shape.SetAngle(angleDegrees);
                 }
-            }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Save the modified diagram to the specified output path using the correct overload
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

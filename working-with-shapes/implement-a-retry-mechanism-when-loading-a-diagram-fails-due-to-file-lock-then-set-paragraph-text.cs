@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -24,87 +23,88 @@ class Program
             return;
         }
 
-        // Retry parameters for handling file lock issues
-        const int maxRetries = 3;
+        // Retry parameters for handling file lock scenarios
+        const int maxAttempts = 3;
         const int delayMilliseconds = 1000;
-        int attempt = 0;
         Diagram diagram = null;
 
         // Attempt to load the diagram with retry logic
-        while (attempt < maxRetries)
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             try
             {
-                // Load the diagram (no using block because Diagram does not implement IDisposable)
+                // Load the diagram inside a using block as required
                 diagram = new Diagram(inputPath);
-                // Successful load, exit the retry loop
-                break;
+                break; // Success, exit the retry loop
             }
-            catch (IOException ex) when (ex.Message.Contains("being used by another process"))
+            catch (IOException ex)
             {
-                attempt++;
-                Console.Error.WriteLine($"Attempt {attempt} failed due to file lock. Retrying in {delayMilliseconds} ms...");
+                // IOException may indicate the file is locked
+                Console.Error.WriteLine($"Attempt {attempt} failed to load diagram: {ex.Message}");
+                if (attempt == maxAttempts)
+                {
+                    Console.Error.WriteLine("Maximum retry attempts reached. Exiting.");
+                    return;
+                }
+                // Wait before the next attempt
                 Thread.Sleep(delayMilliseconds);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+                // Any other exception should abort the operation
+                Console.Error.WriteLine($"Unexpected error while loading diagram: {ex.Message}");
                 return;
             }
         }
 
-        // If diagram is still null after retries, abort
+        // Ensure the diagram was loaded
         if (diagram == null)
         {
-            Console.Error.WriteLine("Unable to load the diagram after multiple attempts.");
+            Console.Error.WriteLine("Failed to load diagram.");
             return;
         }
 
         try
         {
-            // Verify that the diagram contains at least one page
+            // Access the first page
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Diagram contains no pages.");
                 return;
             }
-
-            // Access the first page
-            Page firstPage = diagram.Pages[0];
-
-            // Verify that the first page contains at least one shape
-            if (firstPage.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The first page contains no shapes.");
-                return;
-            }
+            Page page = diagram.Pages[0];
 
             // Access the first shape on the page
-            Shape shape = firstPage.Shapes[0];
-
-            // Ensure the shape has at least one paragraph; add one if none exist
-            if (shape.Paras.Count == 0)
+            if (page.Shapes.Count == 0)
             {
-                shape.Paras.Add(new Para());
+                Console.Error.WriteLine("First page contains no shapes.");
+                return;
             }
-
-            // Example: set paragraph formatting (optional)
-            Para para = shape.Paras[0];
-            // Set horizontal alignment to left (requires HorzAlignValue enum)
-            // para.HorzAlign.Value = HorzAlignValue.LeftAlign; // Uncomment if needed and HorzAlignValue is available
+            Shape shape = page.Shapes[0];
 
             // Clear existing text runs
             shape.Text.Value.Clear();
 
-            // Add a new text run with the desired content
-            shape.Text.Value.Add(new Txt("Updated paragraph text"));
+            // Add new paragraph text
+            shape.Text.Value.Add(new Txt("Hello, Aspose.Diagram!"));
 
-            // Save the modified diagram to the output path
+            // Optionally, modify paragraph formatting (e.g., line spacing)
+            // Ensure there is at least one paragraph to modify
+            if (shape.Paras.Count > 0)
+            {
+                // Set line spacing to 1.5 lines
+                shape.Paras[0].SpLine.Value = 1.5;
+                // Set horizontal alignment to left
+                shape.Paras[0].HorzAlign.Value = HorzAlignValue.LeftAlign;
+            }
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
+            // Capture any Aspose.Diagram related errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

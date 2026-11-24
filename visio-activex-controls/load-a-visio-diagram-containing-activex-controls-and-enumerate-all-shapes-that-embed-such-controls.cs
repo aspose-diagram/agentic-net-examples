@@ -28,9 +28,10 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                bool anyActiveX = false;
+                Console.WriteLine($"Loaded diagram: {inputPath}");
+                Console.WriteLine("Enumerating shapes that contain ActiveX controls...");
 
-                // Iterate through all pages in the diagram.
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
                     // Iterate through all shapes on the current page.
@@ -40,30 +41,24 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Check if the shape contains an ActiveX control.
+                        // Check if the shape embeds an ActiveX control.
                         if (shape.ActiveXControl != null)
                         {
-                            anyActiveX = true;
+                            // Retrieve the concrete control type name.
+                            string controlTypeName = shape.ActiveXControl.GetType().Name;
 
-                            // Output basic information about the shape.
-                            Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}, NameU: {shape.NameU}");
-
-                            // Output the type of the embedded ActiveX control.
-                            // The ControlType property is accessed via the Type member.
-                            Console.WriteLine($"  ActiveX Control Type: {shape.ActiveXControl.Type}");
+                            // Output shape identification and control type.
+                            Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}, Control Type: {controlTypeName}");
                         }
                     }
                 }
 
-                if (!anyActiveX)
-                {
-                    Console.WriteLine("No shapes with embedded ActiveX controls were found.");
-                }
+                Console.WriteLine("Enumeration completed.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

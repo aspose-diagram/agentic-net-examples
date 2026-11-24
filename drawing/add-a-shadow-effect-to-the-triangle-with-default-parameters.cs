@@ -2,67 +2,63 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the directory containing the source Visio file.
-        string dataDir = "Data"; // Adjust this path as needed.
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
 
-        // Define the input Visio file path.
-        string inputPath = Path.Combine(dataDir, "Drawing1.vsdx");
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Define the output image file path.
-        string outputPath = Path.Combine(dataDir, "TriangleWithShadow.png");
-
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            // Get the first page of the diagram.
-            Page page = diagram.Pages[0];
+                // Retrieve the triangle shape.
+                // This example assumes the triangle has shape ID 1.
+                // Adjust the ID as needed for your specific diagram.
+                Shape triangle = page.Shapes.GetShape(1);
 
-            // Define the vertices of the triangle (x1,y1, x2,y2, x3,y3, x1,y1 to close).
-            double[] trianglePoints = new double[] { 1, 1, 5, 1, 3, 4, 1, 1 };
+                // Apply default shadow effect using cell-based APIs
+                // Set shadow type to simple drop shadow
+                triangle.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
 
-            // Draw the triangle on the page; returns the shape ID.
-            long triangleShapeId = page.DrawPolyline(trianglePoints);
+                // Set default shadow color (black)
+                triangle.Fill.ShdwForegnd.Value = "#000000";
 
-            // Retrieve the newly created triangle shape.
-            Shape triangle = page.Shapes.GetShape(triangleShapeId);
+                // Set default shadow transparency (30% transparent)
+                triangle.Fill.ShdwForegndTrans.Value = 0.3;
 
-            // Apply a simple drop shadow with default parameters.
-            // Set shadow type to Simple.
-            triangle.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-            // Set shadow color to black.
-            triangle.Fill.ShdwForegnd.Value = "#000000";
-            // Set shadow transparency to 30% (0.3). Adjust as needed.
-            triangle.Fill.ShdwForegndTrans.Value = 0.3;
-            // Optional: set default shadow offsets (can be omitted for defaults).
-            triangle.Fill.ShapeShdwOffsetX.Value = 0.1;
-            triangle.Fill.ShapeShdwOffsetY.Value = 0.1;
+                // Set default shadow offsets (0.1 inches horizontally and vertically)
+                triangle.Fill.ShapeShdwOffsetX.Value = 0.1;
+                triangle.Fill.ShapeShdwOffsetY.Value = 0.1;
 
-            // Prepare image save options for PNG format.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                // Save the modified diagram to the output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // Save the diagram (with the shadowed triangle) as a PNG image.
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Triangle with shadow saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

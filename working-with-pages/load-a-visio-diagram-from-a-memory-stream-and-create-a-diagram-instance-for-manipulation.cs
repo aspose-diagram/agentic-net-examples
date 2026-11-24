@@ -6,62 +6,50 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Optional output path
-        string outputPath = args.Length > 1 ? args[1] : null;
-
         try
         {
-            // Load the Visio file into a memory stream
-            MemoryStream memoryStream;
-            using (FileStream fileStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            // Read the Visio file into a memory buffer.
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
+
+            // Load the diagram from the memory stream.
+            using (MemoryStream memoryStream = new MemoryStream(fileBytes))
             {
-                memoryStream = new MemoryStream();
-                fileStream.CopyTo(memoryStream);
-                memoryStream.Position = 0; // Reset position for reading
-            }
-
-            // Create a Diagram instance from the memory stream
-            Diagram diagram = new Diagram(memoryStream);
-
-            // Example manipulation: display the number of pages
-            Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
-
-            // If an output path is provided, save the diagram back to a file
-            if (!string.IsNullOrEmpty(outputPath))
-            {
-                // Guard: ensure the directory for the output file exists
-                string outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                // Diagram must be instantiated inside a using block.
+                using (Diagram diagram = new Diagram(memoryStream))
                 {
-                    Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-                    return;
-                }
+                    // Example manipulation: output the number of pages.
+                    Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
 
-                // Save the diagram in VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                    // Optional: save the diagram to a new file to demonstrate further processing.
+                    string outputPath = Path.Combine(
+                        Path.GetDirectoryName(inputPath) ?? string.Empty,
+                        "output.vsdx");
+
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved to: {outputPath}");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

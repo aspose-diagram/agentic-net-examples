@@ -6,118 +6,114 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input parameters
-        string diagramPath = "input.vsdx";          // Path to the source Visio file
-        if (!System.IO.File.Exists(diagramPath))
+        // Validate command‑line arguments.
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <outputVisioPath> <sourcePageName> <targetPageName>");
             return;
         }
-        string sourcePageName = "Page-1";           // Name of the page containing the shape to clone
-        string targetPageName = "Page-2";           // Name of the page where the clone will be inserted
-        long shapeIdToClone = 1;                    // ID of the shape to clone (as displayed in Visio)
 
-        // Guard: ensure the source file exists
-        if (!File.Exists(diagramPath))
+        string sourcePath = args[0];
+        string outputPath = args[1];
+        string sourcePageName = args[2];
+        string targetPageName = args[3];
+
+        // Guard against missing source file.
+        if (!File.Exists(sourcePath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Source file not found: {sourcePath}");
             return;
         }
 
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the source diagram.
+            Diagram diagram = new Diagram(sourcePath);
 
-            // Locate the source page
+            // Retrieve the source page by name.
             Page sourcePage = null;
-            foreach (Page p in diagram.Pages)
+            foreach (Page pg in diagram.Pages)
             {
-                if (p.Name == sourcePageName)
+                if (pg.Name == sourcePageName)
                 {
-                    sourcePage = p;
+                    sourcePage = pg;
                     break;
                 }
             }
+
             if (sourcePage == null)
             {
                 Console.Error.WriteLine($"Source page \"{sourcePageName}\" not found.");
                 return;
             }
 
-            // Locate or create the target page
+            // Retrieve (or create) the target page.
             Page targetPage = null;
-            foreach (Page p in diagram.Pages)
+            foreach (Page pg in diagram.Pages)
             {
-                if (p.Name == targetPageName)
+                if (pg.Name == targetPageName)
                 {
-                    targetPage = p;
+                    targetPage = pg;
                     break;
                 }
             }
+
             if (targetPage == null)
             {
-                // Create a new page with a unique ID
+                // Create a new page and add it to the diagram.
                 targetPage = new Page();
-                targetPage.Name = targetPageName;
-                // Determine a new unique page ID
+                // Assign a unique ID (max existing ID + 1).
                 int maxId = 0;
-                foreach (Page p in diagram.Pages)
+                foreach (Page pg in diagram.Pages)
                 {
-                    if (p.ID > maxId) maxId = p.ID;
+                    if (pg.ID > maxId) maxId = pg.ID;
                 }
                 targetPage.ID = maxId + 1;
+                targetPage.Name = targetPageName;
                 diagram.Pages.Add(targetPage);
             }
 
-            // Retrieve the shape to clone from the source page
-            Shape sourceShape = sourcePage.Shapes.GetShape((int)shapeIdToClone);
-            if (sourceShape == null)
+            // Choose a shape to clone – here we take the first shape on the source page.
+            if (sourcePage.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeIdToClone} not found on page \"{sourcePageName}\".");
+                Console.Error.WriteLine("Source page contains no shapes to clone.");
                 return;
             }
 
-            // Ensure the shape has an associated master (required for adding a new shape)
-            if (sourceShape.Master == null)
-            {
-                Console.Error.WriteLine("The source shape does not have an associated master; cannot clone.");
-                return;
-            }
+            Shape originalShape = sourcePage.Shapes[0];
 
-            // Add a new shape to the target page using the same master and position
-            double pinX = sourceShape.XForm.PinX.Value;
-            double pinY = sourceShape.XForm.PinY.Value;
-            string masterName = sourceShape.Master.Name;
+            // Determine master name for the shape (fallback to a basic rectangle if missing).
+            string masterName = (originalShape.Master != null) ? originalShape.Master.Name : "Rectangle";
 
+            // Retrieve original position.
+            double pinX = originalShape.XForm.PinX.Value;
+            double pinY = originalShape.XForm.PinY.Value;
+
+            // Add a new shape to the target page using the same master and position.
             long newShapeId = targetPage.AddShape(pinX, pinY, masterName, false);
             Shape clonedShape = targetPage.Shapes.GetShape((int)newShapeId);
-            if (clonedShape == null)
-            {
-                Console.Error.WriteLine("Failed to retrieve the newly added shape.");
-                return;
-            }
 
-            // Copy user-defined cells from the source shape to the cloned shape
-            foreach (User srcUser in sourceShape.Users)
+            // Copy user‑defined cells from the original shape to the cloned shape.
+            foreach (User userField in originalShape.Users)
             {
+                // Create a new User object and copy properties.
                 User newUser = new User();
-                newUser.NameU = srcUser.NameU;
-                // Copy Prompt cell value
-                newUser.Prompt.Value = srcUser.Prompt.Value;
-                // Copy Value cell value
-                newUser.Value.Val = srcUser.Value.Val;
+                newUser.NameU = userField.NameU;
+                newUser.Prompt.Value = userField.Prompt.Value;
+                newUser.Value.Val = userField.Value.Val;
+
+                // Add the copied user‑defined cell to the cloned shape.
                 clonedShape.Users.Add(newUser);
             }
 
-            // Save the modified diagram
-            string outputPath = "output.vsdx";
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Shape cloned and saved to {outputPath}");
+            Console.WriteLine($"Shape cloned and saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

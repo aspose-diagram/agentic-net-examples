@@ -1,66 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
             return;
         }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
-
-        // Output Visio file path
-        string outputPath = "output_page3_rotated.vsdx";
 
         try
         {
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least three pages
+                // Ensure the diagram has at least three pages (zero‑based index 2)
                 if (diagram.Pages.Count < 3)
                 {
                     Console.Error.WriteLine("The diagram does not contain a third page.");
                     return;
                 }
 
-                // Page indices are zero‑based; page three is index 2
-                Page pageThree = diagram.Pages[2];
+                // Retrieve the third page (page index 2)
+                Page page = diagram.Pages[2];
 
-                // Angle in radians for 90 degrees
-                double angleRad = (Math.PI / 180) * 90.0;
-
-                // Iterate over all shapes on page three
-                foreach (Shape shape in pageThree.Shapes)
+                // Iterate over all shapes on the third page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a TextXForm object before setting the angle
-                    if (shape.TextXForm != null && shape.TextXForm.TxtAngle != null)
-                    {
-                        shape.TextXForm.TxtAngle.Value = angleRad;
-                    }
+                    // Set text rotation to 90 degrees (π/2 radians)
+                    shape.TextXForm.TxtAngle.Value = Math.PI / 2;
                 }
 
-                // Save the modified diagram to the output file
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Text rotation applied and diagram saved to: {outputPath}");
+            Console.WriteLine("Text rotation applied and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

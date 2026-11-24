@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
@@ -8,56 +9,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least two arguments: input Visio file path and output PDF file path.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath> [customFontFolder]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile> [fontFolder]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string customFontFolder = args.Length >= 3 ? args[2] : null;
+        string fontFolder = args.Length >= 3 ? args[2] : null;
 
-        // Guard: verify input Visio file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: if a custom font folder is provided, verify it exists.
-        if (!string.IsNullOrEmpty(customFontFolder) && !Directory.Exists(customFontFolder))
+        // If a custom font folder is supplied, verify it exists.
+        if (!string.IsNullOrEmpty(fontFolder) && !Directory.Exists(fontFolder))
         {
-            Console.Error.WriteLine($"Custom font folder does not exist: {customFontFolder}");
+            Console.Error.WriteLine($"Font folder not found: {fontFolder}");
             return;
         }
 
         try
         {
-            // Configure Aspose.Diagram to use a custom font folder if supplied.
-            if (!string.IsNullOrEmpty(customFontFolder))
-            {
-                // Register the custom font folder (recursive search).
-                FontConfigs.SetFontFolder(customFontFolder, true);
-            }
-
-            // Set a default fallback font name (must be installed or in the custom folder).
+            // -----------------------------------------------------------------
+            // Configure font handling for Aspose.Diagram.
+            // -----------------------------------------------------------------
+            // Set a default fallback font name.
             FontConfigs.DefaultFontName = "Arial";
 
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Add custom font directory to the search paths if provided.
+            if (!string.IsNullOrEmpty(fontFolder))
+            {
+                // The second argument enables recursive search.
+                FontConfigs.SetFontFolder(fontFolder, true);
+            }
 
-            // Prepare PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // -----------------------------------------------------------------
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            // -----------------------------------------------------------------
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // -----------------------------------------------------------------
+                // Optional: Validate that all fonts used in the diagram are installed.
+                // -----------------------------------------------------------------
+                // Enumerate system installed fonts using Aspose.Drawing.Text.
+                InstalledFontCollection installedFontCollection = new InstalledFontCollection();
+                var installedNames = installedFontCollection.Families
+                    .Select(f => f.Name)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // Set the default font for PDF rendering.
-            pdfOptions.DefaultFont = "Arial";
+                // Iterate over fonts referenced by the diagram.
+                foreach (Font font in diagram.Fonts)
+                {
+                    if (!installedNames.Contains(font.Name))
+                    {
+                        Console.WriteLine($"Warning: Font \"{font.Name}\" used in diagram is not installed on the system.");
+                    }
+                }
 
-            // Save the diagram to PDF with the specified options.
-            diagram.Save(outputPath, pdfOptions);
+                // -----------------------------------------------------------------
+                // Prepare PDF save options.
+                // -----------------------------------------------------------------
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Set the default font to use when a required font is missing.
+                pdfOptions.DefaultFont = "Arial";
 
-            Console.WriteLine($"PDF saved successfully to: {outputPath}");
+                // -----------------------------------------------------------------
+                // Save the diagram to PDF.
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            }
         }
         catch (Exception ex)
         {

@@ -6,24 +6,27 @@ using Aspose.Diagram;
 
 class Program
 {
-    // DTO for a point in geometry
-    private class PointDto
+    // Simple DTO for JSON serialization of a shape's geometry
+    private class ShapeInfo
     {
-        public double X { get; set; }
-        public double Y { get; set; }
+        public long Id { get; set; }
+        public double PinX { get; set; }
+        public double PinY { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
     }
 
-    // DTO for a single geometry (collection of points)
-    private class GeometryDto
+    // DTO for a master and its constituent shapes
+    private class MasterInfo
     {
-        public List<PointDto> Points { get; set; } = new();
+        public string Name { get; set; }
+        public List<ShapeInfo> Shapes { get; set; }
     }
 
-    // DTO for a master shape (its name and all geometries)
-    private class MasterGeometryDto
+    // Root object for the exported JSON schema
+    private class DiagramSchema
     {
-        public string? MasterName { get; set; }
-        public List<GeometryDto> Geometries { get; set; } = new();
+        public List<MasterInfo> Masters { get; set; }
     }
 
     static void Main(string[] args)
@@ -47,106 +50,62 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // List to hold geometry data for all masters
-                List<MasterGeometryDto> mastersData = new();
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-                // Iterate over each master in the diagram
-                foreach (Aspose.Diagram.Master master in diagram.Masters)
+            // Prepare a collection to hold master geometry information
+            List<MasterInfo> mastersInfo = new List<MasterInfo>();
+
+            // Iterate over all masters in the diagram
+            foreach (Master master in diagram.Masters)
+            {
+                // Ensure the master has a valid name
+                string masterName = master.Name ?? string.Empty;
+
+                MasterInfo masterInfo = new MasterInfo
                 {
-                    // Prepare DTO for the current master
-                    MasterGeometryDto masterDto = new MasterGeometryDto
+                    Name = masterName,
+                    Shapes = new List<ShapeInfo>()
+                };
+
+                // Iterate over shapes that belong to this master
+                for (int i = 0; i < master.Shapes.Count; i++)
+                {
+                    Shape shape = master.Shapes[i];
+
+                    // Extract basic geometry data from the shape's XForm section
+                    ShapeInfo shapeInfo = new ShapeInfo
                     {
-                        MasterName = master.Name ?? "UnnamedMaster"
+                        Id = shape.ID,
+                        PinX = shape.XForm.PinX.Value,
+                        PinY = shape.XForm.PinY.Value,
+                        Width = shape.XForm.Width.Value,
+                        Height = shape.XForm.Height.Value
                     };
 
-                    // Iterate over shapes that belong to the master
-                    for (int sIdx = 0; sIdx < master.Shapes.Count; sIdx++)
-                    {
-                        Aspose.Diagram.Shape shape = master.Shapes[sIdx];
-
-                        // Iterate over each geometry section of the shape
-                        for (int gIdx = 0; gIdx < shape.Geoms.Count; gIdx++)
-                        {
-                            Aspose.Diagram.Geom geom = shape.Geoms[gIdx];
-                            GeometryDto geometryDto = new GeometryDto();
-
-                            // Iterate over each coordinate object in the geometry
-                            for (int cIdx = 0; cIdx < geom.CoordinateCol.Count; cIdx++)
-                            {
-                                object coordObj = geom.CoordinateCol[cIdx];
-                                double xVal = 0;
-                                double yVal = 0;
-                                bool hasPoint = false;
-
-                                // Handle supported coordinate types
-                                if (coordObj is Aspose.Diagram.MoveTo move)
-                                {
-                                    xVal = move.X.Value;
-                                    yVal = move.Y.Value;
-                                    hasPoint = true;
-                                }
-                                else if (coordObj is Aspose.Diagram.LineTo line)
-                                {
-                                    xVal = line.X.Value;
-                                    yVal = line.Y.Value;
-                                    hasPoint = true;
-                                }
-                                else if (coordObj is Aspose.Diagram.ArcTo arc)
-                                {
-                                    xVal = arc.X.Value;
-                                    yVal = arc.Y.Value;
-                                    hasPoint = true;
-                                }
-                                else if (coordObj is Aspose.Diagram.EllipticalArcTo ell)
-                                {
-                                    xVal = ell.X.Value;
-                                    yVal = ell.Y.Value;
-                                    hasPoint = true;
-                                }
-                                else if (coordObj is Aspose.Diagram.SplineKnot knot)
-                                {
-                                    xVal = knot.X.Value;
-                                    yVal = knot.Y.Value;
-                                    hasPoint = true;
-                                }
-                                else if (coordObj is Aspose.Diagram.PolylineTo poly)
-                                {
-                                    xVal = poly.X.Value;
-                                    yVal = poly.Y.Value;
-                                    hasPoint = true;
-                                }
-
-                                // Add the point if a supported coordinate was found
-                                if (hasPoint)
-                                {
-                                    geometryDto.Points.Add(new PointDto { X = xVal, Y = yVal });
-                                }
-                            }
-
-                            // Add the geometry DTO to the master DTO
-                            masterDto.Geometries.Add(geometryDto);
-                        }
-                    }
-
-                    // Add the master DTO to the overall collection
-                    mastersData.Add(masterDto);
+                    masterInfo.Shapes.Add(shapeInfo);
                 }
 
-                // Serialize the collected data to JSON with indentation
-                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-                string jsonString = JsonSerializer.Serialize(mastersData, jsonOptions);
-
-                // Write JSON to the specified output file
-                File.WriteAllText(outputPath, jsonString);
-                Console.WriteLine($"Master geometry exported successfully to: {outputPath}");
+                mastersInfo.Add(masterInfo);
             }
+
+            // Build the final schema object
+            DiagramSchema schema = new DiagramSchema
+            {
+                Masters = mastersInfo
+            };
+
+            // Serialize to JSON with indentation for readability
+            string json = JsonSerializer.Serialize(schema, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the specified output file
+            File.WriteAllText(outputPath, json);
+
+            Console.WriteLine($"Master geometry exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any errors from Aspose.Diagram operations or file I/O
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

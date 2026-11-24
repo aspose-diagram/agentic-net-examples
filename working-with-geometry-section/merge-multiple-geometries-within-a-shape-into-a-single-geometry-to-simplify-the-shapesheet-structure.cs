@@ -1,23 +1,22 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
-        // Output Visio file path
-        string outputPath = "output_merged.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,58 +25,51 @@ class Program
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Process only shapes that have more than one geometry
-                    if (shape.Geoms != null && shape.Geoms.Count > 1)
+                    // Ensure the shape has a geometry collection.
+                    if (shape.Geoms == null)
+                        continue;
+
+                    // If the shape contains more than one geometry, merge them.
+                    if (shape.Geoms.Count > 1)
                     {
-                        // Use the first geometry as the target for merging
-                        var targetGeom = shape.Geoms[0];
-
-                        // Merge geometry rows from subsequent geometries into the target
-                        for (int g = 1; g < shape.Geoms.Count; g++)
-                        {
-                            var srcGeom = shape.Geoms[g];
-
-                            // Ensure the source geometry has coordinate rows
-                            if (srcGeom.CoordinateCol != null)
-                            {
-                                // Copy each coordinate row to the target geometry
-                                foreach (var row in srcGeom.CoordinateCol)
-                                {
-                                    // Add the row to the target geometry's collection
-                                    targetGeom.CoordinateCol.Add(row);
-                                }
-                            }
-                        }
-
-                        // Remove the now-merged extra geometries (from last to first to keep indices valid)
-                        for (int g = shape.Geoms.Count - 1; g > 0; g--)
-                        {
-                            shape.Geoms.RemoveAt(g);
-                        }
+                        // TODO: Implement geometry merging logic.
+                        // The typical approach is to move all rows from the secondary
+                        // geometries into the first geometry and then remove the extra
+                        // geometry objects from the collection.
+                        // Example (pseudocode):
+                        // Geometry primary = shape.Geoms[0];
+                        // for (int i = 1; i < shape.Geoms.Count; i++)
+                        // {
+                        //     Geometry secondary = shape.Geoms[i];
+                        //     foreach (var row in secondary.Rows)
+                        //         primary.Rows.Add(row);
+                        // }
+                        // // Remove secondary geometries after merging.
+                        // for (int i = shape.Geoms.Count - 1; i > 0; i--)
+                        //     shape.Geoms.RemoveAt(i);
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -8,16 +8,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file and output HTML file paths
+        // Input Visio file path
         string inputPath = "input.vsdx";
         if (!System.IO.File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output HTML file path
         string outputPath = "output.html";
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,35 +27,33 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create a warning collector implementing IWarningCallback
-            WarningCollector warningCollector = new WarningCollector();
-
-            // Configure HTML save options and assign the warning callback
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.WarningCallback = warningCollector;
-
-            // Save the diagram as HTML using the configured options
-            diagram.Save(outputPath, htmlOptions);
-
-            // Output any captured warnings
-            if (warningCollector.Warnings.Count > 0)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("Warnings captured during HTML export:");
-                foreach (string warning in warningCollector.Warnings)
+                // Create a warning collector implementing IWarningCallback
+                WarningCollector collector = new WarningCollector();
+
+                // Configure HTML save options and assign the warning callback
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                htmlOptions.WarningCallback = collector;
+
+                // Save the diagram to HTML using the configured options
+                diagram.Save(outputPath, htmlOptions);
+
+                // Output captured warnings, if any
+                if (collector.Warnings.Count > 0)
                 {
-                    Console.WriteLine(warning);
+                    Console.WriteLine("Warnings captured during save:");
+                    foreach (string warning in collector.Warnings)
+                    {
+                        Console.WriteLine(warning);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No warnings captured during save.");
                 }
             }
-            else
-            {
-                Console.WriteLine("No warnings were generated during HTML export.");
-            }
-
-            // Dispose the diagram to free resources
-            diagram.Dispose();
         }
         catch (Exception ex)
         {
@@ -62,17 +61,20 @@ class Program
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
+}
 
-    // Implementation of IWarningCallback to collect warning messages
-    private class WarningCollector : IWarningCallback
+// Implementation of IWarningCallback to collect warnings
+class WarningCollector : IWarningCallback
+{
+    public List<string> Warnings { get; } = new List<string>();
+
+    // This method is called by Aspose.Diagram for each warning
+    public void Warning(WarningInfo warning)
     {
-        public List<string> Warnings { get; } = new List<string>();
-
-        // This method is called by Aspose.Diagram for each warning
-        public void Warning(WarningInfo warning)
+        if (warning != null)
         {
-            string description = warning?.Description ?? "Unknown warning";
-            Warnings.Add(description);
+            // Capture the warning description
+            Warnings.Add(warning.Description);
         }
     }
 }

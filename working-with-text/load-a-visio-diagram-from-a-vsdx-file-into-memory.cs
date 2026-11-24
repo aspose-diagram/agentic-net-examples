@@ -6,19 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input file path from command-line arguments.
-        string inputPath;
-        if (args.Length > 0)
+        // Expect the first argument to be the path of the .vsdx file
+        if (args.Length == 0)
         {
-            inputPath = args[0];
-        }
-        else
-        {
-            Console.Error.WriteLine("Please provide the path to a .vsdx file as a command-line argument.");
+            Console.Error.WriteLine("Please provide the path to a .vsdx file as a command‑line argument.");
             return;
         }
 
-        // Guard: ensure the specified file exists before attempting to load.
+        string inputPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
@@ -27,23 +24,22 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram into memory using a using block
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Diagram loaded successfully. Output basic information.
-                Console.WriteLine($"Diagram loaded successfully. Total pages: {diagram.Pages.Count}");
+                // Output basic information to confirm successful load
+                Console.WriteLine($"Diagram loaded successfully. Page count: {diagram.Pages.Count}");
 
-                // Iterate through pages and display their names.
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Iterate through pages and display their IDs and names
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[i];
-                    Console.WriteLine($"Page {i + 1}: NameU = {page.NameU}");
+                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.NameU}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any loading errors to the error output.
+            // Write any loading errors to the error stream
             Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }

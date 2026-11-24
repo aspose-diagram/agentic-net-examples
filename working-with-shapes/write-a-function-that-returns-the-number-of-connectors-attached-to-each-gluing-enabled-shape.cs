@@ -1,23 +1,21 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio diagram file path as the first argument.
+        // Expect the first argument to be the path to the Visio diagram file.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the file exists before proceeding.
+        // Guard: ensure the file exists before attempting to load.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
@@ -26,35 +24,56 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                Console.WriteLine($"Page: {page.Name}");
+
+                // Build a lookup of connector IDs for quick checking (optional).
+                // Connectors are 1‑D shapes (shape.OneD == true).
+                var connectorIds = new System.Collections.Generic.HashSet<long>();
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.OneD == true) // Connectors are 1‑D shapes.
                     {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        connectorIds.Add(shape.ID);
+                    }
+                }
 
-                        // Retrieve IDs of all 1‑D shapes (connectors) glued to this shape.
-                        // The method returns null if there are no glued shapes.
-                        long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+                // For each non‑connector shape, count how many connectors are glued to it.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip connectors themselves.
+                    if (shape.OneD == true)
+                        continue;
 
-                        // If the shape has any glued connectors, output the count.
-                        if (gluedConnectorIds != null && gluedConnectorIds.Length > 0)
+                    // Count connectors attached via the Connects collection.
+                    int attachedConnectorCount = 0;
+                    foreach (Connect connect in page.Connects)
+                    {
+                        // A connector is considered attached if either end references the shape's ID.
+                        if (connect.FromSheet == shape.ID || connect.ToSheet == shape.ID)
                         {
-                            Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) has {gluedConnectorIds.Length} attached connector(s).");
+                            // Ensure the connecting shape is actually a connector.
+                            if (connectorIds.Contains(connect.FromSheet) || connectorIds.Contains(connect.ToSheet))
+                            {
+                                attachedConnectorCount++;
+                            }
                         }
                     }
+
+                    // Output the result for the current shape.
+                    string shapeName = string.IsNullOrEmpty(shape.Name) ? "(no name)" : shape.Name;
+                    Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shapeName}, Attached Connectors: {attachedConnectorCount}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

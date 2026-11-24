@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate command‑line argument for the target directory.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the directory path containing VDX files as the first argument.");
+            Console.Error.WriteLine("Error: Please provide the directory path containing VDX files as the first argument.");
             return;
         }
 
@@ -18,45 +18,53 @@ class Program
         // Guard: ensure the directory exists.
         if (!Directory.Exists(directoryPath))
         {
-            Console.Error.WriteLine($"Directory does not exist: {directoryPath}");
+            Console.Error.WriteLine($"Error: Directory does not exist – \"{directoryPath}\"");
             return;
         }
 
-        // Get all .vdx files in the specified directory.
+        // Retrieve all .vdx files in the directory (non‑recursive).
         string[] vdxFiles = Directory.GetFiles(directoryPath, "*.vdx");
+
+        if (vdxFiles.Length == 0)
+        {
+            Console.WriteLine("No VDX files found in the specified directory.");
+            return;
+        }
 
         // Process each VDX file.
         foreach (string filePath in vdxFiles)
         {
-            // Guard: ensure the file still exists before processing.
+            // Guard: double‑check file existence (defensive programming).
             if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                Console.Error.WriteLine($"Warning: File not found – \"{filePath}\". Skipping.");
                 continue;
             }
 
             try
             {
-                // Load the Visio diagram from the VDX file.
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(filePath);
 
-                // Prepare the current date string (e.g., 2026-10-21).
-                string currentDate = DateTime.Now.ToString("d");
+                // Update header text with the current date.
+                // Using the standard Visio field code &d for date.
+                diagram.HeaderFooter.HeaderCenter = $"Date: {DateTime.Now:yyyy-MM-dd}";
 
-                // Update header fields with the current date.
-                // HeaderLeft, HeaderCenter, and HeaderRight are string properties.
-                diagram.HeaderFooter.HeaderLeft = currentDate;
-                diagram.HeaderFooter.HeaderCenter = currentDate;
-                diagram.HeaderFooter.HeaderRight = currentDate;
+                // Optionally configure header font appearance.
+                var headerFont = diagram.HeaderFooter.HeaderFooterFont;
+                headerFont.FaceName = "Arial";
+                headerFont.Height = 12;          // Font size in points.
+                headerFont.Weight = 700;        // 700 = bold.
+                headerFont.Underline = BOOL.False;
 
-                // Save the modified diagram back to the same file.
+                // Save the diagram back to the same file (preserving VDX format).
                 diagram.Save(filePath, SaveFileFormat.Vdx);
-                Console.WriteLine($"Successfully updated header for: {Path.GetFileName(filePath)}");
+                Console.WriteLine($"Successfully updated header for \"{Path.GetFileName(filePath)}\".");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during loading, modification, or saving.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                // Report any errors that occur during processing of the current file.
+                Console.Error.WriteLine($"Error processing \"{filePath}\": {ex.Message}");
             }
         }
     }

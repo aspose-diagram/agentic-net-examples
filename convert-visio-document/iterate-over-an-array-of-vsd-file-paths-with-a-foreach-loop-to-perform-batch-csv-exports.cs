@@ -7,41 +7,41 @@ class Program
     static void Main(string[] args)
     {
         // Define the list of Visio files to be exported to CSV.
-        // Adjust the paths as needed for your environment.
         string[] visioFiles = new string[]
         {
-            @"C:\Diagrams\Diagram1.vsd",
-            @"C:\Diagrams\Diagram2.vsdx",
-            @"C:\Diagrams\Diagram3.vdx"
+            @"C:\VisioFiles\Diagram1.vsd",
+            @"C:\VisioFiles\Diagram2.vsdx",
+            @"C:\VisioFiles\Diagram3.vdx"
         };
 
-        // Iterate over each file path and perform the export.
-        foreach (string filePath in visioFiles)
+        // Iterate over each file path using a foreach loop.
+        foreach (string inputPath in visioFiles)
         {
-            // Guard: ensure the source file exists before processing.
-            if (!File.Exists(filePath))
+            // Guard: ensure the input file exists before processing.
+            if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                Console.Error.WriteLine($"Input file not found: {inputPath}");
                 continue;
             }
 
             try
             {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(filePath);
+                // Load the Visio diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Determine the output CSV file path (same folder, same name with .csv extension).
+                    string outputPath = Path.ChangeExtension(inputPath, ".csv");
 
-                // Determine the output CSV file path (same folder, .csv extension).
-                string outputPath = Path.ChangeExtension(filePath, ".csv");
+                    // Export the diagram to CSV format.
+                    diagram.Save(outputPath, SaveFileFormat.Csv);
 
-                // Export the diagram to CSV format.
-                diagram.Save(outputPath, SaveFileFormat.Csv);
-
-                Console.WriteLine($"Successfully exported '{filePath}' to '{outputPath}'.");
+                    Console.WriteLine($"Successfully exported '{inputPath}' to CSV at '{outputPath}'.");
+                }
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during loading or saving.
-                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                // Write any Aspose or I/O errors to the error console.
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }
     }

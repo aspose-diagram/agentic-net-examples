@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Aspose.Diagram;
 
@@ -8,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -30,75 +29,52 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Define batch replacements: old text => new text.
-            var replacements = new Dictionary<string, string>
-            {
-                { "OldValue", "NewValue" },
-                { "Placeholder", "ActualText" }
-            };
-
             // Start timing the batch field update operation.
-            Stopwatch sw = Stopwatch.StartNew();
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
             // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over shapes using index to avoid collection modification issues.
-                for (int s = 0; s < page.Shapes.Count; s++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[s];
-
                     // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
                     // Process only shapes that contain text fields.
-                    if (shape.Fields.Count > 0)
+                    if (shape.Fields == null || shape.Fields.Count == 0)
+                        continue;
+
+                    // Update each field in the shape.
+                    foreach (Field field in shape.Fields)
                     {
-                        for (int f = 0; f < shape.Fields.Count; f++)
-                        {
-                            Field field = shape.Fields[f];
+                        // Example update: set the field value to "Updated".
+                        field.Value.Val = "Updated";
 
-                            // Original field value.
-                            string original = field.Value.Val ?? string.Empty;
-                            string updated = original;
+                        // Ensure the unit is undefined (required for proper saving).
+                        field.Value.Ufev.Unit = MeasureConst.Undefined;
+                        field.Value.Ufev.F = ""; // Clear any formula.
 
-                            // Apply all replacements.
-                            foreach (KeyValuePair<string, string> kvp in replacements)
-                            {
-                                if (!string.IsNullOrEmpty(kvp.Key))
-                                    updated = updated.Replace(kvp.Key, kvp.Value);
-                            }
-
-                            // Update the field only if a change occurred.
-                            if (!updated.Equals(original, StringComparison.Ordinal))
-                            {
-                                field.Value.Val = updated;
-                                // Ensure unit is undefined as per API requirements.
-                                field.Value.Ufev.Unit = MeasureConst.Undefined;
-                                field.Value.Ufev.F = string.Empty;
-
-                                // Clear formatting (optional, shown for completeness).
-                                field.Format.Val = string.Empty;
-                                field.Format.Ufev.F = string.Empty;
-                                field.Format.Ufev.Unit = MeasureConst.Undefined;
-                            }
-                        }
+                        // Optionally clear formatting.
+                        field.Format.Val = "";
+                        field.Format.Ufev.F = "";
+                        field.Format.Ufev.Unit = MeasureConst.Undefined;
                     }
                 }
             }
 
-            // Stop timing.
-            sw.Stop();
-            Console.WriteLine($"Batch field update completed in {sw.ElapsedMilliseconds} ms.");
+            // Stop timing after all updates are done.
+            stopwatch.Stop();
 
-            // Save the modified diagram.
+            // Output the elapsed time.
+            Console.WriteLine($"Batch field update completed in {stopwatch.Elapsed.TotalMilliseconds} ms.");
+
+            // Save the modified diagram to the output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,80 +1,92 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, output Visio file, opacity percentage (10-90)
-        if (args.Length < 3)
+        // Validate arguments: input file, output file, optional opacity (percent)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <opacityPercent>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> [opacityPercent]");
+            Console.Error.WriteLine("opacityPercent should be a number between 10 and 90.");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string opacityArg = args[2];
+        double opacityPercent = 30.0; // default opacity 30%
 
-        // Guard: verify input file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse and validate opacity percentage (must be between 10 and 90)
-        if (!int.TryParse(opacityArg, out int opacityPercent) ||
-            opacityPercent < 10 || opacityPercent > 90)
+        // Parse optional opacity argument
+        if (args.Length >= 3)
         {
-            Console.Error.WriteLine("Opacity must be an integer between 10 and 90.");
-            return;
+            if (!double.TryParse(args[2], out opacityPercent))
+            {
+                Console.Error.WriteLine("Invalid opacity value. It must be a number between 10 and 90.");
+                return;
+            }
         }
+
+        // Clamp opacity to allowed range (10% - 90%)
+        if (opacityPercent < 10) opacityPercent = 10;
+        if (opacityPercent > 90) opacityPercent = 90;
+
+        // Convert percent to opacity (0.0 - 1.0) and then to transparency
+        double opacity = opacityPercent / 100.0;
+        double transparency = 1.0 - opacity; // 0 = opaque, 1 = fully transparent
 
         try
         {
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Use the first page for the watermark
-            Page page = diagram.Pages[0];
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Retrieve page dimensions (in inches)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Position the watermark at the top‑left corner (covers full page)
+                double pinX = 0.0;
+                double pinY = 0.0;
 
-            // Watermark text and appearance settings
-            string watermarkText = "Watermark";
-            string fontName = "Calibri";
-            string fontColor = "#a5a5a5"; // Light gray
-            // Font size is in inches; 12 points = 12/72 inches
-            double fontSizeInches = 12.0 / 72.0;
+                // Font size: convert points to inches (1 point = 1/72 inch)
+                double fontSizePoints = 36.0;
+                double fontSizeInches = fontSizePoints / 72.0;
 
-            // Add a full‑page text shape (returns a Shape object)
-            Shape watermarkShape = page.AddText(
-                0,                     // pinX
-                0,                     // pinY
-                pageWidth,             // width
-                pageHeight,            // height
-                watermarkText,         // text
-                fontName,              // fontName
-                fontColor,             // fontColor (hex)
-                fontSizeInches);       // fontSize (in inches)
+                // Add a full‑page watermark text shape
+                Shape watermarkShape = page.AddText(
+                    pinX,
+                    pinY,
+                    pageWidth,
+                    pageHeight,
+                    "Watermark",          // watermark text
+                    "Calibri",            // font name
+                    "#808080",            // font color (gray)
+                    fontSizeInches);      // font size in inches
 
-            // Calculate transparency based on desired opacity
-            // opacityPercent is 10‑90, convert to 0.1‑0.9 range
-            double opacity = opacityPercent / 100.0;
-            double transparency = 1.0 - opacity; // 0 = opaque, 1 = fully transparent
+                // Apply transparency to simulate the desired opacity
+                // ShdwForegndTrans expects a value between 0.0 (opaque) and 1.0 (fully transparent)
+                watermarkShape.Fill.ShdwForegndTrans.Value = transparency;
 
-            // Apply a simple drop shadow to simulate watermark opacity
-            watermarkShape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-            watermarkShape.Fill.ShdwForegnd.Value = "#000000";               // Shadow color (black)
-            watermarkShape.Fill.ShdwForegndTrans.Value = transparency;     // Shadow transparency
+                // Optionally, send the watermark to the background layer
+                // This can be done by moving the shape to a background layer if needed.
+                // Example (commented out):
+                // watermarkShape.LayerMember.Value = "Background";
+            }
 
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Watermark applied with {opacityPercent}% opacity and saved to: {outputPath}");
         }
         catch (Exception ex)
         {

@@ -5,12 +5,13 @@ using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing;
 using Aspose.Drawing.Imaging;
+using Aspose.Drawing.Drawing2D;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input VST file> <output sprite sheet PNG>");
@@ -20,95 +21,109 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Temporary folder for per‑page PNGs
-        string tempFolder = Path.Combine(Path.GetTempPath(), "VstSpriteTemp_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempFolder);
+        // Lists to hold temporary image file paths and loaded images.
+        List<string> tempImagePaths = new List<string>();
+        List<Aspose.Drawing.Image> pageImages = new List<Aspose.Drawing.Image>();
 
         try
         {
-            // Load the VST diagram
+            // Load the VST diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 int pageCount = diagram.Pages.Count;
-                var pageBitmaps = new List<Bitmap>();
-                int maxWidth = 0;
-                int totalHeight = 0;
 
-                // Export each page to a PNG file and load it into a Bitmap
+                // Export each page to a temporary PNG file and load it.
                 for (int i = 0; i < pageCount; i++)
                 {
-                    // Configure image save options for a single page
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                    {
-                        PageIndex = i,
-                        PageCount = 1,
-                        Resolution = 96f // DPI
-                    };
+                    // Configure image save options for a single page.
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    imgOptions.PageIndex = i;   // zero‑based page index
+                    imgOptions.PageCount = 1;   // export only this page
 
-                    string pageImagePath = Path.Combine(tempFolder, $"page_{i}.png");
+                    // Create a temporary file path for the page image.
+                    string tempPath = Path.Combine(Path.GetTempPath(),
+                        $"vst_page_{i}_{Guid.NewGuid()}.png");
 
-                    // Save the page as PNG
-                    diagram.Save(pageImagePath, imgOptions);
+                    // Save the page image.
+                    diagram.Save(tempPath, imgOptions);
+                    tempImagePaths.Add(tempPath);
 
-                    // Load the saved PNG into a Bitmap
-                    Bitmap bmp = new Bitmap(pageImagePath);
-                    pageBitmaps.Add(bmp);
-
-                    // Update sprite sheet dimensions
-                    if (bmp.Width > maxWidth) maxWidth = bmp.Width;
-                    totalHeight += bmp.Height;
-                }
-
-                // Create the final sprite sheet bitmap
-                using (Bitmap spriteSheet = new Bitmap(maxWidth, totalHeight))
-                {
-                    using (Graphics g = Graphics.FromImage(spriteSheet))
-                    {
-                        // Clear with transparent background
-                        g.Clear(Color.Transparent);
-                        int currentY = 0;
-
-                        // Draw each page bitmap onto the sprite sheet vertically
-                        foreach (Bitmap pageBmp in pageBitmaps)
-                        {
-                            g.DrawImage(pageBmp, 0, currentY, pageBmp.Width, pageBmp.Height);
-                            currentY += pageBmp.Height;
-                            pageBmp.Dispose(); // Dispose individual page bitmap after drawing
-                        }
-                    }
-
-                    // Save the combined sprite sheet as PNG
-                    spriteSheet.Save(outputPath, ImageFormat.Png);
+                    // Load the exported image using Aspose.Drawing.
+                    Aspose.Drawing.Image img = Aspose.Drawing.Image.FromFile(tempPath);
+                    pageImages.Add(img);
                 }
             }
 
-            Console.WriteLine($"Sprite sheet created successfully at: {outputPath}");
+            // Determine sprite sheet dimensions (vertical stacking).
+            int spriteWidth = 0;
+            int spriteHeight = 0;
+            foreach (Aspose.Drawing.Image img in pageImages)
+            {
+                if (img.Width > spriteWidth)
+                    spriteWidth = img.Width;
+                spriteHeight += img.Height;
+            }
+
+            // Create the final sprite sheet bitmap.
+            using (Bitmap spriteSheet = new Bitmap(spriteWidth, spriteHeight))
+            {
+                using (Graphics g = Graphics.FromImage(spriteSheet))
+                {
+                    // Clear with transparent background.
+                    g.Clear(Color.Transparent);
+
+                    int offsetY = 0;
+                    foreach (Aspose.Drawing.Image img in pageImages)
+                    {
+                        // Draw each page image at the current vertical offset.
+                        g.DrawImage(img, new Rectangle(0, offsetY, img.Width, img.Height));
+                        offsetY += img.Height;
+                    }
+                }
+
+                // Save the combined sprite sheet to the requested output path.
+                spriteSheet.Save(outputPath, ImageFormat.Png);
+                Console.WriteLine($"Sprite sheet created successfully: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("An error occurred while processing the diagram:");
-            Console.Error.WriteLine(ex.Message);
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
         finally
         {
-            // Clean up temporary files
-            try
+            // Clean up loaded images.
+            foreach (Aspose.Drawing.Image img in pageImages)
             {
-                if (Directory.Exists(tempFolder))
+                try
                 {
-                    Directory.Delete(tempFolder, true);
+                    img.Dispose();
+                }
+                catch
+                {
+                    // Suppress any errors during image disposal.
                 }
             }
-            catch
+
+            // Delete temporary image files.
+            foreach (string tempPath in tempImagePaths)
             {
-                // Suppress any cleanup errors
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                catch
+                {
+                    // Suppress any errors during cleanup.
+                }
             }
         }
     }

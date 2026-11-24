@@ -1,73 +1,79 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output path (optional second argument)
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? "",
-            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
-
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Example geometry modification:
-                        // Increase the shape's width by 10% to demonstrate a change.
-                        // This modifies the XForm.Width cell in the ShapeSheet.
-                        double originalWidth = shape.XForm.Width.Value;
-                        double newWidth = originalWidth * 1.10;
-                        shape.XForm.Width.Value = newWidth;
-
-                        // Document the change by adding a comment to the shape's Misc.Comment cell.
-                        // This comment resides in the ShapeSheet and explains the rationale.
-                        string commentText = $"Width increased from {originalWidth:F2} to {newWidth:F2} (10% increase) to improve layout spacing.";
-                        // Ensure the Comment cell exists before assigning
-                        if (shape.Misc != null && shape.Misc.Comment != null)
+                        // Process each geometry of the shape.
+                        for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
                         {
-                            shape.Misc.Comment.Value = commentText;
+                            // Retrieve the geometry object.
+                            Geom geom = shape.Geoms[geomIndex];
+
+                            // ------------------------------------------------------------
+                            // Example modification: add a new vertex (LineTo) to the geometry.
+                            // ------------------------------------------------------------
+                            LineTo newVertex = new LineTo();
+                            // Set coordinates for the new vertex (example values).
+                            newVertex.X.Value = 2.0; // X coordinate
+                            newVertex.Y.Value = 2.0; // Y coordinate
+
+                            // Append the new vertex to the geometry's coordinate collection.
+                            geom.CoordinateCol.Add(newVertex);
+
+                            // ------------------------------------------------------------
+                            // Document the change by adding a comment linked to the shape.
+                            // ------------------------------------------------------------
+                            // The comment is stored as a page annotation associated with the shape.
+                            page.AddComment(shape, "Added extra vertex to adjust shape geometry.");
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

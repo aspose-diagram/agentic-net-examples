@@ -28,84 +28,65 @@ class Program
             return;
         }
 
-        Diagram oldDiagram = null;
-        Diagram newDiagram = null;
-
         try
         {
-            // Load both diagram versions
-            oldDiagram = new Diagram(oldPath);
-            newDiagram = new Diagram(newPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagrams: {ex.Message}");
-            return;
-        }
-
-        try
-        {
-            // Determine the number of pages to compare (use the smaller count)
-            int pageCount = Math.Min(oldDiagram.Pages.Count, newDiagram.Pages.Count);
-
-            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            // Load the old diagram inside a using block
+            using (Diagram oldDiagram = new Diagram(oldPath))
             {
-                Page oldPage = oldDiagram.Pages[pageIndex];
-                Page newPage = newDiagram.Pages[pageIndex];
-
-                // Iterate over shapes in the old page
-                foreach (Shape oldShape in oldPage.Shapes)
+                // Load the new diagram inside a using block
+                using (Diagram newDiagram = new Diagram(newPath))
                 {
-                    // Attempt to locate the corresponding shape in the new diagram by ID
-                    Shape newShape = null;
-                    try
+                    // Build a lookup of shapes from the new diagram by their ID
+                    var newShapesById = new System.Collections.Generic.Dictionary<long, Shape>();
+                    foreach (Page newPage in newDiagram.Pages)
                     {
-                        // Shape IDs are unique within a page; use GetShape(id) to retrieve
-                        newShape = newPage.Shapes.GetShape(oldShape.ID);
-                    }
-                    catch
-                    {
-                        // If GetShape throws, the shape does not exist in the new version
-                        newShape = null;
+                        foreach (Shape newShape in newPage.Shapes)
+                        {
+                            // Skip deleted shapes
+                            if (newShape.Del == BOOL.True)
+                                continue;
+
+                            newShapesById[newShape.ID] = newShape;
+                        }
                     }
 
-                    if (newShape == null)
+                    // Iterate through pages and shapes of the old diagram
+                    foreach (Page oldPage in oldDiagram.Pages)
                     {
-                        Console.WriteLine($"Shape ID {oldShape.ID} missing in new diagram (Page {pageIndex + 1}).");
-                        continue;
-                    }
+                        foreach (Shape oldShape in oldPage.Shapes)
+                        {
+                            // Skip deleted shapes
+                            if (oldShape.Del == BOOL.True)
+                                continue;
 
-                    // Compare each supported event cell
-                    CompareEventCell("EventDrop", oldShape.Event.EventDrop?.Ufe?.F, newShape.Event.EventDrop?.Ufe?.F, oldShape.ID, pageIndex);
-                    CompareEventCell("EventDblClick", oldShape.Event.EventDblClick?.Ufe?.F, newShape.Event.EventDblClick?.Ufe?.F, oldShape.ID, pageIndex);
-                    CompareEventCell("EventXFMod", oldShape.Event.EventXFMod?.Ufe?.F, newShape.Event.EventXFMod?.Ufe?.F, oldShape.ID, pageIndex);
-                    CompareEventCell("EventMultiDrop", oldShape.Event.EventMultiDrop?.Ufe?.F, newShape.Event.EventMultiDrop?.Ufe?.F, oldShape.ID, pageIndex);
-                    CompareEventCell("TheText", oldShape.Event.TheText?.Ufe?.F, newShape.Event.TheText?.Ufe?.F, oldShape.ID, pageIndex);
-                    CompareEventCell("TheData", oldShape.Event.TheData?.Ufe?.F, newShape.Event.TheData?.Ufe?.F, oldShape.ID, pageIndex);
+                            long shapeId = oldShape.ID;
+
+                            if (!newShapesById.TryGetValue(shapeId, out Shape newShape))
+                            {
+                                Console.WriteLine($"Shape ID {shapeId} exists in old diagram but not in new diagram.");
+                                continue;
+                            }
+
+                            // Compare each relevant event cell
+                            CompareEventCell("EventDrop", oldShape.Event.EventDrop?.Ufe?.F, newShape.Event.EventDrop?.Ufe?.F, shapeId);
+                            CompareEventCell("EventDblClick", oldShape.Event.EventDblClick?.Ufe?.F, newShape.Event.EventDblClick?.Ufe?.F, shapeId);
+                            CompareEventCell("EventXFMod", oldShape.Event.EventXFMod?.Ufe?.F, newShape.Event.EventXFMod?.Ufe?.F, shapeId);
+                            CompareEventCell("EventMultiDrop", oldShape.Event.EventMultiDrop?.Ufe?.F, newShape.Event.EventMultiDrop?.Ufe?.F, shapeId);
+                            CompareEventCell("TheText", oldShape.Event.TheText?.Ufe?.F, newShape.Event.TheText?.Ufe?.F, shapeId);
+                            CompareEventCell("TheData", oldShape.Event.TheData?.Ufe?.F, newShape.Event.TheData?.Ufe?.F, shapeId);
+                        }
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during comparison: {ex.Message}");
-        }
-        finally
-        {
-            // Ensure resources are released
-            oldDiagram?.Dispose();
-            newDiagram?.Dispose();
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Compares two event cell formulas and writes a message if they differ.
-    /// </summary>
-    /// <param name="cellName">Name of the event cell (e.g., EventDrop).</param>
-    /// <param name="oldFormula">Formula from the old diagram (may be null).</param>
-    /// <param name="newFormula">Formula from the new diagram (may be null).</param>
-    /// <param name="shapeId">Identifier of the shape being compared.</param>
-    /// <param name="pageIndex">Zero‑based page index.</param>
-    private static void CompareEventCell(string cellName, string oldFormula, string newFormula, long shapeId, int pageIndex)
+    // Helper method to compare two event formulas and report differences
+    private static void CompareEventCell(string cellName, string oldFormula, string newFormula, long shapeId)
     {
         // Normalize nulls to empty strings for comparison
         string oldVal = oldFormula ?? string.Empty;
@@ -113,9 +94,9 @@ class Program
 
         if (!oldVal.Equals(newVal, StringComparison.Ordinal))
         {
-            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shapeId}, Cell {cellName} changed:");
-            Console.WriteLine($"  Old: {oldVal}");
-            Console.WriteLine($"  New: {newVal}");
+            Console.WriteLine($"Shape ID {shapeId}: {cellName} changed.");
+            Console.WriteLine($"    Old: \"{oldVal}\"");
+            Console.WriteLine($"    New: \"{newVal}\"");
         }
     }
 }

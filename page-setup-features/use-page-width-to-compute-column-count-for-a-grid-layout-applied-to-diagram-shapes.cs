@@ -9,17 +9,23 @@ class Program
         // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [columnWidthInInches]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        double columnWidth = 2.0; // default column width in inches
+
+        if (args.Length >= 3 && double.TryParse(args[2], out double parsedWidth) && parsedWidth > 0)
+        {
+            columnWidth = parsedWidth;
+        }
 
         // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -38,47 +44,42 @@ class Program
             // Work with the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve page dimensions (in inches)
+            // Retrieve page width (in inches)
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Define desired column width (including spacing) in inches
-            const double columnWidth = 2.0; // Adjust as needed
-            const double rowHeight = 1.5;   // Adjust as needed
+            // Compute the number of columns that fit into the page width
+            int columnCount = Math.Max(1, (int)(pageWidth / columnWidth));
 
-            // Compute number of columns that fit into the page width
-            int columnCount = (int)Math.Floor(pageWidth / columnWidth);
-            if (columnCount < 1) columnCount = 1; // Ensure at least one column
+            // Define a simple margin and row height (using the same value as column width for a square grid)
+            double margin = 0.5; // inches
+            double rowHeight = columnWidth;
 
-            // Position shapes in a simple left‑to‑right, top‑to‑bottom grid
-            int shapeIndex = 0;
-            for (int i = 0; i < page.Shapes.Count; i++)
+            // Position each shape in a grid layout
+            int shapeCount = page.Shapes.Count;
+            for (int i = 0; i < shapeCount; i++)
             {
-                // Retrieve the shape
                 Shape shape = page.Shapes[i];
 
-                // Calculate row and column for this shape
-                int row = shapeIndex / columnCount;
-                int col = shapeIndex % columnCount;
+                // Determine row and column for the current shape
+                int row = i / columnCount;
+                int col = i % columnCount;
 
-                // Compute PinX and PinY (center of the shape)
-                double pinX = (col + 0.5) * columnWidth;
-                double pinY = pageHeight - ((row + 0.5) * rowHeight); // Y origin is at bottom
+                // Calculate the center position for the shape
+                double pinX = margin + col * columnWidth + columnWidth / 2.0;
+                double pinY = margin + row * rowHeight + rowHeight / 2.0;
 
-                // Apply new position
+                // Apply the new position
                 shape.XForm.PinX.Value = pinX;
                 shape.XForm.PinY.Value = pinY;
-
-                shapeIndex++;
             }
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

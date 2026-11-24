@@ -8,59 +8,60 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
-            return;
-        }
+        // Determine input and output file paths
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "metadata.json";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access built‑in document properties.
-                DocumentProperties props = diagram.DocumentProps;
+                // Extract built‑in document properties
+                string author = diagram.DocumentProps.Creator;
+                string title = diagram.DocumentProps.Title;
+                string subject = diagram.DocumentProps.Subject;
+                string company = diagram.DocumentProps.Company;
+                string manager = diagram.DocumentProps.Manager;
+                string category = diagram.DocumentProps.Category;
 
-                // Build an object containing the desired metadata.
+                // Extract time‑related properties (DateTime values)
+                DateTime createdDate = diagram.DocumentProps.TimeCreated;
+                DateTime lastSavedDate = diagram.DocumentProps.TimeSaved;
+
+                // Prepare an anonymous object for JSON serialization
                 var metadata = new
                 {
-                    Author = props.Creator,
-                    Company = props.Company,
-                    Title = props.Title,
-                    Subject = props.Subject,
-                    Category = props.Category,
-                    Manager = props.Manager,
-                    Created = props.TimeCreated.ToString("o"),
-                    Saved = props.TimeSaved.ToString("o"),
-                    Version = diagram.Version,
-                    BuildNumberCreated = props.BuildNumberCreated,
-                    BuildNumberEdited = props.BuildNumberEdited
+                    Author = author,
+                    Title = title,
+                    Subject = subject,
+                    Company = company,
+                    Manager = manager,
+                    Category = category,
+                    CreatedDate = createdDate,
+                    LastSavedDate = lastSavedDate
                 };
 
-                // Serialize the metadata object to formatted JSON.
-                string json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize metadata to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(metadata, jsonOptions);
 
-                // Write JSON to the specified output file.
+                // Write JSON to the output file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Metadata successfully written to {outputPath}");
+                Console.WriteLine($"Metadata extracted and saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

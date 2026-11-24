@@ -6,65 +6,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length == 0)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                int totalWarnings = 0;
-
-                // Iterate through each page in the diagram.
-                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIdx];
-
-                    // Iterate through all annotations (comments) on the page.
+                    // Iterate through all annotations (comments) on the current page
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Retrieve the comment text safely.
+                        // Retrieve the comment text; use empty string if null
                         string commentText = annotation.Comment?.Value ?? string.Empty;
 
-                        // Check for empty or whitespace‑only comments.
+                        // Check if the comment text is empty or whitespace
                         if (string.IsNullOrWhiteSpace(commentText))
                         {
-                            totalWarnings++;
+                            // Report a warning with page name and marker ID
                             Console.WriteLine(
-                                $"Warning: Empty comment detected on page {pageIdx + 1}, marker ID {annotation.MarkerIndex?.Value ?? 0}.");
+                                $"Warning: Empty comment found on page '{page.Name}' (Marker ID: {annotation.MarkerIndex?.Value ?? 0}).");
                         }
                     }
-                }
-
-                // Summarize the result.
-                if (totalWarnings == 0)
-                {
-                    Console.WriteLine("No empty comments were found.");
-                }
-                else
-                {
-                    Console.WriteLine($"Validation completed with {totalWarnings} warning(s).");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

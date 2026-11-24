@@ -6,58 +6,84 @@ using Aspose.Diagram;
 
 class Program
 {
+    // DTO class for JSON serialization of SolutionXML elements
+    private class SolutionXmlDto
+    {
+        public string Name { get; set; }
+        public string XmlValue { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expect exactly two arguments: input Visio file path and output JSON file path
+        if (args.Length != 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
+        }
+
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error creating output directory: {ex.Message}");
+                return;
+            }
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect SolutionXML elements into a simple serializable structure.
-                var solutionList = new List<object>();
-
+                // Collect all SolutionXML elements into a list of DTOs
+                List<SolutionXmlDto> solutionXmlList = new List<SolutionXmlDto>();
                 foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    solutionList.Add(new
+                    // Skip null entries just in case
+                    if (solutionXml == null) continue;
+
+                    solutionXmlList.Add(new SolutionXmlDto
                     {
                         Name = solutionXml.Name,
                         XmlValue = solutionXml.XmlValue
                     });
                 }
 
-                // Serialize the collection to formatted JSON.
-                var jsonOptions = new JsonSerializerOptions
+                // Configure JSON serialization options for formatted (indented) output
+                JsonSerializerOptions jsonOptions = new JsonSerializerOptions
                 {
                     WriteIndented = true
                 };
-                string json = JsonSerializer.Serialize(solutionList, jsonOptions);
 
-                // Write JSON to the specified output file.
-                File.WriteAllText(outputPath, json);
-                Console.WriteLine($"SolutionXML exported successfully to: {outputPath}");
+                // Serialize the list to a JSON string
+                string jsonContent = JsonSerializer.Serialize(solutionXmlList, jsonOptions);
+
+                // Write the JSON content to the specified output file
+                File.WriteAllText(outputPath, jsonContent);
+                Console.WriteLine($"Successfully exported {solutionXmlList.Count} SolutionXML element(s) to JSON file: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any errors from Aspose.Diagram operations or file I/O
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

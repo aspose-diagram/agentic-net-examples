@@ -1,11 +1,11 @@
 {
   "category": "working-with-solutionxml-elements",
   "display_name": "Working With Solutionxml Elements",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 34,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,17 +14,16 @@
       "task": "Add a custom data row to a specific shape within the solutionxml and update the file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Xml"
+        "System.Xml.Linq"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "SolutionXMLs",
-        "diagram"
+        "Shapes",
+        "SolutionXMLs"
       ]
     },
     {
@@ -33,12 +32,13 @@
       "task": "Add a hyperlink element to a shape in the solutionxml and define its target url",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
+        "Pages",
         "Save",
         "Shapes",
         "SolutionXMLs"
@@ -50,7 +50,6 @@
       "task": "Apply a conditional formatting rule in the solutionxml that highlights shapes based on data values",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -86,6 +85,7 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
+        "System.Text",
         "System.Xml",
         "System.Xml.Xsl"
       ],
@@ -119,16 +119,16 @@
       "task": "Clone an existing shape node in the solutionxml and reposition the duplicate on the same page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Xml"
+        "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "SolutionXMLs"
       ]
     },
     {
@@ -140,11 +140,9 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
-        "System.Xml"
+        "System.Xml.Linq"
       ],
-      "key_apis": [
-        "shape"
-      ]
+      "key_apis": []
     },
     {
       "slug": "compress-the-solutionxml-content-using-gzip-before-embedding-it-into-a-vsdx-package",
@@ -155,8 +153,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.IO.Compression",
-        "System.Text"
+        "System.IO.Compression"
       ],
       "key_apis": [
         "Diagram",
@@ -206,6 +203,7 @@
       "task": "Create a reusable function that injects a predefined style sheet into any solutionxml document",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -213,7 +211,8 @@
         "Diagram",
         "Save",
         "SolutionXMLs",
-        "diagram"
+        "StyleSheet",
+        "StyleSheets"
       ]
     },
     {
@@ -271,9 +270,8 @@
       "task": "Generate a summary report of shape counts per page by analyzing the solutionxml hierarchy",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
+        "System.Collections",
         "System.IO",
         "System.Linq",
         "System.Xml.Linq"
@@ -309,13 +307,13 @@
       "task": "Implement a version control system that stores incremental solutionxml changes as separate diff files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
-        "Save",
         "SolutionXMLs",
         "diagram"
       ]
@@ -329,7 +327,7 @@
         "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Xml.Linq"
+        "System.Xml"
       ],
       "key_apis": [
         "Diagram",
@@ -345,7 +343,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text.Json"
       ],
@@ -383,13 +380,13 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Xml"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
-        "SolutionXMLs",
+        "Shapes",
         "diagram"
       ]
     },
@@ -434,7 +431,6 @@
       "task": "Parse the solutionxml to extract each shape s id and corresponding name",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Xml.Linq"
@@ -451,10 +447,10 @@
       "task": "Remove all comments from the solutionxml document to clean up metadata before saving",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
-        "System.Linq",
-        "System.Xml.Linq"
+        "System.Xml"
       ],
       "key_apis": [
         "Diagram",
@@ -469,8 +465,8 @@
       "task": "Remove orphaned shape references from the solutionxml to prevent rendering errors",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections",
         "System.Collections.Generic",
         "System.IO",
         "System.Xml"
@@ -489,7 +485,6 @@
       "task": "Replace all instances of a specific font name in the solutionxml with a new font",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -509,10 +504,12 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
-        "System.Xml.Linq"
+        "System.Xml"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
+        "Shapes",
         "SolutionXMLs",
         "diagram"
       ]
@@ -540,6 +537,7 @@
       "task": "Set a custom document level property in the solutionxml for version tracking",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -557,12 +555,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Globalization",
         "System.IO",
         "System.Xml"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "SolutionXMLs",
         "diagram"
@@ -593,7 +591,6 @@
         "Aspose.Diagram",
         "System",
         "System.IO",
-        "System.Text",
         "System.Xml",
         "System.Xml.Schema"
       ],

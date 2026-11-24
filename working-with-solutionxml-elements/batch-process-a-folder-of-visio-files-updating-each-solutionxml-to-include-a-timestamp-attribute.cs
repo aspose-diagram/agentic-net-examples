@@ -8,108 +8,112 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length == 0)
+        // Determine the folder to process
+        string folderPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Usage: Program <folderPath>");
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the folder containing Visio files: ");
+            folderPath = Console.ReadLine();
+        }
+
+        // Guard: folder must exist
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
             return;
         }
 
-        string folderPath = args[0];
+        // Define supported Visio extensions
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vss", ".vstx", ".vst" };
 
-        // Guard: ensure the folder exists.
-        if (!Directory.Exists(folderPath))
-        {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
-            return;
-        }
-
-        // Supported Visio extensions.
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vsx", ".vtx", ".vdx" };
-
-        // Get all files with supported extensions.
+        // Get all files with supported extensions
         string[] files = Directory.GetFiles(folderPath);
         foreach (string filePath in files)
         {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(extensions, ext) < 0)
-                continue; // Skip non‑Visio files.
+            // Process only supported Visio files
+            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLower()) < 0)
+                continue;
 
-            // Guard: ensure the file exists (should always be true here).
+            // Guard: file must exist (redundant but per rule)
             if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                Console.Error.WriteLine("File not found: " + filePath);
                 continue;
             }
 
             try
             {
-                // Load the Visio diagram.
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Iterate over all SolutionXML elements.
-                foreach (SolutionXML solXml in diagram.SolutionXMLs)
+                // Iterate over all SolutionXML elements
+                foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    if (solXml == null || string.IsNullOrEmpty(solXml.XmlValue))
-                        continue;
-
+                    // Parse the existing XML value
+                    XDocument xmlDoc;
                     try
                     {
-                        // Parse the existing XML.
-                        XDocument xDoc = XDocument.Parse(solXml.XmlValue);
-
-                        // Add or update the timestamp attribute on the root element.
-                        XElement root = xDoc.Root;
-                        if (root != null)
-                        {
-                            root.SetAttributeValue("timestamp", DateTime.UtcNow.ToString("o"));
-                            // Write the modified XML back to the SolutionXML.
-                            solXml.XmlValue = xDoc.Declaration != null
-                                ? xDoc.Declaration + Environment.NewLine + xDoc.ToString()
-                                : xDoc.ToString();
-                        }
+                        xmlDoc = XDocument.Parse(solutionXml.XmlValue);
                     }
                     catch (Exception ex)
                     {
-                        // If XML parsing fails, report and continue with next SolutionXML.
-                        Console.Error.WriteLine($"Failed to process SolutionXML in file '{filePath}': {ex.Message}");
+                        Console.Error.WriteLine($"Failed to parse SolutionXML '{solutionXml.Name}' in file '{filePath}': {ex.Message}");
+                        continue;
+                    }
+
+                    // Add or update the timestamp attribute on the root element
+                    XElement root = xmlDoc.Root;
+                    if (root != null)
+                    {
+                        string timestamp = DateTime.UtcNow.ToString("o"); // ISO 8601 format
+                        root.SetAttributeValue("timestamp", timestamp);
+                        // Write the modified XML back to the SolutionXML object
+                        solutionXml.XmlValue = xmlDoc.Declaration != null
+                            ? xmlDoc.Declaration + Environment.NewLine + xmlDoc.ToString()
+                            : xmlDoc.ToString();
                     }
                 }
 
-                // Determine the appropriate save format based on original extension.
-                SaveFileFormat format = GetSaveFileFormat(ext);
+                // Determine appropriate save format based on original extension
+                SaveFileFormat saveFormat = GetSaveFormat(Path.GetExtension(filePath));
 
-                // Save the diagram, overwriting the original file.
-                diagram.Save(filePath, format);
+                // Save the updated diagram, overwriting the original file
+                diagram.Save(filePath, saveFormat);
                 Console.WriteLine($"Processed and saved: {filePath}");
             }
             catch (Exception ex)
             {
-                // Report any errors that occur while loading or saving the diagram.
+                // Capture any Aspose.Diagram related errors
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
     }
 
-    /// <summary>
-    /// Maps a file extension to the corresponding Aspose.Diagram SaveFileFormat.
-    /// </summary>
-    private static SaveFileFormat GetSaveFileFormat(string extension)
+    // Helper method to map file extensions to SaveFileFormat enum values
+    private static SaveFileFormat GetSaveFormat(string extension)
     {
-        switch (extension)
+        switch (extension.ToLower())
         {
             case ".vsdx":
                 return SaveFileFormat.Vsdx;
             case ".vsd":
                 return SaveFileFormat.Vsd;
-            case ".vsx":
-                return SaveFileFormat.Vsx;
-            case ".vtx":
-                return SaveFileFormat.Vtx;
             case ".vdx":
                 return SaveFileFormat.Vdx;
+            case ".vssx":
+                return SaveFileFormat.Vssx;
+            case ".vss":
+                return SaveFileFormat.Vss;
+            case ".vstx":
+                return SaveFileFormat.Vstx;
+            case ".vst":
+                return SaveFileFormat.Vst;
             default:
-                // Default to Vsdx if unknown; callers should have filtered extensions already.
+                // Default to Vsdx if unknown
                 return SaveFileFormat.Vsdx;
         }
     }

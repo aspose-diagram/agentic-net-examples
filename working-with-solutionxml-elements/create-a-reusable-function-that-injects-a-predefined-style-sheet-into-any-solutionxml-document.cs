@@ -1,101 +1,85 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    /// <summary>
-    /// Injects or updates a SolutionXML element with a predefined style sheet XML.
-    /// </summary>
-    /// <param name="inputPath">Path to the source Visio file.</param>
-    /// <param name="outputPath">Path where the modified Visio file will be saved.</param>
-    /// <param name="solutionXmlName">Name identifier for the SolutionXML element.</param>
-    /// <param name="styleSheetXml">The XML string representing the style sheet to inject.</param>
-    static void InjectStyleSheet(string inputPath, string outputPath, string solutionXmlName, string styleSheetXml)
+    // Reusable function that injects a predefined style sheet into a Visio diagram
+    // and stores the style sheet XML inside a SolutionXML element.
+    static void InjectPredefinedStyleSheet(string inputDiagramPath, string outputDiagramPath, string styleSheetName, string styleSheetXml)
     {
-        // Guard: ensure source file exists
-        if (!File.Exists(inputPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputDiagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputDiagramPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(inputDiagramPath);
 
-            // Search for an existing SolutionXML with the specified name
-            SolutionXML target = null;
-            foreach (SolutionXML s in diagram.SolutionXMLs)
-            {
-                if (s.Name == solutionXmlName)
-                {
-                    target = s;
-                    break;
-                }
-            }
+            // Create a new StyleSheet with the provided name
+            StyleSheet styleSheet = new StyleSheet();
+            styleSheet.Name = styleSheetName; // StyleSheet.Name is a plain string
 
-            if (target == null)
-            {
-                // Create a new SolutionXML element if it does not exist
-                target = new SolutionXML();
-                target.Name = solutionXmlName;
-                diagram.SolutionXMLs.Add(target);
-            }
+            // Add the StyleSheet to the diagram's collection
+            diagram.StyleSheets.Add(styleSheet);
 
-            // Inject or replace the XML content
-            target.XmlValue = styleSheetXml;
+            // Create a SolutionXML element that holds the style sheet XML
+            SolutionXML solutionXml = new SolutionXML();
+            solutionXml.Name = styleSheetName;      // Identifier for the SolutionXML element
+            solutionXml.XmlValue = styleSheetXml;   // The actual XML content
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Style sheet injected successfully. Saved to: {outputPath}");
+            // Add the SolutionXML element to the diagram
+            diagram.SolutionXMLs.Add(solutionXml);
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Style sheet '{styleSheetName}' injected and diagram saved to: {outputDiagramPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
     static void Main(string[] args)
     {
-        // Expected arguments:
+        // Example usage:
         // args[0] - input Visio file path
         // args[1] - output Visio file path
-        // args[2] - SolutionXML name (identifier)
-        // args[3] - style sheet file path (XML)
+        // args[2] - style sheet name
+        // args[3] - style sheet XML content (or path to XML file)
 
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <solutionXmlName> <styleSheetFilePath>");
+            Console.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <styleSheetName> <styleSheetXmlOrPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string solutionXmlName = args[2];
-        string styleSheetPath = args[3];
-
-        // Guard: ensure style sheet file exists
-        if (!File.Exists(styleSheetPath))
-        {
-            Console.Error.WriteLine($"Style sheet file not found: {styleSheetPath}");
-            return;
-        }
-
-        // Read the style sheet XML content
+        string styleSheetName = args[2];
+        string styleSheetXmlInput = args[3];
         string styleSheetXml;
-        try
+
+        // Determine if the fourth argument is a file path or raw XML
+        if (File.Exists(styleSheetXmlInput))
         {
-            styleSheetXml = File.ReadAllText(styleSheetPath);
+            // Load XML content from file
+            styleSheetXml = File.ReadAllText(styleSheetXmlInput);
         }
-        catch (Exception ex)
+        else
         {
-            Console.Error.WriteLine($"Failed to read style sheet file: {ex.Message}");
-            return;
+            // Treat argument as raw XML string
+            styleSheetXml = styleSheetXmlInput;
         }
 
-        // Call the reusable injection function
-        InjectStyleSheet(inputPath, outputPath, solutionXmlName, styleSheetXml);
+        // Call the reusable function
+        InjectPredefinedStyleSheet(inputPath, outputPath, styleSheetName, styleSheetXml);
     }
 }

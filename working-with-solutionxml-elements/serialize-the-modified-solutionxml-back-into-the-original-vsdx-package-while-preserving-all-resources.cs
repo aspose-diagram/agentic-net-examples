@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check if input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,53 +26,48 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // ------------------------------------------------------------
-                // Modify SolutionXML collection
-                // ------------------------------------------------------------
-                // Example: add a new SolutionXML element or update an existing one
-                string targetName = "MySolutionData";
-                string newXmlContent = "<Root><Data>Sample</Data></Root>";
+                // Define the name of the SolutionXML element we want to ensure exists.
+                const string targetName = "MySolutionXML";
 
-                // Try to find an existing SolutionXML with the target name
+                // Try to find an existing SolutionXML with the target name.
                 SolutionXML existing = null;
-                foreach (SolutionXML s in diagram.SolutionXMLs)
+                foreach (SolutionXML solXml in diagram.SolutionXMLs)
                 {
-                    if (s.Name == targetName)
+                    if (solXml.Name == targetName)
                     {
-                        existing = s;
+                        existing = solXml;
                         break;
                     }
                 }
 
                 if (existing != null)
                 {
-                    // Update the XML value of the existing element
-                    existing.XmlValue = newXmlContent;
+                    // Update the XML content of the existing element.
+                    existing.XmlValue = "<root><updated>true</updated></root>";
+                    Console.WriteLine($"Updated existing SolutionXML \"{targetName}\".");
                 }
                 else
                 {
-                    // Create and add a new SolutionXML element
-                    SolutionXML solXml = new SolutionXML();
-                    solXml.Name = targetName;
-                    solXml.XmlValue = newXmlContent;
-                    diagram.SolutionXMLs.Add(solXml);
+                    // Create a new SolutionXML element and add it to the diagram.
+                    SolutionXML newSolXml = new SolutionXML();
+                    newSolXml.Name = targetName;
+                    newSolXml.XmlValue = "<root><value>Sample</value></root>";
+                    diagram.SolutionXMLs.Add(newSolXml);
+                    Console.WriteLine($"Added new SolutionXML \"{targetName}\".");
                 }
 
-                // ------------------------------------------------------------
-                // Save the modified diagram back to VSDX, preserving all resources
-                // ------------------------------------------------------------
+                // Save the modified diagram back to a VSDX package, preserving all resources.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            Console.WriteLine("Diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

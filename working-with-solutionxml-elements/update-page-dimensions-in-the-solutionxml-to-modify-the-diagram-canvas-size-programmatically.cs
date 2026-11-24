@@ -1,16 +1,17 @@
 using System;
 using System.IO;
 using System.Xml;
+using System.Globalization;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect: input diagram path, output diagram path, new page width (inches), new page height (inches)
+        // Validate command‑line arguments.
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <newWidthInches> <newHeightInches>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <pageWidthInInches> <pageHeightInInches>");
             return;
         }
 
@@ -19,75 +20,86 @@ class Program
         string widthArg = args[2];
         string heightArg = args[3];
 
-        // Guard: ensure input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse width and height values
-        if (!double.TryParse(widthArg, out double newWidth) || !double.TryParse(heightArg, out double newHeight))
+        // Parse width and height values.
+        if (!double.TryParse(widthArg, NumberStyles.Float, CultureInfo.InvariantCulture, out double newWidth) ||
+            !double.TryParse(heightArg, NumberStyles.Float, CultureInfo.InvariantCulture, out double newHeight))
         {
-            Console.Error.WriteLine("Invalid width or height values. Provide numeric values.");
+            Console.Error.WriteLine("Invalid page width or height. Provide numeric values (in inches).");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Update each page's canvas size
-                foreach (Page page in diagram.Pages)
-                {
-                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
-                }
+                bool anySolutionXmlUpdated = false;
 
-                // Iterate through SolutionXML elements and modify stored page dimensions
+                // Iterate over all SolutionXML elements in the document.
                 foreach (SolutionXML solXml in diagram.SolutionXMLs)
                 {
                     if (string.IsNullOrEmpty(solXml.XmlValue))
-                        continue;
+                        continue; // Skip empty entries.
 
-                    // Load the XML content of the SolutionXML element
+                    // Load the XML content into an XmlDocument for manipulation.
                     XmlDocument xmlDoc = new XmlDocument();
                     try
                     {
                         xmlDoc.LoadXml(solXml.XmlValue);
                     }
-                    catch (Exception ex)
+                    catch (XmlException)
                     {
-                        Console.Error.WriteLine($"Failed to parse SolutionXML '{solXml.Name}': {ex.Message}");
+                        // If the XML is malformed, skip this element.
                         continue;
                     }
 
-                    // Update <PageWidth> node if present
+                    // Attempt to locate <PageWidth> and <PageHeight> nodes.
                     XmlNode widthNode = xmlDoc.SelectSingleNode("//PageWidth");
-                    if (widthNode != null)
-                        widthNode.InnerText = newWidth.ToString();
-
-                    // Update <PageHeight> node if present
                     XmlNode heightNode = xmlDoc.SelectSingleNode("//PageHeight");
-                    if (heightNode != null)
-                        heightNode.InnerText = newHeight.ToString();
 
-                    // Write the modified XML back to the SolutionXML element
-                    using (StringWriter sw = new StringWriter())
+                    // Update nodes if they exist.
+                    if (widthNode != null)
                     {
-                        xmlDoc.Save(sw);
-                        solXml.XmlValue = sw.ToString();
+                        widthNode.InnerText = newWidth.ToString(CultureInfo.InvariantCulture);
+                        anySolutionXmlUpdated = true;
+                    }
+
+                    if (heightNode != null)
+                    {
+                        heightNode.InnerText = newHeight.ToString(CultureInfo.InvariantCulture);
+                        anySolutionXmlUpdated = true;
+                    }
+
+                    // If any changes were made, write the modified XML back to the SolutionXML element.
+                    if (anySolutionXmlUpdated)
+                    {
+                        solXml.XmlValue = xmlDoc.OuterXml;
                     }
                 }
 
-                // Save the modified diagram back to a Visio format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram only if we updated at least one SolutionXML entry.
+                if (anySolutionXmlUpdated)
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved with updated page dimensions to: {outputPath}");
+                }
+                else
+                {
+                    Console.WriteLine("No SolutionXML elements containing page dimensions were found. Diagram not modified.");
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose or IO related exceptions.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

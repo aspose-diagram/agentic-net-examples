@@ -1,118 +1,109 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml.Linq;
+using System.Linq;
+using System.Collections;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Expect the Visio file path as the first argument.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard against missing file
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern)
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Dictionary to hold shape counts per page
-                Dictionary<string, int> shapeCountsPerPage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                bool solutionXmlFound = false;
+                // Prepare a report builder.
+                var report = new System.Text.StringBuilder();
+                report.AppendLine("Shape Count Summary per Page");
+                report.AppendLine("==============================");
 
-                // Attempt to read SolutionXML elements from the diagram
+                // Flag to indicate whether we processed any SolutionXML.
+                bool processedSolutionXml = false;
+
+                // Iterate over all SolutionXML elements in the document.
                 foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
                 {
-                    // Mark that at least one SolutionXML element exists
-                    solutionXmlFound = true;
+                    // Ensure the XML content is not null or empty.
+                    if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
+                        continue;
 
-                    // The XML content is stored in the XmlValue property
-                    string xmlContent = solutionXml.XmlValue;
-                    if (string.IsNullOrWhiteSpace(xmlContent))
+                    processedSolutionXml = true;
+
+                    // Parse the XML content.
+                    XDocument xDoc;
+                    try
                     {
-                        continue; // Skip empty entries
+                        xDoc = XDocument.Parse(solutionXml.XmlValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Warning: Failed to parse SolutionXML content. {ex.Message}");
+                        continue;
                     }
 
-                    // Parse the XML string
-                    XDocument xDoc = XDocument.Parse(xmlContent);
-
-                    // Iterate over each <Page> element in the SolutionXML
-                    foreach (XElement pageElem in xDoc.Descendants("Page"))
+                    // Count shapes per page based on the XML hierarchy.
+                    // This assumes a generic structure where <Page> elements contain <Shape> elements.
+                    foreach (var pageElement in xDoc.Descendants("Page"))
                     {
-                        // Determine the page name (fallback to "UnnamedPage")
-                        string pageName = (string)pageElem.Attribute("Name") ??
-                                          (string)pageElem.Attribute("NameU") ??
-                                          "UnnamedPage";
+                        // Retrieve a page identifier (could be an attribute or element text).
+                        string pageId = pageElement.Attribute("id")?.Value ??
+                                        pageElement.Attribute("name")?.Value ??
+                                        "Unknown";
 
-                        // Count all descendant <Shape> elements within this page element
-                        int shapeCount = pageElem.Descendants("Shape").Count();
+                        // Count all descendant <Shape> elements within this page.
+                        int shapeCount = pageElement.Descendants("Shape").Count();
 
-                        // Store or overwrite the count for this page
-                        shapeCountsPerPage[pageName] = shapeCount;
+                        report.AppendLine($"Page ID {pageId}: {shapeCount} shape(s) (derived from SolutionXML)");
                     }
                 }
 
-                // If no SolutionXML was present, fall back to counting shapes via the Diagram object
-                if (!solutionXmlFound)
+                // If no SolutionXML was present or usable, fall back to direct diagram inspection.
+                if (!processedSolutionXml)
                 {
-                    int pageIndex = 0; // Manual counter because Page has no Index property
+                    int pageIndex = 0;
                     foreach (Page page in diagram.Pages)
                     {
                         pageIndex++;
-
-                        // Use the page's Name if available; otherwise generate a default name
-                        string pageName = !string.IsNullOrEmpty(page.Name)
-                            ? page.Name
-                            : $"Page_{pageIndex}";
-
                         int shapeCount = 0;
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Exclude logically deleted shapes
-                            if (shape.Del == BOOL.True)
-                                continue;
-
-                            shapeCount++;
+                            // Exclude logically deleted shapes.
+                            if (shape.Del == BOOL.False)
+                            {
+                                shapeCount++;
+                            }
                         }
-
-                        shapeCountsPerPage[pageName] = shapeCount;
+                        report.AppendLine($"Page {pageIndex}: {shapeCount} shape(s) (derived from diagram)");
                     }
                 }
 
-                // Output the summary report
-                Console.WriteLine("Shape Count Summary per Page:");
-                Console.WriteLine(new string('-', 40));
-
-                int totalShapes = 0;
-                foreach (KeyValuePair<string, int> kvp in shapeCountsPerPage)
-                {
-                    Console.WriteLine($"Page: {kvp.Key} - Shapes: {kvp.Value}");
-                    totalShapes += kvp.Value;
-                }
-
-                Console.WriteLine(new string('-', 40));
-                Console.WriteLine($"Total Shapes Across All Pages: {totalShapes}");
+                // Output the report to the console.
+                Console.WriteLine(report.ToString());
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine("An error occurred while processing the diagram:");
+            Console.Error.WriteLine(ex.Message);
         }
     }
 }

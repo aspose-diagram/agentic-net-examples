@@ -1,7 +1,7 @@
 using System;
 using System.IO;
+using System.Xml;
 using Aspose.Diagram;
-using System.Xml.Linq;
 
 class Program
 {
@@ -14,70 +14,79 @@ class Program
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        string visioPath = args[0];
+        string xmlPath = args[1];
 
         // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Create the root XML element.
-                XDocument xmlDoc = new XDocument(new XElement("Diagram"));
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                // Prepare XML writer settings.
+                XmlWriterSettings settings = new XmlWriterSettings
                 {
-                    // Iterate through all shapes on the page.
-                    foreach (Shape shape in page.Shapes)
+                    Indent = true,
+                    IndentChars = "  ",
+                    NewLineOnAttributes = false
+                };
+
+                // Create the XML document.
+                using (XmlWriter writer = XmlWriter.Create(xmlPath, settings))
+                {
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("Diagram");
+
+                    // Iterate through each page in the diagram.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        writer.WriteStartElement("Page");
 
-                        // Create an element for the current shape with its ID.
-                        XElement shapeElement = new XElement("Shape",
-                            new XAttribute("id", shape.ID));
+                        // Write page name if available.
+                        if (!string.IsNullOrEmpty(page.NameU))
+                            writer.WriteAttributeString("name", page.NameU);
 
-                        // Ensure the shape has a Props collection before iterating.
-                        if (shape.Props != null)
+                        // Iterate through each shape on the current page.
+                        foreach (Shape shape in page.Shapes)
                         {
-                            // Iterate through all custom properties (Props) of the shape.
+                            // Skip logically deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            writer.WriteStartElement("Shape");
+                            writer.WriteAttributeString("id", shape.ID.ToString());
+
+                            // Iterate through each custom property (Prop) of the shape.
                             foreach (Prop prop in shape.Props)
                             {
-                                // Extract property name and value.
-                                string propName = prop.Name ?? string.Empty;
-                                string propValue = prop.Value?.Val ?? string.Empty;
-
-                                // Add a Property element under the current Shape element.
-                                XElement propElement = new XElement("Property",
-                                    new XAttribute("name", propName),
-                                    new XAttribute("value", propValue));
-
-                                shapeElement.Add(propElement);
+                                writer.WriteStartElement("Prop");
+                                writer.WriteAttributeString("name", prop.Name ?? string.Empty);
+                                writer.WriteAttributeString("value", prop.Value?.Val ?? string.Empty);
+                                writer.WriteEndElement(); // </Prop>
                             }
+
+                            writer.WriteEndElement(); // </Shape>
                         }
 
-                        // Append the shape element to the root.
-                        xmlDoc.Root.Add(shapeElement);
+                        writer.WriteEndElement(); // </Page>
                     }
+
+                    writer.WriteEndElement(); // </Diagram>
+                    writer.WriteEndDocument();
                 }
 
-                // Save the constructed XML document.
-                xmlDoc.Save(outputPath);
-                Console.WriteLine($"Extraction completed. XML saved to: {outputPath}");
+                Console.WriteLine($"Successfully exported shape data to XML file: {xmlPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Capture any errors from Aspose.Diagram or I/O operations.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

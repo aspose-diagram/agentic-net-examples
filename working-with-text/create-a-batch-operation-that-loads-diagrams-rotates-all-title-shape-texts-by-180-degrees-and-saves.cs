@@ -19,7 +19,7 @@ class Program
             folderPath = Console.ReadLine();
         }
 
-        // Validate the folder path.
+        // Guard: ensure the folder exists.
         if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
         {
             Console.Error.WriteLine("Folder does not exist: " + folderPath);
@@ -36,7 +36,7 @@ class Program
 
         foreach (string filePath in diagramFiles)
         {
-            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            // Guard: ensure the file exists before processing.
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine("File not found: " + filePath);
@@ -45,38 +45,42 @@ class Program
 
             try
             {
-                // Load the diagram inside a using block as required.
-                using (Diagram diagram = new Diagram(filePath))
-                {
-                    // Iterate through each page.
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Iterate through each shape on the page.
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // Skip logically deleted shapes.
-                            if (shape.Del == BOOL.True)
-                                continue;
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
 
-                            // Identify title shapes by their universal name.
-                            if (string.Equals(shape.NameU, "Title", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Rotate the text within the shape by 180 degrees.
-                                // TxtAngle is a DoubleValue expressed in radians.
-                                double angleRadians = Math.PI; // 180 degrees = π radians
-                                shape.TextXForm.TxtAngle.Value = angleRadians;
-                            }
+                // Iterate through all pages and shapes.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify title shapes by their NameU property.
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.Equals("Title", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Rotate the text of the title shape by 180 degrees.
+                            // TextXForm.TxtAngle controls the orientation of the shape's text.
+                            shape.TextXForm.TxtAngle.Value = 180.0;
                         }
                     }
-
-                    // Save the modified diagram, overwriting the original file.
-                    diagram.Save(filePath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed and saved: {filePath}");
                 }
+
+                // Prepare output file name (original name with "_rotated" suffix).
+                string directory = Path.GetDirectoryName(filePath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(directory, fileNameWithoutExt + "_rotated.vsdx");
+
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Processed and saved: {outputPath}");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing of the current file.
+                // Log any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }

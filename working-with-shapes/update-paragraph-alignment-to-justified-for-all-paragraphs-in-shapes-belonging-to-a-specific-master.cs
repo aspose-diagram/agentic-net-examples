@@ -7,21 +7,21 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, output file, master name
+        // Validate arguments: input file, master name, output file
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <masterName>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <masterName> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string targetMasterName = args[2];
+        string masterName = args[1];
+        string outputPath = args[2];
 
         // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -36,14 +36,14 @@ class Program
                     // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
                         // Process only shapes that are based on the specified master
-                        if (shape.Master != null && shape.Master.Name == targetMasterName)
+                        if (shape.Master != null && shape.Master.Name == masterName)
                         {
-                            // Iterate over each paragraph in the shape
+                            // Iterate over all paragraphs in the shape
                             for (int i = 0; i < shape.Paras.Count; i++)
                             {
                                 // Set paragraph horizontal alignment to Justify
@@ -53,15 +53,14 @@ class Program
                     }
                 }
 
-                // Save the modified diagram in VSDX format
+                // Save the modified diagram to the output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            Console.WriteLine("Paragraph alignment updated and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

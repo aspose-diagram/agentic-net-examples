@@ -15,20 +15,26 @@ class Program
             return;
         }
 
-        // Output directory for HTML pages
-        string outputDir = "HtmlPages";
-
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure output directory exists
-        if (!Directory.Exists(outputDir))
+        // Output directory for HTML files
+        string outputDir = "HtmlPages";
+
+        // Guard: create output directory if it does not exist
+        try
         {
-            Directory.CreateDirectory(outputDir);
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+            return;
         }
 
         try
@@ -37,11 +43,21 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Determine total page count
-            int pageCount = diagram.Pages.Count;
+            int totalPages = diagram.Pages.Count;
 
-            // Export pages 2 through 4 (1‑based page numbers)
-            // Corresponding zero‑based indices are 1, 2, 3
-            for (int i = 1; i <= 3 && i < pageCount; i++)
+            // Define the custom page range (pages 2 through 4, 1‑based indexing)
+            int startPage = 2; // inclusive
+            int endPage = 4;   // inclusive
+
+            // Validate the requested range
+            if (startPage < 1 || endPage > totalPages || startPage > endPage)
+            {
+                Console.Error.WriteLine("Invalid page range specified.");
+                return;
+            }
+
+            // Loop through the specified pages and export each as a separate HTML file
+            for (int i = startPage - 1; i < endPage; i++) // zero‑based index
             {
                 // Configure HTML save options for a single page
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
@@ -54,15 +70,15 @@ class Program
                 // Build output file name (e.g., page_2.html)
                 string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
 
-                // Save the specific page as HTML
+                // Save the current page to HTML
                 diagram.Save(outputPath, htmlOptions);
+
                 Console.WriteLine($"Exported page {i + 1} to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
         }
     }
 }

@@ -8,7 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
@@ -18,7 +18,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,111 +27,102 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Store original user-defined cell values for rollback.
-            // Key: Shape ID, Value: Dictionary of User cell name -> original value.
-            var originalValues = new Dictionary<long, Dictionary<string, string>>();
+            // Backup structure to store original user-defined cell values per shape
+            var backup = new List<(Shape shape, Dictionary<string, string> originalValues)>();
 
-            // Iterate all pages and shapes to capture original values.
+            // Iterate all pages and shapes to capture original values
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    long shapeId = shape.ID;
-                    var userValues = new Dictionary<string, string>();
-
-                    foreach (User user in shape.Users)
+                    var originalValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (User userCell in shape.Users)
                     {
-                        // Use NameU as the unique identifier for the user-defined cell.
-                        string cellName = user.NameU;
-                        string cellValue = user.Value?.Val ?? string.Empty;
-                        userValues[cellName] = cellValue;
+                        // Store the current value of each user-defined cell
+                        originalValues[userCell.Name] = userCell.Value.Val;
                     }
-
-                    originalValues[shapeId] = userValues;
+                    // Keep a reference to the shape and its original values
+                    backup.Add((shape, originalValues));
                 }
             }
 
             // -----------------------------------------------------------------
-            // Example modification: append "_mod" to each user-defined cell value.
-            // In a real scenario, this would be where you apply business logic.
+            // Example modification: set each user-defined cell to a new value
+            // In a real scenario, these values could come from external input
             // -----------------------------------------------------------------
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    foreach (User user in shape.Users)
+                    foreach (User userCell in shape.Users)
                     {
-                        // Modify the cell value.
-                        string current = user.Value?.Val ?? string.Empty;
-                        user.Value.Val = current + "_mod";
+                        // For demonstration, prepend "New_" to the existing value
+                        userCell.Value.Val = "New_" + userCell.Value.Val;
                     }
                 }
             }
 
             // -----------------------------------------------------------------
-            // Validation: ensure all user-defined cell values are numeric.
-            // If any value fails validation, trigger rollback.
+            // Validation: ensure that a specific user-defined cell (e.g., "CustomValue")
+            // contains a numeric value. If any validation fails, trigger rollback.
             // -----------------------------------------------------------------
             bool validationFailed = false;
-
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    foreach (User user in shape.Users)
+                    foreach (User userCell in shape.Users)
                     {
-                        string val = user.Value?.Val ?? string.Empty;
-                        // Simple numeric validation.
-                        if (!double.TryParse(val, out _))
+                        // Example rule: if the cell name is "CustomValue", it must be numeric
+                        if (string.Equals(userCell.Name, "CustomValue", StringComparison.OrdinalIgnoreCase))
                         {
-                            validationFailed = true;
-                            Console.WriteLine($"Validation failed for Shape ID {shape.ID}, User Cell '{user.NameU}' with value '{val}'.");
-                            // No need to continue checking once a failure is detected.
-                            break;
-                        }
-                    }
-                    if (validationFailed) break;
-                }
-                if (validationFailed) break;
-            }
-
-            // -----------------------------------------------------------------
-            // Rollback if validation failed.
-            // -----------------------------------------------------------------
-            if (validationFailed)
-            {
-                Console.WriteLine("Rolling back to original user-defined cell values...");
-
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        long shapeId = shape.ID;
-                        if (originalValues.TryGetValue(shapeId, out var userValues))
-                        {
-                            foreach (User user in shape.Users)
+                            if (!double.TryParse(userCell.Value.Val, out _))
                             {
-                                string cellName = user.NameU;
-                                if (userValues.TryGetValue(cellName, out string originalVal))
-                                {
-                                    user.Value.Val = originalVal;
-                                }
+                                Console.Error.WriteLine($"Validation failed for shape ID {shape.ID}, cell '{userCell.Name}' with value '{userCell.Value.Val}'.");
+                                validationFailed = true;
+                                // Break out early if desired; continue to collect all errors
                             }
                         }
                     }
                 }
             }
 
-            // Save the (potentially modified) diagram to the output path.
+            // -----------------------------------------------------------------
+            // Rollback mechanism: if validation failed, restore original values
+            // -----------------------------------------------------------------
+            if (validationFailed)
+            {
+                Console.WriteLine("Validation failed. Rolling back changes to user-defined cells.");
+
+                foreach (var entry in backup)
+                {
+                    Shape shape = entry.shape;
+                    Dictionary<string, string> originalValues = entry.originalValues;
+
+                    foreach (User userCell in shape.Users)
+                    {
+                        if (originalValues.TryGetValue(userCell.Name, out string originalVal))
+                        {
+                            userCell.Value.Val = originalVal;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("All validations passed. Changes will be saved.");
+            }
+
+            // Save the diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
+            // Capture any Aspose or IO exceptions and report them
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

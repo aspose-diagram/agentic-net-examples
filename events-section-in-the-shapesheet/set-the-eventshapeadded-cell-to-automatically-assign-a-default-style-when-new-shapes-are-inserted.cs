@@ -9,7 +9,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
@@ -33,19 +33,19 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Set the closest equivalent event cell (EventDrop) to apply a default style
-                    // when the shape is added/dropped onto the page.
-                    // The formula uses the Visio SETSTYLE function; adjust the style name as needed.
-                    shape.Event.EventDrop.Ufe.F = "SETSTYLE(\"MyDefaultStyle\")";
+                    // Set the EventDrop formula to apply a default fill colour
+                    // when the shape is added (closest approximation to EventShapeAdded).
+                    // The formula uses Visio's SETFILLFOREGND function to set a blue fill.
+                    shape.Event.EventDrop.Ufe.F = "SETFILLFOREGND(0,0,255)";
                 }
             }
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -1,33 +1,39 @@
 using System;
 using System.IO;
+using System.Globalization;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 2)
+        // Validate arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> [shapeId]");
             return;
         }
 
         string diagramPath = args[0];
-        string shapeIdArg = args[1];
 
-        // Guard against missing diagram file.
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse the shape ID.
-        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        // Optional shape ID argument.
+        long targetShapeId = 0;
+        bool shapeIdProvided = false;
+        if (args.Length >= 2)
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
-            return;
+            if (!long.TryParse(args[1], out targetShapeId))
+            {
+                Console.Error.WriteLine($"Error: Invalid shape ID '{args[1]}'.");
+                return;
+            }
+            shapeIdProvided = true;
         }
 
         try
@@ -35,14 +41,24 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Locate the shape with the specified ID across all pages.
             Shape targetShape = null;
+
+            // Locate the shape either by provided ID or take the first shape on the first page.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.ID == targetShapeId)
+                    if (shapeIdProvided)
                     {
+                        if (shape.ID == targetShapeId)
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // No ID supplied – pick the first shape we encounter.
                         targetShape = shape;
                         break;
                     }
@@ -53,52 +69,57 @@ class Program
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Error: No shape with ID {targetShapeId} was found in the diagram.");
+                Console.Error.WriteLine(shapeIdProvided
+                    ? $"Error: No shape found with ID {targetShapeId}."
+                    : "Error: No shapes found in the diagram.");
                 return;
             }
 
-            // Ensure the shape has user-defined cells (fields) to inspect.
+            // Ensure the shape has user-defined cells (custom fields).
             if (targetShape.Users == null || targetShape.Users.Count == 0)
             {
-                Console.WriteLine($"Shape ID {targetShapeId} contains no user-defined fields.");
+                Console.WriteLine("The selected shape contains no user-defined fields.");
                 return;
             }
 
-            Console.WriteLine($"User-defined fields for shape ID {targetShapeId}:");
+            Console.WriteLine($"Inspecting fields of shape ID {targetShape.ID} (NameU: {targetShape.NameU})");
+            Console.WriteLine("------------------------------------------------------------");
 
             // Iterate over each user-defined cell and infer its data type.
             foreach (User userField in targetShape.Users)
             {
-                // Retrieve the field name (NameU) and its raw string value.
-                string fieldName = userField.NameU ?? string.Empty;
+                // Retrieve the raw value string; handle possible nulls.
                 string rawValue = userField.Value?.Val ?? string.Empty;
 
-                // Infer the data type based on the value content.
-                string inferredType;
-                if (int.TryParse(rawValue, out _))
+                // Determine the data type based on the value content.
+                string dataType;
+                if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
                 {
-                    inferredType = "int";
+                    dataType = "Int32";
                 }
-                else if (double.TryParse(rawValue, out _))
+                else if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
                 {
-                    inferredType = "double";
+                    dataType = "Double";
                 }
-                else if (DateTime.TryParse(rawValue, out _))
+                else if (DateTime.TryParse(rawValue, CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
                 {
-                    inferredType = "DateTime";
+                    dataType = "DateTime";
                 }
                 else
                 {
-                    inferredType = "string";
+                    dataType = "String";
                 }
 
-                // Output the field information.
-                Console.WriteLine($"  Name: {fieldName}, Type: {inferredType}, Value: {rawValue}");
+                // Output the field name, inferred type, and its current value.
+                Console.WriteLine($"Field Name: {userField.NameU}");
+                Console.WriteLine($"  Type : {dataType}");
+                Console.WriteLine($"  Value: {rawValue}");
+                Console.WriteLine();
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
+            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

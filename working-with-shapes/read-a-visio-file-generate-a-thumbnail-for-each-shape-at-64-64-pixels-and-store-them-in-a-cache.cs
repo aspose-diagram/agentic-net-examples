@@ -7,70 +7,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <CacheFolderPath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <CacheDirectory>");
             return;
         }
 
         string visioPath = args[0];
-        string cacheFolder = args[1];
+        string cacheDir = args[1];
 
-        // Guard: check Visio file existence
+        // Guard: ensure the Visio file exists
         if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Visio file not found: {visioPath}");
+            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
             return;
         }
 
-        // Ensure cache folder exists
+        // Ensure the cache directory exists (create if necessary)
         try
         {
-            if (!Directory.Exists(cacheFolder))
-                Directory.CreateDirectory(cacheFolder);
+            if (!Directory.Exists(cacheDir))
+                Directory.CreateDirectory(cacheDir);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to create cache folder '{cacheFolder}': {ex.Message}");
+            Console.Error.WriteLine($"Error creating cache directory '{cacheDir}': {ex.Message}");
             return;
         }
 
+        // Load the Visio diagram inside a using block (mandatory pattern)
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Iterate through each page in the diagram
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through each shape on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are logically deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Prepare a unique file name for the shape thumbnail
-                    string fileName = $"page_{pageIndex + 1}_shape_{shape.ID}.png";
-                    string outputPath = Path.Combine(cacheFolder, fileName);
+                        // Build a unique file name for the shape thumbnail
+                        string thumbnailPath = Path.Combine(
+                            cacheDir,
+                            $"shape_page{page.ID}_id{shape.ID}.png");
 
-                    // Configure image save options (PNG format)
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        // Configure image save options for a 64 × 64 PNG thumbnail
+                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                        // Set the physical size of the rendered image (width & height in pixels)
+                        imgOptions.PageSize = new PageSize(64f, 64f);
+                        // Do not export hidden pages/shapes
+                        imgOptions.ExportHiddenPage = false;
 
-                    // If the API supports explicit width/height, set them to 64 pixels.
-                    // These properties may vary by version; adjust as needed.
-                    // imgOptions.Width = 64;
-                    // imgOptions.Height = 64;
-
-                    // Export the shape to an image file
-                    shape.ToImage(outputPath, imgOptions);
+                        // Export the shape to an image file
+                        try
+                        {
+                            shape.ToImage(thumbnailPath, imgOptions);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Error exporting shape ID {shape.ID} on page {page.ID}: {ex.Message}");
+                            // Continue processing remaining shapes
+                        }
+                    }
                 }
-            }
 
-            Console.WriteLine("Thumbnails generated successfully.");
+                Console.WriteLine("Thumbnail generation completed.");
+            }
         }
         catch (Exception ex)
         {

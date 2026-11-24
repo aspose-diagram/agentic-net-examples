@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments count
+        // Expect three arguments: target diagram path, source diagram path, output diagram path
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: Program <targetDiagramPath> <sourceDiagramPath> <outputDiagramPath>");
@@ -24,7 +24,6 @@ class Program
             Console.Error.WriteLine($"Target file not found: {targetPath}");
             return;
         }
-
         if (!File.Exists(sourcePath))
         {
             Console.Error.WriteLine($"Source file not found: {sourcePath}");
@@ -33,40 +32,35 @@ class Program
 
         try
         {
-            // Load the target diagram inside a using block as required
+            // Load the target diagram inside a using block
             using (Diagram targetDiagram = new Diagram(targetPath))
             {
-                // Load the source diagram to be merged
+                // Load the source diagram inside a using block
                 using (Diagram sourceDiagram = new Diagram(sourcePath))
                 {
-                    // Merge all pages, masters, and styles from source into target
+                    // Merge source diagram into target diagram
                     targetDiagram.Combine(sourceDiagram);
                 }
 
                 // Rename all pages sequentially to avoid naming conflicts
-                for (int i = 0; i < targetDiagram.Pages.Count; i++)
+                int pageNumber = 1;
+                foreach (Page page in targetDiagram.Pages)
                 {
-                    // Explicitly type the page variable
-                    Page page = targetDiagram.Pages[i];
-
-                    // Construct a new sequential name (e.g., Page1, Page2, ...)
-                    string newName = $"Page{i + 1}";
-
-                    // Set both localized and universal names
-                    page.Name = newName;
-                    page.NameU = newName;
+                    // Set a new name like "Page1", "Page2", etc.
+                    page.Name = $"Page{pageNumber}";
+                    pageNumber++;
                 }
 
                 // Save the merged diagram with renamed pages
                 targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Diagram merged and pages renamed successfully.");
+            Console.WriteLine($"Merged diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Report any errors that occur during Aspose operations
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 }

@@ -1,98 +1,110 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect four arguments: input diagram path, start date, end date, output log path
+        // Validate arguments: input Visio file, output log file, start date, end date
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <startDate> <endDate> <outputLogPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputLogFile> <startDate> <endDate>");
+            Console.Error.WriteLine("Date format: yyyy-MM-dd or any format parsable by DateTime.Parse.");
             return;
         }
 
         string inputPath = args[0];
-        string startDateStr = args[1];
-        string endDateStr = args[2];
-        string outputPath = args[3];
+        string outputPath = args[1];
+        string startDateStr = args[2];
+        string endDateStr = args[3];
 
-        // Guard: verify input diagram file exists
+        // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse start and end dates
-        if (!DateTime.TryParse(startDateStr, out DateTime startDate))
-        {
-            Console.Error.WriteLine($"Invalid start date: {startDateStr}");
-            return;
-        }
-
-        if (!DateTime.TryParse(endDateStr, out DateTime endDate))
-        {
-            Console.Error.WriteLine($"Invalid end date: {endDateStr}");
-            return;
-        }
-
-        // Ensure output directory exists
+        // Parse date range
+        DateTime startDate;
+        DateTime endDate;
         try
         {
-            string outputDir = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
+            startDate = DateTime.Parse(startDateStr);
+            endDate = DateTime.Parse(endDateStr);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to prepare output directory: {ex.Message}");
+            Console.Error.WriteLine($"Error parsing dates: {ex.Message}");
             return;
         }
 
-        // Load diagram and filter comments
+        // Ensure start <= end
+        if (startDate > endDate)
+        {
+            Console.Error.WriteLine("Start date must be earlier than or equal to end date.");
+            return;
+        }
+
         try
         {
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                using (StreamWriter writer = new StreamWriter(outputPath, false))
+                // Collect filtered comment lines
+                List<string> filteredLines = new List<string>();
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all pages
-                    foreach (Page page in diagram.Pages)
+                    // Access annotations (comments) via PageSheet
+                    if (page.PageSheet?.Annotations == null)
+                        continue;
+
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Iterate through all annotations (comments) on the page
-                        foreach (Annotation annotation in page.PageSheet.Annotations)
+                        // Retrieve creation date; fallback to DateTime.MinValue if null
+                        DateTime creationDate = annotation.Date?.Value ?? DateTime.MinValue;
+
+                        // Filter by the specified date range (inclusive)
+                        if (creationDate >= startDate && creationDate <= endDate)
                         {
-                            // Retrieve the comment creation date; Annotation.Date is a DateValue
-                            DateTime commentDate = annotation.Date.Value;
+                            // Retrieve comment text safely
+                            string commentText = annotation.Comment?.Value ?? string.Empty;
 
-                            // Check if the comment falls within the specified date range (inclusive)
-                            if (commentDate >= startDate && commentDate <= endDate)
-                            {
-                                // Retrieve comment text; Annotation.Comment is a Str2Value
-                                string commentText = annotation.Comment?.Value ?? string.Empty;
-
-                                // Retrieve reviewer ID; Annotation.ReviewerID is an IntValue
-                                string reviewerId = annotation.ReviewerID?.Value.ToString() ?? string.Empty;
-
-                                // Write a formatted line to the log file
-                                writer.WriteLine($"[{commentDate:yyyy-MM-dd HH:mm:ss}] ReviewerID: {reviewerId} - {commentText}");
-                            }
+                            // Build a log line with page name (if available), date, and comment
+                            string pageName = page.Name ?? $"Page-{page.ID}";
+                            string line = $"{pageName}\t{creationDate:yyyy-MM-dd HH:mm:ss}\t{commentText}";
+                            filteredLines.Add(line);
                         }
                     }
+                }
+
+                // Write filtered comments to the output log file
+                try
+                {
+                    using (StreamWriter writer = new StreamWriter(outputPath, false))
+                    {
+                        foreach (string line in filteredLines)
+                        {
+                            writer.WriteLine(line);
+                        }
+                    }
+
+                    Console.WriteLine($"Filtered comments written to: {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error writing to output file: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
+            // Catch any Aspose.Diagram related errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
         }
-
-        // Indicate successful completion
-        Console.WriteLine($"Filtered comments have been exported to: {outputPath}");
     }
 }

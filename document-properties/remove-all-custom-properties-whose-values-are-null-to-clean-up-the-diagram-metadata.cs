@@ -1,71 +1,62 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
-        // Determine output path
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? "",
-            Path.GetFileNameWithoutExtension(inputPath) + "_cleaned.vsdx");
+        // Determine output path (same folder, new file name).
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty,
+                                         Path.GetFileNameWithoutExtension(inputPath) + "_cleaned.vsdx");
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the collection of custom document properties
-            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
-
-            // Collect properties with null values for removal
-            List<CustomProp> propsToRemove = new List<CustomProp>();
-            foreach (CustomProp prop in customProps)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Check if the custom property's value is null
-                // CustomValue may be null; also its ValueString may be null
-                if (prop.CustomValue == null || prop.CustomValue.ValueString == null)
+                // Access the custom properties collection.
+                CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
+
+                // Iterate backwards to safely remove items while iterating.
+                for (int i = customProps.Count - 1; i >= 0; i--)
                 {
-                    propsToRemove.Add(prop);
+                    CustomProp prop = customProps[i];
+
+                    // If the property value is null (or the CustomValue object itself is null), remove it.
+                    if (prop.CustomValue == null || prop.CustomValue.ValueString == null)
+                    {
+                        customProps.Remove(prop);
+                    }
                 }
+
+                // Save the cleaned diagram to the output file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Remove the identified properties from the collection
-            foreach (CustomProp prop in propsToRemove)
-            {
-                customProps.Remove(prop);
-            }
-
-            // Save the cleaned diagram to the output file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to free resources
-            diagram.Dispose();
 
             Console.WriteLine($"Diagram cleaned and saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

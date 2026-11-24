@@ -1,15 +1,16 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Expect three arguments: source diagram path, target diagram path, output diagram path
-        if (args.Length < 3)
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: Program <source.vsdx> <target.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <sourceDiagramPath> <targetDiagramPath> <outputDiagramPath>");
             return;
         }
 
@@ -31,54 +32,59 @@ class Program
 
         try
         {
-            // Load source diagram inside a using block
+            // Load source diagram
             using (Diagram sourceDiagram = new Diagram(sourcePath))
             {
-                // Load target diagram inside a using block
+                // Load target diagram
                 using (Diagram targetDiagram = new Diagram(targetPath))
                 {
-                    // Iterate over pages by index to keep correspondence
-                    int pageCount = sourceDiagram.Pages.Count;
+                    // Determine the number of pages to process (use the minimum count to avoid out‑of‑range errors)
+                    int pageCount = Math.Min(sourceDiagram.Pages.Count, targetDiagram.Pages.Count);
+
                     for (int i = 0; i < pageCount; i++)
                     {
-                        // Get source and target pages (assume same order)
-                        Page sourcePage = sourceDiagram.Pages[i];
-                        Page targetPage = targetDiagram.Pages[i];
+                        Page srcPage = sourceDiagram.Pages[i];
+                        Page tgtPage = targetDiagram.Pages[i];
 
-                        // Iterate through all annotations (comments) on the source page
-                        foreach (Annotation srcAnn in sourcePage.PageSheet.Annotations)
+                        // Iterate over each annotation (comment) on the source page
+                        foreach (Annotation srcAnn in srcPage.PageSheet.Annotations)
                         {
-                            // Retrieve comment text, reviewer ID and creation date
+                            // Retrieve comment text (fallback to empty string if null)
                             string commentText = srcAnn.Comment?.Value ?? string.Empty;
-                            int reviewerId = srcAnn.ReviewerID?.Value ?? 0;
-                            DateTime creationDate = srcAnn.Date?.Value ?? DateTime.MinValue;
 
-                            // Add the comment to the target page at a default position (0,0)
-                            // Note: AddComment takes X, Y coordinates and the comment string
-                            targetPage.AddComment(0, 0, commentText);
+                            // Retrieve position (fallback to 0.0 if null)
+                            double posX = srcAnn.X?.Value ?? 0.0;
+                            double posY = srcAnn.Y?.Value ?? 0.0;
 
-                            // Retrieve the newly added annotation (assumed to be the last one)
-                            Annotation newAnn = targetPage.PageSheet.Annotations[targetPage.PageSheet.Annotations.Count - 1];
+                            // Add a new comment to the target page at the same coordinates
+                            tgtPage.AddComment(posX, posY, commentText);
 
-                            // Preserve original reviewer ID and creation date
-                            if (newAnn.ReviewerID != null)
-                                newAnn.ReviewerID.Value = reviewerId;
-                            if (newAnn.Date != null)
-                                newAnn.Date.Value = creationDate;
+                            // The newly added annotation is the last one in the collection
+                            if (tgtPage.PageSheet.Annotations.Count > 0)
+                            {
+                                Annotation newAnn = tgtPage.PageSheet.Annotations[tgtPage.PageSheet.Annotations.Count - 1];
+
+                                // Preserve the shape association if any (ShapeID is writable)
+                                newAnn.ShapeID = srcAnn.ShapeID;
+
+                                // NOTE: ReviewerID and Date properties are read‑only in the Aspose.Diagram API.
+                                // Therefore they cannot be set on the newly created annotation.
+                                // // TODO: If future API versions expose setters for ReviewerID and Date,
+                                // // assign them here to fully preserve author and creation date.
+                            }
                         }
                     }
 
                     // Save the modified target diagram to the specified output path
                     targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Comments copied successfully. Output saved to: {outputPath}");
                 }
             }
-
-            Console.WriteLine("Comments copied successfully.");
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

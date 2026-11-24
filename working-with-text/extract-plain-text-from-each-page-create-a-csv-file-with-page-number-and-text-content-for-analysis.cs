@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -17,67 +16,78 @@ class Program
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputCsvPath = args[1];
 
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare CSV content with a header row.
-            StringBuilder csvBuilder = new StringBuilder();
-            csvBuilder.AppendLine("PageNumber,TextContent");
-
-            int pageNumber = 1;
-
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect plain text from all shapes on the current page.
-                StringBuilder pageTextBuilder = new StringBuilder();
+                // Prepare a StringBuilder for CSV content.
+                StringBuilder csvBuilder = new StringBuilder();
 
-                foreach (Shape shape in page.Shapes)
+                // Write CSV header.
+                csvBuilder.AppendLine("PageNumber,TextContent");
+
+                int pageNumber = 1; // 1‑based page counter.
+
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve concatenated plain text of the shape.
-                    string shapeText = shape.Text?.Value?.ToString();
+                    // Accumulate plain text from all shapes on the current page.
+                    StringBuilder pageTextBuilder = new StringBuilder();
 
-                    if (!string.IsNullOrEmpty(shapeText))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Strip any HTML tags that might be present.
-                        string cleanText = Regex.Replace(shapeText, "<.*?>", string.Empty);
+                        // Retrieve the plain text of the shape.
+                        // According to the API, shape.Text.Value.Text provides the text.
+                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
-                        // Append a space separator if needed.
-                        if (pageTextBuilder.Length > 0)
-                            pageTextBuilder.Append(' ');
-
-                        pageTextBuilder.Append(cleanText);
+                        if (!string.IsNullOrWhiteSpace(shapeText))
+                        {
+                            // Append a space to separate texts from different shapes.
+                            if (pageTextBuilder.Length > 0)
+                                pageTextBuilder.Append(' ');
+                            pageTextBuilder.Append(shapeText);
+                        }
                     }
+
+                    // Combine the collected text and strip any HTML tags (if present).
+                    string rawPageText = pageTextBuilder.ToString();
+                    string plainPageText = Regex.Replace(rawPageText, "<.*?>", string.Empty);
+
+                    // Escape double quotes for CSV compliance.
+                    string escapedText = plainPageText.Replace("\"", "\"\"");
+
+                    // Write the CSV line: page number (1‑based) and escaped text enclosed in quotes.
+                    csvBuilder.AppendLine($"{pageNumber},\"{escapedText}\"");
+
+                    pageNumber++;
                 }
 
-                // Escape double quotes for CSV compliance.
-                string csvSafeText = pageTextBuilder.ToString().Replace("\"", "\"\"");
+                // Ensure the output directory exists.
+                string outputDir = Path.GetDirectoryName(outputCsvPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
 
-                // Write the page number and its aggregated text to the CSV.
-                csvBuilder.AppendLine($"{pageNumber},\"{csvSafeText}\"");
-
-                pageNumber++;
+                // Write the CSV content to the specified file.
+                File.WriteAllText(outputCsvPath, csvBuilder.ToString(), Encoding.UTF8);
+                Console.WriteLine($"CSV file successfully created at \"{outputCsvPath}\".");
             }
-
-            // Write the CSV data to the specified output file.
-            File.WriteAllText(outputPath, csvBuilder.ToString(), Encoding.UTF8);
-            Console.WriteLine($"CSV file successfully created at: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

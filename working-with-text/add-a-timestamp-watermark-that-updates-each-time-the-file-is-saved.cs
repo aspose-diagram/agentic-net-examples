@@ -1,23 +1,25 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        // If output path not provided, create a new file name with suffix
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_watermarked.vsdx");
 
-        // Guard: verify input file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -26,57 +28,38 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each page in the diagram
+                // Iterate through all pages and add a timestamp watermark
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect existing watermark shapes (text starting with "Timestamp:") for deletion
-                    var shapesToDelete = new List<Shape>();
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.Del == BOOL.False && shape.Text != null && shape.Text.Value != null)
-                        {
-                            string existingText = shape.Text.Value.Text;
-                            if (!string.IsNullOrEmpty(existingText) && existingText.StartsWith("Timestamp:"))
-                            {
-                                shapesToDelete.Add(shape);
-                            }
-                        }
-                    }
-
-                    // Mark identified shapes as deleted
-                    foreach (Shape shape in shapesToDelete)
-                    {
-                        shape.Del = BOOL.True;
-                    }
-
                     // Retrieve page dimensions (in inches)
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Define watermark text with current timestamp
-                    string watermarkText = $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                    // Position the watermark at the top-left corner covering the whole page
+                    double pinX = 0.0;
+                    double pinY = 0.0;
+                    double width = pageWidth;
+                    double height = pageHeight;
 
-                    // Add the watermark text covering the full page
-                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize (in inches)
-                    page.AddText(
-                        0,                     // pinX (top‑left corner)
-                        0,                     // pinY (top‑left corner)
-                        pageWidth,             // width
-                        pageHeight,            // height
-                        watermarkText,         // text
-                        "Calibri",             // font name
-                        "#a5a5a5",             // font color (hex)
-                        0.25);                 // font size (in inches)
+                    // Create the watermark text with the current timestamp
+                    string watermarkText = $"Generated on {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+
+                    // Font settings
+                    string fontName = "Calibri";
+                    string fontColor = "#A5A5A5"; // Light gray
+                    double fontSize = 0.25; // Small size suitable for full-page watermark
+
+                    // Add the watermark text shape to the page
+                    page.AddText(pinX, pinY, width, height, watermarkText, fontName, fontColor, fontSize);
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format
+                // Save the modified diagram to the output path using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with timestamp watermark to: {outputPath}");
             }
-
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

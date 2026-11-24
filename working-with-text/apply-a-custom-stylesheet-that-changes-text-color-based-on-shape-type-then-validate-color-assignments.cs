@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -16,7 +15,7 @@ class Program
         }
         string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        // Guard clauses for file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,36 +27,35 @@ class Program
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Define text color mapping based on shape master name (type)
-            var typeColorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "Rectangle", "#FF0000" },   // Red for rectangles
-                { "Ellipse",   "#00FF00" },   // Green for ellipses
-                { "Hexagon",   "#0000FF" },   // Blue for hexagons
-                // Add more mappings as needed
-            };
+            // Create style sheets for different shape types
+            // Rectangle style (red text)
+            StyleSheet rectStyle = new StyleSheet();
+            rectStyle.ID = diagram.StyleSheets.Count + 1;
+            Aspose.Diagram.Char rectChar = new Aspose.Diagram.Char();
+            rectChar.IX = 0; // first character style
+            rectChar.Color.Value = "#FF0000"; // red
+            rectStyle.Chars.Add(rectChar);
+            diagram.StyleSheets.Add(rectStyle);
 
-            // Prepare a stylesheet per shape type
-            var typeStyleMap = new Dictionary<string, StyleSheet>(StringComparer.OrdinalIgnoreCase);
+            // Ellipse style (green text)
+            StyleSheet ellipseStyle = new StyleSheet();
+            ellipseStyle.ID = diagram.StyleSheets.Count + 1;
+            Aspose.Diagram.Char ellipseChar = new Aspose.Diagram.Char();
+            ellipseChar.IX = 0;
+            ellipseChar.Color.Value = "#00FF00"; // green
+            ellipseStyle.Chars.Add(ellipseChar);
+            diagram.StyleSheets.Add(ellipseStyle);
 
-            foreach (var kvp in typeColorMap)
-            {
-                // Create a new stylesheet
-                StyleSheet ss = new StyleSheet();
-                ss.ID = diagram.StyleSheets.Count + 1; // Unique ID
+            // Connector style (blue text)
+            StyleSheet connectorStyle = new StyleSheet();
+            connectorStyle.ID = diagram.StyleSheets.Count + 1;
+            Aspose.Diagram.Char connectorChar = new Aspose.Diagram.Char();
+            connectorChar.IX = 0;
+            connectorChar.Color.Value = "#0000FF"; // blue
+            connectorStyle.Chars.Add(connectorChar);
+            diagram.StyleSheets.Add(connectorStyle);
 
-                // Define a character style with the desired text color
-                Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                ch.Color.Value = kvp.Value; // Hex color string
-                ch.IX = 0; // Index of the character style
-                ss.Chars.Add(ch);
-
-                // Add stylesheet to the diagram and store it for later use
-                diagram.StyleSheets.Add(ss);
-                typeStyleMap[kvp.Key] = ss;
-            }
-
-            // Apply the appropriate stylesheet to each shape based on its master name
+            // Iterate through all pages and shapes, applying the appropriate style
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -66,20 +64,31 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Determine shape type via master name; fallback to "Unknown"
-                    string shapeType = shape.Master?.Name ?? "Unknown";
+                    // Determine shape type via master name (fallback to shape name if master is null)
+                    string masterName = shape.Master?.Name ?? string.Empty;
+                    string shapeName = shape.Name ?? string.Empty;
+                    string typeKey = masterName + shapeName;
 
-                    // Find a matching stylesheet; if none, skip
-                    if (typeStyleMap.TryGetValue(shapeType, out StyleSheet ss))
+                    // Apply style based on identified type
+                    if (typeKey.IndexOf("Rectangle", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Assign the stylesheet to the shape's text style
-                        shape.TextStyle = ss;
+                        shape.TextStyle = rectStyle;
                     }
+                    else if (typeKey.IndexOf("Ellipse", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             typeKey.IndexOf("Oval", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        shape.TextStyle = ellipseStyle;
+                    }
+                    else if (typeKey.IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             typeKey.IndexOf("Dynamic connector", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        shape.TextStyle = connectorStyle;
+                    }
+                    // Shapes that do not match any rule keep their existing style
                 }
             }
 
-            // Validation: ensure each shape's text color matches the expected mapping
-            bool validationFailed = false;
+            // Validation: ensure each shape's text color matches the expected style
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
@@ -87,43 +96,49 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    string shapeType = shape.Master?.Name ?? "Unknown";
+                    string expectedColor = null;
+                    string masterName = shape.Master?.Name ?? string.Empty;
+                    string shapeName = shape.Name ?? string.Empty;
+                    string typeKey = masterName + shapeName;
 
-                    if (typeColorMap.TryGetValue(shapeType, out string expectedColor))
+                    if (typeKey.IndexOf("Rectangle", StringComparison.OrdinalIgnoreCase) >= 0)
+                        expectedColor = "#FF0000";
+                    else if (typeKey.IndexOf("Ellipse", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             typeKey.IndexOf("Oval", StringComparison.OrdinalIgnoreCase) >= 0)
+                        expectedColor = "#00FF00";
+                    else if (typeKey.IndexOf("Connector", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                             typeKey.IndexOf("Dynamic connector", StringComparison.OrdinalIgnoreCase) >= 0)
+                        expectedColor = "#0000FF";
+
+                    // If we have an expectation, verify it
+                    if (expectedColor != null)
                     {
-                        // Retrieve the color from the assigned stylesheet (if any)
-                        string actualColor = shape.TextStyle?.Chars.Count > 0
-                            ? shape.TextStyle.Chars[0].Color.Value
-                            : null;
+                        // Retrieve the applied color from the shape's text style
+                        string actualColor = null;
+                        if (shape.TextStyle != null && shape.TextStyle.Chars.Count > 0)
+                        {
+                            actualColor = shape.TextStyle.Chars[0].Color.Value;
+                        }
 
                         if (!string.Equals(actualColor, expectedColor, StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.Error.WriteLine($"Validation error on shape ID {shape.ID}: Expected color {expectedColor}, but found {(actualColor ?? "null")}.");
-                            validationFailed = true;
+                            string msg = $"Color mismatch on shape ID {shape.ID} (Master: {masterName}). Expected: {expectedColor}, Actual: {actualColor ?? "null"}";
+                            Console.Error.WriteLine(msg);
+                            // Optionally, throw to stop execution
+                            throw new Exception(msg);
                         }
                     }
                 }
             }
 
-            if (validationFailed)
-            {
-                Console.Error.WriteLine("One or more shapes have incorrect text colors.");
-                // Optionally, you could throw an exception to stop further processing
-                // throw new Exception("Validation failed.");
-            }
-            else
-            {
-                Console.WriteLine("All shape text colors validated successfully.");
-            }
-
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

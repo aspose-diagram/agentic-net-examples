@@ -6,23 +6,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: path to the diagram file and path to the custom .vss stencil file.
-        if (args.Length < 2)
+        // Define input and output file paths.
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: Program <DiagramPath> <StencilPath>");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
+        string stencilPath = "custom.vss";
+        if (!System.IO.File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"File not found: {stencilPath}");
+            return;
+        }
+        string outputPath = "output.vsdx";
 
-        string diagramPath = args[0];
-        string stencilPath = args[1];
-
-        // Guard against missing files.
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
+        // Guard: ensure the stencil file exists.
         if (!File.Exists(stencilPath))
         {
             Console.Error.WriteLine($"Stencil file not found: {stencilPath}");
@@ -31,13 +37,13 @@ class Program
 
         try
         {
-            // Load the main diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the main Visio diagram.
+            Diagram diagram = new Diagram(diagramPath, LoadFileFormat.Vsdx);
 
-            // Load the stencil (VSS) file.
+            // Load the custom stencil (.vss) which contains the stylesheet.
             Diagram stencil = new Diagram(stencilPath, LoadFileFormat.Vss);
 
-            // Find the stylesheet named "CustomStyle" in the stencil.
+            // Locate the stylesheet named "CustomStyle" in the stencil.
             StyleSheet customStyle = null;
             foreach (StyleSheet ss in stencil.StyleSheets)
             {
@@ -50,27 +56,46 @@ class Program
 
             if (customStyle == null)
             {
-                Console.Error.WriteLine("Stylesheet 'CustomStyle' not found in the stencil file.");
+                Console.Error.WriteLine("Stylesheet 'CustomStyle' not found in the stencil.");
                 return;
             }
 
-            // Add the found stylesheet to the main diagram's stylesheet collection.
-            // Ensure the ID is unique within the diagram.
-            customStyle.ID = diagram.StyleSheets.Count + 1;
-            diagram.StyleSheets.Add(customStyle);
+            // Add the stylesheet to the main diagram if it does not already exist.
+            bool styleExists = false;
+            foreach (StyleSheet ss in diagram.StyleSheets)
+            {
+                if (ss.Name == customStyle.Name)
+                {
+                    styleExists = true;
+                    break;
+                }
+            }
+            if (!styleExists)
+            {
+                diagram.StyleSheets.Add(customStyle);
+            }
 
-            // Retrieve shape with ID 12 from the first page.
+            // Retrieve the first page (assuming the shape is on page 0).
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
-
             Page page = diagram.Pages[0];
-            Shape shape = page.Shapes.GetShape(12);
+
+            // Retrieve shape with ID 12.
+            long targetShapeId = 12L;
+            Shape shape = page.Shapes.GetShape(targetShapeId);
             if (shape == null)
             {
-                Console.Error.WriteLine("Shape with ID 12 not found on the first page.");
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} not found.");
+                return;
+            }
+
+            // Ensure the shape is not logically deleted.
+            if (shape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} is marked as deleted.");
                 return;
             }
 
@@ -80,13 +105,12 @@ class Program
             shape.LineStyle = customStyle;
 
             // Save the modified diagram.
-            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "output.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
+            // Write any Aspose or IO errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

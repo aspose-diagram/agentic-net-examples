@@ -8,11 +8,19 @@ class Program
     static void Main(string[] args)
     {
         // Define output file path
-        string outputPath = "output.vsdx";
+        string outputPath = "WatermarkedDiagram.vsdx";
+
+        // Guard: ensure the directory for the output exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram
+            // Create a new empty diagram (contains a default page)
             Diagram diagram = new Diagram();
 
             // Access the first (default) page
@@ -24,41 +32,47 @@ class Program
 
             // Watermark settings
             string watermarkText = "CONFIDENTIAL";
-            string fontName = "Arial";
-            string fontColor = "#C0C0C0"; // Light gray
-            double fontSize = 0.5; // Inches
-            double boxWidth = 2.0; // Width of the text box
-            double boxHeight = 0.5; // Height of the text box
-            double rotationAngle = 45.0; // Degrees
-            double transparency = 0.8; // 0 = opaque, 1 = fully transparent
+            string fontName = "Calibri";
+            string fontColor = "#a5a5a5"; // Light gray
+            double fontSize = 0.25; // Approx. 18 pt (Visio uses inches)
 
-            // Define spacing between watermarks
-            double stepX = 3.0; // Horizontal step (inches)
-            double stepY = 3.0; // Vertical step (inches)
+            // Define spacing for repeated watermarks
+            double stepX = pageWidth / 5.0;
+            double stepY = pageHeight / 5.0;
 
-            // Loop over the page area and add repeated watermark shapes
+            // Loop to place watermarks across the page
             for (double y = 0; y < pageHeight; y += stepY)
             {
                 for (double x = 0; x < pageWidth; x += stepX)
                 {
                     // Add a text shape as watermark
-                    Shape wmShape = page.AddText(x, y, boxWidth, boxHeight, watermarkText, fontName, fontColor, fontSize);
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize
+                    Shape wmShape = page.AddText(
+                        x,               // pinX
+                        y,               // pinY
+                        2.0,             // width (arbitrary, enough to contain text)
+                        0.5,             // height (arbitrary)
+                        watermarkText,
+                        fontName,
+                        fontColor,
+                        fontSize);
 
-                    // Rotate the watermark diagonally
-                    wmShape.XForm.Angle.Value = rotationAngle;
+                    // Rotate the watermark 45 degrees for diagonal appearance
+                    wmShape.XForm.Angle.Value = 45.0;
 
-                    // Set semi‑transparent fill (foreground color transparency)
-                    wmShape.Fill.FillForegndTrans.Value = transparency;
+                    // Set semi‑transparent fill to make the watermark faint
+                    // FillForegndTrans: 0.0 = opaque, 1.0 = fully transparent
+                    wmShape.Fill.FillForegndTrans.Value = 0.8; // 80% transparent
                 }
             }
 
-            // Save the diagram with the repeated diagonal watermark pattern
+            // Save the diagram with the watermarks
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

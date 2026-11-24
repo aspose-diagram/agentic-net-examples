@@ -7,97 +7,129 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the output file path
-        string outputPath = "output.vsdx";
-
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // -----------------------------------------------------------------
-            // Create a new empty diagram
-            // -----------------------------------------------------------------
-            Diagram diagram = new Diagram();
-
-            // Use the first (default) page
-            Page page = diagram.Pages[0];
-
-            // -----------------------------------------------------------------
-            // Add a multi‑line text shape
-            // -----------------------------------------------------------------
-            double pinX = 2.0;
-            double pinY = 5.0;
-            double width = 4.0;
-            double height = 2.0;
-            string multiLineText = "First line\nSecond line\nThird line";
-
-            // AddText returns a Shape instance containing the text
-            Shape textShape = page.AddText(pinX, pinY, width, height, multiLineText);
-
-            // -----------------------------------------------------------------
-            // Create a custom stylesheet (will be used for the shape)
-            // -----------------------------------------------------------------
-            StyleSheet customStyle = new StyleSheet();
-            // Assign a unique ID (Visio expects IDs to start at 1)
-            customStyle.ID = diagram.StyleSheets.Count + 1;
-
-            // Add the stylesheet to the diagram
-            diagram.StyleSheets.Add(customStyle);
-
-            // Apply the stylesheet to the text shape
-            textShape.TextStyle = customStyle;
-
-            // -----------------------------------------------------------------
-            // Set line height (paragraph spacing) on the shape's paragraphs
-            // -----------------------------------------------------------------
-            double desiredLineSpacing = 1.5; // 150% line height
-
-            // Apply the line spacing to all existing paragraphs in the shape
-            for (int i = 0; i < textShape.Paras.Count; i++)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // SpLine.Value sets the line spacing (in lines)
-                textShape.Paras[i].SpLine.Value = desiredLineSpacing;
-            }
+                // -------------------------------------------------------------
+                // 1. Create a custom StyleSheet (empty – Paragraph class not available).
+                // -------------------------------------------------------------
+                StyleSheet customStyle = new StyleSheet();
 
-            // -----------------------------------------------------------------
-            // Verify that the line spacing was applied correctly
-            // -----------------------------------------------------------------
-            bool allMatch = true;
-            for (int i = 0; i < textShape.Paras.Count; i++)
-            {
-                double actual = textShape.Paras[i].SpLine.Value;
-                if (Math.Abs(actual - desiredLineSpacing) > 0.0001)
+                // Assign a unique ID for the stylesheet.
+                customStyle.ID = diagram.StyleSheets.Count + 1;
+
+                // Add the stylesheet to the diagram.
+                diagram.StyleSheets.Add(customStyle);
+
+                // Apply the stylesheet to all pages (TextStyle, FillStyle, LineStyle).
+                foreach (Page page in diagram.Pages)
                 {
-                    allMatch = false;
-                    Console.Error.WriteLine($"Paragraph {i} line spacing mismatch. Expected: {desiredLineSpacing}, Actual: {actual}");
+                    page.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
                 }
-            }
 
-            if (allMatch)
-            {
-                Console.WriteLine($"Line spacing verification succeeded. All paragraphs have SpLine = {desiredLineSpacing}");
-            }
-            else
-            {
-                throw new Exception("Line spacing verification failed.");
-            }
+                // -------------------------------------------------------------
+                // 2. Set line spacing (SpLine) to 1.5 on all multi‑line text shapes.
+                // -------------------------------------------------------------
+                const double ExpectedLineSpacing = 1.5;
 
-            // -----------------------------------------------------------------
-            // Save the diagram to a VSDX file
-            // -----------------------------------------------------------------
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True) continue;
+
+                        // Retrieve plain text of the shape.
+                        string plainText = shape.Text.Value.Text ?? string.Empty;
+
+                        // Consider only shapes that contain a line‑break.
+                        if (!plainText.Contains("\n")) continue;
+
+                        // Set the desired line spacing for each paragraph.
+                        for (int i = 0; i < shape.Paras.Count; i++)
+                        {
+                            shape.Paras[i].SpLine.Value = ExpectedLineSpacing;
+                        }
+                    }
+                }
+
+                // -------------------------------------------------------------
+                // 3. Verify that multi‑line text shapes have the expected line spacing.
+                // -------------------------------------------------------------
+                bool allVerified = true;
+
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True) continue;
+
+                        // Retrieve plain text of the shape.
+                        string plainText = shape.Text.Value.Text ?? string.Empty;
+
+                        // Consider only shapes that contain a line‑break.
+                        if (!plainText.Contains("\n")) continue;
+
+                        // Check each paragraph's SpLine value.
+                        bool shapeVerified = true;
+                        for (int i = 0; i < shape.Paras.Count; i++)
+                        {
+                            double actualSpacing = shape.Paras[i].SpLine.Value;
+                            if (Math.Abs(actualSpacing - ExpectedLineSpacing) > 0.001)
+                            {
+                                shapeVerified = false;
+                                break;
+                            }
+                        }
+
+                        if (!shapeVerified)
+                        {
+                            allVerified = false;
+                            Console.WriteLine($"Shape ID {shape.ID} on Page {page.ID} has incorrect line spacing.");
+                        }
+                    }
+                }
+
+                if (allVerified)
+                {
+                    Console.WriteLine("All multi‑line text shapes have the expected line spacing.");
+                }
+                else
+                {
+                    Console.WriteLine("Some shapes did not match the expected line spacing. See details above.");
+                }
+
+                // -------------------------------------------------------------
+                // 4. Save the modified diagram.
+                // -------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

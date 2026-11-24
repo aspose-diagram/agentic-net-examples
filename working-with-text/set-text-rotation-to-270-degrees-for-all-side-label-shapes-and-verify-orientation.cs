@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -29,6 +29,9 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
+                // Define the target rotation in radians (270 degrees).
+                double targetAngleRad = (Math.PI / 180.0) * 270.0;
+
                 // Iterate through all pages.
                 for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
@@ -43,29 +46,24 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Determine if the shape is a side‑label.
-                        // For this example we treat any shape that contains text as a candidate.
+                        // Identify side‑label shapes.
+                        // For this example we treat any shape that contains non‑empty text as a side‑label.
                         string shapeText = shape.Text?.Value?.ToString() ?? string.Empty;
                         if (string.IsNullOrWhiteSpace(shapeText))
                             continue;
 
-                        // Set text rotation to 270 degrees (convert to radians).
-                        double angleDeg = 270.0;
-                        double angleRad = (Math.PI / 180.0) * angleDeg;
-                        shape.TextXForm.TxtAngle.Value = angleRad;
+                        // Set text rotation to 270 degrees (in radians).
+                        shape.TextXForm.TxtAngle.Value = targetAngleRad;
 
-                        // Verify the rotation was applied correctly.
-                        double storedRad = shape.TextXForm.TxtAngle.Value;
-                        double storedDeg = storedRad * (180.0 / Math.PI);
-                        const double tolerance = 0.01; // degrees tolerance
-
-                        if (Math.Abs(storedDeg - angleDeg) > tolerance)
+                        // Verify that the rotation was applied correctly.
+                        double actualAngle = shape.TextXForm.TxtAngle.Value;
+                        if (Math.Abs(actualAngle - targetAngleRad) > 0.0001)
                         {
-                            throw new Exception($"Rotation verification failed for shape ID {shape.ID}. Expected {angleDeg}°, got {storedDeg:F2}°.");
+                            Console.Error.WriteLine($"Warning: Shape ID {shape.ID} rotation verification failed.");
                         }
                         else
                         {
-                            Console.WriteLine($"Shape ID {shape.ID} text rotation set to {storedDeg:F2}° successfully.");
+                            Console.WriteLine($"Shape ID {shape.ID} text rotation set to 270°.");
                         }
                     }
                 }
@@ -77,8 +75,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

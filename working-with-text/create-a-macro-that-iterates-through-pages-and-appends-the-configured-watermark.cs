@@ -6,14 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (required)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output Visio file path (required)
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdm";
-        // Watermark text (optional, default provided)
-        string watermarkText = args.Length > 2 ? args[2] : "CONFIDENTIAL";
+        // Validate arguments: input file, output file, optional watermark text
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> [watermarkText]");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string watermarkText = args.Length >= 3 ? args[2] : "Confidential";
+
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,7 +29,7 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate through each page and add the watermark text
             foreach (Page page in diagram.Pages)
             {
                 // Retrieve page dimensions (in inches)
@@ -41,13 +45,13 @@ class Program
                 page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, "Calibri", "#a5a5a5", 0.25);
             }
 
-            // Save the modified diagram as a macro-enabled Visio file
+            // Save the modified diagram in a macro-enabled format to preserve any existing VBA macros
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
             Console.WriteLine($"Watermark added and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -6,16 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect three arguments: input diagram path, output diagram path, watermark text
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <watermark text>");
             return;
         }
-        string outputPath = "output_with_watermark.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string watermarkText = args[2];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,79 +26,53 @@ class Program
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page
-            if (diagram.Pages.Count == 0)
+            // Process each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Retrieve page dimensions (in inches)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Retrieve page margins (in inches)
+                double leftMargin = page.PageSheet.PrintProps.PageLeftMargin.Value;
+                double rightMargin = page.PageSheet.PrintProps.PageRightMargin.Value;
+                double topMargin = page.PageSheet.PrintProps.PageTopMargin.Value;
+                double bottomMargin = page.PageSheet.PrintProps.PageBottomMargin.Value;
+
+                // Calculate printable area dimensions
+                double printableWidth = pageWidth - leftMargin - rightMargin;
+                double printableHeight = pageHeight - topMargin - bottomMargin;
+
+                // Ensure printable dimensions are positive
+                if (printableWidth <= 0 || printableHeight <= 0)
+                {
+                    Console.Error.WriteLine($"Page {page.Name} has invalid margins resulting in non‑positive printable area.");
+                    continue;
+                }
+
+                // Position the watermark at the top‑left corner of the printable area
+                double pinX = leftMargin;
+                double pinY = topMargin;
+
+                // Define watermark appearance
+                string fontName = "Calibri";
+                string fontColor = "#a5a5a5"; // Light gray
+                double fontSize = 0.25; // In inches (approx. 18 pt)
+
+                // Add the watermark text confined to the printable area
+                page.AddText(pinX, pinY, printableWidth, printableHeight, watermarkText, fontName, fontColor, fontSize);
             }
 
-            // Work with the first page (adjust index as needed)
-            Page page = diagram.Pages[0];
-
-            // ------------------------------
-            // Set page margins (in inches)
-            // ------------------------------
-            // Example margins: 0.5 inch on each side
-            double leftMargin = 0.5;
-            double rightMargin = 0.5;
-            double topMargin = 0.5;
-            double bottomMargin = 0.5;
-
-            page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
-            page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
-            page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
-            page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
-
-            // ------------------------------
-            // Calculate printable area dimensions
-            // ------------------------------
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            double printableWidth = pageWidth - leftMargin - rightMargin;
-            double printableHeight = pageHeight - topMargin - bottomMargin;
-
-            if (printableWidth <= 0 || printableHeight <= 0)
-            {
-                Console.Error.WriteLine("Margins are too large, resulting in non‑positive printable area.");
-                return;
-            }
-
-            // ------------------------------
-            // Add watermark text within printable area
-            // ------------------------------
-            // Position the watermark at the top‑left of the printable rectangle.
-            // Width and height cover the entire printable area so the text can be centered automatically.
-            string watermarkText = "CONFIDENTIAL";
-            string fontName = "Calibri";
-            string fontColor = "#a5a5a5"; // Light gray
-            double fontSize = 0.25; // In inches (approx 18 pt)
-
-            // AddText parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize
-            page.AddText(
-                leftMargin,               // pinX
-                topMargin,                // pinY
-                printableWidth,           // width
-                printableHeight,          // height
-                watermarkText,
-                fontName,
-                fontColor,
-                fontSize
-            );
-
-            // ------------------------------
-            // Save the modified diagram
-            // ------------------------------
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Watermarked diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

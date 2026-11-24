@@ -1,75 +1,73 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Validate arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Prepare output path (same folder, suffix "_watermarked").
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_watermarked.vsdx");
-
         try
         {
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect pages into a list for safe iteration.
-                List<Page> pages = new List<Page>();
-                foreach (Page p in diagram.Pages)
+                // Iterate through all pages and add a full‑page watermark.
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    pages.Add(p);
-                }
+                    Page page = diagram.Pages[i];
 
-                // Add a full‑page watermark to each page.
-                foreach (Page page in pages)
-                {
                     // Retrieve page dimensions.
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Watermark parameters.
-                    double pinX = 0;                     // left edge
-                    double pinY = 0;                     // top edge
-                    double width = pageWidth;            // full page width
-                    double height = pageHeight;          // full page height
+                    // Calculate the position (pinX, pinY) for the watermark.
+                    // Using (0,0) places the text at the lower‑left corner; the width/height cover the whole page.
+                    double pinX = 0;
+                    double pinY = 0;
+
+                    // Watermark text and styling.
                     string watermarkText = "CONFIDENTIAL";
                     string fontName = "Calibri";
-                    string fontColor = "#a5a5a5";
-                    double fontSize = 0.25;              // example size
+                    string fontColor = "#A5A5A5"; // Light gray in hex.
+                    double fontSize = 0.25; // Small size; Visio scales it relative to page size.
 
-                    // Add the watermark text covering the entire page.
-                    page.AddText(pinX, pinY, width, height, watermarkText, fontName, fontColor, fontSize);
+                    // Add the watermark text to the page.
+                    // This method adds a single text shape covering the entire page, which is efficient for large diagrams.
+                    page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSize);
                 }
 
-                // Save the modified diagram with watermarks.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+                // Ensure the output directory exists.
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
 
-            Console.WriteLine($"Watermarked diagram saved to: {outputPath}");
+                // Save the modified diagram.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Watermarked diagram saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

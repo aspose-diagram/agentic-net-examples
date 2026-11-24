@@ -9,9 +9,9 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
@@ -24,40 +24,36 @@ class Program
             return;
         }
 
-        // Dictionary to hold word frequencies.
-        var wordFreq = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        int totalWordCount = 0;
-
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages.
+            // Dictionary to hold word frequencies (case‑insensitive).
+            var wordFreq = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Regular expression to match words (alphanumeric sequences).
+            Regex wordRegex = new Regex(@"\b\w+\b", RegexOptions.Compiled);
+
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
                     // Retrieve plain text from the shape.
-                    string rawText = shape.Text.Value.Text;
+                    string rawText = shape.Text?.Value?.Text ?? string.Empty;
 
                     // Skip shapes without text.
                     if (string.IsNullOrWhiteSpace(rawText))
                         continue;
 
                     // Remove any HTML tags that might be present.
-                    string plainText = Regex.Replace(rawText, "<.*?>", string.Empty);
+                    string cleanText = Regex.Replace(rawText, "<.*?>", string.Empty);
 
-                    // Split the text into words using a regex that matches word characters.
-                    foreach (Match match in Regex.Matches(plainText, @"\b\w+\b"))
+                    // Find all word matches.
+                    foreach (Match match in wordRegex.Matches(cleanText))
                     {
                         string word = match.Value;
-
-                        // Update total count.
-                        totalWordCount++;
-
-                        // Update frequency dictionary.
                         if (wordFreq.ContainsKey(word))
                             wordFreq[word]++;
                         else
@@ -66,45 +62,38 @@ class Program
                 }
             }
 
-            // Output total word count.
-            Console.WriteLine($"Total Words: {totalWordCount}");
-            Console.WriteLine();
-            Console.WriteLine("Word Frequency Report (descending):");
-
-            // Sort frequencies descending and write to console.
-            foreach (var kvp in SortedByValueDesc(wordFreq))
+            // Prepare the frequency report.
+            var reportLines = new List<string>();
+            reportLines.Add("Word Frequency Report");
+            reportLines.Add("=====================");
+            foreach (var kvp in SortedByCountDescending(wordFreq))
             {
-                Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+                reportLines.Add($"{kvp.Key}: {kvp.Value}");
             }
 
-            // Optionally, write the report to a text file in the same folder as the diagram.
+            // Output the report to the console.
+            foreach (string line in reportLines)
+            {
+                Console.WriteLine(line);
+            }
+
+            // Also write the report to a text file in the same directory as the diagram.
             string reportPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "frequency_report.txt");
-            using (StreamWriter writer = new StreamWriter(reportPath))
-            {
-                writer.WriteLine($"Total Words: {totalWordCount}");
-                writer.WriteLine();
-                writer.WriteLine("Word Frequency Report (descending):");
-                foreach (var kvp in SortedByValueDesc(wordFreq))
-                {
-                    writer.WriteLine($"{kvp.Key}: {kvp.Value}");
-                }
-            }
-
-            Console.WriteLine();
-            Console.WriteLine($"Frequency report saved to: {reportPath}");
+            File.WriteAllLines(reportPath, reportLines);
+            Console.WriteLine($"\nReport saved to: {reportPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
-    // Helper method to sort dictionary by value descending.
-    private static IEnumerable<KeyValuePair<string, int>> SortedByValueDesc(Dictionary<string, int> dict)
+    // Helper method to sort dictionary entries by descending count.
+    private static IEnumerable<KeyValuePair<string, int>> SortedByCountDescending(Dictionary<string, int> dict)
     {
         var list = new List<KeyValuePair<string, int>>(dict);
-        list.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+        list.Sort((a, b) => b.Value.CompareTo(a.Value));
         return list;
     }
 }

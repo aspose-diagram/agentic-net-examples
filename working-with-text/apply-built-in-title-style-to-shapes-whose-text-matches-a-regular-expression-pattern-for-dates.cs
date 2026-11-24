@@ -33,7 +33,7 @@ class Program
                 StyleSheet titleStyle = null;
                 foreach (StyleSheet ss in diagram.StyleSheets)
                 {
-                    if (ss.Name == "Title")
+                    if (ss.Name != null && ss.Name.Equals("Title", StringComparison.OrdinalIgnoreCase))
                     {
                         titleStyle = ss;
                         break;
@@ -43,41 +43,36 @@ class Program
                 if (titleStyle == null)
                 {
                     Console.Error.WriteLine("The 'Title' style sheet was not found in the diagram.");
+                    return;
                 }
 
-                // Regular expression to match dates (e.g., 12/31/2023).
-                Regex dateRegex = new Regex(@"\b\d{2}/\d{2}/\d{4}\b", RegexOptions.Compiled);
+                // Define a regular expression that matches typical date formats (e.g., 12/31/2023).
+                Regex dateRegex = new Regex(@"\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b", RegexOptions.Compiled);
 
                 // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve plain text from the shape.
+                        // Retrieve the plain text of the shape.
                         string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
                         // If the text matches the date pattern, apply the Title style.
-                        if (!string.IsNullOrWhiteSpace(shapeText) && dateRegex.IsMatch(shapeText))
+                        if (dateRegex.IsMatch(shapeText))
                         {
-                            if (titleStyle != null)
-                            {
-                                // Apply the style to text, fill, and line aspects of the shape.
-                                shape.TextStyle = titleStyle;
-                                shape.FillStyle = titleStyle;
-                                shape.LineStyle = titleStyle;
-                            }
+                            shape.TextStyle = titleStyle;
                         }
                     }
                 }
 
-                // Save the modified diagram.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -9,14 +9,14 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -29,38 +29,36 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the current page.
-                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[shapeIndex];
+                    // Process only shapes that contain text.
+                    if (shape.Text == null || shape.Text.Value == null)
+                        continue;
 
                     // Retrieve the plain text of the shape.
-                    string text = shape.Text.Value.Text;
-
-                    // Skip shapes without text.
-                    if (string.IsNullOrEmpty(text))
+                    string fullText = shape.Text.Value.Text;
+                    if (string.IsNullOrEmpty(fullText))
                         continue;
 
-                    // Ensure the character collection is available.
-                    if (shape.Chars == null || shape.Chars.Count == 0)
-                        continue;
+                    // Ensure the Chars collection matches the text length.
+                    // If it is shorter, skip the excess characters.
+                    int charCount = Math.Min(fullText.Length, shape.Chars.Count);
 
-                    // Iterate over each character position.
-                    // The character formatting collection aligns with the text string.
-                    int charCount = Math.Min(text.Length, shape.Chars.Count);
+                    // Iterate over each character.
                     for (int i = 0; i < charCount; i++)
                     {
-                        char c = text[i];
+                        char c = fullText[i];
 
-                        // If the character is a digit, change its font size.
+                        // Check if the character is a digit.
                         if (char.IsDigit(c))
                         {
-                            // Set font size to 0.3 inches (approximately 21.6 points).
-                            shape.Chars[i].Size.Value = 0.3;
+                            // Set a larger font size for numeric characters.
+                            // Font size is specified in inches (points / 72).
+                            // Example: 24 points => 24/72 = 0.333... inches.
+                            shape.Chars[i].Size.Value = 24.0 / 72.0;
                         }
                         // Non‑numeric characters are left unchanged.
                     }
@@ -72,8 +70,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

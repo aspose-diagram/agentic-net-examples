@@ -9,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
@@ -19,127 +19,99 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file existence
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // ------------------------------------------------------------
-        // Configure font directories before loading the diagram
-        // ------------------------------------------------------------
         try
         {
-            // Use the system fonts folder as a primary source
-            string systemFonts = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
-            if (Directory.Exists(systemFonts))
+            // -----------------------------------------------------------------
+            // Configure font locations before any diagram processing.
+            // -----------------------------------------------------------------
+            string systemFontDir = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+            if (Directory.Exists(systemFontDir))
             {
-                // Enable recursive search
-                FontConfigs.SetFontFolder(systemFonts, true);
+                // Register the system font folder (recursive search).
+                FontConfigs.SetFontFolder(systemFontDir, true);
             }
             else
             {
-                Console.Error.WriteLine("System fonts folder not found. Font fallback may not work.");
+                Console.Error.WriteLine($"Warning: System font directory not found: {systemFontDir}");
             }
 
-            // Set a default fallback font (used when the desired font is missing)
+            // Set a default fallback font for missing fonts.
             FontConfigs.DefaultFontName = "Arial";
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error configuring fonts: {ex.Message}");
-            return;
-        }
 
-        // ------------------------------------------------------------
-        // Load the diagram inside a using block (mandatory)
-        // ------------------------------------------------------------
-        try
-        {
-            using (Diagram diagram = new Diagram(inputPath))
+            // -----------------------------------------------------------------
+            // Load the Visio diagram.
+            // -----------------------------------------------------------------
+            Diagram diagram = new Diagram(inputPath);
+
+            // -----------------------------------------------------------------
+            // Check for missing fonts used in the diagram.
+            // -----------------------------------------------------------------
+            var installedFonts = new InstalledFontCollection();
+            var installedNames = installedFonts.Families
+                .Select(f => f.Name)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (Font diagramFont in diagram.Fonts)
             {
-                // ------------------------------------------------------------
-                // Determine watermark font, fallback if not installed
-                // ------------------------------------------------------------
-                string watermarkFont = "Calibri";
-                string fallbackFont = FontConfigs.DefaultFontName;
-
-                try
+                string fontName = diagramFont.Name;
+                if (!installedNames.Contains(fontName))
                 {
-                    InstalledFontCollection installedFonts = new InstalledFontCollection();
-                    bool fontExists = installedFonts.Families.Any(f => string.Equals(f.Name, watermarkFont, StringComparison.OrdinalIgnoreCase));
-
-                    if (!fontExists)
-                    {
-                        Console.Error.WriteLine($"Warning: Font '{watermarkFont}' is not installed. Falling back to '{fallbackFont}'.");
-                        watermarkFont = fallbackFont;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error checking installed fonts: {ex.Message}");
-                    watermarkFont = fallbackFont;
-                }
-
-                // ------------------------------------------------------------
-                // Add watermark text to each page
-                // ------------------------------------------------------------
-                string watermarkText = "CONFIDENTIAL";
-                string fontColorHex = "#a5a5a5"; // Light gray
-                double fontSizeInInches = 0.5;   // Approx. 36 points (0.5 inch)
-
-                try
-                {
-                    foreach (Page page in diagram.Pages)
-                    {
-                        // Retrieve page dimensions (in inches)
-                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                        // Add a full‑page text shape as watermark
-                        // Overload: AddText(pinX, pinY, width, height, text, fontName, fontColor, fontSize)
-                        page.AddText(
-                            0,                     // pinX
-                            0,                     // pinY
-                            pageWidth,             // width
-                            pageHeight,            // height
-                            watermarkText,         // text
-                            watermarkFont,         // font name
-                            fontColorHex,          // font color (hex)
-                            fontSizeInInches);     // font size (in inches)
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error adding watermark: {ex.Message}");
-                    return;
-                }
-
-                // ------------------------------------------------------------
-                // Prepare PDF save options with fallback font
-                // ------------------------------------------------------------
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicit format
-                pdfOptions.DefaultFont = fallbackFont;      // Ensure fallback font is used
-
-                // ------------------------------------------------------------
-                // Save the diagram as PDF
-                // ------------------------------------------------------------
-                try
-                {
-                    diagram.Save(outputPath, pdfOptions);
-                    Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
+                    Console.Error.WriteLine($"Warning: Font \"{fontName}\" used in diagram is not installed. It will be substituted with the default font.");
                 }
             }
+
+            // -----------------------------------------------------------------
+            // Add a full‑page watermark to each page.
+            // -----------------------------------------------------------------
+            const string watermarkText = "Sample Watermark";
+            const string watermarkFont = "Calibri"; // Font that may be missing.
+            const string watermarkColor = "#a5a5a5";
+            const double watermarkFontSizePoints = 72.0; // 1 inch.
+            double watermarkFontSizeInches = watermarkFontSizePoints / 72.0;
+
+            foreach (Page page in diagram.Pages)
+            {
+                // Retrieve page dimensions.
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Center position for the watermark.
+                double pinX = pageWidth / 2.0;
+                double pinY = pageHeight / 2.0;
+
+                // Use full page dimensions for the text box.
+                double width = pageWidth;
+                double height = pageHeight;
+
+                // Add the watermark text.
+                page.AddText(pinX, pinY, width, height, watermarkText, watermarkFont, watermarkColor, watermarkFontSizeInches);
+            }
+
+            // -----------------------------------------------------------------
+            // Prepare PDF save options with the default font fallback.
+            // -----------------------------------------------------------------
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.DefaultFont = "Arial";
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format tracker.
+
+            // -----------------------------------------------------------------
+            // Save the diagram as PDF.
+            // -----------------------------------------------------------------
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            // Log any unexpected errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

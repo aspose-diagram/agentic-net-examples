@@ -7,62 +7,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output text file path
+        // Validate command‑line arguments: input Visio file and output text file.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputTextFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputTextPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Collect plain text from all shapes
+            // Collect plain text from every shape in all pages.
             List<string> texts = new List<string>();
 
-            // Iterate through each page in the diagram
+            // Iterate through each page.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the page
+                // Iterate through each shape on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the concatenated plain text of the shape
-                    string shapeText = shape.Text?.Value?.Text;
+                    // Retrieve the concatenated plain text of the shape.
+                    string shapeText = shape.Text.Value.ToString();
 
-                    // If the text is null, treat as empty string
-                    if (shapeText == null)
-                        shapeText = string.Empty;
-
-                    // Trim whitespace and check if the shape contains non‑empty text
+                    // Add non‑empty text to the list.
                     if (!string.IsNullOrWhiteSpace(shapeText))
                     {
-                        // Add the trimmed text to the collection
-                        texts.Add(shapeText.Trim());
+                        texts.Add(shapeText);
                     }
                 }
             }
 
-            // Sort the collected texts alphabetically (case‑insensitive)
-            texts.Sort(StringComparer.OrdinalIgnoreCase);
+            // Sort the collected texts alphabetically (case‑sensitive, ordinal).
+            texts.Sort(StringComparer.Ordinal);
 
-            // Write the sorted texts to the output file, one per line
+            // Write the ordered list to the output file.
             File.WriteAllLines(outputPath, texts);
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

@@ -1,11 +1,11 @@
 {
   "category": "working-with-text",
   "display_name": "Working With Text",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 89,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,6 +14,7 @@
       "task": "Add a footer text watermark that includes document title and version number",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -30,14 +31,12 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -47,7 +46,6 @@
       "task": "Adjust watermark opacity to a configurable value between 10 and 90",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -66,14 +64,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -82,7 +81,6 @@
       "task": "Apply a custom color to the watermark text based on user defined palette",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -100,7 +98,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -117,7 +114,6 @@
       "task": "Apply a custom stylesheet that defines paragraph spacing then verify spacing changes on target shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -125,8 +121,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "StyleSheet",
-        "StyleSheets"
+        "Shapes",
+        "StyleSheet"
       ]
     },
     {
@@ -179,8 +175,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "StyleSheet",
-        "StyleSheets"
+        "Shapes",
+        "StyleSheet"
       ]
     },
     {
@@ -208,10 +204,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Drawing.Text",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -390,6 +384,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -399,6 +394,7 @@
       "task": "Create a batch job that loads diagrams updates footer text with the current timestamp and saves them",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -448,7 +444,6 @@
       "task": "Create a batch script that loads diagrams applies a custom stylesheet and saves them as updated files",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -467,6 +462,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -504,10 +500,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "Window",
-        "Windows",
-        "diagram"
+        "Windows"
       ]
     },
     {
@@ -516,11 +512,13 @@
       "task": "Create a script that adds a footer text shape to every page displaying the page number dynamically",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -537,7 +535,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -566,6 +563,7 @@
       "task": "Create a utility that adds a watermark text shape diagonally across each page with thirty percent opacity",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -582,7 +580,6 @@
       "task": "Document the watermark addition workflow with code examples and usage guidelines",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -604,10 +601,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Masters",
         "Pages",
-        "Save",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -688,7 +686,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
-        "System.Text",
+        "System.Linq",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
@@ -744,7 +742,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Text",
         "System.Text.RegularExpressions"
@@ -834,6 +831,7 @@
       "task": "Find and replace the placeholder date with the current system date in all shapes on page three",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -841,7 +839,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -944,10 +941,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "Pages",
         "PdfSaveOptions",
-        "Save",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -1007,7 +1004,6 @@
       "task": "Iterate through characters of a shape s text underline vowels and leave consonants unchanged",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1157,7 +1153,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1203,6 +1198,7 @@
       "task": "Provide an option to remove existing watermarks from a diagram before adding new ones",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -1221,8 +1217,8 @@
       "task": "Read watermark text and opacity settings from a configuration file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -1343,6 +1339,7 @@
       "task": "Replace placeholder text name with actual user names in every shape on the diagram page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1360,6 +1357,7 @@
       "task": "Rotate text of all footer shapes by one hundred eighty degrees to display upside down information on printed pages",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1416,6 +1414,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
         "diagram"
       ]
@@ -1444,6 +1443,7 @@
       "task": "Set text rotation to 90 degrees for all shapes on page three to create vertical labels",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1451,6 +1451,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1468,6 +1469,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },

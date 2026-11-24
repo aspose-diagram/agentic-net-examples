@@ -6,62 +6,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Expect two arguments: input Visio file path and output Visio file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Verify that the diagram has at least five pages (zero‑based index 4).
+            // Verify the diagram has at least five pages (page index is zero‑based)
             if (diagram.Pages.Count < 5)
             {
-                Console.Error.WriteLine("The diagram does not contain a fifth page.");
+                Console.Error.WriteLine("The diagram does not contain a page five (index 4).");
                 return;
             }
 
-            // Retrieve page five (index 4).
+            // Access page five (zero‑based index 4)
             Page pageFive = diagram.Pages[4];
 
-            // Angle in radians for -30 degrees.
-            double angleRad = -30.0 * Math.PI / 180.0;
+            // Angle in degrees to rotate text (negative for clockwise rotation)
+            double angleDegrees = -30.0;
+            // Convert degrees to radians as required by TextXForm.TxtAngle
+            double angleRadians = (Math.PI / 180.0) * angleDegrees;
 
-            // Iterate through all shapes on page five.
+            // Iterate through all shapes on page five
             foreach (Shape shape in pageFive.Shapes)
             {
-                // Skip deleted shapes.
+                // Skip deleted shapes
                 if (shape.Del == BOOL.True)
                     continue;
 
-                // Ensure the TextXForm object exists before setting the angle.
-                if (shape.TextXForm != null)
-                {
-                    // Rotate the text block by the specified angle (radians).
-                    shape.TextXForm.TxtAngle.Value = angleRad;
-                }
+                // Rotate the text block of the shape
+                shape.TextXForm.TxtAngle.Value = angleRadians;
             }
 
-            // Save the modified diagram to the output path in VSDX format.
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

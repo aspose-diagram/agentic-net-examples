@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure at least one file path is provided
+        // If no file paths are provided, inform the user and exit.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("No input files specified.");
+            Console.Error.WriteLine("Please provide at least one Visio file path as an argument.");
             return;
         }
 
-        // Process each file path supplied via command line arguments
+        // Process each file path supplied via command line arguments.
         foreach (string inputPath in args)
         {
-            // Guard: verify the file exists before attempting to load
+            // Guard: ensure the file exists before attempting to load.
             if (!File.Exists(inputPath))
             {
                 Console.Error.WriteLine($"File not found: {inputPath}");
@@ -25,43 +25,44 @@ class Program
 
             try
             {
-                // Load the Visio diagram from the specified file
+                // Load the Visio diagram.
                 Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages in the diagram to add a watermark
+                // Add a full‑page watermark to every page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve page dimensions (width and height)
+                    // Retrieve page dimensions.
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Watermark configuration
-                    double pinX = 0; // Top‑left X coordinate
-                    double pinY = 0; // Top‑left Y coordinate
-                    string watermarkText = "Watermark";
-                    string fontName = "Calibri";
-                    string fontColor = "#a5a5a5";
-                    double fontSize = 0.25;
-
-                    // Add the watermark text covering the full page area
-                    page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSize);
+                    // Add watermark text that spans the entire page.
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor, fontSize
+                    page.AddText(
+                        0,                     // pinX (left)
+                        0,                     // pinY (bottom)
+                        pageWidth,             // width
+                        pageHeight,            // height
+                        "Watermark",           // watermark text
+                        "Calibri",             // font name
+                        "#a5a5a5",             // font color (light gray)
+                        0.25);                 // font size
                 }
 
-                // Construct output file path (original name with suffix)
+                // Determine output file path (original name with a suffix).
                 string directory = Path.GetDirectoryName(inputPath);
                 string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
                 string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_watermarked.vsdx");
 
-                // Save the modified diagram using VSDX format
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
-                // Log successful watermark addition
-                Console.WriteLine($"Successfully added watermark to '{inputPath}'. Saved as '{outputPath}'.");
+                // Log success.
+                Console.WriteLine($"Processed '{inputPath}': Success. Watermarked file saved as '{outputPath}'.");
             }
             catch (Exception ex)
             {
-                // Log any errors that occurred during processing
-                Console.Error.WriteLine($"Failed to add watermark to '{inputPath}'. Error: {ex.Message}");
+                // Log failure with the exception message.
+                Console.Error.WriteLine($"Processed '{inputPath}': Failure. Error: {ex.Message}");
             }
         }
     }

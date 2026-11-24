@@ -7,107 +7,97 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path.
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page to add a watermark behind existing shapes.
-                foreach (Page page in diagram.Pages)
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    // Retrieve page dimensions (in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Calculate center position for the watermark.
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Add a full‑page text shape that will serve as the watermark.
-                    // The AddText overload returns a Shape instance.
-                    Shape watermarkShape = page.AddText(
-                        pinX,                     // PinX (center X)
-                        pinY,                     // PinY (center Y)
-                        pageWidth,                // Width (full page)
-                        pageHeight,               // Height (full page)
-                        "CONFIDENTIAL",           // Watermark text
-                        "Calibri",                // Font name
-                        "#a5a5a5",                // Font color (light gray)
-                        0.25);                    // Font size in inches (≈18 pt)
-
-                    // OPTIONAL: make the watermark semi‑transparent by adjusting fill transparency.
-                    // 0 = opaque, 100 = fully transparent.
-                    watermarkShape.Fill.FillForegndTrans.Value = 80; // 80% transparent.
-
-                    // OPTIONAL: remove outline.
-                    watermarkShape.Line.LineWeight.Value = 0;
-
-                    // Ensure a dedicated background layer exists for the watermark.
-                    Layer watermarkLayer = null;
-                    foreach (Layer existingLayer in page.PageSheet.Layers)
-                    {
-                        if (existingLayer.Name.Value.Equals("WatermarkLayer", StringComparison.OrdinalIgnoreCase))
-                        {
-                            watermarkLayer = existingLayer;
-                            break;
-                        }
-                    }
-
-                    if (watermarkLayer == null)
-                    {
-                        // Create a new layer for the watermark.
-                        watermarkLayer = new Layer();
-                        watermarkLayer.Name.Value = "WatermarkLayer";
-                        watermarkLayer.Visible.Value = BOOL.True;
-                        watermarkLayer.Print.Value = BOOL.True;
-                        watermarkLayer.Lock.Value = BOOL.False;
-                        watermarkLayer.IsColorChecked = BOOL.False;
-                        watermarkLayer.Color.Value = "#FFFFFF";
-
-                        // Add the layer to the page's layer collection.
-                        page.PageSheet.Layers.Add(watermarkLayer);
-
-                        // Attempt to set the new layer as the background (index 0).
-                        try
-                        {
-                            watermarkLayer.IX = 0;
-                        }
-                        catch
-                        {
-                            // If setting IX fails, continue without forcing the index.
-                        }
-                    }
-
-                    // Assign the watermark shape to the background layer.
-                    // LayerMember expects a semicolon‑separated list of layer indexes.
-                    watermarkShape.LayerMem.LayerMember.Value = watermarkLayer.IX.ToString();
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                // Save the modified diagram to the specified output path using the correct overload.
+                // Work with the first page
+                Page page = diagram.Pages[0];
+
+                // Ensure there is at least one master shape to use for the watermark
+                if (diagram.Masters.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no master shapes to create a watermark.");
+                    return;
+                }
+
+                // Get the name of the first master (e.g., a rectangle)
+                string masterName = diagram.Masters[0].Name;
+
+                // Define watermark position and size (in inches)
+                double posX = 1.0;   // left
+                double posY = 1.0;   // top
+                double width = 5.0;
+                double height = 2.0;
+
+                // Add the watermark shape to the page using the correct overload
+                // Parameters: pinX, pinY, masterName, isCalculate (false)
+                long watermarkShapeId = page.AddShape(posX, posY, masterName, false);
+
+                // Retrieve the newly added shape
+                Shape watermarkShape = page.Shapes.GetShape(watermarkShapeId);
+                if (watermarkShape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the watermark shape.");
+                    return;
+                }
+
+                // Optionally set the size of the watermark shape using the defined width/height
+                watermarkShape.XForm.Width.Value = width;
+                watermarkShape.XForm.Height.Value = height;
+
+                // Set the watermark text
+                watermarkShape.Text.Value.Clear();
+                watermarkShape.Text.Value.Add(new Txt("CONFIDENTIAL"));
+
+                // Style the watermark: light gray fill and invisible line
+                if (watermarkShape.Fill != null && watermarkShape.Fill.FillForegnd != null)
+                {
+                    // Light gray fill (hex color)
+                    watermarkShape.Fill.FillForegnd.Value = "#C8C8C8";
+                }
+
+                if (watermarkShape.Line != null && watermarkShape.Line.LineColor != null)
+                {
+                    // White line (effectively invisible)
+                    watermarkShape.Line.LineColor.Value = "#FFFFFF";
+                }
+
+                // Send the watermark to the back so it does not obscure other shape text
+                watermarkShape.SendToBack();
+
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

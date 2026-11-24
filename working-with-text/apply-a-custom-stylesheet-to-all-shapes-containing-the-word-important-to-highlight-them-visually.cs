@@ -7,74 +7,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check if the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path (same folder with suffix)
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_highlighted.vsdx");
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // ------------------------------------------------------------
-                // Create a custom stylesheet that will be used to highlight shapes.
+                // Create a custom StyleSheet to highlight shapes
                 // ------------------------------------------------------------
                 StyleSheet highlightStyle = new StyleSheet();
 
-                // Assign a unique ID for the stylesheet.
+                // Assign a unique ID (next available)
                 highlightStyle.ID = diagram.StyleSheets.Count + 1;
 
-                // ----- Character style (text) -----
-                // Make the text bold and set its color to red.
-                Aspose.Diagram.Char charStyle = new Aspose.Diagram.Char();
-                charStyle.IX = 0; // Index of the character style.
-                charStyle.Color.Value = "#FF0000"; // Red text.
-                charStyle.Style.Value = StyleValue.Bold; // Bold text.
-                highlightStyle.Chars.Add(charStyle);
+                // Configure text color (blue)
+                Aspose.Diagram.Char textChar = new Aspose.Diagram.Char();
+                textChar.Color.Value = "#0000FF"; // Blue text
+                textChar.IX = 0;
+                highlightStyle.Chars.Add(textChar);
 
-                // ----- Line style -----
-                // Set line color to red.
-                highlightStyle.Line.LineColor.Value = "#FF0000";
+                // Configure line color (red)
+                highlightStyle.Line.LineColor.Value = "#FF0000"; // Red border
 
-                // ----- Fill style -----
-                // Set fill foreground color to yellow.
-                highlightStyle.Fill.FillForegnd.Value = "#FFFF00";
+                // Configure fill color (yellow)
+                highlightStyle.Fill.FillForegnd.Value = "#FFFF00"; // Yellow fill
 
-                // Add the stylesheet to the diagram.
+                // Add the stylesheet to the diagram's collection
                 diagram.StyleSheets.Add(highlightStyle);
 
                 // ------------------------------------------------------------
-                // Iterate through all pages and shapes, applying the stylesheet
-                // to shapes whose text contains the word "Important".
+                // Iterate through all pages and shapes to apply the style
                 // ------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the shape's plain text safely.
-                        string shapeText = shape.Text?.Value?.Text;
+                        // Retrieve the shape's plain text
+                        string shapeText = shape.Text.Value.Text ?? string.Empty;
 
-                        // If the shape's text contains "Important", apply the style.
-                        if (!string.IsNullOrEmpty(shapeText) && shapeText.Contains("Important"))
+                        // Check if the text contains the keyword "Important"
+                        if (shapeText.Contains("Important"))
                         {
-                            // Apply the custom stylesheet to text, fill, and line.
+                            // Apply the custom stylesheet to text, fill, and line
                             shape.TextStyle = highlightStyle;
                             shape.FillStyle = highlightStyle;
                             shape.LineStyle = highlightStyle;
@@ -83,15 +82,16 @@ class Program
                 }
 
                 // ------------------------------------------------------------
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to a new file
                 // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

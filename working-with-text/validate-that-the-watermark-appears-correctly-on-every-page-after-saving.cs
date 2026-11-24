@@ -9,7 +9,6 @@ class Program
     {
         // Input Visio file path (first argument or default)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
@@ -17,13 +16,12 @@ class Program
             return;
         }
 
-        // Define output path for the diagram with watermark
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output_with_watermark.vsdx");
+        // Output file path for the diagram with watermarks
+        string outputPath = "output_with_watermark.vsdx";
 
-        // Load the source diagram, add watermark to each page, and save
+        // Load the source diagram inside a using block (required pattern)
         try
         {
-            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Add watermark text to every page
@@ -33,16 +31,21 @@ class Program
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Center position for the watermark
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
+                    // Position at (0,0) covering the full page
+                    double pinX = 0;
+                    double pinY = 0;
 
-                    // Add full‑page watermark text
-                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches)
-                    page.AddText(pinX, pinY, pageWidth, pageHeight, "Watermark", "Calibri", "#a5a5a5", 0.25);
+                    // Watermark properties
+                    string watermarkText = "Watermark";
+                    string fontName = "Calibri";
+                    string fontColor = "#a5a5a5"; // light gray
+                    double fontSize = 0.25; // size in inches
+
+                    // Add the watermark as a full‑page text shape
+                    page.AddText(pinX, pinY, pageWidth, pageHeight, watermarkText, fontName, fontColor, fontSize);
                 }
 
-                // Save the diagram with watermark
+                // Save the diagram with watermarks (must specify format)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
@@ -52,27 +55,26 @@ class Program
             return;
         }
 
-        // Validate that the watermark exists on every page after reloading
+        // Validate that the watermark exists on every page after saving
         try
         {
-            // Reload the saved diagram inside a using block
             using (Diagram savedDiagram = new Diagram(outputPath))
             {
-                // Iterate through each page to verify watermark presence
+                bool allPagesValid = true;
+
                 foreach (Page page in savedDiagram.Pages)
                 {
                     bool watermarkFound = false;
 
-                    // Scan all shapes on the page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has text and compare its plain value
-                        // shape.Text.Value.Text returns the concatenated plain text
-                        if (shape.Text != null && shape.Text.Value.Text == "Watermark")
+                        // Ensure the shape has text and compare plain text
+                        if (shape.Text != null && shape.Text.Value != null && shape.Text.Value.Text == "Watermark")
                         {
                             watermarkFound = true;
                             break;
@@ -81,16 +83,24 @@ class Program
 
                     if (!watermarkFound)
                     {
-                        throw new Exception($"Watermark not found on page ID {page.ID}.");
+                        Console.Error.WriteLine($"Watermark not found on page ID {page.ID}.");
+                        allPagesValid = false;
                     }
                 }
 
-                Console.WriteLine("Watermark validation succeeded: present on all pages.");
+                if (allPagesValid)
+                {
+                    Console.WriteLine("Validation succeeded: Watermark appears on every page.");
+                }
+                else
+                {
+                    throw new Exception("Validation failed: One or more pages are missing the watermark.");
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Validation error: {ex.Message}");
+            Console.Error.WriteLine($"Error during validation: {ex.Message}");
         }
     }
 }

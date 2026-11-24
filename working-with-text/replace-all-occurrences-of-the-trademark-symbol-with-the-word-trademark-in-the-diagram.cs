@@ -7,46 +7,52 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path. If not supplied, create a new file name with suffix "_updated".
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_updated" + Path.GetExtension(inputPath));
+
         try
         {
-            // Load the diagram inside a using block.
+            // Load the diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each page in the diagram.
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over each shape on the current page.
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted.
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Iterate over each text element within the shape.
-                        foreach (FormatTxt fmt in shape.Text.Value)
+                        // Ensure the shape contains text.
+                        if (shape.Text == null)
+                            continue;
+
+                        // Iterate through each text element (FormatTxt) within the shape.
+                        foreach (var fmt in shape.Text.Value)
                         {
-                            // Cast to Txt to access the actual text string.
-                            Txt txt = fmt as Txt;
-                            if (txt != null && txt.Text != null && txt.Text.Contains("™"))
+                            // Cast to Txt to access the actual string content.
+                            if (fmt is Txt txt && txt.Text != null)
                             {
-                                // Replace the trademark symbol with the word 'Trademark'.
-                                txt.Text = txt.Text.Replace("™", "Trademark");
+                                // Replace the trademark symbol (™) with the word "Trademark".
+                                txt.Text = txt.Text.Replace("\u2122", "Trademark");
                             }
                         }
                     }
@@ -55,11 +61,13 @@ class Program
                 // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram processed successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -11,10 +11,10 @@ class Program
 
         try
         {
-            // Create a new empty diagram inside a using block as required
+            // Create a new empty diagram inside a using block
             using (Diagram diagram = new Diagram())
             {
-                // Ensure the diagram has at least one window; add one if none exist
+                // Ensure the diagram has a window; add one if none exist
                 if (diagram.Windows.Count == 0)
                 {
                     Window window = new Window();
@@ -25,25 +25,33 @@ class Program
                     diagram.Windows.Add(window);
                 }
 
-                // Get the active page (a new diagram contains a default page)
-                Page page = diagram.ActivePage;
+                // Get the first (default) page
+                Page page = diagram.Pages[0];
 
                 // Add a text shape at PinX=2, PinY=3 with width=2, height=1 and sample content
-                // The AddText method returns a Shape instance representing the created text shape
-                Shape textShape = page.AddText(2.0, 3.0, 2.0, 1.0, "Sample Text");
+                double pinX = 2.0;
+                double pinY = 3.0;
+                double width = 2.0;
+                double height = 1.0;
+                string textContent = "Sample Text";
 
-                // (Optional) Additional shape configuration can be done here, e.g., setting fill or line styles
+                // AddText returns a Shape object representing the created text shape
+                Shape textShape = page.AddText(pinX, pinY, width, height, textContent);
+
+                // (Optional) Additional configuration of the text shape can be done here
+                // For example, set the text rotation angle if needed:
+                // textShape.TextXForm.TxtAngle.Value = 0.0;
 
                 // Save the diagram to the specified file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine("Diagram created and saved successfully to " + outputPath);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console as required
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine("Error: " + ex.Message);
         }
     }
 }

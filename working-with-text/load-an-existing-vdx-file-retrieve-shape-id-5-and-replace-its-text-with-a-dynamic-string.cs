@@ -6,67 +6,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Input VDX file path (adjust as needed)
+        string inputPath = "input.vdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <input VDX path> [new text]");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Determine the replacement text (dynamic string).
-        string newText = args.Length > 1 ? args[1] : $"Updated at {DateTime.Now}";
-
-        // Prepare output path (same directory, different file name).
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "updated.vdx");
+        // Output VDX file path
+        string outputPath = "output.vdx";
 
         try
         {
-            // Load the diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the existing Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume we work with the first page
+            Page page = diagram.Pages[0];
+
+            // Retrieve shape with ID 5
+            long targetShapeId = 5L;
+            Shape shape = page.Shapes.GetShape(targetShapeId);
+
+            if (shape == null)
             {
-                // Ensure the diagram has at least one page.
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Access the first page (index 0).
-                Page page = diagram.Pages[0];
-
-                // Shape ID to modify.
-                long shapeId = 5L;
-
-                // Retrieve the shape by its ID.
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
-                {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                    return;
-                }
-
-                // Replace the shape's text with the new dynamic string.
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt(newText));
-
-                // Save the modified diagram to the output file in VDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.Error.WriteLine($"Error: Shape with ID {targetShapeId} not found.");
+                return;
             }
+
+            // Create a dynamic string to replace the shape's text
+            string newText = $"Updated at {DateTime.Now}";
+
+            // Clear existing text and add the new text
+            shape.Text.Value.Clear();
+            shape.Text.Value.Add(new Txt(newText));
+
+            // Save the modified diagram back to VDX format
+            diagram.Save(outputPath, SaveFileFormat.Vdx);
+
+            Console.WriteLine($"Shape ID {targetShapeId} text updated and diagram saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Exception: {ex.Message}");
         }
     }
 }

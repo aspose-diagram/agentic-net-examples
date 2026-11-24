@@ -23,7 +23,7 @@ class Program
             return;
         }
 
-        // Ensure output folder exists (create if necessary).
+        // Guard: ensure output folder exists (create if necessary).
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -37,11 +37,17 @@ class Program
             }
         }
 
-        // Get all files in the input folder (process Visio files only).
-        string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in files)
+        // Collect Visio files (VSDX and VSD) from the input folder.
+        string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+        string[] vsdFiles = Directory.GetFiles(inputFolder, "*.vsd");
+        string[] allFiles = new string[vsdxFiles.Length + vsdFiles.Length];
+        vsdxFiles.CopyTo(allFiles, 0);
+        vsdFiles.CopyTo(allFiles, vsdxFiles.Length);
+
+        // Process each file individually.
+        foreach (string filePath in allFiles)
         {
-            // Guard: file must exist (redundant but required by rules).
+            // Guard: ensure the file still exists.
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -50,31 +56,32 @@ class Program
 
             try
             {
-                // Load the Visio diagram inside a using block (mandatory pattern).
+                // Load the diagram inside a using block (mandatory pattern).
                 using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Iterate through each page and add a numbered text shape.
-                    int pageCounter = 0;
-                    foreach (Page page in diagram.Pages)
+                    int pageNumber = 1; // 1‑based page label.
+
+                    // Iterate through all pages in the diagram.
+                    foreach (Aspose.Diagram.Page page in diagram.Pages)
                     {
-                        pageCounter++;
+                        // Define position and size for the new text shape (in inches).
+                        double pinX = 1.0;   // Horizontal position.
+                        double pinY = 1.0;   // Vertical position.
+                        double width = 2.0;  // Shape width.
+                        double height = 0.5; // Shape height.
 
-                        // Define position and size for the new text shape.
-                        double pinX = 1.0;      // Horizontal position (in inches).
-                        double pinY = 1.0;      // Vertical position (in inches).
-                        double width = 2.0;     // Width of the text box.
-                        double height = 0.5;    // Height of the text box.
+                        // Use the page index as the label text.
+                        string label = pageNumber.ToString();
 
-                        // Text to display: use the page index as the label.
-                        string label = $"Page {pageCounter}";
-
-                        // Add the text shape to the current page.
+                        // Insert the text shape onto the current page.
                         page.AddText(pinX, pinY, width, height, label);
+
+                        pageNumber++;
                     }
 
-                    // Build the output file path (original name with suffix).
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                    string outputPath = Path.Combine(outputFolder, $"{fileNameWithoutExt}_labeled.vsdx");
+                    // Determine the output file path.
+                    string fileName = Path.GetFileName(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileName);
 
                     // Save the modified diagram as VSDX.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
@@ -84,8 +91,8 @@ class Program
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during processing of the current file.
-                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                // Report any errors that occur during processing.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
     }

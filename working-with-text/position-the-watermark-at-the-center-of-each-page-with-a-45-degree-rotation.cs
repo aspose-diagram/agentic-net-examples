@@ -29,32 +29,35 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                // Iterate over each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
                     // Retrieve page dimensions (in inches).
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Calculate center position.
+                    // Calculate the center point of the page.
                     double centerX = pageWidth / 2.0;
                     double centerY = pageHeight / 2.0;
 
-                    // Add a text box that will serve as the watermark.
-                    // Width and height are set to the full page size.
+                    // Add a full‑page text shape that will serve as the watermark.
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches).
                     Shape watermarkShape = page.AddText(
-                        centerX,               // pinX (center X)
-                        centerY,               // pinY (center Y)
-                        pageWidth,             // width of the text box
-                        pageHeight,            // height of the text box
+                        centerX,               // pinX (center)
+                        centerY,               // pinY (center)
+                        pageWidth,             // width (full page)
+                        pageHeight,            // height (full page)
                         "Watermark",           // watermark text
-                        "Calibri",             // font name
-                        "#a5a5a5",             // font color (light gray)
-                        0.25);                 // font size (in inches)
+                        "Arial",               // font name
+                        "#C0C0C0",             // light gray color in hex
+                        0.5);                  // font size (36 pt = 0.5 inches)
 
-                    // Rotate the watermark text 45 degrees (convert to radians).
-                    double angleRadians = (Math.PI / 180.0) * 45.0;
-                    watermarkShape.TextXForm.TxtAngle.Value = angleRadians;
+                    // Rotate the text by 45 degrees.
+                    // TextXForm.TxtAngle expects radians.
+                    watermarkShape.TextXForm.TxtAngle.Value = (Math.PI / 180.0) * 45.0;
+
+                    // Make the shape background transparent (no fill).
+                    watermarkShape.Fill.FillPattern.Value = 0; // No fill
                 }
 
                 // Save the modified diagram to the specified output path.
@@ -64,7 +67,7 @@ class Program
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, target master name
+        // Validate arguments count
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <masterName>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <masterName>");
             return;
         }
 
@@ -17,7 +17,7 @@ class Program
         string outputPath = args[1];
         string targetMasterName = args[2];
 
-        // Guard against missing input file
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -29,30 +29,25 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page
-            if (diagram.Pages.Count == 0)
+            // Iterate over all pages (you can modify to target a specific page if needed)
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Work with the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Iterate over all shapes on the page
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Check if the shape uses the specified master
-                if (shape.Master != null && shape.Master.Name == targetMasterName)
+                // Iterate over all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Apply preset theme, variant, and quickstyle
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-                    shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has an associated master and matches the target master name
+                    if (shape.Master != null && shape.Master.Name == targetMasterName)
+                    {
+                        // Apply preset theme quickstyle to the shape
+                        // Example: Bubble theme, Variant3, VariantStyle2
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                        shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                    }
                 }
             }
 
@@ -62,7 +57,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

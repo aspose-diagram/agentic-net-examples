@@ -1,78 +1,88 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Determine output path (optional argument or auto‑generated)
-        string outputPath = args.Length > 1 ? args[1] : Path.Combine(
+        // Determine output path (original name with suffix).
+        string outputPath = Path.Combine(
             Path.GetDirectoryName(inputPath) ?? "",
             Path.GetFileNameWithoutExtension(inputPath) + "_caption.vsdx");
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Collect all foreign (image) shapes together with their page.
+            var imageShapes = new List<(Page page, Shape shape)>();
+
             foreach (Page page in diagram.Pages)
             {
-                // Collect foreign (image) shapes first to avoid modifying collection during iteration
-                var imageShapes = new System.Collections.Generic.List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Identify image shapes by Type == Foreign.
                     if (shape.Type == TypeValue.Foreign)
                     {
-                        imageShapes.Add(shape);
+                        imageShapes.Add((page, shape));
                     }
-                }
-
-                // Add a caption below each image shape
-                foreach (Shape imgShape in imageShapes)
-                {
-                    // Retrieve geometric data of the image shape
-                    double pinX = imgShape.XForm.PinX.Value;
-                    double pinY = imgShape.XForm.PinY.Value;
-                    double width = imgShape.XForm.Width.Value;
-                    double height = imgShape.XForm.Height.Value;
-
-                    // Determine caption position: directly below the image with a small offset
-                    const double offset = 0.2; // inches
-                    double captionPinY = pinY - (height / 2) - offset;
-
-                    // Use the shape's Name as the caption text (image file name or identifier)
-                    string captionText = imgShape.Name ?? "Image";
-
-                    // Add a text shape using Page.AddText (PinX, PinY, width, height, text)
-                    // Height for the caption shape is set to a modest value (e.g., 0.3 inches)
-                    page.AddText(pinX, captionPinY, width, 0.3, captionText);
                 }
             }
 
-            // Save the modified diagram
+            // Add a caption text shape below each image.
+            foreach (var entry in imageShapes)
+            {
+                Page page = entry.page;
+                Shape imgShape = entry.shape;
+
+                // Retrieve geometry of the image shape.
+                double pinX = imgShape.XForm.PinX.Value;
+                double pinY = imgShape.XForm.PinY.Value;
+                double width = imgShape.XForm.Width.Value;
+                double height = imgShape.XForm.Height.Value;
+
+                // Define caption dimensions.
+                double captionHeight = 0.5; // reasonable height for a single line of text
+                double captionWidth = width; // match image width
+
+                // Compute position: directly below the image with a small gap.
+                double gap = 0.1;
+                double captionPinY = pinY - (height / 2) - (captionHeight / 2) - gap;
+                double captionPinX = pinX;
+
+                // Use the image shape's name as caption text. Fallback to empty string if null.
+                string captionText = imgShape.Name ?? string.Empty;
+
+                // Add the text shape to the page.
+                page.AddText(captionPinX, captionPinY, captionWidth, captionHeight, captionText);
+            }
+
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved with captions: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

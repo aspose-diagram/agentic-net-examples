@@ -7,14 +7,14 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments: input file, shape ID, output file
-        if (args.Length < 3)
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioFile> <shapeId> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeId> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string shapeIdText = args[1];
+        string shapeIdArg = args[1];
         string outputPath = args[2];
 
         // Guard: ensure the input Visio file exists
@@ -25,56 +25,54 @@ class Program
         }
 
         // Parse the shape ID (expected to be a numeric value)
-        if (!long.TryParse(shapeIdText, out long shapeId))
+        if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine($"Error: Unable to parse shape ID \"{shapeIdText}\" as a number.");
+            Console.Error.WriteLine($"Error: Shape ID \"{shapeIdArg}\" is not a valid integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Flag to indicate whether the shape was found
-            bool shapeFound = false;
-
-            // Iterate through all pages to locate the shape by its ID
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // The GetShape method expects an int identifier; cast safely
-                Shape shape = page.Shapes.GetShape((int)shapeId);
-                if (shape != null)
+                try
                 {
-                    // Ensure the shape is not marked as deleted
-                    if (shape.Del == BOOL.False)
+                    // GetShape expects an int; cast the long ID safely
+                    Shape shape = page.Shapes.GetShape((int)shapeId);
+                    if (shape != null)
                     {
-                        // Lock the Y‑position (vertical movement) of the shape
-                        shape.Protection.LockMoveY.Value = BOOL.True;
-                        shapeFound = true;
-                        Console.WriteLine($"Shape ID {shapeId} found on page \"{page.Name}\" and Y‑position locked.");
+                        targetShape = shape;
+                        break;
                     }
-                    else
-                    {
-                        Console.Error.WriteLine($"Shape ID {shapeId} is marked as deleted and cannot be modified.");
-                    }
-                    break; // Shape IDs are unique across the document; exit loop once found
+                }
+                catch
+                {
+                    // GetShape throws if the ID is not present on this page – ignore and continue
                 }
             }
 
-            if (!shapeFound)
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"Error: Shape with ID {shapeId} was not found in the diagram.");
+                Console.Error.WriteLine($"Error: No shape with ID {shapeId} was found in the diagram.");
                 return;
             }
 
-            // Save the modified diagram to the specified output path in VSDX format
+            // Lock the Y‑position (vertical movement) of the shape
+            // The corresponding protection property is LockMoveY
+            targetShape.Protection.LockMoveY.Value = BOOL.True;
+
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Shape ID {shapeId} Y‑position locked successfully. Saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or I/O exceptions and report them
+            // Report any Aspose or I/O errors
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

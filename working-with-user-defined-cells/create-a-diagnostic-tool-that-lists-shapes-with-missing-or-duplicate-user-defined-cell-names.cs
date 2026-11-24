@@ -10,7 +10,7 @@ class Program
         // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No diagram file path provided.");
+            Console.Error.WriteLine("Usage: DiagnosticTool <diagram-file-path>");
             return;
         }
 
@@ -25,102 +25,88 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Lists to collect diagnostic information
+            var shapesWithNoUserCells = new List<(Page page, Shape shape)>();
+            var userCellNameMap = new Dictionary<string, List<(Page page, Shape shape)>>();
+
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
             {
-                // List to hold shapes that have no user-defined cells
-                var shapesMissingUserCells = new List<(string PageName, long ShapeId, string ShapeName)>();
-
-                // Map to track user-defined cell names and the shapes that use them
-                var userCellNameMap = new Dictionary<string, List<(string PageName, long ShapeId, string ShapeName)>>();
-
-                // Manual page counter because Page does not have an Index property
-                int pageCounter = 0;
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Determine a readable page name
-                    string pageName = !string.IsNullOrEmpty(page.NameU) ? page.NameU : $"Page_{pageCounter}";
-                    pageCounter++;
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Check for missing user-defined cells
+                    if (shape.Users == null || shape.Users.Count == 0)
                     {
-                        // Skip logically deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        shapesWithNoUserCells.Add((page, shape));
+                    }
 
-                        // Resolve shape name (fallback to ID if missing)
-                        string shapeName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : $"Shape_{shape.ID}";
-                        long shapeId = shape.ID;
+                    // Process each user-defined cell
+                    if (shape.Users != null)
+                    {
+                        foreach (User user in shape.Users)
+                        {
+                            // Use NameU if available, otherwise fallback to Name
+                            string cellName = !string.IsNullOrEmpty(user.NameU) ? user.NameU : user.Name;
 
-                        // Check for missing user-defined cells
-                        if (shape.Users == null || shape.Users.Count == 0)
-                        {
-                            shapesMissingUserCells.Add((pageName, shapeId, shapeName));
-                        }
-                        else
-                        {
-                            // Process each user-defined cell
-                            foreach (User userCell in shape.Users)
+                            if (string.IsNullOrEmpty(cellName))
+                                continue; // Skip unnamed cells
+
+                            if (!userCellNameMap.ContainsKey(cellName))
                             {
-                                // Prefer universal name, fallback to local name
-                                string cellName = !string.IsNullOrEmpty(userCell.NameU) ? userCell.NameU : userCell.Name;
-
-                                if (string.IsNullOrEmpty(cellName))
-                                    continue; // Skip unnamed cells
-
-                                if (!userCellNameMap.ContainsKey(cellName))
-                                {
-                                    userCellNameMap[cellName] = new List<(string, long, string)>();
-                                }
-
-                                userCellNameMap[cellName].Add((pageName, shapeId, shapeName));
+                                userCellNameMap[cellName] = new List<(Page, Shape)>();
                             }
+                            userCellNameMap[cellName].Add((page, shape));
                         }
                     }
                 }
+            }
 
-                // Output shapes missing user-defined cells
-                Console.WriteLine("=== Shapes Missing User-Defined Cells ===");
-                if (shapesMissingUserCells.Count == 0)
+            // Output shapes with missing user-defined cells
+            Console.WriteLine("=== Shapes Missing User-Defined Cells ===");
+            if (shapesWithNoUserCells.Count == 0)
+            {
+                Console.WriteLine("None");
+            }
+            else
+            {
+                foreach (var entry in shapesWithNoUserCells)
                 {
-                    Console.WriteLine("None");
+                    Console.WriteLine($"Page: {entry.page.Name}, Shape ID: {entry.shape.ID}, Shape NameU: {entry.shape.NameU}");
                 }
-                else
+            }
+
+            // Detect duplicate user-defined cell names across the diagram
+            Console.WriteLine();
+            Console.WriteLine("=== Duplicate User-Defined Cell Names ===");
+            bool anyDuplicates = false;
+            foreach (var kvp in userCellNameMap)
+            {
+                if (kvp.Value.Count > 1)
                 {
-                    foreach (var entry in shapesMissingUserCells)
+                    anyDuplicates = true;
+                    Console.WriteLine($"Cell Name: {kvp.Key}");
+                    foreach (var loc in kvp.Value)
                     {
-                        Console.WriteLine($"Page: {entry.PageName}, Shape ID: {entry.ShapeId}, Shape Name: {entry.ShapeName}");
+                        Console.WriteLine($"  Page: {loc.page.Name}, Shape ID: {loc.shape.ID}, Shape NameU: {loc.shape.NameU}");
                     }
                 }
+            }
 
-                // Output duplicate user-defined cell names
-                Console.WriteLine();
-                Console.WriteLine("=== Duplicate User-Defined Cell Names ===");
-                bool anyDuplicates = false;
-                foreach (var kvp in userCellNameMap)
-                {
-                    if (kvp.Value.Count > 1)
-                    {
-                        anyDuplicates = true;
-                        Console.WriteLine($"Cell Name: {kvp.Key}");
-                        foreach (var shapeInfo in kvp.Value)
-                        {
-                            Console.WriteLine($"\tPage: {shapeInfo.PageName}, Shape ID: {shapeInfo.ShapeId}, Shape Name: {shapeInfo.ShapeName}");
-                        }
-                    }
-                }
-
-                if (!anyDuplicates)
-                {
-                    Console.WriteLine("None");
-                }
+            if (!anyDuplicates)
+            {
+                Console.WriteLine("None");
             }
         }
         catch (Exception ex)
         {
+            // Capture any Aspose.Diagram or I/O errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

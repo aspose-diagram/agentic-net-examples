@@ -6,19 +6,19 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect the first argument to be the path to the Visio file.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input‑visio‑file>");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard against missing input file.
+        // Guard: verify the file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
@@ -27,39 +27,50 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram.
+            bool hasInvalidHyperlinks = false;
+
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are marked as deleted.
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the shape has a Hyperlinks collection.
-                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                    {
-                        // Enumerate each hyperlink attached to the shape.
-                        foreach (Hyperlink link in shape.Hyperlinks)
-                        {
-                            // Retrieve the description text; the Description cell may be null.
-                            string description = link.Description?.Value;
+                    // Ensure the Hyperlinks collection is not null.
+                    if (shape.Hyperlinks == null)
+                        continue;
 
-                            // Validate that the description is not empty or whitespace.
-                            if (string.IsNullOrWhiteSpace(description))
-                            {
-                                Console.WriteLine(
-                                    $"Validation warning: Shape ID {shape.ID} on page ID {page.ID} contains a hyperlink with an empty description.");
-                            }
+                    // Iterate through each hyperlink attached to the shape.
+                    foreach (Hyperlink link in shape.Hyperlinks)
+                    {
+                        // Guard against null hyperlink (should not happen, but safe).
+                        if (link == null)
+                            continue;
+
+                        // Retrieve the description text; the Description cell holds the value.
+                        string description = link.Description?.Value ?? string.Empty;
+
+                        // Validate that the description is not empty or whitespace.
+                        if (string.IsNullOrWhiteSpace(description))
+                        {
+                            hasInvalidHyperlinks = true;
+                            Console.WriteLine($"Shape ID {shape.ID} on page {page.NameU} has a hyperlink with an empty description.");
                         }
                     }
                 }
             }
+
+            if (!hasInvalidHyperlinks)
+            {
+                Console.WriteLine("All shapes with hyperlinks have non‑empty description properties.");
+            }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

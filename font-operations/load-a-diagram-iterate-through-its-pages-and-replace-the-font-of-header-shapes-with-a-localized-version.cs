@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -25,33 +25,38 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages (required by task, even though header font is global)
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // No per-page header font; modify the global header/footer font
-                // Set the localized font name (example: Arial Unicode MS)
-                diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial Unicode MS";
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Identify header shapes by name (contains "Header", case-insensitive)
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.IndexOf("Header", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            // Replace the font of each character run within the shape
+                            for (int i = 0; i < shape.Chars.Count; i++)
+                            {
+                                // Set the font index to 0 (assumes the desired localized font is at index 0)
+                                // Adjust this index as needed for your specific font collection.
+                                shape.Chars[i].Font.Value = 0;
+                            }
+                        }
+                    }
+                }
 
-                // Optionally adjust other typography attributes
-                // Height uses a negative value to represent point size (e.g., -16 for 12pt)
-                diagram.HeaderFooter.HeaderFooterFont.Height = -16;
-                // Set regular weight (400) – use 700 for bold if desired
-                diagram.HeaderFooter.HeaderFooterFont.Weight = 400;
-                // Ensure underline and italic are disabled
-                diagram.HeaderFooter.HeaderFooterFont.Underline = BOOL.False;
-                diagram.HeaderFooter.HeaderFooterFont.Italic = BOOL.False;
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

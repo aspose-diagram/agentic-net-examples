@@ -14,7 +14,6 @@ class Program
         }
 
         string inputPath = args[0];
-
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
@@ -22,33 +21,34 @@ class Program
             return;
         }
 
-        // Determine output path. If not supplied, create a file named "output.vsdx" in the same folder.
-        string outputPath = args.Length > 1
-            ? args[1]
-            : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+        // Determine output path. If not supplied, create a new file name in the same folder.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_TabStop.vsdx");
 
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Iterate through all pages and shapes to set the default tab stop.
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the current page.
-                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                // Iterate shapes using the shape collection.
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    Shape shape = page.Shapes[shapeIndex];
+                    Shape shape = page.Shapes[i];
 
-                    // Set the default tab stop to 0.5 inches for the shape's text block.
-                    // This controls the spacing of tab characters within the shape's text.
-                    shape.TextBlock.DefaultTabStop.Value = 0.5;
+                    // Ensure the shape has a TextBlock section before accessing it.
+                    if (shape.TextBlock != null)
+                    {
+                        // Set default tab stop to 0.5 inches.
+                        shape.TextBlock.DefaultTabStop.Value = 0.5;
+                    }
                 }
             }
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }

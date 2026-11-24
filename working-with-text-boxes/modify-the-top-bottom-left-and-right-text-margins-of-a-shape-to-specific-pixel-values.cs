@@ -1,87 +1,99 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expecting arguments: <diagramPath> <shapeId> <leftPx> <rightPx> <topPx> <bottomPx>
-        if (args.Length != 6)
+        // Expected arguments:
+        // 0: input diagram path
+        // 1: shape NameU to modify
+        // 2: left margin in pixels
+        // 3: right margin in pixels
+        // 4: top margin in pixels
+        // 5: bottom margin in pixels
+        // 6 (optional): output diagram path
+        if (args.Length < 6)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId> <leftPx> <rightPx> <topPx> <bottomPx>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeNameU> <leftPx> <rightPx> <topPx> <bottomPx> [outputDiagramPath]");
             return;
         }
 
-        string diagramPath = args[0];
-        // Guard: ensure the diagram file exists
-        if (!File.Exists(diagramPath))
+        string inputPath = args[0];
+        string shapeNameU = args[1];
+        string outputPath = args.Length >= 7
+            ? args[6]
+            : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse numeric arguments with validation
-        if (!int.TryParse(args[1], out int shapeId))
-        {
-            Console.Error.WriteLine("Error: Invalid shapeId.");
-            return;
-        }
-        if (!int.TryParse(args[2], out int leftPx) ||
-            !int.TryParse(args[3], out int rightPx) ||
-            !int.TryParse(args[4], out int topPx) ||
-            !int.TryParse(args[5], out int bottomPx))
-        {
-            Console.Error.WriteLine("Error: One or more margin values are not valid integers.");
-            return;
-        }
+        // Parse pixel values; fallback to 0 on parse failure.
+        double leftPx = double.TryParse(args[2], out double lp) ? lp : 0;
+        double rightPx = double.TryParse(args[3], out double rp) ? rp : 0;
+        double topPx = double.TryParse(args[4], out double tp) ? tp : 0;
+        double bottomPx = double.TryParse(args[5], out double bp) ? bp : 0;
+
+        // Convert pixels to inches (96 DPI is the standard conversion).
+        const double dpi = 96.0;
+        double leftInches = leftPx / dpi;
+        double rightInches = rightPx / dpi;
+        double topInches = topPx / dpi;
+        double bottomInches = bottomPx / dpi;
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Access the first page (adjust if needed)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on page 0.");
-                return;
+                // Locate the shape with the specified NameU across all pages.
+                Shape targetShape = null;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (!string.IsNullOrEmpty(shape.NameU) &&
+                            shape.NameU.Equals(shapeNameU, StringComparison.OrdinalIgnoreCase))
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    if (targetShape != null) break;
+                }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape with NameU \"{shapeNameU}\" not found in the diagram.");
+                    return;
+                }
+
+                // Create DoubleValue objects using inches as the unit.
+                DoubleValue leftMargin = new DoubleValue(leftInches, MeasureConst.IN);
+                DoubleValue rightMargin = new DoubleValue(rightInches, MeasureConst.IN);
+                DoubleValue topMargin = new DoubleValue(topInches, MeasureConst.IN);
+                DoubleValue bottomMargin = new DoubleValue(bottomInches, MeasureConst.IN);
+
+                // Apply margins to the shape's TextBlock section.
+                targetShape.TextBlock.LeftMargin = leftMargin;
+                targetShape.TextBlock.RightMargin = rightMargin;
+                targetShape.TextBlock.TopMargin = topMargin;
+                targetShape.TextBlock.BottomMargin = bottomMargin;
+
+                // Save the modified diagram using the correct overload.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Convert pixel values to points (1 pixel = 0.75 point at 96 DPI)
-            double leftPoints = leftPx * 0.75;
-            double rightPoints = rightPx * 0.75;
-            double topPoints = topPx * 0.75;
-            double bottomPoints = bottomPx * 0.75;
-
-            // Create DoubleValue objects with PT (points) unit
-            DoubleValue leftMargin = new DoubleValue(leftPoints, MeasureConst.PT);
-            DoubleValue rightMargin = new DoubleValue(rightPoints, MeasureConst.PT);
-            DoubleValue topMargin = new DoubleValue(topPoints, MeasureConst.PT);
-            DoubleValue bottomMargin = new DoubleValue(bottomPoints, MeasureConst.PT);
-
-            // Apply margins to the shape's TextBlock section
-            shape.TextBlock.LeftMargin = leftMargin;
-            shape.TextBlock.RightMargin = rightMargin;
-            shape.TextBlock.TopMargin = topMargin;
-            shape.TextBlock.BottomMargin = bottomMargin;
-
-            // Prepare output file path
-            string outputDir = Path.GetDirectoryName(diagramPath);
-            string outputFileName = Path.GetFileNameWithoutExtension(diagramPath) + "_modified.vsdx";
-            string outputPath = Path.Combine(outputDir, outputFileName);
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

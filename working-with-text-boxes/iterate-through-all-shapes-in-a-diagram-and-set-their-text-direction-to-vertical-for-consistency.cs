@@ -20,7 +20,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -35,7 +35,7 @@ class Program
                     // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a TextBlock before attempting to set direction.
+                        // Ensure the TextBlock section exists before setting direction.
                         if (shape.TextBlock != null)
                         {
                             // Set text direction to vertical for consistency.
@@ -47,6 +47,8 @@ class Program
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram processed successfully. Saved to: {outputPath}");
         }
         catch (Exception ex)
         {

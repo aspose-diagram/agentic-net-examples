@@ -1,54 +1,49 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder containing Visio files.
-        string folderPath;
-        if (args.Length > 0)
+        // Determine the input folder path from arguments or prompt the user.
+        string inputFolder;
+        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
         {
-            folderPath = args[0];
+            inputFolder = args[0];
         }
         else
         {
-            Console.Write("Enter folder path containing Visio files: ");
-            folderPath = Console.ReadLine();
+            Console.Write("Enter the folder path containing Visio files: ");
+            inputFolder = Console.ReadLine();
         }
 
-        // Validate the folder path.
-        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        // Guard: ensure the folder exists.
+        if (string.IsNullOrWhiteSpace(inputFolder) || !Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine("The specified folder does not exist.");
             return;
         }
 
-        // Define supported Visio file extensions.
-        string[] visioExtensions = new[]
+        // Prepare the output folder.
+        string outputFolder = Path.Combine(inputFolder, "output");
+        if (!Directory.Exists(outputFolder))
         {
-            ".vsdx", ".vsd", ".vsx", ".vtx",
-            ".vssx", ".vss", ".vstx", ".vst",
-            ".vstm", ".vssm", ".vsdm"
-        };
-
-        // Prepare output directory.
-        string outputDir = Path.Combine(folderPath, "output");
-        if (!Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
+            Directory.CreateDirectory(outputFolder);
         }
 
-        // Process each Visio file in the folder.
-        foreach (string filePath in Directory.GetFiles(folderPath))
-        {
-            // Skip files that do not have a Visio extension.
-            if (!visioExtensions.Any(ext => ext.Equals(Path.GetExtension(filePath), StringComparison.OrdinalIgnoreCase)))
-                continue;
+        // Define supported Visio extensions.
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".vss", ".vst" };
 
-            // Guard against missing files.
+        // Get all files with supported extensions.
+        string[] allFiles = Directory.GetFiles(inputFolder);
+        foreach (string filePath in allFiles)
+        {
+            string ext = Path.GetExtension(filePath);
+            if (Array.IndexOf(supportedExtensions, ext, 0, supportedExtensions.Length) < 0)
+                continue; // Skip unsupported files.
+
+            // Guard: ensure the file exists (redundant but per rules).
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -60,34 +55,40 @@ class Program
                 // Load the Visio diagram.
                 Diagram diagram = new Diagram(filePath);
 
-                // Iterate through all pages and shapes.
+                // Iterate through each page.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ignore logically deleted shapes.
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
+                        // Check if the shape contains any text.
+                        string shapeText = shape.Text.Value.ToString();
+                        if (string.IsNullOrWhiteSpace(shapeText))
+                            continue; // No text to rotate.
+
                         // Apply a 30-degree rotation to the shape's text.
                         // TextXForm.TxtAngle expects radians.
-                        double angleRadians = Math.PI / 6.0; // 30 degrees = π/6 radians
-                        shape.TextXForm.TxtAngle.Value = angleRadians;
+                        double angleDeg = 30.0;
+                        double angleRad = (Math.PI / 180.0) * angleDeg;
+                        shape.TextXForm.TxtAngle.Value = angleRad;
                     }
                 }
 
-                // Build the output file path (preserve original name, add suffix).
-                string outputFileName = Path.GetFileNameWithoutExtension(filePath) + "_rotated.vsdx";
-                string outputPath = Path.Combine(outputDir, outputFileName);
+                // Determine output file path (same name, saved as VSDX).
+                string outputPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".vsdx");
 
-                // Save the modified diagram as VSDX.
+                // Save the modified diagram in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
                 Console.WriteLine($"Processed and saved: {outputPath}");
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during processing.
+                // Log any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }

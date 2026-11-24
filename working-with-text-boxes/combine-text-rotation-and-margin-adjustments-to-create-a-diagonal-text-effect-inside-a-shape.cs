@@ -26,59 +26,60 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there is at least one page; create a new one if necessary
-                Page page;
-                if (diagram.Pages.Count > 0)
-                {
-                    page = diagram.Pages[0];
-                }
-                else
-                {
-                    // Add a blank page and use it
-                    diagram.Pages.Add(new Page());
-                    page = diagram.Pages[0];
-                }
+                // -----------------------------------------------------------------
+                // Add a new text shape to the first page.
+                // AddText returns a Shape object (the actual API returns Shape).
+                // -----------------------------------------------------------------
+                double pinX = 5.0;   // inches from the left
+                double pinY = 5.0;   // inches from the bottom
+                double width = 3.0;  // inches
+                double height = 1.0; // inches
+                string placeholder = "Placeholder";
 
-                // Define rectangle geometry (center position in inches)
-                double pinX = 5.0;   // horizontal center
-                double pinY = 5.0;   // vertical center
-                double width = 3.0;  // rectangle width
-                double height = 2.0; // rectangle height
+                Shape shape = diagram.Pages[0].AddText(pinX, pinY, width, height, placeholder);
 
-                // Add a rectangle shape; DrawRectangle returns the shape ID (long)
-                long shapeId = page.DrawRectangle(pinX, pinY, width, height);
-
-                // Retrieve the newly added shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Clear any existing text and add the desired diagonal text
+                // -----------------------------------------------------------------
+                // Replace the placeholder text with the desired diagonal text.
+                // -----------------------------------------------------------------
                 shape.Text.Value.Clear();
                 shape.Text.Value.Add(new Txt("Diagonal Text"));
 
-                // Rotate the text 45 degrees (TxtAngle expects radians)
+                // -----------------------------------------------------------------
+                // Rotate the text 45 degrees (diagonal). TxtAngle expects radians.
+                // -----------------------------------------------------------------
                 double angleDeg = 45.0;
                 double angleRad = (Math.PI / 180.0) * angleDeg;
                 shape.TextXForm.TxtAngle.Value = angleRad;
 
-                // Create a margin of 4 points and apply to all sides of the text block
+                // -----------------------------------------------------------------
+                // Adjust text block margins (4 points on each side).
+                // -----------------------------------------------------------------
                 DoubleValue margin = new DoubleValue(4, MeasureConst.PT);
                 shape.TextBlock.LeftMargin = margin;
                 shape.TextBlock.RightMargin = margin;
                 shape.TextBlock.TopMargin = margin;
                 shape.TextBlock.BottomMargin = margin;
 
-                // Save the modified diagram to the specified output path
+                // -----------------------------------------------------------------
+                // Apply changes to the shape.
+                // -----------------------------------------------------------------
+                shape.RefreshData();
+
+                // -----------------------------------------------------------------
+                // Save the modified diagram in VSDX format.
+                // -----------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
+
+            Console.WriteLine("Diagram processed and saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

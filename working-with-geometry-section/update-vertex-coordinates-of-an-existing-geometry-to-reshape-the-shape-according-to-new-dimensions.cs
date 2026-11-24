@@ -1,120 +1,119 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments: input file, output file, shape ID, scale factor
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <shapeId> <scaleFactor>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string shapeIdArg = args[2];
+        string scaleFactorArg = args[3];
 
-        // Guard: ensure the input file exists.
+        // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        // Parse scale factor
+        if (!double.TryParse(scaleFactorArg, out double scaleFactor) || scaleFactor <= 0)
+        {
+            Console.Error.WriteLine($"Invalid scale factor: {scaleFactorArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page.
-                if (diagram.Pages.Count == 0)
+                Shape targetShape = null;
+
+                // Locate the shape by ID across all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Work with the first page.
-                Page page = diagram.Pages[0];
-
-                // Ensure the page has at least one shape.
-                if (page.Shapes.Count == 0)
-                {
-                    Console.Error.WriteLine("The first page contains no shapes.");
-                    return;
-                }
-
-                // Retrieve the first shape on the page.
-                Shape shape = page.Shapes[0];
-
-                // Ensure the shape has at least one geometry section.
-                if (shape.Geoms.Count == 0)
-                {
-                    Console.Error.WriteLine("The selected shape has no geometry sections.");
-                    return;
-                }
-
-                // Retrieve the first geometry.
-                Geom geom = (Geom)shape.Geoms[0];
-
-                // Ensure the geometry has coordinate entries (vertices).
-                if (geom.CoordinateCol.Count == 0)
-                {
-                    Console.Error.WriteLine("The geometry contains no vertices to modify.");
-                    return;
-                }
-
-                // Example scaling factor – adjust as needed for your new dimensions.
-                double scaleFactor = 2.0;
-
-                // Iterate over each coordinate object and update its X and Y values.
-                for (int i = 0; i < geom.CoordinateCol.Count; i++)
-                {
-                    // Use dynamic to avoid compile‑time type checking for X/Y properties.
-                    dynamic coord = geom.CoordinateCol[i];
-
-                    try
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Scale X and Y if they exist.
-                        coord.X.Value *= scaleFactor;
-                        coord.Y.Value *= scaleFactor;
-                    }
-                    catch
-                    {
-                        // If the coordinate does not have X/Y (unlikely), ignore.
-                    }
-
-                    // Handle ArcTo control point A if present.
-                    try
-                    {
-                        if (coord.A != null)
+                        if (shape.ID == targetShapeId)
                         {
-                            coord.A.X.Value *= scaleFactor;
-                            coord.A.Y.Value *= scaleFactor;
+                            targetShape = shape;
+                            break;
                         }
                     }
-                    catch
-                    {
-                        // No control point A – ignore.
-                    }
-
-                    // Note: ArcTo.B is not available in the current API version, so it is omitted.
+                    if (targetShape != null) break;
                 }
 
-                // Refresh the shape to apply geometry changes.
-                shape.RefreshData();
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape with ID {targetShapeId} not found.");
+                    return;
+                }
 
-                // Save the modified diagram to the specified output path.
+                // Ensure the shape has at least one geometry
+                if (targetShape.Geoms == null || targetShape.Geoms.Count == 0)
+                {
+                    Console.Error.WriteLine("Target shape does not contain any geometry.");
+                    return;
+                }
+
+                // Iterate over each geometry (most shapes have one)
+                for (int g = 0; g < targetShape.Geoms.Count; g++)
+                {
+                    var geometry = targetShape.Geoms[g];
+
+                    // Iterate over each vertex segment in the geometry
+                    for (int i = 0; i < geometry.CoordinateCol.Count; i++)
+                    {
+                        var segment = geometry.CoordinateCol[i];
+
+                        // Update MoveTo vertices
+                        if (segment is MoveTo moveTo)
+                        {
+                            moveTo.X.Value *= scaleFactor;
+                            moveTo.Y.Value *= scaleFactor;
+                        }
+                        // Update LineTo vertices
+                        else if (segment is LineTo lineTo)
+                        {
+                            lineTo.X.Value *= scaleFactor;
+                            lineTo.Y.Value *= scaleFactor;
+                        }
+                        // Update ArcTo vertices (if present)
+                        else if (segment is ArcTo arcTo)
+                        {
+                            arcTo.X.Value *= scaleFactor;
+                            arcTo.Y.Value *= scaleFactor;
+                        }
+                        // Other segment types can be handled similarly if needed
+                    }
+                }
+
+                // Save the modified diagram to the output path using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose or IO exceptions and report them
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

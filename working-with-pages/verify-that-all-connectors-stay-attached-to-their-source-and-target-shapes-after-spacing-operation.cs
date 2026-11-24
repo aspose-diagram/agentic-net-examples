@@ -1,100 +1,115 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first argument.
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Please provide the input Visio file path as an argument.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard: ensure the file exists before proceeding.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Load the diagram inside a using block as required.
         try
         {
-            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                // Iterate through each page to perform spacing and verification.
                 foreach (Page page in diagram.Pages)
                 {
-                    // ---------- Perform spacing operation ----------
-                    // AutoSpaceShapes rearranges shapes while attempting to keep connectors attached.
-                    AutoSpaceOptions spacingOptions = new AutoSpaceOptions();
-                    // Use default spacing distances; customize if needed:
-                    // spacingOptions.DistanceInHorizontal = 2;
-                    // spacingOptions.DistanceInVertical = 2;
-                    page.AutoSpaceShapes(page.Shapes, spacingOptions);
-
-                    // ---------- Build a set of valid (non‑deleted) shape IDs ----------
-                    HashSet<long> validShapeIds = new HashSet<long>();
-                    foreach (Shape shape in page.Shapes)
+                    // ------------------------------------------------------------
+                    // Spacing operation: auto‑space shapes on the page.
+                    // ------------------------------------------------------------
+                    try
                     {
-                        if (shape.Del == BOOL.False)
-                        {
-                            validShapeIds.Add(shape.ID);
-                        }
+                        AutoSpaceOptions options = new AutoSpaceOptions();
+                        options.DistanceInHorizontal = 2; // horizontal spacing (in inches)
+                        options.DistanceInVertical = 2;   // vertical spacing (in inches)
+
+                        // AutoSpaceShapes requires the shape collection and options.
+                        page.AutoSpaceShapes(page.Shapes, options);
+                    }
+                    catch (Exception spacingEx)
+                    {
+                        Console.Error.WriteLine($"Spacing operation failed on page '{page.Name}': {spacingEx.Message}");
+                        // Continue with verification even if spacing failed.
                     }
 
-                    // ---------- Verify each connection (glue) ----------
-                    foreach (Connect conn in page.Connects)
+                    // ------------------------------------------------------------
+                    // Verify that all connectors remain attached to valid source and target shapes.
+                    // ------------------------------------------------------------
+                    foreach (Connect connect in page.Connects)
                     {
-                        long fromId = conn.FromSheet;
-                        long toId = conn.ToSheet;
+                        long fromId = connect.FromSheet;
+                        long toId = connect.ToSheet;
 
-                        // Ensure both source and target shapes exist and are not deleted.
-                        if (!validShapeIds.Contains(fromId) || !validShapeIds.Contains(toId))
+                        Shape sourceShape = null;
+                        Shape targetShape = null;
+
+                        // Attempt to retrieve the source shape.
+                        try
                         {
-                            Console.Error.WriteLine($"Page \"{page.Name}\": Connect entry with FromSheet={fromId}, ToSheet={toId} references an invalid or deleted shape.");
-                            throw new Exception("Connector attachment verification failed.");
+                            sourceShape = page.Shapes.GetShape(fromId);
+                        }
+                        catch
+                        {
+                            // Shape may not exist; leave as null.
                         }
 
-                        // Retrieve the target shape (typically the connector) to verify it is a 1‑D shape and not deleted.
-                        Shape targetShape = page.Shapes.GetShape(toId);
-                        if (targetShape == null)
+                        // Attempt to retrieve the target shape.
+                        try
                         {
-                            Console.Error.WriteLine($"Page \"{page.Name}\": Unable to retrieve shape with ID {toId}.");
-                            throw new Exception("Connector shape retrieval failed.");
+                            targetShape = page.Shapes.GetShape(toId);
+                        }
+                        catch
+                        {
+                            // Shape may not exist; leave as null.
                         }
 
-                        // Verify the target shape is not deleted.
-                        if (targetShape.Del == BOOL.True)
-                        {
-                            Console.Error.WriteLine($"Page \"{page.Name}\": Shape ID {toId} (connector) is marked as deleted after spacing.");
-                            throw new Exception("Deleted connector detected.");
-                        }
+                        bool sourceValid = sourceShape != null && sourceShape.Del == BOOL.False;
+                        bool targetValid = targetShape != null && targetShape.Del == BOOL.False;
 
-                        // If the target shape is a connector, ensure it is a 1‑D shape.
-                        if (targetShape.OneD == false && targetShape.Type == TypeValue.Shape)
+                        if (!sourceValid || !targetValid)
                         {
-                            // Non‑connector shapes can also appear in Connects (e.g., group glue), so we only enforce 1‑D for actual connectors.
-                            // No action needed.
+                            Console.WriteLine($"[ERROR] Connector on page '{page.Name}' has invalid attachment. Source ID {fromId} valid: {sourceValid}, Target ID {toId} valid: {targetValid}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[OK] Connector on page '{page.Name}' correctly attached to source ID {fromId} and target ID {toId}.");
                         }
                     }
+                }
 
-                    // If all connectors on the page are valid, report success for this page.
-                    Console.WriteLine($"Page \"{page.Name}\" verification passed.");
+                // Save the diagram after spacing.
+                try
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                }
+                catch (Exception saveEx)
+                {
+                    Console.Error.WriteLine($"Failed to save diagram: {saveEx.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

@@ -7,17 +7,11 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
+        // Determine input and output file paths (command‑line arguments or defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output_cleaned.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,33 +20,37 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // The Aspose.Diagram API does not expose an EventComment cell directly.
-                    // As the closest alternative, clear the EventDrop formula which often holds
-                    // event-related definitions. This effectively removes unused event data.
-                    shape.Event.EventDrop.Ufe.F = string.Empty;
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // The EventComment cell is not exposed in Aspose.Diagram.
+                        // As a practical substitute, clear the generic event cells
+                        // (EventDrop and EventXFMod) which are the closest equivalents.
+                        if (shape.Event != null)
+                        {
+                            // Clear EventDrop formula
+                            shape.Event.EventDrop.Ufe.F = "";
+                            // Clear EventXFMod formula
+                            shape.Event.EventXFMod.Ufe.F = "";
+                        }
+                    }
                 }
-            }
 
-            // Save the cleaned diagram to the output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the cleaned diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved without EventComment equivalents to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

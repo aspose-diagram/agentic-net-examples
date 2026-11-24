@@ -1,83 +1,96 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Define the deprecated font name and its replacement.
-    private const string DeprecatedFontName = "OldFont";
-    private const string ReplacementFontName = "NewFont";
-
     static void Main(string[] args)
     {
-        // Expect a single argument: the path to the folder containing VSD/VSDX files.
-        if (args.Length == 0)
+        // Validate command‑line arguments: input folder, output folder, deprecated font, replacement font
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <folderPath>");
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder> <deprecatedFontName> <replacementFontName>");
             return;
         }
 
-        string folderPath = args[0];
+        string inputFolder = args[0];
+        string outputFolder = args[1];
+        string deprecatedFont = args[2];
+        string replacementFont = args[3];
 
-        // Guard: ensure the folder exists.
-        if (!Directory.Exists(folderPath))
+        // Guard: input folder must exist
+        if (!Directory.Exists(inputFolder))
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Gather all Visio files with supported extensions.
-        string[] vsdFiles = Directory.GetFiles(folderPath, "*.vsd");
-        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx");
-        string[] vdxFiles = Directory.GetFiles(folderPath, "*.vdx");
-        string[] allFiles = vsdFiles.Concat(vsdxFiles).Concat(vdxFiles).ToArray();
-
-        if (allFiles.Length == 0)
+        // Ensure output folder exists (create if necessary)
+        if (!Directory.Exists(outputFolder))
         {
-            Console.WriteLine("No Visio files found in the specified folder.");
-            return;
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
+                return;
+            }
         }
 
-        foreach (string filePath in allFiles)
+        // Process each VSD file in the input folder
+        string[] files = Directory.GetFiles(inputFolder, "*.vsd");
+        foreach (string filePath in files)
         {
-            // Guard: ensure the file still exists before processing.
+            // Guard: file must exist (redundant but required by rules)
             if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
             try
             {
-                // Load the diagram.
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Iterate over all fonts used in the diagram.
-                foreach (Font font in diagram.Fonts)
+                // Iterate through all pages
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // If the font matches the deprecated name, replace it.
-                    if (string.Equals(font.Name, DeprecatedFontName, StringComparison.OrdinalIgnoreCase))
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through all shapes on the page
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        // Substitute with the modern equivalent.
-                        font.Name = ReplacementFontName;
-                        Console.WriteLine($"Replaced font in '{Path.GetFileName(filePath)}': '{DeprecatedFontName}' -> '{ReplacementFontName}'");
+                        Shape shape = page.Shapes[shapeIndex];
+
+                        // Iterate through all character runs in the shape
+                        for (int charIndex = 0; charIndex < shape.Chars.Count; charIndex++)
+                        {
+                            // Use fully qualified Aspose.Diagram.Char to avoid ambiguity with System.Char
+                            Aspose.Diagram.Char ch = shape.Chars[charIndex];
+
+                            // Replace the deprecated font with the modern equivalent
+                            if (ch.FontName.Value == deprecatedFont)
+                            {
+                                ch.FontName.Value = replacementFont;
+                            }
+                        }
                     }
                 }
 
-                // Determine output file path (save as VSDX with a suffix to avoid overwriting original).
-                string directory = Path.GetDirectoryName(filePath);
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
-                string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_updated.vsdx");
+                // Prepare output file path (same name with suffix "_updated.vsdx")
+                string outputFileName = Path.GetFileNameWithoutExtension(filePath) + "_updated.vsdx";
+                string outputPath = Path.Combine(outputFolder, outputFileName);
 
-                // Save the modified diagram in VSDX format.
+                // Save the modified diagram in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Saved updated diagram to: {outputPath}");
+                Console.WriteLine($"Processed and saved: {outputPath}");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing of the current file.
+                // Log any errors that occur during processing of the current file
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }

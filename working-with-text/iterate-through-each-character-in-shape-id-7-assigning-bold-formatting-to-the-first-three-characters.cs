@@ -6,63 +6,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Define input and output file paths.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = "output.vsdx";
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
             // Locate the shape with ID 7 across all pages.
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // GetShape returns null if the ID is not present on this page.
-                targetShape = page.Shapes.GetShape(7);
-                if (targetShape != null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    break;
+                    if (shape.ID == 7L)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
+                if (targetShape != null)
+                    break;
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine("Error: Shape with ID 7 was not found in the diagram.");
+                Console.Error.WriteLine("Shape with ID 7 was not found in the diagram.");
                 return;
             }
 
-            // Ensure the shape has at least three characters.
-            int charsToFormat = Math.Min(3, targetShape.Chars.Count);
-
-            // Apply bold formatting to the first three characters.
-            for (int i = 0; i < charsToFormat; i++)
+            // Iterate over the characters in the shape and apply bold formatting
+            // to the first three characters (or fewer if the shape has less than three).
+            int charCount = targetShape.Chars.Count;
+            int limit = Math.Min(3, charCount);
+            for (int i = 0; i < limit; i++)
             {
-                // Set the style to Bold. Existing style bits are overwritten as per requirement.
+                // Set the style of the character to Bold.
                 targetShape.Chars[i].Style.Value = StyleValue.Bold;
             }
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram to the output file.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

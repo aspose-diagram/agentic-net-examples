@@ -5,57 +5,83 @@ using Aspose.Diagram.Saving;
 
 class CustomStreamProvider : IStreamProvider
 {
-    private readonly string _basePath;
+    // Base directory where all resources will be placed
+    private readonly string _baseOutputDir;
 
-    // Constructor receives the base output directory where subfolders will be created.
-    public CustomStreamProvider(string basePath)
+    public CustomStreamProvider(string baseOutputDir)
     {
-        _basePath = basePath;
+        _baseOutputDir = baseOutputDir;
     }
 
-    // Called before a resource stream is created. No special initialization needed here.
+    // Called by Aspose when a resource stream is required
     public void InitStream(StreamProviderOptions options)
     {
-        // No initialization required for this implementation.
+        try
+        {
+            // Ensure the default path is available
+            if (string.IsNullOrEmpty(options.DefaultPath))
+            {
+                Console.Error.WriteLine("StreamProviderOptions.DefaultPath is null or empty.");
+                return;
+            }
+
+            // Determine the file name from the default path
+            string fileName = Path.GetFileName(options.DefaultPath);
+            if (string.IsNullOrEmpty(fileName))
+            {
+                Console.Error.WriteLine($"Unable to extract file name from path '{options.DefaultPath}'.");
+                return;
+            }
+
+            // Decide subfolder based on file extension (image vs shape)
+            string extension = Path.GetExtension(fileName).ToLowerInvariant();
+            string subFolder = "others";
+
+            // Common image extensions
+            if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" ||
+                extension == ".gif" || extension == ".bmp" || extension == ".tiff")
+            {
+                subFolder = "images";
+            }
+            // SVG files are typically shape resources
+            else if (extension == ".svg")
+            {
+                subFolder = "shapes";
+            }
+
+            // Build the full directory path and ensure it exists
+            string targetDir = Path.Combine(_baseOutputDir, subFolder);
+            Directory.CreateDirectory(targetDir);
+
+            // Full path for the resource file
+            string fullPath = Path.Combine(targetDir, fileName);
+
+            // Assign a writable file stream to the options
+            options.Stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error in InitStream: {ex.Message}");
+        }
     }
 
-    // Called after a resource stream is closed. No special cleanup needed here.
+    // Called by Aspose after the resource has been written
     public void CloseStream(StreamProviderOptions options)
     {
-        // No cleanup required for this implementation.
-    }
-
-    // Provides a writable stream for each resource (image, shape, etc.) during HTML export.
-    public Stream GetStream(StreamProviderOptions options)
-    {
-        // The DefaultPath property contains the original file name (e.g., "image1.png").
-        string fileName = Path.GetFileName(options.DefaultPath);
-        string extension = Path.GetExtension(fileName).ToLowerInvariant();
-
-        // Determine subfolder based on file type.
-        string subFolder = "Resources";
-        if (extension == ".png" || extension == ".jpg" || extension == ".jpeg" || extension == ".gif" || extension == ".bmp")
+        try
         {
-            subFolder = "Images";
+            // Close and dispose the stream if it was created
+            if (options.Stream != null)
+            {
+                options.Stream.Close();
+                options.Stream.Dispose();
+                options.Stream = null;
+            }
         }
-        else if (extension == ".svg")
+        catch (Exception ex)
         {
-            subFolder = "Shapes";
+            Console.Error.WriteLine($"Error in CloseStream: {ex.Message}");
         }
-
-        // Ensure the target directory exists.
-        string targetDir = Path.Combine(_basePath, subFolder);
-        Directory.CreateDirectory(targetDir);
-
-        // Full path for the resource file.
-        string fullPath = Path.Combine(targetDir, fileName);
-
-        // Create the file stream for writing.
-        FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
-        // Assign the stream back to options (required by the interface contract).
-        options.Stream = stream;
-
-        return stream;
     }
 }
 
@@ -63,57 +89,44 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output directory.
-        if (args.Length < 2)
+        // Input Visio file path (hard‑coded for this example)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputDirectory>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputDir = args[1];
-
-        // Guard: verify input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure output directory exists (create if necessary).
-        if (!Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
-        }
+        // Define output directory and main HTML file name
+        string outputDir = "output";
+        string htmlFilePath = Path.Combine(outputDir, "diagram.html");
 
         try
         {
-            // Load the Visio diagram.
+            // Ensure the output directory exists
+            Directory.CreateDirectory(outputDir);
+
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML export options with the custom stream provider.
+            // Configure HTML save options with the custom stream provider
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             htmlOptions.StreamProvider = new CustomStreamProvider(outputDir);
 
-            // Define the main HTML file path.
-            string htmlOutputPath = Path.Combine(outputDir, "output.html");
+            // Save the diagram as HTML; resources will be routed by the provider
+            diagram.Save(htmlFilePath, htmlOptions);
 
-            // Save the diagram as HTML using the configured options.
-            diagram.Save(htmlOutputPath, htmlOptions);
-
-            Console.WriteLine($"HTML export completed successfully: {htmlOutputPath}");
+            Console.WriteLine($"Diagram successfully saved to '{htmlFilePath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -3,24 +3,6 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class CustomStreamProvider : IStreamProvider
-{
-    // Initialize the stream for HTML resources.
-    public void InitStream(StreamProviderOptions options)
-    {
-        // Set a custom base URL or path for resources referenced in the HTML.
-        // This value will be used by Aspose.Diagram when generating resource links.
-        options.CustomPath = "custom_resources/";
-        // No additional stream handling is required for this example.
-    }
-
-    // Clean up any resources if necessary.
-    public void CloseStream(StreamProviderOptions options)
-    {
-        // No cleanup needed for this simple implementation.
-    }
-}
-
 class Program
 {
     static void Main(string[] args)
@@ -28,12 +10,12 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder>");
+            Console.Error.WriteLine("Usage: DiagramHtmlExport <inputVisioFile> <outputHtmlFile>");
             return;
         }
 
         string inputPath = args[0];
-        string outputFolder = args[1];
+        string outputPath = args[1];
 
         // Guard against missing input file.
         if (!File.Exists(inputPath))
@@ -42,42 +24,49 @@ class Program
             return;
         }
 
-        // Guard against missing output directory.
-        if (!Directory.Exists(outputFolder))
-        {
-            Console.Error.WriteLine($"Output folder does not exist: {outputFolder}");
-            return;
-        }
-
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Create an instance of the custom stream provider.
-            IStreamProvider streamProvider = new CustomStreamProvider();
-
-            // Export each page as a separate HTML file.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure HTML save options for a single page.
+                // Configure HTML save options with a custom stream provider.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.PageIndex = i;      // Zero‑based page index.
-                htmlOptions.PageCount = 1;      // Export only the current page.
-                htmlOptions.StreamProvider = streamProvider; // Assign custom provider.
+                htmlOptions.StreamProvider = new CustomStreamProvider();
 
-                // Build the output file path.
-                string outputPath = Path.Combine(outputFolder, $"page_{i + 1}.html");
-
-                // Save the page to HTML.
+                // Export the diagram to HTML using the configured options.
                 diagram.Save(outputPath, htmlOptions);
-                Console.WriteLine($"Saved page {i + 1} to {outputPath}");
+                Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during HTML conversion: {ex.Message}");
+        }
+    }
+}
+
+// Custom stream provider implementation for HTML export.
+class CustomStreamProvider : IStreamProvider
+{
+    // Called by Aspose.Diagram when a new stream is required.
+    public void InitStream(StreamProviderOptions options)
+    {
+        // Create a memory stream to hold the resource data.
+        options.Stream = new MemoryStream();
+
+        // Set a custom base URL/path for the exported resources.
+        // This URL will be used in the generated HTML to reference images, CSS, etc.
+        options.CustomPath = "custom/base/url/";
+    }
+
+    // Called by Aspose.Diagram after the stream is no longer needed.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // Dispose the stream if it was created.
+        if (options.Stream != null)
+        {
+            options.Stream.Dispose();
         }
     }
 }

@@ -20,7 +20,7 @@ class Program
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -29,12 +29,25 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare PDF save options with a page‑saving callback to report progress.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new ProgressCallback();
+            // Determine the desired output format based on file extension.
+            string ext = Path.GetExtension(outputPath).ToLowerInvariant();
 
-            // Save the diagram to the specified output path (PDF format).
-            diagram.Save(outputPath, pdfOptions);
+            if (ext == ".pdf")
+            {
+                // Use PdfSaveOptions with a page‑saving callback to report progress.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = new ProgressCallback();
+
+                // Save the diagram as PDF with progress reporting.
+                diagram.Save(outputPath, pdfOptions);
+            }
+            else
+            {
+                // Map the extension to a SaveFileFormat enum value.
+                SaveFileFormat format = GetSaveFileFormat(ext);
+                // Save using the determined format.
+                diagram.Save(outputPath, format);
+            }
 
             Console.WriteLine("Conversion completed successfully.");
         }
@@ -45,22 +58,62 @@ class Program
         }
     }
 
-    // Implementation of IPageSavingCallback to display real‑time progress.
-    private class ProgressCallback : IPageSavingCallback
+    /// <summary>
+    /// Maps a file extension to the corresponding SaveFileFormat enum value.
+    /// </summary>
+    private static SaveFileFormat GetSaveFileFormat(string extension)
     {
-        // Called before a page starts saving.
-        public void PageStartSaving(PageStartSavingArgs args)
+        // Default to Vsdx if the extension is unrecognized.
+        switch (extension)
         {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
+            case ".vsdx": return SaveFileFormat.Vsdx;
+            case ".vsd":  return SaveFileFormat.Vsd;
+            case ".vssx": return SaveFileFormat.Vssx;
+            case ".vss":  return SaveFileFormat.Vss;
+            case ".vstx": return SaveFileFormat.Vstx;
+            case ".vst":  return SaveFileFormat.Vst;
+            case ".vsdm": return SaveFileFormat.Vsdm;
+            case ".vssm": return SaveFileFormat.Vssm;
+            case ".vstm": return SaveFileFormat.Vstm;
+            case ".pdf":  return SaveFileFormat.Pdf;
+            case ".png":  return SaveFileFormat.Png;
+            case ".jpeg":
+            case ".jpg":  return SaveFileFormat.Jpeg;
+            case ".bmp":  return SaveFileFormat.Bmp;
+            case ".tiff":
+            case ".tif":  return SaveFileFormat.Tiff;
+            case ".gif":  return SaveFileFormat.Gif;
+            case ".html": return SaveFileFormat.Html;
+            case ".svg":  return SaveFileFormat.Svg;
+            case ".swf":  return SaveFileFormat.Swf;
+            case ".xps":  return SaveFileFormat.Xps;
+            case ".csv":  return SaveFileFormat.Csv;
+            case ".emf":  return SaveFileFormat.Emf;
+            case ".xaml": return SaveFileFormat.Xaml;
+            default:
+                // Fallback to Vsdx for unknown extensions.
+                return SaveFileFormat.Vsdx;
         }
+    }
+}
 
-        // Called after a page has been saved.
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+/// <summary>
+/// Implements IPageSavingCallback to display real‑time conversion progress for PDF export.
+/// </summary>
+class ProgressCallback : IPageSavingCallback
+{
+    public void PageStartSaving(PageStartSavingArgs args)
+    {
+        // Report the start of a page save operation.
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
+    }
 
-            // Example: stop after the first page (optional).
-            // args.HasMorePages = false;
-        }
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        // Report the completion of a page save operation.
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+
+        // Example: stop further processing after the first page (optional).
+        // args.HasMorePages = false;
     }
 }

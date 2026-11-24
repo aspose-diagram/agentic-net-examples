@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
+        // Input Visio file path (modify as needed)
         string inputPath = "input.vsdx";
         if (!File.Exists(inputPath))
         {
@@ -15,31 +15,34 @@ class Program
             return;
         }
 
-        // Output HTML file path
-        string outputPath = "output.html";
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure HTML save options
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Configure HTML save options
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                // Do not export hidden pages
+                htmlOptions.ExportHiddenPage = false; // BOOL.False is not assignable to bool
 
-            // Do not export hidden pages
-            htmlOptions.ExportHiddenPage = false;
+                // Do not export comments
+                htmlOptions.IsExportComments = false; // BOOL.False is not assignable to bool
 
-            // NOTE: HTMLSaveOptions does not provide direct properties to limit image dimensions.
-            // To control image size, post‑process the generated HTML or implement a custom
-            // IStreamProvider that resizes images before they are written. This example
-            // proceeds without additional image size configuration.
+                // NOTE: HTMLSaveOptions does not provide a direct property to limit
+                // the maximum image dimensions in the generated HTML. The closest
+                // alternative is to control which pages are exported or to
+                // post‑process the HTML files after export.
 
-            // Save the diagram as HTML using the configured options
-            diagram.Save(outputPath, htmlOptions);
+                // Save the diagram as HTML
+                string outputPath = "output.html";
+                diagram.Save(outputPath, htmlOptions);
+                Console.WriteLine($"HTML export completed: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

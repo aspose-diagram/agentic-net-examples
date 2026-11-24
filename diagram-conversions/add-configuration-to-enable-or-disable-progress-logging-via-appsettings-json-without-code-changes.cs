@@ -6,90 +6,113 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Entry point of the console application
     static void Main(string[] args)
     {
-        // Path to the configuration file.
-        const string configFileName = "appsettings.json";
-
-        // Verify that the configuration file exists.
-        if (!File.Exists(configFileName))
+        // Expect two arguments: input Visio file path and output PDF file path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Configuration file '{configFileName}' not found.");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
-        // Load configuration JSON and retrieve the EnableProgressLogging flag.
-        bool enableProgressLogging = false;
-        try
-        {
-            string json = File.ReadAllText(configFileName);
-            using JsonDocument doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("EnableProgressLogging", out JsonElement elem) &&
-                elem.ValueKind == JsonValueKind.True || elem.ValueKind == JsonValueKind.False)
-            {
-                enableProgressLogging = elem.GetBoolean();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to read configuration: {ex.Message}");
-            return;
-        }
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Determine input and output file paths.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = "output.pdf";
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file '{inputPath}' not found.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
+        }
+
+        // Load configuration from appsettings.json (optional)
+        bool enableProgressLogging = LoadProgressLoggingSetting();
+
+        Diagram diagram = null;
+        try
+        {
+            // Load the Visio diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Prepare PDF save options
+        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+        // If progress logging is enabled, assign a custom callback
+        if (enableProgressLogging)
+        {
+            pdfOptions.PageSavingCallback = new ProgressLoggingCallback();
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            if (enableProgressLogging)
-            {
-                // Create PDF save options and attach the progress logging callback.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new ProgressLoggingCallback();
-
-                // Save the diagram as PDF with progress logging.
-                diagram.Save(outputPath, pdfOptions);
-            }
-            else
-            {
-                // Save the diagram as PDF without progress logging.
-                diagram.Save(outputPath, SaveFileFormat.Pdf);
-            }
-
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            // Save the diagram as PDF using the configured options
+            diagram.Save(outputPath, pdfOptions);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
+    }
+
+    // Reads the "EnableProgressLogging" flag from appsettings.json.
+    // Returns false if the file or the setting is missing or invalid.
+    private static bool LoadProgressLoggingSetting()
+    {
+        const string configFile = "appsettings.json";
+
+        if (!File.Exists(configFile))
+        {
+            // Configuration file not found; default to disabled logging
+            return false;
+        }
+
+        try
+        {
+            string json = File.ReadAllText(configFile);
+            using (JsonDocument doc = JsonDocument.Parse(json))
+            {
+                JsonElement root = doc.RootElement;
+
+                if (root.TryGetProperty("EnableProgressLogging", out JsonElement element) &&
+                    element.ValueKind == JsonValueKind.True ||
+                    element.ValueKind == JsonValueKind.False)
+                {
+                    return element.GetBoolean();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
+        }
+
+        // If any error occurs, fallback to disabled logging
+        return false;
     }
 }
 
-// Implementation of the page saving callback that logs progress to the console.
+// Custom callback that logs page saving progress to the console.
 class ProgressLoggingCallback : IPageSavingCallback
 {
     // Called before a page starts saving.
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        Console.WriteLine($"[Progress] Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
     }
 
     // Called after a page has been saved.
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        Console.WriteLine($"[Progress] Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        // No need to modify args.HasMorePages; let the process continue normally.
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        // Example: stop further processing after the first page (optional)
+        // args.HasMorePages = false;
     }
 }

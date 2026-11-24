@@ -7,60 +7,70 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate command line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output PDF path (same folder, same name with .pdf extension).
+        string outputPath = Path.ChangeExtension(inputPath, ".pdf");
+
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Create PDF save options and configure them.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Explicitly set the target format on the options object.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Example: do not export hidden pages.
+                pdfOptions.ExportHiddenPage = false; // Use bool, not BOOL.
 
-            // Assign a custom callback to receive per‑page saving progress.
-            pdfOptions.PageSavingCallback = new PdfPageSavingCallback();
+                // Assign the custom page-saving callback to receive progress notifications.
+                pdfOptions.PageSavingCallback = new PageProgressCallback();
 
-            // Save the diagram to PDF using the configured options.
-            diagram.Save(outputPath, pdfOptions);
+                // Save the diagram to PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+            }
+
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving.
-            Console.Error.WriteLine($"Error during PDF conversion: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
+}
 
-    // Implementation of IPageSavingCallback to receive progress notifications.
-    private class PdfPageSavingCallback : IPageSavingCallback
+// Implementation of the page-saving callback to report progress.
+class PageProgressCallback : IPageSavingCallback
+{
+    // Called before a page starts saving.
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Called before a page starts saving.
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-        }
+        // args.PageIndex is zero‑based; display a user‑friendly 1‑based index.
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+    }
 
-        // Called after a page has finished saving.
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        }
+    // Called after a page has been saved.
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        // No need to modify args.HasMorePages; let the process continue.
     }
 }

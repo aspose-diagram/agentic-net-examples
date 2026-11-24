@@ -11,59 +11,60 @@ class Program
         // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <sourceVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        string sourcePath = args[0];
+        string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure source file exists
-        if (!File.Exists(sourcePath))
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the source file
-            Diagram diagram = new Diagram(sourcePath);
-
-            // ---------- Embed conversion timestamp as a custom document property ----------
-            CustomProp timestampProp = new CustomProp
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Name = "ConversionTimestamp",
-                // Use string type for the property value
-                PropType = PropType.String,
-                // Assign a CustomValue object with the timestamp string
-                CustomValue = new CustomValue { ValueString = DateTime.UtcNow.ToString("o") }
-            };
-            diagram.DocumentProps.CustomProps.Add(timestampProp);
+                // Add custom document property for conversion timestamp
+                var timestampProp = new CustomProp
+                {
+                    Name = "ConversionTimestamp",
+                    PropType = PropType.String,
+                    CustomValue = new CustomValue()
+                };
+                timestampProp.CustomValue.ValueString = DateTime.UtcNow.ToString("o");
+                diagram.DocumentProps.CustomProps.Add(timestampProp);
 
-            // ---------- Embed source file name as a custom document property ----------
-            CustomProp sourceFileProp = new CustomProp
-            {
-                Name = "SourceFileName",
-                PropType = PropType.String,
-                CustomValue = new CustomValue { ValueString = Path.GetFileName(sourcePath) }
-            };
-            diagram.DocumentProps.CustomProps.Add(sourceFileProp);
+                // Add custom document property for source file name
+                var sourceFileProp = new CustomProp
+                {
+                    Name = "SourceFileName",
+                    PropType = PropType.String,
+                    CustomValue = new CustomValue()
+                };
+                sourceFileProp.CustomValue.ValueString = Path.GetFileName(inputPath);
+                diagram.DocumentProps.CustomProps.Add(sourceFileProp);
 
-            // ---------- Configure DiagramSaveOptions ----------
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions
-            {
-                // Example option: auto‑fit page to drawing content
-                AutoFitPageToDrawingContent = true // corrected: use bool instead of BOOL
-            };
+                // Configure DiagramSaveOptions (e.g., enable auto‑fit)
+                var saveOptions = new DiagramSaveOptions
+                {
+                    AutoFitPageToDrawingContent = true // bool, not BOOL
+                };
 
-            // Save the diagram with the configured options
-            diagram.Save(outputPath, saveOptions);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Save the diagram with the configured options
+                diagram.Save(outputPath, saveOptions);
+            }
+
+            Console.WriteLine("Diagram saved successfully with embedded metadata.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

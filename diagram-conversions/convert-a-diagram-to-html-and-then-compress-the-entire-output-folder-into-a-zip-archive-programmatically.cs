@@ -11,7 +11,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolderPath> <outputZipPath>");
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputFolderPath> <outputZipPath>");
             return;
         }
 
@@ -22,15 +22,14 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         // Ensure the output folder exists.
         try
         {
-            if (!Directory.Exists(outputFolder))
-                Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(outputFolder);
         }
         catch (Exception ex)
         {
@@ -38,50 +37,52 @@ class Program
             return;
         }
 
-        // Load the Visio diagram and export each page to HTML.
+        // Load the diagram and export each page to HTML.
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and save each as a separate HTML file.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure HTML export options for a single page.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                int pageCount = diagram.Pages.Count;
+                for (int i = 0; i < pageCount; i++)
                 {
-                    PageIndex = i,   // Zero‑based page index.
-                    PageCount = 1    // Export only the current page.
-                };
+                    // Configure HTML export for a single page.
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        PageIndex = i,
+                        PageCount = 1
+                    };
 
-                // Build the output HTML file name.
-                string htmlFile = Path.Combine(outputFolder, $"page_{i + 1}.html");
+                    // Build the HTML file name (e.g., page_1.html).
+                    string htmlFilePath = Path.Combine(outputFolder, $"page_{i + 1}.html");
 
-                // Save the current page as HTML.
-                diagram.Save(htmlFile, htmlOptions);
+                    // Export the page.
+                    diagram.Save(htmlFilePath, htmlOptions);
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+            Console.Error.WriteLine($"Error during HTML export: {ex.Message}");
             return;
         }
 
         // Compress the output folder into a ZIP archive.
         try
         {
-            // If a ZIP file already exists, delete it to avoid IOException.
+            // Delete existing ZIP if it exists to avoid IOException.
             if (File.Exists(zipPath))
+            {
                 File.Delete(zipPath);
+            }
 
-            ZipFile.CreateFromDirectory(outputFolder, zipPath);
+            ZipFile.CreateFromDirectory(outputFolder, zipPath, CompressionLevel.Optimal, false);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error creating ZIP archive: {ex.Message}");
+            Console.Error.WriteLine($"Error during ZIP compression: {ex.Message}");
             return;
         }
 
-        Console.WriteLine("Conversion and compression completed successfully.");
+        Console.WriteLine("Diagram successfully exported to HTML and compressed into ZIP.");
     }
 }

@@ -3,40 +3,35 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyStreamProvider : IStreamProvider
+class CustomStreamProvider : IStreamProvider
 {
-    // Initialize the stream for a given resource during HTML export.
-    public void InitStream(StreamProviderOptions options)
+    // Factory to create a stream for each resource based on its default path/name.
+    private readonly Func<string, Stream> _streamFactory;
+
+    public CustomStreamProvider(Func<string, Stream> streamFactory)
     {
-        // Determine a folder to store the resources (images, shapes, etc.).
-        string resourcesFolder = "Resources";
-
-        // Ensure the folder exists.
-        if (!Directory.Exists(resourcesFolder))
-        {
-            Directory.CreateDirectory(resourcesFolder);
-        }
-
-        // Use the default path (resource name) to create a file name.
-        string fileName = Path.GetFileName(options.DefaultPath);
-
-        // Combine folder and file name to get the full path.
-        string fullPath = Path.Combine(resourcesFolder, fileName);
-
-        // Create a file stream for writing the resource.
-        FileStream fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write);
-
-        // Assign the created stream to the options so Aspose can write into it.
-        options.Stream = fileStream;
+        _streamFactory = streamFactory;
     }
 
-    // Close the stream after the resource has been written.
+    // Called by Aspose.Diagram when a resource stream is required.
+    public void InitStream(StreamProviderOptions options)
+    {
+        // The DefaultPath property contains the relative path/name of the resource.
+        string resourcePath = options.DefaultPath;
+
+        // Obtain a writable stream for the resource (e.g., a file stream, response stream, etc.).
+        Stream resourceStream = _streamFactory(resourcePath);
+
+        // Assign the stream to the options so Aspose can write the resource data.
+        options.Stream = resourceStream;
+    }
+
+    // Called after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Safely close and dispose the stream if it was created.
+        // Dispose the stream if it was created.
         if (options.Stream != null)
         {
-            options.Stream.Close();
             options.Stream.Dispose();
         }
     }
@@ -46,19 +41,31 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first argument.
-        if (args.Length == 0)
+        // Expect two arguments: input Visio file path and output folder for HTML resources.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input-visio-file>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputFolder>");
             return;
         }
 
         string inputPath = args[0];
+        string outputFolder = args[1];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Ensure the output folder exists.
+        try
+        {
+            Directory.CreateDirectory(outputFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
             return;
         }
 
@@ -67,23 +74,38 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML save options with a custom stream provider.
+            // Configure HTML save options.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new MyStreamProvider();
 
-            // Define the output HTML file path.
-            string outputHtml = "output.html";
+            // Assign the custom stream provider to handle resource streams.
+            htmlOptions.StreamProvider = new CustomStreamProvider(resourceName =>
+            {
+                // Build the full path for the resource inside the output folder.
+                string resourcePath = Path.Combine(outputFolder, resourceName);
 
-            // Save the diagram to HTML; resources will be streamed via MyStreamProvider.
-            diagram.Save(outputHtml, htmlOptions);
+                // Ensure the directory for the resource exists.
+                string resourceDir = Path.GetDirectoryName(resourcePath);
+                if (!string.IsNullOrEmpty(resourceDir))
+                {
+                    Directory.CreateDirectory(resourceDir);
+                }
 
-            Console.WriteLine($"Diagram successfully exported to '{outputHtml}'.");
-            Console.WriteLine("Associated resources are stored in the 'Resources' folder.");
+                // Return a file stream that Aspose will write the resource into.
+                return new FileStream(resourcePath, FileMode.Create, FileAccess.Write);
+            });
+
+            // Define the main HTML file path.
+            string htmlOutputPath = Path.Combine(outputFolder, "output.html");
+
+            // Save the diagram as HTML using the custom stream provider.
+            diagram.Save(htmlOutputPath, htmlOptions);
+
+            Console.WriteLine($"Diagram successfully exported to HTML at: {htmlOutputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose or I/O errors.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

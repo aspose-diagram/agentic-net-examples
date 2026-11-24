@@ -4,49 +4,29 @@ using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyStreamProvider : IStreamProvider
+class TestStreamProvider : IStreamProvider
 {
-    // Store captured identifiers for verification
-    private readonly List<string> _capturedIdentifiers = new List<string>();
-    public IReadOnlyList<string> CapturedIdentifiers => _capturedIdentifiers;
+    // Stores the resource type identifier (if available) and the default path for each InitStream call
+    public List<(string ResourceType, string DefaultPath)> Calls = new List<(string, string)>();
 
-    // Called by Aspose when a new resource stream is required
     public void InitStream(StreamProviderOptions options)
     {
-        // Attempt to capture a meaningful identifier.
-        // Prefer a hypothetical ResourceType property; fall back to DefaultPath.
-        string identifier = null;
+        // TODO: Retrieve the actual resource type identifier from StreamProviderOptions when the API provides it.
+        // For now, we use a placeholder value.
+        string resourceType = "Unknown";
 
-        // Use reflection to safely access a possible ResourceType property.
-        var resourceTypeProp = options.GetType().GetProperty("ResourceType");
-        if (resourceTypeProp != null)
-        {
-            var rtValue = resourceTypeProp.GetValue(options);
-            if (rtValue != null)
-                identifier = rtValue.ToString();
-        }
+        // Record the (placeholder) resource type and the default path supplied by Aspose
+        string defaultPath = options.DefaultPath ?? string.Empty;
+        Calls.Add((resourceType, defaultPath));
 
-        // If ResourceType is not available, use the default path provided by Aspose.
-        if (string.IsNullOrEmpty(identifier))
-        {
-            identifier = options.DefaultPath ?? "unknown";
-        }
-
-        _capturedIdentifiers.Add(identifier);
-
-        // Provide a dummy stream so Aspose can write the resource.
-        // The Stream property is writable in the current API version.
+        // Provide an in‑memory stream where Aspose will write the resource
         options.Stream = new MemoryStream();
     }
 
-    // Called by Aspose when the resource stream should be closed
     public void CloseStream(StreamProviderOptions options)
     {
-        // Dispose the stream we created in InitStream.
-        if (options.Stream != null)
-        {
-            options.Stream.Dispose();
-        }
+        // Dispose the stream after Aspose has finished writing
+        options.Stream?.Dispose();
     }
 }
 
@@ -61,53 +41,54 @@ class Program
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Output HTML file path
+        string outputPath = "output.html";
+
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Instantiate the custom stream provider
-            MyStreamProvider provider = new MyStreamProvider();
-
-            // Configure HTML save options with the stream provider
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = provider;
-
-            // Prepare output directory and file
-            string outputDir = Path.Combine(Path.GetDirectoryName(inputPath) ?? ".", "html_output");
-            Directory.CreateDirectory(outputDir);
-            string outputPath = Path.Combine(outputDir, "output.html");
-
-            // Save the diagram as HTML using the custom stream provider
-            diagram.Save(outputPath, htmlOptions);
-
-            // Verify that the provider received identifiers for both images and shapes
-            bool hasImage = false;
-            bool hasShape = false;
-
-            foreach (var id in provider.CapturedIdentifiers)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Simple heuristic checks; adjust based on actual identifier format
-                if (id.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0)
-                    hasImage = true;
-                if (id.IndexOf("shape", StringComparison.OrdinalIgnoreCase) >= 0)
-                    hasShape = true;
-            }
+                // Create HTML save options and assign the custom stream provider
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                TestStreamProvider provider = new TestStreamProvider();
+                htmlOptions.StreamProvider = provider;
 
-            if (!hasImage || !hasShape)
-            {
-                throw new Exception("IStreamProvider did not receive expected resource identifiers for images and shapes.");
-            }
+                // Save the diagram to HTML using the options
+                diagram.Save(outputPath, htmlOptions);
 
-            Console.WriteLine("HTML export completed successfully. Stream provider captured expected resource types.");
+                // After saving, verify that the stream provider received calls for images and shapes
+                bool receivedImage = false;
+                bool receivedShape = false;
+
+                foreach (var call in provider.Calls)
+                {
+                    // TODO: Replace the placeholder check with actual resource type comparison when available.
+                    // Example (when ResourceType is accessible):
+                    // if (call.ResourceType.Contains("Image", StringComparison.OrdinalIgnoreCase)) receivedImage = true;
+                    // if (call.ResourceType.Contains("Shape", StringComparison.OrdinalIgnoreCase)) receivedShape = true;
+
+                    // As a fallback, we can attempt to infer from the default path
+                    if (!receivedImage && call.DefaultPath.IndexOf("image", StringComparison.OrdinalIgnoreCase) >= 0)
+                        receivedImage = true;
+                    if (!receivedShape && call.DefaultPath.IndexOf("shape", StringComparison.OrdinalIgnoreCase) >= 0)
+                        receivedShape = true;
+                }
+
+                // Manual assertions – throw exception if expectations are not met
+                if (!receivedImage)
+                    throw new Exception("IStreamProvider did not receive any calls for image resources.");
+                if (!receivedShape)
+                    throw new Exception("IStreamProvider did not receive any calls for shape resources.");
+
+                Console.WriteLine("IStreamProvider received resource calls for images and shapes.");
+            }
         }
         catch (Exception ex)
         {

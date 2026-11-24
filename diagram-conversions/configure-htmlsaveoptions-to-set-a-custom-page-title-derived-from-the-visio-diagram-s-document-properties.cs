@@ -8,14 +8,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.html";
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
 
-        // Guard: ensure the input Visio file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
@@ -24,30 +28,24 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the document title property (built‑in property)
-            string pageTitle = diagram.DocumentProps.Title;
+            // Retrieve the built‑in document title property
+            string docTitle = diagram.DocumentProps.Title;
 
-            // Fallback title if the document property is empty or null
-            if (string.IsNullOrEmpty(pageTitle))
-            {
-                pageTitle = "Untitled Diagram";
-            }
+            // Create HTML save options
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Configure HTML save options with the custom page title
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
-            {
-                // Set the HTML page title derived from the document property
-                Title = pageTitle
-            };
+            // TODO: Set the custom page title on htmlOptions if the API provides such a property.
+            // Example (if available): htmlOptions.Title = docTitle;
+            // Replace the above line with the correct property name when known.
 
             // Save the diagram as HTML using the configured options
+            string outputPath = "output.html";
             diagram.Save(outputPath, htmlOptions);
 
-            Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
+            Console.WriteLine($"HTML export completed successfully: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

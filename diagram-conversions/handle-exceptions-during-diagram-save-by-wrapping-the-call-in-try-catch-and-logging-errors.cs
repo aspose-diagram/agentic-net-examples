@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output file path.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPath>");
+            Console.Error.WriteLine("Usage: DiagramSave <inputFilePath> <outputFilePath>");
             return;
         }
 
@@ -19,38 +19,33 @@ class Program
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        Diagram diagram = null;
-
+        // Load the diagram inside a using block to ensure proper disposal.
         try
         {
-            // Load the Visio diagram.
-            diagram = new Diagram(inputPath);
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Attempt to save the diagram; wrap in try‑catch to log any errors.
+                try
+                {
+                    // Save as VSDX format (adjust SaveFileFormat as needed).
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                }
+                catch (Exception saveEx)
+                {
+                    // Log save‑related exceptions.
+                    Console.Error.WriteLine($"Error saving diagram: {saveEx.Message}");
+                }
+            }
         }
-        catch (Exception ex)
+        catch (Exception loadEx)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        try
-        {
-            // Save the diagram to the specified output path using VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during the save operation.
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-        }
-        finally
-        {
-            // Ensure resources are released.
-            diagram?.Dispose();
+            // Log loading exceptions.
+            Console.Error.WriteLine($"Error loading diagram: {loadEx.Message}");
         }
     }
 }

@@ -7,46 +7,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output HTML file path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath>");
-            return;
-        }
+        // Input Visio file path (modify as needed or pass as first argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Output directory for HTML files
+        string outputDir = "HtmlOutput";
+
+        // Guard: ensure the output directory exists or create it
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure HTML save options.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // PNG is the default image format for HTML export.
-            // The API does not provide a property to change the image format,
-            // so we rely on the default PNG output for all diagram images.
-            // This comment documents the limitation and the chosen approach.
-
-            // Example of setting a boolean property using plain bool
-            // because ExportHiddenPage is a native bool, not Aspose BOOL.
-            htmlOptions.ExportHiddenPage = false;
-
-            // Save the diagram to HTML using the configured options.
-            diagram.Save(outputPath, htmlOptions);
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+            return;
+        }
+
+        // Load the diagram inside a using block as required
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // HTMLSaveOptions does not expose an image format property.
+                // PNG is the default image format for HTML export, which satisfies the requirement.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+                // Export each page as a separate HTML file
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    htmlOptions.PageIndex = i;   // Zero‑based page index
+                    htmlOptions.PageCount = 1;   // Export only the current page
+
+                    string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
+
+                    try
+                    {
+                        diagram.Save(outputPath, htmlOptions);
+                        Console.WriteLine($"Saved page {i + 1} to {outputPath}");
+                    }
+                    catch (Exception saveEx)
+                    {
+                        Console.Error.WriteLine($"Error saving page {i + 1}: {saveEx.Message}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,26 +6,19 @@ using Aspose.Diagram.Saving;
 
 class ThrottlingPageSavingCallback : IPageSavingCallback
 {
-    // Number of milliseconds to pause before processing each page.
-    private const int ThrottleDelayMs = 200;
-
     // Called before a page starts saving.
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Log page start information.
         Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-
-        // Introduce a short delay to throttle CPU usage.
-        Thread.Sleep(ThrottleDelayMs);
+        // No throttling here; we could add logic if needed.
     }
 
     // Called after a page has been saved.
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // Log page end information.
         Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-
-        // No further throttling needed here, but could add additional logic if required.
+        // Introduce a short delay to throttle CPU usage on low‑end devices.
+        Thread.Sleep(200); // Pause for 200 milliseconds between pages.
     }
 }
 
@@ -33,16 +26,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path.
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        // Output PDF file path.
-        string outputPath = "output.pdf";
+        string inputPath = args[0];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
@@ -51,29 +42,33 @@ class Program
             return;
         }
 
+        // Determine output PDF path (same folder, same name with .pdf extension).
+        string outputPath = Path.ChangeExtension(inputPath, ".pdf");
+
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Explicitly set the save format.
-                SaveFormat = SaveFileFormat.Pdf,
-                // Assign the custom throttling callback.
-                PageSavingCallback = new ThrottlingPageSavingCallback()
-            };
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Save the diagram to PDF using the configured options.
-            diagram.Save(outputPath, pdfOptions);
+                // Assign the custom page‑saving callback to throttle conversion.
+                pdfOptions.PageSavingCallback = new ThrottlingPageSavingCallback();
 
-            Console.WriteLine($"Diagram successfully saved to {outputPath}");
+                // Explicitly set the save format (required by the API).
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Save the diagram to PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+            }
+
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

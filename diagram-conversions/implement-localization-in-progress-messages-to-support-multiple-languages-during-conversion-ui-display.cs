@@ -4,142 +4,106 @@ using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class LocalizedProgressCallback : IPageSavingCallback
 {
-    // Supported languages
-    enum Language
+    private readonly string _language;
+    private readonly Dictionary<string, string> _startMessages;
+    private readonly Dictionary<string, string> _endMessages;
+
+    public LocalizedProgressCallback(string language)
     {
-        English,
-        Spanish
+        _language = language?.ToLowerInvariant() ?? "en";
+
+        // Define start messages per language
+        _startMessages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "en", "Saving page {0} of {1}..." },
+            { "es", "Guardando página {0} de {1}..." },
+            { "fr", "Enregistrement de la page {0} sur {1}..." },
+            { "de", "Seite {0} von {1} wird gespeichert..." }
+        };
+
+        // Define end messages per language
+        _endMessages = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "en", "Finished page {0}." },
+            { "es", "Página {0} terminada." },
+            { "fr", "Page {0} terminée." },
+            { "de", "Seite {0} abgeschlossen." }
+        };
     }
 
-    // Localization dictionaries
-    static readonly Dictionary<string, string> EnglishMessages = new Dictionary<string, string>
+    // Called before a page starts saving
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        { "SelectLanguage", "Select language (en/es): " },
-        { "InvalidLanguage", "Invalid selection. Defaulting to English." },
-        { "InputPathPrompt", "Enter the path to the Visio file to convert: " },
-        { "OutputPathPrompt", "Enter the desired output PDF path: " },
-        { "FileNotFound", "File not found: {0}" },
-        { "ConversionStart", "Starting diagram conversion..." },
-        { "PageStart", "Saving page {0} of {1}..." },
-        { "PageEnd", "Finished page {0} of {1}." },
-        { "ConversionComplete", "Diagram conversion completed successfully." },
-        { "ConversionError", "An error occurred during conversion: {0}" }
-    };
-
-    static readonly Dictionary<string, string> SpanishMessages = new Dictionary<string, string>
-    {
-        { "SelectLanguage", "Seleccione el idioma (en/es): " },
-        { "InvalidLanguage", "Selección no válida. Se usará inglés por defecto." },
-        { "InputPathPrompt", "Ingrese la ruta del archivo Visio a convertir: " },
-        { "OutputPathPrompt", "Ingrese la ruta de salida del PDF: " },
-        { "FileNotFound", "Archivo no encontrado: {0}" },
-        { "ConversionStart", "Iniciando la conversión del diagrama..." },
-        { "PageStart", "Guardando página {0} de {1}..." },
-        { "PageEnd", "Página {0} de {1} completada." },
-        { "ConversionComplete", "Conversión del diagrama completada con éxito." },
-        { "ConversionError", "Ocurrió un error durante la conversión: {0}" }
-    };
-
-    // Retrieves a localized message based on the selected language
-    static string GetMessage(string key, Language lang)
-    {
-        switch (lang)
-        {
-            case Language.Spanish:
-                if (SpanishMessages.TryGetValue(key, out var esMsg))
-                    return esMsg;
-                break;
-            case Language.English:
-            default:
-                if (EnglishMessages.TryGetValue(key, out var enMsg))
-                    return enMsg;
-                break;
-        }
-        // Fallback to key if not found
-        return key;
-    }
-
-    static void Main(string[] args)
-    {
-        // Prompt user for language selection
-        Console.Write(GetMessage("SelectLanguage", Language.English));
-        string langInput = Console.ReadLine()?.Trim().ToLowerInvariant();
-        Language selectedLanguage = Language.English;
-        if (langInput == "es")
-            selectedLanguage = Language.Spanish;
-        else if (langInput != "en")
-            Console.WriteLine(GetMessage("InvalidLanguage", selectedLanguage));
-
-        // Prompt for input file path
-        Console.Write(GetMessage("InputPathPrompt", selectedLanguage));
-        string inputPath = Console.ReadLine()?.Trim();
-
-        // Guard: ensure input file exists
-        if (string.IsNullOrEmpty(inputPath) || !File.Exists(inputPath))
-        {
-            Console.Error.WriteLine(string.Format(GetMessage("FileNotFound", selectedLanguage), inputPath));
-            return;
-        }
-
-        // Prompt for output file path
-        Console.Write(GetMessage("OutputPathPrompt", selectedLanguage));
-        string outputPath = Console.ReadLine()?.Trim();
-
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare PDF save options and assign the progress callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new ProgressCallback(selectedLanguage);
-
-            // Inform user that conversion is starting
-            Console.WriteLine(GetMessage("ConversionStart", selectedLanguage));
-
-            // Save the diagram as PDF using the options
-            diagram.Save(outputPath, pdfOptions);
-
-            // Inform user that conversion completed
-            Console.WriteLine(GetMessage("ConversionComplete", selectedLanguage));
+            string format = _startMessages.ContainsKey(_language) ? _startMessages[_language] : _startMessages["en"];
+            Console.WriteLine(string.Format(format, args.PageIndex + 1, args.PageCount));
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine(string.Format(GetMessage("ConversionError", selectedLanguage), ex.Message));
+            Console.Error.WriteLine($"Error in PageStartSaving callback: {ex.Message}");
         }
     }
 
-    // Implementation of IPageSavingCallback to report progress
-    class ProgressCallback : IPageSavingCallback
+    // Called after a page has been saved
+    public void PageEndSaving(PageEndSavingArgs args)
     {
-        private readonly Language _language;
-
-        public ProgressCallback(Language language)
+        try
         {
-            _language = language;
+            string format = _endMessages.ContainsKey(_language) ? _endMessages[_language] : _endMessages["en"];
+            Console.WriteLine(string.Format(format, args.PageIndex + 1));
+
+            // Example: stop after first page (optional logic)
+            // args.HasMorePages = false;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error in PageEndSaving callback: {ex.Message}");
+        }
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Expect at least input and output paths; optional language code
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath> [languageCode]");
+            return;
         }
 
-        // Called before a page starts saving
-        public void PageStartSaving(PageStartSavingArgs args)
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string language = args.Length >= 3 ? args[2] : "en";
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
         {
-            // args.PageIndex is zero‑based; display as 1‑based for user friendliness
-            int pageNumber = args.PageIndex + 1;
-            int totalPages = args.PageCount;
-            Console.WriteLine(string.Format(GetMessage("PageStart", _language), pageNumber, totalPages));
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
         }
 
-        // Called after a page has been saved
-        public void PageEndSaving(PageEndSavingArgs args)
+        try
         {
-            int pageNumber = args.PageIndex + 1;
-            int totalPages = args.PageCount;
-            Console.WriteLine(string.Format(GetMessage("PageEnd", _language), pageNumber, totalPages));
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Continue processing remaining pages
-            args.HasMorePages = true;
+            // Prepare PDF save options with progress callback
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.PageSavingCallback = new LocalizedProgressCallback(language);
+
+            // Save the diagram to PDF while tracking progress
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine("Conversion completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

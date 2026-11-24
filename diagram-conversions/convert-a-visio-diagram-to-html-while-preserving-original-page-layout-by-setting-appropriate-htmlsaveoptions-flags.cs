@@ -8,14 +8,14 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputDirectory]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputDirectory>");
             return;
         }
 
         string inputPath = args[0];
-        string outputDir = args.Length > 1 ? args[1] : Path.GetDirectoryName(inputPath);
+        string outputDir = args[1];
 
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
@@ -24,58 +24,46 @@ class Program
             return;
         }
 
-        // Guard: ensure the output directory exists (create if necessary).
+        // Guard: ensure the output directory exists.
         if (!Directory.Exists(outputDir))
         {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
-                return;
-            }
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over each page and export it as a separate HTML file,
-            // preserving the original page layout.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the page (explicit type required).
-                Page page = diagram.Pages[i];
-
-                // Configure HTML save options for the current page.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                // Iterate over each page to export it individually, preserving layout.
+                int pageCount = diagram.Pages.Count;
+                for (int i = 0; i < pageCount; i++)
                 {
-                    // Export only this page.
-                    PageIndex = i,
-                    PageCount = 1,
+                    // Configure HTML save options for the current page.
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        // Export only this page.
+                        PageIndex = i,
+                        PageCount = 1,
+                        // Preserve original layout by not exporting hidden pages.
+                        ExportHiddenPage = false, // BOOL replaced with native bool
+                        // Do not export comments.
+                        IsExportComments = false // BOOL replaced with native bool
+                    };
 
-                    // Preserve layout by not exporting hidden pages.
-                    ExportHiddenPage = false, // Changed from BOOL.False to bool
+                    // Build the output HTML file path.
+                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.html");
 
-                    // Do not export comments.
-                    IsExportComments = false // Changed from BOOL.False to bool
-                };
-
-                // Build the output file name (e.g., page_1.html).
-                string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
-
-                // Save the page to HTML using the configured options.
-                diagram.Save(outputPath, htmlOptions);
-                Console.WriteLine($"Saved page {i + 1} to '{outputPath}'.");
+                    // Save the current page as HTML.
+                    diagram.Save(outputPath, htmlOptions);
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Output any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

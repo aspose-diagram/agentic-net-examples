@@ -7,26 +7,30 @@ class CustomPageNamingCallback : IPageSavingCallback
 {
     private readonly Diagram _diagram;
 
+    // Constructor receives the diagram to allow page modifications.
     public CustomPageNamingCallback(Diagram diagram)
     {
         _diagram = diagram;
     }
 
-    // Called before a page starts saving to PDF
+    // Called before a page starts saving.
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Ensure the page index is valid
+        // Retrieve the page based on the current index.
+        // Page collection is zero‑based.
         if (args.PageIndex >= 0 && args.PageIndex < _diagram.Pages.Count)
         {
-            // Set a custom name for the page
-            _diagram.Pages[args.PageIndex].Name = $"Custom Page {args.PageIndex + 1}";
+            Page page = _diagram.Pages[args.PageIndex];
+            // Set a custom name for the page.
+            page.Name = $"Custom Page {args.PageIndex + 1}";
         }
     }
 
-    // Called after a page has been saved to PDF
+    // Called after a page has been saved.
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // No additional actions needed after saving each page
+        // No additional actions needed after saving each page.
+        // This method must be present to satisfy the interface.
     }
 }
 
@@ -34,39 +38,37 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
-            return;
-        }
+        // Input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output PDF file path (second argument or default).
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        try
+        // Load the diagram inside a using block as required.
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            try
+            {
+                // Create PDF save options and assign the custom callback.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
 
-            // Prepare PDF save options and assign the custom page‑saving callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new CustomPageNamingCallback(diagram);
+                // Save the diagram to PDF using the options.
+                diagram.Save(outputPath, pdfOptions);
 
-            // Save the diagram to PDF using the options
-            diagram.Save(outputPath, pdfOptions);
-        }
-        catch (Exception ex)
-        {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"PDF saved successfully to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Report any errors that occur during processing.
+                Console.Error.WriteLine($"Error during PDF conversion: {ex.Message}");
+            }
         }
     }
 }

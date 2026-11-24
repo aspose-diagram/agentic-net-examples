@@ -6,23 +6,33 @@ using Aspose.Diagram.Saving;
 
 class ResourceNameCollector : IStreamProvider
 {
-    // Stores the names of all resources generated during HTML export.
-    public List<string> ResourceNames { get; } = new List<string>();
+    // Stores all resource names encountered during HTML export.
+    private readonly HashSet<string> _uniqueNames = new HashSet<string>();
+    private readonly List<string> _allNames = new List<string>();
+    public bool DuplicateFound { get; private set; } = false;
+    public string DuplicateName { get; private set; } = null;
 
-    // Called when a new resource stream is initialized.
+    // Called by Aspose.Diagram when a new resource stream is required.
     public void InitStream(StreamProviderOptions options)
     {
-        // DefaultPath contains the resource file name (e.g., "image1.png").
-        if (!string.IsNullOrEmpty(options.DefaultPath))
+        // Record the resource name.
+        string name = options.DefaultPath;
+        _allNames.Add(name);
+        if (!_uniqueNames.Add(name))
         {
-            ResourceNames.Add(options.DefaultPath);
+            // Duplicate detected.
+            DuplicateFound = true;
+            DuplicateName = name;
         }
+
+        // Provide a dummy stream; the actual content is not needed for validation.
+        options.Stream = new MemoryStream();
     }
 
-    // Called when the resource stream is closed. No action needed for validation.
+    // Called after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Intentionally left blank.
+        options.Stream?.Dispose();
     }
 }
 
@@ -30,91 +40,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output folder path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputFolderPath>");
-            return;
-        }
+        // Input Visio file path (first argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputFolder = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure the output folder exists.
         try
         {
-            Directory.CreateDirectory(outputFolder);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-            return;
-        }
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Load the diagram inside a try/catch to capture Aspose errors.
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Prepare HTML export options.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-        // Prepare HTML export options with a custom stream provider to capture resource names.
-        HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-        // Export all pages.
-        htmlOptions.PageIndex = 0;
-        htmlOptions.PageCount = diagram.Pages.Count;
+            // Export all pages in a single HTML file.
+            htmlOptions.PageIndex = 0;
+            htmlOptions.PageCount = diagram.Pages.Count;
 
-        // Instantiate the collector and assign it.
-        ResourceNameCollector collector = new ResourceNameCollector();
-        htmlOptions.StreamProvider = collector;
+            // Attach the custom stream provider to capture resource names.
+            ResourceNameCollector collector = new ResourceNameCollector();
+            htmlOptions.StreamProvider = collector;
 
-        // Define the output HTML file path.
-        string outputHtmlPath = Path.Combine(outputFolder, "output.html");
+            // Output HTML file path.
+            string outputHtml = "output.html";
 
-        // Perform the save operation.
-        try
-        {
-            diagram.Save(outputHtmlPath, htmlOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during HTML export: {ex.Message}");
-            return;
-        }
+            // Perform the conversion.
+            diagram.Save(outputHtml, htmlOptions);
 
-        // After export, validate that no duplicate resource names were generated.
-        HashSet<string> seenNames = new HashSet<string>();
-        bool duplicateFound = false;
-
-        foreach (string name in collector.ResourceNames)
-        {
-            if (!seenNames.Add(name))
+            // Validate that no duplicate resource names were generated.
+            if (collector.DuplicateFound)
             {
-                // Duplicate detected.
-                duplicateFound = true;
-                Console.Error.WriteLine($"Duplicate resource name detected: {name}");
+                Console.Error.WriteLine($"Duplicate resource name detected: {collector.DuplicateName}");
+                // Optionally, you could throw an exception to signal failure.
+                // throw new Exception($"Duplicate resource name: {collector.DuplicateName}");
+            }
+            else
+            {
+                Console.WriteLine("Validation passed: No duplicate resource names were produced.");
             }
         }
-
-        if (duplicateFound)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine("Validation failed: duplicate resource names were produced.");
-        }
-        else
-        {
-            Console.WriteLine("Validation succeeded: no duplicate resource names were produced.");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

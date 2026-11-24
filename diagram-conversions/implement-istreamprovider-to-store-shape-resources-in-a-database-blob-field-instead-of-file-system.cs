@@ -1,52 +1,78 @@
 using System;
 using System.IO;
-using System.Data;
 using System.Collections.Generic;
+using System.Data;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
 class DatabaseStreamProvider : IStreamProvider
 {
-    // Simulated database table to store resource BLOBs.
-    private readonly DataTable _resourceTable;
-    // Tracks active streams during the export process.
-    private readonly Dictionary<string, MemoryStream> _activeStreams = new Dictionary<string, MemoryStream>();
+    // Simulated database table: each row stores a resource path and its binary content.
+    private static readonly DataTable _resourceTable = CreateResourceTable();
 
-    public DatabaseStreamProvider(DataTable resourceTable)
+    // In-memory map to keep the active stream for each resource during saving.
+    private readonly Dictionary<string, MemoryStream> _activeStreams = new Dictionary<string, MemoryStream>(StringComparer.OrdinalIgnoreCase);
+
+    private static DataTable CreateResourceTable()
     {
-        _resourceTable = resourceTable ?? throw new ArgumentNullException(nameof(resourceTable));
+        var table = new DataTable("DiagramResources");
+        table.Columns.Add("ResourcePath", typeof(string));
+        table.Columns.Add("Content", typeof(byte[]));
+        table.PrimaryKey = new[] { table.Columns["ResourcePath"] };
+        return table;
     }
 
-    // Called by Aspose when a new resource stream is required.
+    // Called by Aspose.Diagram before writing a resource (image, shape, etc.).
     public void InitStream(StreamProviderOptions options)
     {
-        // Create a memory stream that Aspose will write the resource into.
-        var memoryStream = new MemoryStream();
-        // Assign the stream back to the options so Aspose can use it.
-        options.Stream = memoryStream;
-        // Store the stream using the default path as the key for later retrieval.
-        _activeStreams[options.DefaultPath] = memoryStream;
+        // Create a fresh memory stream for the resource.
+        var ms = new MemoryStream();
+        // Store the stream in the dictionary using the default path as the key.
+        _activeStreams[options.DefaultPath] = ms;
+        // Assign the stream back to the options so Aspose can write into it.
+        options.Stream = ms;
     }
 
-    // Called by Aspose when the resource stream is closed.
+    // Called by Aspose.Diagram after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Retrieve the memory stream that was previously created.
-        if (_activeStreams.TryGetValue(options.DefaultPath, out var memoryStream))
+        // Retrieve the memory stream that was used.
+        if (_activeStreams.TryGetValue(options.DefaultPath, out MemoryStream ms))
         {
-            // Ensure all data is flushed and read from the beginning.
-            memoryStream.Position = 0;
-            byte[] data = memoryStream.ToArray();
+            // Ensure all data is flushed.
+            ms.Flush();
+            // Capture the byte array.
+            byte[] data = ms.ToArray();
 
-            // Insert the resource into the simulated database table.
-            DataRow row = _resourceTable.NewRow();
-            row["Path"] = options.DefaultPath; // Resource identifier (e.g., image file name)
-            row["Data"] = data;                // BLOB content
-            _resourceTable.Rows.Add(row);
+            // Insert or update the simulated database table.
+            DataRow row = _resourceTable.Rows.Find(options.DefaultPath);
+            if (row == null)
+            {
+                row = _resourceTable.NewRow();
+                row["ResourcePath"] = options.DefaultPath;
+                row["Content"] = data;
+                _resourceTable.Rows.Add(row);
+            }
+            else
+            {
+                row["Content"] = data;
+            }
 
             // Clean up.
-            memoryStream.Dispose();
+            ms.Dispose();
             _activeStreams.Remove(options.DefaultPath);
+        }
+    }
+
+    // Helper method to display stored resources (for demonstration purposes).
+    public static void PrintStoredResources()
+    {
+        Console.WriteLine("=== Resources stored in simulated database ===");
+        foreach (DataRow row in _resourceTable.Rows)
+        {
+            string path = row["ResourcePath"] as string;
+            byte[] content = row["Content"] as byte[];
+            Console.WriteLine($"Path: {path}, Size: {content?.Length ?? 0} bytes");
         }
     }
 }
@@ -55,56 +81,50 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default).
-        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
-
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Expect two arguments: input Visio file path and output HTML file path.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputHtmlFile>");
             return;
         }
 
-        // Prepare a DataTable to act as the database for storing resources.
-        DataTable resourceTable = new DataTable("DiagramResources");
-        resourceTable.Columns.Add("Path", typeof(string));
-        resourceTable.Columns.Add("Data", typeof(byte[]));
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
 
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create the custom stream provider that writes resources to the DataTable.
-            var streamProvider = new DatabaseStreamProvider(resourceTable);
+            // Configure HTML export options.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Export only the first page for simplicity; adjust as needed.
+                PageIndex = 0,
+                PageCount = 1,
+                // Assign our custom stream provider to capture resources in the simulated DB.
+                StreamProvider = new DatabaseStreamProvider()
+            };
 
-            // Configure HTML export options and assign the stream provider.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = streamProvider;
-            // Export only the first page as a single HTML file (adjust as needed).
-            htmlOptions.PageIndex = 0;
-            htmlOptions.PageCount = 1;
+            // Save the diagram as HTML. Resources (images, etc.) will be routed through the stream provider.
+            diagram.Save(outputPath, htmlOptions);
 
-            // Output HTML file path.
-            string outputHtml = "output.html";
+            Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
 
-            // Save the diagram to HTML using the custom stream provider.
-            diagram.Save(outputHtml, htmlOptions);
+            // Demonstrate that resources have been stored in the simulated database.
+            DatabaseStreamProvider.PrintStoredResources();
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
-            return;
-        }
-
-        // After export, display information about stored resources.
-        Console.WriteLine("Resources stored in the simulated database:");
-        foreach (DataRow row in resourceTable.Rows)
-        {
-            string path = row["Path"] as string;
-            byte[] data = row["Data"] as byte[];
-            Console.WriteLine($"- {path}: {data?.Length ?? 0} bytes");
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,62 +6,29 @@ using Aspose.Diagram.Saving;
 
 class MyStreamProvider : IStreamProvider
 {
-    // List to keep track of all resource file paths created during conversion
-    public List<string> CreatedResources { get; } = new List<string>();
+    // List to store the paths of resources created during conversion.
+    private readonly List<string> _createdResources = new List<string>();
 
-    // Base directory where HTML and its resources will be saved
-    private readonly string _baseOutputDir;
+    // Expose the collected resources as a read‑only collection.
+    public IReadOnlyList<string> CreatedResources => _createdResources.AsReadOnly();
 
-    public MyStreamProvider(string baseOutputDir)
-    {
-        _baseOutputDir = baseOutputDir;
-    }
-
-    // Called by Aspose.Diagram before writing each resource (image, shape, etc.)
+    // Called by Aspose.Diagram when a new resource stream is required.
     public void InitStream(StreamProviderOptions options)
     {
-        try
-        {
-            // Combine base output directory with the default relative path provided by Aspose
-            string resourcePath = Path.Combine(_baseOutputDir, options.DefaultPath);
+        // Record the default path where the resource is expected to be saved.
+        _createdResources.Add(options.DefaultPath);
 
-            // Ensure the directory for the resource exists
-            string resourceDir = Path.GetDirectoryName(resourcePath);
-            if (!Directory.Exists(resourceDir))
-            {
-                Directory.CreateDirectory(resourceDir);
-            }
-
-            // Create a file stream for the resource and assign it to the options
-            FileStream fs = new FileStream(resourcePath, FileMode.Create, FileAccess.Write);
-            options.Stream = fs;
-
-            // Record the created resource path for later reporting
-            CreatedResources.Add(resourcePath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error initializing stream for resource '{options.DefaultPath}': {ex.Message}");
-            // In case of failure, ensure the stream is null to avoid further errors
-            options.Stream = null;
-        }
+        // Provide a memory stream for the resource data.
+        options.Stream = new MemoryStream();
     }
 
-    // Called by Aspose.Diagram after the resource has been written
+    // Called after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        try
+        // Ensure the stream is properly disposed.
+        if (options.Stream != null)
         {
-            // Close the stream if it was successfully created
-            if (options.Stream != null)
-            {
-                options.Stream.Close();
-                options.Stream = null;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error closing stream for resource '{options.DefaultPath}': {ex.Message}");
+            options.Stream.Dispose();
         }
     }
 }
@@ -70,94 +37,75 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: DiagramConverter <inputVisioFile> <outputFolder>");
+            Console.Error.WriteLine("Usage: DiagramDiagnostic <inputVisioFile> [outputFolder]");
             return;
         }
 
         string inputPath = args[0];
-        string outputFolder = args[1];
+        string outputFolder = args.Length > 1 ? args[1] : Path.GetDirectoryName(inputPath);
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Guard: ensure output folder exists or create it
-        if (!Directory.Exists(outputFolder))
+        // Guard: ensure the output folder exists (create if necessary).
+        try
         {
-            try
+            if (!Directory.Exists(outputFolder))
             {
                 Directory.CreateDirectory(outputFolder);
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
-                return;
-            }
-        }
-
-        // Define the main HTML file path (index.html) inside the output folder
-        string htmlOutputPath = Path.Combine(outputFolder, "index.html");
-
-        Diagram diagram = null;
-        try
-        {
-            // Load the Visio diagram
-            diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
             return;
         }
 
-        // Initialize the custom stream provider with the output folder as base path
-        var streamProvider = new MyStreamProvider(outputFolder);
-
-        // Configure HTML save options and assign the stream provider
-        var htmlOptions = new HTMLSaveOptions();
-        htmlOptions.StreamProvider = streamProvider;
-
         try
         {
-            // Save the diagram to HTML using the custom stream provider
-            diagram.Save(htmlOutputPath, htmlOptions);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during HTML conversion: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Generate diagnostic report of all resources created by the stream provider
-        Console.WriteLine("=== Diagnostic Report: Resources Created by IStreamProvider ===");
-        if (streamProvider.CreatedResources.Count == 0)
-        {
-            Console.WriteLine("No resources were created.");
-        }
-        else
-        {
-            foreach (var resource in streamProvider.CreatedResources)
+            // Prepare the custom stream provider to capture resource creation.
+            MyStreamProvider streamProvider = new MyStreamProvider();
+
+            // Configure HTML save options with the stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = streamProvider;
+
+            // Define the output HTML file path.
+            string outputHtmlPath = Path.Combine(outputFolder,
+                Path.GetFileNameWithoutExtension(inputPath) + ".html");
+
+            // Save the diagram as HTML using the configured options.
+            diagram.Save(outputHtmlPath, htmlOptions);
+
+            // After conversion, generate a diagnostic report of created resources.
+            string reportPath = Path.Combine(outputFolder, "diagnostic_report.txt");
+            using (StreamWriter writer = new StreamWriter(reportPath))
             {
-                Console.WriteLine(resource);
+                writer.WriteLine("Diagnostic Report: Resources Created by IStreamProvider");
+                writer.WriteLine("------------------------------------------------------");
+                foreach (string resourcePath in streamProvider.CreatedResources)
+                {
+                    writer.WriteLine(resourcePath);
+                }
             }
-        }
 
-        // Optionally write the report to a text file in the output folder
-        string reportPath = Path.Combine(outputFolder, "resource_report.txt");
-        try
-        {
-            File.WriteAllLines(reportPath, streamProvider.CreatedResources);
-            Console.WriteLine($"Diagnostic report saved to: {reportPath}");
+            Console.WriteLine($"Conversion completed. HTML saved to: {outputHtmlPath}");
+            Console.WriteLine($"Diagnostic report written to: {reportPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to write diagnostic report file: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

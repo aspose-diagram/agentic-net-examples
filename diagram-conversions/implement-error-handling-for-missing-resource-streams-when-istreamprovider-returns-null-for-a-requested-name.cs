@@ -3,36 +3,37 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MissingResourceStreamProvider : IStreamProvider
+class FileStreamProvider : IStreamProvider
 {
-    private readonly string _resourceFolder;
+    private readonly string _resourceBasePath;
 
-    // Constructor receives the folder where resources (images, shapes) are expected.
-    public MissingResourceStreamProvider(string resourceFolder)
+    public FileStreamProvider(string resourceBasePath)
     {
-        _resourceFolder = resourceFolder;
+        _resourceBasePath = resourceBasePath;
     }
 
-    // Called by Aspose.Diagram when it needs a stream for a specific resource.
+    // Called by Aspose when a resource stream is required during HTML export.
     public void InitStream(StreamProviderOptions options)
     {
         // The requested resource name is provided via DefaultPath (read‑only).
-        string resourcePath = Path.Combine(_resourceFolder, options.DefaultPath);
+        string requestedName = options.DefaultPath ?? string.Empty;
+        string fullPath = Path.Combine(_resourceBasePath, requestedName);
 
-        if (File.Exists(resourcePath))
+        if (File.Exists(fullPath))
         {
-            // Resource exists – open a read‑only file stream.
-            options.Stream = new FileStream(resourcePath, FileMode.Open, FileAccess.Read);
+            // Resource exists – open a read‑only stream.
+            options.Stream = File.OpenRead(fullPath);
         }
         else
         {
-            // Resource missing – log the error and supply an empty stream to avoid null references.
-            Console.Error.WriteLine($"Missing resource: {resourcePath}");
-            options.Stream = new MemoryStream(); // Empty placeholder stream.
+            // Resource missing – log the error and supply an empty stream to avoid null reference.
+            Console.Error.WriteLine($"[Error] Missing resource for HTML export: '{requestedName}'. Expected at '{fullPath}'.");
+            // Provide an empty stream so the export can continue without throwing.
+            options.Stream = new MemoryStream();
         }
     }
 
-    // Called after Aspose.Diagram finishes using the stream.
+    // Called by Aspose after the stream is no longer needed.
     public void CloseStream(StreamProviderOptions options)
     {
         if (options.Stream != null)
@@ -47,51 +48,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments:
-        // 0 - input Visio diagram path
-        // 1 - output HTML file path
-        // 2 - (optional) folder containing external resources (images, shapes)
-        if (args.Length < 2)
+        // Input Visio file path.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputHtmlPath> [resourceFolder]");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        string resourceFolder = args.Length >= 3 ? args[2] : Path.GetDirectoryName(inputPath);
-
-        // Guard: ensure the input diagram file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure the resource folder exists (if provided).
-        if (!Directory.Exists(resourceFolder))
-        {
-            Console.Error.WriteLine($"Resource folder not found: {resourceFolder}");
-            return;
-        }
+        // Output HTML file path.
+        string outputPath = "output.html";
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML save options with the custom stream provider.
+            // Prepare HTML save options.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new MissingResourceStreamProvider(resourceFolder);
 
-            // Save the diagram as HTML.
+            // Set up the stream provider to handle external resources (images, shapes, etc.).
+            // The base folder for resources is the directory containing the input file.
+            string resourceBaseFolder = Path.GetDirectoryName(Path.GetFullPath(inputPath));
+            htmlOptions.StreamProvider = new FileStreamProvider(resourceBaseFolder);
+
+            // Perform the HTML export.
             diagram.Save(outputPath, htmlOptions);
-            Console.WriteLine($"Diagram successfully saved to HTML at: {outputPath}");
+
+            Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any errors during loading or saving.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose or I/O errors.
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

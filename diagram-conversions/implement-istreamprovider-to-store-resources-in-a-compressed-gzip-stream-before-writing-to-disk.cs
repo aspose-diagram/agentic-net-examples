@@ -6,25 +6,24 @@ using Aspose.Diagram.Saving;
 
 class GzipStreamProvider : IStreamProvider
 {
-    // Initialize the stream for a resource. The resource will be written to a GZIP-compressed file.
+    // Initialize the stream for a resource, compressing it with GZip before writing to disk.
     public void InitStream(StreamProviderOptions options)
     {
-        // Determine the target file path for the compressed resource.
-        // Append ".gz" to the default path provided by Aspose.
-        string gzipFilePath = options.DefaultPath + ".gz";
+        // The DefaultPath property provides the intended file name for the resource.
+        string resourcePath = options.DefaultPath;
 
-        // Ensure the directory for the target file exists.
-        string directory = Path.GetDirectoryName(gzipFilePath);
+        // Ensure the directory for the resource exists.
+        string directory = Path.GetDirectoryName(resourcePath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
-        // Create a file stream and wrap it with GZipStream for compression.
-        FileStream fileStream = new FileStream(gzipFilePath, FileMode.Create, FileAccess.Write);
+        // Create a file stream for the resource and wrap it with GZip compression.
+        FileStream fileStream = new FileStream(resourcePath, FileMode.Create, FileAccess.Write);
         GZipStream gzipStream = new GZipStream(fileStream, CompressionMode.Compress);
 
-        // Assign the compressed stream back to the options so Aspose writes into it.
+        // Assign the compressed stream back to the options so Aspose can write into it.
         options.Stream = gzipStream;
     }
 
@@ -33,8 +32,8 @@ class GzipStreamProvider : IStreamProvider
     {
         if (options.Stream != null)
         {
-            // Disposing the GZipStream also disposes the underlying FileStream.
             options.Stream.Dispose();
+            options.Stream = null;
         }
     }
 }
@@ -46,7 +45,7 @@ class Program
         // Expect two arguments: input Visio file path and output HTML file path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath>");
+            Console.Error.WriteLine("Usage: <inputVisioPath> <outputHtmlPath>");
             return;
         }
 
@@ -56,7 +55,7 @@ class Program
         // Guard: verify the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -76,15 +75,15 @@ class Program
                 Directory.CreateDirectory(outputDir);
             }
 
-            // Save the diagram to HTML using the configured options.
+            // Save the diagram to HTML; resources will be written via the GZIP provider.
             diagram.Save(outputPath, htmlOptions);
 
-            Console.WriteLine("Diagram successfully saved to HTML with GZIP-compressed resources.");
+            Console.WriteLine($"Diagram successfully saved to HTML with compressed resources at: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

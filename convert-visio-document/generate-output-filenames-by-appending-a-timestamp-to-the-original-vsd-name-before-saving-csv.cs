@@ -1,48 +1,47 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the source Visio file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: check if the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Build output filename with timestamp before the extension
+            // Build output filename with timestamp.
             string directory = Path.GetDirectoryName(inputPath);
-            string originalFileName = Path.GetFileNameWithoutExtension(inputPath);
+            string baseName = Path.GetFileNameWithoutExtension(inputPath);
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            string outputFileName = $"{originalFileName}_{timestamp}.csv";
+            string outputFileName = $"{baseName}_{timestamp}.csv";
             string outputPath = Path.Combine(directory, outputFileName);
 
-            // Save the diagram as CSV
+            // Save the diagram as CSV.
             diagram.Save(outputPath, SaveFileFormat.Csv);
 
-            Console.WriteLine($"Diagram successfully saved to CSV: {outputPath}");
+            Console.WriteLine($"CSV exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Report any errors that occur during loading or saving.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

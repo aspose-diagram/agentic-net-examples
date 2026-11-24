@@ -6,40 +6,43 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file path (VSD) and output CSV file path.
-        string inputPath = "input.vsd";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "output.csv";
+        // Determine input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsd";
+        string outputPath = args.Length > 1 ? args[1] : "output.csv";
 
-        // Guard: ensure the input file exists before proceeding.
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Guard: ensure the directory for the output file exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Use a FileStream inside a using block to write the CSV output
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Use a FileStream inside a using block to write the CSV output.
             using (FileStream outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
             {
-                // Save the diagram as CSV directly to the FileStream.
+                // Load the Visio diagram
+                Diagram diagram = new Diagram(inputPath);
+
+                // Save the diagram as CSV directly to the FileStream
                 diagram.Save(outputStream, SaveFileFormat.Csv);
             }
 
-            Console.WriteLine($"Diagram successfully converted to CSV: {outputPath}");
+            Console.WriteLine($"Conversion successful. CSV saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

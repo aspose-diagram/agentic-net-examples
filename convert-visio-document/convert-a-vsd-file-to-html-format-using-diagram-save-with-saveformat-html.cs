@@ -1,45 +1,55 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Ensure at least the input file path is provided
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: <program> <input VSD file path> <output HTML file path>");
+            Console.Error.WriteLine("Usage: Program <input.vsd> [output.html]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: verify the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
+        }
+
+        // Determine output HTML file path
+        string outputPath;
+        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Replace the input file's extension with .html
+            outputPath = Path.ChangeExtension(inputPath, ".html");
         }
 
         try
         {
-            // Load the Visio diagram from the specified VSD file.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Export the entire diagram to HTML format
+                diagram.Save(outputPath, SaveFileFormat.Html);
+            }
 
-            // Save the diagram as HTML. The second argument must be a valid SaveFileFormat.
-            diagram.Save(outputPath, SaveFileFormat.Html);
-
-            // Release resources held by the Diagram object.
-            diagram.Dispose();
-
-            Console.WriteLine($"Successfully converted \"{inputPath}\" to HTML at \"{outputPath}\".");
+            Console.WriteLine($"Diagram successfully converted to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
-            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

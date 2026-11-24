@@ -7,10 +7,15 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output CSV file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "output.csv";
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output CSV file path
+        string outputPath = "output.csv";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -24,20 +29,19 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create save options for CSV export.
-            // Note: Aspose.Diagram does not expose an Encoding property for CSV.
-            // The library writes CSV using UTF‑8 by default, so no explicit setting is required.
-            DiagramSaveOptions saveOptions = new DiagramSaveOptions();
+            // NOTE:
+            // Aspose.Diagram does not provide an Encoding property on SaveOptions for CSV export.
+            // Therefore, the CSV is saved using the library's default encoding (UTF‑8).
+            // This is the closest possible implementation to the requested task.
 
-            // Save the diagram as CSV using the configured options
-            diagram.Save(outputPath, saveOptions);
-
-            Console.WriteLine($"Diagram successfully saved to CSV at: {outputPath}");
+            // Save the diagram as CSV
+            diagram.Save(outputPath, SaveFileFormat.Csv);
+            Console.WriteLine($"Diagram saved to CSV at: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

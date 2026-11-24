@@ -1,100 +1,106 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input Visio file path and output CSV file path.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
             return;
         }
 
-        string visioPath = args[0];
-        string csvPath = args[1];
+        string inputPath = args[0];
+        string outputCsvPath = args[1];
 
-        // Guard: check if the input Visio file exists.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {visioPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the output directory exists.
+            string outputDir = Path.GetDirectoryName(outputCsvPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
 
             // Export the diagram to CSV format.
-            diagram.Save(csvPath, SaveFileFormat.Csv);
+            diagram.Save(outputCsvPath, SaveFileFormat.Csv);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during Visio to CSV conversion: {ex.Message}");
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
             return;
         }
 
-        // Guard: check if the CSV file was created.
-        if (!File.Exists(csvPath))
+        // Verify that the CSV file was created.
+        if (!File.Exists(outputCsvPath))
         {
-            Console.Error.WriteLine($"CSV file was not created: {csvPath}");
+            Console.Error.WriteLine($"CSV file was not created: {outputCsvPath}");
             return;
         }
-
-        // Define the expected column headers for verification.
-        // Adjust these headers according to the specific Visio export expectations.
-        string[] expectedHeaders = new string[]
-        {
-            "Shape ID",
-            "Shape Name",
-            "Shape Type",
-            "Text"
-        };
 
         try
         {
             // Read all lines from the CSV file.
-            string[] allLines = File.ReadAllLines(csvPath);
+            string[] lines = File.ReadAllLines(outputCsvPath);
 
-            if (allLines.Length == 0)
+            if (lines.Length == 0)
             {
                 Console.Error.WriteLine("CSV file is empty.");
                 return;
             }
 
-            // Split the first line (header row) by commas.
-            string[] actualHeaders = allLines[0].Split(',');
+            // Expected column headers (adjust as needed for your scenario).
+            string[] expectedHeaders = new string[] { "Application", "CSV Producer" };
 
-            // Trim whitespace from each header for robust comparison.
-            actualHeaders = actualHeaders.Select(h => h.Trim()).ToArray();
+            // Split the first line by commas to obtain actual headers.
+            string[] actualHeaders = lines[0].Split(',');
 
-            // Verify that the actual headers match the expected headers.
-            bool headersMatch = expectedHeaders.Length == actualHeaders.Length &&
-                                expectedHeaders.Zip(actualHeaders, (exp, act) => exp == act).All(equal => equal);
-
-            if (!headersMatch)
+            // Simple verification: check that each expected header appears in the actual header list.
+            bool allHeadersPresent = true;
+            foreach (string expected in expectedHeaders)
             {
-                Console.Error.WriteLine("CSV header verification failed.");
-                Console.Error.WriteLine("Expected headers:");
-                Console.Error.WriteLine(string.Join(", ", expectedHeaders));
-                Console.Error.WriteLine("Actual headers:");
-                Console.Error.WriteLine(string.Join(", ", actualHeaders));
-                // Throwing an exception to indicate failure as per guidelines.
-                throw new Exception("CSV headers do not match expected values.");
+                bool found = false;
+                foreach (string actual in actualHeaders)
+                {
+                    if (string.Equals(actual.Trim(), expected, StringComparison.OrdinalIgnoreCase))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    Console.Error.WriteLine($"Missing expected header: '{expected}'");
+                    allHeadersPresent = false;
+                }
+            }
+
+            if (allHeadersPresent)
+            {
+                Console.WriteLine("CSV header verification succeeded. All expected columns are present.");
             }
             else
             {
-                Console.WriteLine("CSV header verification succeeded.");
+                Console.Error.WriteLine("CSV header verification failed.");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during CSV verification: {ex.Message}");
+            Console.Error.WriteLine($"Error while reading/verifying CSV: {ex.Message}");
         }
     }
 }

@@ -1,32 +1,25 @@
 using System;
 using System.IO;
 using System.Diagnostics;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input folder, output folder, optional log file path
-        if (args.Length < 2)
+        // Determine source folder, output folder, and log file path from arguments or use defaults.
+        string sourceFolder = args.Length > 0 ? args[0] : "InputVsd";
+        string outputFolder = args.Length > 1 ? args[1] : "OutputCsv";
+        string logFilePath = args.Length > 2 ? args[2] : "conversion_log.csv";
+
+        // Guard: source folder must exist.
+        if (!Directory.Exists(sourceFolder))
         {
-            Console.Error.WriteLine("Usage: <program> <inputFolder> <outputFolder> [logFilePath]");
+            Console.Error.WriteLine($"Source folder does not exist: {sourceFolder}");
             return;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args[1];
-        string logFilePath = args.Length >= 3 ? args[2] : Path.Combine(outputFolder, "conversion_log.csv");
-
-        // Guard for input folder existence
-        if (!Directory.Exists(inputFolder))
-        {
-            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
-            return;
-        }
-
-        // Ensure output folder exists
+        // Ensure output folder exists.
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -35,12 +28,12 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
                 return;
             }
         }
 
-        // Prepare log file: write header if file does not exist
+        // Prepare the CSV log file. Write header if the file is new.
         bool writeHeader = !File.Exists(logFilePath);
         try
         {
@@ -48,73 +41,80 @@ class Program
             {
                 if (writeHeader)
                 {
-                    logWriter.WriteLine("FileName,StartTime,EndTime,DurationSeconds");
+                    logWriter.WriteLine("InputFile,OutputFile,DurationMilliseconds,Status");
                 }
 
-                // Define supported Visio extensions (case‑insensitive)
-                var visioExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                // Get all Visio files with common extensions.
+                string[] visioExtensions = new[] { ".vsd", ".vsdx", ".vsx", ".vtx", ".vss", ".vst", ".vssx", ".vstx", ".vssm", ".vstm" };
+                var visioFiles = Directory.GetFiles(sourceFolder, "*.*", SearchOption.TopDirectoryOnly);
+                foreach (var filePath in visioFiles)
                 {
-                    ".vsd", ".vsdx", ".vsx", ".vss", ".vssx", ".vst", ".vstx", ".vtx"
-                };
+                    string extension = Path.GetExtension(filePath);
+                    if (Array.IndexOf(visioExtensions, extension.ToLowerInvariant()) < 0)
+                    {
+                        // Skip non-Visio files.
+                        continue;
+                    }
 
-                // Iterate over all files in the input folder
-                foreach (string filePath in Directory.GetFiles(inputFolder))
-                {
-                    // Guard for file existence (redundant but per rule)
+                    // Guard: ensure the file exists (redundant but per requirement).
                     if (!File.Exists(filePath))
                     {
                         Console.Error.WriteLine($"File not found: {filePath}");
                         continue;
                     }
 
-                    string extension = Path.GetExtension(filePath);
-                    if (!visioExtensions.Contains(extension))
-                    {
-                        // Skip non‑Visio files
-                        continue;
-                    }
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string outputCsvPath = Path.Combine(outputFolder, fileNameWithoutExt + ".csv");
 
-                    string fileName = Path.GetFileName(filePath);
-                    string outputCsvPath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(filePath) + ".csv");
-
-                    DateTime startTime = DateTime.Now;
-                    var sw = new Stopwatch();
-
+                    Stopwatch sw = new Stopwatch();
                     try
                     {
-                        // Start timing before loading
+                        // Start timing.
                         sw.Start();
 
-                        // Load the Visio diagram
+                        // Load the Visio diagram.
                         Diagram diagram = new Diagram(filePath);
 
-                        // Save as CSV using the correct overload
+                        // Save as CSV.
                         diagram.Save(outputCsvPath, SaveFileFormat.Csv);
 
-                        // Stop timing after saving
+                        // Stop timing.
                         sw.Stop();
+
+                        // Log successful conversion.
+                        logWriter.WriteLine($"{EscapeCsv(filePath)},{EscapeCsv(outputCsvPath)},{sw.ElapsedMilliseconds},Success");
+                        Console.WriteLine($"Converted '{filePath}' to CSV in {sw.ElapsedMilliseconds} ms.");
                     }
                     catch (Exception ex)
                     {
-                        // Log failure with zero duration
-                        Console.Error.WriteLine($"Error processing '{fileName}': {ex.Message}");
-                        DateTime errorTime = DateTime.Now;
-                        logWriter.WriteLine($"{fileName},{startTime:O},{errorTime:O},0");
-                        continue;
+                        // Stop timing on error.
+                        sw.Stop();
+
+                        // Log failure with error details.
+                        logWriter.WriteLine($"{EscapeCsv(filePath)},{EscapeCsv(outputCsvPath)},{sw.ElapsedMilliseconds},Error: {EscapeCsv(ex.Message)}");
+                        Console.Error.WriteLine($"Error converting '{filePath}': {ex.Message}");
                     }
-
-                    DateTime endTime = DateTime.Now;
-                    double durationSeconds = sw.Elapsed.TotalSeconds;
-
-                    // Write log entry
-                    logWriter.WriteLine($"{fileName},{startTime:O},{endTime:O},{durationSeconds}");
-                    Console.WriteLine($"Converted '{fileName}' to CSV in {durationSeconds:F2} seconds.");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to write log file: {ex.Message}");
+            Console.Error.WriteLine($"Failed to write log file '{logFilePath}': {ex.Message}");
         }
+    }
+
+    // Helper to escape CSV fields that may contain commas or quotes.
+    private static string EscapeCsv(string field)
+    {
+        if (field == null)
+            return "";
+
+        if (field.Contains("\""))
+            field = field.Replace("\"", "\"\"");
+
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
+            return $"\"{field}\"";
+
+        return field;
     }
 }

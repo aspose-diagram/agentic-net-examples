@@ -1,22 +1,16 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "output.pdf";
+        // Input and output file paths (can be passed as command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the source Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,47 +19,44 @@ class Program
 
         Diagram diagram = null;
 
-        // Load the Visio diagram inside a try‑catch to handle loading errors
+        // Load the diagram inside a try‑catch block
         try
         {
             diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
             return;
         }
 
-        // Prepare PDF save options (no special settings required for basic conversion)
-        PdfSaveOptions pdfOptions = new PdfSaveOptions();
+        FileStream outputStream = null;
 
-        FileStream fileStream = null;
-
-        // Perform the conversion inside a try‑catch and ensure the stream is closed in finally
+        // Perform the conversion, ensuring the stream is closed in finally
         try
         {
-            // Open a FileStream for the output PDF
-            fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
+            // Create (or overwrite) the output file stream
+            outputStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
 
-            // Save the diagram to the stream using the PDF options
-            diagram.Save(fileStream, pdfOptions);
+            // Save the diagram to the desired format (PDF in this example)
+            diagram.Save(outputStream, SaveFileFormat.Pdf);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Conversion failed: {ex.Message}");
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
         finally
         {
-            // Ensure the FileStream is properly closed even if an exception occurs
-            if (fileStream != null)
+            // Ensure the FileStream is properly closed
+            if (outputStream != null)
             {
                 try
                 {
-                    fileStream.Close();
+                    outputStream.Close();
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"Error closing FileStream: {ex.Message}");
+                    Console.Error.WriteLine($"Failed to close stream: {ex.Message}");
                 }
             }
         }

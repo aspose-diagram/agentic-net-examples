@@ -9,67 +9,60 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            Console.Error.WriteLine("Usage: Program <input.vsd> <output.csv>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
+        // Load the Visio diagram inside a using block as required.
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Define the custom property name we want to add to every shape.
-            const string customPropName = "MyCustomProp";
-            const string customPropLabel = "My Custom Property";
-            const string customPropValue = "DefaultValue";
-
-            // Iterate through all pages and shapes.
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape already contains the custom property.
-                    bool hasProp = false;
-                    foreach (Prop existingProp in shape.Props)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (existingProp.Name == customPropName)
-                        {
-                            hasProp = true;
-                            break;
-                        }
-                    }
+                        // Create a new custom property (Prop) to be exported as an extra CSV column.
+                        Prop customProp = new Prop();
 
-                    // Add the custom property if it does not exist.
-                    if (!hasProp)
-                    {
-                        Prop prop = new Prop();
-                        prop.Name = customPropName;                     // Property internal name.
-                        prop.Label.Value = customPropLabel;             // Column header shown in CSV.
-                        prop.Value.Val = customPropValue;               // Default value for the shape.
-                        prop.Type.Value = TypePropValue.String;        // Property type.
-                        shape.Props.Add(prop);
+                        // Set the internal name of the property.
+                        customProp.Name = "ExportColumn";
+
+                        // Set the label that will appear as the CSV column header.
+                        customProp.Label.Value = "Export Column";
+
+                        // Set the value for this shape. Here we use the shape ID to generate a unique value.
+                        customProp.Value.Val = $"Value_{shape.ID}";
+
+                        // Define the property type as a string.
+                        customProp.Type.Value = TypePropValue.String;
+
+                        // Add the custom property to the shape's property collection.
+                        shape.Props.Add(customProp);
                     }
                 }
-            }
 
-            // Export the diagram to CSV. Custom properties become additional columns.
-            diagram.Save(outputPath, SaveFileFormat.Csv);
-            Console.WriteLine($"Diagram exported successfully to CSV: {outputPath}");
+                // Export the diagram to CSV. The custom properties become additional columns.
+                diagram.Save(outputPath, SaveFileFormat.Csv);
+                Console.WriteLine($"Diagram exported successfully to \"{outputPath}\".");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -1,89 +1,88 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length == 0)
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputDirectory]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists.
+        string outputFolder = args[1];
+
+        // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Determine output directory (default to current directory).
-        string outputDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
-        if (!Directory.Exists(outputDir))
+        // Guard: ensure output folder exists or create it
+        if (!Directory.Exists(outputFolder))
         {
-            Console.Error.WriteLine($"Error: Output directory \"{outputDir}\" does not exist.");
-            return;
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
         }
 
         try
         {
-            // Load the source Visio diagram.
+            // Load the source Visio diagram inside a using block
             using (Diagram sourceDiagram = new Diagram(inputPath))
             {
                 int pageCount = sourceDiagram.Pages.Count;
-                Console.WriteLine($"Source diagram loaded. Pages count: {pageCount}");
 
-                // Iterate over each page and export it to a separate CSV file.
+                // Iterate over each page in the source diagram
                 for (int i = 0; i < pageCount; i++)
                 {
-                    // Retrieve the source page.
+                    // Retrieve the current page
                     Page srcPage = sourceDiagram.Pages[i];
 
-                    // Create a new empty diagram for the single page export.
+                    // Create a new empty diagram for the single page export
                     using (Diagram singlePageDiagram = new Diagram())
                     {
-                        // Remove the default empty page that a new Diagram contains.
-                        if (singlePageDiagram.Pages.Count > 0)
-                        {
-                            singlePageDiagram.Pages.Remove(singlePageDiagram.Pages[0]);
-                        }
-
-                        // Copy all masters from the source diagram to the new diagram.
+                        // Copy all masters from the source diagram to the new diagram
                         foreach (Master master in sourceDiagram.Masters)
                         {
                             singlePageDiagram.Masters.Add(master);
                         }
 
-                        // Ensure the page ID is unique within the new diagram.
-                        int maxPageId = 0;
-                        foreach (Page p in singlePageDiagram.Pages)
+                        // Create a new page and copy the source page content into it
+                        Page newPage = new Page();
+                        newPage.Copy(srcPage);
+                        singlePageDiagram.Pages.Add(newPage);
+
+                        // Remove the default empty page if it exists
+                        if (singlePageDiagram.Pages.Count > 1 && singlePageDiagram.Pages[0].ID == 0)
                         {
-                            if (p.ID > maxPageId)
-                                maxPageId = p.ID;
+                            singlePageDiagram.Pages.Remove(singlePageDiagram.Pages[0]);
                         }
-                        srcPage.ID = maxPageId + 1;
 
-                        // Add the source page to the new diagram.
-                        singlePageDiagram.Pages.Add(srcPage);
+                        // Build the output CSV file path
+                        string outputCsvPath = Path.Combine(outputFolder, $"Page_{i + 1}.csv");
 
-                        // Build the output CSV file path.
-                        string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.csv");
-
-                        // Save the single-page diagram as CSV.
-                        singlePageDiagram.Save(outputPath, SaveFileFormat.Csv);
-                        Console.WriteLine($"Exported page {i + 1} to \"{outputPath}\"");
+                        // Save the single-page diagram as CSV
+                        singlePageDiagram.Save(outputCsvPath, SaveFileFormat.Csv);
+                        Console.WriteLine($"Exported page {i + 1} to CSV: {outputCsvPath}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any unexpected errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

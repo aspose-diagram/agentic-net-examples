@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,7 +25,7 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram.
+            // Load the existing Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Ensure the diagram has at least one page.
@@ -38,15 +38,18 @@ class Program
                 // Get the first page (page index 0).
                 Page page = diagram.Pages[0];
 
-                // Add a rectangle shape using the built‑in "Rectangle" master.
-                // PinX and PinY are set to 1.0 inch; isCalculate is false.
-                long shapeId = page.AddShape(1.0, 1.0, "Rectangle", false);
+                // Define the master name for a rectangle shape.
+                string rectangleMasterName = "Rectangle";
 
-                // Retrieve the newly added shape object.
-                Shape shape = page.Shapes.GetShape(shapeId);
+                // Add a rectangle shape at an arbitrary position (e.g., PinX=2, PinY=2).
+                // The fourth argument 'isCalculate' is set to false to avoid automatic layout.
+                long shapeId = page.AddShape(2.0, 2.0, rectangleMasterName, false);
 
-                // Set the shape's width to 2 inches.
-                shape.XForm.Width.Value = 2.0;
+                // Retrieve the newly added shape using its ID.
+                Shape rectangleShape = page.Shapes.GetShape(shapeId);
+
+                // Set the width of the rectangle to 2 inches.
+                rectangleShape.XForm.Width.Value = 2.0;
 
                 // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
@@ -55,7 +58,7 @@ class Program
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

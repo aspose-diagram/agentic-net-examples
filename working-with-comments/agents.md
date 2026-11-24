@@ -4,10 +4,10 @@ display_name: Working With Comments
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,15 +63,14 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
 | `System.IO` | 35 | File, Stream, Path, Directory operations |
-| `System.Collections.Generic` | 11 | List, Dictionary, HashSet |
-| `Aspose.Diagram.Saving` | 9 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Text` | 3 | StringBuilder |
+| `System.Collections.Generic` | 10 | List, Dictionary, HashSet |
+| `Aspose.Diagram.Saving` | 7 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Text.Json` | 1 | JSON serialization |
+| `System.Net` | 1 | Supporting utilities |
 | `System.Data` | 1 | Supporting utilities |
 | `Aspose.Diagram.Properties` | 1 | Supporting utilities |
 | `Aspose.Cells` | 1 | Supporting utilities |
 | `System.Xml.Linq` | 1 | Supporting utilities |
-| `System.Net.Http` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -113,7 +112,7 @@ class Program
 | [create-a-utility-that-lists-comment-authors-alphabetically-and-outputs-the-list-to-a-text-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/create-a-utility-that-lists-comment-authors-alphabetically-and-outputs-the-list-to-a-text-file.cs) | `Diagram`, `Pages`, `diagram` | Create a utility that lists comment authors alphabetically and outputs the list to a text file |
 | [delete-comments-containing-a-specific-keyword-and-verify-the-diagram-no-longer-displays-them.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/delete-comments-containing-a-specific-keyword-and-verify-the-diagram-no-longer-displays-them.cs) | `Diagram`, `Pages`, `Save` | Delete comments containing a specific keyword and verify the diagram no longer displays them |
 | [detect-overlapping-comment-positions-and-automatically-adjust-their-coordinates-to-avoid-visual-clutter.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/detect-overlapping-comment-positions-and-automatically-adjust-their-coordinates-to-avoid-visual-clutter.cs) | `Diagram`, `Pages`, `Save` | Detect overlapping comment positions and automatically adjust their coordinates to avoid visual clutter |
-| [develop-a-script-to-migrate-comments-from-legacy-diagram-files-to-the-latest-file-format-version.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/develop-a-script-to-migrate-comments-from-legacy-diagram-files-to-the-latest-file-format-version.cs) | `Diagram`, `Pages`, `Save` | Develop a script to migrate comments from legacy diagram files to the latest file format version |
+| [develop-a-script-to-migrate-comments-from-legacy-diagram-files-to-the-latest-file-format-version.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/develop-a-script-to-migrate-comments-from-legacy-diagram-files-to-the-latest-file-format-version.cs) | `Diagram`, `Save`, `diagram` | Develop a script to migrate comments from legacy diagram files to the latest file format version |
 | [export-all-diagram-comments-to-a-json-file-including-position-coordinates-and-linked-shape-identifiers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/export-all-diagram-comments-to-a-json-file-including-position-coordinates-and-linked-shape-identifiers.cs) | `Diagram`, `Pages`, `diagram` | Export all diagram comments to a json file including position coordinates and linked shape identifiers |
 | [export-comment-data-to-an-html-file-formatting-each-comment-as-a-collapsible-section-with-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/export-comment-data-to-an-html-file-formatting-each-comment-as-a-collapsible-section-with-metadata.cs) | `Diagram`, `Pages`, `diagram` | Export comment data to an html file formatting each comment as a collapsible section with metadata |
 | [export-comment-metadata-to-a-relational-database-mapping-each-comment-to-its-associated-shape-id.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/export-comment-metadata-to-a-relational-database-mapping-each-comment-to-its-associated-shape-id.cs) | `Diagram`, `Pages`, `diagram` | Export comment metadata to a relational database mapping each comment to its associated shape id |
@@ -121,9 +120,9 @@ class Program
 | [filter-comments-by-creation-date-range-and-export-the-filtered-set-to-a-plain-text-log-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/filter-comments-by-creation-date-range-and-export-the-filtered-set-to-a-plain-text-log-file.cs) | `Diagram`, `Pages`, `diagram` | Filter comments by creation date range and export the filtered set to a plain text log file |
 | [generate-a-pdf-snapshot-of-a-diagram-with-comments-rendered-as-callout-annotations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/generate-a-pdf-snapshot-of-a-diagram-with-comments-rendered-as-callout-annotations.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Generate a pdf snapshot of a diagram with comments rendered as callout annotations |
 | [generate-a-summary-table-listing-comment-counts-per-page-and-save-it-as-an-excel-worksheet.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/generate-a-summary-table-listing-comment-counts-per-page-and-save-it-as-an-excel-worksheet.cs) | `Diagram`, `Pages`, `diagram` | Generate a summary table listing comment counts per page and save it as an excel worksheet |
-| [implement-a-feature-to-lock-comments-preventing-further-edits-unless-a-specific-unlock-flag-is-set.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/implement-a-feature-to-lock-comments-preventing-further-edits-unless-a-specific-unlock-flag-is-set.cs) | `Diagram`, `Pages`, `Save` | Implement a feature to lock comments preventing further edits unless a specific unlock flag is set |
+| [implement-a-feature-to-lock-comments-preventing-further-edits-unless-a-specific-unlock-flag-is-set.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/implement-a-feature-to-lock-comments-preventing-further-edits-unless-a-specific-unlock-flag-is-set.cs) | `Diagram`, `Page`, `Pages` | Implement a feature to lock comments preventing further edits unless a specific unlock flag is set |
 | [implement-batch-processing-to-add-a-standardized-disclaimer-comment-to-every-diagram-in-a-project-directory.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/implement-batch-processing-to-add-a-standardized-disclaimer-comment-to-every-diagram-in-a-project-directory.cs) | `Diagram`, `Pages`, `Save` | Implement batch processing to add a standardized disclaimer comment to every diagram in a project directory |
-| [implement-error-handling-to-gracefully-skip-diagrams-that-lack-comment-support-during-batch-operations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/implement-error-handling-to-gracefully-skip-diagrams-that-lack-comment-support-during-batch-operations.cs) | `Diagram`, `Pages`, `Save` | Implement error handling to gracefully skip diagrams that lack comment support during batch operations |
+| [implement-error-handling-to-gracefully-skip-diagrams-that-lack-comment-support-during-batch-operations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/implement-error-handling-to-gracefully-skip-diagrams-that-lack-comment-support-during-batch-operations.cs) | `Diagram`, `Pages`, `diagram` | Implement error handling to gracefully skip diagrams that lack comment support during batch operations |
 | [import-comments-from-an-xml-document-assigning-them-to-corresponding-shapes-based-on-matching-ids.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/import-comments-from-an-xml-document-assigning-them-to-corresponding-shapes-based-on-matching-ids.cs) | `Diagram`, `Pages`, `Save` | Import comments from an xml document assigning them to corresponding shapes based on matching ids |
 | [iterate-through-multiple-visio-files-in-a-folder-extracting-comment-timestamps-into-a-consolidated-report.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/iterate-through-multiple-visio-files-in-a-folder-extracting-comment-timestamps-into-a-consolidated-report.cs) | `Diagram`, `Pages`, `diagram` | Iterate through multiple visio files in a folder extracting comment timestamps into a consolidated report |
 | [load-a-diagram-enumerate-comment-ids-and-use-them-to-retrieve-detailed-comment-objects-via-api.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/load-a-diagram-enumerate-comment-ids-and-use-them-to-retrieve-detailed-comment-objects-via-api.cs) | `Diagram`, `Pages`, `diagram` | Load a diagram enumerate comment ids and use them to retrieve detailed comment objects via api |
@@ -135,7 +134,7 @@ class Program
 | [set-the-visibility-flag-of-all-comments-to-false-then-render-the-diagram-without-comment-overlays.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/set-the-visibility-flag-of-all-comments-to-false-then-render-the-diagram-without-comment-overlays.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Set the visibility flag of all comments to false then render the diagram without comment overlays |
 | [synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-reviews.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/synchronize-comment-visibility-settings-across-multiple-diagrams-to-ensure-consistent-presentation-during-stakeholder-reviews.cs) | `Diagram`, `ImageSaveOptions`, `Save` | Synchronize comment visibility settings across multiple diagrams to ensure consistent presentation during stakeholder reviews |
 | [update-author-names-of-existing-comments-using-a-provided-mapping-dictionary-then-save-the-changes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/update-author-names-of-existing-comments-using-a-provided-mapping-dictionary-then-save-the-changes.cs) | `Diagram`, `Save`, `diagram` | Update author names of existing comments using a provided mapping dictionary then save the changes |
-| [validate-that-comment-positions-stay-within-page-boundaries-after-diagram-scaling-operations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/validate-that-comment-positions-stay-within-page-boundaries-after-diagram-scaling-operations.cs) | `Diagram`, `Pages`, `diagram` | Validate that comment positions stay within page boundaries after diagram scaling operations |
+| [validate-that-comment-positions-stay-within-page-boundaries-after-diagram-scaling-operations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/validate-that-comment-positions-stay-within-page-boundaries-after-diagram-scaling-operations.cs) | `Diagram`, `Pages`, `Save` | Validate that comment positions stay within page boundaries after diagram scaling operations |
 | [validate-that-each-comment-contains-non-empty-text-and-report-any-violations-as-warnings.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-comments/validate-that-each-comment-contains-non-empty-text-and-report-any-violations-as-warnings.cs) | `Diagram`, `Pages`, `diagram` | Validate that each comment contains non empty text and report any violations as warnings |
 
 ## Command Reference
@@ -224,10 +223,13 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 - `Diagram`
 - `ImageSaveOptions`
+- `Page`
 - `Pages`
 - `PdfSaveOptions`
 - `Save`
 - `Shapes`
+- `StyleSheet`
+- `StyleSheets`
 - `diagram`
 - `page`
 
@@ -245,7 +247,7 @@ Frequently asked questions about **Working With Comments** in **Aspose.Diagram f
 
 **Q: How do I get started with Working With Comments in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -276,4 +278,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

@@ -6,53 +6,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
             return;
         }
 
-        string visioPath = args[0];
+        string diagramPath = args[0];
 
-        // Guard against missing input file.
-        if (!File.Exists(visioPath))
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {visioPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Retrieve diagram‑level creation date (if needed for audit).
-            DateTime diagramCreated = diagram.DocumentProps.TimeCreated;
-            Console.WriteLine($"Diagram created on: {diagramCreated:u}");
-            Console.WriteLine();
-
-            // Iterate through all pages and shapes to find OLE (foreign) objects.
+            // Iterate through all pages
             foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
+                // Iterate through all shapes on the page
                 foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // An OLE object is represented by a non‑null ForeignData instance.
-                    if (shape.ForeignData != null)
+                    // Check if the shape contains foreign (OLE) data
+                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
                     {
-                        // Source file name/path of the embedded OLE object.
-                        string sourceFile = shape.ForeignData.ObjectSourceFullName ?? "(unknown)";
+                        // Retrieve the source file name/path of the embedded OLE object
+                        string sourceFile = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
 
-                        // ShowAsIcon flag indicates whether the OLE is displayed as an icon.
-                        BOOL showAsIcon = shape.ForeignData.ShowAsIcon;
+                        // Prepare creation date information
+                        string creationInfo = "N/A";
 
-                        // Output metadata for audit.
+                        // If the source file path points to an existing file, get its creation time
+                        if (!string.IsNullOrEmpty(sourceFile) && File.Exists(sourceFile))
+                        {
+                            try
+                            {
+                                DateTime fileCreation = File.GetCreationTime(sourceFile);
+                                creationInfo = fileCreation.ToString("u");
+                            }
+                            catch (Exception ex)
+                            {
+                                // If accessing file info fails, log the error but continue
+                                Console.Error.WriteLine($"Failed to get creation time for '{sourceFile}': {ex.Message}");
+                            }
+                        }
+
+                        // Output the OLE object metadata
                         Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID}");
-                        Console.WriteLine($"  OLE Source File : {sourceFile}");
-                        Console.WriteLine($"  Show As Icon   : {(showAsIcon == BOOL.True ? "True" : "False")}");
-
-                        // Note: Per‑object creation date is not exposed by Aspose.Diagram.
-                        // The diagram creation date is reported above for overall audit context.
+                        Console.WriteLine($"  Source File: {sourceFile}");
+                        Console.WriteLine($"  Source File Creation Date (UTC): {creationInfo}");
+                        Console.WriteLine($"  Show As Icon: {(shape.ForeignData.ShowAsIcon == BOOL.True ? "True" : "False")}");
                         Console.WriteLine();
                     }
                 }
@@ -60,8 +69,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

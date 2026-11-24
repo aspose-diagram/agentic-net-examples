@@ -3,41 +3,47 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class LoggingStreamProvider : IStreamProvider
+class MyStreamProvider : IStreamProvider
 {
-    private string _basePath;
-
-    // Called before any streams are requested; store the default path.
+    // Called before a resource stream is created.
     public void InitStream(StreamProviderOptions options)
     {
-        _basePath = options.DefaultPath;
-        Console.WriteLine($"[StreamProvider] Initialized. Base path: {_basePath}");
-    }
+        // Log the resource path that will be used for the stream.
+        Console.WriteLine($"[StreamProvider] InitStream called for resource: {options.DefaultPath}");
 
-    // Called for each resource (image, shape, etc.) that needs a stream.
-    public Stream GetStream(string resourcePath)
-    {
-        // Log the creation of the resource stream.
-        Console.WriteLine($"[StreamProvider] Creating stream for resource: {resourcePath}");
-
-        // Combine the base path with the relative resource path.
-        string fullPath = Path.Combine(_basePath ?? string.Empty, resourcePath);
-
-        // Ensure the directory exists.
-        string directory = Path.GetDirectoryName(fullPath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        // Create the file stream for the resource.
+        try
         {
-            Directory.CreateDirectory(directory);
-        }
+            // Ensure the directory exists.
+            string directory = Path.GetDirectoryName(options.DefaultPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
-        // Return a writable file stream for the resource.
-        return new FileStream(fullPath, FileMode.Create, FileAccess.Write);
+            options.Stream = new FileStream(options.DefaultPath, FileMode.Create, FileAccess.Write);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[StreamProvider] Failed to create stream for {options.DefaultPath}: {ex.Message}");
+            throw;
+        }
     }
 
-    // Called after all streams have been processed; perform any cleanup if needed.
+    // Called after the resource stream has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        Console.WriteLine("[StreamProvider] Closed.");
+        // Log the closing of the stream.
+        Console.WriteLine($"[StreamProvider] CloseStream called for resource: {options.DefaultPath}");
+
+        try
+        {
+            options.Stream?.Close();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[StreamProvider] Failed to close stream for {options.DefaultPath}: {ex.Message}");
+        }
     }
 }
 
@@ -45,42 +51,80 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source Visio diagram.
-        string inputPath = "sample.vsdx";
+        // Path to the Aspose.Diagram license file (if you have one).
+        string licensePath = "Aspose.Diagram.lic";
+        if (!File.Exists(licensePath))
+        {
+            Console.Error.WriteLine($"License file not found: {licensePath}");
+            // Continue without a license; Aspose will work in evaluation mode.
+        }
+        else
+        {
+            try
+            {
+                License license = new License();
+                license.SetLicense(licensePath);
+                Console.WriteLine("License loaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to load license: {ex.Message}");
+                return;
+            }
+        }
+
+        // Input Visio diagram file.
+        string inputPath = "input.vsdx";
         if (!System.IO.File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Output directory for HTML files and resources.
+        string outputDir = "output_html";
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        // Load the diagram.
+        Diagram diagram;
         try
         {
-            // Load the diagram from the file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure HTML save options with the custom stream provider.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new LoggingStreamProvider();
-
-            // Output HTML file path.
-            string outputPath = "output.html";
-
-            // Save the diagram as HTML; resources will be handled by the stream provider.
-            diagram.Save(outputPath, htmlOptions);
-
-            Console.WriteLine($"Diagram successfully saved to HTML at: {outputPath}");
+            diagram = new Diagram(inputPath);
+            Console.WriteLine("Diagram loaded successfully.");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
+
+        // Configure HTML save options with the custom stream provider.
+        HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+        {
+            // Assign the custom provider that logs each resource creation.
+            StreamProvider = new MyStreamProvider()
+        };
+
+        // Define the main HTML output file path.
+        string htmlOutputPath = Path.Combine(outputDir, "diagram.html");
+
+        // Save the diagram as HTML.
+        try
+        {
+            diagram.Save(htmlOutputPath, htmlOptions);
+            Console.WriteLine($"Diagram exported to HTML successfully: {htmlOutputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save diagram as HTML: {ex.Message}");
         }
     }
 }

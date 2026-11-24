@@ -6,69 +6,69 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input diagram path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Guard against missing output directory.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
+        // Define output path with a suffix
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block (ensures proper disposal)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least two pages.
-                if (diagram.Pages.Count < 2)
+                // Verify that the diagram has at least two pages (zero‑based index)
+                if (diagram.Pages.Count <= 1)
                 {
-                    Console.Error.WriteLine("The diagram does not contain a second page.");
+                    Console.Error.WriteLine("Error: Diagram does not contain a second page.");
                     return;
                 }
 
-                // Page indices are zero‑based; page two is index 1.
+                // Access the second page (index 1)
                 Page page = diagram.Pages[1];
 
-                // Iterate all shapes on the second page.
+                // Iterate over all shapes on the second page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate all text fragments within the shape.
-                    foreach (FormatTxt txt in shape.Text.Value)
+                    // Ensure the shape has a Text property with content
+                    if (shape.Text == null || shape.Text.Value == null)
+                        continue;
+
+                    // Iterate over each text segment within the shape
+                    foreach (FormatTxt fmt in shape.Text.Value)
                     {
-                        Txt tx = txt as Txt;
-                        if (tx != null && tx.Text != null && tx.Text.Contains("Draft"))
+                        // Cast the segment to Txt to access the actual text string
+                        Txt txt = fmt as Txt;
+                        if (txt != null && txt.Text != null && txt.Text.Contains("Draft"))
                         {
-                            // Replace the phrase "Draft" with "Final".
-                            tx.Text = tx.Text.Replace("Draft", "Final");
+                            // Replace 'Draft' with 'Final' in the text
+                            txt.Text = txt.Text.Replace("Draft", "Final");
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the output file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

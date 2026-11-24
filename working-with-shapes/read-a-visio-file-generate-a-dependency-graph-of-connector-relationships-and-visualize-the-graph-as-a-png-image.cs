@@ -9,17 +9,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate command‑line arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputPngPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length >= 2 ? args[1] : "dependency_graph.png";
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,142 +28,120 @@ class Program
 
         try
         {
-            // Load the source Visio diagram.
+            // Load the source Visio diagram
             using (Diagram sourceDiagram = new Diagram(inputPath))
             {
-                // Ensure the source diagram has at least one page.
+                // Ensure the diagram has at least one page
                 if (sourceDiagram.Pages.Count == 0)
                 {
                     Console.Error.WriteLine("The source diagram contains no pages.");
                     return;
                 }
 
-                // Work with the first page of the source diagram.
                 Page sourcePage = sourceDiagram.Pages[0];
 
-                // -----------------------------------------------------------------
-                // Collect non‑connector shapes (nodes) from the source page.
-                // -----------------------------------------------------------------
-                List<long> nodeShapeIds = new List<long>();
+                // Collect IDs of non‑connector shapes (these will become graph nodes)
+                HashSet<long> nodeIds = new HashSet<long>();
                 foreach (Shape shape in sourcePage.Shapes)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // 1‑D shapes are connectors; we keep only 2‑D shapes.
+                    // 1‑D shapes are connectors; skip them
                     if (!shape.OneD)
                     {
-                        nodeShapeIds.Add(shape.ID);
+                        nodeIds.Add(shape.ID);
                     }
                 }
 
-                // Map original shape ID -> index in node list (optional, for layout).
-                Dictionary<long, int> shapeIdToIndex = new Dictionary<long, int>();
-                for (int i = 0; i < nodeShapeIds.Count; i++)
-                {
-                    shapeIdToIndex[nodeShapeIds[i]] = i;
-                }
-
-                // -----------------------------------------------------------------
-                // Add a new page that will contain the dependency graph.
-                // -----------------------------------------------------------------
-                Page graphPage = new Page();
-                graphPage.Name = "DependencyGraph";
-                sourceDiagram.Pages.Add(graphPage); // Add the new page to the diagram.
-
-                // Simple grid layout parameters (in inches).
-                const double cellWidth = 2.5;
-                const double cellHeight = 1.5;
-                const double startX = 1.0;
-                const double startY = 1.0;
-                int columns = (int)Math.Ceiling(Math.Sqrt(nodeShapeIds.Count));
-                if (columns == 0) columns = 1;
-
-                // Mapping from original shape ID to the newly created graph shape ID.
-                Dictionary<long, long> originalToGraphShapeId = new Dictionary<long, long>();
-
-                // -----------------------------------------------------------------
-                // Create a rectangle shape for each node and copy its text.
-                // -----------------------------------------------------------------
-                for (int i = 0; i < nodeShapeIds.Count; i++)
-                {
-                    long originalId = nodeShapeIds[i];
-                    int row = i / columns;
-                    int col = i % columns;
-                    double pinX = startX + col * cellWidth;
-                    double pinY = startY + row * cellHeight;
-
-                    // Add a rectangle master shape on the graph page.
-                    long newShapeId = graphPage.AddShape(pinX, pinY, "Rectangle", false);
-                    Shape newShape = graphPage.Shapes.GetShape(newShapeId);
-
-                    // Retrieve the original shape's text.
-                    Shape originalShape = sourcePage.Shapes.GetShape(originalId);
-                    string text = string.Empty;
-                    if (originalShape.Text != null)
-                    {
-                        text = originalShape.Text.Value.ToString();
-                    }
-
-                    // Clear any existing text and set the copied text.
-                    newShape.Text.Value.Clear();
-                    newShape.Text.Value.Add(new Txt(text));
-
-                    originalToGraphShapeId[originalId] = newShapeId;
-                }
-
-                // -----------------------------------------------------------------
-                // Iterate over all connections in the source page to create edges.
-                // -----------------------------------------------------------------
+                // Build edge list from the Connects collection (source → target)
+                List<(long fromId, long toId)> edges = new List<(long, long)>();
                 foreach (Connect connect in sourcePage.Connects)
                 {
-                    long fromId = connect.FromSheet;
-                    long toId = connect.ToSheet;
-
-                    // Ensure both ends are nodes we have added to the graph.
-                    if (!originalToGraphShapeId.ContainsKey(fromId) ||
-                        !originalToGraphShapeId.ContainsKey(toId))
-                    {
-                        continue; // Skip connectors that involve non‑node shapes.
-                    }
-
-                    long graphFromId = originalToGraphShapeId[fromId];
-                    long graphToId = originalToGraphShapeId[toId];
-
-                    // Add a dynamic connector shape.
-                    long connectorId = graphPage.AddShape(0, 0, "Dynamic connector", false);
-                    Shape connectorShape = graphPage.Shapes.GetShape(connectorId);
-
-                    // Optionally set connector routing style (right‑angle).
-                    connectorShape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-
-                    // Connect the two node shapes via the connector.
-                    graphPage.ConnectShapesViaConnector(
-                        graphFromId,
-                        ConnectionPointPlace.Right,
-                        graphToId,
-                        ConnectionPointPlace.Left,
-                        connectorId);
+                    edges.Add((connect.FromSheet, connect.ToSheet));
                 }
 
-                // -----------------------------------------------------------------
-                // Save only the graph page as a PNG image.
-                // -----------------------------------------------------------------
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                // Export only the newly added graph page.
-                pngOptions.PageIndex = sourceDiagram.Pages.Count - 1; // zero‑based index of the graph page.
-                pngOptions.PageCount = 1;
+                // Create a new diagram that will hold the dependency graph
+                using (Diagram graphDiagram = new Diagram())
+                {
+                    // The diagram is created with a default page; retrieve it
+                    if (graphDiagram.Pages.Count == 0)
+                    {
+                        Console.Error.WriteLine("Failed to create a page in the graph diagram.");
+                        return;
+                    }
 
-                sourceDiagram.Save(outputPath, pngOptions);
+                    Page graphPage = graphDiagram.Pages[0];
+
+                    // Map original shape IDs to newly created node shape IDs
+                    Dictionary<long, long> idMap = new Dictionary<long, long>();
+
+                    // Simple grid layout parameters (in inches)
+                    const double startX = 1.0;
+                    const double startY = 1.0;
+                    const double stepX = 2.5;
+                    const double stepY = 1.5;
+                    const int columns = 5;
+
+                    int index = 0;
+                    foreach (long originalId in nodeIds)
+                    {
+                        // Calculate grid position for the node
+                        int col = index % columns;
+                        int row = index / columns;
+                        double pinX = startX + col * stepX;
+                        double pinY = startY + row * stepY;
+
+                        // Add a rectangle shape representing the node
+                        long newShapeId = graphPage.AddShape(pinX, pinY, "Rectangle", false); // BOOL.False replaced with false
+                        idMap[originalId] = newShapeId;
+
+                        // Retrieve the shape object to set its text
+                        Shape nodeShape = graphPage.Shapes.GetShape(newShapeId);
+                        if (nodeShape != null && nodeShape.Text != null)
+                        {
+                            // Clear any existing text and add the original shape ID as label
+                            nodeShape.Text.Value.Clear();
+                            nodeShape.Text.Value.Add(new Txt(originalId.ToString()));
+                        }
+
+                        index++;
+                    }
+
+                    // Add connectors for each edge
+                    foreach (var edge in edges)
+                    {
+                        // Both ends must correspond to node shapes; skip otherwise
+                        if (!idMap.TryGetValue(edge.fromId, out long fromShapeId) ||
+                            !idMap.TryGetValue(edge.toId, out long toShapeId))
+                        {
+                            continue;
+                        }
+
+                        // Add a dynamic connector shape (position is irrelevant; it will be glued)
+                        long connectorId = graphPage.AddShape(0, 0, "Dynamic connector", false); // BOOL.False replaced with false
+
+                        // Connect the two node shapes via the connector
+                        graphPage.ConnectShapesViaConnector(
+                            fromShapeId,
+                            ConnectionPointPlace.Right,
+                            toShapeId,
+                            ConnectionPointPlace.Left,
+                            connectorId);
+                    }
+
+                    // Export the graph diagram to a PNG image
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        PageIndex = 0,
+                        PageCount = 1
+                    };
+
+                    graphDiagram.Save(outputPath, pngOptions);
+                    Console.WriteLine($"Dependency graph saved to: {outputPath}");
+                }
             }
-
-            Console.WriteLine($"Dependency graph saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

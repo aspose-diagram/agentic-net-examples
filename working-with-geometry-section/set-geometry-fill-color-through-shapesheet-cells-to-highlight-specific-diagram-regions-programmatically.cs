@@ -6,63 +6,59 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
-            return;
-        }
+        // Input and output file paths (provide via command line or use defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Load the Visio diagram inside a using block as required
         try
         {
-            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages.
+                // Iterate through all pages
                 for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
                     Aspose.Diagram.Page page = diagram.Pages[pageIndex];
 
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the current page
                     for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
-                        Aspose.Diagram.Shape shape = page.Shapes[shapeIndex];
+                        Shape shape = page.Shapes[shapeIndex];
 
-                        // Example condition: highlight shapes with even IDs.
-                        if (shape.ID % 2 == 0)
-                        {
-                            // Ensure the shape has a solid fill pattern.
-                            shape.Fill.FillPattern.Value = 1; // 1 = solid
+                        // Example condition: highlight only shapes with a specific name prefix (optional)
+                        // If no specific condition is needed, this block will apply to all shapes.
+                        // Uncomment and adjust the condition as required.
+                        // if (shape.NameU != null && shape.NameU.StartsWith("Highlight"))
+                        // {
+                        //     // Apply highlight color
+                        // }
 
-                            // Set the foreground fill color to a bright yellow.
-                            shape.Fill.FillForegnd.Value = "#FFFF00";
+                        // Set fill pattern to solid (value 1)
+                        shape.Fill.FillPattern.Value = 1;
 
-                            // Optionally set background fill color (not required for solid fill).
-                            shape.Fill.FillBkgnd.Value = "#FFFFFF";
+                        // Set foreground fill color to a bright yellow (hex format)
+                        shape.Fill.FillForegnd.Value = "#FFFF00";
 
-                            // Ensure the fill is fully opaque (0.0 = opaque, 1.0 = transparent).
-                            shape.Fill.FillForegndTrans.Value = 0.0;
-                        }
+                        // Optional: ensure background color is transparent (no background)
+                        shape.Fill.FillBkgnd.Value = "#FFFFFF";
                     }
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format.
+                // Save the modified diagram to the output path using VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

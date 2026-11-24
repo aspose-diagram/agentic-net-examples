@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -26,7 +26,7 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block to ensure proper disposal
+            // Load the Visio diagram inside a using block
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // ------------------------------------------------------------
@@ -34,13 +34,12 @@ class Program
                 // ------------------------------------------------------------
                 StyleSheet underlineStyle = new StyleSheet();
                 underlineStyle.ID = diagram.StyleSheets.Count + 1;
-                // Optional: give the stylesheet a name (if supported)
-                // underlineStyle.NameU = "UnderlineStyle";
+                underlineStyle.Name = "CustomUnderlineStyle";
 
                 // Define a character style with underline
                 Aspose.Diagram.Char underlineChar = new Aspose.Diagram.Char();
+                underlineChar.IX = 0; // character index
                 underlineChar.Style.Value = StyleValue.Underline;
-                // Add the character definition to the stylesheet
                 underlineStyle.Chars.Add(underlineChar);
 
                 // Add the stylesheet to the diagram's collection
@@ -48,27 +47,28 @@ class Program
 
                 // ------------------------------------------------------------
                 // Apply the underline stylesheet to all heading shapes
+                // For this example, a heading shape is identified by its name containing "Heading"
                 // ------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Identify heading shapes by name containing "Heading"
-                        // (adjust the condition as needed for your diagram)
-                        if (!string.IsNullOrEmpty(shape.NameU) &&
-                            shape.NameU.IndexOf("Heading", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Identify heading shapes by name (case‑insensitive)
+                        if (!string.IsNullOrEmpty(shape.Name) &&
+                            shape.Name.IndexOf("Heading", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            // Apply the stylesheet to the shape's text
+                            // Assign the custom underline stylesheet to the shape's text style
                             shape.TextStyle = underlineStyle;
 
-                            // Ensure each character in the shape also has underline style
-                            foreach (Aspose.Diagram.Char c in shape.Chars)
+                            // Ensure each character explicitly has the underline style
+                            for (int i = 0; i < shape.Chars.Count; i++)
                             {
-                                c.Style.Value = StyleValue.Underline;
+                                shape.Chars[i].Style.Value = StyleValue.Underline;
                             }
                         }
                     }
@@ -83,7 +83,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

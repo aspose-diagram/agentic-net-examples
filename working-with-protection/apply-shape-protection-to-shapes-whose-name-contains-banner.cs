@@ -6,38 +6,43 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Determine output path
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_protected.vsdx");
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate shapes using indexer
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Check if the shape's name contains "Banner" (case‑insensitive).
+                    Shape shape = page.Shapes[i];
+
+                    // Check if the shape's name contains "Banner" (case-insensitive)
                     if (!string.IsNullOrEmpty(shape.NameU) &&
                         shape.NameU.IndexOf("Banner", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Apply protection to the shape.
+                        // Apply protection to the shape by setting various lock flags to TRUE
                         shape.Protection.LockAspect.Value = BOOL.True;
                         shape.Protection.LockBegin.Value = BOOL.True;
                         shape.Protection.LockCalcWH.Value = BOOL.True;
@@ -62,13 +67,13 @@ class Program
                 }
             }
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with protection applied to \"Banner\" shapes: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

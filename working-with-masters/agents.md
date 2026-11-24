@@ -4,10 +4,10 @@ display_name: Working With Masters
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 29
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 29 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,8 +63,8 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 29 | Core diagram API |
 | `System` | 29 | Console, Math, DateTime, Exception |
 | `System.IO` | 29 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 9 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 9 | List, Dictionary, HashSet |
+| `System.Collections.Generic` | 8 | List, Dictionary, HashSet |
+| `Aspose.Diagram.Saving` | 6 | Save options (PDF, PNG, HTML, SVG, XPS) |
 | `System.Xml.Linq` | 1 | Supporting utilities |
 | `System.Text.Json` | 1 | JSON serialization |
 | `System.Xml` | 1 | Supporting utilities |
@@ -98,10 +98,10 @@ class Program
 
 | File | Key APIs | Task |
 |------|----------|------|
-| [add-a-hyperlink-to-a-master-shape-that-opens-a-help-document-when-clicked.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/add-a-hyperlink-to-a-master-shape-that-opens-a-help-document-when-clicked.cs) | `Diagram`, `Pages`, `Save` | Add a hyperlink to a master shape that opens a help document when clicked |
+| [add-a-hyperlink-to-a-master-shape-that-opens-a-help-document-when-clicked.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/add-a-hyperlink-to-a-master-shape-that-opens-a-help-document-when-clicked.cs) | `AddShape`, `Diagram`, `Save` | Add a hyperlink to a master shape that opens a help document when clicked |
 | [apply-a-custom-style-to-all-masters-including-fill-color-and-shadow-effects.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/apply-a-custom-style-to-all-masters-including-fill-color-and-shadow-effects.cs) | `Diagram`, `Masters`, `Save` | Apply a custom style to all masters including fill color and shadow effects |
 | [apply-a-rotation-transformation-to-all-masters-that-have-a-specific-tag-attribute.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/apply-a-rotation-transformation-to-all-masters-that-have-a-specific-tag-attribute.cs) | `Diagram`, `Masters`, `Save` | Apply a rotation transformation to all masters that have a specific tag attribute |
-| [batch-process-a-folder-of-visio-files-to-remove-unused-masters-and-reduce-file-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/batch-process-a-folder-of-visio-files-to-remove-unused-masters-and-reduce-file-size.cs) | `Diagram`, `Save`, `diagram` | Batch process a folder of visio files to remove unused masters and reduce file size |
+| [batch-process-a-folder-of-visio-files-to-remove-unused-masters-and-reduce-file-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/batch-process-a-folder-of-visio-files-to-remove-unused-masters-and-reduce-file-size.cs) | `Diagram`, `Masters`, `Pages` | Batch process a folder of visio files to remove unused masters and reduce file size |
 | [clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/clone-an-existing-master-modify-its-text-block-and-apply-it-to-selected-shapes.cs) | `Diagram`, `Masters`, `Pages` | Clone an existing master modify its text block and apply it to selected shapes |
 | [convert-master-shape-text-to-uppercase-while-preserving-original-formatting-and-alignment.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/convert-master-shape-text-to-uppercase-while-preserving-original-formatting-and-alignment.cs) | `Diagram`, `Pages`, `Save` | Convert master shape text to uppercase while preserving original formatting and alignment |
 | [create-a-master-containing-a-data-graphic-and-embed-it-into-a-diagram-for-dynamic-visualization.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/create-a-master-containing-a-data-graphic-and-embed-it-into-a-diagram-for-dynamic-visualization.cs) | `AddShape`, `Diagram`, `Master` | Create a master containing a data graphic and embed it into a diagram for dynamic visualization |
@@ -113,15 +113,15 @@ class Program
 | [export-master-shape-thumbnails-as-png-images-for-use-in-a-custom-shape-picker-ui.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/export-master-shape-thumbnails-as-png-images-for-use-in-a-custom-shape-picker-ui.cs) | `Diagram`, `ImageSaveOptions`, `Masters` | Export master shape thumbnails as png images for use in a custom shape picker ui |
 | [generate-a-report-summarizing-master-usage-frequency-across-all-pages-in-a-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/generate-a-report-summarizing-master-usage-frequency-across-all-pages-in-a-diagram.cs) | `Diagram`, `Pages`, `Shapes` | Generate a report summarizing master usage frequency across all pages in a diagram |
 | [implement-a-filter-to-list-masters-containing-a-specific-custom-property-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/implement-a-filter-to-list-masters-containing-a-specific-custom-property-value.cs) | `Diagram`, `Masters`, `diagram` | Implement a filter to list masters containing a specific custom property value |
-| [implement-error-handling-to-catch-exceptions-when-loading-diagrams-with-corrupted-master-definitions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/implement-error-handling-to-catch-exceptions-when-loading-diagrams-with-corrupted-master-definitions.cs) | `Diagram`, `Masters`, `Save` | Implement error handling to catch exceptions when loading diagrams with corrupted master definitions |
+| [implement-error-handling-to-catch-exceptions-when-loading-diagrams-with-corrupted-master-definitions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/implement-error-handling-to-catch-exceptions-when-loading-diagrams-with-corrupted-master-definitions.cs) | `Diagram`, `Masters`, `Pages` | Implement error handling to catch exceptions when loading diagrams with corrupted master definitions |
 | [import-master-definitions-from-an-xml-file-and-integrate-them-into-a-loaded-visio-document.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/import-master-definitions-from-an-xml-file-and-integrate-them-into-a-loaded-visio-document.cs) | `AddMaster`, `Diagram`, `Save` | Import master definitions from an xml file and integrate them into a loaded visio document |
-| [load-a-diagram-change-the-master-of-a-group-shape-and-preserve-its-subshape-layout.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/load-a-diagram-change-the-master-of-a-group-shape-and-preserve-its-subshape-layout.cs) | `Diagram`, `Masters`, `Pages` | Load a diagram change the master of a group shape and preserve its subshape layout |
+| [load-a-diagram-change-the-master-of-a-group-shape-and-preserve-its-subshape-layout.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/load-a-diagram-change-the-master-of-a-group-shape-and-preserve-its-subshape-layout.cs) | `Diagram`, `Masters`, `Save` | Load a diagram change the master of a group shape and preserve its subshape layout |
 | [load-a-visio-file-and-list-all-master-shapes-with-their-unique-identifiers.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/load-a-visio-file-and-list-all-master-shapes-with-their-unique-identifiers.cs) | `Diagram`, `Masters`, `diagram` | Load a visio file and list all master shapes with their unique identifiers |
 | [programmatically-assign-a-custom-id-to-each-master-for-easier-lookup-in-large-diagrams.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/programmatically-assign-a-custom-id-to-each-master-for-easier-lookup-in-large-diagrams.cs) | `Diagram`, `Masters`, `Save` | Programmatically assign a custom id to each master for easier lookup in large diagrams |
-| [programmatically-reorder-masters-in-the-stencil-to-prioritize-frequently-used-shapes-for-faster-access.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/programmatically-reorder-masters-in-the-stencil-to-prioritize-frequently-used-shapes-for-faster-access.cs) | `Diagram` | Programmatically reorder masters in the stencil to prioritize frequently used shapes for faster access |
+| [programmatically-reorder-masters-in-the-stencil-to-prioritize-frequently-used-shapes-for-faster-access.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/programmatically-reorder-masters-in-the-stencil-to-prioritize-frequently-used-shapes-for-faster-access.cs) | `Diagram`, `diagram` | Programmatically reorder masters in the stencil to prioritize frequently used shapes for faster access |
 | [remove-all-masters-not-referenced-on-any-page-to-clean-up-the-stencil.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/remove-all-masters-not-referenced-on-any-page-to-clean-up-the-stencil.cs) | `Diagram`, `Masters`, `Pages` | Remove all masters not referenced on any page to clean up the stencil |
 | [replace-all-instances-of-a-specific-master-with-another-master-while-preserving-connections.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/replace-all-instances-of-a-specific-master-with-another-master-while-preserving-connections.cs) | `AddShape`, `Diagram`, `Masters` | Replace all instances of a specific master with another master while preserving connections |
-| [set-a-default-master-for-newly-added-shapes-when-creating-diagrams-programmatically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/set-a-default-master-for-newly-added-shapes-when-creating-diagrams-programmatically.cs) | `AddMaster`, `AddShape`, `Diagram` | Set a default master for newly added shapes when creating diagrams programmatically |
+| [set-a-default-master-for-newly-added-shapes-when-creating-diagrams-programmatically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/set-a-default-master-for-newly-added-shapes-when-creating-diagrams-programmatically.cs) | `AddMaster`, `Diagram`, `Save` | Set a default master for newly added shapes when creating diagrams programmatically |
 | [set-the-default-line-weight-for-all-masters-to-a-thin-value-for-consistent-styling.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/set-the-default-line-weight-for-all-masters-to-a-thin-value-for-consistent-styling.cs) | `Diagram`, `Masters`, `Save` | Set the default line weight for all masters to a thin value for consistent styling |
 | [synchronize-master-definitions-across-multiple-visio-files-to-ensure-consistent-branding-organization-wide.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/synchronize-master-definitions-across-multiple-visio-files-to-ensure-consistent-branding-organization-wide.cs) | `Diagram` | Synchronize master definitions across multiple visio files to ensure consistent branding organization wide |
 | [update-the-line-color-of-all-masters-that-use-a-dashed-line-style.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-masters/update-the-line-color-of-all-masters-that-use-a-dashed-line-style.cs) | `Diagram`, `Masters`, `Save` | Update the line color of all masters that use a dashed line style |
@@ -220,9 +220,11 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Masters`
 - `Page`
 - `Pages`
+- `Prop`
 - `Save`
 - `Shape`
 - `Shapes`
+- `SolutionXMLs`
 - `diagram`
 - `master`
 - `page`
@@ -242,7 +244,7 @@ Frequently asked questions about **Working With Masters** in **Aspose.Diagram fo
 
 **Q: How do I get started with Working With Masters in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -274,4 +276,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 29 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 29 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

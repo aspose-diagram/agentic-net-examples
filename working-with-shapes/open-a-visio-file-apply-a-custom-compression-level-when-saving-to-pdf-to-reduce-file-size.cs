@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PDF file path.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -26,26 +26,26 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure PDF save options with custom compression.
+            // Configure PDF save options with compression settings
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Explicitly set the target format.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Reduce image quality and resolution to lower PDF size
+            pdfOptions.JpegQuality = 75;               // JPEG quality (0-100)
+            pdfOptions.HorizontalResolution = 150;    // DPI
+            pdfOptions.VerticalResolution = 150;      // DPI
 
-            // Apply text compression (Flate) to reduce file size.
-            pdfOptions.TextCompression = PdfTextCompression.Flate;
+            // Do not export hidden pages
+            pdfOptions.ExportHiddenPage = false;
 
-            // Save the diagram as PDF using the configured options.
+            // Save the diagram as PDF with the specified options
             diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram saved to PDF successfully: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during PDF conversion: {ex.Message}");
+            Console.Error.WriteLine($"Error processing file: {ex.Message}");
         }
     }
 }

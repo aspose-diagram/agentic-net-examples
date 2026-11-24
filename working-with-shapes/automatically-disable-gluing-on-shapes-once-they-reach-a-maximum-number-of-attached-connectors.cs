@@ -2,73 +2,71 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Maximum number of connectors allowed to be glued to a shape.
+    private const int MaxGluedConnectors = 3;
+
     static void Main(string[] args)
     {
-        // Validate arguments: input file, output file, optional max connectors
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> [maxConnectors]");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        int maxConnectors = 3; // default limit
 
-        if (args.Length >= 3 && !int.TryParse(args[2], out maxConnectors))
-        {
-            Console.Error.WriteLine("Invalid maxConnectors value. It must be an integer.");
-            return;
-        }
-
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block (required pattern)
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the page
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Get all 1‑D connectors glued to this shape
+                        // Retrieve IDs of all 1‑D (connector) shapes glued to this shape.
                         long[] gluedConnectorIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
 
-                        // If the number of glued connectors exceeds the limit, disable further gluing
-                        if (gluedConnectorIds != null && gluedConnectorIds.Length > maxConnectors)
+                        // If the shape already has the maximum allowed glued connectors,
+                        // disable further dynamic gluing for this shape.
+                        if (gluedConnectorIds != null && gluedConnectorIds.Length >= MaxGluedConnectors)
                         {
-                            Console.WriteLine($"Shape ID {shape.ID} has {gluedConnectorIds.Length} glued connectors (limit {maxConnectors}). Disabling dynamic glue.");
-
-                            // Set the shape's glue type to prevent additional dynamic gluing
-                            shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+                            // Ensure the Misc collection exists before accessing GlueType.
+                            if (shape.Misc != null)
+                            {
+                                // Set the glue type to disallow dynamic glue.
+                                shape.Misc.GlueType.Value = GlueTypeValue.NoAllowDynamicGlue;
+                            }
                         }
                     }
                 }
 
-                // Save the modified diagram to the output path in VSDX format
+                // Save the modified diagram using the correct overload.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram processed and saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

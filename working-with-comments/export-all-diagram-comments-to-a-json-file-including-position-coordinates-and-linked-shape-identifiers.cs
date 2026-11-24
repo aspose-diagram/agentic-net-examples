@@ -3,13 +3,21 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Simple DTO for JSON serialization
+    private class CommentInfo
+    {
+        public string Comment { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public int ShapeId { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Validate arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputJsonPath>");
@@ -19,65 +27,58 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                var commentList = new List<object>();
-                int pageIndex = 0;
+                var allComments = new List<CommentInfo>();
 
-                // Iterate through each page in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access page-level annotations (comments).
+                    // Access page-level annotations (comments)
                     foreach (Annotation ann in page.PageSheet.Annotations)
                     {
-                        // Retrieve comment text.
+                        // Extract comment text safely
                         string commentText = ann.Comment?.Value ?? string.Empty;
 
-                        // Retrieve position coordinates if available.
-                        double posX = ann.X?.Value ?? 0.0;
-                        double posY = ann.Y?.Value ?? 0.0;
+                        // Extract position coordinates (X, Y) if available
+                        double x = ann.X?.Value ?? 0.0;
+                        double y = ann.Y?.Value ?? 0.0;
 
-                        // Retrieve linked shape identifier (if any).
+                        // Extract linked shape identifier (0 if not linked)
                         int shapeId = ann.ShapeID;
 
-                        // Build a simple object representing the comment.
-                        var commentInfo = new
+                        // Add to the collection
+                        allComments.Add(new CommentInfo
                         {
-                            PageIndex = pageIndex,
-                            Text = commentText,
-                            X = posX,
-                            Y = posY,
-                            ShapeID = shapeId
-                        };
-
-                        commentList.Add(commentInfo);
+                            Comment = commentText,
+                            X = x,
+                            Y = y,
+                            ShapeId = shapeId
+                        });
                     }
-
-                    pageIndex++;
                 }
 
-                // Serialize the comment collection to JSON with indentation.
-                string json = JsonSerializer.Serialize(commentList, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize the comments list to JSON with indentation
+                string json = JsonSerializer.Serialize(allComments, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write JSON to the specified output file.
+                // Write JSON to the specified output file
                 File.WriteAllText(outputPath, json);
-
-                Console.WriteLine($"Exported {commentList.Count} comments to \"{outputPath}\".");
+                Console.WriteLine($"Exported {allComments.Count} comments to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

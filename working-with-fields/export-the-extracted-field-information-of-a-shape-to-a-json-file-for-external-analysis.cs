@@ -6,116 +6,109 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Model classes for JSON serialization
-    private class FieldInfo
-    {
-        public string Value { get; set; }
-        public string Type { get; set; }
-        public string Calendar { get; set; }
-    }
-
-    private class ShapeInfo
-    {
-        public long Id { get; set; }
-        public string NameU { get; set; }
-        public List<FieldInfo> Fields { get; set; }
-    }
-
-    private class PageInfo
-    {
-        public int Index { get; set; }
-        public List<ShapeInfo> Shapes { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <shapeId> <outputJsonPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string shapeIdArg = args[1];
+        string outputPath = args[2];
 
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Parse shape ID.
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Error: Shape ID \"{shapeIdArg}\" is not a valid integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare collection to hold extracted information
-            List<PageInfo> pagesData = new List<PageInfo>();
-            int pageIndex = 0;
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                PageInfo pageInfo = new PageInfo
-                {
-                    Index = pageIndex,
-                    Shapes = new List<ShapeInfo>()
-                };
+                Shape targetShape = null;
 
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Search for the shape with the specified ID across all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Process only non-deleted shapes
-                    if (shape.Del == BOOL.False)
+                    // GetShape returns null if the shape is not on this page.
+                    Shape shape = page.Shapes.GetShape(targetShapeId);
+                    if (shape != null)
                     {
-                        ShapeInfo shapeInfo = new ShapeInfo
-                        {
-                            Id = shape.ID,
-                            NameU = shape.NameU,
-                            Fields = new List<FieldInfo>()
-                        };
-
-                        // Iterate through all fields of the shape
-                        foreach (Field field in shape.Fields)
-                        {
-                            FieldInfo fieldInfo = new FieldInfo
-                            {
-                                // Extract the field's textual value
-                                Value = field.Value?.Val,
-                                // Extract the field type as string (enum)
-                                Type = field.Type?.Value.ToString(),
-                                // Extract calendar information if present
-                                Calendar = field.Calendar?.Value.ToString()
-                            };
-
-                            shapeInfo.Fields.Add(fieldInfo);
-                        }
-
-                        pageInfo.Shapes.Add(shapeInfo);
+                        targetShape = shape;
+                        break;
                     }
                 }
 
-                pagesData.Add(pageInfo);
-                pageIndex++;
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Error: No shape with ID {targetShapeId} was found in the diagram.");
+                    return;
+                }
+
+                // Collect field information from the shape.
+                List<FieldInfo> fieldsInfo = new List<FieldInfo>();
+
+                // Ensure the shape actually contains fields.
+                if (targetShape.Fields != null && targetShape.Fields.Count > 0)
+                {
+                    foreach (Field field in targetShape.Fields)
+                    {
+                        // Extract the displayed value.
+                        string value = field.Value?.Val ?? string.Empty;
+
+                        // Extract the field type as a string.
+                        string type = field.Type != null ? field.Type.Value.ToString() : "Undefined";
+
+                        // Extract the underlying formula, if any.
+                        string formula = field.Value?.Ufev?.F ?? string.Empty;
+
+                        fieldsInfo.Add(new FieldInfo
+                        {
+                            Value = value,
+                            Type = type,
+                            Formula = formula
+                        });
+                    }
+                }
+                else
+                {
+                    Console.Error.WriteLine($"Warning: Shape ID {targetShapeId} contains no fields.");
+                }
+
+                // Serialize the collected field data to JSON.
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(fieldsInfo, jsonOptions);
+
+                // Write JSON to the specified output file.
+                File.WriteAllText(outputPath, json);
+                Console.WriteLine($"Field information exported successfully to \"{outputPath}\".");
             }
-
-            // Serialize the collected data to JSON with indentation
-            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-            string jsonOutput = JsonSerializer.Serialize(pagesData, jsonOptions);
-
-            // Write JSON to the specified output file
-            File.WriteAllText(outputPath, jsonOutput);
-            Console.WriteLine($"Field information exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any errors from Aspose.Diagram operations or I/O
+            // Capture any Aspose or I/O errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
+    }
+
+    // DTO for JSON serialization of field data.
+    private class FieldInfo
+    {
+        public string? Value { get; set; }
+        public string? Type { get; set; }
+        public string? Formula { get; set; }
     }
 }

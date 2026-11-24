@@ -1,130 +1,112 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     /// <summary>
     /// Applies a preset theme to the specified shape.
-    /// Returns true if the theme was applied successfully; otherwise false.
     /// </summary>
     /// <param name="shape">The shape to which the theme will be applied.</param>
-    /// <param name="themeName">Name of the theme (case‑insensitive).</param>
-    /// <returns>Boolean indicating success.</returns>
+    /// <param name="themeName">The name of the preset theme (e.g., "Bubble", "Clouds").</param>
+    /// <returns>True if the theme was applied successfully; otherwise, false.</returns>
     static bool ApplyThemeToShape(Shape shape, string themeName)
     {
-        // Guard against a null shape reference.
+        // Validate the shape reference and ensure it is not deleted.
         if (shape == null)
         {
-            Console.Error.WriteLine("Shape is null.");
+            Console.Error.WriteLine("Shape reference is null.");
             return false;
         }
 
-        // Skip shapes that are marked as deleted.
         if (shape.Del == BOOL.True)
         {
-            Console.Error.WriteLine("Shape is marked as deleted.");
+            Console.Error.WriteLine("Cannot apply a theme to a deleted shape.");
             return false;
         }
 
-        // Map the supplied theme name to a PresetThemeValue enum.
-        // Only the confirmed enum members are supported to avoid compilation errors.
-        PresetThemeValue presetTheme;
-        switch (themeName?.Trim().ToLowerInvariant())
+        // Try to parse the theme name to the corresponding PresetThemeValue enum.
+        if (Enum.TryParse<PresetThemeValue>(themeName, ignoreCase: true, out var presetTheme))
         {
-            case "bubble":
-                presetTheme = PresetThemeValue.Bubble;
-                break;
-            case "clouds":
-                presetTheme = PresetThemeValue.Clouds;
-                break;
-            default:
-                Console.Error.WriteLine($"Unsupported or unknown theme name: '{themeName}'.");
+            try
+            {
+                // Apply the preset theme. The property is write‑only.
+                shape.PresetTheme = presetTheme;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error applying theme: {ex.Message}");
                 return false;
+            }
         }
-
-        try
+        else
         {
-            // Apply the preset theme to the shape.
-            shape.PresetTheme = presetTheme;
-
-            // Optionally set a variant and quick style (using the first available values).
-            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-            // Theme applied successfully.
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error applying theme: {ex.Message}");
+            Console.Error.WriteLine($"Invalid theme name '{themeName}'.");
             return false;
         }
     }
 
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path.
+        // Expect two arguments: input diagram path and theme name.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <themeName>");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        string diagramPath = args[0];
+        string themeName = args[1];
 
         // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block (Diagram implements IDisposable).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Ensure the diagram has at least one page and one shape.
+            if (diagram.Pages.Count == 0)
             {
-                // Verify that the diagram contains at least one page.
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Work with the first page.
-                Page firstPage = diagram.Pages[0];
-
-                // Verify that the page contains at least one shape.
-                if (firstPage.Shapes.Count == 0)
-                {
-                    Console.Error.WriteLine("The first page contains no shapes.");
-                    return;
-                }
-
-                // Retrieve the first shape on the page.
-                Shape shape = firstPage.Shapes[0];
-
-                // Example theme name; could be replaced with a command‑line argument or other source.
-                string themeName = "Bubble";
-
-                // Apply the theme using the reusable method.
-                bool success = ApplyThemeToShape(shape, themeName);
-                if (!success)
-                {
-                    Console.Error.WriteLine("Failed to apply the theme to the shape.");
-                    return;
-                }
-
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
+
+            if (diagram.Pages[0].Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
+
+            // Retrieve the first shape on the first page.
+            Shape shape = diagram.Pages[0].Shapes[0];
+
+            // Apply the requested theme to the shape.
+            bool success = ApplyThemeToShape(shape, themeName);
+            if (!success)
+            {
+                Console.Error.WriteLine("Failed to apply the theme.");
+                return;
+            }
+
+            // Prepare output path (original name with "_themed" suffix).
+            string directory = Path.GetDirectoryName(diagramPath);
+            string filenameWithoutExt = Path.GetFileNameWithoutExtension(diagramPath);
+            string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_themed.vsdx");
+
+            // Save the modified diagram in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Theme applied successfully. Saved to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Capture any Aspose or I/O errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

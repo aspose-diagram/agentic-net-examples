@@ -1,98 +1,125 @@
 using System;
 using System.IO;
 using System.Data;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
-        if (args.Length < 2)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+
+        // Output Visio file path
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the diagram inside a using block
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // ------------------------------------------------------------
-                // STEP 1: Update the first SQL Server data connection (if any)
+                // Simulate a SQL Server query result using an in‑memory DataTable.
+                // In a real scenario you would use ADO.NET like:
+                //   using (SqlConnection conn = new SqlConnection(connectionString))
+                //   {
+                //       conn.Open();
+                //       using (SqlCommand cmd = new SqlCommand(query, conn))
+                //       using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                //       {
+                //           DataTable dt = new DataTable();
+                //           da.Fill(dt);
+                //           // use dt below
+                //       }
+                //   }
                 // ------------------------------------------------------------
-                if (diagram.DataConnections.Count > 0)
+                DataTable queryResult = GetSampleData();
+
+                // Choose the first page (index 0) for adding shapes
+                int pageIndex = 0;
+                Page page = diagram.Pages[pageIndex];
+
+                // Positioning variables for new shapes
+                double startX = 1.0;
+                double startY = 1.0;
+                double offsetY = 2.0;
+
+                // Keep track of created shape IDs for later connection
+                List<long> createdShapeIds = new List<long>();
+
+                // Iterate over each row and create a rectangle shape with the row data
+                foreach (DataRow row in queryResult.Rows)
                 {
-                    // Update connection string and command text.
-                    // In a real scenario replace the placeholder values with actual ones.
-                    diagram.DataConnections[0].ConnectionString = "Data Source=SERVER;Initial Catalog=Database;Integrated Security=True";
-                    diagram.DataConnections[0].Command = "SELECT Name, Value FROM SampleTable";
+                    string name = row["Name"].ToString();
 
-                    // Refresh the diagram to pull data from the database.
-                    diagram.Refresh();
-                }
-                else
-                {
-                    Console.WriteLine("No data connections found in the diagram. Skipping data refresh.");
-                }
+                    // Add a rectangle shape; diagram.AddShape returns the shape ID (long)
+                    long shapeId = diagram.AddShape(startX, startY, "Rectangle", pageIndex);
 
-                // ------------------------------------------------------------
-                // STEP 2: Simulate query results using an in‑memory DataTable
-                // ------------------------------------------------------------
-                DataTable simulatedResult = new DataTable();
-                simulatedResult.Columns.Add("Name", typeof(string));
-                simulatedResult.Columns.Add("Value", typeof(string));
+                    // Retrieve the shape object to modify its properties
+                    Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Sample rows – replace with actual data retrieval logic as needed
-                simulatedResult.Rows.Add("Alpha", "100");
-                simulatedResult.Rows.Add("Beta", "200");
-                simulatedResult.Rows.Add("Gamma", "300");
-
-                // ------------------------------------------------------------
-                // STEP 3: Populate shapes with the simulated data
-                // ------------------------------------------------------------
-                // For demonstration, assign each row's data to a shape on the first page.
-                // If there are more shapes than rows, remaining shapes are left unchanged.
-                Page firstPage = diagram.Pages[0];
-                int rowIndex = 0;
-
-                foreach (Shape shape in firstPage.Shapes)
-                {
-                    if (rowIndex >= simulatedResult.Rows.Count)
-                        break; // No more data rows to assign
-
-                    DataRow row = simulatedResult.Rows[rowIndex];
-
-                    // Clear existing text and add new text in the required format
+                    // Clear any existing text and set the shape's text to the value from the query
                     shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt($"{row["Name"]}: {row["Value"]}"));
+                    shape.Text.Value.Add(new Txt(name));
 
-                    rowIndex++;
+                    // Store the shape ID for later connector creation
+                    createdShapeIds.Add(shapeId);
+
+                    // Move down for the next shape
+                    startY += offsetY;
                 }
 
-                // ------------------------------------------------------------
-                // STEP 4: Save the modified diagram
-                // ------------------------------------------------------------
+                // If more than one shape was created, connect them sequentially
+                if (createdShapeIds.Count > 1)
+                {
+                    for (int i = 0; i < createdShapeIds.Count - 1; i++)
+                    {
+                        // Add a dynamic connector shape
+                        long connectorId = diagram.AddShape(0, 0, "Dynamic connector", pageIndex);
+                        Shape connector = page.Shapes.GetShape(connectorId);
+
+                        // Connect the current shape to the next shape using the connector
+                        page.ConnectShapesViaConnector(
+                            createdShapeIds[i],
+                            ConnectionPointPlace.Bottom,
+                            createdShapeIds[i + 1],
+                            ConnectionPointPlace.Top,
+                            connectorId);
+                    }
+                }
+
+                // Save the modified diagram to the output file (VSDX format)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    // Helper method to create a sample DataTable mimicking a SQL query result
+    static DataTable GetSampleData()
+    {
+        DataTable table = new DataTable();
+        table.Columns.Add("Name", typeof(string));
+        table.Rows.Add("Alice");
+        table.Rows.Add("Bob");
+        table.Rows.Add("Charlie");
+        return table;
     }
 }

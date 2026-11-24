@@ -6,63 +6,70 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
         string diagramPath = args[0];
+        string shapeIdArg = args[1];
 
-        // Guard: ensure the file exists
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse shape ID.
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. It must be an integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Get the active page
-            Page activePage = diagram.ActivePage;
-            if (activePage == null)
+            // Ensure the diagram has at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram does not contain an active page.");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
                 return;
             }
 
-            // Ensure there is at least one shape on the page
-            if (activePage.Shapes.Count == 0)
+            // Use the active page (or first page) to locate the shape.
+            Page page = diagram.ActivePage ?? diagram.Pages[0];
+
+            // Retrieve the shape by its ID.
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-                Console.Error.WriteLine("No shapes found on the active page.");
+                Console.Error.WriteLine($"Error: No shape found with ID {shapeId} on the active page.");
                 return;
             }
 
-            // Retrieve the first shape (as the selected shape)
-            Shape shape = activePage.Shapes[0];
+            // Access the gradient fill information.
+            // GradientFill may be null if the shape does not have a gradient; handle gracefully.
+            if (shape.Fill?.GradientFill == null)
+            {
+                Console.WriteLine("The selected shape does not have a gradient fill.");
+                return;
+            }
 
-            // Check if the shape has a gradient fill enabled
-            if (shape.Fill != null &&
-                shape.Fill.GradientFill != null &&
-                shape.Fill.GradientFill.GradientEnabled != null &&
-                shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
-            {
-                // Read the current gradient angle (in degrees)
-                double gradientAngle = shape.Fill.GradientFill.GradientAngle.Value;
-                Console.WriteLine($"Gradient angle of the selected shape: {gradientAngle} degrees");
-            }
-            else
-            {
-                Console.WriteLine("The selected shape does not have a gradient fill enabled.");
-            }
+            // Read the current gradient angle (in degrees).
+            double gradientAngle = shape.Fill.GradientFill.GradientAngle.Value;
+
+            // Output the angle to the console.
+            Console.WriteLine($"Shape ID {shapeId} gradient angle: {gradientAngle} degrees");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

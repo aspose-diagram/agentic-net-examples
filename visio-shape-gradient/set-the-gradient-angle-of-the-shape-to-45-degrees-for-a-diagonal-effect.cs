@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,37 +25,41 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (or active page) of the diagram.
-            Page page = diagram.ActivePage;
-
-            // Ensure the page contains at least one shape.
-            if (page.Shapes.Count == 0)
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no shapes to modify.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Retrieve the first shape on the page.
+            // Work with the first page
+            Page page = diagram.Pages[0];
+
+            // Ensure the page has at least one shape
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
+            }
+
+            // Retrieve the first shape on the page
             Shape shape = page.Shapes[0];
 
-            // Enable gradient fill by setting the fill pattern to gradient (value 25).
-            shape.Fill.FillPattern.Value = 25;
-
-            // Turn on the gradient fill.
+            // Enable gradient fill if not already enabled
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set the gradient angle to 45 degrees for a diagonal effect.
+            // Set the gradient angle to 45 degrees for a diagonal effect
             shape.Fill.GradientFill.GradientAngle.Value = 45.0;
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

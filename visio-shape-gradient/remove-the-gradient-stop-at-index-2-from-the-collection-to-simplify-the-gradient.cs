@@ -8,83 +8,88 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Define input and output file paths.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        // Define output path
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            bool gradientModified = false;
+
+            // Iterate through pages and shapes to find a shape with a gradient fill.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the shape has a gradient fill
-                    if (shape.Fill == null || shape.Fill.GradientFill == null)
-                        continue;
-
-                    GradientFill gradientFill = shape.Fill.GradientFill;
-
-                    // Check if there are enough gradient stops to remove index 2
-                    if (gradientFill.GradientStops == null || gradientFill.GradientStops.Count <= 2)
-                        continue;
-
-                    // Collect gradient stops except the one at index 2
-                    List<GradientStop> keptStops = new List<GradientStop>();
-                    for (int i = 0; i < gradientFill.GradientStops.Count; i++)
+                    // Ensure the shape has a gradient fill enabled.
+                    if (shape.Fill != null &&
+                        shape.Fill.GradientFill != null &&
+                        shape.Fill.GradientFill.GradientEnabled != null &&
+                        shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
                     {
-                        GradientStop stop = gradientFill.GradientStops[i];
-                        if (i != 2) // Skip the stop at index 2
+                        // Access the gradient stops collection.
+                        GradientStopCollection stops = shape.Fill.GradientFill.GradientStops;
+
+                        // Collect stops except the one at index 2.
+                        List<GradientStop> keptStops = new List<GradientStop>();
+                        int currentIndex = 0;
+                        foreach (GradientStop stop in stops)
                         {
-                            keptStops.Add(stop);
+                            if (currentIndex != 2)
+                            {
+                                keptStops.Add(stop);
+                            }
+                            currentIndex++;
                         }
-                    }
 
-                    // Clear existing stops
-                    gradientFill.GradientStops.Clear();
+                        // Clear existing stops and re-add the kept ones.
+                        stops.Clear();
+                        foreach (GradientStop stop in keptStops)
+                        {
+                            // Re-add using the original position and color.
+                            stops.Add(stop.Position, stop.Color);
+                        }
 
-                    // Re-add the kept stops using the required Add method signature
-                    foreach (GradientStop stop in keptStops)
-                    {
-                        // Preserve original position and color
-                        DoubleValue position = new DoubleValue(stop.Position.Value, MeasureConst.NUM);
-                        ColorValue color = new ColorValue(stop.Color.Value, MeasureConst.Undefined);
-                        gradientFill.GradientStops.Add(position, color);
+                        gradientModified = true;
+                        // Assuming only one shape needs modification; break out of loops.
+                        break;
                     }
                 }
+                if (gradientModified)
+                    break;
             }
 
-            // Save the modified diagram
+            if (!gradientModified)
+            {
+                Console.WriteLine("No shape with a gradient fill was found or gradient had fewer than 3 stops.");
+            }
+
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

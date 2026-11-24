@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file path, first shape ID, second shape ID
+        // Validate command‑line arguments.
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <shapeId1> <shapeId2>");
@@ -14,106 +14,84 @@ class Program
         }
 
         string inputPath = args[0];
+        string shapeId1Str = args[1];
+        string shapeId2Str = args[2];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
-        if (!long.TryParse(args[1], out long shapeId1))
+        // Parse shape IDs.
+        if (!long.TryParse(shapeId1Str, out long shapeId1) || !long.TryParse(shapeId2Str, out long shapeId2))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
-            return;
-        }
-
-        if (!long.TryParse(args[2], out long shapeId2))
-        {
-            Console.Error.WriteLine($"Invalid shape ID: {args[2]}");
+            Console.Error.WriteLine("Error: Shape IDs must be valid integers.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Assume shapes are on the first page; adjust if needed
+                // Ensure the diagram has at least one page.
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
+                    Console.Error.WriteLine("Error: Diagram contains no pages.");
                     return;
                 }
 
+                // Retrieve the first page (index 0).
                 Page page = diagram.Pages[0];
 
-                // Retrieve the two shapes by their IDs
+                // Retrieve the first shape.
                 Shape shape1 = page.Shapes.GetShape(shapeId1);
-                Shape shape2 = page.Shapes.GetShape(shapeId2);
-
                 if (shape1 == null)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId1} not found.");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId1} not found on page 0.");
                     return;
                 }
 
+                // Retrieve the second shape.
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
                 if (shape2 == null)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId2} not found.");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId2} not found on page 0.");
                     return;
                 }
 
-                // Helper function to extract gradient direction value
-                double GetGradientDirection(Shape shape)
-                {
-                    // Check if gradient fill is enabled; if not, treat direction as undefined (NaN)
-                    if (shape.Fill?.GradientFill?.GradientEnabled?.Value == BOOL.True)
-                    {
-                        // GradientDir may be null; guard against it
-                        return shape.Fill.GradientFill.GradientDir?.Value ?? double.NaN;
-                    }
-                    else
-                    {
-                        return double.NaN; // Not enabled
-                    }
-                }
+                // Access gradient direction values.
+                double dir1 = shape1.Fill?.GradientFill?.GradientDir?.Value ?? double.NaN;
+                double dir2 = shape2.Fill?.GradientFill?.GradientDir?.Value ?? double.NaN;
 
-                double dir1 = GetGradientDirection(shape1);
-                double dir2 = GetGradientDirection(shape2);
+                // Output the gradient directions.
+                Console.WriteLine($"Shape {shapeId1} Gradient Direction: {dir1}");
+                Console.WriteLine($"Shape {shapeId2} Gradient Direction: {dir2}");
 
-                // Output the retrieved directions
-                Console.WriteLine($"Shape {shapeId1} gradient direction: {(double.IsNaN(dir1) ? "Not enabled" : dir1.ToString())}");
-                Console.WriteLine($"Shape {shapeId2} gradient direction: {(double.IsNaN(dir2) ? "Not enabled" : dir2.ToString())}");
-
-                // Compare the directions, considering NaN (not enabled) as a possible difference
-                bool areDifferent;
+                // Compare the directions and note any differences.
                 if (double.IsNaN(dir1) && double.IsNaN(dir2))
                 {
-                    areDifferent = false; // Both not enabled
+                    Console.WriteLine("Both shapes have no gradient direction defined.");
                 }
                 else if (double.IsNaN(dir1) || double.IsNaN(dir2))
                 {
-                    areDifferent = true; // One enabled, the other not
+                    Console.WriteLine("One of the shapes does not have a gradient direction defined.");
+                }
+                else if (Math.Abs(dir1 - dir2) < 0.0001)
+                {
+                    Console.WriteLine("The gradient directions are identical.");
                 }
                 else
                 {
-                    // Use a tolerance for floating‑point comparison
-                    areDifferent = Math.Abs(dir1 - dir2) > 0.0001;
-                }
-
-                // Report the analysis result
-                if (areDifferent)
-                {
-                    Console.WriteLine("Difference detected: gradient directions are not the same.");
-                }
-                else
-                {
-                    Console.WriteLine("No difference: gradient directions are identical.");
+                    Console.WriteLine("The gradient directions differ.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Report any Aspose or runtime errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

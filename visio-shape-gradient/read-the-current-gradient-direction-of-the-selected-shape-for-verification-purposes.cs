@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect diagram file path and shape ID.
+        // Validate input arguments: expect diagram file path and shape ID
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
@@ -14,55 +14,60 @@ class Program
         }
 
         string diagramPath = args[0];
-        // Guard: ensure the diagram file exists.
+        string shapeIdArg = args[1];
+
+        // Guard: check if the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse shape ID.
-        if (!long.TryParse(args[1], out long shapeId) || shapeId <= 0)
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine("Error: Invalid shape ID. It must be a positive integer.");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Get the active page (or you could select a specific page if needed).
+            // Retrieve the active page (or you could select a specific page if needed)
             Page page = diagram.ActivePage;
+            if (page == null)
+            {
+                Console.Error.WriteLine("Error: No active page found in the diagram.");
+                return;
+            }
 
-            // Retrieve the shape by its ID.
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+            // Get the shape by ID
+            Shape shape = page.Shapes.GetShape(shapeId);
             if (shape == null)
             {
                 Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on the active page.");
                 return;
             }
 
-            // Verify that gradient fill is enabled.
-            if (shape.Fill?.GradientFill?.GradientEnabled?.Value != BOOL.True)
+            // Ensure the shape has a gradient fill defined
+            if (shape.Fill == null || shape.Fill.GradientFill == null)
             {
-                Console.WriteLine("Gradient fill is not enabled for the selected shape.");
+                Console.Error.WriteLine("Error: The selected shape does not have a gradient fill.");
                 return;
             }
 
-            // Read the current gradient direction.
-            // GradientDir.Value typically holds a numeric value representing the direction.
-            double gradientDirection = shape.Fill.GradientFill.GradientDir?.Value ?? 0.0;
+            // Read the current gradient direction value
+            double gradientDirection = shape.Fill.GradientFill.GradientDir.Value;
 
-            // Output the gradient direction for verification.
-            Console.WriteLine($"Shape ID: {shapeId}");
-            Console.WriteLine($"Current Gradient Direction: {gradientDirection}");
+            // Output the gradient direction for verification
+            Console.WriteLine($"Shape ID {shapeId} Gradient Direction: {gradientDirection}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Exception occurred: {ex.Message}");
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -20,7 +21,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -36,67 +37,68 @@ class Program
                     return;
                 }
 
-                // Work with the first page.
+                // Access the first page.
                 Page page = diagram.Pages[0];
 
-                // Find the first non‑deleted shape on the page.
-                Shape targetShape = null;
-                foreach (Shape s in page.Shapes)
+                // Ensure the page has at least one shape.
+                if (page.Shapes.Count == 0)
                 {
-                    if (s.Del == BOOL.False)
-                    {
-                        targetShape = s;
-                        break;
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    Console.Error.WriteLine("No visible shape found on the first page.");
+                    Console.Error.WriteLine("The first page contains no shapes.");
                     return;
                 }
 
-                // Enable gradient fill for the shape.
-                targetShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+                // Retrieve the first shape (indexer uses int).
+                Shape shape = page.Shapes[0];
 
-                // Access the gradient stops collection.
-                var gradientStops = targetShape.Fill.GradientFill.GradientStops;
+                // Skip logically deleted shapes.
+                if (shape.Del == BOOL.True)
+                {
+                    Console.Error.WriteLine("The selected shape is marked as deleted.");
+                    return;
+                }
 
-                // Ensure there are at least two stops to modify index 1.
-                if (gradientStops.Count < 2)
+                // Access the gradient fill collection.
+                GradientFill gradientFill = shape.Fill.GradientFill;
+                GradientStopCollection stopsCollection = gradientFill.GradientStops;
+
+                // Ensure there are at least two gradient stops.
+                if (stopsCollection.Count <= 1)
                 {
                     Console.Error.WriteLine("The shape does not have a gradient stop at index 1.");
                     return;
                 }
 
-                // Store existing positions and colors.
-                List<double> positions = new List<double>();
-                List<ColorValue> colors = new List<ColorValue>();
-                foreach (GradientStop stop in gradientStops)
+                // Copy existing stops to a temporary list.
+                List<GradientStop> tempStops = new List<GradientStop>();
+                foreach (GradientStop stop in stopsCollection)
                 {
-                    positions.Add(stop.Position.Value);
-                    colors.Add(stop.Color); // Store the ColorValue object itself.
+                    tempStops.Add(stop);
                 }
 
-                // Clear existing stops before re‑adding.
-                gradientStops.Clear();
+                // Modify the position of the stop at index 1 to 0.5 (midpoint).
+                GradientStop targetStop = tempStops[1];
+                // Create a new DoubleValue for the position (0.5, numeric unit).
+                targetStop.Position = new DoubleValue(0.5, MeasureConst.NUM);
+                // Update the list entry.
+                tempStops[1] = targetStop;
 
-                // Re‑add stops, adjusting the position of the stop at index 1 to 0.5.
-                for (int i = 0; i < positions.Count; i++)
+                // Clear existing stops and re‑add them with the updated values.
+                stopsCollection.Clear();
+                foreach (GradientStop stop in tempStops)
                 {
-                    double newPos = (i == 1) ? 0.5 : positions[i];
-                    gradientStops.Add(new DoubleValue(newPos, MeasureConst.NUM), colors[i]);
+                    // Add expects position and color values.
+                    stopsCollection.Add(stop.Position, stop.Color);
                 }
 
-                // Save the modified diagram.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Gradient stop position updated and diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,90 +6,104 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) – fallback to a default name.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
-        // Output file path (second argument) – fallback to a default name.
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        string diagramPath = args[0];
+
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Ensure there is at least one page.
+            // Ensure there is at least one page
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page.
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Ensure the page has at least one shape.
+            // Ensure there is at least one shape on the page
             if (page.Shapes.Count == 0)
             {
                 Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            // Retrieve the first shape on the page.
-            Shape shape = page.Shapes[0];
+            // Retrieve the first shape (shape IDs start at 1)
+            Shape shape = page.Shapes.GetShape(1);
 
-            // Access the gradient fill of the shape.
-            GradientFill gradientFill = shape.Fill.GradientFill;
+            // Enable gradient fill if not already enabled
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Retrieve the current gradient stop count.
-            int stopCount = gradientFill.GradientStops.Count;
+            // Access the gradient stops collection
+            var gradientStops = shape.Fill.GradientFill.GradientStops;
+
+            // Retrieve current stop count
+            int stopCount = gradientStops.Count;
             Console.WriteLine($"Current gradient stop count: {stopCount}");
 
-            // Ensure there are at least three gradient stops.
+            // Ensure a minimum of three gradient stops
             if (stopCount < 3)
             {
-                // Enable gradient if it is not already enabled.
-                gradientFill.GradientEnabled.Value = BOOL.True;
+                Console.WriteLine("Adding missing gradient stops to reach a minimum of three.");
 
-                // Clear existing stops and add three default stops.
-                gradientFill.GradientStops.Clear();
-
-                // Add stop at position 0 (red).
-                gradientFill.GradientStops.Add(
-                    new DoubleValue(0, MeasureConst.NUM),
-                    new ColorValue("#FF0000", MeasureConst.Undefined));
-
-                // Add stop at position 0.5 (green).
-                gradientFill.GradientStops.Add(
+                // Define default positions and colors for the stops
+                // Positions are normalized (0 to 1) using MeasureConst.NUM
+                // Colors are defined with hex strings and MeasureConst.Undefined
+                DoubleValue[] positions = new DoubleValue[]
+                {
+                    new DoubleValue(0.0, MeasureConst.NUM),
                     new DoubleValue(0.5, MeasureConst.NUM),
-                    new ColorValue("#00FF00", MeasureConst.Undefined));
+                    new DoubleValue(1.0, MeasureConst.NUM)
+                };
 
-                // Add stop at position 1 (blue).
-                gradientFill.GradientStops.Add(
-                    new DoubleValue(1, MeasureConst.NUM),
-                    new ColorValue("#0000FF", MeasureConst.Undefined));
+                ColorValue[] colors = new ColorValue[]
+                {
+                    new ColorValue("#FF0000", MeasureConst.Undefined), // Red
+                    new ColorValue("#00FF00", MeasureConst.Undefined), // Green
+                    new ColorValue("#0000FF", MeasureConst.Undefined)  // Blue
+                };
 
-                Console.WriteLine("Added missing gradient stops to meet the minimum of three.");
+                // Clear existing stops to avoid duplicates
+                gradientStops.Clear();
+
+                // Add three stops
+                for (int i = 0; i < 3; i++)
+                {
+                    gradientStops.Add(positions[i], colors[i]);
+                }
+
+                Console.WriteLine("Gradient stops have been set to three default values.");
             }
             else
             {
-                Console.WriteLine("The shape already has three or more gradient stops.");
+                Console.WriteLine("The gradient already has three or more stops.");
             }
 
-            // Save the modified diagram to the output path.
+            // Optionally save the modified diagram to a new file
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "Modified_" + Path.GetFileName(diagramPath));
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

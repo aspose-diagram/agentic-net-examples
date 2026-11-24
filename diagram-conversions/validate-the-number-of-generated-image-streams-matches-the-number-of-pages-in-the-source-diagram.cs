@@ -8,80 +8,78 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line argument for source diagram path
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No input file path provided.");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        string sourcePath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the source file exists
-        if (!File.Exists(sourcePath))
+        // Guard against missing file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {sourcePath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
-
-        // List to hold generated image streams
-        List<MemoryStream> imageStreams = new List<MemoryStream>();
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(sourcePath);
-
-            // Get the total number of pages in the diagram
-            int pageCount = diagram.Pages.Count;
-
-            // Iterate over each page and export it to a PNG image stream
-            for (int i = 0; i < pageCount; i++)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a new memory stream for the current page image
-                MemoryStream ms = new MemoryStream();
+                // Prepare a list to hold image streams for each page
+                List<MemoryStream> imageStreams = new List<MemoryStream>();
 
-                // Configure image save options for PNG format and single-page export
-                ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                options.PageIndex = i;   // Zero‑based page index
-                options.PageCount = 1;   // Export only the current page
+                // Iterate over each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Create a new memory stream for the current page image
+                    MemoryStream pageStream = new MemoryStream();
 
-                // Save the current page to the memory stream
-                diagram.Save(ms, options);
+                    // Configure image save options for PNG format, exporting a single page
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        // Export only the current page
+                        PageIndex = i,
+                        PageCount = 1
+                    };
 
-                // Reset stream position for potential downstream reading
-                ms.Position = 0;
+                    // Save the current page to the memory stream
+                    diagram.Save(pageStream, saveOptions);
 
-                // Store the stream in the collection
-                imageStreams.Add(ms);
+                    // Reset stream position for potential downstream use
+                    pageStream.Position = 0;
+
+                    // Add the stream to the collection
+                    imageStreams.Add(pageStream);
+                }
+
+                // Validate that the number of generated streams matches the page count
+                if (imageStreams.Count != diagram.Pages.Count)
+                {
+                    // Mismatch detected – report and throw an exception
+                    Console.Error.WriteLine($"Mismatch: Generated {imageStreams.Count} image streams but diagram contains {diagram.Pages.Count} pages.");
+                    throw new Exception("Image stream count does not match page count.");
+                }
+                else
+                {
+                    // Success – report the validation result
+                    Console.WriteLine($"Validation successful: {imageStreams.Count} image streams generated for {diagram.Pages.Count} pages.");
+                }
+
+                // Optional: Dispose all memory streams (handled by using block exit if needed)
+                foreach (var ms in imageStreams)
+                {
+                    ms.Dispose();
+                }
             }
-
-            // Validate that the number of generated streams matches the page count
-            if (imageStreams.Count != pageCount)
-            {
-                throw new Exception($"Mismatch: Generated {imageStreams.Count} image streams but diagram has {pageCount} pages.");
-            }
-            else
-            {
-                Console.WriteLine($"Success: Generated {imageStreams.Count} image streams matching the {pageCount} pages.");
-            }
-
-            // Dispose the diagram object to free resources
-            diagram.Dispose();
         }
         catch (Exception ex)
         {
             // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            return;
-        }
-        finally
-        {
-            // Ensure all memory streams are properly disposed
-            foreach (var stream in imageStreams)
-            {
-                stream.Dispose();
-            }
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

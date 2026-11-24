@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
@@ -10,7 +11,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXpsPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputXpsFile>");
             return;
         }
 
@@ -26,37 +27,33 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (required pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate over all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Skip background pages (Background == BOOL.True).
+                    // Skip background pages.
                     if (page.Background == BOOL.True)
-                    {
                         continue;
-                    }
 
-                    // Set the page orientation to Landscape.
+                    // Set page orientation to Landscape.
                     page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
                 }
 
                 // Configure XPS save options.
-                XPSSaveOptions xpsOptions = new XPSSaveOptions
-                {
-                    // Do not export hidden pages.
-                    ExportHiddenPage = false // BOOL.False cannot be assigned; use native bool.
-                };
+                XPSSaveOptions xpsOptions = new XPSSaveOptions();
+                // Do not export hidden pages.
+                xpsOptions.ExportHiddenPage = false;
 
-                // Save the diagram as XPS using the configured options.
+                // Save the diagram as XPS.
                 diagram.Save(outputPath, xpsOptions);
             }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

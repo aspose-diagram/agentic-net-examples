@@ -6,101 +6,112 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file (adjust as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        // Guard: ensure the file exists before proceeding
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Verify that the diagram contains at least one page
+                // Ensure the diagram has at least one page.
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.WriteLine("The diagram contains no pages.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Access the first page
+                // Retrieve the first page.
                 Page page = diagram.Pages[0];
 
-                // Find the first non‑deleted shape on the page
-                Shape targetShape = null;
-                foreach (Shape s in page.Shapes)
+                // Ensure the page has at least one shape.
+                if (page.Shapes.Count == 0)
                 {
-                    // Skip logically deleted shapes
-                    if (s.Del == BOOL.False)
-                    {
-                        targetShape = s;
-                        break;
-                    }
-                }
-
-                if (targetShape == null)
-                {
-                    Console.WriteLine("No visible shape found on the first page.");
+                    Console.Error.WriteLine("The first page contains no shapes.");
                     return;
                 }
 
-                // Output basic shape information
-                Console.WriteLine($"Shape ID: {targetShape.ID}");
-                Console.WriteLine($"Shape NameU: {targetShape.NameU}");
-                Console.WriteLine($"Shape Master: {(targetShape.Master != null ? targetShape.Master.Name : "None")}");
+                // Retrieve the first shape on the page.
+                Shape shape = page.Shapes[0];
 
-                // Retrieve the Geometry collection (Geoms) for analysis
-                if (targetShape.Geoms == null || targetShape.Geoms.Count == 0)
+                // Output basic shape information.
+                Console.WriteLine($"Shape ID: {shape.ID}");
+                Console.WriteLine($"Shape NameU: {shape.NameU}");
+                Console.WriteLine($"Shape Master Name: {(shape.Master != null ? shape.Master.Name : "None")}");
+
+                // Access the Geometry (Geoms) collection.
+                if (shape.Geoms == null || shape.Geoms.Count == 0)
                 {
-                    Console.WriteLine("The selected shape has no geometry sections.");
+                    Console.WriteLine("The shape has no geometry sections.");
                 }
                 else
                 {
-                    Console.WriteLine($"Geometry sections count: {targetShape.Geoms.Count}");
+                    Console.WriteLine($"Geometry sections count: {shape.Geoms.Count}");
 
-                    // Enumerate each geometry section
-                    int geomIndex = 0;
-                    foreach (Geom geom in targetShape.Geoms)
+                    // Iterate over each geometry section.
+                    for (int i = 0; i < shape.Geoms.Count; i++)
                     {
-                        Console.WriteLine($"  Geom #{geomIndex}");
+                        // Explicitly type the geometry object.
+                        Geom geom = shape.Geoms[i];
+                        Console.WriteLine($"  Geometry {i + 1}:");
 
-                        // Output the number of coordinate entries in this geometry (if available)
-                        if (geom.CoordinateCol != null)
+                        // Ensure the geometry has a coordinate collection.
+                        if (geom.CoordinateCol == null || geom.CoordinateCol.Count == 0)
                         {
-                            Console.WriteLine($"    Coordinate entries count: {geom.CoordinateCol.Count}");
+                            Console.WriteLine("    No coordinates in this geometry.");
+                            continue;
+                        }
 
-                            // Example: list the type of each coordinate entry
-                            int coordIndex = 0;
-                            foreach (object coord in geom.CoordinateCol)
+                        // Iterate over each coordinate.
+                        for (int j = 0; j < geom.CoordinateCol.Count; j++)
+                        {
+                            // The collection holds various coordinate types (MoveTo, LineTo, etc.).
+                            // Use the base type 'Coordinate' for iteration.
+                            Coordinate coord = geom.CoordinateCol[j];
+
+                            // Identify the concrete coordinate type and print its values.
+                            if (coord is MoveTo moveTo)
                             {
-                                string typeName = coord.GetType().Name;
-                                Console.WriteLine($"      [{coordIndex}] {typeName}");
-                                coordIndex++;
+                                Console.WriteLine($"    Coord {j + 1} (MoveTo): X = {moveTo.X.Value}, Y = {moveTo.Y.Value}");
+                            }
+                            else if (coord is LineTo lineTo)
+                            {
+                                Console.WriteLine($"    Coord {j + 1} (LineTo): X = {lineTo.X.Value}, Y = {lineTo.Y.Value}");
+                            }
+                            else if (coord is ArcTo arcTo)
+                            {
+                                Console.WriteLine($"    Coord {j + 1} (ArcTo): X = {arcTo.X.Value}, Y = {arcTo.Y.Value}");
+                            }
+                            else if (coord is EllipticalArcTo ellArc)
+                            {
+                                Console.WriteLine($"    Coord {j + 1} (EllipticalArcTo): X = {ellArc.X.Value}, Y = {ellArc.Y.Value}");
+                            }
+                            else
+                            {
+                                // Fallback for any other coordinate types.
+                                Console.WriteLine($"    Coord {j + 1} (Unknown type): {coord.GetType().Name}");
                             }
                         }
-                        else
-                        {
-                            Console.WriteLine("    No coordinate collection found.");
-                        }
-
-                        geomIndex++;
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
+            // Write any Aspose or runtime errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

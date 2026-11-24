@@ -7,94 +7,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
+
+        // Determine output path
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_adjusted.vsdx");
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define a minimal distance (in inches) to consider comments overlapping
-                const double overlapThreshold = 0.5; // 0.5 inches
-                // Define offset to apply when moving a comment to resolve overlap
-                const double offset = 0.2; // 0.2 inches
+                // Define a small distance threshold (in inches) to consider comments overlapping
+                const double epsilon = 0.01; // Adjust as needed
+                const double offsetStep = 0.2; // Shift overlapping comments by this amount
 
-                // Iterate through all pages in the diagram
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Process each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the current page
-                    Page page = diagram.Pages[pageIndex];
-
                     // Collect annotations (comments) from the page
-                    List<Annotation> annotations = new List<Annotation>();
-                    foreach (Annotation ann in page.PageSheet.Annotations)
-                    {
-                        annotations.Add(ann);
-                    }
+                    List<Annotation> annotations = new List<Annotation>(page.PageSheet.Annotations);
 
-                    // Simple O(n^2) overlap detection and adjustment
+                    // Iterate through annotations to detect and resolve overlaps
                     for (int i = 0; i < annotations.Count; i++)
                     {
-                        Annotation a1 = annotations[i];
+                        Annotation annA = annotations[i];
+                        double xA = annA.X?.Value ?? 0;
+                        double yA = annA.Y?.Value ?? 0;
 
-                        // Ensure the annotation has X and Y coordinates; if not, skip adjustment
-                        if (a1.X == null || a1.Y == null)
-                            continue;
-
-                        double x1 = a1.X.Value;
-                        double y1 = a1.Y.Value;
-
+                        // Compare with subsequent annotations
                         for (int j = i + 1; j < annotations.Count; j++)
                         {
-                            Annotation a2 = annotations[j];
+                            Annotation annB = annotations[j];
+                            double xB = annB.X?.Value ?? 0;
+                            double yB = annB.Y?.Value ?? 0;
 
-                            if (a2.X == null || a2.Y == null)
-                                continue;
-
-                            double x2 = a2.X.Value;
-                            double y2 = a2.Y.Value;
-
-                            // Compute Euclidean distance between the two comment positions
-                            double distance = Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2));
-
-                            // If the distance is less than the threshold, adjust the second comment
-                            if (distance < overlapThreshold)
+                            // Check if positions are within the overlap threshold
+                            if (Math.Abs(xA - xB) < epsilon && Math.Abs(yA - yB) < epsilon)
                             {
-                                // Apply offset to the second comment's coordinates
-                                a2.X.Value = x2 + offset;
-                                a2.Y.Value = y2 + offset;
+                                // Adjust the second annotation's position to avoid overlap
+                                double newX = xB + offsetStep;
+                                double newY = yB + offsetStep;
+
+                                // Update annotation coordinates
+                                if (annB.X != null) annB.X.Value = newX;
+                                if (annB.Y != null) annB.Y.Value = newY;
 
                                 // Update local variables for further comparisons
-                                x2 = a2.X.Value;
-                                y2 = a2.Y.Value;
+                                xB = newX;
+                                yB = newY;
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram to the output path using VSDX format
+                // Save the adjusted diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram saved with adjusted comments to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -20,7 +20,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -29,14 +29,17 @@ class Program
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages to reset theme settings.
+                // Iterate through all pages to reset and apply a fresh preset theme.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Apply a fresh preset theme to the page.
+                    // Apply a preset theme to the page.
                     page.PresetTheme = PresetThemeValue.Bubble;
                     page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-                    // Iterate through all shapes on the page.
+                    // Optionally, also apply a quick style to the page (if needed).
+                    // page.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1; // Uncomment if quick style is desired.
+
+                    // Iterate through all shapes on the page to ensure they adopt the new theme.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes.
@@ -47,13 +50,10 @@ class Program
                         shape.PresetTheme = PresetThemeValue.Bubble;
                         shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                         shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
-
-                        // Optionally set style matrices (using default style/color indices).
-                        shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style1, PresetColorMatricsValue.Color1);
                     }
                 }
 
-                // Save the modified diagram with a fresh theme.
+                // Save the modified diagram using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }

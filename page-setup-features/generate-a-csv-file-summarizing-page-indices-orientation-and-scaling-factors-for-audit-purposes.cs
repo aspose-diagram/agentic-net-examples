@@ -6,15 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output CSV file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "pages_summary.csv";
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check if the input Visio file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -23,59 +28,39 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare CSV writer
+            // Prepare to write CSV output
             using (StreamWriter writer = new StreamWriter(outputPath))
             {
                 // Write CSV header
                 writer.WriteLine("PageIndex,Orientation,ScaleX,ScaleY");
 
-                // Iterate over pages using a for-loop
+                // Iterate through each page in the diagram
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Retrieve the page
+                    // Retrieve the page object
                     Page page = diagram.Pages[i];
 
-                    // Default values
-                    string orientationStr = "Unknown";
-                    double scaleX = 0;
-                    double scaleY = 0;
+                    // Get page dimensions
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Attempt to read orientation
-                    try
-                    {
-                        // PrintPageOrientationValue enum provides orientation info
-                        var orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-                        if (orientation != null)
-                        {
-                            orientationStr = orientation.ToString();
-                        }
-                    }
-                    catch
-                    {
-                        // Keep orientation as "Unknown" on error
-                    }
+                    // Determine orientation based on dimensions
+                    string orientation = width >= height ? "Landscape" : "Portrait";
 
-                    // Attempt to read scaling factors
-                    try
-                    {
-                        scaleX = page.PageSheet.PrintProps.ScaleX.Value;
-                        scaleY = page.PageSheet.PrintProps.ScaleY.Value;
-                    }
-                    catch
-                    {
-                        // Keep defaults (0) on error
-                    }
+                    // Retrieve scaling factors (default to 1 if not set)
+                    double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
+                    double scaleY = page.PageSheet.PrintProps.ScaleY.Value;
 
-                    // Write CSV line for the current page
-                    writer.WriteLine($"{i},{orientationStr},{scaleX},{scaleY}");
+                    // Write a CSV line for the current page
+                    writer.WriteLine($"{i},{orientation},{scaleX},{scaleY}");
                 }
             }
 
-            Console.WriteLine($"CSV summary generated successfully at: {outputPath}");
+            Console.WriteLine($"CSV summary successfully created at: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any Aspose or I/O errors
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

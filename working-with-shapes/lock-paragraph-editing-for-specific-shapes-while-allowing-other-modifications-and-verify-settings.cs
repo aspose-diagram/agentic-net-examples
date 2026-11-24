@@ -6,65 +6,94 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, shape name to lock paragraph editing.
-        if (args.Length < 3)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <shapeName>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        string targetShapeName = args[2];
-
-        // Guard: verify input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and shapes to find matching shapes.
+                // Define the IDs of shapes whose paragraph editing should be locked
+                // (example: lock shape with ID 1; add more IDs as needed)
+                long[] shapesToLock = new long[] { 1 };
+
+                // Iterate through all pages and shapes to apply the lock
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape's universal name matches the target name (case-sensitive).
-                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU == targetShapeName)
+                        // Check if the current shape is in the lock list
+                        bool shouldLock = false;
+                        foreach (long id in shapesToLock)
                         {
-                            // Lock paragraph (text) editing for this shape.
+                            if (shape.ID == id)
+                            {
+                                shouldLock = true;
+                                break;
+                            }
+                        }
+
+                        if (shouldLock)
+                        {
+                            // Lock paragraph (text) editing for this shape
                             shape.Protection.LockTextEdit.Value = BOOL.True;
 
-                            // Verify the lock was applied.
-                            if (shape.Protection.LockTextEdit.Value == BOOL.True)
-                            {
-                                Console.WriteLine($"Paragraph editing locked for shape ID {shape.ID} (NameU: {targetShapeName}).");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Failed to lock paragraph editing for shape ID {shape.ID} (NameU: {targetShapeName}).");
-                            }
-
-                            // Example of allowing other modifications: change fill foreground color.
-                            // Use a hex color string (e.g., yellow).
-                            shape.Fill.FillForegnd.Value = "#FFFF00";
+                            // Ensure other lock properties remain unlocked (optional explicit setting)
+                            shape.Protection.LockAspect.Value = BOOL.False;
+                            shape.Protection.LockBegin.Value = BOOL.False;
+                            shape.Protection.LockCalcWH.Value = BOOL.False;
+                            shape.Protection.LockCrop.Value = BOOL.False;
+                            shape.Protection.LockCustProp.Value = BOOL.False;
+                            shape.Protection.LockDelete.Value = BOOL.False;
+                            shape.Protection.LockEnd.Value = BOOL.False;
+                            shape.Protection.LockFormat.Value = BOOL.False;
+                            shape.Protection.LockFromGroupFormat.Value = BOOL.False;
+                            shape.Protection.LockGroup.Value = BOOL.False;
+                            shape.Protection.LockHeight.Value = BOOL.False;
+                            shape.Protection.LockMoveX.Value = BOOL.False;
+                            shape.Protection.LockMoveY.Value = BOOL.False;
+                            shape.Protection.LockRotate.Value = BOOL.False;
+                            shape.Protection.LockSelect.Value = BOOL.False;
+                            shape.Protection.LockThemeColors.Value = BOOL.False;
+                            shape.Protection.LockThemeEffects.Value = BOOL.False;
+                            shape.Protection.LockVtxEdit.Value = BOOL.False;
+                            shape.Protection.LockWidth.Value = BOOL.False;
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Verification: output lock status for each shape
+                Console.WriteLine("Paragraph editing lock status per shape:");
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        BOOL lockStatus = shape.Protection.LockTextEdit.Value;
+                        Console.WriteLine($"Shape ID {shape.ID}, Name \"{shape.Name}\": LockTextEdit = {lockStatus}");
+                    }
+                }
+
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                Console.WriteLine($"Diagram saved to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -1,72 +1,73 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Output file path (optional command‑line argument)
-        string outputPath = args.Length > 0 ? args[0] : "AddedRectangle.vsdx";
-
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Validate input arguments: stencil file and output diagram path
+        string stencilPath = args.Length > 0 ? args[0] : "stencil.vss";
+        if (!File.Exists(stencilPath))
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Stencil file not found: {stencilPath}");
             return;
         }
+
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
         try
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Ensure there is at least one window (required for saving)
+            // Ensure the diagram has at least one window (required for saving)
             if (diagram.Windows.Count == 0)
             {
-                Window window = new Window
-                {
-                    WindowType = WindowTypeValue.Drawing,
-                    WindowState = WindowStateValue.Maximized,
-                    WindowWidth = 1100,
-                    WindowHeight = 700
-                };
-                diagram.Windows.Add(window);
+                Window win = new Window();
+                win.WindowType = WindowTypeValue.Drawing;
+                win.WindowState = WindowStateValue.Maximized;
+                win.WindowWidth = 1100;
+                win.WindowHeight = 700;
+                diagram.Windows.Add(win);
             }
 
-            // Use the active page for adding the shape
-            Page page = diagram.ActivePage;
+            // Ensure there is at least one page; add if missing
+            if (diagram.Pages.Count == 0)
+            {
+                diagram.Pages.Add(new Page());
+            }
 
-            // Define rectangle center position and desired size (in inches)
-            double pinX = 5.0;          // X coordinate of the shape's center
-            double pinY = 5.0;          // Y coordinate of the shape's center
-            double rectWidth = 2.0;     // Width in inches
-            double rectHeight = 1.0;    // Height in inches
+            // Load the "Rectangle" master from the provided stencil
+            // This makes the master available for shape creation
+            diagram.AddMaster(stencilPath, "Rectangle");
 
-            // Add a rectangle shape using the built‑in "Rectangle" master.
-            // The fourth parameter (isCalculate) is a plain bool.
+            // Retrieve the first page to add the shape onto
+            Page page = diagram.Pages[0];
+
+            // Define rectangle position (PinX, PinY) and desired size
+            double pinX = 2.0;   // horizontal center position in inches
+            double pinY = 2.0;   // vertical center position in inches
+            double rectWidth = 3.0;   // desired width in inches
+            double rectHeight = 2.0;  // desired height in inches
+
+            // Add a rectangle shape using the master name.
+            // The fourth argument 'false' indicates that the shape should not be recalculated immediately.
             long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
 
             // Retrieve the newly added shape by its ID
-            Shape rectangle = page.Shapes.GetShape(shapeId);
+            Shape rectShape = page.Shapes.GetShape(shapeId);
 
-            // Set the shape's width and height
-            rectangle.XForm.Width.Value = rectWidth;
-            rectangle.XForm.Height.Value = rectHeight;
+            // Set the shape's width and height via the XForm properties
+            rectShape.XForm.Width.Value = rectWidth;
+            rectShape.XForm.Height.Value = rectHeight;
 
-            // Optionally set a simple fill color (hex string) and solid fill pattern
-            rectangle.Fill.FillForegnd.Value = "#FFCC00"; // Light orange fill
-            rectangle.Fill.FillPattern.Value = 1;        // 1 = solid pattern
-
-            // Save the diagram to the specified file in VSDX format
+            // Save the diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

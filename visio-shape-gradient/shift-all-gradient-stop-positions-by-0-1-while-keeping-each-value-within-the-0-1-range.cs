@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -39,17 +39,26 @@ class Program
                             continue;
 
                         // Ensure the shape has a gradient fill enabled.
-                        if (shape.Fill?.GradientFill == null)
+                        if (shape.Fill?.GradientFill?.GradientEnabled?.Value != BOOL.True)
                             continue;
 
-                        // Process each gradient stop.
-                        foreach (GradientStop stop in shape.Fill.GradientFill.GradientStops)
+                        // Access the gradient stops collection.
+                        var gradientStops = shape.Fill.GradientFill.GradientStops;
+
+                        // Iterate over each gradient stop and shift its position.
+                        foreach (GradientStop stop in gradientStops)
                         {
-                            // Shift the position by +0.1 and clamp to the 0‑1 range.
-                            double newPos = stop.Position.Value + 0.1;
-                            if (newPos > 1.0) newPos = 1.0;
-                            if (newPos < 0.0) newPos = 0.0;
-                            stop.Position.Value = newPos;
+                            // Current position (0‑1 range).
+                            double currentPos = stop.Position?.Value ?? 0.0;
+
+                            // Shift by +0.1 and clamp to 1.0.
+                            double newPos = currentPos + 0.1;
+                            if (newPos > 1.0)
+                                newPos = 1.0;
+
+                            // Assign the new position back to the stop.
+                            if (stop.Position != null)
+                                stop.Position.Value = newPos;
                         }
                     }
                 }
@@ -60,8 +69,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

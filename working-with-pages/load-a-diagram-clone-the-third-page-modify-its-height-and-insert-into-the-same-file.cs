@@ -6,69 +6,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first argument.
-        if (args.Length == 0)
+        // Validate input arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as an argument.");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the file exists before proceeding.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Verify that the diagram has at least three pages.
+            // Ensure there are at least three pages.
             if (diagram.Pages.Count < 3)
             {
-                Console.Error.WriteLine("The diagram does not contain a third page to clone.");
+                Console.Error.WriteLine("Error: Diagram does not contain at least three pages.");
                 return;
             }
 
-            // Retrieve the third page (zero‑based index).
+            // Retrieve the third page (zero‑based index 2).
             Page sourcePage = diagram.Pages[2];
 
-            // Create a new blank page instance.
+            // Determine a new unique page ID.
+            int maxPageId = 0;
+            foreach (Page p in diagram.Pages)
+            {
+                if (p.ID > maxPageId)
+                    maxPageId = p.ID;
+            }
+
+            // Create a new page instance for the clone.
             Page clonedPage = new Page();
+            clonedPage.ID = maxPageId + 1;
+            clonedPage.Name = sourcePage.Name + "_Clone";
 
             // Copy the contents of the source page into the new page.
             clonedPage.Copy(sourcePage);
 
-            // Assign a unique ID to the cloned page (max existing ID + 1).
-            int maxId = int.MinValue;
-            foreach (Page p in diagram.Pages)
-            {
-                if (p.ID > maxId)
-                    maxId = p.ID;
-            }
-            clonedPage.ID = maxId + 1;
-
-            // Optionally give the cloned page a distinct name.
-            clonedPage.Name = sourcePage.Name + "_Clone";
-
-            // Modify the height of the cloned page.
-            // Example: increase the height by 1.0 inch (or any desired value).
+            // Modify the height of the cloned page (increase by 2.0 units).
             double originalHeight = clonedPage.PageSheet.PageProps.PageHeight.Value;
-            clonedPage.PageSheet.PageProps.PageHeight.Value = originalHeight + 1.0;
+            clonedPage.PageSheet.PageProps.PageHeight.Value = originalHeight + 2.0;
 
-            // Insert the cloned page into the diagram's pages collection.
+            // Insert the cloned page into the diagram.
             diagram.Pages.Add(clonedPage);
 
-            // Save the updated diagram back to the same file (overwrites original).
+            // Save the updated diagram back to the original file.
             diagram.Save(inputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine("Page cloned, height modified, and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error console.
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

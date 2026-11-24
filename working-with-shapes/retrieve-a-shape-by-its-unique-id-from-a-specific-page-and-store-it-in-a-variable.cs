@@ -6,59 +6,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the input Visio file path, target page index, and shape ID.
-        string diagramPath = "input.vsdx";
-        if (!System.IO.File.Exists(diagramPath))
+        // Validate command‑line arguments: diagram path, page index, shape ID
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <diagramPath> <pageIndex> <shapeId>");
+            return;
+        }
+
+        string diagramPath = args[0];
+        if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
-        int targetPageIndex = 0; // zero‑based page index
-        long targetShapeId = 1;  // unique shape ID to retrieve
 
-        // Guard: ensure the diagram file exists before proceeding.
-        if (!File.Exists(diagramPath))
+        if (!int.TryParse(args[1], out int pageIndex))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine("Invalid page index.");
+            return;
+        }
+
+        if (!long.TryParse(args[2], out long shapeId))
+        {
+            Console.Error.WriteLine("Invalid shape ID.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Validate the requested page index.
-            if (targetPageIndex < 0 || targetPageIndex >= diagram.Pages.Count)
+            // Ensure the requested page exists
+            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
             {
-                Console.Error.WriteLine($"Error: Page index {targetPageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
+                Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
                 return;
             }
 
-            // Retrieve the specific page.
-            Page page = diagram.Pages[targetPageIndex];
+            // Retrieve the specific page
+            Page page = diagram.Pages[pageIndex];
 
-            // Retrieve the shape by its unique ID from the page.
-            // The GetShape method expects an integer; cast the long ID accordingly.
-            Shape shape = page.Shapes.GetShape((int)targetShapeId);
+            // Retrieve the shape by its unique ID from the page
+            // Shapes.GetShape expects an integer ID; cast the long ID safely
+            Shape targetShape = page.Shapes.GetShape((int)shapeId);
 
-            // Verify that the shape was found.
-            if (shape == null)
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"Error: No shape with ID {targetShapeId} found on page {targetPageIndex}.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page {pageIndex}.");
                 return;
             }
 
-            // Shape successfully retrieved; you can now work with the 'shape' variable.
-            Console.WriteLine($"Shape retrieved successfully:");
-            Console.WriteLine($"  ID      : {shape.ID}");
-            Console.WriteLine($"  NameU   : {shape.NameU}");
-            Console.WriteLine($"  Master  : {shape.Master?.Name ?? "None"}");
+            // Shape successfully retrieved; you can now work with 'targetShape'
+            Console.WriteLine($"Shape retrieved: ID={targetShape.ID}, NameU='{targetShape.NameU}', Master='{targetShape.Master?.Name}'");
         }
         catch (Exception ex)
         {
-            // Output any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            // Output any Aspose or runtime errors
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

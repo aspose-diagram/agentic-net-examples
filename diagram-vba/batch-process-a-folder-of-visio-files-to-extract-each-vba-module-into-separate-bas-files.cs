@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
@@ -7,105 +9,106 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Get folder path from first argument
+        string folderPath = args.Length > 0 ? args[0] : string.Empty;
+        if (string.IsNullOrWhiteSpace(folderPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
+            Console.WriteLine("Please provide the folder path as the first argument.");
             return;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args[1];
-
-        // Guard input folder existence.
-        if (!Directory.Exists(inputFolder))
+        // Verify folder exists
+        if (!Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Ensure output folder exists.
-        if (!Directory.Exists(outputFolder))
+        // Define Visio file extensions to process
+        string[] extensions = new[]
         {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
+            ".vsdx", ".vsdm", ".vsd", ".vsx",
+            ".vssx", ".vss", ".vstx", ".vst"
+        };
+
+        // Get all matching files in the folder
+        var files = Directory.GetFiles(folderPath)
+            .Where(f => extensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        if (files.Count == 0)
+        {
+            Console.WriteLine("No Visio files found in the specified folder.");
+            return;
         }
 
-        // Define supported Visio extensions.
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vssx", ".vss", ".vstx", ".vst", ".vsdm", ".vsdm" };
-
-        // Get all files with supported extensions.
-        string[] allFiles = Directory.GetFiles(inputFolder);
-        foreach (string filePath in allFiles)
+        // Process each Visio file
+        foreach (var filePath in files)
         {
-            string ext = Path.GetExtension(filePath);
-            if (Array.IndexOf(extensions, ext, 0, extensions.Length) < 0)
-                continue; // Skip non‑Visio files.
-
-            // Guard file existence (redundant but per rules).
+            // Guard against missing file
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
-            Console.WriteLine($"Processing file: {filePath}");
-
             try
             {
-                // Load the Visio diagram.
+                // Load the Visio diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Ensure the diagram contains a VBA project.
+                // Check for VBA project
                 if (diagram.VbaProject == null)
                 {
-                    Console.WriteLine($"No VBA project found in {filePath}.");
+                    Console.WriteLine($"No VBA project in file: {filePath}");
                     continue;
                 }
 
-                // Iterate through each VBA module.
+                // Check for VBA modules
+                if (diagram.VbaProject.Modules == null || diagram.VbaProject.Modules.Count == 0)
+                {
+                    Console.WriteLine($"No VBA modules in file: {filePath}");
+                    continue;
+                }
+
+                // Prepare output directory for extracted modules
+                string outputDir = Path.Combine(
+                    Path.GetDirectoryName(filePath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(filePath) + "_VbaModules");
+                Directory.CreateDirectory(outputDir);
+
+                // Iterate through each VBA module
                 foreach (VbaModule module in diagram.VbaProject.Modules)
                 {
-                    string moduleName = module.Name;
+                    string moduleName = module.Name ?? "UnnamedModule";
                     string code = module.Codes ?? string.Empty;
 
-                    // Validate VBA syntax: Sub/End Sub count matching.
+                    // Simple syntax validation: count Sub and End Sub occurrences
                     int subCount = CountOccurrences(code, "Sub ");
                     int endSubCount = CountOccurrences(code, "End Sub");
                     if (subCount != endSubCount)
                     {
-                        Console.Error.WriteLine($"Syntax error in module '{moduleName}' of file '{filePath}': Sub/End Sub count mismatch ({subCount} vs {endSubCount}).");
+                        Console.Error.WriteLine(
+                            $"Syntax mismatch in module '{moduleName}' of file '{filePath}': " +
+                            $"Sub count {subCount} vs End Sub count {endSubCount}.");
                     }
 
-                    // Ensure at least one Sub or Function exists.
-                    int functionCount = CountOccurrences(code, "Function ");
-                    if (subCount == 0 && functionCount == 0)
+                    // Ensure the module contains at least one Sub or Function
+                    bool containsProcedure = code.IndexOf("Sub ", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                             code.IndexOf("Function ", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (!containsProcedure)
                     {
-                        Console.Error.WriteLine($"Warning: Module '{moduleName}' in file '{filePath}' contains no Sub or Function.");
+                        Console.Error.WriteLine(
+                            $"Warning: Module '{moduleName}' in file '{filePath}' does not contain Sub or Function definitions.");
                     }
 
-                    // Prepare output .bas file path.
-                    string baseFileName = Path.GetFileNameWithoutExtension(filePath);
-                    string safeModuleName = MakeFileSystemSafeName(moduleName);
-                    string outputPath = Path.Combine(outputFolder, $"{baseFileName}_{safeModuleName}.bas");
+                    // Build output file path
+                    string outFileName = $"{Path.GetFileNameWithoutExtension(filePath)}_{moduleName}.bas";
+                    string outPath = Path.Combine(outputDir, outFileName);
 
-                    // Write the VBA code to the .bas file.
-                    try
-                    {
-                        File.WriteAllText(outputPath, code);
-                        Console.WriteLine($"Extracted module '{moduleName}' to '{outputPath}'.");
-                    }
-                    catch (Exception writeEx)
-                    {
-                        Console.Error.WriteLine($"Failed to write module '{moduleName}' to file: {writeEx.Message}");
-                    }
+                    // Write the VBA code to a .bas file
+                    File.WriteAllText(outPath, code);
+                    Console.WriteLine($"Extracted module '{moduleName}' to '{outPath}'.");
                 }
             }
             catch (Exception ex)
@@ -113,12 +116,10 @@ class Program
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
-
-        Console.WriteLine("Batch processing completed.");
     }
 
-    // Helper: count case‑insensitive occurrences of a substring.
-    private static int CountOccurrences(string source, string substring)
+    // Helper method to count case‑insensitive occurrences of a substring
+    static int CountOccurrences(string source, string substring)
     {
         if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(substring))
             return 0;
@@ -131,15 +132,5 @@ class Program
             index += substring.Length;
         }
         return count;
-    }
-
-    // Helper: make a string safe for file names by removing invalid characters.
-    private static string MakeFileSystemSafeName(string name)
-    {
-        foreach (char c in Path.GetInvalidFileNameChars())
-        {
-            name = name.Replace(c, '_');
-        }
-        return name;
     }
 }

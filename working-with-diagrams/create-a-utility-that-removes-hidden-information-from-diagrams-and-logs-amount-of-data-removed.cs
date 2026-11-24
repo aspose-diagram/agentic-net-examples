@@ -7,68 +7,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: RemoveHiddenInfo <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: RemoveHiddenInfoUtility <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure input file exists
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found – \"{inputPath}\"");
             return;
-        }
-
-        // Determine output path
-        string outputPath;
-        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
-        {
-            outputPath = args[1];
-        }
-        else
-        {
-            // Insert "_cleaned" before the file extension
-            string dir = Path.GetDirectoryName(inputPath) ?? string.Empty;
-            string name = Path.GetFileNameWithoutExtension(inputPath);
-            string ext = Path.GetExtension(inputPath);
-            outputPath = Path.Combine(dir, $"{name}_cleaned{ext}");
         }
 
         try
         {
-            // Record original file size
-            long originalSize = new FileInfo(inputPath).Length;
-
-            // Load the diagram inside a using block as required
+            // Load the diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Combine flags to remove hidden shapes, masters, and styles
+                // Combine the hidden‑information flags that are supported.
+                // DataConnections flag is not available in this version, so we use Shapes, Masters, and Styles.
                 int flags = (int)(RemoveHiddenInfoItem.Shapes |
-                                  RemoveHiddenInfoItem.Masters |
-                                  RemoveHiddenInfoItem.Styles);
+                                   RemoveHiddenInfoItem.Masters |
+                                   RemoveHiddenInfoItem.Styles);
 
-                // Remove hidden information
+                // Remove hidden information.
                 diagram.RemoveHiddenInformation(flags);
+                Console.WriteLine("Hidden information removed.");
 
-                // Save the cleaned diagram in VSDX format
+                // Save the cleaned diagram in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Cleaned diagram saved to \"{outputPath}\".");
             }
-
-            // Record cleaned file size
-            long cleanedSize = new FileInfo(outputPath).Length;
-
-            // Log the amount of data removed
-            long bytesRemoved = originalSize - cleanedSize;
-            Console.WriteLine($"Original size: {originalSize} bytes");
-            Console.WriteLine($"Cleaned size:  {cleanedSize} bytes");
-            Console.WriteLine($"Data removed:  {bytesRemoved} bytes");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Log any exceptions that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

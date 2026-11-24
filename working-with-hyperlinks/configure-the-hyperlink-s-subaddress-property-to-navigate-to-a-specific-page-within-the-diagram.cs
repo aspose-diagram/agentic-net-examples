@@ -6,80 +6,79 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
+        }
+
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram inside a using block for proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page
-                if (diagram.Pages.Count == 0)
+                // Ensure there are at least two pages; add a second page if necessary
+                if (diagram.Pages.Count < 2)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
+                    diagram.Pages.Add(new Page());
                 }
 
-                // Access the first page (you can change the index as needed)
-                Page page = diagram.Pages[0];
+                // Reference the source (first) page and the target (second) page
+                Page sourcePage = diagram.Pages[0];
+                Page targetPage = diagram.Pages[1];
 
-                // Ensure the page has at least one shape
-                if (page.Shapes.Count == 0)
+                // Add a rectangle shape to the source page (using the diagram helper)
+                // The AddShape method returns a long shape identifier
+                long shapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
+                // Retrieve the Shape object from the source page's collection
+                Shape shape = sourcePage.Shapes.GetShape((int)shapeId);
+
+                // Create a new Hyperlink instance
+                Hyperlink link = new Hyperlink();
+
+                // Determine the name of the target page for the SubAddress
+                string targetPageName = targetPage.Name;
+                if (string.IsNullOrEmpty(targetPageName))
                 {
-                    Console.Error.WriteLine("The selected page contains no shapes.");
-                    return;
+                    // Fallback to Visio's default naming convention if the page has no explicit name
+                    targetPageName = $"Page-{targetPage.ID}";
                 }
 
-                // Retrieve the first shape on the page
-                // Shapes are accessed via their long ID; iterate to get one
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    targetShape = shape;
-                    break;
-                }
+                // Set the SubAddress to navigate to the target page within the same diagram
+                link.SubAddress.Value = targetPageName;
 
-                if (targetShape == null)
-                {
-                    Console.Error.WriteLine("Failed to retrieve a shape from the page.");
-                    return;
-                }
+                // Optional: provide a tooltip/description for the hyperlink
+                link.Description.Value = $"Navigate to {targetPageName}";
 
-                // Create a new hyperlink
-                Hyperlink hyperlink = new Hyperlink();
+                // Add the hyperlink to the shape's Hyperlinks collection
+                shape.Hyperlinks.Add(link);
 
-                // Set a description (optional)
-                hyperlink.Description.Value = "Navigate to Page 2";
-
-                // Set the SubAddress to the target page name or ID.
-                // For example, to navigate to a page named "Page-2":
-                hyperlink.SubAddress.Value = "Page-2";
-
-                // Add the hyperlink to the shape's hyperlink collection
-                targetShape.Hyperlinks.Add(hyperlink);
-
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

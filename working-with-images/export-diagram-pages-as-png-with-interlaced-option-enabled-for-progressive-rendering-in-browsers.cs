@@ -7,64 +7,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input Visio file and output directory.
-        if (args.Length < 2)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputDir = args[1];
-
-        // Guard: check input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
-        }
-
-        // Guard: ensure output directory exists or create it.
-        if (!Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
-                return;
-            }
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each page and export it as a PNG image.
+                // Iterate over each page in the diagram
                 for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Configure image save options for PNG.
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    // Export only the current page.
-                    saveOptions.PageIndex = i;
-                    saveOptions.PageCount = 1;
+                    // Prepare PNG save options for the current page
+                    ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        // Export only the current page
+                        PageIndex = i,
+                        PageCount = 1
+                    };
 
-                    // NOTE: Aspose.Diagram does not support interlaced PNG export.
-                    // The interlaced option cannot be enabled; we export standard PNG files.
+                    // NOTE: Aspose.Diagram does not provide an Interlaced property for PNG export.
+                    // The interlaced (progressive) option cannot be enabled via the current API.
+                    // The PNG will be saved with the default (non‑interlaced) settings.
 
-                    string outputPath = Path.Combine(outputDir, $"Page_{i + 1}.png");
-                    diagram.Save(outputPath, saveOptions);
-                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
+                    // Build output file name
+                    string outputPath = $"output_page_{i + 1}.png";
+
+                    // Save the current page as PNG
+                    diagram.Save(outputPath, pngOptions);
+                    Console.WriteLine($"Page {i + 1} saved to {outputPath}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

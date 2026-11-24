@@ -6,56 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 1)
+        // Ensure required arguments are provided: input file path and maximum height.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path> [max-page-height]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <maxHeightInInches>");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: verify the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Determine the maximum allowed page height (in inches). Default to A4 height if not provided.
-        double maxPageHeight = 11.69; // Default A4 height in inches.
-        if (args.Length > 1)
+        // Parse the maximum allowed page height (in inches).
+        if (!double.TryParse(args[1], out double maxHeight))
         {
-            if (!double.TryParse(args[1], out maxPageHeight))
-            {
-                Console.Error.WriteLine($"Error: Invalid max page height value '{args[1]}'.");
-                return;
-            }
+            Console.Error.WriteLine($"Invalid maximum height value: {args[1]}");
+            return;
         }
 
         try
         {
-            // Load the diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through each page and compare its height to the maximum.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the page height in inches.
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                // If the page height exceeds the predefined maximum, raise an exception.
-                if (pageHeight > maxPageHeight)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    throw new Exception($"Page ID {page.ID} height {pageHeight} exceeds the maximum allowed {maxPageHeight} inches.");
-                }
-            }
+                    // Retrieve the page height (value is in inches).
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            Console.WriteLine("All pages are within the allowed height limit.");
+                    // Compare against the predefined maximum and raise an exception if exceeded.
+                    if (pageHeight > maxHeight)
+                    {
+                        throw new Exception($"Page height {pageHeight} inches exceeds the maximum allowed {maxHeight} inches.");
+                    }
+                }
+
+                // If no exception was thrown, all pages are within the limit.
+                Console.WriteLine("All page heights are within the allowed limit.");
+            }
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during processing.
+            // Output any errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

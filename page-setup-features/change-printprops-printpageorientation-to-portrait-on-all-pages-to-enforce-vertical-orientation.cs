@@ -8,48 +8,59 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
+        }
+
+        // Determine output path (optional second argument or auto‑generated).
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            string dir = Path.GetDirectoryName(inputPath);
+            string name = Path.GetFileNameWithoutExtension(inputPath);
+            string ext = Path.GetExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{name}_portrait{ext}");
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate over all pages and set print orientation to Portrait.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Ensure the page sheet and print properties are available.
-                    if (page.PageSheet != null && page.PageSheet.PrintProps != null)
+                    // PageSheet and PrintProps are always initialized, but check for safety.
+                    if (page.PageSheet?.PrintProps != null)
                     {
-                        // Set orientation to Portrait.
                         page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with portrait orientation to: {outputPath}");
             }
-
-            Console.WriteLine("Print orientation set to Portrait for all pages successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Output any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

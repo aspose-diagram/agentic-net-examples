@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate arguments: expect diagram file path and expected orientation string.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <expectedOrientation>");
+            Console.Error.WriteLine("Usage: Program <diagramFilePath> <expectedOrientation>");
             Console.Error.WriteLine("expectedOrientation values: Landscape, Portrait, SameAsPrinter");
             return;
         }
@@ -38,40 +38,32 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            bool allMatch = true;
-
-            // Iterate through all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Access the first page (or you could iterate all pages as needed).
+            if (diagram.Pages.Count == 0)
             {
-                // Retrieve the current page orientation.
-                PrintPageOrientationValue actualOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-
-                // Compare with the expected orientation.
-                if (actualOrientation == expectedOrientation)
-                {
-                    Console.WriteLine($"Page '{page.Name}' (ID: {page.ID}) orientation matches expected value: {expectedOrientation}.");
-                }
-                else
-                {
-                    Console.WriteLine($"Page '{page.Name}' (ID: {page.ID}) orientation mismatch. Expected: {expectedOrientation}, Actual: {actualOrientation}.");
-                    allMatch = false;
-                }
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                return;
             }
 
-            // Summary result.
-            if (allMatch)
+            Page page = diagram.Pages[0];
+
+            // Retrieve the current print page orientation.
+            PrintPageOrientationValue actualOrientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+
+            // Compare with the expected value and output the result.
+            if (actualOrientation == expectedOrientation)
             {
-                Console.WriteLine("All pages have the expected print orientation.");
+                Console.WriteLine($"Success: PrintPageOrientation is '{actualOrientation}' as expected.");
             }
             else
             {
-                Console.WriteLine("One or more pages do not match the expected print orientation.");
+                Console.WriteLine($"Mismatch: PrintPageOrientation is '{actualOrientation}', expected '{expectedOrientation}'.");
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Exception occurred: {ex.Message}");
         }
     }
 }

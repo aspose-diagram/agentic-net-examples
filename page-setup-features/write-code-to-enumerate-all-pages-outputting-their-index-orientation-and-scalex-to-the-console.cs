@@ -9,53 +9,61 @@ class Program
         // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
             return;
         }
 
-        string filePath = args[0];
+        string inputPath = args[0];
 
         // Guard against missing file
-        if (!File.Exists(filePath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        Diagram diagram = null;
         try
         {
-            // Load the Visio diagram
-            diagram = new Diagram(filePath);
-
-            // Iterate through all pages
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the page by index
-                Page page = diagram.Pages[i];
+                // Iterate over all pages in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    Page page = diagram.Pages[i];
 
-                // Get orientation from PrintProps
-                var orientationValue = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                    // Retrieve orientation from PrintProps
+                    string orientationStr = "Unknown";
+                    try
+                    {
+                        var orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                        orientationStr = orientation.ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Unable to read orientation for page {i}: {ex.Message}");
+                    }
 
-                // Get ScaleX from PrintProps
-                var scaleXValue = page.PageSheet.PrintProps.ScaleX.Value;
+                    // Retrieve ScaleX from PrintProps
+                    double scaleX = 0;
+                    try
+                    {
+                        scaleX = page.PageSheet.PrintProps.ScaleX.Value;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Unable to read ScaleX for page {i}: {ex.Message}");
+                    }
 
-                // Output page information
-                Console.WriteLine($"Page {i}: Orientation = {orientationValue}, ScaleX = {scaleXValue}");
+                    // Output the page information
+                    Console.WriteLine($"Page Index: {i}, Orientation: {orientationStr}, ScaleX: {scaleX}");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
-        finally
-        {
-            // Ensure resources are released
-            if (diagram != null)
-            {
-                diagram.Dispose();
-            }
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

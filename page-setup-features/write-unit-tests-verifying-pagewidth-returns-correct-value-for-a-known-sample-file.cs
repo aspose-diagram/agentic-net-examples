@@ -6,59 +6,59 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the sample Visio file. Adjust as needed.
-        string samplePath = "sample.vsdx";
-        if (!System.IO.File.Exists(samplePath))
+        // Validate command‑line arguments: expect file path and expected width.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {samplePath}");
+            Console.Error.WriteLine("Usage: Program <diagramFilePath> <expectedPageWidthInInches>");
             return;
         }
 
-        // Verify the file exists before proceeding.
-        if (!File.Exists(samplePath))
+        string diagramPath = args[0];
+        string expectedWidthStr = args[1];
+
+        // Guard against missing file.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {samplePath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Expected page width in inches for the known sample file.
-        // This value should match the page setup of the sample diagram.
-        double expectedPageWidth = 8.5; // Example: Letter size width.
+        // Parse expected width.
+        if (!double.TryParse(expectedWidthStr, out double expectedWidth))
+        {
+            Console.Error.WriteLine($"Error: Unable to parse expected width '{expectedWidthStr}' as a double.");
+            return;
+        }
 
         try
         {
-            // Load the diagram from the file.
-            Diagram diagram = new Diagram(samplePath);
+            // Load the diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
             // Ensure the diagram contains at least one page.
             if (diagram.Pages.Count == 0)
             {
-                throw new Exception("The diagram contains no pages.");
+                throw new Exception("The diagram does not contain any pages.");
             }
 
-            // Access the first page (index 0).
-            Page page = diagram.Pages[0];
+            // Access the first page's width.
+            Page firstPage = diagram.Pages[0];
+            double actualWidth = firstPage.PageSheet.PageProps.PageWidth.Value;
 
-            // Retrieve the page width using the correct property path.
-            double actualPageWidth = page.PageSheet.PageProps.PageWidth.Value;
-
-            // Output the retrieved width for diagnostic purposes.
-            Console.WriteLine($"Actual Page Width: {actualPageWidth} inches");
-
-            // Compare the actual width with the expected value using a tolerance.
-            double tolerance = 0.001; // Allow minor floating‑point differences.
-            if (Math.Abs(actualPageWidth - expectedPageWidth) > tolerance)
+            // Compare actual width with expected width (tolerance of 0.001 inches).
+            const double tolerance = 0.001;
+            if (Math.Abs(actualWidth - expectedWidth) > tolerance)
             {
-                throw new Exception($"Page width mismatch. Expected: {expectedPageWidth}, Actual: {actualPageWidth}");
+                throw new Exception($"PageWidth mismatch. Expected: {expectedWidth} inches, Actual: {actualWidth} inches.");
             }
 
-            // If we reach this point, the test passed.
-            Console.WriteLine("Test passed: Page width matches the expected value.");
+            // If we reach here, the test passed.
+            Console.WriteLine($"Success: PageWidth is {actualWidth} inches as expected.");
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error during test execution: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

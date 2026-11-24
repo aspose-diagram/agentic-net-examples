@@ -6,26 +6,25 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the sample Visio file.
-        if (args.Length == 0)
+        // Path to the sample Visio file. Adjust as needed.
+        string diagramPath = "sample.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: Program <path-to-sample.vsdx>");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        string filePath = args[0];
-
         // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(filePath))
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
             // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(filePath);
+            Diagram diagram = new Diagram(diagramPath);
 
             // Ensure the diagram contains at least one page.
             if (diagram.Pages.Count == 0)
@@ -33,20 +32,26 @@ class Program
                 throw new Exception("The diagram does not contain any pages.");
             }
 
-            // Access the first page's height (in inches).
-            double actualHeight = diagram.Pages[0].PageSheet.PageProps.PageHeight.Value;
+            // Retrieve the first page (index 0).
+            Page firstPage = diagram.Pages[0];
 
-            // TODO: Replace the placeholder with the expected page height for the known sample file.
-            double expectedHeight = 0.0; // e.g., 11.0 for Letter size
+            // Access the page height (in inches) via the PageProps property.
+            double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value;
 
-            // Verify that the actual height matches the expected height within a small tolerance.
-            const double tolerance = 0.001;
-            if (Math.Abs(actualHeight - expectedHeight) > tolerance)
+            // Expected height for the known sample file (in inches).
+            // Update this value to match the actual height of your sample file.
+            double expectedHeight = 11.0;
+
+            // Verify that the retrieved height matches the expected value.
+            // Allow a small tolerance for floating‑point comparisons.
+            double tolerance = 0.001;
+            if (Math.Abs(pageHeight - expectedHeight) > tolerance)
             {
-                throw new Exception($"PageHeight verification failed. Expected: {expectedHeight}, Actual: {actualHeight}");
+                throw new Exception($"PageHeight test failed. Expected: {expectedHeight}, Actual: {pageHeight}");
             }
 
-            Console.WriteLine("PageHeight verification passed.");
+            // If we reach this point, the test passed.
+            Console.WriteLine("PageHeight test passed.");
         }
         catch (Exception ex)
         {

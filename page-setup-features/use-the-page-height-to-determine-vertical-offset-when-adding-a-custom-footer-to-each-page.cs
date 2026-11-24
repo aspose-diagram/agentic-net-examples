@@ -1,62 +1,77 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            return;
+        }
 
-        // Guard against missing input file.
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        try
+        // Determine output path (optional second argument or default suffix)
+        string outputPath = args.Length >= 2
+            ? args[1]
+            : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + "_FooterAdded.vsdx");
+
+        // Load the Visio diagram inside a using block (mandatory pattern)
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Total number of pages in the diagram.
-            int pageCount = diagram.Pages.Count;
-
-            // Iterate through each page to add a custom footer.
-            for (int i = 0; i < pageCount; i++)
+            try
             {
-                // Retrieve the current page.
-                Page page = diagram.Pages[i];
+                // Desired distance of the footer from the top edge (in inches)
+                double desiredTopOffset = 0.5;
 
-                // Get page dimensions (in inches).
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                // Calculate the footer margin (distance from the bottom edge) based on the first page height
+                double footerMargin = 0.0;
+                if (diagram.Pages.Count > 0)
+                {
+                    Page firstPage = diagram.Pages[0];
+                    double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value; // height in inches
+                    // FooterMargin = page height - desired distance from top
+                    footerMargin = pageHeight - desiredTopOffset;
+                }
 
-                // Determine vertical offset as 5% of the page height.
-                double verticalOffset = pageHeight * 0.05;
+                // Set custom footer text (applies to the whole document)
+                diagram.HeaderFooter.FooterLeft = "Custom Footer - Left";
+                diagram.HeaderFooter.FooterCenter = "Custom Footer - Center";
+                diagram.HeaderFooter.FooterRight = "Custom Footer - Right";
 
-                // Define footer text (including page number placeholders).
-                string footerText = $"Page {i + 1} of {pageCount}";
+                // Apply the calculated vertical offset using FooterMargin (distance from bottom edge)
+                diagram.HeaderFooter.FooterMargin.Value = footerMargin;
 
-                // Define a modest height for the footer text shape.
-                double footerShapeHeight = 0.2; // inches
+                // Customize footer font
+                var footerFont = diagram.HeaderFooter.HeaderFooterFont;
+                footerFont.FaceName = "Arial";
+                // Negative Height maps to point size (e.g., -16 ≈ 12pt)
+                footerFont.Height = -16;
+                footerFont.Weight = 700; // 700 = bold
+                footerFont.Underline = BOOL.False; // no underline
 
-                // Add a text shape that spans the full page width, positioned using the calculated offset.
-                // PinX = 0 (left edge), PinY = verticalOffset (distance from bottom), Width = pageWidth, Height = footerShapeHeight.
-                page.AddText(0, verticalOffset, pageWidth, footerShapeHeight, footerText);
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with custom footer to: {outputPath}");
             }
-
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Write any errors to the error console
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
         }
     }
 }

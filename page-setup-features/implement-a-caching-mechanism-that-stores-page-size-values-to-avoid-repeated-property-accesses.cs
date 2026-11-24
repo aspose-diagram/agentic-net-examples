@@ -7,110 +7,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio diagram file path as the first argument.
+        // Validate input arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to a Visio diagram file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load.
+        // Guard against missing file.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Initialize the page size cache for the loaded diagram.
-            PageSizeCache cache = new PageSizeCache(diagram);
+            // Initialize the page size cache.
+            PageSizeCache cache = new PageSizeCache();
 
-            // Example usage: print cached page sizes.
+            // Iterate through all pages and retrieve cached sizes.
             for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                PageSize size = cache.GetPageSize(i);
-                Console.WriteLine($"Page {i + 1}: Width = {size.Width} inches, Height = {size.Height} inches");
-            }
-
-            // Example usage: modify each page size using the cached values (increase by 10%).
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                PageSize originalSize = cache.GetPageSize(i);
-                double newWidth = originalSize.Width * 1.1;
-                double newHeight = originalSize.Height * 1.1;
-
                 Page page = diagram.Pages[i];
-                page.PageSheet.PageProps.PageWidth.Value = newWidth;
-                page.PageSheet.PageProps.PageHeight.Value = newHeight;
+                (double width, double height) = cache.GetPageSize(page);
+                Console.WriteLine($"Page {i + 1}: Width = {width} inches, Height = {height} inches");
             }
-
-            // Save the modified diagram to a new file in VSDX format.
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                "Modified_" + Path.GetFileName(diagramPath));
-
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }
 
-// Helper class that caches page width and height values to avoid repeated property accesses.
+/// <summary>
+/// Caches page width and height values to avoid repeated property accesses.
+/// </summary>
 class PageSizeCache
 {
-    // Internal dictionary: key = page index, value = cached size.
-    private readonly Dictionary<int, PageSize> _cache = new Dictionary<int, PageSize>();
+    // Internal dictionary keyed by page ID.
+    private readonly Dictionary<int, (double width, double height)> _cache = new Dictionary<int, (double, double)>();
 
-    // Constructor populates the cache from the provided diagram.
-    public PageSizeCache(Diagram diagram)
+    /// <summary>
+    /// Retrieves the size of the specified page, using the cache when possible.
+    /// </summary>
+    /// <param name="page">The page whose size is required.</param>
+    /// <returns>A tuple containing width and height in inches.</returns>
+    public (double width, double height) GetPageSize(Page page)
     {
-        if (diagram == null) throw new ArgumentNullException(nameof(diagram));
+        // Use the page's ID as the cache key (IDs are unique per page).
+        int key = page.ID;
 
-        // Iterate through all pages and store their dimensions.
-        for (int i = 0; i < diagram.Pages.Count; i++)
-        {
-            Page page = diagram.Pages[i];
-            double width = page.PageSheet.PageProps.PageWidth.Value;
-            double height = page.PageSheet.PageProps.PageHeight.Value;
-            _cache[i] = new PageSize(width, height);
-        }
-    }
-
-    // Retrieves the cached size for the specified page index.
-    public PageSize GetPageSize(int pageIndex)
-    {
-        if (_cache.TryGetValue(pageIndex, out PageSize size))
+        // Return cached value if it exists.
+        if (_cache.TryGetValue(key, out var size))
         {
             return size;
         }
-        else
-        {
-            // This situation should not occur; handle gracefully.
-            throw new ArgumentOutOfRangeException(nameof(pageIndex), $"Page index {pageIndex} is out of range.");
-        }
-    }
-}
 
-// Simple immutable struct to hold page width and height.
-struct PageSize
-{
-    public double Width { get; }
-    public double Height { get; }
+        // Access the page properties to obtain width and height.
+        double width = page.PageSheet.PageProps.PageWidth.Value;
+        double height = page.PageSheet.PageProps.PageHeight.Value;
 
-    public PageSize(double width, double height)
-    {
-        Width = width;
-        Height = height;
+        // Store the retrieved size in the cache for future use.
+        _cache[key] = (width, height);
+
+        return (width, height);
     }
 }

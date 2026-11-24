@@ -6,60 +6,47 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 1)
+        // Verify that a file path argument was provided
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path> [page-index]");
+            Console.Error.WriteLine("Please provide the path to a Visio diagram file as the first argument.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the diagram file exists.
+        // Guard: ensure the file exists before attempting to load
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
-            return;
-        }
-
-        // Optional page index argument; default to the first page (index 0).
-        int pageIndex = 0;
-        if (args.Length >= 2 && !int.TryParse(args[1], out pageIndex))
-        {
-            Console.Error.WriteLine("Error: Invalid page index. It must be an integer.");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(diagramPath);
 
-            // Validate the requested page index.
-            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+            // Ensure the diagram contains at least one page
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Document contains {diagram.Pages.Count} page(s).");
+                Console.Error.WriteLine("The diagram does not contain any pages.");
                 return;
             }
 
-            // Access the selected page.
-            Page page = diagram.Pages[pageIndex];
+            // Access the first page (index 0) – you can change the index to select a different page
+            Page page = diagram.Pages[0];
 
-            // Read the page width (in inches) from PageProps.
+            // Read the PageWidth property from the page's PageProps (value is in inches)
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Optionally, also read the page height for completeness.
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Output the retrieved dimensions.
-            Console.WriteLine($"Page Index: {pageIndex}");
+            // Output the retrieved page width
             Console.WriteLine($"Page Width: {pageWidth} inches");
-            Console.WriteLine($"Page Height: {pageHeight} inches");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any exception details to the error output
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

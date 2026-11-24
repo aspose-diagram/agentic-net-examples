@@ -1,12 +1,13 @@
 using System;
 using System.IO;
+using System.Globalization;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output CSV path
+        // Validate command-line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputCsvPath>");
@@ -16,62 +17,45 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input diagram file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Guard: ensure output directory exists
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
-
-        Diagram diagram = null;
         try
         {
-            // Load the Visio diagram
-            diagram = new Diagram(inputPath);
-
-            // Open CSV writer
-            using (StreamWriter writer = new StreamWriter(outputPath))
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Write CSV header
-                writer.WriteLine("PageIndex,Width,Height");
-
-                // Iterate through pages and log dimensions
-                int pageIndex = 0;
-                foreach (Page page in diagram.Pages)
+                // Open a StreamWriter for the CSV output.
+                using (StreamWriter writer = new StreamWriter(outputPath, false))
                 {
-                    // Retrieve page width and height (values are in inches)
-                    double width = page.PageSheet.PageProps.PageWidth.Value;
-                    double height = page.PageSheet.PageProps.PageHeight.Value;
+                    // Write CSV header.
+                    writer.WriteLine("PageIndex,WidthInches,HeightInches");
 
-                    // Write a CSV line for the current page
-                    writer.WriteLine($"{pageIndex},{width},{height}");
+                    int pageIndex = 0;
+                    // Iterate through each page in the diagram.
+                    foreach (Page page in diagram.Pages)
+                    {
+                        pageIndex++;
 
-                    pageIndex++;
+                        // Retrieve page width and height (values are in inches).
+                        double width = page.PageSheet.PageProps.PageWidth.Value;
+                        double height = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Write the data line using invariant culture to ensure consistent decimal format.
+                        string line = string.Format(CultureInfo.InvariantCulture, "{0},{1},{2}", pageIndex, width, height);
+                        writer.WriteLine(line);
+                    }
                 }
             }
-
-            Console.WriteLine($"Page dimensions have been written to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
-        finally
-        {
-            // Dispose the diagram if it implements IDisposable
-            if (diagram != null)
-            {
-                diagram.Dispose();
-            }
+            // Log any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output path for the diagram loaded from memory
+        string outputPath = "output_from_memory.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Verify that the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,20 +25,28 @@ class Program
 
         try
         {
-            // Open the Visio file as a stream and load it into a Diagram instance.
-            using (FileStream stream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
+            // Open the file as a FileStream
+            using (FileStream fileStream = new FileStream(inputPath, FileMode.Open, FileAccess.Read))
             {
-                // Use the Diagram constructor that accepts a Stream.
-                Diagram diagram = new Diagram(stream);
+                // Copy the file stream into a MemoryStream to simulate loading from memory
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    fileStream.CopyTo(memoryStream);
+                    memoryStream.Position = 0; // Reset position to the beginning
 
-                // Save the loaded diagram to the specified output path in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram successfully loaded from memory and saved to: {outputPath}");
+                    // Load the diagram from the memory stream using the stream constructor
+                    using (Diagram diagram = new Diagram(memoryStream))
+                    {
+                        // Save the loaded diagram to a new file
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        Console.WriteLine($"Diagram successfully saved to: {outputPath}");
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving.
+            // Output any errors encountered during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

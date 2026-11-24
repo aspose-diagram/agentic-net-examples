@@ -1,21 +1,18 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
+using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        string outputPath = "output_modified.vsdx";
+        // Determine input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,53 +21,45 @@ class Program
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block (ensures proper disposal)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
+                // Access the first page of the diagram
+                Page page = diagram.Pages[0];
 
-            // Update print settings for each page
-            foreach (Page page in diagram.Pages)
-            {
-                // Access the PrintProps object for the page
+                // Retrieve the page's print properties object
                 PrintProps printProps = page.PageSheet.PrintProps;
 
-                // Example: set scaling factors (1 = 100%)
+                // Update page print settings:
+                // Set margins (values are in inches)
+                printProps.PageLeftMargin.Value = 0.5;   // left margin
+                printProps.PageRightMargin.Value = 0.5;  // right margin
+                printProps.PageTopMargin.Value = 0.5;    // top margin
+                printProps.PageBottomMargin.Value = 0.5; // bottom margin
+
+                // Set scaling factors (1.0 = 100%)
                 printProps.ScaleX.Value = 1.0;
                 printProps.ScaleY.Value = 1.0;
 
-                // Example: set page margins (in inches)
-                printProps.PageLeftMargin.Value = 0.5;
-                printProps.PageRightMargin.Value = 0.5;
-                printProps.PageTopMargin.Value = 0.5;
-                printProps.PageBottomMargin.Value = 0.5;
+                // Set page orientation to portrait
+                // PrintPageOrientationValue.Portrait = portrait, .Landscape = landscape
+                printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
 
-                // Example: set orientation to portrait (true = portrait, false = landscape)
-                // Note: In Aspose.Diagram, orientation is controlled via the PageSheet's PageProps.
-                // Here we set the page width greater than height for landscape, otherwise portrait.
-                // Adjust as needed.
-                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-                if (pageWidth > pageHeight)
-                {
-                    // Switch to portrait by swapping width and height
-                    page.PageSheet.PageProps.PageWidth.Value = pageHeight;
-                    page.PageSheet.PageProps.PageHeight.Value = pageWidth;
-                }
+                // Optionally enable fit-to-page (uncomment if needed)
+                // printProps.OnPage.Value = BOOL.True;
+                // printProps.PagesX.Value = 1;
+                // printProps.PagesY.Value = 1;
+
+                // Save the modified diagram to a new Visio file (VSDX format)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram to a new VSDX file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -14,12 +14,12 @@ class Program
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the file exists
-        if (!File.Exists(diagramPath))
+        // Guard against missing file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -28,33 +28,33 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through all pages in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the width of the current page from its PageSheet
-                // Width is stored in PageProps.PageWidth.Value (in inches)
-                double width = page.PageSheet.PageProps.PageWidth.Value;
+                // Iterate over all pages in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve the width of the current page from PageProps
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
 
-                // Add the width to the collection
-                pageWidths.Add(width);
+                    // Add the width to the collection
+                    pageWidths.Add(width);
+                }
             }
 
             // Output the collected widths for analysis
-            Console.WriteLine("Collected page widths (in inches):");
+            Console.WriteLine("Collected page widths:");
             for (int i = 0; i < pageWidths.Count; i++)
             {
                 Console.WriteLine($"Page {i + 1}: {pageWidths[i]}");
             }
 
-            // Dispose the diagram if needed
-            diagram.Dispose();
+            // Placeholder for further analysis on pageWidths
+            // TODO: Perform additional analysis as needed
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

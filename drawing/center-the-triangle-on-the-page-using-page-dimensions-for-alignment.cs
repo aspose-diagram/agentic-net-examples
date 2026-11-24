@@ -7,11 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provide via command line or use defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output_centered.vsdx";
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -20,44 +26,46 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page (assumes at least one page exists)
-            Page page = diagram.Pages[0];
-
-            // Retrieve page dimensions (in inches)
-            double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-            double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Define triangle vertices (relative to origin) and close the shape
-            // Format: x1, y1, x2, y2, x3, y3, x1, y1
-            double[] trianglePoints = new double[]
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                0, 0,   // Vertex 1
-                2, 0,   // Vertex 2
-                1, 2,   // Vertex 3
-                0, 0    // Close the polygon
-            };
+                // Access the first page (index 0).
+                Page page = diagram.Pages[0];
 
-            // Draw the triangle on the page; returns the shape ID
-            long triangleId = page.DrawPolyline(trianglePoints);
+                // Retrieve page dimensions (in inches).
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // Retrieve the shape object using the ID
-            Shape triangleShape = page.Shapes.GetShape(triangleId);
+                // Define desired triangle size.
+                double triangleWidth = 2.0;   // inches
+                double triangleHeight = 2.0;  // inches
 
-            // Center the triangle on the page by setting its PinX and PinY to page center
-            triangleShape.XForm.PinX.Value = pageWidth / 2.0;
-            triangleShape.XForm.PinY.Value = pageHeight / 2.0;
+                // Calculate lower‑left corner so the triangle is centered.
+                double left = (pageWidth - triangleWidth) / 2.0;
+                double bottom = (pageHeight - triangleHeight) / 2.0;
 
-            // Save the modified diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Define triangle vertices (clockwise) and close the shape by repeating the first point.
+                double[] points = new double[]
+                {
+                    left, bottom,                                 // Vertex 1
+                    left + triangleWidth, bottom,                 // Vertex 2
+                    left + triangleWidth / 2.0, bottom + triangleHeight, // Vertex 3 (top)
+                    left, bottom                                  // Close polygon
+                };
+
+                // Draw the triangle on the page.
+                long shapeId = page.DrawPolyline(points);
+
+                // (Optional) Retrieve the shape if further modifications are needed.
+                // Shape triangle = page.Shapes.GetShape(shapeId);
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

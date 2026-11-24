@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
@@ -31,34 +31,36 @@ class Program
                 // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page.
+                    // Iterate through each shape on the page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Identify connector shapes: connectors are 1‑D shapes.
-                        if (!shape.OneD)
-                            continue;
-
-                        // Check the current jump style; change only if it is the page default.
-                        if (shape.Layout.ConLineJumpStyle.Value == ConLineJumpStyleValue.PageDefault)
+                        // Identify connector shapes (1‑D shapes).
+                        if (shape.OneD)
                         {
-                            shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
-                            Console.WriteLine($"Connector ID {shape.ID} jump style changed to Square.");
+                            // Retrieve current jump style.
+                            var currentStyle = shape.Layout.ConLineJumpStyle.Value;
+
+                            // If the jump style is the default (straight) or undefined, set it to Square.
+                            if (currentStyle == ConLineJumpStyleValue.PageDefault ||
+                                currentStyle == ConLineJumpStyleValue.Undefined)
+                            {
+                                shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Square;
+                            }
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

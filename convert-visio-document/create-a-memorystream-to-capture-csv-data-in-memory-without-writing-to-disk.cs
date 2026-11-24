@@ -6,50 +6,48 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length == 0)
+        // Determine the input Visio file path (first argument or a default placeholder).
+        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
+
+        // Guard: ensure the input file exists before proceeding.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string visioPath = args[0];
-
-        // Guard: ensure the input Visio file exists.
-        if (!File.Exists(visioPath))
+        // MemoryStream to hold the CSV output in memory.
+        using (MemoryStream csvStream = new MemoryStream())
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
-            return;
-        }
-
-        try
-        {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(visioPath);
-
-            // Create a memory stream to capture CSV output.
-            using (MemoryStream csvStream = new MemoryStream())
+            try
             {
-                // Save the diagram to the memory stream in CSV format.
+                // Load the Visio diagram from the specified file.
+                Diagram diagram = new Diagram(inputPath);
+
+                // Save the diagram directly to the MemoryStream in CSV format.
+                // This overload writes the CSV data into the provided stream.
                 diagram.Save(csvStream, SaveFileFormat.Csv);
-
-                // Reset stream position to the beginning for reading.
-                csvStream.Position = 0;
-
-                // Read the CSV data as text.
-                using (StreamReader reader = new StreamReader(csvStream))
-                {
-                    string csvContent = reader.ReadToEnd();
-
-                    // Output the CSV content to the console (or further processing).
-                    Console.WriteLine(csvContent);
-                }
             }
-        }
-        catch (Exception ex)
-        {
-            // Write any errors that occur during processing to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Capture any Aspose.Diagram related errors.
+                Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+                return;
+            }
+
+            // Reset the stream position to the beginning before reading.
+            csvStream.Seek(0, SeekOrigin.Begin);
+
+            // Read the CSV content from the MemoryStream as a string.
+            string csvContent;
+            using (StreamReader reader = new StreamReader(csvStream))
+            {
+                csvContent = reader.ReadToEnd();
+            }
+
+            // Output the CSV data to the console (or further processing as needed).
+            Console.WriteLine("CSV data captured in memory:");
+            Console.WriteLine(csvContent);
         }
     }
 }

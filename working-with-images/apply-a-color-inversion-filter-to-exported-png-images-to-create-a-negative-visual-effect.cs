@@ -5,94 +5,87 @@ using Aspose.Diagram.Saving;
 using Aspose.Drawing;
 using Aspose.Drawing.Imaging;
 
-// Alias Aspose.Drawing types for clarity
-using AsposeImage = Aspose.Drawing.Image;
-using AsposeBitmap = Aspose.Drawing.Bitmap;
-using AsposeColor = Aspose.Drawing.Color;
-
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder>");
             return;
         }
 
         string inputPath = args[0];
         string outputFolder = args[1];
 
-        // Guard: check input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure output directory exists
-        try
+        // Guard: ensure the output folder exists (create if necessary).
+        if (!Directory.Exists(outputFolder))
         {
-            Directory.CreateDirectory(outputFolder);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-            return;
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram
+            // Iterate over each page in the diagram.
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Configure image save options for PNG export (single page)
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                imgOptions.PageIndex = pageIndex;   // zero‑based page index
-                imgOptions.PageCount = 1;           // export only this page
+                // Prepare PNG export options for the current page.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                pngOptions.PageIndex = pageIndex;   // Export only this page.
+                pngOptions.PageCount = 1;
 
-                // Export the page to a memory stream
-                using (MemoryStream pngStream = new MemoryStream())
+                // Define the output PNG file path.
+                string pngPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}.png");
+
+                // Export the page to PNG.
+                diagram.Save(pngPath, pngOptions);
+
+                // Load the exported PNG using Aspose.Drawing.
+                using (Bitmap bitmap = new Bitmap(pngPath))
                 {
-                    diagram.Save(pngStream, imgOptions);
-                    pngStream.Position = 0; // reset stream position for reading
-
-                    // Load the PNG into Aspose.Drawing.Bitmap for pixel manipulation
-                    using (AsposeBitmap bitmap = new AsposeBitmap(pngStream))
+                    // Invert colors pixel by pixel.
+                    for (int y = 0; y < bitmap.Height; y++)
                     {
-                        // Invert colors pixel by pixel
-                        for (int y = 0; y < bitmap.Height; y++)
+                        for (int x = 0; x < bitmap.Width; x++)
                         {
-                            for (int x = 0; x < bitmap.Width; x++)
-                            {
-                                AsposeColor original = bitmap.GetPixel(x, y);
-                                // Compute inverted color (RGB components)
-                                int invR = 255 - original.R;
-                                int invG = 255 - original.G;
-                                int invB = 255 - original.B;
-                                // Preserve original alpha
-                                AsposeColor inverted = AsposeColor.FromArgb(original.A, invR, invG, invB);
-                                bitmap.SetPixel(x, y, inverted);
-                            }
+                            Color original = bitmap.GetPixel(x, y);
+                            int invR = 255 - original.R;
+                            int invG = 255 - original.G;
+                            int invB = 255 - original.B;
+                            Color inverted = Color.FromArgb(original.A, invR, invG, invB);
+                            bitmap.SetPixel(x, y, inverted);
                         }
-
-                        // Build output file path
-                        string outputPath = Path.Combine(outputFolder, $"page_{pageIndex + 1}_negative.png");
-
-                        // Save the inverted bitmap as PNG
-                        bitmap.Save(outputPath, ImageFormat.Png);
-                        Console.WriteLine($"Saved negative image: {outputPath}");
                     }
+
+                    // Save the inverted image back to the same file.
+                    bitmap.Save(pngPath, ImageFormat.Png);
                 }
+
+                Console.WriteLine($"Processed page {pageIndex + 1}: {pngPath}");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

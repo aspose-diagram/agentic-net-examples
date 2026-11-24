@@ -1,44 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: <folderPath> <placeholderImagePath> <replacementImagePath>
-        if (args.Length < 3)
+        // Expect four arguments: source folder, placeholder image path, replacement image path, output folder
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <folderPath> <placeholderImagePath> <replacementImagePath>");
+            Console.Error.WriteLine("Usage: Program <sourceFolder> <placeholderImagePath> <replacementImagePath> <outputFolder>");
             return;
         }
 
-        string folderPath = args[0];
+        string sourceFolder = args[0];
         string placeholderPath = args[1];
         string replacementPath = args[2];
+        string outputFolder = args[3];
 
-        // Guard folder existence
-        if (!Directory.Exists(folderPath))
+        // Validate source folder
+        if (!Directory.Exists(sourceFolder))
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine($"Source folder does not exist: {sourceFolder}");
             return;
         }
 
-        // Guard placeholder image existence
+        // Validate placeholder image file
         if (!File.Exists(placeholderPath))
         {
             Console.Error.WriteLine($"Placeholder image file not found: {placeholderPath}");
             return;
         }
 
-        // Guard replacement image existence
+        // Validate replacement image file
         if (!File.Exists(replacementPath))
         {
             Console.Error.WriteLine($"Replacement image file not found: {replacementPath}");
             return;
         }
 
-        // Load image bytes once for comparison and replacement
+        // Ensure output folder exists
+        if (!Directory.Exists(outputFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
+
+        // Load placeholder and replacement image bytes once
         byte[] placeholderBytes;
         byte[] replacementBytes;
         try
@@ -52,85 +68,70 @@ class Program
             return;
         }
 
-        // Get all VSDX files in the specified folder
-        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx", SearchOption.TopDirectoryOnly);
-        if (vsdxFiles.Length == 0)
+        // Process each VSDX file in the source folder
+        string[] vsdxFiles = Directory.GetFiles(sourceFolder, "*.vsdx");
+        foreach (string inputPath in vsdxFiles)
         {
-            Console.WriteLine("No VSDX files found in the specified folder.");
-            return;
-        }
-
-        foreach (string filePath in vsdxFiles)
-        {
-            // Guard each file (should exist from GetFiles, but double‑check)
-            if (!File.Exists(filePath))
+            // Guard: ensure the file still exists
+            if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"File not found (skipping): {filePath}");
+                Console.Error.WriteLine($"File not found (skipping): {inputPath}");
                 continue;
             }
 
             try
             {
                 // Load diagram inside a using block as required
-                using (Diagram diagram = new Diagram(filePath))
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    bool modified = false;
-
-                    // Iterate through all pages
+                    // Iterate over all pages
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the page
+                        // Iterate over all shapes on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Identify picture shapes (foreign images)
+                            // Identify foreign (image) shapes
                             if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                             {
                                 // Compare the current image bytes with the placeholder bytes
-                                if (ByteArraysEqual(shape.ForeignData.Value, placeholderBytes))
+                                byte[] currentBytes = shape.ForeignData.Value;
+                                if (AreByteArraysEqual(currentBytes, placeholderBytes))
                                 {
-                                    // Replace the image data with the new PNG bytes
+                                    // Replace with the new image bytes
                                     shape.ForeignData.Value = replacementBytes;
-
-                                    // Ensure the image stays behind other content
-                                    shape.SendToBack();
-
-                                    modified = true;
                                 }
                             }
                         }
                     }
 
-                    // Save only if any replacement was performed
-                    if (modified)
-                    {
-                        diagram.Save(filePath, SaveFileFormat.Vsdx);
-                        Console.WriteLine($"Replaced placeholder image in: {Path.GetFileName(filePath)}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"No matching placeholder found in: {Path.GetFileName(filePath)}");
-                    }
+                    // Prepare output path (same file name in output folder)
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(inputPath));
+
+                    // Save the modified diagram back to VSDX format
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine($"Processed and saved: {Path.GetFileName(inputPath)}");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }
     }
 
     // Helper method to compare two byte arrays for equality
-    private static bool ByteArraysEqual(byte[] a1, byte[] a2)
+    private static bool AreByteArraysEqual(byte[] a, byte[] b)
     {
-        if (ReferenceEquals(a1, a2))
+        if (ReferenceEquals(a, b))
             return true;
-        if (a1 == null || a2 == null)
+        if (a == null || b == null)
             return false;
-        if (a1.Length != a2.Length)
+        if (a.Length != b.Length)
             return false;
-        for (int i = 0; i < a1.Length; i++)
+        for (int i = 0; i < a.Length; i++)
         {
-            if (a1[i] != a2[i])
+            if (a[i] != b[i])
                 return false;
         }
         return true;

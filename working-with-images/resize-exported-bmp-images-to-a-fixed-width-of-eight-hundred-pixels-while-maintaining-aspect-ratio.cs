@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
@@ -17,14 +17,14 @@ class Program
         string inputPath = args[0];
         string outputFolder = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: input file must exist
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure the output folder exists or create it.
+        // Guard: output folder must exist (create if missing)
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -40,66 +40,51 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page in the diagram
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Iterate over each page in the diagram.
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Access the current page
+                Page page = diagram.Pages[i];
+
+                // Retrieve page width in inches
+                double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+
+                // Define desired output width in pixels
+                const int targetWidthPixels = 800;
+
+                // Set a base resolution (DPI) for the exported image
+                const float resolutionDpi = 96f;
+
+                // Calculate scale factor to achieve the target width while preserving aspect ratio
+                // Scale = targetWidth / (pageWidthInches * resolution)
+                float scale = (float)(targetWidthPixels / (pageWidthInches * resolutionDpi));
+
+                // Configure image save options for BMP format
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Bmp)
                 {
-                    // Prepare temporary and final BMP file paths.
-                    string tempBmpPath = Path.Combine(outputFolder, $"page_{i + 1}_temp.bmp");
-                    string finalBmpPath = Path.Combine(outputFolder, $"page_{i + 1}.bmp");
+                    // Export only the current page
+                    PageIndex = i,
+                    PageCount = 1,
+                    // Set resolution and scaling
+                    Resolution = resolutionDpi,
+                    Scale = scale
+                };
 
-                    // Configure image save options for BMP export.
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Bmp);
-                    imgOptions.PageIndex = i;   // Export only the current page.
-                    imgOptions.PageCount = 1;   // Single page.
+                // Build output file path
+                string outputPath = Path.Combine(outputFolder, $"page_{i + 1}.bmp");
 
-                    // Export the page to a temporary BMP file.
-                    diagram.Save(tempBmpPath, imgOptions);
+                // Save the page as a BMP image with the calculated scaling
+                diagram.Save(outputPath, saveOptions);
 
-                    // Resize the exported BMP to a fixed width of 800 pixels while preserving aspect ratio.
-                    using (Aspose.Drawing.Image original = Aspose.Drawing.Image.FromFile(tempBmpPath))
-                    {
-                        int originalWidth = original.Width;
-                        int originalHeight = original.Height;
-
-                        // Calculate new dimensions.
-                        int newWidth = 800;
-                        int newHeight = (int)(originalHeight * (newWidth / (double)originalWidth));
-
-                        // Create a new bitmap with the target size.
-                        using (Aspose.Drawing.Bitmap resized = new Aspose.Drawing.Bitmap(newWidth, newHeight))
-                        {
-                            using (Aspose.Drawing.Graphics g = Aspose.Drawing.Graphics.FromImage(resized))
-                            {
-                                // Use high‑quality scaling.
-                                g.InterpolationMode = Aspose.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                g.DrawImage(original, 0, 0, newWidth, newHeight);
-                            }
-
-                            // Save the resized image to the final path.
-                            resized.Save(finalBmpPath, Aspose.Drawing.Imaging.ImageFormat.Bmp);
-                        }
-                    }
-
-                    // Delete the temporary BMP file.
-                    try
-                    {
-                        File.Delete(tempBmpPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"Warning: could not delete temporary file '{tempBmpPath}': {ex.Message}");
-                    }
-
-                    Console.WriteLine($"Page {i + 1} exported and resized to '{finalBmpPath}'.");
-                }
+                Console.WriteLine($"Exported page {i + 1} to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Log any Aspose.Diagram or I/O errors.
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

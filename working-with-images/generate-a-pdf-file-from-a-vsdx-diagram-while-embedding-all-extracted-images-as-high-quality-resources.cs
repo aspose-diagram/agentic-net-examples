@@ -10,7 +10,7 @@ class Program
     {
         // Input and output file paths (can be passed as command‑line arguments)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+        string outputPdfPath = args.Length > 1 ? args[1] : "output.pdf";
 
         // Guard against missing input file
         if (!File.Exists(inputPath))
@@ -19,73 +19,67 @@ class Program
             return;
         }
 
+        // Collection to hold extracted image data and file names
+        List<(byte[] Data, string FileName)> extractedImages = new List<(byte[], string)>();
+
         try
         {
-            // Load the VSDX diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // -----------------------------------------------------------------
-                // Extract all foreign (image) shapes from the diagram
-                // -----------------------------------------------------------------
-                List<byte[]> extractedImages = new List<byte[]>();
-
+                // Iterate through all pages and shapes to find foreign (image) shapes
+                int imageIndex = 0;
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Foreign shapes contain image data
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                        // Identify image shapes by TypeValue.Foreign and non‑null ForeignData
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData?.Value != null)
                         {
-                            extractedImages.Add(shape.ForeignData.Value);
+                            imageIndex++;
+                            byte[] imageBytes = shape.ForeignData.Value;
+                            // Default to PNG extension; real format detection is omitted for brevity
+                            string imageFileName = $"ExtractedImage_{imageIndex}.png";
+                            extractedImages.Add((imageBytes, imageFileName));
                         }
                     }
                 }
 
-                // -----------------------------------------------------------------
-                // Save the diagram to a temporary PDF file using PdfSaveOptions
-                // -----------------------------------------------------------------
-                string tempPdfPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
-
+                // Configure PDF save options for high‑quality output
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the format tracker as required
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;               // Explicitly set format tracker
+                pdfOptions.HorizontalResolution = 300;                    // High DPI for raster content
+                pdfOptions.VerticalResolution = 300;                      // High DPI for raster content
+                pdfOptions.ExportHiddenPage = false;                      // Do not export hidden pages
 
                 // Save the diagram as PDF
-                diagram.Save(tempPdfPath, pdfOptions);
+                diagram.Save(outputPdfPath, pdfOptions);
+            }
 
-                // -----------------------------------------------------------------
-                // Open the generated PDF with Aspose.Pdf and embed extracted images
-                // -----------------------------------------------------------------
-                // Fully qualified Aspose.Pdf types are used to avoid namespace conflicts
-                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(tempPdfPath);
-
-                int imageIndex = 1;
-                foreach (byte[] imgBytes in extractedImages)
+            // After the PDF is created, embed the extracted images as file attachments
+            using (Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(outputPdfPath))
+            {
+                foreach (var (Data, FileName) in extractedImages)
                 {
-                    using (MemoryStream imgStream = new MemoryStream(imgBytes))
+                    using (MemoryStream ms = new MemoryStream(Data))
                     {
                         // Create a file specification for the image and add it to the PDF's embedded files collection
-                        string fileName = $"Image_{imageIndex}.png";
-                        Aspose.Pdf.FileSpecification fileSpec = new Aspose.Pdf.FileSpecification(imgStream, fileName);
-                        pdfDocument.EmbeddedFiles.Add(fileSpec);
-                        imageIndex++;
+                        Aspose.Pdf.FileSpecification fileSpec = new Aspose.Pdf.FileSpecification(ms, FileName);
+                        pdfDoc.EmbeddedFiles.Add(fileSpec);
                     }
                 }
 
-                // Save the final PDF with embedded images
-                pdfDocument.Save(outputPath);
-
-                // Clean up the temporary PDF file
-                if (File.Exists(tempPdfPath))
-                {
-                    File.Delete(tempPdfPath);
-                }
+                // Save the updated PDF (overwrites the previous file)
+                pdfDoc.Save(outputPdfPath);
             }
+
+            Console.WriteLine($"PDF generated successfully: {outputPdfPath}");
+            Console.WriteLine($"Embedded {extractedImages.Count} image(s) into the PDF.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -7,30 +7,24 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input VST file> [output folder]");
+            Console.Error.WriteLine("Usage: Program <input VST file> <output folder>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists.
+        string outputFolder = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Determine output folder (optional argument). Use input file directory if not provided.
-        string outputFolder = args.Length >= 2 ? args[1] : Path.GetDirectoryName(inputPath);
-        if (string.IsNullOrEmpty(outputFolder))
-        {
-            Console.Error.WriteLine("Unable to determine output folder.");
-            return;
-        }
-
-        // Ensure the output folder exists.
+        // Ensure the output directory exists.
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -39,7 +33,7 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                Console.Error.WriteLine($"Error: Could not create output directory \"{outputFolder}\": {ex.Message}");
                 return;
             }
         }
@@ -49,55 +43,49 @@ class Program
             // Load the VST (stencil) file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Fixed resolution (DPI) for image rendering.
-            const float resolution = 96f;
-
-            int pageCounter = 0;
-            // Iterate through each page in the stencil.
+            // Iterate over each page in the stencil.
+            int pageIndex = 0;
             foreach (Page page in diagram.Pages)
             {
                 // Retrieve page dimensions in inches.
                 double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Convert dimensions to pixels using the chosen resolution.
-                double pixelWidth = pageWidthInches * resolution;
-                double pixelHeight = pageHeightInches * resolution;
+                // Default DPI for Aspose image export is 96.
+                const double dpi = 96.0;
+                double pixelWidth = pageWidthInches * dpi;
+                double pixelHeight = pageHeightInches * dpi;
 
                 // Determine scaling factor so that the larger side does not exceed 100 pixels.
-                double maxPixelDim = Math.Max(pixelWidth, pixelHeight);
-                float scale = maxPixelDim > 0 ? (float)(100.0 / maxPixelDim) : 1f;
-                if (scale > 1f) scale = 1f; // Do not upscale smaller pages.
+                double maxPixel = Math.Max(pixelWidth, pixelHeight);
+                double scale = maxPixel > 100 ? 100.0 / maxPixel : 1.0;
 
-                // Configure image save options.
+                // Configure image save options for PNG thumbnail.
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
                 {
                     // Export only the current page.
-                    PageIndex = pageCounter,
+                    PageIndex = pageIndex,
                     PageCount = 1,
-                    Resolution = resolution,
-                    Scale = scale
+                    // Apply the calculated scaling factor.
+                    Scale = (float)scale,
+                    // Do not export hidden pages.
+                    ExportHiddenPage = false
                 };
 
-                // Build output file name (e.g., page_1.png).
-                string outputPath = Path.Combine(outputFolder, $"page_{pageCounter + 1}.png");
+                // Build output file name.
+                string outputPath = Path.Combine(outputFolder, $"thumbnail_page_{pageIndex + 1}.png");
 
-                // Save the thumbnail image.
+                // Save the thumbnail.
                 diagram.Save(outputPath, saveOptions);
 
-                Console.WriteLine($"Thumbnail saved: {outputPath}");
+                Console.WriteLine($"Generated thumbnail for page {pageIndex + 1}: {outputPath}");
 
-                pageCounter++;
-            }
-
-            if (pageCounter == 0)
-            {
-                Console.WriteLine("No pages found in the stencil.");
+                pageIndex++;
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

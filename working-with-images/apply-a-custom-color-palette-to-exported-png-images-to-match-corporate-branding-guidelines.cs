@@ -3,122 +3,130 @@ using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output directory.
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputDirectory>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
             return;
         }
 
         string inputPath = args[0];
-        string outputDir = args[1];
+        string outputFolder = args[1];
 
-        // Guard: verify input file exists.
+        // Guard for input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure output directory exists (create if necessary).
-        try
+        // Ensure output folder exists
+        if (!Directory.Exists(outputFolder))
         {
-            if (!Directory.Exists(outputDir))
+            try
             {
-                Directory.CreateDirectory(outputDir);
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
             }
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-            return;
-        }
 
-        // Define a custom color palette mapping original hex colors to corporate branding colors.
-        // Keys and values should be hex strings (e.g., "#FFFFFF").
-        var colorPalette = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        // Define custom color palette mapping (original -> replacement)
+        // Example: map corporate brand colors
+        var colorMap = new Dictionary<Color, Color>
         {
-            // Example mappings – replace with actual corporate colors as needed.
-            { "#FFFFFF", "#F0F0F0" }, // white -> light gray
-            { "#000000", "#1A1A1A" }, // black -> dark gray
-            { "#FF0000", "#C00000" }, // red -> corporate red
-            { "#00FF00", "#00A000" }, // green -> corporate green
-            { "#0000FF", "#0030C0" }  // blue -> corporate blue
+            { FromHex("#FF0000"), FromHex("#003366") }, // Red -> Dark Blue
+            { FromHex("#00FF00"), FromHex("#669900") }, // Lime -> Olive
+            { FromHex("#0000FF"), FromHex("#CC6600") }  // Blue -> Orange
         };
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram.
+            // Iterate through each page and export to PNG
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                Page page = diagram.Pages[pageIndex];
+                // Configure image save options for a single page
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                imgOptions.PageIndex = pageIndex;
+                imgOptions.PageCount = 1;
+                imgOptions.Resolution = 300f; // High resolution
 
-                // Iterate over each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Build output PNG file path
+                string pageName = diagram.Pages[pageIndex].Name;
+                string pngPath = Path.Combine(outputFolder, $"{pageName}.png");
+
+                // Export page to PNG
+                diagram.Save(pngPath, imgOptions);
+
+                // Apply custom palette to the exported PNG
+                ApplyPalette(pngPath, colorMap);
+            }
+
+            Console.WriteLine("Export and palette application completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    // Loads a PNG, replaces colors according to the map, and saves it back
+    private static void ApplyPalette(string imagePath, Dictionary<Color, Color> palette)
+    {
+        try
+        {
+            using (Bitmap bitmap = new Bitmap(imagePath))
+            {
+                int width = bitmap.Width;
+                int height = bitmap.Height;
+
+                for (int y = 0; y < height; y++)
                 {
-                    // Apply custom fill foreground color if it matches the palette.
-                    try
+                    for (int x = 0; x < width; x++)
                     {
-                        string fillForeColor = shape.Fill.FillForegnd.Value;
-                        if (!string.IsNullOrEmpty(fillForeColor) && colorPalette.TryGetValue(fillForeColor, out string newForeColor))
+                        Color original = bitmap.GetPixel(x, y);
+                        if (palette.TryGetValue(original, out Color replacement))
                         {
-                            shape.Fill.FillForegnd.Value = newForeColor;
+                            bitmap.SetPixel(x, y, replacement);
                         }
                     }
-                    catch { /* Ignore shapes without a FillForegnd cell */ }
-
-                    // Apply custom fill background color if it matches the palette.
-                    try
-                    {
-                        string fillBackColor = shape.Fill.FillBkgnd.Value;
-                        if (!string.IsNullOrEmpty(fillBackColor) && colorPalette.TryGetValue(fillBackColor, out string newBackColor))
-                        {
-                            shape.Fill.FillBkgnd.Value = newBackColor;
-                        }
-                    }
-                    catch { /* Ignore shapes without a FillBkgnd cell */ }
-
-                    // Apply custom line color if it matches the palette.
-                    try
-                    {
-                        string lineColor = shape.Line.LineColor.Value;
-                        if (!string.IsNullOrEmpty(lineColor) && colorPalette.TryGetValue(lineColor, out string newLineColor))
-                        {
-                            shape.Line.LineColor.Value = newLineColor;
-                        }
-                    }
-                    catch { /* Ignore shapes without a LineColor cell */ }
                 }
 
-                // Configure PNG export options for the current page.
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
-                {
-                    PageIndex = pageIndex,
-                    PageCount = 1,
-                    // Optional: set resolution and scale as needed.
-                    Resolution = 300f,
-                    Scale = 1.0f
-                };
-
-                // Build output file path.
-                string outputPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.png");
-
-                // Export the page to PNG using the configured options.
-                diagram.Save(outputPath, pngOptions);
-                Console.WriteLine($"Exported page {pageIndex + 1} to {outputPath}");
+                // Overwrite the original PNG with the recolored version
+                bitmap.Save(imagePath);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
+            Console.Error.WriteLine($"Failed to apply palette to {imagePath}: {ex.Message}");
         }
+    }
+
+    // Helper to convert a hex string (e.g., "#RRGGBB") to Aspose.Drawing.Color
+    private static Color FromHex(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+            throw new ArgumentException("Invalid hex color.");
+
+        hex = hex.TrimStart('#');
+        if (hex.Length != 6)
+            throw new ArgumentException("Hex color must be 6 characters.");
+
+        int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+        int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+        int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+        return Color.FromArgb(r, g, b);
     }
 }

@@ -7,46 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PNG file path
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputPngFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        // Determine output path; default to same name with .png extension.
+        string outputPath = args.Length > 1 ? args[1] : Path.ChangeExtension(inputPath, ".png");
 
-        // Guard: ensure the input file exists before proceeding
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure image save options for high‑resolution PNG export
+                // Configure image export options for high‑resolution PNG.
                 ImageSaveOptions options = new ImageSaveOptions(SaveFileFormat.Png);
-                // Export only the first page (index 0)
-                options.PageIndex = 0;
+                options.PageIndex = 0;          // Export only the first page.
                 options.PageCount = 1;
-                // Set a high DPI resolution (e.g., 300 DPI) for better quality
-                options.Resolution = 300f;
+                options.Resolution = 300f;      // Set DPI for high quality.
+                options.SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias; // Enable anti‑aliasing.
 
-                // Save the first page as a PNG image
+                // Save the first page as PNG.
                 diagram.Save(outputPath, options);
+                Console.WriteLine($"First page exported successfully to \"{outputPath}\".");
             }
-
-            Console.WriteLine($"First page exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
+            // Report any errors that occur during loading or saving.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

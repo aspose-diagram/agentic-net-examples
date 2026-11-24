@@ -2,6 +2,11 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
+using Aspose.Drawing.Imaging;
+using AsposeImage = Aspose.Drawing.Image;
+using AsposeBitmap = Aspose.Drawing.Bitmap;
+using AsposeColor = Aspose.Drawing.Color;
 
 class Program
 {
@@ -15,88 +20,105 @@ class Program
         }
 
         string inputPath = args[0];
-        string outputFolder = args.Length >= 2 ? args[1] : Path.GetDirectoryName(inputPath);
+        string outputFolder = args.Length > 1 ? args[1] : Path.GetDirectoryName(inputPath);
 
         // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure output folder exists
+        // Guard: ensure output folder exists
         if (!Directory.Exists(outputFolder))
         {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
+            Console.Error.WriteLine($"Output folder does not exist: {outputFolder}");
+            return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            int pageIdx = 0;
-            // Iterate over each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Process each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each page
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify foreign (image) shapes
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
+                    // Iterate over each shape in the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        byte[] imageBytes = shape.ForeignData.Value;
-
-                        // Load image from byte array using Aspose.Drawing
-                        using (MemoryStream msIn = new MemoryStream(imageBytes))
-                        using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(msIn))
-                        using (Aspose.Drawing.Bitmap bmp = new Aspose.Drawing.Bitmap(img))
+                        // Identify foreign (image) shapes
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                         {
-                            // Apply grayscale conversion pixel by pixel
-                            for (int y = 0; y < bmp.Height; y++)
+                            try
                             {
-                                for (int x = 0; x < bmp.Width; x++)
+                                // Extract original image bytes
+                                byte[] originalBytes = shape.ForeignData.Value;
+
+                                // Load image using Aspose.Drawing
+                                using (MemoryStream inputMs = new MemoryStream(originalBytes))
+                                using (AsposeImage img = AsposeImage.FromStream(inputMs))
+                                using (AsposeBitmap bmp = new AsposeBitmap(img))
                                 {
-                                    Aspose.Drawing.Color pixel = bmp.GetPixel(x, y);
-                                    int gray = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
-                                    gray = Math.Clamp(gray, 0, 255);
-                                    Aspose.Drawing.Color grayColor = Aspose.Drawing.Color.FromArgb(gray, gray, gray);
-                                    bmp.SetPixel(x, y, grayColor);
+                                    // Apply grayscale conversion pixel by pixel
+                                    for (int y = 0; y < bmp.Height; y++)
+                                    {
+                                        for (int x = 0; x < bmp.Width; x++)
+                                        {
+                                            AsposeColor pixel = bmp.GetPixel(x, y);
+                                            int gray = (int)(0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B);
+                                            AsposeColor grayColor = AsposeColor.FromArgb(pixel.A, gray, gray, gray);
+                                            bmp.SetPixel(x, y, grayColor);
+                                        }
+                                    }
+
+                                    // Save modified image back to byte array (PNG format)
+                                    using (MemoryStream outputMs = new MemoryStream())
+                                    {
+                                        bmp.Save(outputMs, ImageFormat.Png);
+                                        shape.ForeignData.Value = outputMs.ToArray();
+                                    }
                                 }
                             }
-
-                            // Save the modified bitmap back to a byte array (PNG format)
-                            using (MemoryStream msOut = new MemoryStream())
+                            catch (Exception ex)
                             {
-                                bmp.Save(msOut, Aspose.Drawing.Imaging.ImageFormat.Png);
-                                shape.ForeignData.Value = msOut.ToArray();
+                                Console.Error.WriteLine($"Failed to process image in shape ID {shape.ID}: {ex.Message}");
+                                // Continue processing other shapes
                             }
                         }
                     }
                 }
 
-                // Export the current page as a TIFF image
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-                saveOptions.PageIndex = pageIdx;   // Export only this page
-                saveOptions.PageCount = 1;        // Single page export
+                // Export each page as a separate TIFF file
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
+                {
+                    try
+                    {
+                        // Configure image save options for TIFF
+                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
+                        saveOptions.PageIndex = pageIndex;   // zero‑based page index
+                        saveOptions.PageCount = 1;           // export only the current page
 
-                string outputPath = Path.Combine(outputFolder, $"Page_{pageIdx + 1}.tiff");
-                diagram.Save(outputPath, saveOptions);
+                        // Build output file name
+                        string outputPath = Path.Combine(outputFolder, $"Page_{pageIndex + 1}.tiff");
 
-                pageIdx++;
+                        // Save the page as TIFF
+                        diagram.Save(outputPath, saveOptions);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Failed to export page {pageIndex + 1} to TIFF: {ex.Message}");
+                        // Continue with next page
+                    }
+
+                    pageIndex++;
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

@@ -7,18 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Input Visio file, target layer name, and output PNG path.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <layerName> <outputPngPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string targetLayerName = "OverlayLayer";
+        string outputPath = "layer_overlay.png";
 
-        string inputPath = args[0];
-        string targetLayerName = args[1];
-        string outputPath = args[2];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,16 +26,17 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and adjust layer visibility.
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all layers on the current page.
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Show only the requested layer; hide all others.
-                        if (string.Equals(layer.Name.Value, targetLayerName, StringComparison.OrdinalIgnoreCase))
+                        // Make only the target layer visible; hide others.
+                        if (layer.Name != null && layer.Name.Value == targetLayerName)
                         {
                             layer.Visible.Value = BOOL.True;
                         }
@@ -47,12 +47,15 @@ class Program
                     }
                 }
 
-                // Configure PNG export options.
+                // Configure image save options for PNG export.
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                // TODO: If a TransparentBackground property becomes available, set it to BOOL.True here.
-                saveOptions.Resolution = 300f;          // Optional: set DPI.
-                saveOptions.PageIndex = 0;              // Export the first page.
-                saveOptions.PageCount = 1;              // Export a single page.
+                // Export only the first page (adjust PageIndex/PageCount as needed).
+                saveOptions.PageIndex = 0;
+                saveOptions.PageCount = 1;
+
+                // NOTE: Aspose.Diagram's ImageSaveOptions does not expose a TransparentBackground property.
+                // The exported PNG will use the default background (typically white). This is the closest
+                // achievable result with the available API.
 
                 // Save the diagram as a PNG image.
                 diagram.Save(outputPath, saveOptions);
@@ -61,8 +64,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

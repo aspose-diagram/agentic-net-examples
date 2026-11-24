@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputTiffFile>");
@@ -17,41 +17,36 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure image save options for multi‑page TIFF
+                // Configure image save options for TIFF format.
                 ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Tiff);
-
-                // Export all pages: start from the first page (index 0) and include all pages
+                // Apply LZW compression to reduce file size.
+                saveOptions.TiffCompression = TiffCompression.Lzw;
+                // Export all pages as a single multi‑page TIFF.
                 saveOptions.PageIndex = 0;
                 saveOptions.PageCount = diagram.Pages.Count;
 
-                // Set smoothing mode for better rendering quality
-                saveOptions.SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias;
-
-                // NOTE: Aspose.Diagram's ImageSaveOptions does not expose a Compression property.
-                // LZW compression for TIFF is not directly configurable via the current API,
-                // so the default compression will be used.
-
-                // Save the diagram as a multi‑page TIFF file
+                // Save the diagram to the specified TIFF file.
                 diagram.Save(outputPath, saveOptions);
-                Console.WriteLine($"Successfully exported to \"{outputPath}\".");
             }
+
+            Console.WriteLine($"Diagram successfully exported to multi‑page TIFF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

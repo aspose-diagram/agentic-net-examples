@@ -1,11 +1,11 @@
 {
   "category": "working-with-headers-and-footers",
   "display_name": "Working With Headers And Footers",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -47,6 +47,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -94,6 +95,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -121,11 +123,13 @@
       "task": "Configure the footer margin to 0 3 centimeters and verify the change using print preview",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "ImageSaveOptions",
         "Save",
         "diagram"
       ]
@@ -136,9 +140,11 @@
       "task": "Create a command line tool that accepts a directory path and applies a predefined header footer template to all visio files",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -152,9 +158,9 @@
       "task": "Create a script that reads header and footer configurations from an xml file and applies them to a diagram",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing",
         "System",
+        "System.Globalization",
         "System.IO",
         "System.Xml.Linq"
       ],
@@ -170,7 +176,7 @@
       "task": "Create a utility method that accepts a diagram path and header settings applies them and saves the file",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -201,7 +207,6 @@
       "task": "Ensure that after modifying header text the diagram s print preview reflects the updated content accurately",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
         "Aspose.Diagram.Saving",
         "Aspose.Drawing",
         "System",
@@ -209,7 +214,6 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -221,6 +225,7 @@
       "task": "Extract current header and footer text values from a diagram and write them to a json configuration file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Text.Json"
@@ -252,10 +257,13 @@
         "Aspose.Diagram",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
-        "Diagram"
+        "Diagram",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -306,6 +314,7 @@
       "task": "Load multiple visio files set left header text to document title and save each file with updated headers",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "System",
         "System.IO"
       ],

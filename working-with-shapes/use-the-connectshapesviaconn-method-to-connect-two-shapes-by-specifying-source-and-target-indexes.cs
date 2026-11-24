@@ -1,52 +1,77 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the output file path for the generated diagram
-        string outputPath = "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram instance
-            Diagram diagram = new Diagram();
+            // Load the existing Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Add a single blank page to the diagram
-            diagram.Pages.Add(new Page());
+            // Ensure there is at least one page to work with.
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Use the first page.
             Page page = diagram.Pages[0];
 
-            // Add the first rectangle shape (source) at position (2,2)
-            // The fourth parameter 'isCalculate' must be a native bool, not BOOL
-            long sourceShapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+            // -----------------------------------------------------------------
+            // Add two rectangle shapes that will be connected.
+            // -----------------------------------------------------------------
+            // Shape 1 – positioned at (2, 5) inches.
+            long shapeId1 = page.AddShape(2.0, 5.0, "Rectangle", false);
+            // Shape 2 – positioned at (6, 5) inches.
+            long shapeId2 = page.AddShape(6.0, 5.0, "Rectangle", false);
 
-            // Add the second rectangle shape (target) at position (5,5)
-            long targetShapeId = page.AddShape(5.0, 5.0, "Rectangle", false);
+            // -----------------------------------------------------------------
+            // Add a dynamic connector shape that will link the two rectangles.
+            // -----------------------------------------------------------------
+            // Place the connector roughly between the two shapes.
+            long connectorId = page.AddShape(4.0, 5.0, "Dynamic connector", false);
 
-            // Add a dynamic connector shape that will be used to link the two rectangles
-            long connectorShapeId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
+            // -----------------------------------------------------------------
+            // Connect the shapes using connection indexes.
+            // The ConnectShapesViaConnectorIndex method expects:
+            //   sourceShapeId, sourceConnectionIndex,
+            //   targetShapeId, targetConnectionIndex,
+            //   connectorShapeId
+            // Connection indexes are 1‑based. Here we use index 1 for both shapes.
+            // -----------------------------------------------------------------
+            page.ConnectShapesViaConnectorIndex(shapeId1, 1, shapeId2, 1, connectorId);
 
-            // Connect the source shape to the target shape using connection indexes.
-            // Here we use connection index 1 for both shapes (default first connection point).
-            page.ConnectShapesViaConnectorIndex(
-                sourceShapeId,   // ID of the source shape
-                1,               // Connection index on the source shape
-                targetShapeId,   // ID of the target shape
-                1,               // Connection index on the target shape
-                connectorShapeId // ID of the connector shape
-            );
-
-            // Save the diagram to a VSDX file using the correct SaveFileFormat enum member
+            // -----------------------------------------------------------------
+            // Save the modified diagram to the specified output file.
+            // -----------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

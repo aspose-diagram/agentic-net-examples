@@ -7,120 +7,108 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path (required)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output diagram path (optional)
-        string outputPath = args.Length > 1 ? args[1] : "output_audit.vsdx";
-
-        // Optional image file for ImageActiveXControl updates
-        string imagePath = args.Length > 2 ? args[2] : null;
-        byte[] newImageData = null;
-        if (!string.IsNullOrEmpty(imagePath))
-        {
-            if (!File.Exists(imagePath))
-            {
-                Console.Error.WriteLine($"Image file not found: {imagePath}");
-                return;
-            }
-            newImageData = File.ReadAllBytes(imagePath);
-        }
-
-        // Audit log file path
-        string auditLogPath = "audit.log";
-
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes to find ActiveX controls
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // Use zero‑based indexer for shapes collection
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
+                    Shape shape = page.Shapes[i];
+
                     // Skip shapes without an ActiveX control
                     if (shape.ActiveXControl == null)
                         continue;
 
-                    // Determine the control type
-                    ControlType ctrlType = shape.ActiveXControl.Type;
+                    // Retrieve the generic ActiveX control
+                    ActiveXControl activeX = shape.ActiveXControl;
+                    string controlTypeName = activeX.Type.ToString();
 
-                    // Process CommandButtonActiveXControl
-                    if (ctrlType == ControlType.CommandButton)
+                    // Use the shape's NameU (string) for logging
+                    string shapeName = shape.NameU ?? "UnnamedShape";
+
+                    // Process based on specific control type
+                    switch (activeX.Type)
                     {
-                        var btn = (CommandButtonActiveXControl)shape.ActiveXControl;
-                        string prevCaption = btn.Caption;
-                        string newCaption = "Updated Caption";
+                        case ControlType.TextBox:
+                            // Cast to TextBoxActiveXControl to access Text property
+                            TextBoxActiveXControl txtCtrl = (TextBoxActiveXControl)activeX;
+                            string oldText = txtCtrl.Text;
+                            string newText = "Updated Text";
+                            txtCtrl.Text = newText;
+                            LogChange(shapeName, controlTypeName, "Text", oldText, newText);
+                            break;
 
-                        // Apply change
-                        btn.Caption = newCaption;
+                        case ControlType.CheckBox:
+                            // Cast to CheckBoxActiveXControl to access Value property
+                            CheckBoxActiveXControl chkCtrl = (CheckBoxActiveXControl)activeX;
+                            CheckValueType oldValue = chkCtrl.Value;
+                            // Toggle the checkbox state (Checked <-> Unchecked)
+                            CheckValueType newValue = (oldValue == CheckValueType.Checked) ? (CheckValueType)0 : CheckValueType.Checked;
+                            chkCtrl.Value = newValue;
+                            LogChange(shapeName, controlTypeName, "Value", oldValue.ToString(), newValue.ToString());
+                            break;
 
-                        // Log the change
-                        string logEntry = $"Shape ID {shape.ID}: CommandButton Caption changed from '{prevCaption}' to '{newCaption}'.";
-                        Console.WriteLine(logEntry);
-                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
+                        case ControlType.CommandButton:
+                            // Cast to CommandButtonActiveXControl to access Caption property
+                            CommandButtonActiveXControl btnCtrl = (CommandButtonActiveXControl)activeX;
+                            string oldCaption = btnCtrl.Caption;
+                            string newCaption = "Clicked!";
+                            btnCtrl.Caption = newCaption;
+                            LogChange(shapeName, controlTypeName, "Caption", oldCaption, newCaption);
+                            break;
+
+                        // Add handling for other control types as needed
+                        default:
+                            // For unsupported types, just log that they were found
+                            Console.WriteLine($"Shape '{shapeName}' contains ActiveX control of type '{controlTypeName}' which is not processed.");
+                            break;
                     }
-                    // Process CheckBoxActiveXControl
-                    else if (ctrlType == ControlType.CheckBox)
-                    {
-                        var chk = (CheckBoxActiveXControl)shape.ActiveXControl;
-                        CheckValueType prevValue = chk.Value;
-
-                        // Toggle the checkbox state
-                        CheckValueType newValue = prevValue == CheckValueType.Checked ? (CheckValueType)0 : CheckValueType.Checked;
-                        chk.Value = newValue;
-
-                        // Log the change
-                        string logEntry = $"Shape ID {shape.ID}: CheckBox Value changed from '{prevValue}' to '{newValue}'.";
-                        Console.WriteLine(logEntry);
-                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
-                    }
-                    // Process ImageActiveXControl (if new image data is provided)
-                    else if (ctrlType == ControlType.Image && newImageData != null)
-                    {
-                        var imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
-                        byte[] prevPicture = imgCtrl.Picture;
-
-                        // Update picture data
-                        imgCtrl.Picture = newImageData;
-
-                        // Log the change (show byte lengths)
-                        string logEntry = $"Shape ID {shape.ID}: Image picture data length changed from {prevPicture?.Length ?? 0} to {newImageData.Length}.";
-                        Console.WriteLine(logEntry);
-                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
-                    }
-                    // Process TextBoxActiveXControl
-                    else if (ctrlType == ControlType.TextBox)
-                    {
-                        var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
-                        string prevText = txtBox.Text;
-                        string newText = "Updated Text";
-
-                        // Apply change
-                        txtBox.Text = newText;
-
-                        // Log the change
-                        string logEntry = $"Shape ID {shape.ID}: TextBox Text changed from '{prevText}' to '{newText}'.";
-                        Console.WriteLine(logEntry);
-                        File.AppendAllText(auditLogPath, logEntry + Environment.NewLine);
-                    }
-                    // Additional control types can be handled here as needed
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram with explicit format argument
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Log any Aspose or I/O errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Logs a property change with previous and new values.
+    /// </summary>
+    /// <param name="shapeName">Name of the shape containing the control.</param>
+    /// <param name="controlType">ActiveX control type.</param>
+    /// <param name="propertyName">Name of the property that changed.</param>
+    /// <param name="oldValue">Previous value.</param>
+    /// <param name="newValue">New value.</param>
+    private static void LogChange(string shapeName, string controlType, string propertyName, string oldValue, string newValue)
+    {
+        Console.WriteLine($"[Audit] Shape: '{shapeName}', Control: '{controlType}', Property: '{propertyName}' changed from '{oldValue}' to '{newValue}'.");
     }
 }

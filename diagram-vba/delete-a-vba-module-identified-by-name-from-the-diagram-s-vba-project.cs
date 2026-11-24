@@ -2,28 +2,27 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments: expect input file, module name to delete, and output file.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <moduleNameToDelete> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <moduleNameToDelete> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string moduleName = args[1];
-        string outputPath = args.Length >= 3 ? args[2] : Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? "",
-            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdm");
+        string outputPath = args[2];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
@@ -32,44 +31,48 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram contains a VBA project.
+            // Check if the diagram contains a VBA project.
             if (diagram.VbaProject == null)
             {
-                Console.Error.WriteLine("Error: The diagram does not contain a VBA project.");
+                Console.Error.WriteLine("The diagram does not contain a VBA project. No modules to delete.");
                 return;
             }
 
-            // Find the index of the module with the specified name.
-            int moduleIndex = -1;
+            // Flag to indicate whether the module was found.
+            bool moduleRemoved = false;
+
+            // Iterate over the modules collection using an index-based loop.
+            // This allows safe removal via RemoveAt when the target module is found.
             for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
             {
-                VbaModule mod = diagram.VbaProject.Modules[i];
-                if (mod != null && string.Equals(mod.Name, moduleName, StringComparison.OrdinalIgnoreCase))
+                VbaModule module = diagram.VbaProject.Modules[i];
+                if (module != null && string.Equals(module.Name, moduleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    moduleIndex = i;
+                    // Remove the module at the identified index.
+                    diagram.VbaProject.Modules.RemoveAt(i);
+                    moduleRemoved = true;
+                    Console.WriteLine($"Module \"{moduleName}\" has been removed.");
                     break;
                 }
             }
 
-            if (moduleIndex == -1)
+            if (!moduleRemoved)
             {
-                Console.WriteLine($"Info: No VBA module named \"{moduleName}\" was found.");
-            }
-            else
-            {
-                // Delete the module at the identified index.
-                diagram.VbaProject.Modules.RemoveAt(moduleIndex);
-                Console.WriteLine($"Info: VBA module \"{moduleName}\" has been deleted.");
+                Console.Error.WriteLine($"Module \"{moduleName}\" was not found in the VBA project.");
+                return;
             }
 
-            // Save the modified diagram in a macro‑enabled format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-            Console.WriteLine($"Info: Modified diagram saved to \"{outputPath}\".");
+            // Prepare save options for a macro-enabled Visio format.
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdm);
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, saveOptions);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose or I/O exceptions and report them.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

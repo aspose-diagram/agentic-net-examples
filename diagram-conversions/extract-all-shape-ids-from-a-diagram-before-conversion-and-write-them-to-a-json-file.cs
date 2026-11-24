@@ -25,44 +25,40 @@ class Program
             return;
         }
 
+        // Prepare a list to hold shape IDs
+        List<long> shapeIds = new List<long>();
+
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Collect shape IDs from all pages
-            List<long> shapeIds = new List<long>();
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through each shape on the page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Add the shape's ID to the list
-                    shapeIds.Add(shape.ID);
+                        // Add the shape's ID to the collection
+                        shapeIds.Add(shape.ID);
+                    }
                 }
             }
 
             // Serialize the list of IDs to JSON
             string json = JsonSerializer.Serialize(shapeIds, new JsonSerializerOptions { WriteIndented = true });
 
-            // Write JSON to the specified output file
+            // Write JSON to the output file (overwrite if exists)
             File.WriteAllText(outputPath, json);
-
-            Console.WriteLine($"Extracted {shapeIds.Count} shape IDs to '{outputPath}'.");
-            
-            // Dispose the diagram to free resources
-            diagram.Dispose();
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

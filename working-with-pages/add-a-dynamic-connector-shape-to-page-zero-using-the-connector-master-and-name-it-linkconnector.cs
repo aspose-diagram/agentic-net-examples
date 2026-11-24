@@ -6,52 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input diagram path and output diagram path
-        if (args.Length < 2)
+        // Validate arguments: expect at least input file path, optional output file path.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Determine output path. If not provided, create a new file name based on input.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
+
         try
         {
-            // Load the existing Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page (page zero)
+                // Access the first page (page zero).
                 Page page = diagram.Pages[0];
 
-                // Add a dynamic connector shape at position (0,0) using the master name "Dynamic connector"
-                // The last argument 'isCalculate' must be a BOOL value; use false here
+                // Add a dynamic connector shape using the "Dynamic connector" master.
+                // PinX and PinY are set to 0; isCalculate is false as per API requirements.
                 long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
 
-                // Retrieve the newly added shape object
+                // Retrieve the newly added shape object.
                 Shape connectorShape = page.Shapes.GetShape(connectorId);
 
-                // Set the shape's name to "LinkConnector"
+                // Assign a name to the connector shape.
                 connectorShape.NameU = "LinkConnector";
-                connectorShape.Name = "LinkConnector";
 
-                // Save the modified diagram to the specified output path in VSDX format
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Dynamic connector added and diagram saved successfully.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

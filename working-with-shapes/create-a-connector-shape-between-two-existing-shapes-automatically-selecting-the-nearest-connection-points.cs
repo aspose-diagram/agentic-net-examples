@@ -7,141 +7,103 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
+        // Input and output file paths (can be passed as command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram.
+            // Load the existing diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
+            // Ensure the diagram has at least one page
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page.
+            // Work with the first page
             Page page = diagram.Pages[0];
 
-            // ------------------------------------------------------------
-            // Locate the two shapes to be connected.
-            // Attempt to find shapes named "Shape1" and "Shape2".
-            // If not found, fall back to the first two shapes on the page.
-            // ------------------------------------------------------------
-            long shape1Id = -1;
-            long shape2Id = -1;
-
-            foreach (Shape s in page.Shapes)
+            // Collect the first two non‑connector (2‑D) shapes on the page
+            long shape1Id = 0, shape2Id = 0;
+            int found = 0;
+            foreach (Shape shp in page.Shapes)
             {
-                if (s.NameU == "Shape1")
-                    shape1Id = s.ID;
-                else if (s.NameU == "Shape2")
-                    shape2Id = s.ID;
+                // Skip 1‑D connector shapes
+                if (shp.OneD) continue;
+
+                if (found == 0) shape1Id = shp.ID;
+                else if (found == 1) { shape2Id = shp.ID; break; }
+
+                found++;
             }
 
-            // Fallback: use the first two shapes if specific names were not found.
-            if (shape1Id == -1 || shape2Id == -1)
+            if (found < 2)
             {
-                int found = 0;
-                foreach (Shape s in page.Shapes)
-                {
-                    if (found == 0) { shape1Id = s.ID; found++; }
-                    else if (found == 1) { shape2Id = s.ID; found++; break; }
-                }
-            }
-
-            // Validate that we have two distinct shape IDs.
-            if (shape1Id == -1 || shape2Id == -1 || shape1Id == shape2Id)
-            {
-                Console.Error.WriteLine("Unable to locate two distinct shapes to connect.");
+                Console.Error.WriteLine("The page does not contain at least two non‑connector shapes.");
                 return;
             }
 
-            // Retrieve the shape objects for geometry calculations.
+            // Retrieve the shape objects for further calculations
             Shape shape1 = page.Shapes.GetShape(shape1Id);
             Shape shape2 = page.Shapes.GetShape(shape2Id);
 
-            // ------------------------------------------------------------
-            // Determine the nearest connection points based on shape centers.
-            // Use ConnectionPointPlace enum values: Right, Left, Top, Bottom.
-            // ------------------------------------------------------------
-            double pinX1 = shape1.XForm.PinX.Value;
-            double pinY1 = shape1.XForm.PinY.Value;
-            double pinX2 = shape2.XForm.PinX.Value;
-            double pinY2 = shape2.XForm.PinY.Value;
+            // Calculate shape centers using PinX/PinY (the shape's position)
+            double x1 = shape1.XForm.PinX.Value;
+            double y1 = shape1.XForm.PinY.Value;
+            double x2 = shape2.XForm.PinX.Value;
+            double y2 = shape2.XForm.PinY.Value;
 
-            double deltaX = pinX2 - pinX1;
-            double deltaY = pinY2 - pinY1;
+            // Determine the nearest connection points based on relative positions
+            ConnectionPointPlace connPlace1 = ConnectionPointPlace.Right;
+            ConnectionPointPlace connPlace2 = ConnectionPointPlace.Left;
 
-            ConnectionPointPlace fromPlace;
-            ConnectionPointPlace toPlace;
-
-            if (Math.Abs(deltaX) > Math.Abs(deltaY))
+            // Simple heuristic: choose horizontal side that faces the other shape
+            if (x2 < x1)
             {
-                // Horizontal dominance.
-                if (deltaX > 0)
+                connPlace1 = ConnectionPointPlace.Left;
+                connPlace2 = ConnectionPointPlace.Right;
+            }
+
+            // If the shapes are more vertically aligned, prefer top/bottom
+            double dx = Math.Abs(x2 - x1);
+            double dy = Math.Abs(y2 - y1);
+            if (dy > dx)
+            {
+                if (y2 < y1)
                 {
-                    fromPlace = ConnectionPointPlace.Right;
-                    toPlace = ConnectionPointPlace.Left;
+                    connPlace1 = ConnectionPointPlace.Top;
+                    connPlace2 = ConnectionPointPlace.Bottom;
                 }
                 else
                 {
-                    fromPlace = ConnectionPointPlace.Left;
-                    toPlace = ConnectionPointPlace.Right;
-                }
-            }
-            else
-            {
-                // Vertical dominance.
-                if (deltaY > 0)
-                {
-                    fromPlace = ConnectionPointPlace.Bottom;
-                    toPlace = ConnectionPointPlace.Top;
-                }
-                else
-                {
-                    fromPlace = ConnectionPointPlace.Top;
-                    toPlace = ConnectionPointPlace.Bottom;
+                    connPlace1 = ConnectionPointPlace.Bottom;
+                    connPlace2 = ConnectionPointPlace.Top;
                 }
             }
 
-            // ------------------------------------------------------------
-            // Create a dynamic connector shape.
-            // The AddShape overload expects (pinX, pinY, width, height, masterName, isCalculate).
-            // For a connector, dimensions are not required; use zeros and set isCalculate to false.
-            // ------------------------------------------------------------
+            // Add a dynamic connector shape to the page
+            // Using the overload that creates a shape with zero size at (0,0)
             long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
 
-            // ------------------------------------------------------------
-            // Connect the two shapes via the newly created connector,
-            // using the automatically selected nearest connection points.
-            // ------------------------------------------------------------
-            page.ConnectShapesViaConnector(shape1Id, fromPlace, shape2Id, toPlace, connectorId);
+            // Connect the two shapes via the newly created connector using the selected connection points
+            page.ConnectShapesViaConnector(shape1Id, connPlace1, shape2Id, connPlace2, connectorId);
 
-            // ------------------------------------------------------------
-            // Save the modified diagram to the specified output path.
-            // ------------------------------------------------------------
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Connector added and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -1,16 +1,15 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input file path, output file path, zero‑based page index
+        // Expect three arguments: input diagram path, output diagram path, zero‑based page index
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <pageIndex>");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <pageIndex>");
             return;
         }
 
@@ -25,7 +24,7 @@ class Program
         // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -37,51 +36,51 @@ class Program
                 // Validate page index range
                 if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
                 {
-                    Console.Error.WriteLine("Page index out of range.");
+                    Console.Error.WriteLine($"Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
                     return;
                 }
 
                 // Retrieve the target foreground page
-                Page targetPage = diagram.Pages[pageIndex];
+                Page foregroundPage = diagram.Pages[pageIndex];
 
                 // Create a new background page
+                // The Add method creates a new page; adjust if a different API is required.
                 Page backgroundPage = new Page();
-                backgroundPage.Background = BOOL.True; // Mark as background page
+                diagram.Pages.Add(backgroundPage);
+                // Mark the new page as a background page
+                backgroundPage.Background = BOOL.True;
 
                 // Retrieve page dimensions (in inches)
-                double pageWidth = targetPage.PageSheet.PageProps.PageWidth.Value;
-                double pageHeight = targetPage.PageSheet.PageProps.PageHeight.Value;
+                double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
                 // Add a rectangle shape that spans the entire page
-                // PinX and PinY are the center coordinates; set to half width/height
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-                long rectShapeId = backgroundPage.AddShape(pinX, pinY, "Rectangle", false);
+                // Use the built‑in "Rectangle" master; the last parameter indicates no calculation.
+                long rectShapeId = backgroundPage.AddShape(pageWidth / 2, pageHeight / 2, "Rectangle", false);
+                // Retrieve the shape object to modify its properties
                 Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
 
-                // Set rectangle size to match page dimensions
+                // Set the shape size to match the page dimensions
                 rectShape.XForm.Width.Value = pageWidth;
                 rectShape.XForm.Height.Value = pageHeight;
 
-                // Configure solid fill with light gray color (#D3D3D3)
+                // Configure fill: solid pattern (value 1) and light gray color (#D3D3D3)
                 rectShape.Fill.FillPattern.Value = 1; // Solid fill
                 rectShape.Fill.FillForegnd.Value = "#D3D3D3";
 
-                // Add the background page to the diagram
-                diagram.Pages.Add(backgroundPage);
+                // Link the foreground page to the newly created background page
+                foregroundPage.BackPage = backgroundPage;
 
-                // Link the background page to the target page
-                targetPage.BackPage = backgroundPage;
-
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Background color applied successfully.");
+            Console.WriteLine("Background color applied and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

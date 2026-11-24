@@ -7,42 +7,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Define output file path
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output_SameAsPrinter.vsdx");
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages and set the print orientation to follow printer defaults.
-            foreach (Page page in diagram.Pages)
+            // Ensure there is at least one page
+            if (diagram.Pages.Count == 0)
             {
-                // Access the print properties and assign SameAsPrinter.
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Save the modified diagram.
+            // Get the first page (or modify as required)
+            Page page = diagram.Pages[0];
+
+            // Set the print orientation to follow printer defaults
+            // PrintPageOrientationValue.SameAsPrinter makes the page use the printer's default orientation
+            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.SameAsPrinter;
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

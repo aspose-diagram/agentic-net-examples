@@ -7,80 +7,94 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output_with_outline.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve the plain text of the shape
-                    string shapeText = shape.Text.Value.ToString();
-
-                    // Continue only if the shape contains text
-                    if (string.IsNullOrWhiteSpace(shapeText))
-                        continue;
-
-                    // Clear existing text runs and add the original text back as a single run
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(shapeText));
-
-                    // Clear any existing character formatting
-                    shape.Chars.Clear();
-
-                    // Create a new character formatting entry for the text
-                    Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
-                    shape.Chars.Add(charFormat);
-                    charFormat.IX = 0; // Apply to the first character run
-
-                    // Set the inner text color to white
-                    charFormat.Color.Value = "#FFFFFF";
-
-                    // Apply a black background to simulate an outline effect
-                    if (shape.TextBlock != null && shape.TextBlock.TextBkgnd != null && shape.TextBlock.TextBkgnd.Ufe != null)
-                    {
-                        // Set background color to black
-                        shape.TextBlock.TextBkgnd.Ufe.F = "#000000";
-
-                        // Make the background fully opaque (0% transparency)
-                        shape.TextBlock.TextBkgndTrans.Value = 0.0;
-                    }
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
-            }
 
-            // Save the modified diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Use the first page
+                Page page = diagram.Pages[0];
+
+                // Text to display
+                string text = "Sample Text";
+
+                // Position and size for the main (white) text shape
+                double pinX = 2.0;   // X coordinate (in inches)
+                double pinY = 2.0;   // Y coordinate (in inches)
+                double width = 2.0;  // Width (in inches)
+                double height = 0.5; // Height (in inches)
+
+                // -----------------------------------------------------------------
+                // Create a black outline shape slightly larger than the white text.
+                // This simulates a 1‑pixel border effect.
+                // -----------------------------------------------------------------
+                double outlineOffset = 0.05; // small offset to simulate outline thickness
+                double outlinePinX = pinX - outlineOffset;
+                double outlinePinY = pinY - outlineOffset;
+                double outlineWidth = width + outlineOffset * 2;
+                double outlineHeight = height + outlineOffset * 2;
+
+                // Add the outline shape (added first so it appears behind the white text)
+                Shape outlineShape = page.AddText(outlinePinX, outlinePinY, outlineWidth, outlineHeight, text);
+
+                // Clear any default character runs and add a new one with black color
+                outlineShape.Chars.Clear();
+                outlineShape.Chars.Add(new Aspose.Diagram.Char());
+                outlineShape.Chars[0].IX = 0;
+                outlineShape.Chars[0].Color.Value = "#000000"; // Black color
+
+                // Ensure the text content is the desired string
+                outlineShape.Text.Value.Clear();
+                outlineShape.Text.Value.Add(new Txt(text));
+
+                // -----------------------------------------------------------------
+                // Create the white text shape that sits on top of the outline.
+                // -----------------------------------------------------------------
+                Shape whiteShape = page.AddText(pinX, pinY, width, height, text);
+
+                // Clear any default character runs and add a new one with white color
+                whiteShape.Chars.Clear();
+                whiteShape.Chars.Add(new Aspose.Diagram.Char());
+                whiteShape.Chars[0].IX = 0;
+                whiteShape.Chars[0].Color.Value = "#FFFFFF"; // White color
+
+                // Ensure the text content is the desired string
+                whiteShape.Text.Value.Clear();
+                whiteShape.Text.Value.Add(new Txt(text));
+
+                // -----------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -7,31 +7,30 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the Visio file.
-        if (args.Length == 0)
+        // Path to the Visio file to be processed.
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        string inputPath = args[0];
-
         // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
             // Load the diagram.
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(diagramPath);
 
             // Ensure the diagram has at least one page.
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
                 return;
             }
 
@@ -42,50 +41,32 @@ class Program
             double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-            // -----------------------------------------------------------------
-            // Scenario 1: ScaleX = 1.0 (no scaling)
-            // -----------------------------------------------------------------
-            // Set ScaleX to 1.0. ScaleY is read‑only; use its existing value.
+            // ---------- ScaleX = 1.0 ----------
             page.PageSheet.PrintProps.ScaleX.Value = 1.0;
-            double scaleY = page.PageSheet.PrintProps.ScaleY.Value; // read‑only
+            // Effective printed dimensions after applying ScaleX.
+            double printedWidthScale1 = pageWidth * page.PageSheet.PrintProps.ScaleX.Value;
+            double printedHeightScale1 = pageHeight * page.PageSheet.PrintProps.ScaleY.Value; // ScaleY defaults to 1.0
 
-            double scaledWidth1 = pageWidth * page.PageSheet.PrintProps.ScaleX.Value;
-            double scaledHeight1 = pageHeight * scaleY;
+            Console.WriteLine("=== ScaleX = 1.0 ===");
+            Console.WriteLine($"Original Page Width:  {pageWidth} inches");
+            Console.WriteLine($"Original Page Height: {pageHeight} inches");
+            Console.WriteLine($"Printed Width:  {printedWidthScale1} inches");
+            Console.WriteLine($"Printed Height: {printedHeightScale1} inches");
+            Console.WriteLine();
 
-            // -----------------------------------------------------------------
-            // Scenario 2: ScaleX = 0.5 (reduce width by half)
-            // -----------------------------------------------------------------
+            // ---------- ScaleX = 0.5 ----------
             page.PageSheet.PrintProps.ScaleX.Value = 0.5;
-            // ScaleY remains unchanged.
-            double scaledWidth2 = pageWidth * page.PageSheet.PrintProps.ScaleX.Value;
-            double scaledHeight2 = pageHeight * scaleY;
+            // Effective printed dimensions after applying ScaleX = 0.5.
+            double printedWidthScaleHalf = pageWidth * page.PageSheet.PrintProps.ScaleX.Value;
+            double printedHeightScaleHalf = pageHeight * page.PageSheet.PrintProps.ScaleY.Value; // ScaleY still 1.0
 
-            // Output the comparison results.
-            Console.WriteLine("=== Printed Output Dimensions Comparison ===");
-            Console.WriteLine($"Original Page Size: Width = {pageWidth:F2} in, Height = {pageHeight:F2} in");
-            Console.WriteLine();
-            Console.WriteLine("Scenario 1: ScaleX = 1.0");
-            Console.WriteLine($"  Scaled Width  = {scaledWidth1:F2} in");
-            Console.WriteLine($"  Scaled Height = {scaledHeight1:F2} in");
-            Console.WriteLine();
-            Console.WriteLine("Scenario 2: ScaleX = 0.5");
-            Console.WriteLine($"  Scaled Width  = {scaledWidth2:F2} in");
-            Console.WriteLine($"  Scaled Height = {scaledHeight2:F2} in");
-            Console.WriteLine();
-
-            // Simple validation: the width in scenario 2 should be half of scenario 1.
-            if (Math.Abs(scaledWidth2 * 2 - scaledWidth1) < 0.001)
-            {
-                Console.WriteLine("Validation passed: Width with ScaleX 0.5 is half of the width with ScaleX 1.0.");
-            }
-            else
-            {
-                Console.WriteLine("Validation failed: Unexpected width scaling results.");
-            }
+            Console.WriteLine("=== ScaleX = 0.5 ===");
+            Console.WriteLine($"Printed Width:  {printedWidthScaleHalf} inches");
+            Console.WriteLine($"Printed Height: {printedHeightScaleHalf} inches");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Log any errors that occur during processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

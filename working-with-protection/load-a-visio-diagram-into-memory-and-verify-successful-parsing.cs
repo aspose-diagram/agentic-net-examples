@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first command‑line argument.
+        // Expect the Visio file path as the first argument.
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Error: No input file path provided.");
@@ -15,33 +15,34 @@ class Program
 
         string inputPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load.
+        // Guard: verify that the file exists before attempting to load.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – \"{inputPath}\"");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram into memory.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Verify that the diagram was parsed by checking page collection.
-            int pageCount = diagram.Pages.Count;
-            Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
-
-            // Optionally, iterate pages and report shape counts.
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                int shapeCount = page.Shapes.Count;
-                Console.WriteLine($"Page \"{page.Name}\" contains {shapeCount} shape(s).");
+                // Verify that the diagram contains at least one page.
+                if (diagram.Pages.Count > 0)
+                {
+                    Console.WriteLine("Visio diagram loaded successfully. Page count: " + diagram.Pages.Count);
+                }
+                else
+                {
+                    // If no pages are present, consider it a parsing failure.
+                    Console.Error.WriteLine("Error: Diagram loaded but contains no pages.");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occurred during loading or processing.
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            // Output any exceptions that occur during loading.
+            Console.Error.WriteLine("Error loading Visio diagram: " + ex.Message);
         }
     }
 }

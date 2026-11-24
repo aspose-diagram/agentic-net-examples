@@ -1,11 +1,11 @@
 {
   "category": "document-properties",
   "display_name": "Document Properties",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 34,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,15 +14,14 @@
       "task": "Add a custom property containing xml data and ensure it is correctly serialized within the diagram file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
-        "Pages",
-        "Prop",
-        "Save"
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -49,7 +48,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -95,13 +95,14 @@
       "task": "Apply a conditional update to custom property priority setting it to high when current value is low",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -157,6 +158,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -172,7 +174,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Reflection"
       ],
       "key_apis": [
         "Diagram"
@@ -186,6 +189,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -255,11 +259,8 @@
       "task": "Implement a feature to bulk remove custom properties matching a regular expression pattern from multiple diagrams",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "System",
-        "System.Collections.Generic",
         "System.IO",
-        "System.Linq",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
@@ -290,10 +291,10 @@
       "task": "Implement a method to retrieve all custom property names sorted alphabetically for display in ui",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram"
@@ -307,8 +308,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
         "System",
-        "System.IO",
-        "System.Reflection"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -322,16 +322,13 @@
       "task": "Iterate through diagrams in a collection removing any custom property named deprecatedflag before saving",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -341,7 +338,6 @@
       "task": "Load a diagram add a timestamp custom property using current utc time and save changes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "System",
         "System.IO"
       ],
@@ -391,6 +387,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -401,9 +398,8 @@
       "task": "Remove all custom properties whose values are null to clean up the diagram metadata",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -434,6 +430,7 @@
       "task": "Retrieve the automatically embedded api version information from the saved diagram file for audit purposes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "System",
         "System.IO"
       ],
@@ -447,7 +444,6 @@
       "task": "Set the custom property reviewstatus to pending and export to svg preserving metadata",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -465,10 +461,8 @@
       "task": "Test that attempting to delete a built in property throws the expected exception and is properly handled",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -500,6 +494,7 @@
       "task": "Use a linq query to filter custom properties whose names start with dept and list their values",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Properties",
         "System",
         "System.IO",
         "System.Linq"

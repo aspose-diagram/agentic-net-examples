@@ -7,74 +7,79 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio stencil file path
-        string inputPath = "input.vssx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Output path for the cleaned stencil
-        string outputPath = "cleaned_output.vssx";
+        // Determine output path (same directory with suffix "_cleaned.vsdx")
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_cleaned.vsdx");
 
         try
         {
-            // Load the stencil diagram inside a using block as required
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect masters that are not referenced by any shape on any page
-                List<Master> mastersToRemove = new List<Master>();
+                // Collect names of masters that are actually used by shapes on any page
+                HashSet<string> usedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate over each master in the stencil
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // If the shape references a master, add the master's name to the set
+                        if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
+                        {
+                            usedMasterNames.Add(shape.Master.Name);
+                        }
+                    }
+                }
+
+                // Build a list of all masters to avoid modifying the collection during enumeration
+                List<Master> allMasters = new List<Master>();
                 foreach (Master master in diagram.Masters)
                 {
-                    bool isUsed = false;
-
-                    // Scan all pages and their shapes to see if the master is referenced
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            // If the shape uses this master, mark as used and break out
-                            if (shape.Master != null && shape.Master.NameU == master.NameU)
-                            {
-                                isUsed = true;
-                                break;
-                            }
-                        }
-                        if (isUsed) break;
-                    }
-
-                    // If the master was never used, schedule it for removal
-                    if (!isUsed)
-                    {
-                        mastersToRemove.Add(master);
-                    }
+                    allMasters.Add(master);
                 }
 
-                // Remove the unused masters from the diagram
-                foreach (Master m in mastersToRemove)
+                // Remove masters that are not referenced by any shape
+                foreach (Master master in allMasters)
                 {
-                    // The MasterCollection supports Remove method
-                    diagram.Masters.Remove(m);
+                    // If the master name is not in the used set, remove it
+                    if (!usedMasterNames.Contains(master.Name))
+                    {
+                        // Attempt to remove the master from the diagram
+                        diagram.Masters.Remove(master);
+                        Console.WriteLine($"Removed unused master: {master.Name}");
+                    }
                 }
 
-                // Save the cleaned stencil to a new file
-                diagram.Save(outputPath, SaveFileFormat.Vssx);
-                Console.WriteLine($"Cleaned stencil saved to: {outputPath}");
+                // Save the cleaned diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Cleaned diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

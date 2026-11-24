@@ -24,55 +24,59 @@ class Program
             return;
         }
 
+        // Define a simple custom color palette (hex strings).
+        string[] palette = new string[]
+        {
+            "#FF5733", // reddish
+            "#33FF57", // greenish
+            "#3357FF", // bluish
+            "#F1C40F", // yellow
+            "#9B59B6", // purple
+            "#E67E22", // orange
+            "#1ABC9C", // teal
+            "#ECF0F1"  // light gray
+        };
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define a custom color palette (hex strings).
-                string[] palette = new string[]
-                {
-                    "#FF5733", // reddish
-                    "#33FF57", // greenish
-                    "#3357FF", // bluish
-                    "#FF33A8", // pink
-                    "#A833FF", // purple
-                    "#33FFF6"  // cyan
-                };
-
-                int shapeCounter = 0;
-
                 // Iterate over all pages and shapes to apply the palette.
+                int colorIndex = 0;
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Choose a color from the palette, cycling if necessary.
-                        string colorHex = palette[shapeCounter % palette.Length];
+                        // Assign a solid fill pattern.
+                        shape.Fill.FillPattern.Value = 1; // 1 = solid
 
-                        // Ensure the shape has a solid fill pattern.
-                        shape.Fill.FillPattern.Value = 1; // 1 = solid fill
-
-                        // Apply the foreground fill color.
+                        // Apply the next color from the palette (wrap around if needed).
+                        string colorHex = palette[colorIndex % palette.Length];
                         shape.Fill.FillForegnd.Value = colorHex;
 
-                        shapeCounter++;
+                        // Move to the next palette entry.
+                        colorIndex++;
                     }
                 }
 
                 // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format.
+                pdfOptions.ExportHiddenPage = false;       // Do not export hidden pages.
+                pdfOptions.HorizontalResolution = 300;    // Optional high‑resolution setting.
+                pdfOptions.VerticalResolution = 300;
+                pdfOptions.JpegQuality = 100;             // Preserve image quality.
 
-                // Export the modified diagram to PDF.
+                // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram successfully saved as PDF to \"{outputPath}\".");
+            Console.WriteLine($"Diagram successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

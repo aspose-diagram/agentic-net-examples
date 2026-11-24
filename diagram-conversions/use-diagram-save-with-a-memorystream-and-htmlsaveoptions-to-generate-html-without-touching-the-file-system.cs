@@ -7,76 +7,80 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
-            return;
-        }
+        // Determine the input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare a memory stream that will receive the HTML output.
-            using (MemoryStream htmlStream = new MemoryStream())
+            // Load the diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure HTML export options.
+                // Configure HTML export options
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions
                 {
-                    // Do not export hidden pages.
-                    ExportHiddenPage = false,
-                    // Do not export comments.
-                    IsExportComments = false,
-                    // Provide a custom stream provider for embedded resources.
-                    StreamProvider = new MemoryStreamProvider()
+                    // ExportHiddenPage expects a plain bool, not BOOL
+                    ExportHiddenPage = false
                 };
 
-                // Save the diagram as HTML into the memory stream.
-                diagram.Save(htmlStream, htmlOptions);
+                // Assign a custom stream provider to handle embedded resources in memory
+                htmlOptions.StreamProvider = new MemoryStreamProvider();
 
-                // Reset the stream position to read the generated HTML.
-                htmlStream.Position = 0;
-                using (StreamReader reader = new StreamReader(htmlStream))
+                // Save the diagram to a memory stream as HTML
+                using (MemoryStream outputStream = new MemoryStream())
                 {
-                    string htmlContent = reader.ReadToEnd();
-                    // Output the HTML content to the console (no file system usage).
-                    Console.WriteLine(htmlContent);
+                    try
+                    {
+                        // Save using the overload that accepts a stream and save options
+                        diagram.Save(outputStream, htmlOptions);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Error during diagram save: {ex.Message}");
+                        return;
+                    }
+
+                    // Reset stream position to read the generated HTML
+                    outputStream.Position = 0;
+                    using (StreamReader reader = new StreamReader(outputStream))
+                    {
+                        string htmlContent = reader.ReadToEnd();
+                        // Output the HTML content to the console (or further processing)
+                        Console.WriteLine(htmlContent);
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }
 
-// Custom implementation of IStreamProvider that supplies a MemoryStream for each resource.
+// Custom IStreamProvider implementation that supplies in‑memory streams for resources
 class MemoryStreamProvider : IStreamProvider
 {
-    // Called by Aspose.Diagram when a new resource stream is required.
+    // Called by Aspose.Diagram when a new resource stream is needed
     public void InitStream(StreamProviderOptions options)
     {
-        // Provide a fresh MemoryStream for the resource.
+        // Provide a fresh MemoryStream for the resource
         options.Stream = new MemoryStream();
     }
 
-    // Called by Aspose.Diagram after the resource has been written.
+    // Called when the resource stream is no longer needed
     public void CloseStream(StreamProviderOptions options)
     {
-        // Dispose the stream to release resources.
-        options.Stream?.Dispose();
+        // Dispose the stream if it was created
+        if (options.Stream != null)
+        {
+            options.Stream.Dispose();
+        }
     }
 }

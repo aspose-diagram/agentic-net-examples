@@ -7,58 +7,65 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path.
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over each page to modify PrintProps and collect report data.
-            int pageIndex = 0;
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Set orientation to Landscape for demonstration.
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                // -----------------------------------------------------------------
+                // Modify each page's PrintProps: set orientation to Landscape and
+                // ScaleX to 0.75 (75 %).
+                // -----------------------------------------------------------------
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                {
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                }
 
-                // Set ScaleX to 0.75 (75% scaling) for demonstration.
-                page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                // -----------------------------------------------------------------
+                // Generate a report of the current PrintProps after modification.
+                // -----------------------------------------------------------------
+                Console.WriteLine("Page PrintProps Report:");
+                int pageIndex = 0;
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                {
+                    PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
+                    double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
+                    Console.WriteLine($"Page {pageIndex}: Orientation = {orientation}, ScaleX = {scaleX}");
+                    pageIndex++;
+                }
 
-                // Retrieve current values after modification.
-                PrintPageOrientationValue orientation = page.PageSheet.PrintProps.PrintPageOrientation.Value;
-                double scaleX = page.PageSheet.PrintProps.ScaleX.Value;
+                // -----------------------------------------------------------------
+                // Optionally save the modified diagram to a new file.
+                // -----------------------------------------------------------------
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(inputPath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
 
-                // Output report line for the current page.
-                Console.WriteLine($"Page {pageIndex + 1}: Orientation = {orientation}, ScaleX = {scaleX}");
-
-                pageIndex++;
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to free resources.
-            diagram.Dispose();
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

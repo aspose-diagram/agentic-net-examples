@@ -7,83 +7,84 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: check if input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_styled.vsdx");
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least two pages.
+                // ------------------------------------------------------------
+                // Create a custom stylesheet that will be used for page formatting
+                // ------------------------------------------------------------
+                StyleSheet customStyle = new StyleSheet();
+                // Assign a unique ID (Visio IDs start at 1)
+                customStyle.ID = diagram.StyleSheets.Count + 1;
+                // Give the stylesheet a recognizable name
+                customStyle.Name = "CenterAlignStyle";
+
+                // NOTE: Alignment is a paragraph property, not directly stored in a stylesheet.
+                // The stylesheet can still be applied to the page for consistency.
+                // Add the stylesheet to the document's collection
+                diagram.StyleSheets.Add(customStyle);
+
+                // ------------------------------------------------------------
+                // Apply the custom stylesheet to page two (index 1, because pages are zero‑based)
+                // ------------------------------------------------------------
                 if (diagram.Pages.Count < 2)
                 {
                     Console.Error.WriteLine("The diagram does not contain a second page.");
                     return;
                 }
 
-                // ------------------------------------------------------------
-                // Create a custom stylesheet that will be used for text alignment.
-                // ------------------------------------------------------------
-                StyleSheet customStyle = new StyleSheet();
-                // Assign a unique ID (Visio IDs start at 1).
-                customStyle.ID = diagram.StyleSheets.Count + 1;
-
-                // The stylesheet can hold character formatting; we only need it
-                // to be present so that we can apply it to the page.
-                // (No additional character or fill settings are required here.)
-
-                // Add the stylesheet to the diagram's collection.
-                diagram.StyleSheets.Add(customStyle);
-
-                // ------------------------------------------------------------
-                // Apply the stylesheet to page two (index 1).
-                // ------------------------------------------------------------
                 Page pageTwo = diagram.Pages[1];
-                // ApplyStyle(lineStyleId, fillStyleId, textStyleId)
+                // Apply the style to the page (style ID for text, line, and fill)
                 pageTwo.ApplyStyle(customStyle.ID, customStyle.ID, customStyle.ID);
 
                 // ------------------------------------------------------------
-                // Align all paragraph texts to center on page two.
+                // Align all paragraph texts to center on page two
                 // ------------------------------------------------------------
                 foreach (Shape shape in pageTwo.Shapes)
                 {
-                    // Skip deleted shapes.
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Iterate through each paragraph in the shape.
+                    // Iterate through all paragraphs of the shape
                     for (int i = 0; i < shape.Paras.Count; i++)
                     {
-                        // Set horizontal alignment to center.
+                        // Set horizontal alignment to center
                         shape.Paras[i].HorzAlign.Value = HorzAlignValue.Center;
                     }
                 }
 
                 // ------------------------------------------------------------
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram
                 // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

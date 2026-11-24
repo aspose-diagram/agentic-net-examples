@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
             return;
         }
 
@@ -20,7 +20,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -29,56 +29,59 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page to add a title whose font size is based on page width.
-            foreach (Page page in diagram.Pages)
+            // Iterate over each page to add a title based on page width.
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                // Retrieve page dimensions (in inches).
+                // Retrieve the current page.
+                Page page = diagram.Pages[i];
+
+                // Get page dimensions (in inches).
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Calculate a font size proportional to the page width (e.g., 5% of width).
-                // Font size for AddText is expressed in inches.
-                double fontSizeInches = pageWidth * 0.05;
+                // Calculate a font size proportional to the page width.
+                // Example: 10 points per inch of page width.
+                double titleFontSize = pageWidth * 10.0;
 
-                // Define the title text.
-                string titleText = "Page Title";
+                // Define title text.
+                string titleText = $"Page {i + 1} Title";
 
-                // Position the title near the top‑center of the page.
-                double marginTop = pageHeight * 0.05;               // 5% top margin.
-                double pinX = pageWidth / 2.0;                      // Center horizontally.
-                double pinY = pageHeight - marginTop - (fontSizeInches / 2.0); // Slightly below top edge.
+                // Position the title near the top centre of the page.
+                // PinX = 0 (left edge), PinY = pageHeight - 0.5 inches (margin from top).
+                double pinX = 0.0;
+                double pinY = pageHeight - 0.5; // 0.5 inch margin from top.
+                double titleWidth = pageWidth;   // Full page width.
+                double titleHeight = 0.5;        // Height allocated for the title.
 
-                // Define the text box dimensions (full page width, height enough for the text).
-                double textBoxWidth = pageWidth;
-                double textBoxHeight = fontSizeInches * 1.2;        // Approximate height for the text.
-
-                // Add the title text shape to the page.
-                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches).
-                Shape titleShape = page.AddText(pinX, pinY, textBoxWidth, textBoxHeight,
-                                                titleText, "Arial", "#000000", fontSizeInches);
-
-                // Center‑align the paragraph within the shape, if a paragraph exists.
-                if (titleShape.Paras.Count > 0)
-                {
-                    // Horizontal alignment enum resides in Aspose.Diagram.
-                    titleShape.Paras[0].HorzAlign.Value = HorzAlignValue.Center;
-                }
+                // Add the title text shape.
+                // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize.
+                Shape titleShape = page.AddText(pinX, pinY, titleWidth, titleHeight,
+                                                titleText, "Arial", "#000000", titleFontSize);
+                // Optional: center the text horizontally.
+                // The AddText method respects the width parameter; centering can be handled via alignment if needed.
             }
 
             // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.DefaultFont = "Arial";
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions
+            {
+                // Export hidden pages if any (set to false for typical use).
+                ExportHiddenPage = false,
+                // Set high resolution for raster images embedded in the PDF.
+                HorizontalResolution = 300,
+                VerticalResolution = 300,
+                // Use Flate compression to reduce PDF size.
+                TextCompression = PdfTextCompression.Flate
+            };
 
-            // Save the diagram as a PDF file.
+            // Save the diagram as a PDF using the configured options.
             diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            Console.WriteLine($"PDF successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

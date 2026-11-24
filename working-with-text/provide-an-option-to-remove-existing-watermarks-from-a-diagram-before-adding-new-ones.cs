@@ -2,92 +2,92 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path.
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        // Expect three arguments: input file, output file, watermark text
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <watermark text>");
             return;
         }
 
-        // Output diagram path.
-        string outputPath = "output.vsdx";
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string newWatermarkText = args[2];
 
-        // New watermark text.
-        string newWatermarkText = "Confidential";
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram inside a using block.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages to remove existing watermark shapes.
+                // ---------------------------------------------------------------
+                // Remove existing watermarks (shapes containing the word "Watermark")
+                // ---------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect IDs of shapes that appear to be watermarks.
-                    List<long> idsToRemove = new List<long>();
+                    // Collect shapes to remove to avoid modifying the collection during iteration
+                    List<Shape> shapesToRemove = new List<Shape>();
 
                     foreach (Shape shape in page.Shapes)
                     {
-                        bool isWatermark = false;
+                        // Retrieve the concatenated plain text of the shape (if any)
+                        string shapeText = shape.Text?.Value?.ToString();
 
-                        // Check shape name for the word "Watermark".
-                        if (!string.IsNullOrEmpty(shape.NameU) &&
-                            shape.NameU.IndexOf("Watermark", StringComparison.OrdinalIgnoreCase) >= 0)
+                        if (!string.IsNullOrEmpty(shapeText) &&
+                            shapeText.IndexOf("Watermark", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            isWatermark = true;
-                        }
-
-                        // Check shape text for the word "Watermark".
-                        if (!isWatermark && shape.Text != null && shape.Text.Value != null)
-                        {
-                            string plainText = shape.Text.Value.ToString();
-                            if (!string.IsNullOrEmpty(plainText) &&
-                                plainText.IndexOf("Watermark", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                isWatermark = true;
-                            }
-                        }
-
-                        if (isWatermark)
-                        {
-                            idsToRemove.Add(shape.ID);
+                            shapesToRemove.Add(shape);
                         }
                     }
 
-                    // Remove identified watermark shapes.
-                    foreach (long id in idsToRemove)
+                    // Remove the identified shapes from the page
+                    foreach (Shape s in shapesToRemove)
                     {
-                        Shape shapeToRemove = page.Shapes.GetShape(id);
-                        if (shapeToRemove != null)
-                        {
-                            page.Shapes.Remove(shapeToRemove);
-                        }
+                        page.Shapes.Remove(s);
                     }
-
-                    // Add a new watermark that covers the whole page.
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
-
-                    // Center position for the watermark shape.
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Font size in inches (e.g., 0.25 inches ≈ 18 points).
-                    double fontSizeInches = 0.25;
-
-                    // Add the watermark text shape.
-                    page.AddText(pinX, pinY, pageWidth, pageHeight, newWatermarkText, "Calibri", "#a5a5a5", fontSizeInches);
                 }
 
-                // Save the modified diagram.
+                // ---------------------------------------------------------------
+                // Add a new watermark shape to the first page (if any pages exist)
+                // ---------------------------------------------------------------
+                if (diagram.Pages.Count > 0)
+                {
+                    Page firstPage = diagram.Pages[0];
+
+                    // Retrieve page dimensions (in inches)
+                    double pageWidth = firstPage.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = firstPage.PageSheet.PageProps.PageHeight.Value;
+
+                    // Add a full‑page text shape as the watermark
+                    // Parameters: pinX, pinY, width, height, text, fontName, fontColor (hex), fontSize (in inches)
+                    Shape watermarkShape = firstPage.AddText(
+                        0,                     // pinX (left)
+                        0,                     // pinY (top)
+                        pageWidth,             // width
+                        pageHeight,            // height
+                        newWatermarkText,      // watermark text
+                        "Calibri",             // font name
+                        "#a5a5a5",             // font color (light gray)
+                        0.25);                 // font size (in inches)
+
+                    // Optionally make the watermark outline thin
+                    watermarkShape.Line.LineWeight.Value = 0.1;
+                }
+
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram processed and saved to: {outputPath}");
             }
         }
         catch (Exception ex)

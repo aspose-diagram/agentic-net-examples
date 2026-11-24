@@ -1,76 +1,69 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Prompt user for the Visio file path
+        Console.Write("Enter the path to the Visio diagram file: ");
+        string inputPath = Console.ReadLine();
+
+        // Guard: ensure the file exists
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Error: The specified file does not exist.");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        // Prompt user for desired orientation
+        Console.Write("Enter desired orientation (P for Portrait, L for Landscape): ");
+        string orientationInput = Console.ReadLine()?.Trim().ToUpperInvariant();
 
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Determine the orientation value based on user input
+        PrintPageOrientationValue orientationValue;
+        if (orientationInput == "L")
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
-            return;
+            orientationValue = PrintPageOrientationValue.Landscape;
         }
-
-        // Prompt the user for the desired orientation.
-        Console.WriteLine("Enter desired page orientation:");
-        Console.WriteLine("P - Portrait");
-        Console.WriteLine("L - Landscape");
-        Console.Write("Your choice (P/L): ");
-        string choice = Console.ReadLine()?.Trim().ToUpperInvariant();
-
-        // Determine the orientation enum value.
-        PrintPageOrientationValue orientation;
-        if (choice == "L")
+        else if (orientationInput == "P")
         {
-            orientation = PrintPageOrientationValue.Landscape;
-        }
-        else if (choice == "P")
-        {
-            orientation = PrintPageOrientationValue.Portrait;
+            orientationValue = PrintPageOrientationValue.Portrait;
         }
         else
         {
-            Console.Error.WriteLine("Invalid choice. Please enter 'P' for Portrait or 'L' for Landscape.");
+            Console.Error.WriteLine("Error: Invalid orientation input. Use 'P' or 'L'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply the selected orientation to every page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Set the page orientation.
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = orientation;
+                // Apply the chosen orientation to every page in the diagram
+                foreach (Page page in diagram.Pages)
+                {
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = orientationValue;
+                }
+
+                // Prepare output file path with a suffix indicating the orientation
+                string directory = Path.GetDirectoryName(inputPath);
+                string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string suffix = orientationValue == PrintPageOrientationValue.Landscape ? "_landscape" : "_portrait";
+                string outputPath = Path.Combine(directory, filenameWithoutExt + suffix + ".vsdx");
+
+                // Save the modified diagram in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to free resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\" with {orientation} orientation.");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose.Diagram errors to the error console
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

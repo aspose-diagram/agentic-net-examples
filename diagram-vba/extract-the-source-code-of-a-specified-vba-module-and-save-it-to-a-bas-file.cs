@@ -7,65 +7,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, VBA module name, output .bas file path
-        if (args.Length < 3)
+        // Validate command line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <vbaModuleName> <outputBasPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <moduleName> [outputBasPath]");
             return;
         }
 
-        string visioPath = args[0];
+        string inputPath = args[0];
         string moduleName = args[1];
-        string outputPath = args[2];
+        string outputPath = args.Length >= 3 ? args[2] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", moduleName + ".bas");
 
-        // Guard: ensure the input Visio file exists
-        if (!File.Exists(visioPath))
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input Visio file not found: {visioPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Access the VBA project
-            VbaProject vbaProject = diagram.VbaProject;
-            if (vbaProject == null)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram does not contain a VBA project.");
-                return;
-            }
-
-            // Find the specified VBA module by name
-            VbaModule targetModule = null;
-            foreach (VbaModule module in vbaProject.Modules)
-            {
-                if (string.Equals(module.Name, moduleName, StringComparison.OrdinalIgnoreCase))
+                // Ensure the diagram contains a VBA project.
+                if (diagram.VbaProject == null)
                 {
-                    targetModule = module;
-                    break;
+                    Console.Error.WriteLine("Error: The diagram does not contain a VBA project.");
+                    return;
                 }
+
+                // Search for the specified VBA module by name.
+                VbaModule targetModule = null;
+                for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
+                {
+                    VbaModule mod = diagram.VbaProject.Modules[i];
+                    if (string.Equals(mod.Name, moduleName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetModule = mod;
+                        break;
+                    }
+                }
+
+                if (targetModule == null)
+                {
+                    Console.Error.WriteLine($"Error: VBA module \"{moduleName}\" not found in the diagram.");
+                    return;
+                }
+
+                // Extract the VBA source code.
+                string vbaCode = targetModule.Codes ?? string.Empty;
+
+                // Ensure the output directory exists.
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Write the code to a .bas file.
+                File.WriteAllText(outputPath, vbaCode);
+                Console.WriteLine($"VBA module \"{moduleName}\" extracted successfully to: {outputPath}");
             }
-
-            if (targetModule == null)
-            {
-                Console.Error.WriteLine($"VBA module \"{moduleName}\" not found in the diagram.");
-                return;
-            }
-
-            // Extract the VBA source code
-            string vbaCode = targetModule.Codes ?? string.Empty;
-
-            // Write the code to the .bas file (overwrite if exists)
-            File.WriteAllText(outputPath, vbaCode);
-            Console.WriteLine($"VBA module \"{moduleName}\" extracted successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or I/O errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

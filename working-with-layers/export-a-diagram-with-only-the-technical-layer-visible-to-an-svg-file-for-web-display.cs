@@ -7,35 +7,36 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputSvgFilePath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path; if not provided, use same folder with .svg extension
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".svg");
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and adjust layer visibility.
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the collection of layers on the page.
+                    // Iterate through each layer in the current page's sheet
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Make only the layer named "Technical" visible.
+                        // Set visibility: only the layer named "Technical" stays visible
                         if (layer.Name.Value == "Technical")
                         {
                             layer.Visible.Value = BOOL.True;
@@ -47,25 +48,16 @@ class Program
                     }
                 }
 
-                // Configure SVG export options.
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-                // Set the target format explicitly.
-                svgOptions.SaveFormat = SaveFileFormat.Svg;
-                // Export the first page (index 0). Adjust if needed.
-                svgOptions.PageIndex = 0;
-                // Optional: export all pages by setting PageCount if the property exists.
-                // svgOptions.PageCount = diagram.Pages.Count; // Uncomment if supported.
-
-                // Export the diagram to SVG using the configured options.
-                diagram.Save(outputPath, svgOptions);
-
-                Console.WriteLine($"Diagram exported successfully to \"{outputPath}\".");
+                // Export the diagram to SVG format
+                diagram.Save(outputPath, SaveFileFormat.Svg);
             }
+
+            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

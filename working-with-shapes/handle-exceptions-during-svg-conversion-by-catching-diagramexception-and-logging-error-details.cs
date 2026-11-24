@@ -7,79 +7,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "sample.vsdx";
-        // Output SVG file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "shape.svg";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioFile> <outputSvgFile>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputSvgPath = args[1];
+
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block for proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains at least one page
+                // Ensure the diagram has at least one page
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("Error: Diagram contains no pages.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
                 // Get the first page
                 Page page = diagram.Pages[0];
 
-                // Ensure the page contains at least one shape
-                if (page.Shapes.Count == 0)
+                // Find the first non-deleted shape on the page
+                Shape targetShape = null;
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.Error.WriteLine("Error: Page contains no shapes.");
+                    // Use BOOL.False to check the deletion flag
+                    if (shape.Del == BOOL.False)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine("No visible shape found on the first page.");
                     return;
                 }
 
-                // Get the first shape on the page
-                Shape shape = page.Shapes[0];
+                // Prepare SVG save options (default options are sufficient for basic export)
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Prepare SVG save options
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    // Fit the SVG to the viewport (preserve viewbox)
-                    SVGFitToViewPort = true,               // changed from BOOL.True to bool
-                    // Do not export guide shapes
-                    ExportGuideShapes = false,              // changed from BOOL.False to bool
-                    // Do not export comments
-                    IsExportComments = false,               // changed from BOOL.False to bool
-                    // Export only the first page (current page)
-                    PageIndex = 0
-                    // PageCount property omitted because it is not required for shape export
-                };
+                // Export the selected shape to SVG
+                targetShape.ToSvg(outputSvgPath, svgOptions);
 
-                // Convert the shape to SVG using the specified options
-                shape.ToSvg(outputPath, svgOptions);
-
-                Console.WriteLine($"Shape successfully exported to SVG: {outputPath}");
+                Console.WriteLine($"Shape successfully exported to SVG: {outputSvgPath}");
             }
         }
         catch (DiagramException dex)
         {
             // Handle Aspose.Diagram specific exceptions
-            Console.Error.WriteLine("DiagramException occurred during SVG conversion:");
-            Console.Error.WriteLine(dex.Message);
-            if (dex.InnerException != null)
-            {
-                Console.Error.WriteLine("Inner exception:");
-                Console.Error.WriteLine(dex.InnerException.Message);
-            }
+            Console.Error.WriteLine($"DiagramException occurred: {dex.Message}");
         }
         catch (Exception ex)
         {
             // Handle any other unexpected exceptions
-            Console.Error.WriteLine("An unexpected error occurred:");
-            Console.Error.WriteLine(ex.Message);
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

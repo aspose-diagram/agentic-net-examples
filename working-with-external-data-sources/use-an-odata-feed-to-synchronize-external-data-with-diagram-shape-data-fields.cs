@@ -1,115 +1,150 @@
 using System;
 using System.IO;
-using System.Data;
+using System.Net.Http;
+using System.Text.Json;
+using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Simple POCO to hold OData items
+    private class ODataItem
+    {
+        public long Id { get; set; }
+        public string FieldValue { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Define input and output file paths.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <outputPath> <odataUrl>");
             return;
         }
 
+        string diagramPath = args[0];
+        string outputPath = args[1];
+        string odataUrl = args[2];
+
+        // Guard against missing diagram file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Load the diagram inside a try/catch block
+        Diagram diagram;
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-            // ------------------------------------------------------------
-            // Simulate an OData feed using an in-memory DataTable.
-            // In a real scenario, replace this block with actual OData
-            // retrieval logic (e.g., HttpClient request and JSON parsing).
-            // ------------------------------------------------------------
-            DataTable odataTable = new DataTable();
-            odataTable.Columns.Add("ShapeId", typeof(long));
-            odataTable.Columns.Add("Status", typeof(string));
-
-            // Sample data rows – map shape IDs to a status string.
-            // Adjust or extend rows as needed for real data.
-            DataRow row1 = odataTable.NewRow();
-            row1["ShapeId"] = 1L;
-            row1["Status"] = "Active";
-            odataTable.Rows.Add(row1);
-
-            DataRow row2 = odataTable.NewRow();
-            row2["ShapeId"] = 2L;
-            row2["Status"] = "Inactive";
-            odataTable.Rows.Add(row2);
-            // ------------------------------------------------------------
-
-            // Iterate through all pages and shapes in the diagram.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+        // Fetch OData JSON synchronously
+        string json;
+        try
+        {
+            using (HttpClient client = new HttpClient())
             {
-                Page page = diagram.Pages[pageIndex];
+                json = client.GetStringAsync(odataUrl).Result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error fetching OData from '{odataUrl}': {ex.Message}");
+            return;
+        }
 
-                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+        // Deserialize OData into a list of items
+        List<ODataItem> odataItems;
+        try
+        {
+            odataItems = JsonSerializer.Deserialize<List<ODataItem>>(json);
+            if (odataItems == null)
+            {
+                Console.Error.WriteLine("OData response deserialized to null.");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error parsing OData JSON: {ex.Message}");
+            return;
+        }
+
+        // Create a lookup dictionary for fast ID matching
+        Dictionary<long, string> dataMap = new Dictionary<long, string>();
+        foreach (ODataItem item in odataItems)
+        {
+            if (!dataMap.ContainsKey(item.Id))
+            {
+                dataMap.Add(item.Id, item.FieldValue ?? string.Empty);
+            }
+        }
+
+        // Iterate through all pages and shapes to synchronize data
+        try
+        {
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            {
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[shapeIndex];
-
-                    // Find a matching OData row for the current shape ID.
-                    string statusValue = null;
-                    foreach (DataRow dataRow in odataTable.Rows)
+                    // Check if the shape ID exists in the OData payload
+                    if (dataMap.TryGetValue(shape.ID, out string newValue))
                     {
-                        long shapeIdFromData = (long)dataRow["ShapeId"];
-                        if (shape.ID == shapeIdFromData)
+                        // Look for an existing user-defined cell named "ODataValue"
+                        Aspose.Diagram.User existingUser = null;
+                        foreach (Aspose.Diagram.User user in shape.Users)
                         {
-                            statusValue = dataRow["Status"]?.ToString();
-                            break;
+                            if (string.Equals(user.NameU, "ODataValue", StringComparison.OrdinalIgnoreCase))
+                            {
+                                existingUser = user;
+                                break;
+                            }
+                        }
+
+                        if (existingUser != null)
+                        {
+                            // Update the existing user-defined cell
+                            existingUser.Value.Val = newValue;
+                        }
+                        else
+                        {
+                            // Create a new user-defined cell and add it to the shape
+                            Aspose.Diagram.User newUser = new Aspose.Diagram.User();
+                            newUser.NameU = "ODataValue";
+                            newUser.Value.Val = newValue;
+                            shape.Users.Add(newUser);
                         }
                     }
-
-                    // If there is no matching data, skip this shape.
-                    if (statusValue == null)
-                        continue;
-
-                    // --------------------------------------------------------
-                    // Update or add a custom property named "Status" on the shape.
-                    // --------------------------------------------------------
-                    bool propertyFound = false;
-                    for (int propIndex = 0; propIndex < shape.Props.Count; propIndex++)
-                    {
-                        Prop prop = shape.Props[propIndex];
-                        if (prop.Name == "Status")
-                        {
-                            // Update existing property value.
-                            prop.Value.Val = statusValue;
-                            propertyFound = true;
-                            break;
-                        }
-                    }
-
-                    if (!propertyFound)
-                    {
-                        // Create a new custom property.
-                        Prop newProp = new Prop();
-                        newProp.Name = "Status";
-                        newProp.Label.Value = "Status";
-                        newProp.Type.Value = TypePropValue.String;
-                        newProp.Value.Val = statusValue;
-                        shape.Props.Add(newProp);
-                    }
-
-                    // Refresh shape data to apply changes.
-                    shape.RefreshData();
                 }
             }
 
-            // Save the updated diagram to the output file.
+            // Refresh the diagram to apply any data connection changes
+            diagram.Refresh();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during synchronization: {ex.Message}");
+            return;
+        }
+
+        // Save the updated diagram
+        try
+        {
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
         }
     }
 }

@@ -7,77 +7,85 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path and output file path as arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Prepare output path with a suffix
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_validated.vsdx");
+
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                bool allValid = true;
+
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
-                    Console.WriteLine($"Processing Page ID {page.ID}, Name \"{page.Name}\"");
-
-                    // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // If the shape is based on a master, validate line inheritance.
+                        // Process only shapes that have an associated master
                         if (shape.Master != null)
                         {
-                            // Access the inherited line formatting.
-                            var inheritLine = shape.InheritLine;
+                            // Retrieve line formatting from the shape
+                            var shapeLineColor = shape.Line?.LineColor?.Value;
+                            var shapeLineWeight = shape.Line?.LineWeight?.Value;
 
-                            // Validate that the inherited line color is present.
-                            // (LineColor may be null if inheritance is not applied.)
-                            if (inheritLine?.LineColor == null || inheritLine.LineColor.Value == null)
-                            {
-                                Console.WriteLine($"[Warning] Shape ID {shape.ID} does not inherit line color from its master \"{shape.Master.Name}\".");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Shape ID {shape.ID} inherits line color: {inheritLine.LineColor.Value}");
-                            }
+                            // Retrieve inherited line formatting
+                            var inheritLineColor = shape.InheritLine?.LineColor?.Value;
+                            var inheritLineWeight = shape.InheritLine?.LineWeight?.Value;
 
-                            // Additional validation can be added here for other line properties
-                            // such as LineWeight, BeginArrow, EndArrow, etc., following the same pattern.
-                        }
-                        else
-                        {
-                            // Shape has no master; inheritance check is not applicable.
-                            Console.WriteLine($"Shape ID {shape.ID} has no master; skipping inheritance validation.");
+                            // Validate inheritance: compare color and weight
+                            bool colorMatches = shapeLineColor != null && inheritLineColor != null && shapeLineColor == inheritLineColor;
+                            bool weightMatches = shapeLineWeight != null && inheritLineWeight != null && shapeLineWeight == inheritLineWeight;
+
+                            if (!colorMatches || !weightMatches)
+                            {
+                                Console.WriteLine($"Shape ID {shape.ID} on page '{page.Name}' does not inherit line formatting from master '{shape.Master.Name}'.");
+                                allValid = false;
+                            }
                         }
                     }
                 }
 
-                // After validation, export the diagram to the specified output path.
+                // Report validation result
+                if (!allValid)
+                {
+                    Console.WriteLine("Validation failed: some shapes do not inherit line formatting from their masters.");
+                }
+                else
+                {
+                    Console.WriteLine("All shapes inherit line formatting from their masters.");
+                }
+
+                // Export the diagram to VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

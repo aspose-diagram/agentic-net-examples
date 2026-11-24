@@ -7,39 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
             return;
         }
 
-        // Output SVG file path
-        string outputPath = "output.svg";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure SVG save options.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-            // Create SVG save options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
+                // NOTE: The Aspose.Diagram API does not expose a FontRenderingMode
+                // property for SVGSaveOptions. If such a feature becomes available,
+                // set it here. For now, the default rendering is used.
+                // TODO: Set font rendering mode to anti‑aliased when supported.
 
-            // TODO: Set font rendering mode to anti‑aliased if supported by future API versions.
-            // Current Aspose.Diagram SVGSaveOptions does not expose a FontRenderingMode property.
+                // Save the diagram as SVG using the configured options.
+                diagram.Save(outputPath, svgOptions);
+            }
 
-            // Save the diagram as SVG using the configured options
-            diagram.Save(outputPath, svgOptions);
+            Console.WriteLine($"Diagram successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

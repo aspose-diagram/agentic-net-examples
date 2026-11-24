@@ -6,23 +6,24 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputDirectory]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input Visio file exists.
+        string outputDir = args[1];
+
+        // Guard: input file must exist
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output directory (optional second argument or default "OleOutputs").
-        string outputDir = args.Length >= 2 ? args[1] : "OleOutputs";
+        // Ensure output directory exists
         if (!Directory.Exists(outputDir))
         {
             try
@@ -38,36 +39,35 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            int oleCounter = 0; // Counter to generate unique file names when needed.
+            int oleCounter = 0;
 
-            // Iterate through all pages.
+            // Iterate through all pages
             foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through all shapes on the page
                 foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Check if the shape contains foreign (OLE) data.
+                    // Check if the shape contains foreign (OLE) data
                     if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                     {
                         byte[] oleData = shape.ForeignData.ObjectData;
 
-                        // Attempt to derive a file extension from the source full name.
+                        // Determine original file extension from ObjectSourceFullName, fallback to .bin
                         string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
                         string extension = Path.GetExtension(sourceName);
                         if (string.IsNullOrEmpty(extension))
                         {
-                            // Fallback to a generic binary extension if none is found.
                             extension = ".bin";
                         }
 
-                        // Build a unique file name using shape ID and counter to avoid collisions.
-                        string fileName = $"Ole_{shape.ID}_{oleCounter}{extension}";
+                        // Build a unique file name using shape ID and counter
+                        string fileName = $"OleObject_{shape.ID}_{oleCounter}{extension}";
                         string outputPath = Path.Combine(outputDir, fileName);
 
-                        // Write the binary OLE data to the file.
+                        // Write the binary data to the file
                         File.WriteAllBytes(outputPath, oleData);
                         Console.WriteLine($"Extracted OLE object from Shape ID {shape.ID} to '{outputPath}'.");
 
@@ -80,7 +80,6 @@ class Program
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

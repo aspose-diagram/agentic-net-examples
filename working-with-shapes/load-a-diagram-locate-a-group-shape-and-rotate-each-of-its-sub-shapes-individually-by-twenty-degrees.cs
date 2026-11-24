@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -17,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,37 +25,53 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (ensures proper disposal).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate over each shape on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Detect a group shape by its Type.
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify a group shape. A group shape has Type == TypeValue.Group.
                         if (shape.Type == TypeValue.Group)
                         {
-                            // Iterate through each sub‑shape within the group.
+                            // Rotate each sub‑shape inside the group by 20 degrees.
                             foreach (Shape child in shape.Shapes)
                             {
-                                // Add 20 degrees to the existing rotation angle of the sub‑shape.
-                                double currentAngle = child.XForm.Angle.Value;
-                                child.XForm.Angle.Value = currentAngle + 20.0;
+                                // Skip deleted child shapes.
+                                if (child.Del == BOOL.True)
+                                    continue;
+
+                                // Add 20 degrees to the existing rotation angle.
+                                double newAngle = child.XForm.Angle.Value + 20.0;
+
+                                // Apply the new rotation using the SetAngle method.
+                                child.SetAngle(newAngle);
                             }
+
+                            // If only the first group should be processed, uncomment the break statements below.
+                            // break; // Exit shape loop after handling the first group.
                         }
                     }
+
+                    // If only the first group on the first page should be processed, uncomment the break below.
+                    // break; // Exit page loop after handling the first group.
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

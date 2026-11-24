@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
@@ -24,15 +24,15 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 int redLineShapeCount = 0;
 
-                // Iterate through all pages in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip logically deleted shapes
@@ -42,12 +42,8 @@ class Program
                         // Ensure the shape has a Line object and a LineColor cell
                         if (shape.Line != null && shape.Line.LineColor != null)
                         {
-                            // Retrieve the line color value (may be null)
-                            string lineColor = shape.Line.LineColor.Value;
-
                             // Compare the line color to red (hex string "#FF0000")
-                            if (!string.IsNullOrEmpty(lineColor) &&
-                                lineColor.Equals("#FF0000", StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(shape.Line.LineColor.Value, "#FF0000", StringComparison.OrdinalIgnoreCase))
                             {
                                 redLineShapeCount++;
                             }
@@ -62,7 +58,7 @@ class Program
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

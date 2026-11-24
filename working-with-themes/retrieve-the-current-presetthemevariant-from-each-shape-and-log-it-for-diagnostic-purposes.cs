@@ -6,50 +6,47 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Expect the first argument to be the path to the Visio file.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No diagram file path provided.");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard against missing file
+        // Guard: ensure the file exists before attempting to load.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram from the specified file.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
+                // Iterate through each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
+                    // Skip shapes that are marked as deleted.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Log basic shape information
-                    Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
-
-                    // NOTE: Shape.PresetThemeVariant is write‑only and cannot be read.
-                    // Therefore we cannot retrieve its current value. We log this fact.
-                    Console.WriteLine("  PresetThemeVariant: [cannot read - write only property]");
+                    // NOTE: Shape.PresetThemeVariant is write‑only in the Aspose.Diagram API.
+                    // It cannot be read back, so we log a diagnostic message indicating this limitation.
+                    Console.WriteLine($"Page ID: {page.ID}, Shape ID: {shape.ID} - PresetThemeVariant is write‑only and cannot be retrieved.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any exceptions that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

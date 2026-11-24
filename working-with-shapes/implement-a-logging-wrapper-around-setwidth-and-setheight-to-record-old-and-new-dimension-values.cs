@@ -4,9 +4,29 @@ using Aspose.Diagram;
 
 class Program
 {
+    // Wrapper that logs old and new width before applying the change
+    static void SetWidthWithLogging(Shape shape, double newWidth)
+    {
+        // Retrieve current width (in inches) from the shape's XForm
+        double oldWidth = shape.XForm.Width.Value;
+        Console.WriteLine($"Setting Width - Old: {oldWidth}, New: {newWidth}");
+        // Apply the new width using the native SetWidth method
+        shape.SetWidth(newWidth);
+    }
+
+    // Wrapper that logs old and new height before applying the change
+    static void SetHeightWithLogging(Shape shape, double newHeight)
+    {
+        // Retrieve current height (in inches) from the shape's XForm
+        double oldHeight = shape.XForm.Height.Value;
+        Console.WriteLine($"Setting Height - Old: {oldHeight}, New: {newHeight}");
+        // Apply the new height using the native SetHeight method
+        shape.SetHeight(newHeight);
+    }
+
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input diagram path and output diagram path as arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -16,31 +36,30 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page.
+                // For demonstration, operate on the first page
                 if (diagram.Pages.Count == 0)
                 {
                     Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Access the first page.
+                // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Retrieve a shape by its ID. Here we use ID = 1 as an example.
-                // Adjust the ID as needed for your specific diagram.
-                long shapeId = 1;
+                // Define the shape ID to modify; adjust as needed
+                long shapeId = 1; // Example shape ID
                 Shape shape = page.Shapes.GetShape(shapeId);
                 if (shape == null)
                 {
@@ -48,58 +67,23 @@ class Program
                     return;
                 }
 
-                // Log current dimensions.
-                double currentWidth = shape.XForm.Width.Value;
-                double currentHeight = shape.XForm.Height.Value;
-                Console.WriteLine($"Current dimensions - Width: {currentWidth}, Height: {currentHeight}");
+                // Example new dimensions (in inches)
+                double newWidth = 2.0;
+                double newHeight = 1.5;
 
-                // Define new dimensions (example: increase each by 1.0 units).
-                double newWidth = currentWidth + 1.0;
-                double newHeight = currentHeight + 1.0;
+                // Apply width and height changes using the logging wrappers
+                SetWidthWithLogging(shape, newWidth);
+                SetHeightWithLogging(shape, newHeight);
 
-                // Apply width and height changes using the logging wrappers.
-                SetShapeWidth(shape, newWidth);
-                SetShapeHeight(shape, newHeight);
-
-                // Save the modified diagram.
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Log any exceptions that occur during Aspose operations
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Sets the width of a shape while logging the old and new values.
-    /// </summary>
-    /// <param name="shape">The shape to modify.</param>
-    /// <param name="newWidth">The desired new width.</param>
-    private static void SetShapeWidth(Shape shape, double newWidth)
-    {
-        // Retrieve the existing width.
-        double oldWidth = shape.XForm.Width.Value;
-        // Log the change.
-        Console.WriteLine($"Changing width from {oldWidth} to {newWidth}");
-        // Apply the new width.
-        shape.SetWidth(newWidth);
-    }
-
-    /// <summary>
-    /// Sets the height of a shape while logging the old and new values.
-    /// </summary>
-    /// <param name="shape">The shape to modify.</param>
-    /// <param name="newHeight">The desired new height.</param>
-    private static void SetShapeHeight(Shape shape, double newHeight)
-    {
-        // Retrieve the existing height.
-        double oldHeight = shape.XForm.Height.Value;
-        // Log the change.
-        Console.WriteLine($"Changing height from {oldHeight} to {newHeight}");
-        // Apply the new height.
-        shape.SetHeight(newHeight);
     }
 }

@@ -8,122 +8,124 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 4)
+        // Validate arguments: input diagram, output diagram, source master name, target master name
+        if (args.Length != 4)
         {
-            Console.Error.WriteLine("Usage: <input.vsdx> <sourceMasterName> <targetMasterName> <output.vsdx>");
+            Console.Error.WriteLine("Usage: <input.vsdx> <output.vsdx> <sourceMasterName> <targetMasterName>");
             return;
         }
 
         string inputPath = args[0];
-        string sourceMasterName = args[1];
-        string targetMasterName = args[2];
-        string outputPath = args[3];
+        string outputPath = args[1];
+        string sourceMasterName = args[2];
+        string targetMasterName = args[3];
 
-        // Guard: ensure input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve source and target masters.
-            Master? sourceMaster = null;
-            Master? targetMaster = null;
-
-            // Find source master by name.
-            foreach (Master master in diagram.Masters)
+            // Verify that both source and target masters exist in the diagram
+            if (!diagram.Masters.IsExist(sourceMasterName))
             {
-                if (master.Name == sourceMasterName)
-                {
-                    sourceMaster = master;
-                }
-                if (master.Name == targetMasterName)
-                {
-                    targetMaster = master;
-                }
-                if (sourceMaster != null && targetMaster != null)
-                {
-                    break;
-                }
-            }
-
-            if (sourceMaster == null)
-            {
-                Console.Error.WriteLine($"Source master \"{sourceMasterName}\" not found in diagram.");
+                Console.Error.WriteLine($"Source master \"{sourceMasterName}\" does not exist in the diagram.");
                 return;
             }
 
-            if (targetMaster == null)
+            if (!diagram.Masters.IsExist(targetMasterName))
             {
-                Console.Error.WriteLine($"Target master \"{targetMasterName}\" not found in diagram.");
+                Console.Error.WriteLine($"Target master \"{targetMasterName}\" does not exist in the diagram.");
                 return;
             }
 
-            // Iterate through each page and replace shapes that use the source master.
+            // Iterate through each page and replace shapes that use the source master
             foreach (Page page in diagram.Pages)
             {
-                // Collect shape IDs that need replacement to avoid modifying collection while iterating.
-                List<long> shapesToReplace = new List<long>();
+                // Map old shape IDs to newly created shape IDs for connection updates
+                Dictionary<long, long> shapeIdMap = new Dictionary<long, long>();
 
+                // Collect shapes to replace to avoid modifying the collection while iterating
+                List<Shape> shapesToReplace = new List<Shape>();
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has an associated master and compare its name.
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has an associated master and matches the source master name
                     if (shape.Master != null && shape.Master.Name == sourceMasterName)
                     {
-                        shapesToReplace.Add(shape.ID);
+                        shapesToReplace.Add(shape);
                     }
                 }
 
-                // Process each shape that uses the source master.
-                foreach (long oldShapeId in shapesToReplace)
+                // Replace each identified shape
+                foreach (Shape oldShape in shapesToReplace)
                 {
-                    Shape oldShape = page.Shapes.GetShape(oldShapeId);
-
-                    // Preserve geometry.
+                    // Preserve geometry of the old shape
                     double pinX = oldShape.XForm.PinX.Value;
                     double pinY = oldShape.XForm.PinY.Value;
                     double width = oldShape.XForm.Width.Value;
                     double height = oldShape.XForm.Height.Value;
 
-                    // Add a new shape using the target master at the same location and size.
-                    // Note: AddShape overload with size parameters is not documented; use the overload with pinX, pinY, masterName.
-                    // After adding, set size manually.
-                    long newShapeId = page.AddShape(pinX, pinY, targetMaster.Name);
+                    // Add a new shape using the target master at the same position and size
+                    long newShapeIdLong = page.AddShape(pinX, pinY, width, height, targetMasterName);
+                    // GetShape expects an int ID, so cast safely
+                    int newShapeId = (int)newShapeIdLong;
                     Shape newShape = page.Shapes.GetShape(newShapeId);
-                    newShape.XForm.Width.Value = width;
-                    newShape.XForm.Height.Value = height;
 
-                    // Preserve connections: update any Connect objects that reference the old shape ID.
-                    foreach (Connect conn in page.Connects)
+                    // Copy text content from the old shape to the new shape
+                    if (oldShape.Text != null && oldShape.Text.Value != null)
                     {
-                        if (conn.FromSheet == oldShapeId)
+                        // Clear existing text runs
+                        newShape.Text.Value.Clear();
+                        // Add each text run from the old shape
+                        foreach (var txt in oldShape.Text.Value)
                         {
-                            conn.FromSheet = newShapeId;
-                        }
-                        if (conn.ToSheet == oldShapeId)
-                        {
-                            conn.ToSheet = newShapeId;
+                            if (txt is Txt t)
+                            {
+                                newShape.Text.Value.Add(new Txt(t.Text));
+                            }
                         }
                     }
 
-                    // Hide the old shape instead of deleting it (removal APIs are not guaranteed).
-                    oldShape.Del = BOOL.True;
+                    // Record the ID mapping for later connection updates
+                    shapeIdMap[oldShape.ID] = newShapeIdLong;
+
+                    // Remove the old shape from the page
+                    // Fixed: Remove expects a Shape object, not an ID
+                    page.Shapes.Remove(oldShape);
+                }
+
+                // Update connections to point to the new shape IDs
+                foreach (Connect conn in page.Connects)
+                {
+                    if (shapeIdMap.TryGetValue(conn.FromSheet, out long newFrom))
+                    {
+                        conn.FromSheet = newFrom;
+                    }
+
+                    if (shapeIdMap.TryGetValue(conn.ToSheet, out long newTo))
+                    {
+                        conn.ToSheet = newTo;
+                    }
                 }
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

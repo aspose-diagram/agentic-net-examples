@@ -9,72 +9,78 @@ class Program
     static void Main(string[] args)
     {
         // Validate input arguments
-        if (args.Length < 1)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputLogPath]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputLogPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : "sanitized_text.log";
+        string outputPath = args[1];
 
         // Guard: ensure the input diagram file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        // StringBuilder to accumulate sanitized text
-        StringBuilder sanitizedBuilder = new StringBuilder();
 
         try
         {
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
+                var sb = new StringBuilder();
+
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Guard: skip deleted shapes
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
                         // Retrieve plain text from the shape
-                        string rawText = shape.Text?.Value?.Text ?? string.Empty;
+                        string rawText = shape.Text?.Value?.Text;
 
-                        // Skip empty text
-                        if (string.IsNullOrWhiteSpace(rawText))
+                        if (string.IsNullOrEmpty(rawText))
                             continue;
 
-                        // Remove all punctuation using a regular expression
-                        // This keeps letters, digits and whitespace
-                        string sanitized = Regex.Replace(rawText, @"[^\w\s]", string.Empty);
+                        // Remove punctuation from the text
+                        string sanitized = RemovePunctuation(rawText);
 
-                        // Append the sanitized line to the builder
-                        sanitizedBuilder.AppendLine(sanitized);
+                        // Append sanitized text to the log content
+                        sb.AppendLine(sanitized);
                     }
                 }
+
+                // Ensure the output directory exists
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Write the collected text to the log file
+                File.WriteAllText(outputPath, sb.ToString());
+                Console.WriteLine($"Sanitized text has been saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
+    }
 
-        try
-        {
-            // Write the accumulated sanitized text to the log file
-            File.WriteAllText(outputPath, sanitizedBuilder.ToString());
-            Console.WriteLine($"Sanitized text saved to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error writing log file: {ex.Message}");
-        }
+    /// <summary>
+    /// Removes all punctuation characters from the provided text.
+    /// </summary>
+    private static string RemovePunctuation(string text)
+    {
+        // Use a regular expression to strip punctuation and symbols
+        return Regex.Replace(text, @"[\p{P}\p{S}]", string.Empty);
     }
 }

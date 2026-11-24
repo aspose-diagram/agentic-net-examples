@@ -7,61 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) or default.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output directory for PNG files (second argument) or default.
-        string outputDir = args.Length > 1 ? args[1] : "output";
-
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Validate command-line arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input VSD/VSDX file> <output PNG file>");
             return;
         }
 
-        // Ensure the output directory exists.
-        Directory.CreateDirectory(outputDir);
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages in the diagram.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Process only background pages.
-                if (page.Background == BOOL.True)
+                // Iterate through all pages to find background pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the background page.
-                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
+                    // Check if the page is a background page
+                    if (page.Background == BOOL.True)
                     {
-                        Shape shape = page.Shapes[shapeIdx];
-
-                        // Identify foreign (image) shapes.
-                        if (shape.Type == TypeValue.Foreign && shape.Image != null)
+                        // Iterate through all shapes on the background page
+                        for (int i = 0; i < page.Shapes.Count; i++)
                         {
-                            // Apply a blur filter (e.g., 25% blur).
-                            shape.Image.Blur.Value = 0.25;
+                            Shape shape = page.Shapes[i];
+
+                            // Identify foreign (image) shapes
+                            if (shape.Type == TypeValue.Foreign && shape.Image != null)
+                            {
+                                // Apply a blur filter (value range 0.0 - 1.0)
+                                shape.Image.Blur.Value = 0.25;
+                            }
                         }
                     }
                 }
 
-                // Export the current page to PNG.
+                // Configure PNG export options
                 ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                pngOptions.PageIndex = pageIndex;   // Export this specific page.
-                pngOptions.PageCount = 1;           // Export only one page per file.
+                // Export hidden pages flag expects a plain bool, not BOOL
+                pngOptions.ExportHiddenPage = false;
 
-                string outputPath = Path.Combine(outputDir, $"page_{pageIndex + 1}.png");
+                // Save the modified diagram as PNG
                 diagram.Save(outputPath, pngOptions);
             }
+
+            Console.WriteLine($"Successfully saved blurred PNG to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

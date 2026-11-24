@@ -8,88 +8,106 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputHtmlPath>");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path> [output-directory]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputDir = args.Length >= 2 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "HtmlOutput");
 
-        // Guard against missing input file.
+        // Guard: check if input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Ensure output directory exists
+        Directory.CreateDirectory(outputDir);
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // StringBuilder to compose the final HTML document.
-                StringBuilder htmlBuilder = new StringBuilder();
+                int pageCount = diagram.Pages.Count;
 
-                // Write basic HTML header.
-                htmlBuilder.AppendLine("<!DOCTYPE html>");
-                htmlBuilder.AppendLine("<html lang=\"en\">");
-                htmlBuilder.AppendLine("<head>");
-                htmlBuilder.AppendLine("    <meta charset=\"UTF-8\">");
-                htmlBuilder.AppendLine("    <title>Diagram Export</title>");
-                htmlBuilder.AppendLine("</head>");
-                htmlBuilder.AppendLine("<body>");
-                htmlBuilder.AppendLine("    <h1>Diagram Export – Shapes as Base64 Images</h1>");
-
-                // Iterate through all pages.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate over each page and export it to a separate HTML file
+                for (int i = 0; i < pageCount; i++)
                 {
-                    Page page = diagram.Pages[pageIndex];
-                    htmlBuilder.AppendLine($"    <h2>Page {pageIndex + 1}</h2>");
+                    // Configure HTML export options for a single page
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                    htmlOptions.PageIndex = i;   // zero‑based page index
+                    htmlOptions.PageCount = 1;   // export only this page
 
-                    // Iterate through all shapes on the current page.
-                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
-                    {
-                        Shape shape = page.Shapes[shapeIndex];
+                    // Define HTML file path
+                    string htmlFileName = $"page_{i + 1}.html";
+                    string htmlPath = Path.Combine(outputDir, htmlFileName);
 
-                        // Generate a temporary PNG file for the shape.
-                        string tempImagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
+                    // Export the page to HTML
+                    diagram.Save(htmlPath, htmlOptions);
 
-                        // Export the shape to PNG using ImageSaveOptions.
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        shape.ToImage(tempImagePath, imgOptions);
-
-                        // Read the PNG bytes and convert to a Base64 data URI.
-                        byte[] imageBytes = File.ReadAllBytes(tempImagePath);
-                        string base64 = Convert.ToBase64String(imageBytes);
-                        string dataUri = $"data:image/png;base64,{base64}";
-
-                        // Clean up the temporary file.
-                        File.Delete(tempImagePath);
-
-                        // Append the shape representation to the HTML.
-                        htmlBuilder.AppendLine("    <div style=\"margin-bottom:20px;\">");
-                        htmlBuilder.AppendLine($"        <p>Shape ID: {shape.ID}</p>");
-                        htmlBuilder.AppendLine($"        <img src=\"{dataUri}\" alt=\"Shape {shape.ID}\" style=\"max-width:100%; height:auto;\"/>");
-                        htmlBuilder.AppendLine("    </div>");
-                    }
+                    // After export, embed any generated PNG images as base64 data URIs
+                    EmbedImagesInHtml(htmlPath, outputDir, i + 1);
                 }
-
-                // Close HTML tags.
-                htmlBuilder.AppendLine("</body>");
-                htmlBuilder.AppendLine("</html>");
-
-                // Write the composed HTML to the output file.
-                File.WriteAllText(outputPath, htmlBuilder.ToString(), Encoding.UTF8);
-                Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Finds PNG images generated for a specific page, converts them to base64,
+    /// replaces the src attributes in the HTML file, and optionally deletes the PNG files.
+    /// </summary>
+    /// <param name="htmlPath">Full path to the generated HTML file.</param>
+    /// <param name="outputDir">Directory where the HTML and image files reside.</param>
+    /// <param name="pageNumber">One‑based page number used in naming convention.</param>
+    private static void EmbedImagesInHtml(string htmlPath, string outputDir, int pageNumber)
+    {
+        // Read the HTML content
+        string htmlContent = File.ReadAllText(htmlPath, Encoding.UTF8);
+
+        // Determine image file naming pattern for this page (e.g., page_1_*.png)
+        string imagePrefix = $"page_{pageNumber}_";
+        string[] imageFiles = Directory.GetFiles(outputDir, $"{imagePrefix}*.png");
+
+        foreach (string imagePath in imageFiles)
+        {
+            // Read image bytes and convert to base64
+            byte[] imageBytes = File.ReadAllBytes(imagePath);
+            string base64 = Convert.ToBase64String(imageBytes);
+            string dataUri = $"data:image/png;base64,{base64}";
+
+            // Extract just the file name to match the src attribute in HTML
+            string imageFileName = Path.GetFileName(imagePath);
+
+            // Replace src="imageFileName" with src="dataUri"
+            // Simple string replace; assumes double quotes around src value
+            string srcPattern = $"src=\"{imageFileName}\"";
+            string replacement = $"src=\"{dataUri}\"";
+            htmlContent = htmlContent.Replace(srcPattern, replacement);
+        }
+
+        // Write the modified HTML back to the file
+        File.WriteAllText(htmlPath, htmlContent, Encoding.UTF8);
+
+        // Optionally delete the now‑embedded PNG files
+        foreach (string imagePath in imageFiles)
+        {
+            try
+            {
+                File.Delete(imagePath);
+            }
+            catch
+            {
+                // If deletion fails, ignore and continue
+            }
         }
     }
 }

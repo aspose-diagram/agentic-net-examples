@@ -1,14 +1,16 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length != 1)
+        // Validate command-line arguments.
+        if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: HeaderFooterTool <directoryPath>");
             return;
@@ -19,72 +21,68 @@ class Program
         // Verify the directory exists.
         if (!Directory.Exists(directoryPath))
         {
-            Console.Error.WriteLine($"Error: Directory does not exist – {directoryPath}");
+            Console.Error.WriteLine($"Directory does not exist: {directoryPath}");
             return;
         }
 
-        // Define the header/footer template strings.
-        const string leftHeader   = "Company Name";
-        const string centerHeader = "Document Title";
-        const string rightHeader  = "Date: &d";          // Visio date field.
-        const string leftFooter   = "Page &p of &P";    // Visio page number fields.
-        const string centerFooter = "";
-        const string rightFooter  = "Confidential";
-
-        // Map supported file extensions to their corresponding SaveFileFormat.
-        var formatMap = new Dictionary<string, SaveFileFormat>(StringComparer.OrdinalIgnoreCase)
+        // Define Visio file extensions to process.
+        string[] visioExtensions = new[]
         {
-            { ".vsdx", SaveFileFormat.Vsdx },
-            { ".vsd",  SaveFileFormat.Vsd },
-            { ".vsx",  SaveFileFormat.Vsx },
-            { ".vtx",  SaveFileFormat.Vtx }
+            ".vsdx", ".vsd", ".vsx", ".vtx",
+            ".vssx", ".vss", ".vstx", ".vst",
+            ".vstm", ".vssm", ".vsdm"
         };
 
-        // Retrieve all files in the specified directory (non‑recursive).
-        string[] allFiles = Directory.GetFiles(directoryPath);
+        // Retrieve all matching files in the directory.
+        string[] files = Directory.GetFiles(directoryPath)
+            .Where(f => visioExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+            .ToArray();
 
-        foreach (string filePath in allFiles)
+        foreach (string filePath in files)
         {
-            // Guard: ensure the file still exists before processing.
+            // Guard against missing files (should not happen after GetFiles, but added per rules).
             if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"Skipping missing file: {filePath}");
-                continue;
-            }
-
-            string extension = Path.GetExtension(filePath);
-            if (!formatMap.TryGetValue(extension, out SaveFileFormat saveFormat))
-            {
-                // Not a supported Visio file; skip.
+                Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
             try
             {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(filePath);
+                // Load the Visio diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // ----- Apply header/footer template -----
+                    diagram.HeaderFooter.HeaderLeft = "Company Confidential";
+                    diagram.HeaderFooter.HeaderCenter = "Document Title";
+                    diagram.HeaderFooter.HeaderRight = "Date: &d";
 
-                // Apply header strings.
-                diagram.HeaderFooter.HeaderLeft   = leftHeader;
-                diagram.HeaderFooter.HeaderCenter = centerHeader;
-                diagram.HeaderFooter.HeaderRight  = rightHeader;
+                    diagram.HeaderFooter.FooterLeft = "Created by: User";
+                    diagram.HeaderFooter.FooterCenter = "";
+                    diagram.HeaderFooter.FooterRight = "Page &p of &P";
 
-                // Apply footer strings.
-                diagram.HeaderFooter.FooterLeft   = leftFooter;
-                diagram.HeaderFooter.FooterCenter = centerFooter;
-                diagram.HeaderFooter.FooterRight  = rightFooter;
+                    // Set margins (in inches).
+                    diagram.HeaderFooter.HeaderMargin.Value = 0.5;
+                    diagram.HeaderFooter.FooterMargin.Value = 0.5;
 
-                // Optional: configure a simple header/footer font.
-                var hfFont = diagram.HeaderFooter.HeaderFooterFont;
-                hfFont.FaceName = "Arial";
-                hfFont.Weight   = 700;          // Bold.
-                hfFont.Height   = -16;          // Approx. 12pt (negative value per API spec).
-                hfFont.Underline = BOOL.False; // No underline.
+                    // Configure header/footer font.
+                    diagram.HeaderFooter.HeaderFooterFont.FaceName = "Arial";
+                    diagram.HeaderFooter.HeaderFooterFont.Height = 12;
+                    diagram.HeaderFooter.HeaderFooterFont.Weight = 700; // Bold weight.
+                    diagram.HeaderFooter.HeaderFooterFont.Italic = BOOL.False;
+                    diagram.HeaderFooter.HeaderFooterFont.Underline = BOOL.False;
 
-                // Save the diagram, overwriting the original file.
-                diagram.Save(filePath, saveFormat);
+                    // Set header/footer color (black).
+                    diagram.HeaderFooter.HeaderFooterColor = Color.FromArgb(0, 0, 0);
 
-                Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
+                    // Determine the appropriate save format based on file extension.
+                    SaveFileFormat format = GetSaveFormat(filePath);
+
+                    // Save the modified diagram back to the original file.
+                    diagram.Save(filePath, format);
+                }
+
+                Console.WriteLine($"Processed: {filePath}");
             }
             catch (Exception ex)
             {
@@ -92,5 +90,26 @@ class Program
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
+    }
+
+    // Maps a file extension to the corresponding Aspose.Diagram SaveFileFormat.
+    private static SaveFileFormat GetSaveFormat(string filePath)
+    {
+        string ext = Path.GetExtension(filePath).ToLowerInvariant();
+        return ext switch
+        {
+            ".vsdx" => SaveFileFormat.Vsdx,
+            ".vsd" => SaveFileFormat.Vsd,
+            ".vsx" => SaveFileFormat.Vsx,
+            ".vtx" => SaveFileFormat.Vtx,
+            ".vssx" => SaveFileFormat.Vssx,
+            ".vss" => SaveFileFormat.Vss,
+            ".vstx" => SaveFileFormat.Vstx,
+            ".vst" => SaveFileFormat.Vst,
+            ".vstm" => SaveFileFormat.Vstm,
+            ".vssm" => SaveFileFormat.Vssm,
+            ".vsdm" => SaveFileFormat.Vsdm,
+            _ => SaveFileFormat.Vsdx,
+        };
     }
 }

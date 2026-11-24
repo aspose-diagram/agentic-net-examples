@@ -7,104 +7,93 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputDirectory]");
             return;
         }
 
         string inputPath = args[0];
-        string outputFolder = args[1];
+        string outputDir = args.Length >= 2 ? args[1] : Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
 
-        // Guard: check input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure output folder exists (create if missing)
-        if (!Directory.Exists(outputFolder))
+        // Guard: ensure the output directory exists or create it.
+        try
         {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error creating output directory '{outputDir}': {ex.Message}");
+            return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages and shapes to enable KeepTextFlat
+                // Iterate through all pages and shapes to enable KeepTextFlat.
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // ThreeDFormat is always present; set KeepTextFlat to true
-                        if (shape.ThreeDFormat != null)
-                        {
-                            shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
-                        }
+                        // Enable KeepTextFlat for 3‑D rendering.
+                        shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
                     }
                 }
 
-                // Configure PDF save options (export first page only)
+                // -------------------- Export to PDF --------------------
                 PdfSaveOptions pdfOptions = new PdfSaveOptions
                 {
-                    PageIndex = 0,
-                    PageCount = 1
+                    // Use a common font to avoid missing‑font warnings.
+                    DefaultFont = "Arial"
                 };
 
-                // Configure SVG save options (export first page only)
+                string pdfPath = Path.Combine(outputDir,
+                    Path.GetFileNameWithoutExtension(inputPath) + "_KeepTextFlat.pdf");
+
+                diagram.Save(pdfPath, pdfOptions);
+                Console.WriteLine($"PDF exported to: {pdfPath}");
+
+                // -------------------- Export to SVG --------------------
                 SVGSaveOptions svgOptions = new SVGSaveOptions
                 {
+                    // Export the first page only (adjust if needed).
                     PageIndex = 0
-                    // PageCount property is omitted to avoid compatibility issues
+                    // PageCount is optional; omitted to avoid version‑specific issues.
                 };
 
-                // Define output file paths
-                string pdfPath = Path.Combine(outputFolder, "output_keeptextflat.pdf");
-                string svgPath = Path.Combine(outputFolder, "output_keeptextflat.svg");
+                string svgPath = Path.Combine(outputDir,
+                    Path.GetFileNameWithoutExtension(inputPath) + "_KeepTextFlat.svg");
 
-                // Save diagram as PDF
-                diagram.Save(pdfPath, pdfOptions);
-
-                // Save diagram as SVG
                 diagram.Save(svgPath, svgOptions);
+                Console.WriteLine($"SVG exported to: {svgPath}");
 
-                // Report file sizes as a simple visual comparison indicator
-                long pdfSize = new FileInfo(pdfPath).Length;
-                long svgSize = new FileInfo(svgPath).Length;
-
-                Console.WriteLine($"PDF saved to: {pdfPath} (size: {pdfSize} bytes)");
-                Console.WriteLine($"SVG saved to: {svgPath} (size: {svgSize} bytes)");
-
-                if (pdfSize > 0 && svgSize > 0)
-                {
-                    Console.WriteLine("Both PDF and SVG files were generated successfully with KeepTextFlat enabled.");
-                }
-                else
-                {
-                    Console.WriteLine("One of the output files appears to be empty.");
-                }
+                // -------------------- Simple visual comparison --------------------
+                FileInfo pdfInfo = new FileInfo(pdfPath);
+                FileInfo svgInfo = new FileInfo(svgPath);
+                Console.WriteLine($"PDF size: {pdfInfo.Length} bytes");
+                Console.WriteLine($"SVG size: {svgInfo.Length} bytes");
+                Console.WriteLine("Export completed. Manually inspect the PDF and SVG files to verify that text appears flat.");
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or IO exceptions
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

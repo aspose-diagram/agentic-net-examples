@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Expect two arguments: input diagram path and output diagram path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file exists
+        // Verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -29,7 +29,7 @@ class Program
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Apply diagram-level protection to prevent theme changes.
-                // Setting ProtectStyles to TRUE disables modifications to styles and themes.
+                // Setting ProtectStyles to TRUE restricts modifications to styles and themes.
                 diagram.DocumentSettings.ProtectStyles = BOOL.True;
 
                 // Save the protected diagram to the specified output path in VSDX format

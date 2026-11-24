@@ -8,7 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -16,113 +16,120 @@ class Program
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPdfPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // List to keep track of temporary PDF files generated for each shape.
-        List<string> tempPdfFiles = new List<string>();
+        // Create a temporary directory for per‑shape PDFs
+        string tempDir = Path.Combine(Path.GetTempPath(), "ShapePdfExport_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page to preserve page order.
-            for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+            // List to keep track of generated PDF file paths in correct order
+            List<string> pdfPages = new List<string>();
+
+            // Iterate each page
+            foreach (Page page in diagram.Pages)
             {
-                // Retrieve the current page.
-                Page page = diagram.Pages[pageIdx];
-
-                // Retrieve the layer collection for the current page.
-                LayerCollection layers = page.PageSheet.Layers;
-
-                // Process layers in their original order.
-                for (int layerIdx = 0; layerIdx < layers.Count; layerIdx++)
+                // Iterate layers in the order they appear
+                foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    Layer layer = layers[layerIdx];
-                    string layerIndexString = layer.IX.ToString();
+                    string layerIndexStr = layer.IX.ToString();
 
-                    // Iterate over all shapes on the page.
+                    // Iterate shapes in the page's shape collection
                     foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Determine if the shape belongs to the current layer.
-                        // The LayerMember property holds a comma‑separated list of layer indexes.
-                        string layerMember = shape.LayerMem?.LayerMember?.Value;
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue; // Shape is not assigned to any layer.
-
-                        // Split the member string and check for the current layer index.
-                        string[] memberIndices = layerMember.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                        bool belongsToLayer = false;
-                        foreach (string idx in memberIndices)
+                        // Determine if the shape belongs to the current layer
+                        if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
                         {
-                            if (idx.Trim() == layerIndexString)
+                            string memberValue = shape.LayerMem.LayerMember.Value ?? string.Empty;
+                            string[] members = memberValue.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            bool belongsToLayer = false;
+                            foreach (string m in members)
                             {
-                                belongsToLayer = true;
-                                break;
+                                if (m.Trim() == layerIndexStr)
+                                {
+                                    belongsToLayer = true;
+                                    break;
+                                }
                             }
+
+                            if (!belongsToLayer)
+                                continue; // Skip shapes not in this layer
+                        }
+                        else
+                        {
+                            // Shape has no layer membership; skip it
+                            continue;
                         }
 
-                        if (!belongsToLayer)
-                            continue; // Skip shapes not in this layer.
-
-                        // Generate a temporary PDF file for the shape.
-                        string tempPdfPath = Path.Combine(
-                            Path.GetTempPath(),
-                            $"shape_page{pageIdx}_layer{layerIdx}_id{shape.ID}.pdf");
-
-                        // Convert the shape to a PDF page.
-                        shape.ToPdf(tempPdfPath);
-
-                        // Record the temporary file for later merging.
-                        tempPdfFiles.Add(tempPdfPath);
+                        // Export the shape to a temporary PDF file
+                        string shapePdfPath = Path.Combine(tempDir, $"shape_{shape.ID}_{Guid.NewGuid().ToString("N")}.pdf");
+                        try
+                        {
+                            // Shape.ToPdf writes a vector PDF of the shape
+                            shape.ToPdf(shapePdfPath);
+                            pdfPages.Add(shapePdfPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} to PDF: {ex.Message}");
+                        }
                     }
                 }
             }
 
-            // Merge all temporary PDFs into a single document using Aspose.Pdf (fully qualified).
-            var finalPdf = new Aspose.Pdf.Document();
+            // Combine individual PDFs into a single document using Aspose.Pdf (fully qualified)
+            Aspose.Pdf.Document finalPdf = new Aspose.Pdf.Document();
 
-            foreach (string tempFile in tempPdfFiles)
-            {
-                // Load each temporary PDF.
-                var tempDoc = new Aspose.Pdf.Document(tempFile);
-
-                // Append each page from the temporary document to the final document.
-                foreach (Aspose.Pdf.Page page in tempDoc.Pages)
-                {
-                    finalPdf.Pages.Add(page);
-                }
-            }
-
-            // Save the merged PDF to the requested output path.
-            finalPdf.Save(outputPath);
-        }
-        catch (Exception ex)
-        {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
-        finally
-        {
-            // Clean up temporary PDF files.
-            foreach (string tempFile in tempPdfFiles)
+            foreach (string pagePath in pdfPages)
             {
                 try
                 {
-                    if (File.Exists(tempFile))
-                        File.Delete(tempFile);
+                    // Load the temporary PDF
+                    Aspose.Pdf.Document tempDoc = new Aspose.Pdf.Document(pagePath);
+                    // Append each page from the temporary document to the final document
+                    foreach (Aspose.Pdf.Page tempPage in tempDoc.Pages)
+                    {
+                        finalPdf.Pages.Add(tempPage);
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Suppress any cleanup errors.
+                    Console.Error.WriteLine($"Failed to merge PDF page '{pagePath}': {ex.Message}");
                 }
+            }
+
+            // Save the combined PDF
+            finalPdf.Save(outputPdfPath);
+            Console.WriteLine($"Combined PDF saved to: {outputPdfPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up temporary files
+            try
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+            catch
+            {
+                // Suppress any cleanup errors
             }
         }
     }

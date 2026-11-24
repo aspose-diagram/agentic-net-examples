@@ -1,68 +1,66 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Attempt to locate a rectangle shape.
-            // For demonstration we use the first shape on the first page.
-            // Adjust the logic as needed to target a specific rectangle.
-            if (diagram.Pages.Count == 0)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Retrieve the first page (or specify by name/index as needed)
+                Page page = diagram.Pages[0];
+
+                // Identify the rectangle shape by its ID.
+                // Adjust the shape ID according to your diagram.
+                long shapeId = 1; // Example ID; replace with actual rectangle shape ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Ensure the shape is a rectangle (optional check)
+                // Note: Shape type checking is omitted due to API limitations.
+
+                // Set a long text string to demonstrate wrapping
+                string longText = "This is a very long sentence that should automatically wrap inside the rectangle shape to improve readability and ensure that the text does not overflow the shape boundaries.";
+                // Clear existing text
+                shape.Text.Value.Clear();
+                // Add the new text
+                shape.Text.Value.Add(new Txt(longText));
+
+                // Enable text wrapping by defining the text block width.
+                // The TxtWidth property controls the width of the text block; setting it to the shape's width forces wrapping.
+                shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
+
+                // Optionally, set the text block height to match the shape's height
+                shape.TextXForm.TxtHeight.Value = shape.XForm.Height.Value;
+
+                // Save the modified diagram to the output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Page page = diagram.Pages[0];
-
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The first page contains no shapes.");
-                return;
-            }
-
-            // Retrieve the first shape (replace with proper identification logic).
-            Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-            // TODO: Enable text wrapping for the shape.
-            // The Aspose.Diagram API provides a TextBlock cell collection where the
-            // Wrap property can be set (e.g., shape.TextBlock.Wrap = BOOL.True;).
-            // Insert the appropriate code here once the correct property/method is identified.
-
-            // Example of adding long text to demonstrate wrapping (optional).
-            shape.Text.Value.Add(new Txt("This is a very long sentence that should automatically wrap inside the rectangle shape to improve readability."));
-
-            // Save the modified diagram.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

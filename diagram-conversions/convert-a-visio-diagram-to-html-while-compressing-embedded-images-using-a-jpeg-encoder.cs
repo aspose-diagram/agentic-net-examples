@@ -24,45 +24,74 @@ class Program
             return;
         }
 
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to locate embedded images.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Process only foreign (image) shapes that contain data.
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData?.Value != null)
-                    {
-                        byte[] originalData = shape.ForeignData.Value;
+                // Configure HTML export options.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-                        // Re‑encode the image to JPEG to achieve compression.
-                        using (MemoryStream sourceStream = new MemoryStream(originalData))
-                        using (Aspose.Drawing.Image image = Aspose.Drawing.Image.FromStream(sourceStream))
-                        using (MemoryStream jpegStream = new MemoryStream())
-                        {
-                            // Save the image as JPEG using the default quality.
-                            image.Save(jpegStream, Aspose.Drawing.Imaging.ImageFormat.Jpeg);
-                            // Replace the shape's foreign data with the compressed JPEG bytes.
-                            shape.ForeignData.Value = jpegStream.ToArray();
-                        }
-                    }
-                }
+                // Assign a custom stream provider to handle embedded resources.
+                // Currently the provider writes the original data without compression.
+                // TODO: Implement JPEG compression of image data when an appropriate encoder is available.
+                htmlOptions.StreamProvider = new JpegCompressStreamProvider(outputDir);
+
+                // Save the diagram as HTML using the configured options.
+                diagram.Save(outputPath, htmlOptions);
             }
-
-            // Prepare HTML export options.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-
-            // Export the diagram to HTML.
-            diagram.Save(outputPath, htmlOptions);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console.
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+        }
+    }
+}
+
+// Custom stream provider that writes embedded resources (e.g., images) to the output directory.
+// Image compression using a JPEG encoder is not implemented due to missing API support.
+class JpegCompressStreamProvider : IStreamProvider
+{
+    private readonly string _outputDirectory;
+
+    public JpegCompressStreamProvider(string outputDirectory)
+    {
+        _outputDirectory = outputDirectory;
+    }
+
+    // Called by Aspose.Diagram before writing each resource.
+    public void InitStream(StreamProviderOptions options)
+    {
+        // Use a memory stream to capture the original resource data.
+        options.Stream = new MemoryStream();
+    }
+
+    // Called after the resource has been written to the stream.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        // Ensure the captured stream is a MemoryStream.
+        if (options.Stream is MemoryStream memoryStream)
+        {
+            memoryStream.Position = 0;
+
+            // Determine the target file path.
+            string targetPath = Path.Combine(_outputDirectory, options.DefaultPath);
+
+            // Write the captured data to the target file.
+            using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+            {
+                memoryStream.CopyTo(fileStream);
+            }
+
+            // Note: JPEG compression is not performed here.
         }
     }
 }

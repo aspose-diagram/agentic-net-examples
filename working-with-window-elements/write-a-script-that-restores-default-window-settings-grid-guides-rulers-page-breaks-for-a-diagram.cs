@@ -6,59 +6,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input file path and output file path
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Determine output path (overwrite input if not specified)
+        string outputPath = args.Length > 1 ? args[1] : inputPath;
+
         try
         {
-            // Load the diagram from the specified file
+            // Load the diagram
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure at least one window exists; create one if necessary
+                // Ensure at least one window exists; create a default one if needed
                 if (diagram.Windows.Count == 0)
                 {
-                    Window newWindow = new Window();
-                    // Set a basic window type; other properties can remain default
-                    newWindow.WindowType = WindowTypeValue.Drawing;
-                    diagram.Windows.Add(newWindow);
+                    Window defaultWindow = new Window();
+                    defaultWindow.WindowType = WindowTypeValue.Drawing;
+                    defaultWindow.WindowState = (WindowStateValue)0; // Normal state
+                    defaultWindow.WindowWidth = 1100;
+                    defaultWindow.WindowHeight = 700;
+                    diagram.Windows.Add(defaultWindow);
                 }
 
-                // Retrieve the first window (index 0) to modify its settings
-                Window window = diagram.Windows[0];
+                // Restore default window settings for each window
+                foreach (Window window in diagram.Windows)
+                {
+                    // Show grid, guides, rulers, and page breaks
+                    window.ShowGrid = BOOL.True;
+                    window.ShowGuides = BOOL.True;
+                    window.ShowRulers = BOOL.True;
+                    window.ShowPageBreaks = BOOL.True;
+                }
 
-                // Restore default visibility settings
-                window.ShowGrid = BOOL.True;          // Show grid lines
-                window.ShowGuides = BOOL.True;        // Show alignment guides
-                window.ShowRulers = BOOL.True;        // Show rulers
-                window.ShowPageBreaks = BOOL.True;    // Show page breaks
-
-                // Optionally, also restore dynamic grid and connection points to defaults
-                // These properties accept BOOL values as well
-                window.DynamicGridEnabled = BOOL.True;      // Enable dynamic grid
-                window.ShowConnectionPoints = BOOL.True;    // Show connection points
-
-                // Save the modified diagram to the output path in VSDX format
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

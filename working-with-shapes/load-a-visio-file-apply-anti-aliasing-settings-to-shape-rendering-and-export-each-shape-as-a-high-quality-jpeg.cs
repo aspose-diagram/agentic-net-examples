@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
             return;
         }
 
@@ -20,7 +20,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -38,24 +38,16 @@ class Program
             }
         }
 
+        // Load the Visio diagram inside a using block as required.
         try
         {
-            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure image save options for high‑quality JPEG output.
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-                // Set a high resolution (e.g., 300 DPI) to improve rendering quality.
-                imgOptions.Resolution = 300.0f;
-                // High JPEG quality (0‑100).
-                imgOptions.JpegQuality = 95;
-                // No scaling; keep original size.
-                imgOptions.Scale = 1.0f;
-
-                int pageIndex = 0;
                 // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
+                    Page page = diagram.Pages[pageIndex];
+
                     // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
@@ -63,22 +55,37 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Build a unique file name for the shape image.
-                        string fileName = $"Page{pageIndex + 1}_Shape{shape.ID}.jpg";
-                        string outputPath = Path.Combine(outputFolder, fileName);
+                        // Prepare JPEG save options with highest quality.
+                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
+                        saveOptions.JpegQuality = 100; // Highest JPEG quality.
 
-                        // Export the shape to a JPEG file using the configured options.
-                        shape.ToImage(outputPath, imgOptions);
+                        // NOTE: Aspose.Diagram.ImageSaveOptions does not expose an AntiAliasing property.
+                        // Anti‑aliasing cannot be set directly via the API; the rendering engine applies its
+                        // default smoothing. If explicit anti‑aliasing control is required, consider using
+                        // a different rendering library or post‑process the image.
+
+                        // Build a unique file name for the exported shape.
+                        string shapeFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_page{pageIndex + 1}_shape{shape.ID}.jpg";
+                        string outputPath = Path.Combine(outputFolder, shapeFileName);
+
+                        try
+                        {
+                            // Export the current shape to a JPEG file.
+                            shape.ToImage(outputPath, saveOptions);
+                            Console.WriteLine($"Exported shape ID {shape.ID} to {outputPath}");
+                        }
+                        catch (Exception shapeEx)
+                        {
+                            // Log shape‑specific errors but continue processing other shapes.
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID}: {shapeEx.Message}");
+                        }
                     }
-                    pageIndex++;
                 }
-
-                Console.WriteLine("Shape export completed successfully.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Log any errors that occur during diagram loading or processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

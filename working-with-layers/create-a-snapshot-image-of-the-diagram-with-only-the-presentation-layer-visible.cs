@@ -7,35 +7,35 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Expect two arguments: input Visio file path and output image file path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputImagePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputImagePath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages in the diagram
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over each layer in the page's sheet
+                    // Iterate through each layer defined on the page's sheet.
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Show only the layer named "Presentation", hide others
+                        // Make only the 'Presentation' layer visible; hide all others.
                         if (layer.Name != null && layer.Name.Value == "Presentation")
                         {
                             layer.Visible.Value = BOOL.True;
@@ -47,18 +47,22 @@ class Program
                     }
                 }
 
-                // Configure image export options (PNG format, first page only)
-                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                imgOptions.PageIndex = 0;   // Export the first page
-                imgOptions.PageCount = 1;   // Export a single page
+                // Configure image export options (PNG format, first page only).
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    PageIndex = 0,   // Export the first page.
+                    PageCount = 1    // Export a single page.
+                };
 
-                // Save the snapshot image
-                diagram.Save(outputPath, imgOptions);
+                // Save the diagram snapshot as an image.
+                diagram.Save(outputPath, saveOptions);
             }
+
+            Console.WriteLine($"Snapshot image saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

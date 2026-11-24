@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output Visio file.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
@@ -16,10 +16,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -28,13 +28,13 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each page in the diagram.
+            // Iterate through all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Retrieve the current page width.
+                // Retrieve the current page width (in inches).
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-                // Set the page height to match the width, making the page square.
+                // Set the page height to match the width, creating a square layout.
                 page.PageSheet.PageProps.PageHeight.Value = pageWidth;
             }
 
@@ -43,7 +43,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

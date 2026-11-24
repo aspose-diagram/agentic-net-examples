@@ -7,65 +7,60 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate that an input file path was provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as a command-line argument.");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string filePath = args[0];
 
-        // Guard against missing file.
+        // Guard: ensure the file exists before proceeding
         if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"Error: File not found at path '{filePath}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block to ensure proper disposal.
+            // Load the Visio diagram inside a using block (required by Aspose.Diagram)
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Dictionary to hold connector counts per page (key = page index, value = count).
-                Dictionary<int, int> connectorCounts = new Dictionary<int, int>();
+                // Dictionary to hold connector counts per page (key: Page ID, value: connector count)
+                Dictionary<long, int> pageConnectorCounts = new Dictionary<long, int>();
 
-                int pageIndex = 0;
-
-                // Iterate through each page in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
                     int connectorCount = 0;
 
-                    // Iterate through shapes on the page and count 1‑D shapes (connectors).
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // shape.OneD returns a native bool indicating a connector.
+                        // shape.OneD is a native bool indicating a 1‑D shape (connector)
                         if (shape.OneD)
                         {
                             connectorCount++;
                         }
                     }
 
-                    // Store the count for the current page.
-                    connectorCounts[pageIndex] = connectorCount;
-
-                    pageIndex++;
+                    // Store the count using the page's unique ID
+                    pageConnectorCounts[page.ID] = connectorCount;
                 }
 
-                // Output the results.
+                // Output the results
                 Console.WriteLine("Connector counts per page:");
-                foreach (KeyValuePair<int, int> kvp in connectorCounts)
+                foreach (KeyValuePair<long, int> kvp in pageConnectorCounts)
                 {
-                    // Display page numbers starting from 1 for readability.
-                    Console.WriteLine($"Page {kvp.Key + 1}: {kvp.Value} connector(s)");
+                    Console.WriteLine($"Page ID {kvp.Key}: {kvp.Value} connector(s)");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

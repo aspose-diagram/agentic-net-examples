@@ -18,7 +18,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input diagram file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -30,7 +30,7 @@ class Program
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains at least one page.
+                // Verify the diagram contains at least one page.
                 if (diagram.Pages.Count == 0)
                 {
                     Console.Error.WriteLine("The diagram contains no pages.");
@@ -38,40 +38,35 @@ class Program
                 }
 
                 // Retrieve the first page (page index 0).
-                Page page = diagram.Pages[0];
+                Aspose.Diagram.Page page = diagram.Pages[0];
 
-                // StringBuilder to accumulate extracted plain text.
-                StringBuilder sb = new StringBuilder();
+                // Accumulate plain text from all shapes on the page.
+                StringBuilder textBuilder = new StringBuilder();
 
-                // Iterate over all shapes on the first page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each shape on the page.
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Guard against null Text objects.
+                    // Ensure the shape has a Text object and a non‑null Value.
                     if (shape.Text != null && shape.Text.Value != null)
                     {
-                        // Extract the raw text from the shape.
                         string rawText = shape.Text.Value.Text;
-
-                        // Skip empty strings.
                         if (!string.IsNullOrEmpty(rawText))
                         {
-                            // Remove any HTML or XML tags to obtain plain text.
+                            // Strip any HTML tags that may be present.
                             string plainText = Regex.Replace(rawText, "<.*?>", string.Empty);
-
-                            // Append the cleaned text followed by a newline.
-                            sb.AppendLine(plainText);
+                            textBuilder.AppendLine(plainText);
                         }
                     }
                 }
 
-                // Write the accumulated text to the output file using UTF‑8 encoding.
-                File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+                // Write the collected text to the output file using UTF‑8 encoding.
+                File.WriteAllText(outputPath, textBuilder.ToString(), Encoding.UTF8);
             }
         }
         catch (Exception ex)
         {
             // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

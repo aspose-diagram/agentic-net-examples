@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Expect the diagram file path as the first command‑line argument
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <path-to-diagram>");
             return;
         }
 
@@ -24,27 +24,29 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API
-            using (Diagram diagram = new Diagram(diagramPath))
-            {
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
-                {
-                    // Retrieve page properties
-                    int pageId = page.ID;
-                    string pageName = page.Name;
-                    // Background flag is a BOOL; compare with BOOL.True
-                    string isBackground = page.Background == BOOL.True ? "True" : "False";
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-                    // Log the page information
-                    Console.WriteLine($"Page ID: {pageId}, Name: \"{pageName}\", IsBackground: {isBackground}");
-                }
+            // Iterate through each page in the diagram
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            {
+                // Retrieve page ID
+                long pageId = page.ID;
+
+                // Retrieve page name (use universal name if available)
+                string pageName = page.NameU;
+
+                // Determine if the page is a background page (BOOL enum)
+                bool isBackground = page.Background == BOOL.True;
+
+                // Log the page information
+                Console.WriteLine($"Page ID: {pageId}, Name: {pageName}, IsBackground: {isBackground}");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during loading or processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

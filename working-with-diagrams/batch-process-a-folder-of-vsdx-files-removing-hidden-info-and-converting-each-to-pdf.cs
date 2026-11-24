@@ -7,27 +7,38 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder containing VSDX files (argument or user input).
-        string folderPath;
-        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            folderPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the path to the folder containing VSDX files: ");
-            folderPath = Console.ReadLine();
-        }
-
-        // Guard: ensure the folder exists.
-        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
-        {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine("Usage: BatchConvertVsdx <inputFolder> [outputFolder]");
             return;
         }
 
-        // Retrieve all VSDX files in the folder.
-        string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx");
+        string inputFolder = args[0];
+        // Guard: ensure the input folder exists.
+        if (!Directory.Exists(inputFolder))
+        {
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            return;
+        }
+
+        // Determine output folder (optional second argument).
+        string outputFolder = args.Length >= 2 ? args[1] : inputFolder;
+        if (!Directory.Exists(outputFolder))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
+                return;
+            }
+        }
+
+        // Retrieve all VSDX files in the input directory.
+        string[] vsdxFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
         if (vsdxFiles.Length == 0)
         {
             Console.WriteLine("No VSDX files found in the specified folder.");
@@ -35,43 +46,44 @@ class Program
         }
 
         // Process each VSDX file.
-        foreach (string inputPath in vsdxFiles)
+        foreach (string vsdxPath in vsdxFiles)
         {
             // Guard: ensure the file still exists.
-            if (!File.Exists(inputPath))
+            if (!File.Exists(vsdxPath))
             {
-                Console.Error.WriteLine($"File not found: {inputPath}");
+                Console.Error.WriteLine($"File not found: {vsdxPath}");
                 continue;
             }
-
-            // Determine the output PDF path (same folder, same name with .pdf extension).
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(inputPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(inputPath) + ".pdf");
 
             try
             {
                 // Load the diagram inside a using block as required.
-                using (Diagram diagram = new Diagram(inputPath))
+                using (Diagram diagram = new Diagram(vsdxPath))
                 {
                     // Remove hidden shapes and masters from the diagram.
-                    diagram.RemoveHiddenInformation(
-                        (int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
+                    diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
 
-                    // Configure PDF save options (optional: set default font).
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.DefaultFont = "Arial";
+                    // Configure PDF save options (optional settings).
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Ensure hidden pages are not exported (already removed, but set for safety).
+                        ExportHiddenPage = false
+                    };
+
+                    // Build the output PDF file path.
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vsdxPath);
+                    string pdfPath = Path.Combine(outputFolder, fileNameWithoutExt + ".pdf");
 
                     // Save the cleaned diagram as PDF.
-                    diagram.Save(outputPath, pdfOptions);
-                }
+                    diagram.Save(pdfPath, pdfOptions);
 
-                Console.WriteLine($"Successfully converted: {inputPath} -> {outputPath}");
+                    Console.WriteLine($"Converted '{vsdxPath}' to PDF successfully.");
+                }
             }
             catch (Exception ex)
             {
-                // Write any errors that occur during processing to the error stream.
-                Console.Error.WriteLine($"Error processing '{inputPath}': {ex.Message}");
+                // Report any errors that occur during processing.
+                Console.Error.WriteLine($"Error processing file '{vsdxPath}': {ex.Message}");
             }
         }
     }

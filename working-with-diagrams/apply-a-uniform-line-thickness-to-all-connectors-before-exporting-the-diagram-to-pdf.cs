@@ -24,9 +24,12 @@ class Program
             return;
         }
 
+        // Desired uniform line thickness (in inches). 0.02 inches ≈ 2 pt.
+        double uniformThickness = 0.02;
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages in the diagram.
@@ -39,17 +42,22 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Identify connector shapes (1‑D shapes).
+                        // Identify connector shapes: connectors are 1‑D shapes.
                         if (shape.OneD)
                         {
-                            // Apply a uniform line thickness (e.g., 0.02 inches).
-                            shape.Line.LineWeight.Value = 0.02;
+                            // Ensure the Line object and its LineWeight cell exist.
+                            if (shape.Line != null && shape.Line.LineWeight != null)
+                            {
+                                // Apply the uniform line thickness.
+                                shape.Line.LineWeight.Value = uniformThickness;
+                            }
                         }
                     }
                 }
 
                 // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
                 // Optional: set a default font to avoid missing‑font warnings.
                 pdfOptions.DefaultFont = "Arial";
@@ -62,8 +70,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

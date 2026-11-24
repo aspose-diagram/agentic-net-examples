@@ -7,65 +7,78 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: first diagram path, second diagram path, output PNG thumbnail path.
-        if (args.Length < 3)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <firstDiagram.vsdx> <secondDiagram.vsdx> <outputThumbnail.png>");
+            Console.Error.WriteLine("Usage: Program <baseDiagram.vsdx> <diagramToMerge1.vsdx> [<diagramToMerge2.vsdx> ...]");
             return;
         }
 
-        string firstDiagramPath = args[0];
-        string secondDiagramPath = args[1];
-        string outputPngPath = args[2];
+        string basePath = args[0];
 
-        // Guard: ensure input files exist.
-        if (!File.Exists(firstDiagramPath))
+        // Guard: ensure the base diagram file exists.
+        if (!File.Exists(basePath))
         {
-            Console.Error.WriteLine($"File not found: {firstDiagramPath}");
-            return;
-        }
-        if (!File.Exists(secondDiagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {secondDiagramPath}");
+            Console.Error.WriteLine($"Base diagram file not found: {basePath}");
             return;
         }
 
-        try
+        // Load the base diagram inside a using block (required pattern).
+        using (Diagram baseDiagram = new Diagram(basePath))
         {
-            // Load the first diagram.
-            using (Diagram mergedDiagram = new Diagram(firstDiagramPath))
+            // Merge additional diagrams into the base diagram.
+            for (int i = 1; i < args.Length; i++)
             {
-                // Load the second diagram and merge it into the first.
-                using (Diagram secondDiagram = new Diagram(secondDiagramPath))
+                string mergePath = args[i];
+
+                // Guard: ensure each merge diagram file exists.
+                if (!File.Exists(mergePath))
                 {
-                    mergedDiagram.Combine(secondDiagram);
+                    Console.Error.WriteLine($"Diagram to merge not found: {mergePath}");
+                    return;
                 }
 
-                // Prepare image save options for PNG thumbnail.
-                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                // Export only the first page.
-                pngOptions.PageIndex = 0;
-                pngOptions.PageCount = 1;
-                // Do not export hidden pages.
-                pngOptions.ExportHiddenPage = false;
-                // Scale down to create a thumbnail (e.g., 20% of original size).
-                pngOptions.Scale = 0.2f;
-
-                // Ensure the output directory exists.
-                string? outputDir = Path.GetDirectoryName(outputPngPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                try
                 {
-                    Directory.CreateDirectory(outputDir);
+                    // Load the diagram to be merged.
+                    using (Diagram mergeDiagram = new Diagram(mergePath))
+                    {
+                        // Combine all pages, masters, and other resources.
+                        baseDiagram.Combine(mergeDiagram);
+                    }
                 }
-
-                // Save the first page as a PNG thumbnail.
-                mergedDiagram.Save(outputPngPath, pngOptions);
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to merge diagram '{mergePath}': {ex.Message}");
+                    return;
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+
+            // Define output thumbnail path (same directory as base diagram).
+            string thumbnailPath = Path.Combine(Path.GetDirectoryName(basePath) ?? string.Empty, "thumbnail.png");
+
+            try
+            {
+                // Configure image save options for PNG thumbnail.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export only the first page.
+                    PageIndex = 0,
+                    PageCount = 1,
+                    // Scale down to create a thumbnail (e.g., 20% of original size).
+                    Scale = 0.2f,
+                    // Do not export hidden pages.
+                    ExportHiddenPage = false
+                };
+
+                // Save the thumbnail image.
+                baseDiagram.Save(thumbnailPath, pngOptions);
+                Console.WriteLine($"Thumbnail saved to: {thumbnailPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to generate thumbnail: {ex.Message}");
+            }
         }
     }
 }

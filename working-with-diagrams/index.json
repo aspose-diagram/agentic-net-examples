@@ -1,11 +1,11 @@
 {
   "category": "working-with-diagrams",
   "display_name": "Working With Diagrams",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 40,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -67,10 +67,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "PdfSaveOptions",
-        "Save",
-        "Shapes"
+        "Save"
       ]
     },
     {
@@ -115,15 +115,12 @@
       "task": "Apply auto fit layout to all shapes in the diagram before saving",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.AutoLayout",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Layout",
-        "LayoutOptions",
         "Save",
         "diagram"
       ]
@@ -208,9 +205,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
+        "HTMLSaveOptions",
         "Pages",
-        "Shapes",
+        "Save",
         "diagram"
       ]
     },
@@ -286,11 +283,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -321,6 +321,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Manipulation",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -328,7 +329,8 @@
       "key_apis": [
         "Diagram",
         "Page",
-        "Shape"
+        "diagram",
+        "shape"
       ]
     },
     {
@@ -340,6 +342,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
+        "System.Linq",
         "System.Text.Json"
       ],
       "key_apis": [
@@ -356,6 +359,7 @@
       "task": "Extract font names used in a vsd diagram and compare them against a corporate whitelist",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -373,17 +377,16 @@
       "task": "Flatten all groups into individual shapes after merging to simplify further processing",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -392,13 +395,16 @@
       "task": "Generate a summary report listing page counts and shape totals for each source diagram after merging",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "Shapes",
+        "diagram",
         "page"
       ]
     },
@@ -408,12 +414,14 @@
       "task": "Implement error handling that catches interruptmonitor exceptions and logs the aborted operation",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO",
         "System.Threading"
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -456,6 +464,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
+        "System.Linq",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -564,13 +573,14 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "diagram"
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -585,6 +595,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -650,6 +661,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "Save",
         "diagram"
       ]
     },

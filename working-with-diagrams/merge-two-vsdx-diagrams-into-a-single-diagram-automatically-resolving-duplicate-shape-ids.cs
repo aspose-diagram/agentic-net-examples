@@ -17,7 +17,7 @@ class Program
         string secondPath = args[1];
         string outputPath = args[2];
 
-        // Guard clauses for input files
+        // Guard against missing input files
         if (!File.Exists(firstPath))
         {
             Console.Error.WriteLine($"File not found: {firstPath}");
@@ -31,19 +31,21 @@ class Program
 
         try
         {
-            // Load the first diagram (target diagram)
-            Diagram targetDiagram = new Diagram(firstPath);
+            // Load the first diagram which will become the target diagram
+            using (Diagram targetDiagram = new Diagram(firstPath))
+            {
+                // Load the second diagram to be merged into the target
+                using (Diagram sourceDiagram = new Diagram(secondPath))
+                {
+                    // Combine the source diagram into the target diagram.
+                    // This merges pages, masters, and shapes. Duplicate shape IDs are handled internally.
+                    targetDiagram.Combine(sourceDiagram);
+                }
 
-            // Load the second diagram (source diagram to be merged)
-            Diagram sourceDiagram = new Diagram(secondPath);
-
-            // Combine the source diagram into the target diagram.
-            // Aspose.Diagram.Combine automatically merges pages, masters and resolves duplicate shape IDs.
-            targetDiagram.Combine(sourceDiagram);
-
-            // Save the merged diagram to the specified output path in VSDX format.
-            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagrams merged successfully. Output saved to: {outputPath}");
+                // Save the merged diagram to the specified output path in VSDX format
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagrams merged successfully. Output saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {

@@ -8,88 +8,89 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> <outputDirectory>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
             return;
         }
 
         string inputPath = args[0];
         string outputDir = args[1];
 
-        // Guard: check input file existence
+        // Guard: check input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: check output directory existence
+        // Guard: check output directory exists.
         if (!Directory.Exists(outputDir))
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Output directory not found: {outputDir}");
             return;
         }
 
-        // ------------------------------
-        // Conversion without InterruptMonitor
-        // ------------------------------
-        try
-        {
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Prepare PDF save options (default settings)
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-                string outputPath = Path.Combine(outputDir, "output_without_monitor.pdf");
-
-                Stopwatch sw = Stopwatch.StartNew();
-
-                // Save diagram to PDF
-                diagram.Save(outputPath, pdfOptions);
-
-                sw.Stop();
-
-                Console.WriteLine($"Conversion without InterruptMonitor took {sw.ElapsedMilliseconds} ms.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during conversion without InterruptMonitor: {ex.Message}");
-            return;
-        }
+        string outputWithMonitor = Path.Combine(outputDir, "output_with_monitor.pdf");
+        string outputWithoutMonitor = Path.Combine(outputDir, "output_without_monitor.pdf");
 
         // ------------------------------
-        // Conversion with InterruptMonitor
+        // Conversion WITH InterruptMonitor
         // ------------------------------
         try
         {
-            using (Diagram diagram = new Diagram(inputPath))
+            // Create an InterruptMonitor instance.
+            InterruptMonitor monitor = new InterruptMonitor();
+
+            // Prepare LoadOptions with the monitor.
+            LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
+            loadOptions.InterruptMonitor = monitor;
+
+            // Load diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath, loadOptions))
             {
-                // Assign an InterruptMonitor to the diagram
-                InterruptMonitor monitor = new InterruptMonitor();
+                // Assign the same monitor to the diagram for post‑load operations.
                 diagram.InterruptMonitor = monitor;
 
-                // Prepare PDF save options (default settings)
+                // Configure PDF save options (default settings are sufficient for timing).
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                string outputPath = Path.Combine(outputDir, "output_with_monitor.pdf");
-
+                // Measure conversion time.
                 Stopwatch sw = Stopwatch.StartNew();
-
-                // Save diagram to PDF
-                diagram.Save(outputPath, pdfOptions);
-
+                diagram.Save(outputWithMonitor, pdfOptions);
                 sw.Stop();
 
-                Console.WriteLine($"Conversion with InterruptMonitor took {sw.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"PDF conversion WITH InterruptMonitor took {sw.ElapsedMilliseconds} ms");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during conversion with InterruptMonitor: {ex.Message}");
-            return;
+            Console.Error.WriteLine($"Error during conversion WITH InterruptMonitor: {ex.Message}");
+        }
+
+        // ------------------------------
+        // Conversion WITHOUT InterruptMonitor
+        // ------------------------------
+        try
+        {
+            // Load diagram without any monitor.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options (default settings).
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // Measure conversion time.
+                Stopwatch sw = Stopwatch.StartNew();
+                diagram.Save(outputWithoutMonitor, pdfOptions);
+                sw.Stop();
+
+                Console.WriteLine($"PDF conversion WITHOUT InterruptMonitor took {sw.ElapsedMilliseconds} ms");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during conversion WITHOUT InterruptMonitor: {ex.Message}");
         }
     }
 }

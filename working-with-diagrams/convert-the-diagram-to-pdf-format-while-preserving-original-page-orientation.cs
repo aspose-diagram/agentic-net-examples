@@ -8,49 +8,42 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: DiagramToPdf <inputVisioFile> [outputPdfFile]");
+            Console.Error.WriteLine("Usage: DiagramToPdf <inputVisioFile> <outputPdfFile>");
             return;
         }
 
-        // Input Visio file path.
         string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
-        }
-
-        // Determine output PDF file path.
-        string outputPath;
-        if (args.Length >= 2)
-        {
-            outputPath = args[1];
-        }
-        else
-        {
-            outputPath = Path.ChangeExtension(inputPath, ".pdf");
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create PDF save options and explicitly set the target format.
+                // Create PDF save options and explicitly set the format tracker.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // preserve original orientation automatically
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram to PDF while keeping the original page orientation.
+                // Preserve original page orientation – no changes are made to page settings.
+
+                // Save the diagram as PDF using the options.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            Console.WriteLine($"Diagram successfully converted to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading or saving.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }

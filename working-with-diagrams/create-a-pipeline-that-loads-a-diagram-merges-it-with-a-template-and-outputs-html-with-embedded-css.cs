@@ -7,34 +7,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path
-        string sourcePath = "source.vsdx";
-        if (!System.IO.File.Exists(sourcePath))
+        // Expect three arguments: source diagram path, template diagram path, output HTML path
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
+            Console.Error.WriteLine("Usage: Program <sourceDiagram> <templateDiagram> <outputHtml>");
             return;
         }
-        // Template diagram path
-        string templatePath = "template.vsdx";
-        if (!System.IO.File.Exists(templatePath))
-        {
-            Console.Error.WriteLine($"File not found: {templatePath}");
-            return;
-        }
-        // Output HTML path
-        string outputPath = "merged_output.html";
 
-        // Guard against missing source file
+        string sourcePath = args[0];
+        string templatePath = args[1];
+        string outputPath = args[2];
+
+        // Guard: verify source diagram exists
         if (!File.Exists(sourcePath))
         {
-            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            Console.Error.WriteLine($"Source diagram file not found: {sourcePath}");
             return;
         }
 
-        // Guard against missing template file
+        // Guard: verify template diagram exists
         if (!File.Exists(templatePath))
         {
-            Console.Error.WriteLine($"Template file not found: {templatePath}");
+            Console.Error.WriteLine($"Template diagram file not found: {templatePath}");
             return;
         }
 
@@ -46,24 +40,28 @@ class Program
                 // Load the template diagram inside a using block
                 using (Diagram templateDiagram = new Diagram(templatePath))
                 {
-                    // Merge each page from the template into the source diagram
-                    foreach (Page tmplPage in templateDiagram.Pages)
+                    // ------------------------------------------------------------
+                    // Merge: copy all pages from the source diagram into the template
+                    // ------------------------------------------------------------
+                    foreach (Page srcPage in sourceDiagram.Pages)
                     {
-                        // Add the template page to the source diagram
-                        // This creates a copy of the page within the source diagram
-                        sourceDiagram.Pages.Add(tmplPage);
+                        // Add the source page to the template diagram's Pages collection
+                        // The Pages collection supports Add(Page) to copy a page.
+                        templateDiagram.Pages.Add(srcPage);
                     }
+
+                    // ------------------------------------------------------------
+                    // Export the merged diagram to HTML with embedded CSS
+                    // ------------------------------------------------------------
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+                    // The HTMLSaveOptions class does not expose a direct property for
+                    // embedding CSS; by default Aspose.Diagram embeds CSS into the HTML.
+                    // Additional configuration can be added here if needed.
+
+                    // Save the merged diagram as HTML
+                    templateDiagram.Save(outputPath, htmlOptions);
                 }
-
-                // Prepare HTML save options with embedded CSS
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                // Enable embedding of CSS directly into the HTML (if supported)
-                // The property name may vary; using BOOL.True as required by the API
-                // If the property does not exist, the line can be removed without breaking compilation
-                // htmlOptions.EmbeddedCss = BOOL.True; // Uncomment if property exists
-
-                // Save the merged diagram as HTML with embedded CSS
-                sourceDiagram.Save(outputPath, htmlOptions);
             }
 
             Console.WriteLine($"Diagram merged and saved to HTML successfully: {outputPath}");

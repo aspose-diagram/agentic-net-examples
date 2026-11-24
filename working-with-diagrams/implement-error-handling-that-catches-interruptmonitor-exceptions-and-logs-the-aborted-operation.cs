@@ -2,59 +2,70 @@ using System;
 using System.IO;
 using System.Threading;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine input file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        string outputPath = "output.pdf";
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Create an InterruptMonitor to allow aborting long operations
+        // Create an InterruptMonitor to allow aborting long‑running operations
         InterruptMonitor monitor = new InterruptMonitor();
 
-        // Prepare load options and attach the monitor
-        LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
-        loadOptions.InterruptMonitor = monitor;
-
-        // Start a background thread that will interrupt after a short delay
-        Thread interrupter = new Thread(() =>
+        // Start a background thread that will request an interrupt after a timeout (e.g., 5 seconds)
+        Thread interruptThread = new Thread(() =>
         {
-            // Wait for 2 seconds before triggering interruption
-            Thread.Sleep(2000);
+            // Wait for the defined timeout period
+            Thread.Sleep(5000);
+            // Signal the monitor to interrupt the ongoing operation
             monitor.Interrupt();
+            Console.WriteLine("Interrupt requested.");
         });
-        interrupter.Start();
+        interruptThread.Start();
 
         try
         {
-            // Attempt to load the diagram with monitoring enabled
+            // Configure LoadOptions with the interrupt monitor attached
+            LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsdx);
+            loadOptions.InterruptMonitor = monitor;
+
+            // Load the diagram while monitoring for possible interruption
             Diagram diagram = new Diagram(inputPath, loadOptions);
 
-            // If loading succeeds, optionally save to PDF to demonstrate further processing
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.pdf");
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
-            Console.WriteLine($"Diagram successfully saved to '{outputPath}'.");
+            // Assign the same monitor to the diagram for post‑load operations (e.g., saving)
+            diagram.InterruptMonitor = monitor;
+
+            // Prepare PDF save options (default settings)
+            PdfSaveOptions saveOptions = new PdfSaveOptions();
+
+            // Save the diagram to PDF; this operation can also be interrupted
+            diagram.Save(outputPath, saveOptions);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any exception, specifically handling interruption scenarios
+            // Log that the operation was aborted due to an interrupt or other error
             Console.Error.WriteLine($"Operation aborted: {ex.Message}");
         }
         finally
         {
-            // Ensure the interrupter thread has finished
-            if (interrupter.IsAlive)
-            {
-                interrupter.Join();
-            }
+            // Ensure the interrupt thread has completed before exiting
+            interruptThread.Join();
         }
     }
 }

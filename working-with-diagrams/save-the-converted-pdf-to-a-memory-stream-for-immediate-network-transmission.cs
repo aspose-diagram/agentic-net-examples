@@ -7,39 +7,38 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Load the Visio diagram inside a using block as required
         try
         {
-            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a memory stream to hold the PDF output
+                // Prepare PDF save options (default options are sufficient for this example)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // MemoryStream to hold the generated PDF for immediate transmission
                 using (MemoryStream pdfStream = new MemoryStream())
                 {
-                    // Save the diagram as PDF directly into the memory stream
-                    diagram.Save(pdfStream, SaveFileFormat.Pdf);
+                    // Save the diagram as PDF into the memory stream
+                    diagram.Save(pdfStream, pdfOptions);
 
-                    // Reset stream position for any subsequent reading/transmission
+                    // Reset stream position to the beginning if further reading is needed
                     pdfStream.Position = 0;
 
-                    // Example output: report the size of the generated PDF
-                    Console.WriteLine($"PDF successfully saved to memory stream. Size: {pdfStream.Length} bytes.");
+                    // Example: output the size of the generated PDF
+                    Console.WriteLine($"PDF generated successfully. Size: {pdfStream.Length} bytes.");
 
-                    // At this point, pdfStream can be sent over the network as needed.
+                    // (Optional) Write the PDF to a file for verification
+                    // File.WriteAllBytes("output.pdf", pdfStream.ToArray());
                 }
             }
         }

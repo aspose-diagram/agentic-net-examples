@@ -15,7 +15,7 @@ class Program
         }
 
         string inputPath = args[0];
-        string outputPdfPath = args[1];
+        string outputPath = args[1];
 
         // Guard: check input file exists
         if (!File.Exists(inputPath))
@@ -32,21 +32,18 @@ class Program
             // Prepare timestamp string
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            // Iterate through all pages and shapes to prepend timestamp to existing text
+            // Iterate through all pages and shapes to update text
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over shapes collection
-                for (int i = 0; i < page.Shapes.Count; i++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[i];
+                    // Get existing plain text
+                    string existingText = shape.Text?.Value?.Text ?? string.Empty;
 
-                    // Retrieve existing text; handle possible nulls safely
-                    string existingText = shape.Text?.Value?.ToString() ?? string.Empty;
+                    // Build new text with timestamp prefix
+                    string newText = $"{timestamp} {existingText}".Trim();
 
-                    // Build new text with timestamp
-                    string newText = $"{timestamp} {existingText}";
-
-                    // Clear current text collection
+                    // Clear existing text collection
                     shape.Text.Value.Clear();
 
                     // Add the new text as a Txt object
@@ -56,15 +53,14 @@ class Program
 
             // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Explicitly set the save format (required by some versions)
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Ensure format is set explicitly
 
             // Save the updated diagram as PDF
-            diagram.Save(outputPdfPath, pdfOptions);
+            diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

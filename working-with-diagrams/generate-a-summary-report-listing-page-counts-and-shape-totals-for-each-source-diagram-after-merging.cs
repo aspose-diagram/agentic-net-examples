@@ -2,28 +2,43 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Simple container for diagram statistics
+    private class DiagramStats
+    {
+        public string FilePath { get; set; }
+        public int PageCount { get; set; }
+        public int ShapeCount { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: first argument is output file, remaining are source diagrams.
+        // Expect at least two arguments: output file path and one or more source diagram paths
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <outputPath> <sourceDiagram1> [<sourceDiagram2> ...]");
+            Console.Error.WriteLine("Usage: Program <output.vsdx> <source1.vsdx> [<source2.vsdx> ...]");
             return;
         }
 
         string outputPath = args[0];
+        string outputDirectory = Path.GetDirectoryName(outputPath);
+        if (!Directory.Exists(outputDirectory))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDirectory}");
+            return;
+        }
 
-        // Collect source file paths.
+        // Collect source file paths
         List<string> sourcePaths = new List<string>();
         for (int i = 1; i < args.Length; i++)
         {
             sourcePaths.Add(args[i]);
         }
 
-        // Verify that each source file exists.
+        // Validate each source file exists
         foreach (string path in sourcePaths)
         {
             if (!File.Exists(path))
@@ -33,98 +48,111 @@ class Program
             }
         }
 
-        // List to hold page and shape counts for each source diagram.
-        List<(string Path, int PageCount, int ShapeCount)> reportData = new List<(string, int, int)>();
+        // List to hold statistics for each source diagram
+        List<DiagramStats> statsList = new List<DiagramStats>();
 
-        // Load the first diagram as the target for merging.
+        // Load the first diagram as the target for merging
+        Diagram targetDiagram = null;
         try
         {
-            using (Diagram targetDiagram = new Diagram(sourcePaths[0]))
+            // Load first diagram
+            string firstPath = sourcePaths[0];
+            using (Diagram firstDiagram = new Diagram(firstPath))
             {
-                // Count pages and shapes of the first (target) diagram.
-                int firstPageCount = targetDiagram.Pages.Count;
-                int firstShapeCount = 0;
-                foreach (Aspose.Diagram.Page page in targetDiagram.Pages)
+                // Clone the first diagram into targetDiagram (deep copy)
+                // Since Diagram implements IDisposable, we create a new instance via the copy constructor pattern
+                // Aspose.Diagram does not provide a direct copy constructor, so we save to a memory stream and reload
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    firstShapeCount += page.Shapes.Count;
-                }
-                reportData.Add((sourcePaths[0], firstPageCount, firstShapeCount));
-
-                // Process remaining source diagrams: count and merge.
-                for (int idx = 1; idx < sourcePaths.Count; idx++)
-                {
-                    string srcPath = sourcePaths[idx];
-                    try
-                    {
-                        using (Diagram srcDiagram = new Diagram(srcPath))
-                        {
-                            // Count pages and shapes of the current source diagram.
-                            int srcPageCount = srcDiagram.Pages.Count;
-                            int srcShapeCount = 0;
-                            foreach (Aspose.Diagram.Page page in srcDiagram.Pages)
-                            {
-                                srcShapeCount += page.Shapes.Count;
-                            }
-                            reportData.Add((srcPath, srcPageCount, srcShapeCount));
-
-                            // Merge the current source diagram into the target diagram.
-                            targetDiagram.Combine(srcDiagram);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"Error processing source diagram '{srcPath}': {ex.Message}");
-                        return;
-                    }
+                    firstDiagram.Save(ms, SaveFileFormat.Vsdx);
+                    ms.Position = 0;
+                    targetDiagram = new Diagram(ms);
                 }
 
-                // Save the merged diagram to the specified output path.
-                try
-                {
-                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error saving merged diagram to '{outputPath}': {ex.Message}");
-                    return;
-                }
+                // Compute statistics for the first diagram
+                DiagramStats firstStats = ComputeStats(firstDiagram, firstPath);
+                statsList.Add(firstStats);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading target diagram '{sourcePaths[0]}': {ex.Message}");
+            Console.Error.WriteLine($"Error loading first diagram: {ex.Message}");
             return;
         }
 
-        // Output the summary report for each source diagram.
-        Console.WriteLine("Summary Report:");
-        foreach (var item in reportData)
+        // Process remaining source diagrams
+        for (int idx = 1; idx < sourcePaths.Count; idx++)
         {
-            Console.WriteLine($"Source: {item.Path}");
-            Console.WriteLine($"  Pages : {item.PageCount}");
-            Console.WriteLine($"  Shapes: {item.ShapeCount}");
+            string srcPath = sourcePaths[idx];
+            try
+            {
+                using (Diagram srcDiagram = new Diagram(srcPath))
+                {
+                    // Compute and store statistics for this source diagram
+                    DiagramStats srcStats = ComputeStats(srcDiagram, srcPath);
+                    statsList.Add(srcStats);
+
+                    // Merge current source diagram into the target diagram
+                    // The Combine method merges pages, masters, styles, etc.
+                    targetDiagram.Combine(srcDiagram);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing source diagram '{srcPath}': {ex.Message}");
+                // Continue processing remaining diagrams
+            }
         }
 
-        // Load the merged diagram to report its final page and shape totals.
+        // Save the merged diagram
         try
         {
-            using (Diagram mergedDiagram = new Diagram(outputPath))
-            {
-                int mergedPageCount = mergedDiagram.Pages.Count;
-                int mergedShapeCount = 0;
-                foreach (Aspose.Diagram.Page page in mergedDiagram.Pages)
-                {
-                    mergedShapeCount += page.Shapes.Count;
-                }
-
-                Console.WriteLine("Merged Diagram:");
-                Console.WriteLine($"  Pages : {mergedPageCount}");
-                Console.WriteLine($"  Shapes: {mergedShapeCount}");
-            }
+            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Merged diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading merged diagram for final report: {ex.Message}");
+            Console.Error.WriteLine($"Error saving merged diagram: {ex.Message}");
         }
+        finally
+        {
+            // Dispose target diagram if it implements IDisposable
+            if (targetDiagram != null)
+            {
+                targetDiagram.Dispose();
+            }
+        }
+
+        // Output summary report
+        Console.WriteLine("\nSummary Report:");
+        Console.WriteLine("-------------------------------------------------");
+        Console.WriteLine("{0,-30} {1,10} {2,12}", "Source File", "Pages", "Shapes");
+        Console.WriteLine("-------------------------------------------------");
+        foreach (DiagramStats ds in statsList)
+        {
+            Console.WriteLine("{0,-30} {1,10} {2,12}", Path.GetFileName(ds.FilePath), ds.PageCount, ds.ShapeCount);
+        }
+        Console.WriteLine("-------------------------------------------------");
+    }
+
+    // Helper method to compute page and shape counts for a diagram
+    private static DiagramStats ComputeStats(Diagram diagram, string filePath)
+    {
+        int pageCount = diagram.Pages.Count;
+        int shapeCount = 0;
+
+        // Iterate over each page and count shapes
+        foreach (Page page in diagram.Pages)
+        {
+            // page.Shapes is a collection; its Count property gives the number of shapes on the page
+            shapeCount += page.Shapes.Count;
+        }
+
+        return new DiagramStats
+        {
+            FilePath = filePath,
+            PageCount = pageCount,
+            ShapeCount = shapeCount
+        };
     }
 }

@@ -7,159 +7,110 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect exactly two arguments: paths to the two Visio files.
-        if (args.Length != 2)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagram1.vsdx> <diagram2.vsdx>");
+            Console.Error.WriteLine("Usage: Program <VisioFile1> <VisioFile2>");
             return;
         }
 
-        string diagramPath1 = args[0];
-        string diagramPath2 = args[1];
+        string filePath1 = args[0];
+        string filePath2 = args[1];
 
-        // Guard: ensure both files exist.
-        if (!File.Exists(diagramPath1))
+        // Guard against missing input files.
+        if (!File.Exists(filePath1))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath1}");
+            Console.Error.WriteLine($"Error: File not found – {filePath1}");
             return;
         }
-        if (!File.Exists(diagramPath2))
+        if (!File.Exists(filePath2))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath2}");
-            return;
-        }
-
-        Diagram diagram1 = null;
-        Diagram diagram2 = null;
-
-        try
-        {
-            // Load the first diagram.
-            diagram1 = new Diagram(diagramPath1);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram 1: {ex.Message}");
+            Console.Error.WriteLine($"Error: File not found – {filePath2}");
             return;
         }
 
         try
         {
-            // Load the second diagram.
-            diagram2 = new Diagram(diagramPath2);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram 2: {ex.Message}");
-            return;
-        }
+            // Load the two Visio diagrams.
+            Diagram diagram1 = new Diagram(filePath1);
+            Diagram diagram2 = new Diagram(filePath2);
 
-        // Extract OLE object file extensions from each diagram.
-        HashSet<string> oleExtensions1 = ExtractOleExtensions(diagram1);
-        HashSet<string> oleExtensions2 = ExtractOleExtensions(diagram2);
+            // Extract OLE object information from each diagram.
+            var oleMap1 = ExtractOleObjects(diagram1);
+            var oleMap2 = ExtractOleObjects(diagram2);
 
-        // Determine differences.
-        var onlyInFirst = new List<string>();
-        var onlyInSecond = new List<string>();
+            // Build a set of all keys (pageIndex_shapeId) present in either diagram.
+            var allKeys = new HashSet<string>(oleMap1.Keys);
+            allKeys.UnionWith(oleMap2.Keys);
 
-        foreach (var ext in oleExtensions1)
-        {
-            if (!oleExtensions2.Contains(ext))
-                onlyInFirst.Add(ext);
-        }
-
-        foreach (var ext in oleExtensions2)
-        {
-            if (!oleExtensions1.Contains(ext))
-                onlyInSecond.Add(ext);
-        }
-
-        // Report results.
-        Console.WriteLine("=== OLE Object File Type Comparison ===");
-        Console.WriteLine($"Diagram 1: {diagramPath1}");
-        Console.WriteLine($"Diagram 2: {diagramPath2}");
-        Console.WriteLine();
-
-        Console.WriteLine("File types present in Diagram 1:");
-        foreach (var ext in oleExtensions1)
-            Console.WriteLine($"  {ext}");
-        Console.WriteLine();
-
-        Console.WriteLine("File types present in Diagram 2:");
-        foreach (var ext in oleExtensions2)
-            Console.WriteLine($"  {ext}");
-        Console.WriteLine();
-
-        if (onlyInFirst.Count == 0 && onlyInSecond.Count == 0)
-        {
-            Console.WriteLine("Both diagrams contain the same set of OLE object file types.");
-        }
-        else
-        {
-            if (onlyInFirst.Count > 0)
+            // Report differences.
+            Console.WriteLine("OLE Object Comparison Report:");
+            foreach (var key in allKeys)
             {
-                Console.WriteLine("File types only in Diagram 1:");
-                foreach (var ext in onlyInFirst)
-                    Console.WriteLine($"  {ext}");
-            }
+                bool inFirst = oleMap1.TryGetValue(key, out string source1);
+                bool inSecond = oleMap2.TryGetValue(key, out string source2);
 
-            if (onlyInSecond.Count > 0)
-            {
-                Console.WriteLine("File types only in Diagram 2:");
-                foreach (var ext in onlyInSecond)
-                    Console.WriteLine($"  {ext}");
-            }
-        }
-    }
-
-    /// <summary>
-    /// Extracts a set of file extensions from OLE objects embedded in the given diagram.
-    /// </summary>
-    /// <param name="diagram">The diagram to inspect.</param>
-    /// <returns>A HashSet containing lower‑cased extensions (including the leading dot).</returns>
-    private static HashSet<string> ExtractOleExtensions(Diagram diagram)
-    {
-        var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        try
-        {
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
-            {
-                // Iterate through all shapes on the page.
-                foreach (Shape shape in page.Shapes)
+                if (inFirst && inSecond)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check if the shape contains foreign (OLE) data.
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
+                    if (!string.Equals(source1, source2, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Attempt to get the source file name of the OLE object.
-                        string sourceFullName = shape.ForeignData.ObjectSourceFullName;
-
-                        if (!string.IsNullOrEmpty(sourceFullName))
-                        {
-                            string ext = Path.GetExtension(sourceFullName);
-                            if (!string.IsNullOrEmpty(ext))
-                                extensions.Add(ext.ToLowerInvariant());
-                        }
-                        else
-                        {
-                            // If source name is unavailable, we can still attempt to infer type from the binary data.
-                            // For this example we record it as "<unknown>".
-                            extensions.Add("<unknown>");
-                        }
+                        Console.WriteLine($"- Different OLE type at Page/Shape {KeyToReadable(key)}:");
+                        Console.WriteLine($"    Diagram 1: {source1}");
+                        Console.WriteLine($"    Diagram 2: {source2}");
                     }
+                }
+                else if (inFirst && !inSecond)
+                {
+                    Console.WriteLine($"- OLE object present only in Diagram 1 at {KeyToReadable(key)}: {source1}");
+                }
+                else if (!inFirst && inSecond)
+                {
+                    Console.WriteLine($"- OLE object present only in Diagram 2 at {KeyToReadable(key)}: {source2}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error while extracting OLE extensions: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+
+    // Extracts OLE objects from a diagram and returns a dictionary keyed by "pageIndex_shapeId".
+    private static Dictionary<string, string> ExtractOleObjects(Diagram diagram)
+    {
+        var result = new Dictionary<string, string>();
+
+        for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+        {
+            Page page = diagram.Pages[pageIndex];
+            foreach (Shape shape in page.Shapes)
+            {
+                // OLE objects are represented by non‑null ForeignData.
+                if (shape.ForeignData != null)
+                {
+                    // ObjectSourceFullName may contain the embedded file type or application name.
+                    string source = shape.ForeignData.ObjectSourceFullName ?? "Unknown";
+
+                    // Use shape.ID as a stable identifier within the page.
+                    string key = $"{pageIndex}_{shape.ID}";
+                    result[key] = source;
+                }
+            }
         }
 
-        return extensions;
+        return result;
+    }
+
+    // Converts the dictionary key back to a readable "Page X, Shape ID Y" format.
+    private static string KeyToReadable(string key)
+    {
+        var parts = key.Split('_');
+        if (parts.Length == 2 &&
+            int.TryParse(parts[0], out int pageIdx) &&
+            int.TryParse(parts[1], out int shapeId))
+        {
+            return $"Page {pageIdx + 1}, Shape ID {shapeId}";
+        }
+        return key;
     }
 }

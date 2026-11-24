@@ -2,13 +2,14 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
@@ -18,96 +19,77 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // List to hold connector information for JSON serialization.
-                List<ConnectorInfo> connectors = new List<ConnectorInfo>();
+                // List to hold connector information
+                var connectors = new List<ConnectorInfo>();
 
-                // Iterate through all pages in the diagram.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Iterate through all shapes on the current page.
-                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                    // Iterate through each shape on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[shapeIndex];
-
-                        // Identify connector shapes (1-D shapes). shape.OneD returns a native bool.
+                        // Identify connector shapes (1-D shapes)
                         if (shape.OneD)
                         {
                             long connectorId = shape.ID;
-                            long fromShapeId = 0;
-                            long toShapeId = 0;
 
-                            // Examine the Connects collection to find the start (BeginX) and end (EndX) connections.
-                            for (int connIndex = 0; connIndex < page.Connects.Count; connIndex++)
+                            // Find connections where this connector is the target (ToSheet)
+                            var relatedConnections = page.Connects
+                                .Where(c => c.ToSheet == connectorId)
+                                .ToList();
+
+                            // Expect at least two connections (start and end)
+                            if (relatedConnections.Count >= 2)
                             {
-                                Connect conn = page.Connects[connIndex];
+                                long startShapeId = relatedConnections[0].FromSheet;
+                                long endShapeId = relatedConnections[1].FromSheet;
 
-                                // We're only interested in connections where the connector is the source shape.
-                                if (conn.FromSheet == connectorId)
+                                connectors.Add(new ConnectorInfo
                                 {
-                                    // Determine whether this connection represents the start or end point.
-                                    if (string.Equals(conn.FromCell, "BeginX", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        fromShapeId = conn.ToSheet;
-                                    }
-                                    else if (string.Equals(conn.FromCell, "EndX", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        toShapeId = conn.ToSheet;
-                                    }
-                                }
+                                    PageId = page.ID,
+                                    ConnectorId = connectorId,
+                                    StartShapeId = startShapeId,
+                                    EndShapeId = endShapeId
+                                });
                             }
-
-                            // Add the connector information to the list.
-                            connectors.Add(new ConnectorInfo
-                            {
-                                ConnectorId = connectorId,
-                                FromShapeId = fromShapeId,
-                                ToShapeId = toShapeId
-                            });
                         }
                     }
                 }
 
-                // Serialize the connector list to JSON with indentation.
-                string json = JsonSerializer.Serialize(connectors, new JsonSerializerOptions { WriteIndented = true });
+                // Serialize the connector list to JSON with indentation
+                var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+                string json = JsonSerializer.Serialize(connectors, jsonOptions);
 
-                // Ensure the output directory exists.
-                string outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-                {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                // Write the JSON content to the specified file.
+                // Write JSON to the output file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Connector data exported successfully to: {outputPath}");
+                Console.WriteLine($"Connector data exported to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Capture any errors from Aspose.Diagram operations or file I/O.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    // Simple DTO for JSON serialization of connector information.
+    // DTO for JSON output
     private class ConnectorInfo
     {
+        public int PageId { get; set; }
         public long ConnectorId { get; set; }
-        public long FromShapeId { get; set; }
-        public long ToShapeId { get; set; }
+        public long StartShapeId { get; set; }
+        public long EndShapeId { get; set; }
     }
 }

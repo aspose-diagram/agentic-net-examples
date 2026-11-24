@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeId> [outputDiagramPath]");
@@ -15,67 +15,73 @@ class Program
 
         string inputPath = args[0];
         string shapeIdArg = args[1];
-        string outputPath = args.Length >= 3 ? args[2] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_ThemeApplied.vsdx");
+        string outputPath = args.Length >= 3 ? args[2] : null;
 
-        // Guard: ensure the input file exists.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Guard: parse the shape ID.
+        // Parse shape ID (long)
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. It must be a numeric value.");
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
+        }
+
+        // Determine output path if not provided
+        if (string.IsNullOrEmpty(outputPath))
+        {
+            string dir = Path.GetDirectoryName(inputPath);
+            string name = Path.GetFileNameWithoutExtension(inputPath);
+            string ext = Path.GetExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{name}_modified{ext}");
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified ID across all pages.
+            // Find the shape with the specified ID across all pages
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // GetShape throws if not found, so use try/catch per page
+                try
                 {
-                    if (shape.ID == shapeId)
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
                     {
                         targetShape = shape;
                         break;
                     }
                 }
-                if (targetShape != null)
-                    break;
+                catch
+                {
+                    // Shape not on this page; continue searching
+                }
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Error: No shape with ID {shapeId} was found in the diagram.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page.");
                 return;
             }
 
             // Apply a preset theme to the shape.
-            // Only confirmed enum member is PresetThemeValue.Bubble.
+            // PresetTheme is write‑only; using a confirmed enum member.
             targetShape.PresetTheme = PresetThemeValue.Bubble;
 
-            // Optionally, you could also set a variant or quick style here if desired.
-            // Example (commented out):
-            // targetShape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-            // targetShape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
-
-            // Save the modified diagram to the output path.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Shape ID {shapeId} theme applied successfully. Saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

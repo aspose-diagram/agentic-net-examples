@@ -10,56 +10,51 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputCsvPath>");
+            Console.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram using Aspose.Diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Collect unique font names from the diagram.
-            HashSet<string> uniqueFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (Font font in diagram.Fonts)
+            // Load the Visio diagram.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Guard against null or empty font names.
-                if (!string.IsNullOrWhiteSpace(font.Name))
+                // Collect unique font names from the diagram.
+                HashSet<string> uniqueFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (Font font in diagram.Fonts)
                 {
-                    uniqueFonts.Add(font.Name);
+                    if (!string.IsNullOrEmpty(font.Name))
+                    {
+                        uniqueFonts.Add(font.Name);
+                    }
                 }
-            }
 
-            // Export the unique font names to a CSV file.
-            using (StreamWriter writer = new StreamWriter(outputPath, false))
-            {
-                // Write CSV header.
-                writer.WriteLine("FontName");
-
-                // Write each font name, escaping double quotes if present.
-                foreach (string name in uniqueFonts)
+                // Write the unique font names to a CSV file (one name per line).
+                using (StreamWriter writer = new StreamWriter(outputPath, false))
                 {
-                    string escaped = name.Replace("\"", "\"\"");
-                    writer.WriteLine($"\"{escaped}\"");
+                    foreach (string fontName in uniqueFonts)
+                    {
+                        writer.WriteLine(fontName);
+                    }
                 }
-            }
 
-            Console.WriteLine($"Successfully extracted {uniqueFonts.Count} unique font(s) to \"{outputPath}\".");
+                Console.WriteLine($"Extracted {uniqueFonts.Count} unique font(s) to '{outputPath}'.");
+            }
         }
         catch (Exception ex)
         {
             // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing the Visio file: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

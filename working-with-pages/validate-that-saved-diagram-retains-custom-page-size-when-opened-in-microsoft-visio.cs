@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
+        // Validate command line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -19,69 +19,66 @@ class Program
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Define the custom page size (in inches).
-        double customWidth = 8.5;
-        double customHeight = 11.0;
+        // Define custom page size (in inches).
+        double customWidth = 11.0;   // Example width.
+        double customHeight = 8.5;   // Example height.
 
         try
         {
-            // Load the original diagram inside a using block.
+            // Load the source diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Verify that the diagram contains at least one page.
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Access the first page.
+                // Access the first (foreground) page.
                 Page page = diagram.Pages[0];
 
-                // Set the custom page dimensions.
+                // Set custom page dimensions.
                 page.PageSheet.PageProps.PageWidth.Value = customWidth;
                 page.PageSheet.PageProps.PageHeight.Value = customHeight;
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Reload the saved diagram to verify that the custom page size persisted.
+            // Verify that the saved file exists.
+            if (!File.Exists(outputPath))
+            {
+                Console.Error.WriteLine($"Failed to create output file: {outputPath}");
+                return;
+            }
+
+            // Re-open the saved diagram to validate page size retention.
             using (Diagram savedDiagram = new Diagram(outputPath))
             {
-                if (savedDiagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The saved diagram contains no pages.");
-                    return;
-                }
-
-                // Retrieve the first page from the saved diagram.
                 Page savedPage = savedDiagram.Pages[0];
+
                 double savedWidth = savedPage.PageSheet.PageProps.PageWidth.Value;
                 double savedHeight = savedPage.PageSheet.PageProps.PageHeight.Value;
 
-                // Compare the saved dimensions with the expected custom size (allowing a tiny tolerance).
-                const double tolerance = 0.001;
-                bool widthMatches = Math.Abs(savedWidth - customWidth) <= tolerance;
-                bool heightMatches = Math.Abs(savedHeight - customHeight) <= tolerance;
+                // Compare saved dimensions with the original custom dimensions.
+                const double tolerance = 0.001; // Allow minimal floating‑point variance.
+                bool widthMatches = Math.Abs(savedWidth - customWidth) < tolerance;
+                bool heightMatches = Math.Abs(savedHeight - customHeight) < tolerance;
 
                 if (widthMatches && heightMatches)
                 {
-                    Console.WriteLine("Custom page size retained after saving.");
+                    Console.WriteLine("Success: Custom page size retained after saving and reloading.");
                 }
                 else
                 {
-                    Console.Error.WriteLine($"Page size mismatch. Expected: {customWidth}x{customHeight}, Actual: {savedWidth}x{savedHeight}");
+                    string message = $"Failure: Page size mismatch. Expected ({customWidth} x {customHeight}), " +
+                                     $"but got ({savedWidth} x {savedHeight}).";
+                    Console.Error.WriteLine(message);
+                    throw new Exception(message);
                 }
             }
         }
         catch (Exception ex)
         {
-            // Output any unexpected errors.
+            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

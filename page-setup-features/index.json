@@ -1,11 +1,11 @@
 {
   "category": "page-setup-features",
   "display_name": "Page Setup Features",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 82,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -63,7 +63,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -214,7 +213,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -311,7 +309,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Properties",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -327,7 +324,6 @@
       "task": "Create a batch job that processes visio files nightly applying standardized print settings for corporate reports",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -344,9 +340,11 @@
       "task": "Create a configuration file that maps page indices to specific orientation and scaling values",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
@@ -361,7 +359,6 @@
       "task": "Create a custom export function that embeds page dimension metadata into the output file header",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Properties",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
@@ -369,6 +366,7 @@
       "key_apis": [
         "Diagram",
         "Pages",
+        "PdfSaveOptions",
         "Save",
         "diagram"
       ]
@@ -445,6 +443,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -452,7 +451,8 @@
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Window",
+        "Windows"
       ]
     },
     {
@@ -461,6 +461,7 @@
       "task": "Create a utility method that sets orientation and scaling based on user provided parameters",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -477,10 +478,12 @@
       "task": "Deserialize previously saved json page dimensions and compare them with current diagram values",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
-        "System.Text.Json"
+        "System.Text.Json",
+        "System.Text.Json.Serialization"
       ],
       "key_apis": [
         "Diagram",
@@ -495,6 +498,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -512,6 +516,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.IO"
       ],
@@ -601,7 +606,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -611,7 +615,6 @@
       "task": "Implement a fallback to portrait orientation if landscape assignment fails due to file corruption",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -681,6 +684,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -729,6 +733,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -780,6 +785,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Globalization",
         "System.IO"
       ],
       "key_apis": [
@@ -800,7 +806,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -826,7 +831,9 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO",
         "System.Text.Json"
       ],
@@ -875,7 +882,6 @@
       "task": "Programmatically toggle between portrait and landscape orientations based on page content analysis",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -893,6 +899,8 @@
       "task": "Save the modified diagram to a new visio file after updating page print settings",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -974,6 +982,7 @@
       "task": "Use a configuration manager to retrieve default orientation and scaling values from application settings",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -990,6 +999,7 @@
       "task": "Use a try catch block to handle unsupported orientation values while processing multiple pages",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1006,7 +1016,6 @@
       "task": "Use diagram clone to create a backup before applying bulk orientation updates",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1043,11 +1052,10 @@
         "System.Linq"
       ],
       "key_apis": [
-        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -1111,8 +1119,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
         "System",
-        "System.IO",
-        "System.Reflection"
+        "System.IO"
       ],
       "key_apis": []
     },
@@ -1137,6 +1144,7 @@
       "task": "Use the page height to determine vertical offset when adding a custom footer to each page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -1211,7 +1219,6 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "diagram"
       ]
     },
@@ -1237,6 +1244,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Printing",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -1245,6 +1253,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -1285,7 +1294,6 @@
       "task": "Write a sample program demonstrating switching between portrait and landscape orientations based on user input",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Printing",
         "System",
         "System.IO"
       ],
@@ -1302,7 +1310,6 @@
       "task": "Write a script that reads a list of visio files and applies uniform landscape orientation to each",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

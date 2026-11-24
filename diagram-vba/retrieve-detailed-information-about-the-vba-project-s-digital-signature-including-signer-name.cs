@@ -7,8 +7,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments
-        if (args.Length == 0)
+        // Validate input arguments
+        if (args.Length < 1)
         {
             Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
@@ -16,7 +16,7 @@ class Program
 
         string filePath = args[0];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the file exists
         if (!File.Exists(filePath))
         {
             Console.Error.WriteLine($"Error: File not found - {filePath}");
@@ -32,41 +32,33 @@ class Program
             VbaProject vbaProject = diagram.VbaProject;
 
             // Output basic VBA project information
-            Console.WriteLine("VBA Project Information:");
-            Console.WriteLine($"- Project Name : {vbaProject.Name}");
-            Console.WriteLine($"- Is Signed    : {vbaProject.IsSigned}");
+            Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
+            Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
 
-            // List all VBA modules
-            Console.WriteLine("\nModules:");
-            if (vbaProject.Modules != null && vbaProject.Modules.Count > 0)
+            // List all VBA modules and basic details
+            Console.WriteLine("VBA Modules:");
+            foreach (VbaModule module in vbaProject.Modules)
             {
-                foreach (VbaModule module in vbaProject.Modules)
-                {
-                    Console.WriteLine($"  * Module Name : {module.Name}");
-                    // Show a preview of the code (first 100 characters) if available
-                    if (!string.IsNullOrEmpty(module.Codes))
-                    {
-                        string preview = module.Codes.Length > 100 ? module.Codes.Substring(0, 100) + "..." : module.Codes;
-                        Console.WriteLine($"    Code Preview: {preview}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("    (No code)");
-                    }
-                }
+                Console.WriteLine($"  Module Name: {module.Name}");
+                int codeLength = module.Codes != null ? module.Codes.Length : 0;
+                Console.WriteLine($"    Code Length: {codeLength} characters");
+            }
+
+            // Provide information about signature details
+            if (vbaProject.IsSigned)
+            {
+                Console.WriteLine("Detailed signer information (e.g., signer name) is not exposed by the Aspose.Diagram API.");
+                Console.WriteLine("To obtain signer details, use external certificate APIs or libraries.");
             }
             else
             {
-                Console.WriteLine("  (No modules found)");
+                Console.WriteLine("The VBA project is not digitally signed.");
             }
-
-            // Note about detailed signer information
-            Console.WriteLine("\nNote: Detailed signer information (e.g., signer name, certificate details) is not exposed by the Aspose.Diagram VbaProject API. Only the IsSigned flag is available.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

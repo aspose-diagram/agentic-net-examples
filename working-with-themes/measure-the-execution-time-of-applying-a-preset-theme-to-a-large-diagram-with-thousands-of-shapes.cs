@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -18,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,41 +26,43 @@ class Program
 
         try
         {
+            // Start measuring execution time.
+            Stopwatch sw = Stopwatch.StartNew();
+
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a stopwatch to measure the theme‑application time.
-                Stopwatch sw = new Stopwatch();
-
-                // Start timing.
-                sw.Start();
-
-                // Apply a preset theme to every page in the diagram.
-                // The theme is applied at the page level; it propagates to all shapes on the page.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Apply a preset theme to each page and each shape.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the page explicitly.
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Set the preset theme and a variant.
+                    // Apply theme at page level.
                     page.PresetTheme = PresetThemeValue.Bubble;
                     page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                    // Iterate through all shapes on the page.
+                    for (int i = 0; i < page.Shapes.Count; i++)
+                    {
+                        Shape shape = page.Shapes[i];
+                        // Apply the same preset theme to the shape.
+                        shape.PresetTheme = PresetThemeValue.Bubble;
+                        shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    }
                 }
 
-                // Stop timing.
+                // Stop the timer after theme application is complete.
                 sw.Stop();
-
-                // Output the elapsed time.
-                Console.WriteLine($"Theme applied to diagram in {sw.Elapsed.TotalMilliseconds} ms.");
 
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            // Output the elapsed time.
+            Console.WriteLine($"Theme applied in {sw.Elapsed.TotalMilliseconds} ms.");
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

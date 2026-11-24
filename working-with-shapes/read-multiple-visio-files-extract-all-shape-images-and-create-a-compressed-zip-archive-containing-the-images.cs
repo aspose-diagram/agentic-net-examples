@@ -2,50 +2,48 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: at least one input Visio file and an output ZIP path
+        // Validate arguments: first argument is output ZIP path, remaining are input Visio files
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisio1> [<inputVisio2> ...] <outputZipPath>");
+            Console.Error.WriteLine("Usage: <output-zip-path> <input-visio-1> [<input-visio-2> ...]");
             return;
         }
 
-        // The last argument is the output ZIP file path
-        string zipPath = args[args.Length - 1];
-
-        // Collect input file paths (all arguments except the last one)
+        string outputZipPath = args[0];
         string[] inputFiles = new string[args.Length - 1];
-        Array.Copy(args, inputFiles, args.Length - 1);
+        Array.Copy(args, 1, inputFiles, 0, inputFiles.Length);
 
         // Verify each input file exists
-        foreach (string inputPath in inputFiles)
+        foreach (string path in inputFiles)
         {
-            if (!File.Exists(inputPath))
+            if (!File.Exists(path))
             {
-                Console.Error.WriteLine($"Input file not found: {inputPath}");
+                Console.Error.WriteLine($"Input file not found: {path}");
                 return;
             }
         }
 
+        // Create (or overwrite) the ZIP archive
         try
         {
-            // Create (or overwrite) the ZIP archive
-            using (FileStream zipToOpen = new FileStream(zipPath, FileMode.Create))
-            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create))
+            using (FileStream zipToOpen = new FileStream(outputZipPath, FileMode.Create))
+            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
             {
                 // Process each Visio file
                 foreach (string visioPath in inputFiles)
                 {
                     try
                     {
-                        // Load the Visio diagram
+                        // Load the Visio diagram inside a using block as required
                         using (Diagram diagram = new Diagram(visioPath))
                         {
-                            int pageIndex = 0; // Manual page counter since Page.PageNum does not exist
+                            int pageIndex = 0; // Manual page counter because Page has no Index property
 
                             // Iterate through all pages
                             foreach (Page page in diagram.Pages)
@@ -59,25 +57,24 @@ class Program
                                     if (shape.Del == BOOL.True)
                                         continue;
 
-                                    // Identify foreign (image) shapes
-                                    if (shape.Type == TypeValue.Foreign)
+                                    // Prepare image save options (PNG format)
+                                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+
+                                    // Export shape to a memory stream
+                                    using (MemoryStream imgStream = new MemoryStream())
                                     {
-                                        // Retrieve the raw image bytes from the shape
-                                        byte[] imageData = shape.ForeignData?.Value;
+                                        // Export the shape image
+                                        shape.ToImage(imgStream, imgOptions);
+                                        imgStream.Position = 0;
 
-                                        // Ensure we have image data to write
-                                        if (imageData != null && imageData.Length > 0)
+                                        // Build a unique entry name for the ZIP archive
+                                        string entryName = $"{Path.GetFileNameWithoutExtension(visioPath)}_Page{pageIndex}_Shape{shape.ID}.png";
+
+                                        // Add the image to the ZIP archive
+                                        ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+                                        using (Stream entryStream = entry.Open())
                                         {
-                                            // Build a unique entry name: <VisioFileName>_Page<pageIndex>_Shape<shape.ID>.png
-                                            string safeVisioName = Path.GetFileNameWithoutExtension(visioPath);
-                                            string entryName = $"{safeVisioName}_Page{pageIndex}_Shape{shape.ID}.png";
-
-                                            // Create a new entry in the ZIP archive
-                                            ZipArchiveEntry entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-                                            using (Stream entryStream = entry.Open())
-                                            {
-                                                entryStream.Write(imageData, 0, imageData.Length);
-                                            }
+                                            imgStream.CopyTo(entryStream);
                                         }
                                     }
                                 }
@@ -86,18 +83,17 @@ class Program
                     }
                     catch (Exception ex)
                     {
-                        // Log any errors that occur while processing an individual Visio file
                         Console.Error.WriteLine($"Error processing file '{visioPath}': {ex.Message}");
+                        // Continue with next file
                     }
                 }
             }
 
-            Console.WriteLine($"Image extraction completed. ZIP archive created at: {zipPath}");
+            Console.WriteLine($"Images extracted and saved to ZIP archive: {outputZipPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur while creating the ZIP archive
-            Console.Error.WriteLine($"Failed to create ZIP archive '{zipPath}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to create ZIP archive: {ex.Message}");
         }
     }
 }

@@ -9,72 +9,62 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeId>");
             return;
         }
 
-        string diagramPath = args[0];
+        string visioPath = args[0];
         string shapeIdArg = args[1];
 
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Error: File not found -> {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
             return;
         }
 
-        // Parse the shape ID (expected to be a long).
+        // Parse the shape ID (expected to be a long integer).
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
+
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                bool shapeFound = false;
-                int pageIndex = 0; // Manual page counter because Page.Index does not exist.
-
-                // Iterate through all pages to locate the shape by its ID.
-                foreach (Page page in diagram.Pages)
-                {
-                    // Attempt to retrieve the shape using ShapeCollection.GetShape(long id).
-                    Shape shape = null;
-                    try
-                    {
-                        shape = page.Shapes.GetShape(shapeId);
-                    }
-                    catch
-                    {
-                        // GetShape may throw if the ID is not present on this page; ignore and continue.
-                    }
-
-                    if (shape != null)
-                    {
-                        shapeFound = true;
-                        Console.WriteLine($"Shape found on page #{pageIndex}");
-                        Console.WriteLine($"Shape ID   : {shape.ID}");
-                        Console.WriteLine($"Shape NameU: {shape.NameU}");
-                        // Additional shape details can be printed here if needed.
-                        break;
-                    }
-
-                    pageIndex++;
-                }
-
-                if (!shapeFound)
-                {
-                    Console.WriteLine($"Shape with ID {shapeId} was not found in any page of the diagram.");
-                }
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
             }
+
+            // Retrieve the first page (index 0).
+            Page page = diagram.Pages[0];
+
+            // Locate the shape by its ID using ShapeCollection.GetShape.
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Verify that the shape was found.
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} was not found on page 0.");
+                return;
+            }
+
+            // Output basic information about the located shape.
+            Console.WriteLine($"Shape found:");
+            Console.WriteLine($"  ID      : {shape.ID}");
+            Console.WriteLine($"  NameU   : {shape.NameU}");
+            Console.WriteLine($"  Master  : {(shape.Master != null ? shape.Master.Name : "None")}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading or processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

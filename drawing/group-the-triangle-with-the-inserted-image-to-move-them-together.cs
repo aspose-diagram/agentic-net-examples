@@ -7,12 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments:
-        // args[0] - path to the source Visio diagram (e.g., Drawing1.vsdx)
-        // args[1] - path to the image file to insert (e.g., picture.png)
-        // args[2] - path to save the modified diagram (e.g., Modified.vsdx)
-        // args[3] - path to export the diagram as PNG (e.g., Output.png)
-
+        // Validate command‑line arguments.
         if (args.Length < 4)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <imagePath> <outputDiagramPath> <outputPngPath>");
@@ -24,13 +19,12 @@ class Program
         string outputDiagramPath = args[2];
         string outputPngPath = args[3];
 
-        // Guard against missing input files
+        // Guard against missing input files.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
-
         if (!File.Exists(imagePath))
         {
             Console.Error.WriteLine($"Image file not found: {imagePath}");
@@ -39,76 +33,78 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Access the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // ------------------------------------------------------------
-            // Insert the image as a shape on the page
-            // ------------------------------------------------------------
-            // Define position and size for the image (in inches)
-            double imgPinX = 1.0;   // X coordinate of the shape's pin
-            double imgPinY = 1.0;   // Y coordinate of the shape's pin
-            double imgWidth = 2.0; // Width of the image
-            double imgHeight = 2.0; // Height of the image
-
-            long imageShapeId;
-            using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // AddShape returns the shape's ID (long)
-                imageShapeId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
+                // Obtain the first page, or create a new one if the diagram is empty.
+                Page page;
+                if (diagram.Pages.Count > 0)
+                {
+                    page = diagram.Pages[0];
+                }
+                else
+                {
+                    // Create a new empty page and add it to the diagram.
+                    page = new Page();
+                    diagram.Pages.Add(page);
+                }
+
+                // ------------------------------------------------------------
+                // Insert the external image as a shape.
+                // ------------------------------------------------------------
+                double imgPinX = 2.0;   // X coordinate of the shape's pin (in inches)
+                double imgPinY = 2.0;   // Y coordinate of the shape's pin (in inches)
+                double imgWidth = 4.0;  // Width of the image (in inches)
+                double imgHeight = 3.0; // Height of the image (in inches)
+
+                long imageShapeId;
+                using (FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read))
+                {
+                    // AddShape returns the shape ID (long).
+                    imageShapeId = page.AddShape(imgPinX, imgPinY, imgWidth, imgHeight, imgStream);
+                }
+                Shape imageShape = page.Shapes.GetShape(imageShapeId);
+
+                // ------------------------------------------------------------
+                // Draw a triangle using DrawPolyline.
+                // ------------------------------------------------------------
+                // Define triangle vertices (in inches). The last point repeats the first to close the shape.
+                double[] trianglePoints = new double[]
+                {
+                    5.0, 5.0,   // Vertex 1
+                    7.0, 5.0,   // Vertex 2
+                    6.0, 7.0,   // Vertex 3
+                    5.0, 5.0    // Close back to Vertex 1
+                };
+                long triangleShapeId = page.DrawPolyline(trianglePoints);
+                Shape triangleShape = page.Shapes.GetShape(triangleShapeId);
+
+                // ------------------------------------------------------------
+                // Group the triangle and the image together.
+                // ------------------------------------------------------------
+                Shape groupShape = page.Shapes.Group(new Shape[] { triangleShape, imageShape });
+
+                // ------------------------------------------------------------
+                // Move the group as a single entity.
+                // ------------------------------------------------------------
+                // Move the group 2 inches to the right and 1 inch up.
+                groupShape.Move(2.0, -1.0);
+
+                // ------------------------------------------------------------
+                // Save the modified diagram.
+                // ------------------------------------------------------------
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+
+                // ------------------------------------------------------------
+                // Export the first page as PNG to verify the result.
+                // ------------------------------------------------------------
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(outputPngPath, pngOptions);
             }
-
-            // Retrieve the Shape object for further operations
-            Shape imageShape = page.Shapes.GetShape(imageShapeId);
-
-            // ------------------------------------------------------------
-            // Draw a triangle shape on the same page
-            // ------------------------------------------------------------
-            // Define triangle vertices (in inches) and close the polygon by repeating the first point
-            double[] trianglePoints = new double[]
-            {
-                3.0, 3.0,   // Vertex 1
-                5.0, 3.0,   // Vertex 2
-                4.0, 5.0,   // Vertex 3
-                3.0, 3.0    // Close the triangle
-            };
-
-            // DrawPolyline returns the shape's ID (long)
-            long triangleShapeId = page.DrawPolyline(trianglePoints);
-
-            // Retrieve the Shape object for the triangle
-            Shape triangleShape = page.Shapes.GetShape(triangleShapeId);
-
-            // ------------------------------------------------------------
-            // Group the image shape and the triangle shape together
-            // ------------------------------------------------------------
-            Shape groupShape = page.Shapes.Group(new Shape[] { imageShape, triangleShape });
-
-            // ------------------------------------------------------------
-            // Move the group as a single entity (e.g., shift 1 inch right and 1 inch up)
-            // ------------------------------------------------------------
-            groupShape.Move(1.0, 1.0);
-
-            // ------------------------------------------------------------
-            // Save the modified diagram in VSDX format
-            // ------------------------------------------------------------
-            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-
-            // ------------------------------------------------------------
-            // Export the diagram (first page) as a PNG image
-            // ------------------------------------------------------------
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            diagram.Save(outputPngPath, pngOptions);
-
-            Console.WriteLine("Diagram processing completed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

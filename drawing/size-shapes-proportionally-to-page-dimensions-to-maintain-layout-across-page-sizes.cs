@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting: <inputVisioPath> <outputVisioPath> <targetPageWidthInInches> <targetPageHeightInInches>
+        // Expecting four arguments: input diagram path, output diagram path, new page width (in inches), new page height (in inches)
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <targetPageWidthInInches> <targetPageHeightInInches>");
+            Console.Error.WriteLine("Usage: <program> <inputPath> <outputPath> <newPageWidthInches> <newPageHeightInches>");
             return;
         }
 
@@ -25,16 +25,16 @@ class Program
             return;
         }
 
-        // Parse target page dimensions
-        if (!double.TryParse(widthArg, out double targetWidth) || targetWidth <= 0)
+        // Parse new page dimensions
+        if (!double.TryParse(widthArg, out double newPageWidth) || newPageWidth <= 0)
         {
-            Console.Error.WriteLine("Invalid target page width.");
+            Console.Error.WriteLine("Invalid new page width. It must be a positive number.");
             return;
         }
 
-        if (!double.TryParse(heightArg, out double targetHeight) || targetHeight <= 0)
+        if (!double.TryParse(heightArg, out double newPageHeight) || newPageHeight <= 0)
         {
-            Console.Error.WriteLine("Invalid target page height.");
+            Console.Error.WriteLine("Invalid new page height. It must be a positive number.");
             return;
         }
 
@@ -43,7 +43,7 @@ class Program
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
                 // Retrieve original page dimensions (in inches)
@@ -53,13 +53,13 @@ class Program
                 // Avoid division by zero
                 if (originalWidth == 0 || originalHeight == 0)
                 {
-                    Console.Error.WriteLine("Encountered a page with zero width or height; skipping scaling for this page.");
+                    Console.Error.WriteLine("Encountered a page with zero width or height. Skipping scaling for this page.");
                     continue;
                 }
 
-                // Compute scaling factors for X and Y dimensions
-                double scaleX = targetWidth / originalWidth;
-                double scaleY = targetHeight / originalHeight;
+                // Calculate scaling factors for width and height
+                double scaleX = newPageWidth / originalWidth;
+                double scaleY = newPageHeight / originalHeight;
 
                 // Scale each shape on the page
                 foreach (Shape shape in page.Shapes)
@@ -68,23 +68,23 @@ class Program
                     shape.XForm.Width.Value *= scaleX;
                     shape.XForm.Height.Value *= scaleY;
 
-                    // Scale shape position to keep relative layout
+                    // Scale shape position
                     shape.XForm.PinX.Value *= scaleX;
                     shape.XForm.PinY.Value *= scaleY;
                 }
 
-                // Update the page size to the target dimensions
-                page.PageSheet.PageProps.PageWidth.Value = targetWidth;
-                page.PageSheet.PageProps.PageHeight.Value = targetHeight;
+                // Update the page size to the new dimensions
+                page.PageSheet.PageProps.PageWidth.Value = newPageWidth;
+                page.PageSheet.PageProps.PageHeight.Value = newPageHeight;
             }
 
-            // Save the modified diagram in VSDX format
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

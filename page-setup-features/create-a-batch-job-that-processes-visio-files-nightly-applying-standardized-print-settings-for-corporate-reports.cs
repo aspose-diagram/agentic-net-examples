@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Printing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
@@ -24,32 +23,23 @@ class Program
             return;
         }
 
-        // Create output folder if it does not exist.
+        // Verify output folder exists.
         if (!Directory.Exists(outputFolder))
         {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
+            Console.Error.WriteLine($"Output folder does not exist: {outputFolder}");
+            return;
         }
 
-        // Get all Visio files (VSDX, VSD, VDX) in the input folder.
-        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in visioFiles)
+        // Retrieve all Visio files in the input folder.
+        string[] files = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in files)
         {
             // Process only supported Visio extensions.
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx")
-            {
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
                 continue;
-            }
 
-            // Guard: ensure the file exists before processing.
+            // Guard against missing file.
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -58,40 +48,36 @@ class Program
 
             try
             {
-                // Load the diagram.
+                // Load the Visio diagram inside a using block for automatic disposal.
                 using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Iterate through all pages to apply standardized print settings.
+                    // Apply standardized print settings to every page.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Access the PrintProps collection for the current page.
-                        PrintProps printProps = page.PageSheet.PrintProps;
+                        // Set page orientation to Landscape.
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                        // Set orientation to Landscape.
-                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                        // Set scaling to 75 % (both X and Y).
+                        page.PageSheet.PrintProps.ScaleX.Value = 0.75;
+                        page.PageSheet.PrintProps.ScaleY.Value = 0.75;
 
-                        // Set scaling to 75% (both X and Y).
-                        printProps.ScaleX.Value = 0.75;
-                        printProps.ScaleY.Value = 0.75;
+                        // Enable "Fit to sheet" (1 × 1 page per sheet).
+                        page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
+                        page.PageSheet.PrintProps.PagesX.Value = 1;
+                        page.PageSheet.PrintProps.PagesY.Value = 1;
 
-                        // Enable "Fit to sheet" (OnPage) and define a single page layout.
-                        printProps.OnPage.Value = BOOL.True;
-                        printProps.PagesX.Value = 1;
-                        printProps.PagesY.Value = 1;
-
-                        // Set margins (0.5 inch = 36 points) for all sides.
-                        double marginPoints = 0.5 * 72.0; // 1 inch = 72 points.
-                        printProps.PageTopMargin.Value = marginPoints;
-                        printProps.PageBottomMargin.Value = marginPoints;
-                        printProps.PageLeftMargin.Value = marginPoints;
-                        printProps.PageRightMargin.Value = marginPoints;
+                        // Set uniform margins of 0.5 inches (36 points).
+                        page.PageSheet.PrintProps.PageTopMargin.Value = 36;
+                        page.PageSheet.PrintProps.PageBottomMargin.Value = 36;
+                        page.PageSheet.PrintProps.PageLeftMargin.Value = 36;
+                        page.PageSheet.PrintProps.PageRightMargin.Value = 36;
                     }
 
-                    // Determine output file path.
-                    string fileName = Path.GetFileName(filePath);
-                    string outputPath = Path.Combine(outputFolder, fileName);
+                    // Build the output file path (preserve original name, save as VSDX).
+                    string fileName = Path.GetFileNameWithoutExtension(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileName + ".vsdx");
 
-                    // Save the updated diagram back to VSDX format.
+                    // Save the updated diagram with the required overload.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
@@ -99,7 +85,7 @@ class Program
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing of the current file.
+                // Report any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }

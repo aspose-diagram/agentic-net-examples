@@ -1,112 +1,156 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string diagramPath = "input.vsdx";
-        if (!System.IO.File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
+        // Input Visio file path (first argument or hardcoded)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        // Log file path for versioning changes
+        // Log file path for recording cell changes
         string logPath = "cell_changes.log";
 
+        Diagram diagram;
         try
         {
             // Load the diagram
-            Diagram diagram = new Diagram(diagramPath);
+            diagram = new Diagram(diagramPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
 
-            // Build a lookup of shapes by their ID for quick access
-            Dictionary<long, Shape> shapeLookup = new Dictionary<long, Shape>();
+        // Store original values of all user-defined cells for change detection
+        var originalValues = diagram.Pages
+            .Cast<Page>()
+            .SelectMany(page => page.Shapes.Cast<Shape>()
+                .Where(shape => shape.Del == BOOL.False) // ignore deleted shapes
+                .SelectMany(shape => shape.Users.Cast<User>()
+                    .Select(user => new
+                    {
+                        ShapeId = shape.ID,
+                        UserName = user.Name,
+                        OriginalValue = user.Value?.Val ?? string.Empty,
+                        Shape = shape,
+                        User = user
+                    })))
+            .ToDictionary(
+                x => (x.ShapeId, x.UserName),
+                x => x.OriginalValue);
+
+        // Interactive loop for editing user-defined cells
+        while (true)
+        {
+            Console.WriteLine("\n--- User-Defined Cells ---");
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True) continue;
-                    shapeLookup[shape.ID] = shape;
-                }
-            }
-
-            // List all shapes with user-defined cells
-            Console.WriteLine("Shapes with user-defined cells:");
-            foreach (var kvp in shapeLookup)
-            {
-                Shape shape = kvp.Value;
-                if (shape.Users.Count > 0)
-                {
-                    Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.NameU}");
+                    if (shape.Del == BOOL.True) continue; // skip deleted shapes
                     foreach (User user in shape.Users)
                     {
-                        Console.WriteLine($"  Cell: {user.NameU}, Value: {user.Value.Val}");
+                        Console.WriteLine($"Shape ID: {shape.ID}, Cell: {user.Name}, Value: {user.Value?.Val}");
                     }
                 }
             }
 
-            // Prompt user to select a shape ID
-            Console.Write("Enter Shape ID to modify: ");
-            if (!long.TryParse(Console.ReadLine(), out long shapeId) || !shapeLookup.ContainsKey(shapeId))
+            Console.Write("\nEnter Shape ID to edit (or 'exit' to finish): ");
+            string shapeInput = Console.ReadLine();
+            if (string.Equals(shapeInput, "exit", StringComparison.OrdinalIgnoreCase))
+                break;
+
+            if (!int.TryParse(shapeInput, out int targetShapeId))
             {
-                Console.Error.WriteLine("Invalid Shape ID.");
-                return;
+                Console.WriteLine("Invalid Shape ID.");
+                continue;
             }
 
-            Shape targetShape = shapeLookup[shapeId];
-
-            // Prompt user to select a user-defined cell name
-            Console.Write("Enter User-defined Cell NameU to modify: ");
-            string cellNameU = Console.ReadLine();
-            User targetUser = null;
-            foreach (User user in targetShape.Users)
+            Console.Write("Enter User-Defined Cell Name: ");
+            string cellName = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(cellName))
             {
-                if (string.Equals(user.NameU, cellNameU, StringComparison.OrdinalIgnoreCase))
-                {
-                    targetUser = user;
+                Console.WriteLine("Cell name cannot be empty.");
+                continue;
+            }
+
+            // Locate the shape
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                targetShape = page.Shapes.GetShape(targetShapeId);
+                if (targetShape != null && targetShape.Del == BOOL.False)
                     break;
-                }
             }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine($"Shape with ID {targetShapeId} not found.");
+                continue;
+            }
+
+            // Locate the user-defined cell
+            User targetUser = targetShape.Users
+                .Cast<User>()
+                .FirstOrDefault(u => string.Equals(u.Name, cellName, StringComparison.OrdinalIgnoreCase) ||
+                                     string.Equals(u.NameU, cellName, StringComparison.OrdinalIgnoreCase));
 
             if (targetUser == null)
             {
-                Console.Error.WriteLine("User-defined cell not found on the selected shape.");
-                return;
+                Console.WriteLine($"User-defined cell '{cellName}' not found in shape {targetShapeId}.");
+                continue;
             }
 
-            // Show current value and ask for new value
-            string oldValue = targetUser.Value.Val;
-            Console.WriteLine($"Current value of '{cellNameU}': {oldValue}");
-            Console.Write("Enter new value: ");
-            string newValue = Console.ReadLine();
+            string oldValue = targetUser.Value?.Val ?? string.Empty;
+            Console.Write($"Current Value: '{oldValue}'. Enter New Value: ");
+            string newValue = Console.ReadLine() ?? string.Empty;
 
             // Update the cell value
-            targetUser.Value.Val = newValue;
+            try
+            {
+                targetUser.Value.Val = newValue;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to set new value: {ex.Message}");
+                continue;
+            }
 
-            // Save the diagram (overwrite original or save as new)
-            string outputPath = "output.vsdx";
+            // Log the change
+            string logEntry = $"{DateTime.UtcNow:O}\tShapeID:{targetShapeId}\tCell:{cellName}\tOldValue:{oldValue}\tNewValue:{newValue}{Environment.NewLine}";
+            try
+            {
+                File.AppendAllText(logPath, logEntry);
+                Console.WriteLine("Change logged.");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to write log: {ex.Message}");
+            }
+
+            // Update original values dictionary
+            originalValues[(targetShapeId, cellName)] = newValue;
+        }
+
+        // Save the modified diagram
+        string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "output.vsdx");
+        try
+        {
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to {outputPath}");
-
-            // Append change to log file
-            string logEntry = $"{DateTime.Now:u} | ShapeID: {shapeId} | Cell: {cellNameU} | Old: {oldValue} | New: {newValue}";
-            File.AppendAllText(logPath, logEntry + Environment.NewLine);
-            Console.WriteLine($"Change logged to {logPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
 }

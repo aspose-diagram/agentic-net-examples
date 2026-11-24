@@ -7,103 +7,113 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file that contains a CheckBox ActiveX control.
-        string inputPath = "input.vsdx";
+        // Resolve input and output file paths (allow command‑line overrides)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output file where the modified diagram will be saved.
-        string outputPath = "output.vsdx";
-
-        // Variables to keep track of the CheckBox shape across the save/load cycle.
-        long checkBoxShapeId = 0;
-        int checkBoxPageIndex = -1;
+        // Variables that need to survive across the two phases
+        long targetShapeId = 0;
+        CheckValueType expectedValue = CheckValueType.Checked;
+        string expectedCaption = "UnitTestCheckBox";
+        double expectedWidth = 2.0;
+        double expectedHeight = 1.0;
 
         // -----------------------------------------------------------------
-        // Load the diagram, locate the CheckBox ActiveX control, modify it,
-        // and save the diagram.
+        // Phase 1: Load diagram, modify CheckBox properties and save
         // -----------------------------------------------------------------
         try
         {
-            // Load the diagram from the input file.
+            // Load the original diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Search for the first shape that contains a CheckBox ActiveX control.
-            bool found = false;
-            for (int p = 0; p < diagram.Pages.Count && !found; p++)
+            // Locate the first CheckBox ActiveX control
+            Shape? targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[p];
-                for (int s = 0; s < page.Shapes.Count && !found; s++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[s];
-                    // Ensure the shape actually has an ActiveX control.
                     if (shape.ActiveXControl != null && shape.ActiveXControl.Type == ControlType.CheckBox)
                     {
-                        // Store identifiers for later verification.
-                        checkBoxShapeId = shape.ID;
-                        checkBoxPageIndex = p;
-                        // Cast to the specific CheckBox control type.
-                        CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
-                        // Set the checkbox to checked.
-                        checkBox.Value = CheckValueType.Checked;
-                        // Disable the control. // Changed from BOOL.False to false (bool)
-                        checkBox.IsEnabled = false;
-                        found = true;
+                        targetShape = shape;
+                        targetShapeId = shape.ID; // Preserve the shape ID for later lookup
+                        break;
                     }
                 }
+                if (targetShape != null) break;
             }
 
-            if (!found)
+            if (targetShape == null)
             {
                 Console.Error.WriteLine("No CheckBox ActiveX control found in the diagram.");
                 return;
             }
 
-            // Save the modified diagram to the output path.
+            // Cast to the specific CheckBox control type
+            CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)targetShape.ActiveXControl;
+
+            // Modify properties
+            checkBox.Value = expectedValue;          // Set checked state
+            checkBox.Caption = expectedCaption;      // Set caption text
+            checkBox.Width = expectedWidth;          // Set width (in inches)
+            checkBox.Height = expectedHeight;        // Set height (in inches)
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during modification and saving: {ex.Message}");
+            Console.Error.WriteLine($"Error during modification/saving: {ex.Message}");
             return;
         }
 
         // -----------------------------------------------------------------
-        // Reload the saved diagram and verify that the property changes
-        // on the CheckBox ActiveX control persisted.
+        // Phase 2: Reload diagram and verify that changes persisted
         // -----------------------------------------------------------------
         try
         {
-            // Reload the diagram from the output file.
+            // Reload the saved diagram
             Diagram reloadedDiagram = new Diagram(outputPath);
 
-            // Validate stored page index.
-            if (checkBoxPageIndex < 0 || checkBoxPageIndex >= reloadedDiagram.Pages.Count)
-                throw new Exception("Invalid page index after reload.");
+            // Locate the shape by the previously stored ID
+            Shape? reloadedShape = null;
+            foreach (Page page in reloadedDiagram.Pages)
+            {
+                // GetShape returns null if the ID is not present on this page
+                reloadedShape = page.Shapes.GetShape(targetShapeId);
+                if (reloadedShape != null) break;
+            }
 
-            // Retrieve the page and shape by their stored identifiers.
-            Page reloadedPage = reloadedDiagram.Pages[checkBoxPageIndex];
-            Shape reloadedShape = reloadedPage.Shapes.GetShape(checkBoxShapeId);
+            if (reloadedShape == null)
+            {
+                Console.Error.WriteLine("Failed to locate the CheckBox shape after reload.");
+                return;
+            }
 
-            // Ensure the shape still contains a CheckBox ActiveX control.
-            if (reloadedShape.ActiveXControl == null || reloadedShape.ActiveXControl.Type != ControlType.CheckBox)
-                throw new Exception("CheckBox ActiveX control not found after reload.");
-
-            // Cast to the specific CheckBox control type.
+            // Cast to CheckBox control again
             CheckBoxActiveXControl reloadedCheckBox = (CheckBoxActiveXControl)reloadedShape.ActiveXControl;
 
-            // Verify that the Value property persisted as Checked.
-            if (reloadedCheckBox.Value != CheckValueType.Checked)
-                throw new Exception("CheckBox Value property was not persisted correctly.");
+            // Verify each property; throw if any mismatch
+            if (reloadedCheckBox.Value != expectedValue)
+                throw new Exception("Value property was not persisted correctly.");
 
-            // Verify that the IsEnabled property persisted as False. // Changed comparison to false (bool)
-            if (reloadedCheckBox.IsEnabled != false)
-                throw new Exception("CheckBox IsEnabled property was not persisted correctly.");
+            if (reloadedCheckBox.Caption != expectedCaption)
+                throw new Exception("Caption property was not persisted correctly.");
 
-            Console.WriteLine("Property changes on CheckBox ActiveX control were persisted successfully.");
+            if (Math.Abs(reloadedCheckBox.Width - expectedWidth) > 0.001)
+                throw new Exception("Width property was not persisted correctly.");
+
+            if (Math.Abs(reloadedCheckBox.Height - expectedHeight) > 0.001)
+                throw new Exception("Height property was not persisted correctly.");
+
+            // All checks passed
+            Console.WriteLine("CheckBox ActiveX control properties persisted successfully after saving.");
         }
         catch (Exception ex)
         {

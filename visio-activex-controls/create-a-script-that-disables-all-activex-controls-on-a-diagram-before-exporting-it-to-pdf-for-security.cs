@@ -38,22 +38,22 @@ class Program
                         // If the shape hosts an ActiveX control, disable it.
                         if (shape.ActiveXControl != null)
                         {
-                            // The IsEnabled property expects a native bool.
-                            shape.ActiveXControl.IsEnabled = false;
+                            // The IsEnabled property expects a native bool, not Aspose.Diagram.BOOL.
+                            shape.ActiveXControl.IsEnabled = false; // Disabled for security.
                         }
                     }
                 }
 
                 // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the format tracker.
+                // Explicitly set the format tracker as required.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
                 // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
         catch (Exception ex)
         {

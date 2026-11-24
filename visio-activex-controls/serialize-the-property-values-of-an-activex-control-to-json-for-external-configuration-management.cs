@@ -7,118 +7,116 @@ using Aspose.Diagram.ActiveXControls;
 
 class Program
 {
-    // DTO representing serialized ActiveX control properties
-    public class ActiveXControlDto
-    {
-        public string ControlType { get; set; } = string.Empty;
-        public string Caption { get; set; } = string.Empty;
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public bool IsEnabled { get; set; }
-        public Dictionary<string, object> AdditionalProperties { get; set; } = new Dictionary<string, object>();
-    }
-
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output JSON path
-        if (args.Length < 2)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputJsonPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output JSON file path
+        string outputPath = "activex_controls.json";
 
-        string diagramPath = args[0];
-        string jsonOutputPath = args[1];
-
-        // Guard against missing input file
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(inputPath);
 
-            // List to hold serialized control data
-            List<ActiveXControlDto> controlsData = new List<ActiveXControlDto>();
+            // List to hold serialized control information
+            List<ActiveXControlInfo> controlsInfo = new List<ActiveXControlInfo>();
 
             // Iterate through all pages and shapes to find ActiveX controls
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Check if the shape hosts an ActiveX control
+                    // Check if the shape contains an ActiveX control
                     if (shape.ActiveXControl != null)
                     {
-                        var control = shape.ActiveXControl;
-
-                        var dto = new ActiveXControlDto
+                        // Base information common to all controls
+                        var baseInfo = new ActiveXControlInfo
                         {
-                            ControlType = control.Type.ToString(),
-                            Width = control.Width,
-                            Height = control.Height,
-                            // Directly assign the native bool value (removed invalid BOOL comparison)
-                            IsEnabled = control.IsEnabled
+                            ShapeId = shape.ID,
+                            ControlType = shape.ActiveXControl.Type.ToString(),
+                            Width = shape.ActiveXControl.Width,
+                            Height = shape.ActiveXControl.Height
                         };
 
-                        // Capture Caption where the property exists
-                        if (control is CommandButtonActiveXControl btn)
+                        // Retrieve type‑specific properties
+                        switch (shape.ActiveXControl.Type)
                         {
-                            dto.Caption = btn.Caption;
-                        }
-                        else if (control is CheckBoxActiveXControl chk)
-                        {
-                            dto.Caption = chk.Caption;
-                        }
-                        else if (control is LabelActiveXControl lbl)
-                        {
-                            dto.Caption = lbl.Caption;
-                        }
-                        // ImageActiveXControl does not have a Caption property – removed invalid access
+                            case ControlType.CommandButton:
+                                var cmdBtn = (CommandButtonActiveXControl)shape.ActiveXControl;
+                                baseInfo.Caption = cmdBtn.Caption;
+                                break;
 
-                        // Capture type‑specific additional properties
-                        var additional = dto.AdditionalProperties;
+                            case ControlType.TextBox:
+                                var txtBox = (TextBoxActiveXControl)shape.ActiveXControl;
+                                baseInfo.Text = txtBox.Text;
+                                break;
 
-                        // CheckBox specific
-                        if (control is CheckBoxActiveXControl checkBox)
-                        {
-                            // Store enum value as integer
-                            additional["Value"] = (int)checkBox.Value;
+                            case ControlType.CheckBox:
+                                var chkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
+                                // Checked state is represented by CheckValueType.Checked or 0 for unchecked
+                                baseInfo.IsChecked = chkBox.Value == CheckValueType.Checked;
+                                break;
+
+                            case ControlType.Image:
+                                var imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
+                                // Image data is stored as a byte array; we capture its size
+                                baseInfo.ImageSizeBytes = imgCtrl.Picture?.Length ?? 0;
+                                break;
+
+                            case ControlType.SpinButton:
+                                var spinBtn = (SpinButtonActiveXControl)shape.ActiveXControl;
+                                baseInfo.Position = spinBtn.Position;
+                                break;
+
+                            // Add other control types as needed
+                            default:
+                                // For unsupported types, no additional properties are captured
+                                break;
                         }
 
-                        // TextBox specific
-                        if (control is TextBoxActiveXControl textBox)
-                        {
-                            additional["Text"] = textBox.Text;
-                        }
-
-                        // Image specific
-                        if (control is ImageActiveXControl imageCtrl)
-                        {
-                            additional["PictureLength"] = imageCtrl.Picture?.Length ?? 0;
-                        }
-
-                        // Add the DTO to the collection
-                        controlsData.Add(dto);
+                        controlsInfo.Add(baseInfo);
                     }
                 }
             }
 
-            // Serialize the collection to JSON with indentation for readability
+            // Serialize the collected information to JSON
             var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(controlsData, jsonOptions);
-
-            // Write JSON to the specified output file
-            File.WriteAllText(jsonOutputPath, json);
-            Console.WriteLine($"ActiveX control properties have been serialized to: {jsonOutputPath}");
+            string json = JsonSerializer.Serialize(controlsInfo, jsonOptions);
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"ActiveX control data serialized to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // DTO class representing the serializable properties of an ActiveX control
+    private class ActiveXControlInfo
+    {
+        public long ShapeId { get; set; }
+        public string ControlType { get; set; } = string.Empty;
+        public double Width { get; set; }
+        public double Height { get; set; }
+
+        // Optional properties for specific control types
+        public string? Caption { get; set; }
+        public string? Text { get; set; }
+        public bool? IsChecked { get; set; }
+        public int? ImageSizeBytes { get; set; }
+        public int? Position { get; set; }
     }
 }

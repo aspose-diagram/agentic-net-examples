@@ -10,14 +10,14 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -34,36 +34,25 @@ class Program
             // Iterate through all pages and shapes to locate CheckBox ActiveX controls.
             foreach (Page page in diagram.Pages)
             {
-                // Shapes collection is zero‑based; iterate by index.
-                for (int i = 0; i < page.Shapes.Count; i++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[i];
-
                     // Skip shapes that do not contain an ActiveX control.
                     if (shape.ActiveXControl == null)
                         continue;
 
-                    // Identify CheckBox controls via the ControlType enumeration.
+                    // Identify CheckBox controls by their ControlType.
                     if (shape.ActiveXControl.Type == ControlType.CheckBox)
                     {
-                        // Cast to the specific CheckBoxActiveXControl class.
+                        // Cast to the specific CheckBox control class.
                         CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)shape.ActiveXControl;
 
-                        // Disable user interaction. The IsEnabled property is a plain bool,
-                        // so assign the C# literal false (not BOOL.False).
+                        // Disable user interaction. The IsEnabled property is a plain bool.
                         checkBox.IsEnabled = false;
 
-                        Console.WriteLine($"Disabled CheckBox on page {page.ID}, shape index {i}.");
+                        Console.WriteLine($"Disabled CheckBox on shape ID {shape.ID} (Page {page.ID}).");
                         checkBoxFound = true;
-
-                        // Break out of the inner loop if only the first checkbox should be disabled.
-                        // Remove the break statements to disable all checkboxes.
-                        break;
                     }
                 }
-
-                if (checkBoxFound)
-                    break;
             }
 
             if (!checkBoxFound)
@@ -71,13 +60,13 @@ class Program
                 Console.WriteLine("No CheckBox ActiveX control found in the diagram.");
             }
 
-            // Save the modified diagram in VSDX format.
+            // Save the modified diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing.
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

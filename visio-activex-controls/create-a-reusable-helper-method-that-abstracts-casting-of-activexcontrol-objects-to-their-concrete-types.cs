@@ -7,171 +7,111 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least the input diagram path.
-        if (args.Length < 1)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [shapeId]");
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
             return;
         }
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
+        string diagramPath = args[0];
 
-        // Optional shape ID (Visio shape ID is a long).
-        long shapeId = 0;
-        bool hasShapeId = false;
-        if (args.Length >= 2 && long.TryParse(args[1], out long parsedId))
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
         {
-            shapeId = parsedId;
-            hasShapeId = true;
+            Console.Error.WriteLine($"File not found: {diagramPath}");
+            return;
         }
 
         try
         {
-            // Load the diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // For simplicity, work with the first page.
-            if (diagram.Pages.Count == 0)
+            // Iterate through pages and shapes to find a shape with an ActiveX control
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            Page page = diagram.Pages[0];
-
-            // Retrieve the target shape.
-            Shape shape;
-            if (hasShapeId)
-            {
-                shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on the first page.");
-                    return;
-                }
-            }
-            else
-            {
-                // If no ID provided, take the first shape that has an ActiveX control.
-                shape = null;
-                foreach (Shape s in page.Shapes)
-                {
-                    if (s.ActiveXControl != null)
+                    if (shape.ActiveXControl != null)
                     {
-                        shape = s;
-                        break;
+                        // Example: attempt to cast to CommandButtonActiveXControl using the helper
+                        try
+                        {
+                            CommandButtonActiveXControl button = CastActiveXControl<CommandButtonActiveXControl>(shape);
+                            // Modify a property as a demonstration
+                            button.Caption = "Updated Caption";
+                            Console.WriteLine($"Shape ID {shape.ID} - CommandButton caption set to '{button.Caption}'.");
+                        }
+                        catch (InvalidCastException)
+                        {
+                            // The control is not a CommandButton; handle other types as needed
+                            Console.WriteLine($"Shape ID {shape.ID} contains an ActiveX control of type {shape.ActiveXControl.Type}, not a CommandButton.");
+                        }
                     }
                 }
-
-                if (shape == null)
-                {
-                    Console.Error.WriteLine("No shape with an ActiveX control was found on the first page.");
-                    return;
-                }
             }
 
-            // Use the helper to obtain the concrete ActiveX control.
-            object concreteControl = ActiveXHelper.GetConcreteActiveXControl(shape);
-            if (concreteControl == null)
-            {
-                Console.WriteLine("The selected shape does not contain an ActiveX control.");
-                return;
-            }
-
-            // Demonstrate handling of a specific control type.
-            if (concreteControl is CommandButtonActiveXControl button)
-            {
-                // Modify a property specific to CommandButtonActiveXControl.
-                button.Caption = "Clicked!";
-                Console.WriteLine("CommandButton caption updated.");
-            }
-            else if (concreteControl is CheckBoxActiveXControl checkBox)
-            {
-                // Toggle the checkbox state.
-                // Checked = 1, Unchecked = 0 (cast to enum).
-                checkBox.Value = (CheckValueType)1; // Checked
-                Console.WriteLine("CheckBox set to Checked.");
-            }
-            else if (concreteControl is TextBoxActiveXControl textBox)
-            {
-                // Update the displayed text.
-                textBox.Text = "Hello, Aspose!";
-                Console.WriteLine("TextBox text updated.");
-            }
-            else
-            {
-                Console.WriteLine($"ActiveX control of type {concreteControl.GetType().Name} retrieved.");
-            }
-
-            // Save the modified diagram to a new file.
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "Modified_" + Path.GetFileName(inputPath));
+            // Save the modified diagram (example output path)
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "ModifiedOutput.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or runtime exceptions.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Log any Aspose or IO exceptions
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
-}
 
-/// <summary>
-/// Helper class that abstracts casting of ActiveXControl objects to their concrete types.
-/// </summary>
-static class ActiveXHelper
-{
     /// <summary>
-    /// Returns the concrete ActiveX control instance based on the control's <see cref="ControlType"/>.
-    /// If the control type is not recognized, the original <see cref="ActiveXControl"/> instance is returned.
+    /// Generic helper that casts a shape's ActiveXControl to the specified concrete type.
+    /// Throws InvalidCastException if the underlying control type does not match.
     /// </summary>
-    /// <param name="shape">The shape containing the ActiveX control.</param>
-    /// <returns>The concrete control object or null if no control is present.</returns>
-    public static object GetConcreteActiveXControl(Shape shape)
+    /// <typeparam name="T">Concrete ActiveXControl type (e.g., CommandButtonActiveXControl).</typeparam>
+    /// <param name="shape">Shape containing the ActiveX control.</param>
+    /// <returns>Typed ActiveX control instance.</returns>
+    static T CastActiveXControl<T>(Shape shape) where T : ActiveXControl
     {
-        if (shape == null)
-            throw new ArgumentNullException(nameof(shape));
+        if (shape == null) throw new ArgumentNullException(nameof(shape));
 
-        // Retrieve the generic ActiveXControl reference.
-        var genericControl = shape.ActiveXControl;
-        if (genericControl == null)
-            return null;
+        ActiveXControl activeX = shape.ActiveXControl;
+        if (activeX == null)
+            throw new InvalidOperationException("The shape does not contain an ActiveX control.");
 
-        // Determine the concrete type via the ControlType enumeration.
-        switch (genericControl.Type)
-        {
-            case ControlType.CommandButton:
-                return (CommandButtonActiveXControl)genericControl;
-            case ControlType.CheckBox:
-                return (CheckBoxActiveXControl)genericControl;
-            case ControlType.TextBox:
-                return (TextBoxActiveXControl)genericControl;
-            case ControlType.Image:
-                return (ImageActiveXControl)genericControl;
-            case ControlType.ComboBox:
-                return (ComboBoxActiveXControl)genericControl;
-            case ControlType.ListBox:
-                return (ListBoxActiveXControl)genericControl;
-            case ControlType.SpinButton:
-                return (SpinButtonActiveXControl)genericControl;
-            case ControlType.ScrollBar:
-                return (ScrollBarActiveXControl)genericControl;
-            case ControlType.RadioButton:
-                return (RadioButtonActiveXControl)genericControl;
-            case ControlType.Label:
-                return (LabelActiveXControl)genericControl;
-            case ControlType.ToggleButton:
-                return (ToggleButtonActiveXControl)genericControl;
-            // Add additional cases as new control types become available.
-            default:
-                // Return the generic control if a specific mapping is not defined.
-                return genericControl;
-        }
+        // Determine the expected ControlType based on the generic type argument
+        ControlType expectedType;
+
+        if (typeof(T) == typeof(CommandButtonActiveXControl))
+            expectedType = ControlType.CommandButton;
+        else if (typeof(T) == typeof(ImageActiveXControl))
+            expectedType = ControlType.Image;
+        else if (typeof(T) == typeof(CheckBoxActiveXControl))
+            expectedType = ControlType.CheckBox;
+        else if (typeof(T) == typeof(TextBoxActiveXControl))
+            expectedType = ControlType.TextBox;
+        else if (typeof(T) == typeof(ComboBoxActiveXControl))
+            expectedType = ControlType.ComboBox;
+        else if (typeof(T) == typeof(ListBoxActiveXControl))
+            expectedType = ControlType.ListBox;
+        else if (typeof(T) == typeof(SpinButtonActiveXControl))
+            expectedType = ControlType.SpinButton;
+        else if (typeof(T) == typeof(ScrollBarActiveXControl))
+            expectedType = ControlType.ScrollBar;
+        else if (typeof(T) == typeof(RadioButtonActiveXControl))
+            expectedType = ControlType.RadioButton;
+        else if (typeof(T) == typeof(LabelActiveXControl))
+            expectedType = ControlType.Label;
+        else if (typeof(T) == typeof(ToggleButtonActiveXControl))
+            expectedType = ControlType.ToggleButton;
+        else
+            throw new NotSupportedException($"Casting to type {typeof(T).Name} is not supported by the helper.");
+
+        // Verify that the actual control type matches the expected type
+        if (activeX.Type != expectedType)
+            throw new InvalidCastException($"ActiveX control type mismatch. Expected {expectedType}, but found {activeX.Type}.");
+
+        // Safe cast to the concrete type
+        return (T)activeX;
     }
 }

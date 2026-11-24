@@ -3,76 +3,77 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MockPageSavingCallback : IPageSavingCallback
-{
-    // Called before a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"[Callback] Start saving page {args.PageIndex + 1} of {args.PageCount}");
-    }
-
-    // Called after a page has been saved
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"[Callback] End saving page {args.PageIndex + 1} of {args.PageCount}");
-        // Example: stop further processing after the first page (for test purposes)
-        if (args.PageIndex >= 0)
-        {
-            args.HasMorePages = false;
-            Console.WriteLine("[Callback] Requested to stop further page processing.");
-        }
-    }
-}
-
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to a sample Visio file – adjust as needed for your environment
-        string diagramPath = "sample.vsdx";
-        if (!System.IO.File.Exists(diagramPath))
+        // Validate that an input file path was provided.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        // Guard: ensure the input file exists before proceeding
-        if (!File.Exists(diagramPath))
+        string inputPath = args[0];
+
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Create PDF save options and assign the mock callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new MockPageSavingCallback();
-
-            // NOTE: We intentionally do NOT call diagram.Save(...) here.
-            // The purpose is to demonstrate how the callback can be mocked
-            // and injected without performing an actual file save.
-            Console.WriteLine("Mock IPageSavingCallback has been configured. In integration tests, Aspose.Diagram will invoke the callback during PDF export.");
-
-            // OPTIONAL: Simulate callback invocation manually (purely for illustration)
-            // Since the actual args constructors may not be publicly accessible,
-            // this block simply logs what would happen.
-            for (int i = 0; i < 2; i++)
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine($"[Simulation] Would invoke PageStartSaving for page {i + 1}");
-                Console.WriteLine($"[Simulation] Would invoke PageEndSaving for page {i + 1}");
-            }
+                // Configure PDF save options and attach the mock callback.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format tracker.
+                pdfOptions.PageSavingCallback = new MockPageSavingCallback();
 
-            // Clean up resources
-            diagram.Dispose();
+                // Save to a memory stream to avoid writing a physical file.
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    diagram.Save(ms, pdfOptions);
+                    Console.WriteLine($"Diagram processed. Memory stream size: {ms.Length} bytes.");
+                }
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    // Mock implementation of IPageSavingCallback for integration testing.
+    private class MockPageSavingCallback : IPageSavingCallback
+    {
+        // Called before a page starts saving.
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            Console.WriteLine($"[Mock] Start saving page {args.PageIndex + 1} of {args.PageCount}");
+        }
+
+        // Called after a page has finished saving.
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            Console.WriteLine($"[Mock] End saving page {args.PageIndex + 1} of {args.PageCount}");
+
+            // Stop processing after the third page (index 2).
+            if (args.PageIndex >= 2)
+            {
+                // According to the API, HasMorePages is a plain bool.
+                args.HasMorePages = false;
+                Console.WriteLine("[Mock] Stopping further page processing.");
+            }
+            else
+            {
+                // Continue processing remaining pages.
+                args.HasMorePages = true;
+            }
         }
     }
 }

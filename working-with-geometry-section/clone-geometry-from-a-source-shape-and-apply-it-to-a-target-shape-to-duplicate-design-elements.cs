@@ -6,127 +6,106 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "source.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <sourceShapeNameU> <targetShapeNameU>");
             return;
         }
-        // Output Visio file path
-        string outputPath = "cloned_geometry_output.vsdx";
 
-        // Guard against missing input file
-        if (!File.Exists(inputPath))
+        string diagramPath = args[0];
+        string sourceShapeNameU = args[1];
+        string targetShapeNameU = args[2];
+
+        // Guard against missing input file.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Define the names of the source and target shapes
-                string sourceShapeNameU = "SourceShape";
-                string targetShapeNameU = "TargetShape";
+                Shape sourceShape = null;
+                Shape targetShape = null;
 
-                // Locate source shape
-                Shape sourceShape = FindShapeByNameU(diagram, sourceShapeNameU);
+                // Locate source and target shapes by their NameU property.
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.NameU != null && shape.NameU.Equals(sourceShapeNameU, StringComparison.OrdinalIgnoreCase))
+                        {
+                            sourceShape = shape;
+                        }
+
+                        if (shape.NameU != null && shape.NameU.Equals(targetShapeNameU, StringComparison.OrdinalIgnoreCase))
+                        {
+                            targetShape = shape;
+                        }
+
+                        // Break early if both shapes are found.
+                        if (sourceShape != null && targetShape != null)
+                            break;
+                    }
+
+                    if (sourceShape != null && targetShape != null)
+                        break;
+                }
+
+                // Verify that both shapes were found.
                 if (sourceShape == null)
                 {
-                    Console.Error.WriteLine($"Source shape \"{sourceShapeNameU}\" not found.");
+                    Console.Error.WriteLine($"Error: Source shape \"{sourceShapeNameU}\" not found.");
                     return;
                 }
 
-                // Locate target shape
-                Shape targetShape = FindShapeByNameU(diagram, targetShapeNameU);
                 if (targetShape == null)
                 {
-                    Console.Error.WriteLine($"Target shape \"{targetShapeNameU}\" not found.");
+                    Console.Error.WriteLine($"Error: Target shape \"{targetShapeNameU}\" not found.");
                     return;
                 }
 
-                // Ensure both shapes are not deleted
-                if (sourceShape.Del == BOOL.True)
+                // Remove any existing geometry from the target shape.
+                if (targetShape.Geoms != null)
                 {
-                    Console.Error.WriteLine("Source shape is marked as deleted.");
-                    return;
-                }
-                if (targetShape.Del == BOOL.True)
-                {
-                    Console.Error.WriteLine("Target shape is marked as deleted.");
-                    return;
-                }
-
-                // Clear existing geometry of the target shape (if possible)
-                // Attempt to clear the collection; if Clear is not available, remove items individually
-                try
-                {
-                    targetShape.Geoms.Clear();
-                }
-                catch
-                {
-                    // Fallback: remove geometries one by one
                     while (targetShape.Geoms.Count > 0)
                     {
+                        // RemoveAt removes the geometry at the specified index.
                         targetShape.Geoms.RemoveAt(0);
                     }
                 }
 
-                // Clone geometry from source to target
-                for (int i = 0; i < sourceShape.Geoms.Count; i++)
+                // Clone geometry from source shape to target shape.
+                if (sourceShape.Geoms != null)
                 {
-                    // Explicitly type the iterator as Geom
-                    Geom srcGeom = (Geom)sourceShape.Geoms[i];
+                    for (int i = 0; i < sourceShape.Geoms.Count; i++)
+                    {
+                        // Retrieve the source geometry.
+                        Geom srcGeom = (Geom)sourceShape.Geoms[i];
 
-                    // Add the geometry to the target shape
-                    // Assuming Add creates a copy; if it adds reference, this still demonstrates the concept
-                    targetShape.Geoms.Add(srcGeom);
+                        // Add the geometry to the target shape.
+                        // Adding the same Geom instance effectively clones its data.
+                        targetShape.Geoms.Add(srcGeom);
+                    }
                 }
 
-                // Save the modified diagram to the output path using Vsdx format
+                // Define output path.
+                string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "ClonedGeometry.vsdx");
+
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
                 Console.WriteLine($"Geometry cloned from \"{sourceShapeNameU}\" to \"{targetShapeNameU}\" and saved to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Finds a shape by its NameU across all pages of the diagram.
-    /// Returns null if not found.
-    /// </summary>
-    private static Shape FindShapeByNameU(Diagram diagram, string nameU)
-    {
-        // Iterate through each page
-        for (int p = 0; p < diagram.Pages.Count; p++)
-        {
-            Page page = diagram.Pages[p];
-
-            // Iterate through each shape on the page
-            for (int s = 0; s < page.Shapes.Count; s++)
-            {
-                Shape shape = page.Shapes[s];
-
-                // Skip deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Compare the NameU property
-                if (shape.NameU != null && shape.NameU.Equals(nameU, StringComparison.OrdinalIgnoreCase))
-                {
-                    return shape;
-                }
-            }
-        }
-
-        // Shape not found
-        return null;
     }
 }

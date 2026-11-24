@@ -1,11 +1,11 @@
 {
   "category": "working-with-geometry-section",
   "display_name": "Working With Geometry Section",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 36,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -31,6 +31,7 @@
       "task": "Apply a scaling transformation to all vertices in a geometry to uniformly enlarge the shape",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -83,9 +84,7 @@
       "task": "Calculate the total length of all line segments in a geometry to assess diagram complexity metrics",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -136,7 +135,6 @@
       "task": "Copy geometry from a master template shape to multiple target shapes to ensure uniform design standards",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -144,7 +142,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -171,6 +168,7 @@
       "task": "Create asynchronous methods to add geometries to shapes improving performance for large diagram processing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -190,6 +188,7 @@
       "task": "Document geometry changes by adding comments to shapesheet cells describing the modification rationale",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -213,10 +212,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "Layout",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -231,9 +230,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Pages",
         "SVGSaveOptions",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -259,7 +259,6 @@
       "task": "Filter geometries by line type processing only those with solid lines for further customization",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -277,16 +276,11 @@
       "task": "Generate unit tests that verify geometry addition removal and vertex updates produce expected shapesheet values",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
-        "AddShape",
-        "Diagram",
-        "Pages",
-        "Save",
-        "Shapes"
+        "Diagram"
       ]
     },
     {
@@ -312,6 +306,7 @@
       "task": "Implement a transaction scope that commits geometry changes only if all modifications succeed without errors",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -346,7 +341,6 @@
       "task": "Integrate geometry manipulation into a web api endpoint allowing remote clients to modify visio shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -398,7 +392,6 @@
       "task": "Merge multiple geometries within a shape into a single geometry to simplify the shapesheet structure",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -504,6 +497,7 @@
       "task": "Save the modified visio diagram to the original file path persisting all geometry changes",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -573,7 +567,6 @@
       "task": "Update vertex coordinates of an existing geometry to reshape the shape according to new dimensions",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -591,6 +584,7 @@
       "task": "Use a configuration file to specify which geometries to modify enabling flexible runtime behavior",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
         "System.IO",
@@ -600,6 +594,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -614,9 +609,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -625,7 +622,6 @@
       "task": "Validate that the geometry section contains the expected number of geometries after modifications",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],

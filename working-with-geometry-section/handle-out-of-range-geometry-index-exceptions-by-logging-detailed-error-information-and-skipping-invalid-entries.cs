@@ -6,20 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -27,72 +27,59 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             diagram = new Diagram(inputPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram '{inputPath}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram '{inputPath}'. Exception: {ex.Message}");
             return;
         }
 
-        // Iterate through all pages
+        // Iterate over all pages in the diagram.
         for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
         {
             Page page = diagram.Pages[pageIndex];
 
-            // Iterate through all shapes on the page
-            for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+            // Iterate over all shapes on the current page.
+            for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
             {
-                Shape shape = page.Shapes[shapeIndex];
-                long shapeId = shape.ID;
+                Shape shape = page.Shapes[shapeIdx];
 
-                // Iterate through all geometries of the shape
-                for (int geomIndex = 0; geomIndex < shape.Geoms.Count; geomIndex++)
+                // Attempt to access a geometry at a specific index that may be out of range.
+                // This demonstrates handling of out‑of‑range geometry index exceptions.
+                int targetGeomIndex = 10; // Example index that could be invalid.
+
+                try
                 {
-                    // Cast the geometry object to Geom
-                    Geom geom = (Geom)shape.Geoms[geomIndex];
+                    // The Geoms collection returns objects; cast to Geom.
+                    Geom geom = (Geom)shape.Geoms[targetGeomIndex];
 
-                    // Example operation: attempt to delete the segment at index 2
-                    int targetSegmentIndex = 2;
-
-                    try
-                    {
-                        // Access the segment; this may throw if the index is out of range
-                        object segmentObj = geom.CoordinateCol[targetSegmentIndex];
-
-                        // The segment types (MoveTo, LineTo, etc.) share the Del property
-                        // Use dynamic to set the property without knowing the exact type
-                        // (Aspose.Diagram types expose Del as a BOOL field)
-                        var delProperty = segmentObj.GetType().GetProperty("Del");
-                        if (delProperty != null && delProperty.CanWrite)
-                        {
-                            delProperty.SetValue(segmentObj, BOOL.True);
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine($"Segment at page {pageIndex}, shape ID {shapeId}, geometry {geomIndex}, index {targetSegmentIndex} does not have a deletable 'Del' property.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log detailed error information and continue processing
-                        Console.Error.WriteLine($"Error processing segment at page {pageIndex}, shape ID {shapeId}, geometry {geomIndex}, segment index {targetSegmentIndex}: {ex.Message}");
-                        // Skip this invalid entry and continue with the next geometry/segment
-                    }
+                    // Example operation: mark the geometry as deleted.
+                    // This uses the BOOL enum as required by Aspose.Diagram.
+                    geom.Del = BOOL.True;
+                }
+                catch (Exception ex)
+                {
+                    // Log detailed error information and continue with the next shape.
+                    Console.Error.WriteLine(
+                        $"[Error] Page {pageIndex}, Shape ID {shape.ID} (Name: {shape.NameU}) - " +
+                        $"Failed to access geometry at index {targetGeomIndex}. " +
+                        $"Exception: {ex.GetType().Name} - {ex.Message}");
+                    // Optionally, you could log ex.StackTrace for deeper diagnostics.
                 }
             }
         }
 
         try
         {
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to save diagram to '{outputPath}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to save diagram to '{outputPath}'. Exception: {ex.Message}");
         }
     }
 }

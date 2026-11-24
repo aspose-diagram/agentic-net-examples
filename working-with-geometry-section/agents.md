@@ -4,10 +4,10 @@ display_name: Working With Geometry Section
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 36
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 36 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,8 +63,8 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 36 | Core diagram API |
 | `System` | 36 | Console, Math, DateTime, Exception |
 | `System.IO` | 36 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Saving` | 16 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 4 | List, Dictionary, HashSet |
+| `Aspose.Diagram.Saving` | 14 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 3 | List, Dictionary, HashSet |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
 | `Aspose.Diagram.Manipulation` | 1 | Supporting utilities |
 | `System.Threading` | 1 | Supporting utilities |
@@ -110,11 +110,11 @@ class Program
 | [create-a-new-geometry-instance-define-custom-vertices-and-add-it-to-the-target-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/create-a-new-geometry-instance-define-custom-vertices-and-add-it-to-the-target-shape.cs) | `Diagram`, `Pages`, `Save` | Create a new geometry instance define custom vertices and add it to the target shape |
 | [create-asynchronous-methods-to-add-geometries-to-shapes-improving-performance-for-large-diagram-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/create-asynchronous-methods-to-add-geometries-to-shapes-improving-performance-for-large-diagram-processing.cs) | `Diagram`, `Pages`, `Save` | Create asynchronous methods to add geometries to shapes improving performance for large diagram processing |
 | [document-geometry-changes-by-adding-comments-to-shapesheet-cells-describing-the-modification-rationale.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/document-geometry-changes-by-adding-comments-to-shapesheet-cells-describing-the-modification-rationale.cs) | `Diagram`, `Pages`, `Save` | Document geometry changes by adding comments to shapesheet cells describing the modification rationale |
-| [edit-connector-geometry-entries-directly-in-the-shapesheet-to-improve-diagram-routing-clarity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/edit-connector-geometry-entries-directly-in-the-shapesheet-to-improve-diagram-routing-clarity.cs) | `Diagram`, `Layout`, `Pages` | Edit connector geometry entries directly in the shapesheet to improve diagram routing clarity |
-| [export-the-diagram-with-updated-geometries-to-svg-format-to-verify-vector-rendering-accuracy.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/export-the-diagram-with-updated-geometries-to-svg-format-to-verify-vector-rendering-accuracy.cs) | `Diagram`, `SVGSaveOptions`, `Save` | Export the diagram with updated geometries to svg format to verify vector rendering accuracy |
+| [edit-connector-geometry-entries-directly-in-the-shapesheet-to-improve-diagram-routing-clarity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/edit-connector-geometry-entries-directly-in-the-shapesheet-to-improve-diagram-routing-clarity.cs) | `Diagram`, `Pages`, `Save` | Edit connector geometry entries directly in the shapesheet to improve diagram routing clarity |
+| [export-the-diagram-with-updated-geometries-to-svg-format-to-verify-vector-rendering-accuracy.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/export-the-diagram-with-updated-geometries-to-svg-format-to-verify-vector-rendering-accuracy.cs) | `Diagram`, `Pages`, `SVGSaveOptions` | Export the diagram with updated geometries to svg format to verify vector rendering accuracy |
 | [export-the-updated-diagram-to-pdf-format-to-verify-visual-appearance-after-geometry-adjustments.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/export-the-updated-diagram-to-pdf-format-to-verify-visual-appearance-after-geometry-adjustments.cs) | `Diagram`, `PdfSaveOptions`, `Save` | Export the updated diagram to pdf format to verify visual appearance after geometry adjustments |
 | [filter-geometries-by-line-type-processing-only-those-with-solid-lines-for-further-customization.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/filter-geometries-by-line-type-processing-only-those-with-solid-lines-for-further-customization.cs) | `Diagram`, `Pages`, `Save` | Filter geometries by line type processing only those with solid lines for further customization |
-| [generate-unit-tests-that-verify-geometry-addition-removal-and-vertex-updates-produce-expected-shapesheet-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/generate-unit-tests-that-verify-geometry-addition-removal-and-vertex-updates-produce-expected-shapesheet-values.cs) | `AddShape`, `Diagram`, `Pages` | Generate unit tests that verify geometry addition removal and vertex updates produce expected shapesheet values |
+| [generate-unit-tests-that-verify-geometry-addition-removal-and-vertex-updates-produce-expected-shapesheet-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/generate-unit-tests-that-verify-geometry-addition-removal-and-vertex-updates-produce-expected-shapesheet-values.cs) | `Diagram` | Generate unit tests that verify geometry addition removal and vertex updates produce expected shapesheet values |
 | [handle-out-of-range-geometry-index-exceptions-by-logging-detailed-error-information-and-skipping-invalid-entries.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/handle-out-of-range-geometry-index-exceptions-by-logging-detailed-error-information-and-skipping-invalid-entries.cs) | `Diagram`, `Pages`, `Save` | Handle out of range geometry index exceptions by logging detailed error information and skipping invalid entries |
 | [implement-a-transaction-scope-that-commits-geometry-changes-only-if-all-modifications-succeed-without-errors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/implement-a-transaction-scope-that-commits-geometry-changes-only-if-all-modifications-succeed-without-errors.cs) | `Diagram`, `Pages`, `Save` | Implement a transaction scope that commits geometry changes only if all modifications succeed without errors |
 | [implement-conditional-logic-that-updates-geometry-vertices-only-when-shape-width-exceeds-a-defined-threshold.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/implement-conditional-logic-that-updates-geometry-vertices-only-when-shape-width-exceeds-a-defined-threshold.cs) | `Diagram`, `Pages`, `Save` | Implement conditional logic that updates geometry vertices only when shape width exceeds a defined threshold |
@@ -133,7 +133,7 @@ class Program
 | [update-geometry-line-type-property-to-dashed-style-for-visual-distinction-of-connector-paths.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/update-geometry-line-type-property-to-dashed-style-for-visual-distinction-of-connector-paths.cs) | `Diagram`, `Pages`, `Save` | Update geometry line type property to dashed style for visual distinction of connector paths |
 | [update-vertex-coordinates-of-an-existing-geometry-to-reshape-the-shape-according-to-new-dimensions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/update-vertex-coordinates-of-an-existing-geometry-to-reshape-the-shape-according-to-new-dimensions.cs) | `Diagram`, `Pages`, `Save` | Update vertex coordinates of an existing geometry to reshape the shape according to new dimensions |
 | [use-a-configuration-file-to-specify-which-geometries-to-modify-enabling-flexible-runtime-behavior.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/use-a-configuration-file-to-specify-which-geometries-to-modify-enabling-flexible-runtime-behavior.cs) | `Diagram`, `Pages`, `Save` | Use a configuration file to specify which geometries to modify enabling flexible runtime behavior |
-| [use-shapesheet-formulas-to-dynamically-calculate-geometry-vertex-positions-based-on-shape-dimensions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/use-shapesheet-formulas-to-dynamically-calculate-geometry-vertex-positions-based-on-shape-dimensions.cs) | `Diagram`, `Save`, `diagram` | Use shapesheet formulas to dynamically calculate geometry vertex positions based on shape dimensions |
+| [use-shapesheet-formulas-to-dynamically-calculate-geometry-vertex-positions-based-on-shape-dimensions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/use-shapesheet-formulas-to-dynamically-calculate-geometry-vertex-positions-based-on-shape-dimensions.cs) | `AddShape`, `Diagram`, `Pages` | Use shapesheet formulas to dynamically calculate geometry vertex positions based on shape dimensions |
 | [validate-that-the-geometry-section-contains-the-expected-number-of-geometries-after-modifications.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-geometry-section/validate-that-the-geometry-section-contains-the-expected-number-of-geometries-after-modifications.cs) | `Diagram`, `Pages`, `Save` | Validate that the geometry section contains the expected number of geometries after modifications |
 
 ## Command Reference
@@ -222,7 +222,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 - `AddShape`
 - `Diagram`
-- `Layout`
 - `Pages`
 - `PdfSaveOptions`
 - `SVGSaveOptions`
@@ -230,7 +229,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Shapes`
 - `diagram`
 - `page`
-- `shape`
 
 ## Real-World Use Cases
 
@@ -246,7 +244,7 @@ Frequently asked questions about **Working With Geometry Section** in **Aspose.D
 
 **Q: How do I get started with Working With Geometry Section in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -277,4 +275,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 36 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 36 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

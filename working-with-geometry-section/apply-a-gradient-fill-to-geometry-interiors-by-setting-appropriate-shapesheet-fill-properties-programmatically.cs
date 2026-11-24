@@ -29,39 +29,34 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the current page.
-                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[shapeIndex];
-
                     // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
                     // Apply a gradient fill to the shape.
-                    // 1. Set fill pattern to gradient (value 25).
+                    // Set fill pattern to gradient (value 25 as per Visio spec).
                     shape.Fill.FillPattern.Value = 25;
 
-                    // 2. Enable gradient fill.
+                    // Enable gradient fill.
                     shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-                    // 3. Set gradient direction (0 = horizontal, for example).
+                    // Set gradient direction (0 = horizontal, adjust as needed).
                     shape.Fill.GradientFill.GradientDir.Value = 0;
 
-                    // 4. Clear any existing gradient stops.
+                    // Clear any existing gradient stops.
                     shape.Fill.GradientFill.GradientStops.Clear();
 
-                    // 5. Add new gradient stops.
-                    //    First stop at position 0 (start) with blue color.
+                    // Add a start stop (position 0) with red color.
                     shape.Fill.GradientFill.GradientStops.Add(
                         new DoubleValue(0, MeasureConst.NUM),
-                        new ColorValue("#0000FF", MeasureConst.Undefined));
+                        new ColorValue("#FF0000", MeasureConst.Undefined));
 
-                    //    Second stop at position 1 (end) with green color.
+                    // Add an end stop (position 1) with green color.
                     shape.Fill.GradientFill.GradientStops.Add(
                         new DoubleValue(1, MeasureConst.NUM),
                         new ColorValue("#00FF00", MeasureConst.Undefined));

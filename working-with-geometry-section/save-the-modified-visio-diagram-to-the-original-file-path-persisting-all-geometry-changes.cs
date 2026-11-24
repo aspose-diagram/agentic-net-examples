@@ -1,66 +1,66 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the path to the Visio file as the first argument.
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Error: No input file path provided.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
-        string inputPath = args[0];
+        string filePath = args[0];
 
-        // Verify that the input file exists before proceeding.
-        if (!File.Exists(inputPath))
+        // Guard against missing input file.
+        if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"Error: File not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Error: File not found – {filePath}");
             return;
         }
 
-        // Load the diagram inside a using block to ensure proper disposal.
+        // Load the Visio diagram inside a using block to ensure proper disposal.
         try
         {
-            using (Diagram diagram = new Diagram(inputPath))
+            using (Diagram diagram = new Diagram(filePath))
             {
-                // Example geometry modification: shift the first non-deleted shape by (1,1) units.
-                bool shapeMoved = false;
-
-                // Iterate over pages with explicit type declarations (avoid 'var' as per guidelines).
+                // Example geometry modification:
+                // Iterate pages and shapes, find the first non‑deleted shape,
+                // and shift its position by (1,1) units.
+                bool shapeModified = false;
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted.
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Apply a simple translation to the shape's position.
+                        // Apply a simple translation to the shape's PinX and PinY.
                         shape.XForm.PinX.Value += 1.0;
                         shape.XForm.PinY.Value += 1.0;
 
-                        shapeMoved = true;
+                        shapeModified = true;
                         break; // Modify only the first eligible shape.
                     }
 
-                    if (shapeMoved)
-                        break; // Exit after modifying one shape.
+                    if (shapeModified)
+                        break;
                 }
 
-                // Save the diagram back to the original file path, preserving all changes.
-                // Use the appropriate SaveFileFormat enum value (Vsdx for .vsdx files).
-                diagram.Save(inputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram back to the original file path,
+                // persisting all geometry changes.
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during loading, modification, or saving.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Report any errors that occur during loading, modification, or saving.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

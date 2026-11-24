@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input folder and output folder
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
@@ -17,14 +17,14 @@ class Program
         string inputFolder = args[0];
         string outputFolder = args[1];
 
-        // Validate input folder
+        // Verify input folder exists.
         if (!Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Ensure output folder exists
+        // Create output folder if it does not exist.
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -38,82 +38,92 @@ class Program
             }
         }
 
-        // Process each Visio file in the input folder
-        string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
-        foreach (string filePath in files)
+        // Get all VSDX files in the input folder.
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx");
+        if (visioFiles.Length == 0)
         {
-            // Guard against missing file (should not happen after GetFiles, but added per rules)
-            if (!File.Exists(filePath))
+            Console.WriteLine("No Visio files found in the input folder.");
+            return;
+        }
+
+        foreach (string inputPath in visioFiles)
+        {
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
+            if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                Console.Error.WriteLine($"File not found: {inputPath}");
                 continue;
             }
 
             try
             {
-                // Load the diagram inside a using block as required
-                using (Diagram diagram = new Diagram(filePath))
+                // Load the diagram inside a using block (mandatory pattern).
+                using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate through all pages
+                    // Iterate through each page.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the page
+                        // Iterate through each shape on the page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip deleted shapes
+                            // Skip logically deleted shapes.
                             if (shape.Del == BOOL.True)
                                 continue;
 
-                            // Create a new geometry template (simple rectangle matching shape size)
-                            Geom geom = new Geom();
+                            // Clear existing geometry sections.
+                            shape.Geoms.Clear();
 
-                            // Move to the top‑left corner (0,0)
+                            // Create a new geometry representing a unit rectangle (0,0)-(1,1).
+                            Geom rectGeom = new Geom();
+
+                            // Move to the starting point (0,0).
                             MoveTo move = new MoveTo();
-                            move.X.Value = 0;
-                            move.Y.Value = 0;
-                            geom.CoordinateCol.Add(move);
+                            move.X.Value = 0.0;
+                            move.Y.Value = 0.0;
+                            rectGeom.CoordinateCol.Add(move);
 
-                            // Line to top‑right corner (Width,0)
-                            LineTo lineTopRight = new LineTo();
-                            lineTopRight.X.Value = shape.XForm.Width.Value;
-                            lineTopRight.Y.Value = 0;
-                            geom.CoordinateCol.Add(lineTopRight);
+                            // Line to (1,0).
+                            LineTo line1 = new LineTo();
+                            line1.X.Value = 1.0;
+                            line1.Y.Value = 0.0;
+                            rectGeom.CoordinateCol.Add(line1);
 
-                            // Line to bottom‑right corner (Width,Height)
-                            LineTo lineBottomRight = new LineTo();
-                            lineBottomRight.X.Value = shape.XForm.Width.Value;
-                            lineBottomRight.Y.Value = shape.XForm.Height.Value;
-                            geom.CoordinateCol.Add(lineBottomRight);
+                            // Line to (1,1).
+                            LineTo line2 = new LineTo();
+                            line2.X.Value = 1.0;
+                            line2.Y.Value = 1.0;
+                            rectGeom.CoordinateCol.Add(line2);
 
-                            // Line to bottom‑left corner (0,Height)
-                            LineTo lineBottomLeft = new LineTo();
-                            lineBottomLeft.X.Value = 0;
-                            lineBottomLeft.Y.Value = shape.XForm.Height.Value;
-                            geom.CoordinateCol.Add(lineBottomLeft);
+                            // Line to (0,1).
+                            LineTo line3 = new LineTo();
+                            line3.X.Value = 0.0;
+                            line3.Y.Value = 1.0;
+                            rectGeom.CoordinateCol.Add(line3);
 
-                            // Close the path by returning to the start point (0,0)
-                            LineTo closeLine = new LineTo();
-                            closeLine.X.Value = 0;
-                            closeLine.Y.Value = 0;
-                            geom.CoordinateCol.Add(closeLine);
+                            // Close the rectangle by returning to (0,0).
+                            LineTo line4 = new LineTo();
+                            line4.X.Value = 0.0;
+                            line4.Y.Value = 0.0;
+                            rectGeom.CoordinateCol.Add(line4);
 
-                            // Add the new geometry to the shape
-                            shape.Geoms.Add(geom);
+                            // Add the new geometry to the shape.
+                            shape.Geoms.Add(rectGeom);
                         }
                     }
 
-                    // Prepare output file path
-                    string fileName = Path.GetFileName(filePath);
+                    // Prepare output file path.
+                    string fileName = Path.GetFileName(inputPath);
                     string outputPath = Path.Combine(outputFolder, fileName);
 
-                    // Save the modified diagram in VSDX format
+                    // Save the modified diagram in VSDX format.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
                     Console.WriteLine($"Processed and saved: {outputPath}");
                 }
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }
     }

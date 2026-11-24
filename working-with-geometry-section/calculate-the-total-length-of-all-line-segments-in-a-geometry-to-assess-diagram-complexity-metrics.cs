@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -11,30 +9,30 @@ class Program
         // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard against missing file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 double totalLength = 0.0;
 
-                // Iterate through all pages explicitly typed
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip logically deleted shapes
@@ -42,58 +40,42 @@ class Program
                             continue;
 
                         // Iterate through each geometry (Geom) of the shape
-                        foreach (Geom geom in shape.Geoms)
+                        for (int g = 0; g < shape.Geoms.Count; g++)
                         {
-                            // Collect points from the geometry's coordinate collection
-                            List<double> xs = new List<double>();
-                            List<double> ys = new List<double>();
+                            // Cast the geometry object to Geom
+                            Geom geom = (Geom)shape.Geoms[g];
 
-                            // The CoordinateCol holds a mixed collection of vertex objects (MoveTo, LineTo, etc.)
-                            foreach (object vertex in geom.CoordinateCol)
-                            {
-                                if (vertex is MoveTo move)
-                                {
-                                    xs.Add(move.X.Value);
-                                    ys.Add(move.Y.Value);
-                                }
-                                else if (vertex is LineTo line)
-                                {
-                                    xs.Add(line.X.Value);
-                                    ys.Add(line.Y.Value);
-                                }
-                                else if (vertex is ArcTo arc)
-                                {
-                                    xs.Add(arc.X.Value);
-                                    ys.Add(arc.Y.Value);
-                                }
-                                else if (vertex is EllipticalArcTo ell)
-                                {
-                                    xs.Add(ell.X.Value);
-                                    ys.Add(ell.Y.Value);
-                                }
-                                // Other vertex types (e.g., SplineKnot) are ignored for length calculation
-                            }
+                            // Access the collection of coordinates within the geometry
+                            var coordinates = geom.CoordinateCol;
 
-                            // Compute distances between consecutive points
-                            for (int i = 0; i + 1 < xs.Count; i++)
+                            // Sum distances between consecutive coordinate points
+                            for (int i = 1; i < coordinates.Count; i++)
                             {
-                                double dx = xs[i + 1] - xs[i];
-                                double dy = ys[i + 1] - ys[i];
-                                double segmentLength = Math.Sqrt(dx * dx + dy * dy);
-                                totalLength += segmentLength;
+                                // Use dynamic to access X and Y properties of the coordinate objects
+                                dynamic prev = coordinates[i - 1];
+                                dynamic curr = coordinates[i];
+
+                                double x1 = (double)prev.X.Value;
+                                double y1 = (double)prev.Y.Value;
+                                double x2 = (double)curr.X.Value;
+                                double y2 = (double)curr.Y.Value;
+
+                                double dx = x2 - x1;
+                                double dy = y2 - y1;
+                                totalLength += Math.Sqrt(dx * dx + dy * dy);
                             }
                         }
                     }
                 }
 
-                // Output the total length of all line segments
+                // Output the calculated total length
                 Console.WriteLine($"Total length of all line segments: {totalLength}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

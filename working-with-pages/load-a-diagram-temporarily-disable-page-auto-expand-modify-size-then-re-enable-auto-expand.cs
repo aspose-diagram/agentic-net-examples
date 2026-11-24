@@ -1,63 +1,56 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (command‑line arguments or defaults)
+        // Determine input file path (first argument or default)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Define output file paths
+        string outputWithoutAutoExpand = "output_noexpand.vsdx";
+        string outputWithAutoExpand = "output_withexpand.vsdx";
+
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram contains at least one page
-            if (diagram.Pages.Count == 0)
+            // Load the diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // -----------------------------------------------------------------
+                // Step 1: Disable page auto‑expand (DrawingResizeType) before resizing
+                // -----------------------------------------------------------------
+                page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
+
+                // Modify the page size (values are in inches)
+                double newWidthInches = 20.0;
+                double newHeightInches = 15.0;
+                page.PageSheet.PageProps.PageWidth.Value = newWidthInches;
+                page.PageSheet.PageProps.PageHeight.Value = newHeightInches;
+
+                // Save the diagram with auto‑expand disabled
+                diagram.Save(outputWithoutAutoExpand, SaveFileFormat.Vsdx);
+
+                // -----------------------------------------------------------------
+                // Step 2: Re‑enable page auto‑expand and save again
+                // -----------------------------------------------------------------
+                page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.Automatically;
+
+                // Save the diagram with auto‑expand re‑enabled
+                diagram.Save(outputWithAutoExpand, SaveFileFormat.Vsdx);
             }
-
-            // Work with the first page
-            Page page = diagram.Pages[0];
-
-            // ------------------------------------------------------------
-            // Temporarily disable page auto‑expand
-            // ------------------------------------------------------------
-            // Set DrawingResizeType to NotAutomatically to prevent auto‑expansion
-            page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.NotAutomatically;
-
-            // ------------------------------------------------------------
-            // Modify the page size (width and height in inches)
-            // ------------------------------------------------------------
-            double newWidth = 20.0;   // Desired page width in inches
-            double newHeight = 15.0;  // Desired page height in inches
-
-            page.PageSheet.PageProps.PageWidth.Value = newWidth;
-            page.PageSheet.PageProps.PageHeight.Value = newHeight;
-
-            // ------------------------------------------------------------
-            // Re‑enable page auto‑expand
-            // ------------------------------------------------------------
-            // Restore DrawingResizeType to Automatically
-            page.PageSheet.PageProps.DrawingResizeType.Value = DrawingResizeTypeValue.Automatically;
-
-            // ------------------------------------------------------------
-            // Save the modified diagram
-            // ------------------------------------------------------------
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

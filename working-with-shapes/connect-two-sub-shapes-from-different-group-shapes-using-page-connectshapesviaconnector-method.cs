@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -26,74 +26,88 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page (index 0).
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page.
                 Page page = diagram.Pages[0];
 
                 // Find the first two group shapes on the page.
                 Shape groupShape1 = null;
                 Shape groupShape2 = null;
 
-                for (int i = 0; i < page.Shapes.Count; i++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shp = page.Shapes.GetShape(i);
-                    if (shp.Type == TypeValue.Group)
+                    // Detect a group shape via the Type property.
+                    if (shape.Type == TypeValue.Group)
                     {
                         if (groupShape1 == null)
-                            groupShape1 = shp;
+                        {
+                            groupShape1 = shape;
+                        }
                         else if (groupShape2 == null)
                         {
-                            groupShape2 = shp;
+                            groupShape2 = shape;
                             break; // Found both groups.
                         }
                     }
                 }
 
-                // Ensure we have two groups to work with.
                 if (groupShape1 == null || groupShape2 == null)
                 {
-                    Console.Error.WriteLine("The diagram must contain at least two group shapes.");
+                    Console.Error.WriteLine("Could not find two group shapes on the page.");
                     return;
                 }
 
-                // Retrieve the first sub‑shape from each group.
-                if (groupShape1.Shapes.Count == 0 || groupShape2.Shapes.Count == 0)
+                // Retrieve a sub‑shape (first child) from each group.
+                Shape subShape1 = null;
+                foreach (Shape child in groupShape1.Shapes)
+                {
+                    subShape1 = child;
+                    break;
+                }
+
+                Shape subShape2 = null;
+                foreach (Shape child in groupShape2.Shapes)
+                {
+                    subShape2 = child;
+                    break;
+                }
+
+                if (subShape1 == null || subShape2 == null)
                 {
                     Console.Error.WriteLine("One of the groups does not contain any sub‑shapes.");
                     return;
                 }
 
-                Shape subShape1 = groupShape1.Shapes[0];
-                Shape subShape2 = groupShape2.Shapes[0];
-
-                long subShape1Id = subShape1.ID;
-                long subShape2Id = subShape2.ID;
-
                 // Add a dynamic connector shape to the page.
-                // The fourth argument (isCalculate) is a bool, not BOOL.
-                long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
+                // Parameters: pinX, pinY, width, height, master name, isCalculate.
+                long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
 
                 // Connect the two sub‑shapes via the connector.
-                // Using ConnectionPointPlace.Bottom for the source and ConnectionPointPlace.Top for the target.
                 page.ConnectShapesViaConnector(
-                    subShape1Id,
+                    subShape1.ID,
                     ConnectionPointPlace.Bottom,
-                    subShape2Id,
+                    subShape2.ID,
                     ConnectionPointPlace.Top,
                     connectorId);
 
-                // Save the modified diagram to the specified output file.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

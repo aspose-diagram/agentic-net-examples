@@ -9,16 +9,9 @@ class Program
         // Define the output file path for the diagram
         string outputPath = "output.vsdx";
 
-        // Ensure the output directory exists (if a directory is specified)
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
         try
         {
-            // Create a new empty diagram inside a using block (mandatory pattern)
+            // Create a new empty diagram inside a using block
             using (Diagram diagram = new Diagram())
             {
                 // Create a new Window instance
@@ -33,16 +26,16 @@ class Program
                 // Add the configured window to the diagram's window collection
                 diagram.Windows.Add(window);
 
-                // Save the diagram to a VSDX file (requires a SaveFileFormat argument)
+                // Save the diagram to the specified file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine("Diagram saved successfully to " + outputPath);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine("Error: " + ex.Message);
         }
     }
 }

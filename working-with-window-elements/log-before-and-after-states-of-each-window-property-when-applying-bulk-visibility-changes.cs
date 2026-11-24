@@ -8,16 +8,17 @@ class Program
     static void Main(string[] args)
     {
         // Validate arguments
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty,
+                                                                     Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
 
-        // Guard: check input file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -29,70 +30,62 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one window; if none, add a default window
+            // Ensure there is at least one window; add a default one if none exist
             if (diagram.Windows.Count == 0)
             {
-                Window defaultWindow = new Window
+                Window newWindow = new Window
                 {
-                    // Set basic window properties
-                    WindowType = WindowTypeValue.Drawing,
-                    WindowState = (WindowStateValue)0, // Normal state
+                    // Set a reasonable default size and state
                     WindowWidth = 1100,
-                    WindowHeight = 700
+                    WindowHeight = 700,
+                    WindowState = (WindowStateValue)0 // Normal state (cast from 0)
                 };
-                diagram.Windows.Add(defaultWindow);
+                diagram.Windows.Add(newWindow);
             }
 
-            // Iterate over each window and apply bulk visibility changes
+            // Iterate over each window and log before/after states
             foreach (Window window in diagram.Windows)
             {
-                Console.WriteLine($"--- Window ID: {window.ID} ---");
+                // Log before changes
+                Console.WriteLine($"Window ID: {window.ID}");
+                Console.WriteLine("Before Change:");
+                LogWindowProperties(window);
 
-                // ShowGrid
-                BOOL beforeShowGrid = window.ShowGrid;
-                Console.WriteLine($"ShowGrid before: {beforeShowGrid}");
-                window.ShowGrid = BOOL.True;
-                Console.WriteLine($"ShowGrid after: {window.ShowGrid}");
+                // Apply bulk visibility changes (hide all UI aids)
+                window.ShowGrid = BOOL.False;
+                window.ShowGuides = BOOL.False;
+                window.ShowRulers = BOOL.False;
+                window.ShowPageBreaks = BOOL.False;
+                window.DynamicGridEnabled = BOOL.False;
+                window.ShowConnectionPoints = BOOL.False;
 
-                // ShowGuides
-                BOOL beforeShowGuides = window.ShowGuides;
-                Console.WriteLine($"ShowGuides before: {beforeShowGuides}");
-                window.ShowGuides = BOOL.True;
-                Console.WriteLine($"ShowGuides after: {window.ShowGuides}");
-
-                // ShowRulers
-                BOOL beforeShowRulers = window.ShowRulers;
-                Console.WriteLine($"ShowRulers before: {beforeShowRulers}");
-                window.ShowRulers = BOOL.True;
-                Console.WriteLine($"ShowRulers after: {window.ShowRulers}");
-
-                // ShowPageBreaks
-                BOOL beforeShowPageBreaks = window.ShowPageBreaks;
-                Console.WriteLine($"ShowPageBreaks before: {beforeShowPageBreaks}");
-                window.ShowPageBreaks = BOOL.True;
-                Console.WriteLine($"ShowPageBreaks after: {window.ShowPageBreaks}");
-
-                // DynamicGridEnabled
-                BOOL beforeDynamicGrid = window.DynamicGridEnabled;
-                Console.WriteLine($"DynamicGridEnabled before: {beforeDynamicGrid}");
-                window.DynamicGridEnabled = BOOL.True;
-                Console.WriteLine($"DynamicGridEnabled after: {window.DynamicGridEnabled}");
-
-                // ShowConnectionPoints
-                BOOL beforeConnectionPoints = window.ShowConnectionPoints;
-                Console.WriteLine($"ShowConnectionPoints before: {beforeConnectionPoints}");
-                window.ShowConnectionPoints = BOOL.True;
-                Console.WriteLine($"ShowConnectionPoints after: {window.ShowConnectionPoints}");
+                // Log after changes
+                Console.WriteLine("After Change:");
+                LogWindowProperties(window);
+                Console.WriteLine(new string('-', 40));
             }
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Helper method to log relevant window properties
+    private static void LogWindowProperties(Window window)
+    {
+        Console.WriteLine($"  ShowGrid: {(window.ShowGrid == BOOL.True ? "True" : "False")}");
+        Console.WriteLine($"  ShowGuides: {(window.ShowGuides == BOOL.True ? "True" : "False")}");
+        Console.WriteLine($"  ShowRulers: {(window.ShowRulers == BOOL.True ? "True" : "False")}");
+        Console.WriteLine($"  ShowPageBreaks: {(window.ShowPageBreaks == BOOL.True ? "True" : "False")}");
+        Console.WriteLine($"  DynamicGridEnabled: {(window.DynamicGridEnabled == BOOL.True ? "True" : "False")}");
+        Console.WriteLine($"  ShowConnectionPoints: {(window.ShowConnectionPoints == BOOL.True ? "True" : "False")}");
+        Console.WriteLine($"  WindowState: {window.WindowState}");
+        Console.WriteLine($"  WindowWidth: {window.WindowWidth}");
+        Console.WriteLine($"  WindowHeight: {window.WindowHeight}");
     }
 }

@@ -1,55 +1,52 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
             return;
         }
 
-        string filePath = args[0];
+        string inputPath = args[0];
 
-        // Guard against missing input file.
-        if (!File.Exists(filePath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {filePath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(filePath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Check if any windows are present.
-            if (diagram.Windows.Count == 0)
+            // Iterate over all windows and toggle the ShowGrid property
+            foreach (Window window in diagram.Windows)
             {
-                Console.WriteLine("No windows found in the diagram.");
+                // Toggle: if currently True set to False, otherwise set to True
+                window.ShowGrid = (window.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
             }
-            else
-            {
-                // Iterate over all windows and toggle the ShowGrid property.
-                foreach (Window window in diagram.Windows)
-                {
-                    // Toggle: if currently TRUE make it FALSE, otherwise make it TRUE.
-                    window.ShowGrid = (window.ShowGrid == BOOL.True) ? BOOL.False : BOOL.True;
-                }
 
-                // Save the modified diagram back to the same file (overwrites original).
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
-                Console.WriteLine("ShowGrid toggled for all windows and diagram saved.");
-            }
+            // Determine output path (same directory, fixed name)
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output.vsdx");
+
+            // Save the modified diagram in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"ShowGrid toggled for all windows. Saved modified diagram to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

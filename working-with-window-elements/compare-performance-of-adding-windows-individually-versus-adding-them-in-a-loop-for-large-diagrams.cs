@@ -1,110 +1,105 @@
 using System;
 using System.IO;
 using System.Diagnostics;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the number of windows to add for the performance test.
-        const int windowCount = 5000;
-
-        // Define output file path.
-        string outputPath = "PerformanceTestOutput.vsdx";
-
-        // Guard: ensure we can write to the output directory.
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Input Visio file path (must exist)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Number of windows to add for the performance test
+        int windowCount = 1000;
+
+        // ------------------------------------------------------------
+        // Approach 1: Add windows directly to the diagram one by one
+        // ------------------------------------------------------------
         try
         {
-            // Create a new empty diagram inside a using block as required.
-            using (Diagram diagram = new Diagram())
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // -----------------------------------------------------------------
-                // Approach 1: Add windows individually (new Window instance each time).
-                // -----------------------------------------------------------------
-                Stopwatch swIndividual = Stopwatch.StartNew();
+                Stopwatch sw = Stopwatch.StartNew();
 
                 for (int i = 0; i < windowCount; i++)
                 {
-                    // Create a new window and set basic properties.
-                    Window win = new Window
-                    {
-                        // Set the window type to Drawing.
-                        WindowType = WindowTypeValue.Drawing,
-                        // Use Maximized state (Normal state is not available).
-                        WindowState = WindowStateValue.Maximized,
-                        // Assign arbitrary size and position.
-                        WindowWidth = 800,
-                        WindowHeight = 600,
-                        WindowLeft = 0,
-                        WindowTop = 0
-                    };
+                    // Create a new window instance
+                    Window win = new Window();
 
-                    // Add the window to the diagram's window collection.
+                    // Configure basic window properties
+                    win.WindowType = WindowTypeValue.Drawing;
+                    // Normal state is represented by the integer value 0
+                    win.WindowState = (WindowStateValue)0;
+                    win.WindowWidth = 800;
+                    win.WindowHeight = 600;
+
+                    // Add the window to the diagram's window collection
                     diagram.Windows.Add(win);
                 }
 
-                swIndividual.Stop();
-                Console.WriteLine($"Individual addition time for {windowCount} windows: {swIndividual.ElapsedMilliseconds} ms");
+                sw.Stop();
+                Console.WriteLine($"Approach 1 (individual adds) elapsed: {sw.ElapsedMilliseconds} ms");
 
-                // -----------------------------------------------------------------
-                // Approach 2: Add windows in a loop using a pre‑created window template.
-                // This reduces object allocation overhead by reusing a single Window instance.
-                // -----------------------------------------------------------------
-                // First, clear previously added windows to have a fair comparison.
-                diagram.Windows.Clear();
-
-                Stopwatch swLoop = Stopwatch.StartNew();
-
-                // Create a template window once.
-                Window templateWin = new Window
-                {
-                    WindowType = WindowTypeValue.Drawing,
-                    WindowState = WindowStateValue.Maximized,
-                    WindowWidth = 800,
-                    WindowHeight = 600,
-                    WindowLeft = 0,
-                    WindowTop = 0
-                };
-
-                for (int i = 0; i < windowCount; i++)
-                {
-                    // Clone the template window for each addition.
-                    // Since Window does not provide a Clone method, we create a new instance
-                    // and copy the property values manually (still cheaper than setting all
-                    // properties from scratch each iteration).
-                    Window win = new Window
-                    {
-                        WindowType = templateWin.WindowType,
-                        WindowState = templateWin.WindowState,
-                        WindowWidth = templateWin.WindowWidth,
-                        WindowHeight = templateWin.WindowHeight,
-                        WindowLeft = templateWin.WindowLeft,
-                        WindowTop = templateWin.WindowTop
-                    };
-
-                    diagram.Windows.Add(win);
-                }
-
-                swLoop.Stop();
-                Console.WriteLine($"Loop addition time for {windowCount} windows: {swLoop.ElapsedMilliseconds} ms");
-
-                // Save the resulting diagram (contains windows from the second approach).
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                // Save the resulting diagram
+                diagram.Save("individual_windows.vsdx", SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error during Approach 1: {ex.Message}");
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // Approach 2: Create all windows first, then add them in a batch loop
+        // ------------------------------------------------------------
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+
+                // First, create all windows and store them in a list
+                List<Window> windows = new List<Window>(windowCount);
+                for (int i = 0; i < windowCount; i++)
+                {
+                    Window win = new Window();
+                    win.WindowType = WindowTypeValue.Drawing;
+                    win.WindowState = (WindowStateValue)0;
+                    win.WindowWidth = 800;
+                    win.WindowHeight = 600;
+                    windows.Add(win);
+                }
+
+                // Now add all prepared windows to the diagram
+                foreach (Window win in windows)
+                {
+                    diagram.Windows.Add(win);
+                }
+
+                sw.Stop();
+                Console.WriteLine($"Approach 2 (batch add) elapsed: {sw.ElapsedMilliseconds} ms");
+
+                // Save the resulting diagram
+                diagram.Save("batch_windows.vsdx", SaveFileFormat.Vsdx);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during Approach 2: {ex.Message}");
+            return;
         }
     }
 }

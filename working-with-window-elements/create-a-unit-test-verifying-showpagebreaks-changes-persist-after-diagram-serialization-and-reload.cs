@@ -6,66 +6,85 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define a temporary file path for the test diagram
-        string tempFilePath = Path.Combine(Path.GetTempPath(), "ShowPageBreaksTest.vsdx");
-
-        // Ensure any previous test file is removed
-        if (File.Exists(tempFilePath))
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            File.Delete(tempFilePath);
+            Console.Error.WriteLine("Error: No input diagram file path provided.");
+            return;
         }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            return;
+        }
+
+        // Prepare a temporary output path for the serialized diagram
+        string tempPath = Path.ChangeExtension(Path.GetTempFileName(), ".vsdx");
 
         try
         {
-            // ---------- Create a new diagram and set ShowPageBreaks ----------
-            using (Diagram diagram = new Diagram())
+            // Load the original diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one window; add one if necessary
+                // Guard: ensure the diagram has at least one window
                 if (diagram.Windows.Count == 0)
                 {
-                    Window newWindow = new Window();
-                    diagram.Windows.Add(newWindow);
+                    Console.Error.WriteLine("Error: Diagram contains no windows.");
+                    return;
                 }
 
-                // Set ShowPageBreaks to TRUE on the first window
+                // Access the first window and set ShowPageBreaks to TRUE
                 Window window = diagram.Windows[0];
                 window.ShowPageBreaks = BOOL.True;
 
-                // Save the diagram to the temporary file
-                diagram.Save(tempFilePath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the temporary file
+                diagram.Save(tempPath, SaveFileFormat.Vsdx);
             }
 
-            // Guard: verify the file was created
-            if (!File.Exists(tempFilePath))
+            // Reload the diagram from the temporary file to verify persistence
+            using (Diagram reloadedDiagram = new Diagram(tempPath))
             {
-                Console.Error.WriteLine("Failed to create the test diagram file.");
-                return;
-            }
-
-            // ---------- Reload the diagram and verify the setting ----------
-            using (Diagram loadedDiagram = new Diagram(tempFilePath))
-            {
-                // Ensure the loaded diagram contains a window
-                if (loadedDiagram.Windows.Count == 0)
+                // Guard: ensure the reloaded diagram has at least one window
+                if (reloadedDiagram.Windows.Count == 0)
                 {
-                    throw new Exception("No windows found in the loaded diagram.");
+                    Console.Error.WriteLine("Error: Reloaded diagram contains no windows.");
+                    return;
                 }
 
-                // Retrieve the window and check ShowPageBreaks value
-                Window loadedWindow = loadedDiagram.Windows[0];
-                if (loadedWindow.ShowPageBreaks != BOOL.True)
+                // Access the first window and verify ShowPageBreaks is TRUE
+                Window reloadedWindow = reloadedDiagram.Windows[0];
+                if (reloadedWindow.ShowPageBreaks != BOOL.True)
                 {
-                    throw new Exception("ShowPageBreaks value was not persisted after reload.");
+                    throw new Exception("ShowPageBreaks property did not persist after save and reload.");
                 }
 
-                // If the check passes, output success message
-                Console.WriteLine("ShowPageBreaks persisted correctly after serialization and reload.");
+                // If verification passes, output success message
+                Console.WriteLine("Success: ShowPageBreaks property persisted correctly after serialization.");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine("Error: " + ex.Message);
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up the temporary file if it exists
+            if (File.Exists(tempPath))
+            {
+                try
+                {
+                    File.Delete(tempPath);
+                }
+                catch
+                {
+                    // Suppress any cleanup errors
+                }
+            }
         }
     }
 }

@@ -7,46 +7,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio file – replace with your actual file path or pass as an argument.
+        // Determine the input file path (first argument or default)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        // Guard against missing file.
+        // Guard: ensure the file exists before proceeding
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Error: File not found -> {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there are windows to enumerate.
+                // Check if any windows are present
                 if (diagram.Windows == null || diagram.Windows.Count == 0)
                 {
-                    Console.WriteLine("No windows found in the diagram.");
-                    return;
+                    Console.WriteLine("No Window objects found in the diagram.");
                 }
-
-                // Iterate over each Window object in the WindowCollection.
-                foreach (Window window in diagram.Windows)
+                else
                 {
-                    // Output basic window information.
-                    Console.WriteLine("Window ID: " + window.ID);
-                    Console.WriteLine("Window Type: " + window.WindowType);
-                    Console.WriteLine("Window Width: " + window.WindowWidth);
-                    Console.WriteLine("Window Height: " + window.WindowHeight);
-                    Console.WriteLine("Window State: " + window.WindowState);
-                    Console.WriteLine(new string('-', 40));
+                    // Iterate over each Window in the WindowCollection
+                    foreach (Window window in diagram.Windows)
+                    {
+                        // Output basic properties of the window
+                        Console.WriteLine($"Window ID: {window.ID}");
+                        Console.WriteLine($"Window Type: {window.WindowType}");
+                        Console.WriteLine($"Window State: {window.WindowState}");
+                        Console.WriteLine($"Window Width: {window.WindowWidth}");
+                        Console.WriteLine($"Window Height: {window.WindowHeight}");
+                        Console.WriteLine(new string('-', 40));
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine("An error occurred while processing the diagram:");
-            Console.Error.WriteLine(ex.Message);
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

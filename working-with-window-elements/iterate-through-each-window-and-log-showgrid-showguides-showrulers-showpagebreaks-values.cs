@@ -6,44 +6,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments
+        // Expect the Visio file path as the first argument.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string filePath = args[0];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the file exists before attempting to load.
         if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(filePath);
 
-            // Iterate through each Window in the diagram
+            // Check if any windows are present.
+            if (diagram.Windows == null || diagram.Windows.Count == 0)
+            {
+                Console.WriteLine("No windows found in the diagram.");
+                return;
+            }
+
+            // Iterate through each Window and log the required BOOL properties.
             foreach (Window window in diagram.Windows)
             {
-                // Log window identifier
+                // Log window identifier for clarity.
                 Console.WriteLine($"Window ID: {window.ID}");
 
-                // Log ShowGrid, ShowGuides, ShowRulers, ShowPageBreaks values
-                Console.WriteLine($"ShowGrid: {window.ShowGrid}");
-                Console.WriteLine($"ShowGuides: {window.ShowGuides}");
-                Console.WriteLine($"ShowRulers: {window.ShowRulers}");
-                Console.WriteLine($"ShowPageBreaks: {window.ShowPageBreaks}");
-                Console.WriteLine(); // Blank line for readability
+                // Log ShowGrid value.
+                Console.WriteLine($"  ShowGrid: {window.ShowGrid}");
+
+                // Log ShowGuides value.
+                Console.WriteLine($"  ShowGuides: {window.ShowGuides}");
+
+                // Log ShowRulers value.
+                Console.WriteLine($"  ShowRulers: {window.ShowRulers}");
+
+                // Log ShowPageBreaks value.
+                Console.WriteLine($"  ShowPageBreaks: {window.ShowPageBreaks}");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

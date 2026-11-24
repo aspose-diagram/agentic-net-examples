@@ -6,59 +6,48 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure at least the file path argument is provided
+        // Validate command‑line arguments
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: <program> <VisioFilePath> [on|off]");
+            Console.Error.WriteLine("Usage: <program> <VisioFilePath> [show|hide]");
             return;
         }
 
         string filePath = args[0];
-
-        // Guard: verify the Visio file exists
+        // Guard against missing input file
         if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
             return;
         }
 
-        // Determine the desired ShowRulers setting from arguments or interactive input
-        string toggleInput = args.Length > 1 ? args[1] : null;
-        if (string.IsNullOrWhiteSpace(toggleInput))
+        // Determine the desired ShowRulers state
+        BOOL desiredState;
+        if (args.Length >= 2)
         {
-            Console.Write("Enter 'on' to show rulers, 'off' to hide: ");
-            toggleInput = Console.ReadLine();
-        }
-
-        if (toggleInput == null)
-        {
-            Console.Error.WriteLine("No input provided for ShowRulers setting.");
-            return;
-        }
-
-        toggleInput = toggleInput.Trim().ToLowerInvariant();
-
-        BOOL showRulersValue;
-        if (toggleInput == "on" || toggleInput == "true" || toggleInput == "1" || toggleInput == "show")
-        {
-            showRulersValue = BOOL.True;
-        }
-        else if (toggleInput == "off" || toggleInput == "false" || toggleInput == "0" || toggleInput == "hide")
-        {
-            showRulersValue = BOOL.False;
+            if (!TryParseShowRulersArgument(args[1], out desiredState))
+            {
+                Console.Error.WriteLine("Error: Invalid ShowRulers argument. Use 'show', 'hide', 'true', 'false', '1', or '0'.");
+                return;
+            }
         }
         else
         {
-            Console.Error.WriteLine("Invalid value for ShowRulers. Use 'on' or 'off'.");
-            return;
+            Console.Write("Enter desired ShowRulers state (show/hide): ");
+            string input = Console.ReadLine()?.Trim() ?? string.Empty;
+            if (!TryParseShowRulersArgument(input, out desiredState))
+            {
+                Console.Error.WriteLine("Error: Invalid input. Expected 'show' or 'hide'.");
+                return;
+            }
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Ensure there is at least one Window object; create one if missing
+                // Ensure there is at least one window; create one if none exist
                 if (diagram.Windows.Count == 0)
                 {
                     Window newWindow = new Window();
@@ -67,20 +56,43 @@ class Program
                     diagram.Windows.Add(newWindow);
                 }
 
-                // Access the first window and set its ShowRulers property
-                Window window = diagram.Windows[0];
-                window.ShowRulers = showRulersValue;
+                // Toggle the ShowRulers property on the first window
+                diagram.Windows[0].ShowRulers = desiredState;
 
-                // Save the modified diagram, overwriting the original file
+                // Save the diagram back to the original file (overwrites)
                 diagram.Save(filePath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"ShowRulers set to {(showRulersValue == BOOL.True ? "On" : "Off")} for file: {filePath}");
+            Console.WriteLine($"Successfully set ShowRulers to {(desiredState == BOOL.True ? "True" : "False")} and saved the file.");
         }
         catch (Exception ex)
         {
-            // Output any errors encountered during processing
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+        }
+    }
+
+    // Helper method to convert user input into BOOL values
+    private static bool TryParseShowRulersArgument(string arg, out BOOL result)
+    {
+        result = BOOL.False; // default
+        if (string.IsNullOrWhiteSpace(arg))
+            return false;
+
+        string normalized = arg.Trim().ToLowerInvariant();
+        switch (normalized)
+        {
+            case "show":
+            case "true":
+            case "1":
+                result = BOOL.True;
+                return true;
+            case "hide":
+            case "false":
+            case "0":
+                result = BOOL.False;
+                return true;
+            default:
+                return false;
         }
     }
 }

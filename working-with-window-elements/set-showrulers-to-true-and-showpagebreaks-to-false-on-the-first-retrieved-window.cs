@@ -16,10 +16,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -28,30 +28,28 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there is at least one Window object.
-                if (diagram.Windows == null || diagram.Windows.Count == 0)
+                // Retrieve the first Window object from the collection.
+                if (diagram.Windows.Count == 0)
                 {
-                    Console.Error.WriteLine("No Window objects found in the diagram.");
+                    Console.Error.WriteLine("Error: No windows found in the diagram.");
                     return;
                 }
 
-                // Retrieve the first Window.
                 Window firstWindow = diagram.Windows[0];
 
-                // Set ShowRulers to true and ShowPageBreaks to false using BOOL values.
+                // Set ShowRulers to true and ShowPageBreaks to false using BOOL enum.
                 firstWindow.ShowRulers = BOOL.True;
                 firstWindow.ShowPageBreaks = BOOL.False;
 
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
-
-            Console.WriteLine("Window properties updated and diagram saved successfully.");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

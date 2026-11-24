@@ -8,40 +8,36 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
-
-        // Determine output path (optional: same folder with suffix).
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_RulersEnabled.vsdx");
 
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there are windows to process.
+            // Ensure there is at least one window; otherwise, nothing to process.
             if (diagram.Windows == null || diagram.Windows.Count == 0)
             {
                 Console.WriteLine("The diagram contains no windows to process.");
             }
             else
             {
-                // Use LINQ to filter windows where ShowRulers is false.
+                // Use LINQ to find windows where ShowRulers is FALSE.
                 var windowsToEnable = diagram.Windows
                     .Cast<Window>()
                     .Where(w => w.ShowRulers == BOOL.False)

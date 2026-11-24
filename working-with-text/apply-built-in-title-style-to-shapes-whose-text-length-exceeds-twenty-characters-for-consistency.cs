@@ -7,25 +7,33 @@ class Program
     static void Main(string[] args)
     {
         // Validate input arguments
-        if (args.Length == 0)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-
-        // Guard: check if the input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Determine output path (same folder with suffix "_styled.vsdx")
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_styled.vsdx");
+        // Determine output path
+        string outputPath;
+        if (args.Length >= 2 && !string.IsNullOrWhiteSpace(args[1]))
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Append suffix if no output path provided
+            string dir = Path.GetDirectoryName(inputPath);
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{nameWithoutExt}_TitleStyled.vsdx");
+        }
 
         try
         {
@@ -45,7 +53,7 @@ class Program
 
             if (titleStyle == null)
             {
-                Console.Error.WriteLine("The 'Title' style sheet was not found in the diagram.");
+                Console.Error.WriteLine("Error: \"Title\" style sheet not found in the diagram.");
                 return;
             }
 
@@ -54,15 +62,8 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Build plain text from the shape's Txt objects
-                    string shapeText = string.Empty;
-                    foreach (object item in shape.Text.Value)
-                    {
-                        if (item is Txt txt)
-                        {
-                            shapeText += txt.Text;
-                        }
-                    }
+                    // Retrieve plain text of the shape
+                    string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
                     // Apply the Title style if text length exceeds 20 characters
                     if (shapeText.Length > 20)
@@ -74,10 +75,11 @@ class Program
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

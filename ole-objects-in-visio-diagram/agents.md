@@ -4,10 +4,10 @@ display_name: Ole Objects In Visio Diagram
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 30
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 30 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -64,13 +64,13 @@ You always use explicit types (never `var`), include all required `using` direct
 | `System` | 30 | Console, Math, DateTime, Exception |
 | `System.IO` | 30 | File, Stream, Path, Directory operations |
 | `Aspose.Diagram.Saving` | 7 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 7 | List, Dictionary, HashSet |
+| `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
 | `System.IO.Compression` | 2 | Supporting utilities |
-| `System.Text` | 2 | StringBuilder |
 | `Aspose.Cells` | 1 | Supporting utilities |
-| `System.Linq` | 1 | LINQ queries on collections |
-| `System.Security.Cryptography` | 1 | Supporting utilities |
+| `Aspose.Cells.Saving` | 1 | Supporting utilities |
+| `System.Text` | 1 | StringBuilder |
 | `System.Text.Json` | 1 | JSON serialization |
+| `System.Linq` | 1 | LINQ queries on collections |
 
 ## Common Code Pattern
 
@@ -109,7 +109,7 @@ class Program
 | [compress-ole-object-streams-using-zip-compression-before-saving-the-visio-diagram-to-reduce-file-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/compress-ole-object-streams-using-zip-compression-before-saving-the-visio-diagram-to-reduce-file-size.cs) | `Diagram`, `Pages`, `Save` | Compress ole object streams using zip compression before saving the visio diagram to reduce file size |
 | [configure-the-diagram-saver-to-retain-ole-objects-when-converting-the-visio-file-to-svg-format.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/configure-the-diagram-saver-to-retain-ole-objects-when-converting-the-visio-file-to-svg-format.cs) | `Diagram`, `SVGSaveOptions`, `Save` | Configure the diagram saver to retain ole objects when converting the visio file to svg format |
 | [convert-embedded-ole-excel-worksheets-to-csv-files-while-preserving-cell-formatting-information.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/convert-embedded-ole-excel-worksheets-to-csv-files-while-preserving-cell-formatting-information.cs) | `Diagram`, `Pages`, `Shapes` | Convert embedded ole excel worksheets to csv files while preserving cell formatting information |
-| [create-a-copy-of-a-visio-diagram-with-all-ole-objects-converted-to-embedded-images.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/create-a-copy-of-a-visio-diagram-with-all-ole-objects-converted-to-embedded-images.cs) | `AddShape`, `Diagram`, `ImageSaveOptions` | Create a copy of a visio diagram with all ole objects converted to embedded images |
+| [create-a-copy-of-a-visio-diagram-with-all-ole-objects-converted-to-embedded-images.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/create-a-copy-of-a-visio-diagram-with-all-ole-objects-converted-to-embedded-images.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Create a copy of a visio diagram with all ole objects converted to embedded images |
 | [delete-ole-objects-whose-embedded-type-matches-excel-worksheets-from-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/delete-ole-objects-whose-embedded-type-matches-excel-worksheets-from-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Delete ole objects whose embedded type matches excel worksheets from the diagram |
 | [detect-and-log-ole-objects-that-reference-missing-external-files-during-diagram-validation.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/detect-and-log-ole-objects-that-reference-missing-external-files-during-diagram-validation.cs) | `Diagram`, `Pages`, `Shapes` | Detect and log ole objects that reference missing external files during diagram validation |
 | [enable-lazy-loading-of-ole-objects-to-improve-initial-diagram-opening-performance.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/enable-lazy-loading-of-ole-objects-to-improve-initial-diagram-opening-performance.cs) | `Diagram`, `Pages`, `Save` | Enable lazy loading of ole objects to improve initial diagram opening performance |
@@ -125,7 +125,7 @@ class Program
 | [read-ole-object-metadata-such-as-source-file-name-and-creation-date-for-audit-purposes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/read-ole-object-metadata-such-as-source-file-name-and-creation-date-for-audit-purposes.cs) | `Diagram`, `Pages`, `Shapes` | Read ole object metadata such as source file name and creation date for audit purposes |
 | [render-a-preview-image-of-each-ole-object-and-embed-it-as-a-shape-thumbnail.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/render-a-preview-image-of-each-ole-object-and-embed-it-as-a-shape-thumbnail.cs) | `AddShape`, `Diagram`, `ImageSaveOptions` | Render a preview image of each ole object and embed it as a shape thumbnail |
 | [replace-a-specific-ole-object-identified-by-its-index-with-a-new-external-pdf-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/replace-a-specific-ole-object-identified-by-its-index-with-a-new-external-pdf-file.cs) | `Diagram`, `Pages`, `Save` | Replace a specific ole object identified by its index with a new external pdf file |
-| [replace-all-ole-objects-of-type-powerpoint-with-a-placeholder-image-to-reduce-diagram-complexity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/replace-all-ole-objects-of-type-powerpoint-with-a-placeholder-image-to-reduce-diagram-complexity.cs) | `AddShape`, `Diagram`, `Pages` | Replace all ole objects of type powerpoint with a placeholder image to reduce diagram complexity |
+| [replace-all-ole-objects-of-type-powerpoint-with-a-placeholder-image-to-reduce-diagram-complexity.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/replace-all-ole-objects-of-type-powerpoint-with-a-placeholder-image-to-reduce-diagram-complexity.cs) | `Diagram`, `Pages`, `Save` | Replace all ole objects of type powerpoint with a placeholder image to reduce diagram complexity |
 | [serialize-ole-object-information-into-json-format-for-integration-with-external-inventory-systems.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/serialize-ole-object-information-into-json-format-for-integration-with-external-inventory-systems.cs) | `Diagram`, `Pages`, `Shapes` | Serialize ole object information into json format for integration with external inventory systems |
 | [set-ole-object-display-mode-to-icon-only-and-customize-the-icon-caption-for-better-readability.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/set-ole-object-display-mode-to-icon-only-and-customize-the-icon-caption-for-better-readability.cs) | `Diagram`, `Pages`, `Save` | Set ole object display mode to icon only and customize the icon caption for better readability |
 | [update-ole-object-hyperlinks-to-point-to-a-new-network-share-location-across-the-diagram.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/ole-objects-in-visio-diagram/update-ole-object-hyperlinks-to-point-to-a-new-network-share-location-across-the-diagram.cs) | `Diagram`, `Pages`, `Save` | Update ole object hyperlinks to point to a new network share location across the diagram |
@@ -225,6 +225,7 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Shapes`
 - `diagram`
 - `page`
+- `shape`
 
 ## Real-World Use Cases
 
@@ -240,7 +241,7 @@ Frequently asked questions about **Ole Objects In Visio Diagram** in **Aspose.Di
 
 **Q: How do I get started with Ole Objects In Visio Diagram in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -271,4 +272,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 30 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

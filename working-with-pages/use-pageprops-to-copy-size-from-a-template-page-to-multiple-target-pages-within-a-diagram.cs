@@ -6,70 +6,55 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least three arguments: diagramPath, templatePageName, targetPageName(s)
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <templatePageName> <targetPageName1> [<targetPageName2> ...]");
-            return;
-        }
+        // Input and output file paths (can be provided via command line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "template_diagram.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "updated_diagram.vsdx";
 
-        string diagramPath = args[0];
-        string templatePageName = args[1];
-
-        // Guard: ensure the diagram file exists
-        if (!File.Exists(diagramPath))
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
             // Load the diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the template page by name
-            Page templatePage = diagram.Pages.GetPage(templatePageName);
-            if (templatePage == null)
+            // Ensure the diagram contains at least one page to act as the template
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine($"Error: Template page '{templatePageName}' not found.");
+                Console.Error.WriteLine("The diagram does not contain any pages.");
                 return;
             }
 
-            // Read width and height from the template page's PageProps
+            // Use the first page as the template for size copying
+            Page templatePage = diagram.Pages[0];
             double templateWidth = templatePage.PageSheet.PageProps.PageWidth.Value;
             double templateHeight = templatePage.PageSheet.PageProps.PageHeight.Value;
 
-            // Iterate over each target page name provided in the arguments
-            for (int i = 2; i < args.Length; i++)
+            // Iterate over all pages and copy the size from the template page
+            for (int i = 0; i < diagram.Pages.Count; i++)
             {
-                string targetPageName = args[i];
-                Page targetPage = diagram.Pages.GetPage(targetPageName);
-                if (targetPage == null)
-                {
-                    Console.Error.WriteLine($"Warning: Target page '{targetPageName}' not found. Skipping.");
+                Page page = diagram.Pages[i];
+
+                // Skip the template page itself (optional; remove if you want to set it as well)
+                if (page == templatePage)
                     continue;
-                }
 
-                // Copy size from the template page to the target page
-                targetPage.PageSheet.PageProps.PageWidth.Value = templateWidth;
-                targetPage.PageSheet.PageProps.PageHeight.Value = templateHeight;
-
-                Console.WriteLine($"Copied size to page '{targetPageName}'.");
+                // Copy width and height values
+                page.PageSheet.PageProps.PageWidth.Value = templateWidth;
+                page.PageSheet.PageProps.PageHeight.Value = templateHeight;
             }
 
-            // Prepare output path (original name with "_updated" suffix)
-            string directory = Path.GetDirectoryName(diagramPath);
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(diagramPath);
-            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_updated.vsdx");
-
-            // Save the modified diagram in VSDX format
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

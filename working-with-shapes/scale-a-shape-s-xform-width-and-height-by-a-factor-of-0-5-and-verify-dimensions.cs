@@ -6,96 +6,88 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output_scaled.vsdx";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the input file
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
+            // Flag to indicate whether the target shape was found
+            bool shapeFound = false;
+
+            // Iterate through all pages and shapes to locate the first non-deleted shape named "Rectangle"
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Check shape name (NameU) – adjust as needed for your diagram
+                    if (shape.NameU == "Rectangle")
+                    {
+                        shapeFound = true;
+
+                        // Store original dimensions
+                        double originalWidth = shape.XForm.Width.Value;
+                        double originalHeight = shape.XForm.Height.Value;
+
+                        // Scale dimensions by 0.5
+                        double factor = 0.5;
+                        shape.XForm.Width.Value = originalWidth * factor;
+                        shape.XForm.Height.Value = originalHeight * factor;
+
+                        // Verify the scaling
+                        double expectedWidth = originalWidth * factor;
+                        double expectedHeight = originalHeight * factor;
+                        double tolerance = 0.0001; // tolerance for floating‑point comparison
+
+                        if (Math.Abs(shape.XForm.Width.Value - expectedWidth) > tolerance ||
+                            Math.Abs(shape.XForm.Height.Value - expectedHeight) > tolerance)
+                        {
+                            throw new Exception("Scaling verification failed: dimensions do not match expected values.");
+                        }
+
+                        Console.WriteLine($"Shape '{shape.NameU}' scaled successfully. New Width={shape.XForm.Width.Value}, New Height={shape.XForm.Height.Value}");
+                        // Exit after processing the first matching shape
+                        break;
+                    }
+                }
+
+                if (shapeFound)
+                    break;
+            }
+
+            if (!shapeFound)
+            {
+                Console.Error.WriteLine("Target shape named 'Rectangle' was not found in the diagram.");
                 return;
             }
 
-            // Work with the first page
-            Page page = diagram.Pages[0];
-
-            // Target shape ID (example uses shape ID 1 as per documentation)
-            int targetShapeId = 1;
-
-            // Retrieve the shape; GetShape returns null if not found
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-            if (shape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {targetShapeId} not found on the first page.");
-                return;
-            }
-
-            // Skip logically deleted shapes
-            if (shape.Del == BOOL.True)
-            {
-                Console.Error.WriteLine($"Shape with ID {targetShapeId} is marked as deleted.");
-                return;
-            }
-
-            // Read original dimensions
-            double originalWidth = shape.XForm.Width.Value;
-            double originalHeight = shape.XForm.Height.Value;
-
-            // Scale factor
-            double scaleFactor = 0.5;
-
-            // Compute new dimensions
-            double expectedWidth = originalWidth * scaleFactor;
-            double expectedHeight = originalHeight * scaleFactor;
-
-            // Apply scaling
-            shape.XForm.Width.Value = expectedWidth;
-            shape.XForm.Height.Value = expectedHeight;
-
-            // Verify the dimensions after scaling
-            double actualWidth = shape.XForm.Width.Value;
-            double actualHeight = shape.XForm.Height.Value;
-
-            const double tolerance = 1e-6;
-            bool widthMatches = Math.Abs(actualWidth - expectedWidth) < tolerance;
-            bool heightMatches = Math.Abs(actualHeight - expectedHeight) < tolerance;
-
-            if (!widthMatches || !heightMatches)
-            {
-                throw new Exception($"Dimension verification failed. Expected Width={expectedWidth}, Height={expectedHeight}. " +
-                                    $"Actual Width={actualWidth}, Height={actualHeight}.");
-            }
-            else
-            {
-                Console.WriteLine($"Shape ID {targetShapeId} scaled successfully. New Width={actualWidth}, Height={actualHeight}.");
-            }
-
-            // Save the modified diagram to the output file
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

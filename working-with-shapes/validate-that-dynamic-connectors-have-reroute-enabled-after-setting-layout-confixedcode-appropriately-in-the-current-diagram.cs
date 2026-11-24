@@ -1,97 +1,77 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length == 0)
+        // Expect at least one argument: input diagram file path
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path> [output-diagram-path]");
             return;
         }
 
-        string diagramPath = args[0];
-
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Optional output path; if not provided, overwrite the input file
+        string outputPath = args.Length >= 2 ? args[1] : inputPath;
 
         try
         {
-            // Load the diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through all pages and shapes to set ConFixedCode for dynamic connectors.
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify dynamic connector shapes by master name.
-                    if (shape.Master != null && shape.Master.Name != null &&
-                        shape.Master.Name.Equals("Dynamic connector", StringComparison.OrdinalIgnoreCase))
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set ConFixedCode to a defined value (Undefined is the only confirmed member).
-                        // This represents the appropriate configuration for reroute behavior.
-                        shape.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
-                    }
-                }
-            }
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-            // Validate that all dynamic connectors have the expected ConFixedCode setting.
-            bool allRerouteEnabled = true;
-
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Master != null && shape.Master.Name != null &&
-                        shape.Master.Name.Equals("Dynamic connector", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Check the ConFixedCode value; if it differs from the expected value, flag as failure.
-                        if (shape.Layout.ConFixedCode.Value != ConFixedCodeValue.Undefined)
+                        // Identify dynamic connector shapes by master name
+                        if (shape.Master != null && shape.Master.Name == "Dynamic connector")
                         {
-                            allRerouteEnabled = false;
-                            Console.Error.WriteLine($"Connector ID {shape.ID} on page {page.ID} does not have the expected ConFixedCode setting.");
+                            // Ensure the Layout object exists
+                            if (shape.Layout != null)
+                            {
+                                // Set ConFixedCode to enable rerouting
+                                shape.Layout.ConFixedCode.Value = ConFixedCodeValue.RerouteFreely;
+
+                                // Validate that reroute is now enabled
+                                if (shape.Layout.ConFixedCode.Value != ConFixedCodeValue.RerouteFreely)
+                                {
+                                    Console.Error.WriteLine($"Connector ID {shape.ID} reroute not enabled after setting.");
+                                }
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine($"Connector ID {shape.ID} has no Layout object.");
+                            }
                         }
                     }
                 }
-            }
 
-            if (allRerouteEnabled)
-            {
-                Console.WriteLine("All dynamic connectors have reroute enabled (ConFixedCode set to Undefined).");
-            }
-            else
-            {
-                throw new Exception("One or more dynamic connectors do not have reroute enabled.");
-            }
-
-            // Optional: save the modified diagram if an output path is provided.
-            if (args.Length > 1)
-            {
-                string outputPath = args[1];
-                // Ensure the output directory exists.
-                string outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-                {
-                    Directory.CreateDirectory(outputDir);
-                }
-
-                // Save the diagram in VSDX format.
+                // Save the modified diagram (using SaveFileFormat to preserve format)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                Console.WriteLine($"Diagram processed and saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

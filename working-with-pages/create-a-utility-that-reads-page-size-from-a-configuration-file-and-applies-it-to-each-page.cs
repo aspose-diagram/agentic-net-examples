@@ -6,78 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: config file, input diagram, output diagram
-        if (args.Length != 3)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <configFilePath> <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <configPath> <outputPath>");
             return;
         }
 
-        string configPath = args[0];
-        string inputDiagramPath = args[1];
-        string outputDiagramPath = args[2];
+        string diagramPath = args[0];
+        string configPath = args[1];
+        string outputPath = args[2];
 
-        // Guard: ensure configuration file exists
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            return;
+        }
+
+        // Guard: ensure the configuration file exists.
         if (!File.Exists(configPath))
         {
             Console.Error.WriteLine($"Configuration file not found: {configPath}");
             return;
         }
 
-        // Guard: ensure input diagram file exists
-        if (!File.Exists(inputDiagramPath))
-        {
-            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
-            return;
-        }
-
-        // Read and parse page size from configuration file
-        double pageWidthInches = 0;
-        double pageHeightInches = 0;
+        // Read page size configuration (expected format: Width=8.5  Height=11)
+        double pageWidth = 0;
+        double pageHeight = 0;
         try
         {
-            // Simple key=value pairs, separated by new lines or semicolons
-            string[] lines = File.ReadAllLines(configPath);
-            foreach (string rawLine in lines)
+            foreach (var line in File.ReadAllLines(configPath))
             {
-                string line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
-                    continue; // Skip empty lines or comments
-
-                // Support both "key=value" and "key=value;" formats
-                string[] parts = line.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (string part in parts)
+                var trimmed = line.Trim();
+                if (trimmed.StartsWith("Width=", StringComparison.OrdinalIgnoreCase))
                 {
-                    string[] kv = part.Split(new[] { '=' }, 2);
-                    if (kv.Length != 2)
-                        continue;
-
-                    string key = kv[0].Trim().ToLowerInvariant();
-                    string value = kv[1].Trim();
-
-                    if (key == "width")
+                    var valuePart = trimmed.Substring("Width=".Length);
+                    if (!double.TryParse(valuePart, out pageWidth))
                     {
-                        if (!double.TryParse(value, out pageWidthInches))
-                        {
-                            Console.Error.WriteLine($"Invalid width value in config: {value}");
-                            return;
-                        }
+                        Console.Error.WriteLine($"Invalid width value in config: {valuePart}");
+                        return;
                     }
-                    else if (key == "height")
+                }
+                else if (trimmed.StartsWith("Height=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var valuePart = trimmed.Substring("Height=".Length);
+                    if (!double.TryParse(valuePart, out pageHeight))
                     {
-                        if (!double.TryParse(value, out pageHeightInches))
-                        {
-                            Console.Error.WriteLine($"Invalid height value in config: {value}");
-                            return;
-                        }
+                        Console.Error.WriteLine($"Invalid height value in config: {valuePart}");
+                        return;
                     }
                 }
             }
 
-            // Validate that both dimensions were provided
-            if (pageWidthInches <= 0 || pageHeightInches <= 0)
+            // Ensure both dimensions were read.
+            if (pageWidth <= 0 || pageHeight <= 0)
             {
-                Console.Error.WriteLine("Both width and height must be positive numbers in the configuration file.");
+                Console.Error.WriteLine("Both Width and Height must be positive numbers in the configuration file.");
                 return;
             }
         }
@@ -87,27 +72,25 @@ class Program
             return;
         }
 
-        // Load the diagram and apply page size to each page
+        // Load the diagram and apply the page size to every page.
         try
         {
-            Diagram diagram = new Diagram(inputDiagramPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate over all pages and set the size (values are in inches)
+            // Iterate through all pages and set the new dimensions (values are in inches).
             foreach (Page page in diagram.Pages)
             {
-                page.PageSheet.PageProps.PageWidth.Value = pageWidthInches;
-                page.PageSheet.PageProps.PageHeight.Value = pageHeightInches;
+                page.PageSheet.PageProps.PageWidth.Value = pageWidth;
+                page.PageSheet.PageProps.PageHeight.Value = pageHeight;
             }
 
-            // Save the modified diagram to the specified output path
-            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            // Save the modified diagram to the specified output path.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
+            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
         }
-
-        Console.WriteLine("Page size applied successfully to all pages.");
     }
 }

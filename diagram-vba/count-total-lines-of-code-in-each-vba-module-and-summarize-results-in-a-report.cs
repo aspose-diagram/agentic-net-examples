@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <VisioFilePath>");
@@ -16,56 +16,53 @@ class Program
 
         string visioPath = args[0];
 
-        // Guard: ensure the Visio file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            Console.Error.WriteLine($"Error: File not found – {visioPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(visioPath);
 
-            // Check if the diagram contains a VBA project
+            // Check whether the diagram contains a VBA project.
             if (diagram.VbaProject == null)
             {
-                Console.WriteLine("No VBA project found in the diagram.");
+                Console.WriteLine("The diagram does not contain a VBA project.");
                 return;
             }
 
-            // Prepare summary variables
-            int totalLines = 0;
-            Console.WriteLine("VBA Modules Line Count Report");
-            Console.WriteLine("--------------------------------");
+            // Prepare counters for the report.
+            long totalLines = 0;
+            int moduleIndex = 0;
 
-            // Iterate through each VBA module
+            // Iterate through each VBA module in the project.
             foreach (VbaModule module in diagram.VbaProject.Modules)
             {
-                // Retrieve the VBA code string; handle null safely
+                moduleIndex++;
+
+                // Retrieve the VBA source code.
                 string code = module.Codes ?? string.Empty;
 
-                // Split the code into lines (handle both CRLF and LF)
+                // Count lines – split on both CRLF and LF.
                 string[] lines = code.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                long lineCount = lines.Length;
 
-                int lineCount = lines.Length;
                 totalLines += lineCount;
 
-                // Output module-specific line count
-                Console.WriteLine($"Module: {module.Name}");
-                Console.WriteLine($"Lines of Code: {lineCount}");
-                Console.WriteLine();
+                // Output per‑module statistics.
+                Console.WriteLine($"Module {moduleIndex}: \"{module.Name}\" – {lineCount} line(s)");
             }
 
-            // Output total summary
-            Console.WriteLine("--------------------------------");
-            Console.WriteLine($"Total VBA Modules: {diagram.VbaProject.Modules.Count}");
-            Console.WriteLine($"Total Lines of Code: {totalLines}");
+            // Summarize the overall result.
+            Console.WriteLine($"Total lines of VBA code across all modules: {totalLines}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

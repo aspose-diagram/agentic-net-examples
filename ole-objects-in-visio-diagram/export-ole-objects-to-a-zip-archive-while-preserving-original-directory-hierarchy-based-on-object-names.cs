@@ -7,72 +7,98 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) and output ZIP file path (second argument)
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string zipPath = args.Length > 1 ? args[1] : "OleObjects.zip";
-
-        // Guard against missing input file
-        if (!File.Exists(diagramPath))
+        // Expect two arguments: input Visio file path and output ZIP file path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputZipPath>");
+            return;
+        }
+
+        string inputVisioPath = args[0];
+        string outputZipPath = args[1];
+
+        // Guard: verify input Visio file exists
+        if (!File.Exists(inputVisioPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputVisioPath}");
+            return;
+        }
+
+        // Guard: ensure the directory for the output ZIP exists
+        string outputDir = Path.GetDirectoryName(outputZipPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
             return;
         }
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(inputVisioPath);
 
-            // Create (or overwrite) the ZIP archive
-            using (FileStream zipFileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write))
-            using (ZipArchive zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Create, leaveOpen: false))
+            // Create the ZIP archive
+            using (FileStream zipStream = new FileStream(outputZipPath, FileMode.Create))
+            using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
             {
-                // Iterate through all pages and shapes to find OLE objects
+                // Iterate through all pages and shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Check if the shape contains foreign (OLE) data
-                        if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                        // Identify OLE (foreign) shapes
+                        if (shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
                         {
-                            // Determine a file name based on the original source path of the OLE object
+                            // Determine a file name based on the source full name or shape name
                             string sourceFullName = shape.ForeignData.ObjectSourceFullName;
+                            string fileName = !string.IsNullOrEmpty(sourceFullName)
+                                ? Path.GetFileName(sourceFullName)
+                                : $"{shape.NameU}.bin";
 
-                            // Fallback to shape name if source path is unavailable
-                            if (string.IsNullOrEmpty(sourceFullName))
+                            // Determine relative directory hierarchy (if any)
+                            string relativePath = null;
+                            if (!string.IsNullOrEmpty(sourceFullName))
                             {
-                                sourceFullName = $"{shape.NameU}_{shape.ID}";
+                                string sourceDir = Path.GetDirectoryName(sourceFullName);
+                                if (!string.IsNullOrEmpty(sourceDir))
+                                {
+                                    // Remove drive/root part to make it relative
+                                    string root = Path.GetPathRoot(sourceDir);
+                                    if (!string.IsNullOrEmpty(root) && sourceDir.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        sourceDir = sourceDir.Substring(root.Length);
+                                    }
+
+                                    // Normalize to forward slashes for ZIP entries
+                                    relativePath = sourceDir.Replace('\\', '/').TrimStart('/');
+                                }
                             }
 
-                            // Normalize the path for ZIP entry (use forward slashes)
-                            string entryPath = sourceFullName.Replace('\\', '/').TrimStart('/');
+                            // Build the full entry path inside the ZIP
+                            string entryPath = string.IsNullOrEmpty(relativePath)
+                                ? fileName
+                                : $"{relativePath}/{fileName}";
 
-                            // Ensure the entry path does not contain invalid characters for ZIP entries
-                            foreach (char invalidChar in Path.GetInvalidPathChars())
-                            {
-                                entryPath = entryPath.Replace(invalidChar.ToString(), "_");
-                            }
-
-                            // Create a new entry in the ZIP archive
-                            ZipArchiveEntry entry = zipArchive.CreateEntry(entryPath, CompressionLevel.Optimal);
-
-                            // Write the OLE binary data into the ZIP entry
+                            // Create the ZIP entry and write the OLE data
+                            ZipArchiveEntry entry = archive.CreateEntry(entryPath, CompressionLevel.Optimal);
                             using (Stream entryStream = entry.Open())
+                            using (MemoryStream ms = new MemoryStream(shape.ForeignData.ObjectData))
                             {
-                                entryStream.Write(shape.ForeignData.ObjectData, 0, shape.ForeignData.ObjectData.Length);
+                                ms.CopyTo(entryStream);
                             }
 
-                            Console.WriteLine($"Exported OLE object to '{entryPath}'.");
+                            Console.WriteLine($"Exported OLE object to ZIP entry: {entryPath}");
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"All OLE objects have been exported to ZIP archive: {zipPath}");
+            Console.WriteLine($"OLE objects have been successfully exported to: {outputZipPath}");
         }
         catch (Exception ex)
         {
-            // Capture any errors from Aspose.Diagram operations or I/O
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

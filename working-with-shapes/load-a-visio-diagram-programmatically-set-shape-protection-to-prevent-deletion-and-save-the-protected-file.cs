@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
@@ -25,28 +25,42 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate over all pages and their shapes to set deletion protection.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate over all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Guard against null Shapes collection (should not happen, but defensive).
+                if (page.Shapes == null) continue;
+
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    // Iterate over all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    Shape shape = page.Shapes[i];
+
+                    // Ensure the Protection object is not null.
+                    if (shape.Protection != null)
                     {
-                        // Set the shape protection to prevent deletion.
+                        // Lock the shape so it cannot be deleted.
                         shape.Protection.LockDelete.Value = BOOL.True;
                     }
                 }
-
-                // Save the modified diagram to the output path in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
+
+            // Ensure the output directory exists.
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Save the protected diagram in VSDX format.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
+            // Write any Aspose.Diagram errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

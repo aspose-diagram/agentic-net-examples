@@ -10,58 +10,39 @@ class Program
         // Ensure a file path argument is provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <VisioDiagramPath>");
             return;
         }
 
-        string filePath = args[0];
+        string diagramPath = args[0];
 
-        // Guard: verify the file exists before proceeding
-        if (!File.Exists(filePath))
+        // Guard: verify the diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
-            return;
-        }
-
-        Diagram diagram = null;
-        try
-        {
-            // Load the Visio diagram from the specified file
-            diagram = new Diagram(filePath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Access the VBA project associated with the diagram
-            VbaProject vbaProject = diagram.VbaProject;
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Access the VBA project associated with the diagram
+                VbaProject vbaProject = diagram.VbaProject;
 
-            if (vbaProject == null)
-            {
-                Console.WriteLine("No VBA project found in the diagram.");
-            }
-            else
-            {
-                // Output the VBA project name and its signature status
+                // Output the VBA project name
                 Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
-                Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
+
+                // Determine whether the VBA project is digitally signed
+                bool isSigned = vbaProject.IsSigned;
+                Console.WriteLine($"Is VBA Project Signed: {isSigned}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error accessing VBA project: {ex.Message}");
-        }
-        finally
-        {
-            // Dispose the diagram to release resources
-            if (diagram != null)
-            {
-                diagram.Dispose();
-            }
+            // Write any errors encountered during processing to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

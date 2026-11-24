@@ -6,75 +6,104 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments count
-        if (args.Length < 5)
+        // Expect three arguments: input diagram path, first shape ID, second shape ID
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: <inputVisioFile> <pageIndex1> <shapeId1> <pageIndex2> <shapeId2>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId1> <shapeId2>");
             return;
         }
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        string diagramPath = args[0];
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse page indices and shape IDs
-        if (!int.TryParse(args[1], out int pageIndex1) ||
-            !long.TryParse(args[2], out long shapeId1) ||
-            !int.TryParse(args[3], out int pageIndex2) ||
-            !long.TryParse(args[4], out long shapeId2))
+        // Parse shape IDs
+        if (!long.TryParse(args[1], out long shapeId1))
         {
-            Console.Error.WriteLine("Invalid page index or shape ID arguments.");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{args[1]}'");
+            return;
+        }
+        if (!long.TryParse(args[2], out long shapeId2))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{args[2]}'");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Retrieve the first shape
-                if (pageIndex1 < 0 || pageIndex1 >= diagram.Pages.Count)
+                // Assume comparison on the first page; adjust if needed
+                if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine($"Page index {pageIndex1} is out of range.");
+                    Console.Error.WriteLine("Error: Diagram contains no pages.");
                     return;
                 }
-                Page page1 = diagram.Pages[pageIndex1];
-                Shape shape1 = page1.Shapes.GetShape(shapeId1);
 
-                // Retrieve the second shape
-                if (pageIndex2 < 0 || pageIndex2 >= diagram.Pages.Count)
+                // Retrieve the first page
+                Page page = diagram.Pages[0];
+
+                // Retrieve shapes by their IDs
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
+
+                if (shape1 == null)
                 {
-                    Console.Error.WriteLine($"Page index {pageIndex2} is out of range.");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId1} not found.");
                     return;
                 }
-                Page page2 = diagram.Pages[pageIndex2];
-                Shape shape2 = page2.Shapes.GetShape(shapeId2);
-
-                // Access gradient angle values
-                double angle1 = shape1.Fill.GradientFill.GradientAngle.Value;
-                double angle2 = shape2.Fill.GradientFill.GradientAngle.Value;
-
-                // Compare angles with a tolerance to account for floating‑point precision
-                const double tolerance = 0.0001;
-                if (Math.Abs(angle1 - angle2) > tolerance)
+                if (shape2 == null)
                 {
-                    Console.WriteLine($"Gradient angles differ:");
-                    Console.WriteLine($"  Shape 1 (ID {shapeId1}) angle: {angle1} degrees");
-                    Console.WriteLine($"  Shape 2 (ID {shapeId2}) angle: {angle2} degrees");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId2} not found.");
+                    return;
+                }
+
+                // Helper function to obtain gradient angle; returns NaN if not applicable
+                double GetGradientAngle(Shape shape)
+                {
+                    // Ensure gradient fill is enabled; otherwise treat as not set
+                    if (shape.Fill?.GradientFill != null &&
+                        shape.Fill.GradientFill.GradientEnabled != null &&
+                        shape.Fill.GradientFill.GradientEnabled.Value == BOOL.True)
+                    {
+                        // GradientAngle is a DoubleValue; retrieve its numeric value
+                        return shape.Fill.GradientFill.GradientAngle.Value;
+                    }
+                    // Gradient not defined
+                    return double.NaN;
+                }
+
+                double angle1 = GetGradientAngle(shape1);
+                double angle2 = GetGradientAngle(shape2);
+
+                // Output the retrieved angles
+                Console.WriteLine($"Shape {shapeId1} gradient angle: {(double.IsNaN(angle1) ? "N/A" : angle1.ToString())} degrees");
+                Console.WriteLine($"Shape {shapeId2} gradient angle: {(double.IsNaN(angle2) ? "N/A" : angle2.ToString())} degrees");
+
+                // Compare angles only if both are defined
+                if (double.IsNaN(angle1) || double.IsNaN(angle2))
+                {
+                    Console.WriteLine("Cannot compare angles because one or both shapes do not have a gradient fill.");
+                }
+                else if (angle1 == angle2)
+                {
+                    Console.WriteLine("No variation detected: both shapes have the same gradient angle.");
                 }
                 else
                 {
-                    Console.WriteLine($"Gradient angles are the same: {angle1} degrees");
+                    double diff = Math.Abs(angle1 - angle2);
+                    Console.WriteLine($"Variation detected: gradient angles differ by {diff} degrees.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any Aspose or runtime errors
+            // Capture any Aspose or runtime exceptions and report them
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

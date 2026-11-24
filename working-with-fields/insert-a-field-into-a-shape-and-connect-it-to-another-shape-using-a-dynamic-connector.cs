@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -26,61 +27,81 @@ class Program
 
         try
         {
-            // Load the source Visio diagram inside a using block (mandatory pattern).
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page (index 0).
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page.
                 Page page = diagram.Pages[0];
 
-                // -----------------------------------------------------------------
-                // 1. Add two rectangle shapes to the page.
-                // -----------------------------------------------------------------
-                // Add first rectangle.
-                long rect1Id = page.AddShape(2.0, 5.0, "Rectangle", false);
-                Shape rect1 = page.Shapes.GetShape(rect1Id);
+                // Find two regular (non‑connector) shapes on the page.
+                Shape firstShape = null;
+                Shape secondShape = null;
 
-                // Add second rectangle.
-                long rect2Id = page.AddShape(6.0, 5.0, "Rectangle", false);
-                Shape rect2 = page.Shapes.GetShape(rect2Id);
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip 1‑D connector shapes.
+                    if (shape.OneD)
+                        continue;
 
-                // -----------------------------------------------------------------
-                // 2. Insert a custom text field into the first rectangle.
-                // -----------------------------------------------------------------
-                Field field = new Field();
+                    if (firstShape == null)
+                        firstShape = shape;
+                    else if (secondShape == null)
+                    {
+                        secondShape = shape;
+                        break;
+                    }
+                }
+
+                if (firstShape == null || secondShape == null)
+                {
+                    Console.Error.WriteLine("The page does not contain at least two regular shapes.");
+                    return;
+                }
+
+                // ------------------------------------------------------------
+                // Insert a custom text field into the first shape.
+                // ------------------------------------------------------------
+                Field customField = new Field();
                 // Set the displayed value of the field.
-                field.Value.Val = "Sample Field";
-                // Initialise the formula (UFEV) – empty formula with undefined unit.
-                field.Value.Ufev.Unit = MeasureConst.Undefined;
-                field.Value.Ufev.F = "";
+                customField.Value.Val = "Custom Field Text";
                 // Add the field to the shape's field collection.
-                rect1.Fields.Add(field);
+                firstShape.Fields.Add(customField);
 
-                // -----------------------------------------------------------------
-                // 3. Add a dynamic connector shape.
-                // -----------------------------------------------------------------
-                long connectorId = page.AddShape(4.0, 5.0, "Dynamic connector", false);
-                Shape connector = page.Shapes.GetShape(connectorId);
+                // ------------------------------------------------------------
+                // Add a dynamic connector shape to the page.
+                // ------------------------------------------------------------
+                // The connector will be routed automatically; position is arbitrary.
+                long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
+                Shape connectorShape = page.Shapes.GetShape(connectorId);
 
-                // -----------------------------------------------------------------
-                // 4. Connect the two rectangles via the dynamic connector.
-                // -----------------------------------------------------------------
+                // ------------------------------------------------------------
+                // Connect the two shapes using the dynamic connector.
+                // ------------------------------------------------------------
+                // Use connection points: Right side of the first shape, Bottom side of the second shape.
                 page.ConnectShapesViaConnector(
-                    rect1.ID,
+                    firstShape.ID,
                     ConnectionPointPlace.Right,
-                    rect2.ID,
-                    ConnectionPointPlace.Left,
+                    secondShape.ID,
+                    ConnectionPointPlace.Bottom,
                     connectorId);
 
-                // -----------------------------------------------------------------
-                // 5. Save the modified diagram.
-                // -----------------------------------------------------------------
+                // ------------------------------------------------------------
+                // Save the modified diagram.
+                // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

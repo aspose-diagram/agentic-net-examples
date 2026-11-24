@@ -6,79 +6,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: first argument = diagram file path, second argument = shape ID
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeId>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
-        string visioPath = args[0];
-        // Guard: ensure the Visio file exists.
-        if (!File.Exists(visioPath))
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: ensure the diagram file exists
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {visioPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse the shape ID (expected to be a long integer).
-        if (!long.TryParse(args[1], out long shapeId))
+        // Parse the shape ID (Visio shape IDs are long integers)
+        if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine("Error: ShapeId must be a valid integer.");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. It must be a numeric value.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(visioPath))
+            // Load the Visio diagram inside a using block as required by the API guidelines
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Ensure the diagram contains at least one page.
+                // Ensure the diagram contains at least one page
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("Error: The diagram contains no pages.");
+                    Console.Error.WriteLine("Error: The diagram does not contain any pages.");
                     return;
                 }
 
-                // Access the first page (index 0). Adjust if a different page is needed.
+                // Access the first page (index 0)
                 Page page = diagram.Pages[0];
 
-                // Retrieve the shape by its ID using the correct API.
+                // Retrieve the shape by its ID using the supported GetShape method
                 Shape shape = page.Shapes.GetShape(shapeId);
 
-                // Verify that the shape is not logically deleted.
-                if (shape.Del == BOOL.True)
-                {
-                    Console.Error.WriteLine($"Warning: Shape with ID {shapeId} is marked as deleted.");
-                }
-
-                // Output basic shape information.
+                // Output basic information about the retrieved shape
                 Console.WriteLine($"Shape ID   : {shape.ID}");
-                Console.WriteLine($"NameU      : {shape.NameU}");
+                Console.WriteLine($"Shape Name : {shape.Name}");
                 Console.WriteLine($"Master Name: {shape.Master?.Name ?? "(none)"}");
 
-                // Retrieve and display the shape comment if present.
-                string comment = shape.Misc?.Comment?.Value ?? string.Empty;
-                if (!string.IsNullOrEmpty(comment))
+                // Example of checking the deletion flag using BOOL enumeration
+                if (shape.Del == BOOL.True)
                 {
-                    Console.WriteLine($"Comment    : {comment}");
+                    Console.WriteLine("Note: This shape is marked as deleted in the diagram.");
                 }
-
-                // If the shape is a group, list its child shapes.
-                if (shape.Type == TypeValue.Group && shape.Shapes != null)
+                else
                 {
-                    Console.WriteLine($"Group contains {shape.Shapes.Count} child shape(s):");
-                    foreach (Shape child in shape.Shapes)
-                    {
-                        Console.WriteLine($"  Child ID: {child.ID}, NameU: {child.NameU}");
-                    }
+                    Console.WriteLine("The shape is active.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading or processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

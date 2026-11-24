@@ -6,11 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provided via command‑line arguments or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Guard: ensure the source Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -22,32 +28,40 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram
+            // Define the name of the custom property to check
+            const string targetPropName = "MyFlag";
+
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Determine whether the shape has the custom property "IsTarget" set to "True"
-                    bool hasTargetProperty = false;
+                    bool hasTargetPropTrue = false;
+
+                    // Check each custom property (Prop) of the shape
                     foreach (Prop prop in shape.Props)
                     {
-                        if (prop.Name == "IsTarget" &&
-                            string.Equals(prop.Value.Val, "True", StringComparison.OrdinalIgnoreCase))
+                        if (prop.Name == targetPropName &&
+                            prop.Value != null &&
+                            prop.Value.Val != null &&
+                            prop.Value.Val.Equals("True", StringComparison.OrdinalIgnoreCase))
                         {
-                            hasTargetProperty = true;
+                            hasTargetPropTrue = true;
                             break;
                         }
                     }
 
-                    // If the condition is met, add a new text field to the shape
-                    if (hasTargetProperty)
+                    // If the shape has the target property set to true, add a field
+                    if (hasTargetPropTrue)
                     {
-                        // Create a new Field object
+                        // Create a new field (e.g., a custom text field)
                         Field field = new Field();
 
-                        // Set the field's displayed value (static text "Special")
-                        field.Value.Val = "Special";
+                        // Set the field type to Undefined (safe default)
+                        field.Type.Value = TypeFieldValue.Undefined;
+
+                        // Assign a value to the field (can be any string)
+                        field.Value.Val = "AddedField";
 
                         // Add the field to the shape's Fields collection
                         shape.Fields.Add(field);
@@ -55,13 +69,13 @@ class Program
                 }
             }
 
-            // Save the modified diagram to the output path in VSDX format
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

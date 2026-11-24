@@ -1,15 +1,16 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expecting: inputPath outputPath shapeId fieldIndex
+        // Expecting four arguments: input diagram path, output diagram path, shape ID, field index
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <shapeId> <fieldIndex>");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <shapeId> <fieldIndex>");
             return;
         }
 
@@ -18,7 +19,7 @@ class Program
         string shapeIdArg = args[2];
         string fieldIndexArg = args[3];
 
-        // Guard: verify input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -40,17 +41,17 @@ class Program
 
         try
         {
-            // Load diagram inside a using block as required
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 Shape targetShape = null;
 
-                // Locate the shape by its ID across all pages
+                // Locate the shape by ID across all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // GetShape expects an int ID; cast safely
-                    Shape shape = page.Shapes.GetShape((int)shapeId);
-                    if (shape != null && shape.Del == BOOL.False)
+                    // GetShape returns null if not found
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
                     {
                         targetShape = shape;
                         break;
@@ -59,7 +60,14 @@ class Program
 
                 if (targetShape == null)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found or is deleted.");
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
+                    return;
+                }
+
+                // Ensure the shape is not marked as deleted
+                if (targetShape.Del == BOOL.True)
+                {
+                    Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
                     return;
                 }
 
@@ -73,16 +81,17 @@ class Program
                 // Retrieve the field at the specified index
                 Field fieldToRemove = targetShape.Fields[fieldIndex];
 
-                // Remove the field from the collection
+                // Remove the field from the shape
                 targetShape.Fields.Remove(fieldToRemove);
 
-                // Save the modified diagram
+                // Save the modified diagram to the output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Field at index {fieldIndex} removed from shape ID {shapeId}. Diagram saved to {outputPath}.");
+                Console.WriteLine($"Field at index {fieldIndex} removed from shape {shapeId}. Diagram saved to {outputPath}.");
             }
         }
         catch (Exception ex)
         {
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -6,19 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -45,29 +46,43 @@ class Program
             }
 
             // Retrieve the first shape on the page
-            // Shape IDs are stored as long; cast to int for GetShape
-            long shapeId = page.Shapes[0].ID;
-            Shape shape = page.Shapes.GetShape((int)shapeId);
+            Shape shape = page.Shapes[0];
 
-            // --- Modify the shape's geometry ---
-            // Example: change the width and height of the shape
-            // This will affect the shape's geometry and may impact any attached fields
+            // -----------------------------------------------------------------
+            // Modify the shape's geometry: change width and height (in inches)
+            // -----------------------------------------------------------------
             shape.XForm.Width.Value = 2.0;   // Set width to 2 inches
             shape.XForm.Height.Value = 2.0;  // Set height to 2 inches
 
-            // Refresh the shape's data so that any fields recalculate based on the new geometry
+            // ---------------------------------------------------------------
+            // Refresh the shape's data to recalculate any fields dependent on geometry
+            // ---------------------------------------------------------------
             shape.RefreshData();
 
-            // Optional: verify that the shape now has the expected dimensions
-            Console.WriteLine($"Shape ID {shape.ID} new size: Width={shape.XForm.Width.Value}, Height={shape.XForm.Height.Value}");
+            // ---------------------------------------------------------------
+            // (Optional) Demonstrate that a field value has been updated
+            // ---------------------------------------------------------------
+            if (shape.Fields != null && shape.Fields.Count > 0)
+            {
+                // Iterate through all fields and output their current values
+                for (int i = 0; i < shape.Fields.Count; i++)
+                {
+                    Field field = shape.Fields[i];
+                    Console.WriteLine($"Field IX={field.IX}, Value=\"{field.Value.Val}\"");
+                }
+            }
+            else
+            {
+                Console.WriteLine("The shape contains no fields to display.");
+            }
 
-            // Save the modified diagram to a new file
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

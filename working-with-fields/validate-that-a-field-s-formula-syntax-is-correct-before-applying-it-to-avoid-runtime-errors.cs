@@ -1,22 +1,26 @@
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, new formula string
-        if (args.Length < 3)
+        // Expecting four arguments:
+        // 0 - input Visio file path
+        // 1 - output Visio file path
+        // 2 - target shape ID (numeric)
+        // 3 - new formula string to apply to the first field of the shape
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <newFormula>");
+            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <shapeId> <newFormula>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string newFormula = args[2];
+        string shapeIdArg = args[2];
+        string newFormula = args[3];
 
         // Guard: verify input file exists
         if (!File.Exists(inputPath))
@@ -25,18 +29,10 @@ class Program
             return;
         }
 
-        // Simple formula validation using a regular expression.
-        // This is a placeholder; replace with Aspose.Diagram's native validation if available.
-        bool IsFormulaValid(string formula)
+        // Parse shape ID (Visio shape IDs are long)
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
         {
-            // Allow letters, digits, basic operators, parentheses, and asterisk for multiplication.
-            // Adjust the pattern as needed for more complex Visio formulas.
-            return Regex.IsMatch(formula, @"^[A-Za-z0-9\+\-\*/\(\)\s]+$");
-        }
-
-        if (!IsFormulaValid(newFormula))
-        {
-            Console.Error.WriteLine("The provided formula appears to be invalid.");
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
         }
 
@@ -45,34 +41,44 @@ class Program
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes to apply the formula to each field
+            // Locate the target shape by searching all pages
+            Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // GetShape accepts a long ID
+                Shape shape = page.Shapes.GetShape(targetShapeId);
+                if (shape != null)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Ensure the shape has at least one field
-                    if (shape.Fields == null || shape.Fields.Count == 0)
-                        continue;
-
-                    // Iterate over all fields in the shape
-                    for (int i = 0; i < shape.Fields.Count; i++)
-                    {
-                        Field field = shape.Fields[i];
-
-                        // Example: only modify fields of type formula (TypeFieldValue.Undefined is a safe default)
-                        // Since specific type enums are not reliably known, we apply the formula to all fields.
-                        // Set the formula string
-                        field.Value.Ufev.F = newFormula;
-
-                        // Set unit to undefined to avoid unit-related errors
-                        field.Value.Ufev.Unit = MeasureConst.Undefined;
-                    }
+                    targetShape = shape;
+                    break;
                 }
             }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {targetShapeId} not found.");
+                return;
+            }
+
+            // Ensure the shape has at least one field to update
+            if (targetShape.Fields == null || targetShape.Fields.Count == 0)
+            {
+                Console.Error.WriteLine($"Shape ID {targetShapeId} does not contain any fields.");
+                return;
+            }
+
+            // Validate the formula syntax before applying it
+            bool isFormulaValid = ValidateFormula(diagram, newFormula);
+            if (!isFormulaValid)
+            {
+                Console.Error.WriteLine("The provided formula is syntactically invalid and will not be applied.");
+                return;
+            }
+
+            // Apply the validated formula to the first field of the target shape
+            Field fieldToUpdate = targetShape.Fields[0];
+            fieldToUpdate.Value.Ufev.F = newFormula;
+            fieldToUpdate.Value.Ufev.Unit = MeasureConst.Undefined;
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
@@ -80,7 +86,47 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Validates a Visio formula by attempting to assign it to a temporary field.
+    /// Returns true if no exception is thrown, indicating the formula is syntactically correct.
+    /// </summary>
+    /// <param name="diagram">The diagram instance to use for temporary shape creation.</param>
+    /// <param name="formula">The formula string to validate.</param>
+    /// <returns>True if the formula is valid; otherwise false.</returns>
+    private static bool ValidateFormula(Diagram diagram, string formula)
+    {
+        try
+        {
+            // Add a temporary rectangle shape on the first page (page index 0)
+            // Using overload: AddShape(pinX, pinY, masterName, pageIndex)
+            long tempShapeId = diagram.AddShape(1.0, 1.0, "Rectangle", 0);
+
+            // Retrieve the shape instance
+            Shape tempShape = diagram.Pages[0].Shapes.GetShape(tempShapeId);
+            if (tempShape == null)
+                return false; // Unexpected, treat as invalid
+
+            // Create a new field and assign the formula
+            Field tempField = new Field();
+            tempField.Value.Ufev.F = formula;
+            tempField.Value.Ufev.Unit = MeasureConst.Undefined;
+
+            // Add the field to the temporary shape
+            tempShape.Fields.Add(tempField);
+
+            // If we reach this point, no exception was thrown => formula is syntactically valid
+            // Mark the temporary shape for deletion
+            tempShape.Del = BOOL.True;
+            return true;
+        }
+        catch
+        {
+            // Any exception indicates invalid formula syntax
+            return false;
         }
     }
 }

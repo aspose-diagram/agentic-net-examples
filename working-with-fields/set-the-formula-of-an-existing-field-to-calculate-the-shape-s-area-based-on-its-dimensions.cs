@@ -6,20 +6,32 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input diagram path and output diagram path
-        if (args.Length < 2)
+        // Prompt for input Visio file path
+        Console.Write("Enter the path to the Visio file (e.g., diagram.vsdx): ");
+        string inputPath = Console.ReadLine();
+
+        // Guard: ensure the input file exists
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Input file does not exist.");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Prompt for the shape ID to modify
+        Console.Write("Enter the Shape ID (numeric) whose area formula you want to set: ");
+        string shapeIdText = Console.ReadLine();
+        if (!long.TryParse(shapeIdText, out long shapeId))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine("Invalid Shape ID.");
+            return;
+        }
+
+        // Prompt for output file path
+        Console.Write("Enter the output file path (e.g., diagram_modified.vsdx): ");
+        string outputPath = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            Console.Error.WriteLine("Output path cannot be empty.");
             return;
         }
 
@@ -28,46 +40,44 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                bool fieldUpdated = false;
-
-                // Iterate through all pages and shapes to find a shape with at least one custom property (Prop)
-                foreach (Page page in diagram.Pages)
+                // Assume we work with the first page; adjust as needed
+                if (diagram.Pages.Count == 0)
                 {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has a Props collection with at least one item
-                        if (shape.Props != null && shape.Props.Count > 0)
-                        {
-                            // Update the first existing property to calculate area = Width * Height
-                            // The formula is set as a Visio expression string
-                            Prop prop = shape.Props[0];
-                            prop.Value.Ufev.F = "Width*Height";
-                            // Use Undefined unit for the formula result
-                            prop.Value.Ufev.Unit = MeasureConst.Undefined;
-
-                            fieldUpdated = true;
-                            // Break after updating the first found property
-                            break;
-                        }
-                    }
-
-                    if (fieldUpdated)
-                        break;
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                if (!fieldUpdated)
+                Page page = diagram.Pages[0];
+
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    Console.Error.WriteLine("No shape with an existing custom property (Prop) was found in the diagram.");
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on the first page.");
+                    return;
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format
+                // Create a new field that calculates area = Width * Height
+                Field areaField = new Field();
+
+                // Set the formula for the field. Visio formula syntax uses cell names.
+                // Width and Height refer to the shape's XForm.Width and XForm.Height cells.
+                areaField.Value.Ufev.F = "Width*Height";
+
+                // Optionally set the unit to undefined (default)
+                areaField.Value.Ufev.Unit = MeasureConst.Undefined;
+
+                // Add the field to the shape's Fields collection
+                shape.Fields.Add(areaField);
+
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

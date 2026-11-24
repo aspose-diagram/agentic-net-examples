@@ -7,55 +7,78 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments: inputPath, outputPath, target RGB (e.g., "255,0,0"), new background hex (e.g., "#00FF00")
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <targetRGB> <newBackgroundHex>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string targetRgb = args[2];
+        string newBackgroundHex = args[3];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Define the target fill foreground color (hex string) and the new color to apply.
-        const string targetColor = "#FF0000"; // Red – change as needed.
-        const string newColor = "#00FF00";    // Green – change as needed.
-
+        // Parse target RGB and convert to hex string (e.g., "#FF0000")
+        string targetHex;
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            var rgbParts = targetRgb.Split(',').Select(p => int.Parse(p.Trim())).ToArray();
+            if (rgbParts.Length != 3 ||
+                rgbParts.Any(v => v < 0 || v > 255))
+                throw new FormatException();
 
-            // Use LINQ to find all shapes whose FillForegnd matches the target color.
-            var matchingShapes = diagram.Pages
-                .SelectMany(page => page.Shapes.Cast<Shape>())
-                .Where(shape => string.Equals(shape.Fill.FillForegnd.Value, targetColor, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            Console.WriteLine($"Found {matchingShapes.Count} shape(s) with fill foreground color {targetColor}.");
-
-            // Update each matching shape's fill foreground color to the new color.
-            foreach (var shape in matchingShapes)
-            {
-                shape.Fill.FillForegnd.Value = newColor;
-                Console.WriteLine($"Shape ID {shape.ID} fill color changed to {newColor}.");
-            }
-
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            targetHex = $"#{rgbParts[0]:X2}{rgbParts[1]:X2}{rgbParts[2]:X2}";
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Invalid target RGB value '{targetRgb}'. Expected format: R,G,B (0-255). Error: {ex.Message}");
+            return;
+        }
+
+        // Guard: ensure new background hex is a valid hex string (basic check)
+        if (!newBackgroundHex.StartsWith("#") || newBackgroundHex.Length != 7)
+        {
+            Console.Error.WriteLine($"Invalid new background hex color '{newBackgroundHex}'. Expected format: #RRGGBB.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
+            {
+                // Use LINQ to select shapes whose FillForegnd matches the target hex color
+                var matchingShapes = page.Shapes
+                                         .Cast<Shape>()
+                                         .Where(s => string.Equals(s.Fill.FillForegnd.Value, targetHex, StringComparison.OrdinalIgnoreCase))
+                                         .ToList();
+
+                // Apply targeted update: change the background fill color
+                foreach (Shape shape in matchingShapes)
+                {
+                    shape.Fill.FillBkgnd.Value = newBackgroundHex;
+                }
+            }
+
+            // Save the updated diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,16 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input VSDX file path as the first argument.
-        if (args.Length == 0)
+        // Validate command line arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx>");
+            Console.Error.WriteLine("Usage: Program <input-vsdx-path>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the file exists before proceeding.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Error: File not found - {inputPath}");
@@ -24,50 +24,45 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 bool allImagesValid = true;
 
-                // Iterate through each page in the diagram.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Identify embedded images: shapes of type Foreign.
+                        // Identify embedded images (foreign shapes)
                         if (shape.Type == TypeValue.Foreign)
                         {
-                            // Ensure the shape contains foreign data (image bytes).
-                            if (shape.ForeignData == null || shape.ForeignData.Value == null || shape.ForeignData.Value.Length == 0)
-                            {
-                                Console.WriteLine($"Warning: Shape ID {shape.ID} on page {page.ID} is marked as Foreign but contains no image data.");
-                                allImagesValid = false;
-                                continue;
-                            }
+                            // Retrieve the raw image bytes from the shape's foreign data
+                            byte[] imageBytes = shape.ForeignData?.Value;
 
-                            // Load the image from the embedded byte array using Aspose.Drawing.Image.
-                            using (MemoryStream ms = new MemoryStream(shape.ForeignData.Value))
+                            // If there is no image data, continue to next shape
+                            if (imageBytes == null || imageBytes.Length == 0)
+                                continue;
+
+                            // Load the image using Aspose.Drawing to inspect its DPI
+                            using (MemoryStream ms = new MemoryStream(imageBytes))
                             {
-                                // Fully qualify the Image class to avoid ambiguity with Aspose.Diagram.Image.
+                                // Fully qualify Aspose.Drawing.Image to avoid ambiguity
                                 using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                                 {
-                                    float hDpi = img.HorizontalResolution;
-                                    float vDpi = img.VerticalResolution;
+                                    float horizontalDpi = img.HorizontalResolution;
+                                    float verticalDpi = img.VerticalResolution;
 
-                                    // Validate DPI against the 300 DPI minimum.
-                                    if (hDpi < 300f || vDpi < 300f)
+                                    // Validate DPI against the 300 DPI minimum
+                                    if (horizontalDpi < 300f || verticalDpi < 300f)
                                     {
-                                        Console.WriteLine($"Image validation failed for Shape ID {shape.ID} on page {page.ID}: DPI = {hDpi}x{vDpi} (required >= 300).");
+                                        Console.WriteLine($"Image in shape ID {shape.ID} on page ID {page.ID} has DPI {horizontalDpi}x{verticalDpi}, which is below the required 300 DPI.");
                                         allImagesValid = false;
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($"Image OK for Shape ID {shape.ID} on page {page.ID}: DPI = {hDpi}x{vDpi}.");
                                     }
                                 }
                             }
@@ -75,20 +70,16 @@ class Program
                     }
                 }
 
-                // Final result output.
+                // Report overall validation result
                 if (allImagesValid)
                 {
-                    Console.WriteLine("All embedded images meet the minimum resolution of 300 DPI.");
-                }
-                else
-                {
-                    Console.WriteLine("One or more embedded images do not meet the minimum resolution of 300 DPI.");
+                    Console.WriteLine("All embedded images meet the minimum 300 DPI requirement.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or I/O errors and report them.
+            // Write any unexpected errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

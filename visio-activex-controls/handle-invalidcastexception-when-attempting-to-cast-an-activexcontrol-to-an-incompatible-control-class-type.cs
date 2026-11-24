@@ -7,88 +7,85 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths.
-        string inputPath = "sample.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect the diagram file path as the first command‑line argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        string diagramPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Locate the first shape that contains an ActiveX control.
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ActiveXControl != null)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null)
+                    break;
+            }
+
+            if (targetShape == null)
+            {
+                Console.WriteLine("No shape with an ActiveX control was found in the diagram.");
                 return;
             }
 
-            // Work with the first page.
-            Page page = diagram.Pages[0];
-
-            // Insert a CommandButton ActiveX control onto the page.
-            // Parameters: control type, x, y, width, height.
-            page.AddActiveXControl(ControlType.CommandButton, 2, 2, 1.5, 0.5);
-
-            // Retrieve the newly added shape (last shape in the collection).
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("No shapes were added to the page.");
-                return;
-            }
-
-            // Shapes indexer uses zero‑based int index.
-            Shape addedShape = page.Shapes[page.Shapes.Count - 1];
-
-            // Attempt to cast the ActiveX control to an incompatible type (ImageActiveXControl).
+            // Attempt to cast the ActiveX control to a CommandButtonActiveXControl.
             try
             {
-                // This cast is expected to fail because the control is a CommandButton.
-                ImageActiveXControl imageCtrl = (ImageActiveXControl)addedShape.ActiveXControl;
-                // If the cast unexpectedly succeeds, we can use the control (not expected).
-                Console.WriteLine("Unexpectedly cast to ImageActiveXControl.");
+                CommandButtonActiveXControl button = (CommandButtonActiveXControl)targetShape.ActiveXControl;
+                // Cast succeeded – modify a property.
+                button.Caption = "Updated Caption";
+                Console.WriteLine("ActiveX control cast succeeded; caption updated.");
             }
-            catch (InvalidCastException icex)
+            catch (InvalidCastException ex)
             {
-                // Handle the invalid cast gracefully.
-                Console.WriteLine("InvalidCastException caught: attempted to cast to an incompatible ActiveX control type.");
-                Console.WriteLine($"Details: {icex.Message}");
+                // Handle the case where the control is not a CommandButton.
+                Console.Error.WriteLine($"InvalidCastException: The ActiveX control is not a CommandButton. Details: {ex.Message}");
+
+                // Example of handling a different control type (CheckBox).
+                if (targetShape.ActiveXControl.Type == ControlType.CheckBox)
+                {
+                    // Safe cast because we verified the type.
+                    CheckBoxActiveXControl checkBox = (CheckBoxActiveXControl)targetShape.ActiveXControl;
+                    checkBox.Value = CheckValueType.Checked;
+                    Console.WriteLine("Handled as CheckBoxActiveXControl and set to Checked.");
+                }
+                else
+                {
+                    Console.WriteLine($"ActiveX control type is {targetShape.ActiveXControl.Type}; no specific handling implemented.");
+                }
             }
 
-            // Correctly cast to the actual control type and modify a property.
-            if (addedShape.ActiveXControl.Type == ControlType.CommandButton)
-            {
-                CommandButtonActiveXControl cmdBtn = (CommandButtonActiveXControl)addedShape.ActiveXControl;
-                // Set the caption of the command button.
-                cmdBtn.Caption = "Click Me";
-                Console.WriteLine("CommandButton caption set successfully.");
-            }
-            else
-            {
-                Console.WriteLine("The added shape does not contain a CommandButton ActiveX control.");
-            }
-
-            // Save the modified diagram to the output path.
+            // Save the modified diagram to a new file.
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? string.Empty, "output.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors.
-            Console.Error.WriteLine("An error occurred while processing the diagram:");
-            Console.Error.WriteLine(ex.Message);
+            // General error handling for Aspose operations.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

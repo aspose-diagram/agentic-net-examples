@@ -2,12 +2,13 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path and output PDF file path as arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -17,7 +18,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists before proceeding.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,38 +27,47 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (required pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages in the diagram.
+                // Increment value: 0.5 point = 0.5/72 inches.
+                const double incrementInInches = 0.5 / 72.0;
+
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over all shapes on the current page.
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted.
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Process only 1‑D connector shapes (OneD is a native bool).
+                        // Process only 1‑D connector shapes.
                         if (shape.OneD)
                         {
-                            // Increase line weight by 0.5 pt (0.5/72 inches).
-                            double increment = 0.5 / 72.0;
-                            shape.Line.LineWeight.Value += increment;
+                            // Ensure the Line object exists.
+                            if (shape.Line != null && shape.Line.LineWeight != null)
+                            {
+                                // Increase the line weight by the calculated increment.
+                                shape.Line.LineWeight.Value += incrementInInches;
+                            }
                         }
                     }
                 }
 
-                // Configure PDF save options and explicitly set the format tracker.
+                // Prepare PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format tracker.
+                // (Optional) Set high resolution for raster images inside PDF.
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+                pdfOptions.JpegQuality = 100;
 
-                // Save the modified diagram as a PDF file.
+                // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Successfully saved PDF to: {outputPath}");
             }
-
-            Console.WriteLine($"Successfully saved PDF to {outputPath}");
         }
         catch (Exception ex)
         {

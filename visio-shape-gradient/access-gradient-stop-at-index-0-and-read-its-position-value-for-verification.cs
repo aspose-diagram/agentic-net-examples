@@ -6,61 +6,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard: ensure the file exists before proceeding
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            return;
+        }
+
+        string diagramPath = args[0];
+
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Ensure the diagram contains at least one page
+            // Ensure the diagram has at least one page
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
             // Access the first page
             Page page = diagram.Pages[0];
 
-            // Ensure the page contains at least one shape
-            if (page.Shapes.Count == 0)
+            // Find the first shape that contains gradient stops
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine("Error: Page contains no shapes.");
+                if (shape.Fill != null &&
+                    shape.Fill.GradientFill != null &&
+                    shape.Fill.GradientFill.GradientStops != null &&
+                    shape.Fill.GradientFill.GradientStops.Count > 0)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No shape with gradient stops was found on the first page.");
                 return;
             }
 
-            // Access the first shape on the page
-            Shape shape = page.Shapes[0];
+            // Access the gradient stop at index 0
+            GradientStop firstStop = targetShape.Fill.GradientFill.GradientStops[0];
 
-            // Access the gradient fill of the shape
-            GradientFill gradientFill = shape.Fill?.GradientFill;
-            if (gradientFill == null)
-            {
-                Console.Error.WriteLine("Error: Shape does not have a gradient fill.");
-                return;
-            }
-
-            // Access the collection of gradient stops
-            GradientStopCollection stops = gradientFill.GradientStops;
-            if (stops == null || stops.Count == 0)
-            {
-                Console.Error.WriteLine("Error: No gradient stops found in the shape.");
-                return;
-            }
-
-            // Retrieve the gradient stop at index 0
-            GradientStop firstStop = stops[0];
-
-            // Read the position value of the first gradient stop
+            // Read its position value
             double position = firstStop.Position.Value;
 
             // Output the position for verification
@@ -68,8 +68,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error console
-            Console.Error.WriteLine($"Exception occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

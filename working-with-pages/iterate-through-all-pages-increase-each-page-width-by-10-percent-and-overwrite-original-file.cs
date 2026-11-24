@@ -6,8 +6,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
@@ -15,10 +15,10 @@ class Program
 
         string filePath = args[0];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"Error: File not found – {filePath}");
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
             return;
         }
 
@@ -27,13 +27,13 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Iterate over each page and increase its width by 10 %.
+                // Iterate through each page and increase its width by 10 percent.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the current width (in inches).
+                    // Retrieve the current page width (in inches).
                     double currentWidth = page.PageSheet.PageProps.PageWidth.Value;
 
-                    // Calculate the new width (10 % larger).
+                    // Calculate the new width (increase by 10%).
                     double newWidth = currentWidth * 1.10;
 
                     // Apply the new width back to the page.
@@ -46,8 +46,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
         }
     }
 }

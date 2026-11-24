@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists before proceeding.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -35,20 +35,19 @@ class Program
                 return;
             }
 
-            // Access the first page (index 0).
+            // Access the first page of the diagram.
             Page firstPage = diagram.Pages[0];
 
-            // Change the page width to 8.5 inches.
-            // Page dimensions are stored in inches via the PageProps object.
+            // Change the page width to 8.5 inches (values are in inches).
             firstPage.PageSheet.PageProps.PageWidth.Value = 8.5;
 
-            // Save the modified diagram back to a file in VSDX format.
+            // Save the modified diagram back to a Visio file (VSDX format).
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading, modification, or saving.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Output any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

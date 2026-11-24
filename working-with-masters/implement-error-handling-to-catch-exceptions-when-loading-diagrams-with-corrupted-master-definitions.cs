@@ -6,62 +6,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input file path as first argument
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
             return;
         }
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        string diagramPath = args[0];
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         Diagram diagram = null;
+
+        // Attempt to load the diagram with error handling for corrupted master definitions
         try
         {
-            // Attempt to load the diagram; this may throw if master definitions are corrupted
-            diagram = new Diagram(inputPath);
+            // Load the diagram from the specified file
+            diagram = new Diagram(diagramPath);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load diagram '{inputPath}'. Exception: {ex.Message}");
+            // Catch any exception that occurs during loading (e.g., corrupted master definitions)
+            Console.Error.WriteLine($"Error loading diagram '{diagramPath}': {ex.Message}");
+            // Optionally, you could inspect ex.InnerException for more details
             return;
         }
 
-        // Process masters: list their IDs and names, and detect possible corruption (e.g., missing name)
-        Console.WriteLine("Master information:");
-        foreach (Master master in diagram.Masters)
-        {
-            string masterName = master.Name;
-            if (string.IsNullOrEmpty(masterName))
-            {
-                Console.Error.WriteLine($"Warning: Master with ID {master.ID} has an invalid or missing name. It may be corrupted.");
-                // Continue processing other masters; you could implement additional recovery logic here
-                continue;
-            }
-
-            Console.WriteLine($"- ID: {master.ID}, Name: {masterName}");
-        }
-
-        // Prepare output path
-        string directory = Path.GetDirectoryName(inputPath) ?? "";
-        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-        string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_clean.vsdx");
-
+        // If loading succeeded, proceed to work with the diagram
         try
         {
-            // Save the diagram to a new file (unchanged content)
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Successfully loaded diagram: {diagramPath}");
+            Console.WriteLine($"Number of pages: {diagram.Pages.Count}");
+            Console.WriteLine($"Number of masters: {diagram.Masters.Count}");
+
+            // Iterate through masters and display their basic information
+            foreach (Master master in diagram.Masters)
+            {
+                // Guard against null master reference (should not happen, but defensive programming)
+                if (master == null)
+                    continue;
+
+                // Output master details
+                Console.WriteLine($"Master ID: {master.ID}, Name: {master.Name}, Hidden: {(master.Hidden == BOOL.True ? "True" : "False")}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to save diagram to '{outputPath}'. Exception: {ex.Message}");
+            // Catch any unexpected errors during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose the diagram if it implements IDisposable (Aspose.Diagram.Diagram does)
+            if (diagram is IDisposable disposableDiagram)
+            {
+                disposableDiagram.Dispose();
+            }
         }
     }
 }

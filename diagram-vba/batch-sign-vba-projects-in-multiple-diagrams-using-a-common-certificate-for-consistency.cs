@@ -1,48 +1,49 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Diagram.Vba;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: the folder containing diagrams and a certificate file path (not used directly).
+        // Expect two arguments: folder path containing diagrams and path to a certificate file.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: BatchSignVba <DiagramsFolderPath> <CertificateFilePath>");
+            Console.Error.WriteLine("Usage: Program <DiagramsFolderPath> <CertificateFilePath>");
             return;
         }
 
         string folderPath = args[0];
         string certificatePath = args[1];
 
-        // Guard against missing folder.
+        // Validate folder existence.
         if (!Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine($"Folder not found: {folderPath}");
             return;
         }
 
-        // Guard against missing certificate file (the certificate is not used by Aspose, but we validate its presence).
+        // Validate certificate file existence (certificate is not used because signing is not supported via Aspose.Diagram).
         if (!File.Exists(certificatePath))
         {
-            Console.Error.WriteLine($"Certificate file does not exist: {certificatePath}");
+            Console.Error.WriteLine($"Certificate file not found: {certificatePath}");
             return;
         }
 
-        // Get all Visio files that may contain VBA projects.
+        // Get all Visio files that can contain VBA projects.
         string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
         foreach (string filePath in diagramFiles)
         {
             // Process only supported Visio extensions.
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vsdm")
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (extension != ".vsdx" && extension != ".vsdm" && extension != ".vsx" && extension != ".vssx")
             {
                 continue;
             }
 
-            // Guard against missing file (should not happen after GetFiles, but added for safety).
+            // Guard for file existence (redundant after GetFiles but kept per rules).
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -51,57 +52,27 @@ class Program
 
             try
             {
-                // Load the diagram.
-                Diagram diagram = new Diagram(filePath);
-
-                // Access the VBA project.
-                VbaProject vbaProject = diagram.VbaProject;
-
-                // Output current signature status.
-                Console.WriteLine($"Processing '{Path.GetFileName(filePath)}':");
-                Console.WriteLine($"  VBA Project Name : {vbaProject.Name}");
-                Console.WriteLine($"  Is Signed        : {vbaProject.IsSigned}");
-
-                // Since Aspose.Diagram does not provide a direct signing API,
-                // we simulate a signing step by adding a module that records the certificate information.
-                // This preserves macro-enabled status and documents the intended certificate.
-
-                // Create a simple VBA module with a comment about the certificate.
-                string moduleName = "SignatureInfo";
-                string moduleCode = $"' Signed with certificate: {Path.GetFileName(certificatePath)}\r\n" +
-                                    $"' Timestamp: {DateTime.UtcNow:u}\r\n" +
-                                    $"Sub Dummy()\r\n" +
-                                    $"    ' No operation – placeholder for signature metadata.\r\n" +
-                                    $"End Sub";
-
-                // Add the module if it does not already exist.
-                bool moduleExists = false;
-                foreach (VbaModule existingModule in vbaProject.Modules)
+                // Load diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    if (string.Equals(existingModule.Name, moduleName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        moduleExists = true;
-                        // Update the code to reflect the latest certificate info.
-                        existingModule.Codes = moduleCode;
-                        Console.WriteLine($"  Updated existing module '{moduleName}'.");
-                        break;
-                    }
-                }
+                    // Access the VBA project (read‑only).
+                    VbaProject vbaProject = diagram.VbaProject;
 
-                if (!moduleExists)
-                {
-                    // Add a new procedural module.
-                    int newIndex = vbaProject.Modules.Add(VbaModuleType.Procedural, moduleName);
-                    VbaModule newModule = vbaProject.Modules[newIndex];
-                    newModule.Codes = moduleCode;
-                    Console.WriteLine($"  Added new module '{moduleName}'.");
-                }
+                    // Output basic VBA project information.
+                    Console.WriteLine($"Processing file: {Path.GetFileName(filePath)}");
+                    Console.WriteLine($"  VBA Project Name : {vbaProject.Name}");
+                    Console.WriteLine($"  Is Signed        : {vbaProject.IsSigned}");
 
-                // Save the diagram in a macro-enabled format to preserve VBA.
-                string outputFilePath = Path.Combine(folderPath, Path.GetFileNameWithoutExtension(filePath) + "_Signed.vsdm");
-                diagram.Save(outputFilePath, SaveFileFormat.Vsdm);
-                Console.WriteLine($"  Saved signed diagram as '{Path.GetFileName(outputFilePath)}'.");
-                diagram.Dispose();
+                    // NOTE: Aspose.Diagram does not provide an API to sign a VBA project.
+                    // The following save operation preserves the existing VBA project.
+                    // If signing were supported, this would be the place to apply the certificate.
+
+                    // Save the diagram in a macro‑enabled format to keep VBA content.
+                    string outputPath = Path.Combine(folderPath,
+                        Path.GetFileNameWithoutExtension(filePath) + "_processed.vsdm");
+                    diagram.Save(outputPath, SaveFileFormat.Vsdm);
+                    Console.WriteLine($"  Saved processed diagram to: {outputPath}");
+                }
             }
             catch (Exception ex)
             {

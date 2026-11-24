@@ -8,17 +8,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output PDF file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPdfPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,54 +27,40 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // ------------------------------------------------------------
+                // Embed a VBA macro into the diagram
+                // ------------------------------------------------------------
+                // Add a new procedural VBA module named "InteractiveModule"
+                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "InteractiveModule");
+                // Retrieve the newly added module
+                VbaModule vbaModule = diagram.VbaProject.Modules[moduleIndex];
+                // Set the VBA code for the module
+                vbaModule.Codes = "Sub ShowMessage()\n    MsgBox \"Hello from VBA macro!\"\nEnd Sub";
 
-            // ------------------------------------------------------------
-            // Embed a VBA module with sample macro code.
-            // ------------------------------------------------------------
-            // Add a new procedural VBA module named "SampleModule".
-            int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "SampleModule");
+                // ------------------------------------------------------------
+                // Configure PDF save options
+                // ------------------------------------------------------------
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optionally specify a default font for PDF rendering
+                pdfOptions.DefaultFont = "Arial";
 
-            // Retrieve the newly added module and set its VBA source code.
-            VbaModule vbaModule = diagram.VbaProject.Modules[moduleIndex];
-            vbaModule.Codes = @"
-Sub SampleMacro()
-    MsgBox ""Hello from VBA!""
-End Sub
-";
+                // ------------------------------------------------------------
+                // Save the diagram as a PDF file
+                // ------------------------------------------------------------
+                diagram.Save(outputPdfPath, pdfOptions);
+            }
 
-            // ------------------------------------------------------------
-            // Configure PDF save options.
-            // ------------------------------------------------------------
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-
-            // Explicitly set the format tracker.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-            // Set default font for fallback.
-            pdfOptions.DefaultFont = "Arial";
-
-            // Do not export hidden pages.
-            pdfOptions.ExportHiddenPage = false;
-
-            // Do not split multi‑page diagrams into separate PDFs.
-            pdfOptions.SplitMultiPages = false;
-
-            // Set PDF/A compliance (optional).
-            pdfOptions.Compliance = PdfCompliance.PdfA1b;
-
-            // ------------------------------------------------------------
-            // Save the diagram as PDF.
-            // ------------------------------------------------------------
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram successfully converted to PDF with embedded VBA macros: {outputPath}");
+            Console.WriteLine($"Diagram successfully converted to PDF: {outputPdfPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Output any errors that occur during processing
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

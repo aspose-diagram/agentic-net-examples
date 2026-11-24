@@ -7,17 +7,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output file path.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <password>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string password = args[2];
 
-        // Guard: verify input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -26,42 +27,32 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the VBA project (read‑only property).
-            VbaProject vbaProject = diagram.VbaProject;
-
-            if (vbaProject == null)
+            // Ensure the diagram contains a VBA project
+            if (diagram.VbaProject == null)
             {
-                Console.WriteLine("The diagram does not contain a VBA project.");
-            }
-            else
-            {
-                // Output basic VBA project information.
-                Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
-                Console.WriteLine($"VBA Project IsSigned: {vbaProject.IsSigned}");
-
-                // List existing VBA modules.
-                Console.WriteLine("Existing VBA Modules:");
-                foreach (VbaModule module in vbaProject.Modules)
-                {
-                    Console.WriteLine($"- {module.Name}");
-                }
-
-                // TODO: Apply password protection to the VBA project when a supported API becomes available.
-                // Aspose.Diagram currently does not expose a property or method to set a VBA project password.
-                // When such an API is added, it should be invoked here, e.g.:
-                // vbaProject.Password = "YourPassword";
+                Console.Error.WriteLine("The diagram does not contain a VBA project.");
+                return;
             }
 
-            // Save the diagram in a macro‑enabled format (VSDM) to preserve VBA content.
+            // TODO: Apply password protection to the VBA project.
+            // Aspose.Diagram currently does not expose an API to set a password on the VBA project.
+            // When such an API becomes available, it should be invoked here, e.g.:
+            // diagram.VbaProject.SetPassword(password);
+            // For now, we simply output the intended password (do not store it in the file).
+
+            Console.WriteLine($"Intended VBA password: {password}");
+            Console.WriteLine($"VBA Project Name: {diagram.VbaProject.Name}");
+            Console.WriteLine($"Is VBA Project Signed: {diagram.VbaProject.IsSigned}");
+
+            // Save the diagram in macro-enabled format (VSDM)
             diagram.Save(outputPath, SaveFileFormat.Vsdm);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

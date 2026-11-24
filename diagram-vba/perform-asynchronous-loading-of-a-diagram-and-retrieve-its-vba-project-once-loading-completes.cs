@@ -8,71 +8,55 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Input diagram file path (modify as needed)
+        string inputPath = "input.vsdm";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string diagramPath = args[0];
-
         // Guard: ensure the file exists before proceeding
-        if (!File.Exists(diagramPath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
             // Asynchronously load the diagram
-            Diagram diagram = await LoadDiagramAsync(diagramPath);
-
-            // Retrieve the VBA project from the loaded diagram
-            VbaProject vbaProject = diagram.VbaProject;
-
-            if (vbaProject == null)
+            using (Diagram diagram = await LoadDiagramAsync(inputPath))
             {
-                Console.WriteLine("The diagram does not contain a VBA project.");
-            }
-            else
-            {
+                // Retrieve the VBA project from the loaded diagram
+                VbaProject vbaProject = diagram.VbaProject;
+
                 // Output basic VBA project information
                 Console.WriteLine($"VBA Project Name: {vbaProject.Name}");
                 Console.WriteLine($"Is Signed: {vbaProject.IsSigned}");
 
-                // List all VBA modules within the project
-                Console.WriteLine("VBA Modules:");
+                // List all VBA modules and their code
                 foreach (VbaModule module in vbaProject.Modules)
                 {
-                    Console.WriteLine($"- Module Name: {module.Name}");
-                    Console.WriteLine("  Code:");
+                    Console.WriteLine($"--- Module: {module.Name} ---");
                     Console.WriteLine(module.Codes);
+                    Console.WriteLine();
                 }
             }
-
-            // Dispose the diagram to free resources
-            diagram.Dispose();
         }
         catch (Exception ex)
         {
             // Write any errors that occur during loading or processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Loads a Visio diagram from the specified file path on a background thread.
-    /// </summary>
-    /// <param name="path">The full path to the Visio file.</param>
-    /// <returns>A Task that resolves to the loaded Diagram instance.</returns>
+    // Helper method to load a Diagram asynchronously
     private static Task<Diagram> LoadDiagramAsync(string path)
     {
         return Task.Run(() =>
         {
-            // The Diagram constructor loads the file synchronously.
-            // Wrapping it in Task.Run provides asynchronous behavior.
+            // Diagram constructor loads the file synchronously; wrapping in Task.Run makes it asynchronous
             return new Diagram(path);
         });
     }

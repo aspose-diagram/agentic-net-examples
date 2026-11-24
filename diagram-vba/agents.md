@@ -4,10 +4,10 @@ display_name: Diagram Vba
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 35
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 35 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,13 +63,16 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 35 | Core diagram API |
 | `System` | 35 | Console, Math, DateTime, Exception |
 | `System.IO` | 35 | File, Stream, Path, Directory operations |
-| `Aspose.Diagram.Vba` | 30 | Supporting utilities |
-| `Aspose.Diagram.Saving` | 5 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 2 | List, Dictionary, HashSet |
+| `Aspose.Diagram.Vba` | 33 | Supporting utilities |
+| `Aspose.Diagram.Saving` | 7 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 3 | List, Dictionary, HashSet |
+| `System.Linq` | 1 | LINQ queries on collections |
+| `System.Text` | 1 | StringBuilder |
 | `System.Text.RegularExpressions` | 1 | Supporting utilities |
 | `System.Text.Json` | 1 | JSON serialization |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
 | `System.Xml.Linq` | 1 | Supporting utilities |
+| `System.Security.Cryptography.X509Certificates` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -239,7 +242,7 @@ Frequently asked questions about **Diagram Vba** in **Aspose.Diagram for .NET**:
 
 **Q: How do I get started with Diagram Vba in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -270,4 +273,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 35 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

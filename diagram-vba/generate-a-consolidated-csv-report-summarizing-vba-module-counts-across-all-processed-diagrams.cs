@@ -7,96 +7,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input_folder_path> [output_csv_path]");
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputCsvPath>");
             return;
         }
 
         string inputFolder = args[0];
-        string outputCsv = args.Length >= 2 ? args[1] : "VbaModuleReport.csv";
+        string outputCsvPath = args[1];
 
-        // Guard: input folder must exist.
+        // Verify the input folder exists.
         if (!Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Prepare CSV header.
+        // Prepare the CSV file for writing.
         try
         {
-            using (var writer = new StreamWriter(outputCsv, false))
+            using (StreamWriter csvWriter = new StreamWriter(outputCsvPath, false))
             {
-                writer.WriteLine("DiagramPath,ModuleCount");
+                // Write CSV header.
+                csvWriter.WriteLine("DiagramPath,ModuleCount");
 
-                // Process each Visio file in the folder (non-recursive).
-                string[] visioExtensions = new[] { ".vsdx", ".vsd", ".vsdm", ".vssx", ".vss", ".vssm", ".vstx", ".vst", ".vstm", ".vdx", ".vsx", ".vtx" };
-                foreach (string filePath in Directory.GetFiles(inputFolder))
+                // Gather Visio files that may contain VBA projects.
+                string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+                foreach (string filePath in visioFiles)
                 {
-                    // Guard: file must exist (redundant but per rules).
+                    // Filter supported Visio extensions.
+                    string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (ext != ".vsdx" && ext != ".vsdm" && ext != ".vsd" && ext != ".vssx" && ext != ".vssm" && ext != ".vstx" && ext != ".vstm")
+                    {
+                        continue;
+                    }
+
+                    // Guard against missing files (should not happen after GetFiles, but required by rules).
                     if (!File.Exists(filePath))
                     {
                         Console.Error.WriteLine($"File not found: {filePath}");
                         continue;
                     }
 
-                    // Process only files with Visio extensions.
-                    string ext = Path.GetExtension(filePath);
-                    if (Array.IndexOf(visioExtensions, ext, 0, visioExtensions.Length) < 0)
-                    {
-                        // Skip non-Visio files.
-                        continue;
-                    }
-
-                    int moduleCount = 0;
-
                     try
                     {
-                        // Load the diagram.
-                        Diagram diagram = new Diagram(filePath);
-
-                        // If a VBA project exists, count its modules.
-                        if (diagram.VbaProject != null && diagram.VbaProject.Modules != null)
+                        // Load the diagram inside a using block as required.
+                        using (Diagram diagram = new Diagram(filePath))
                         {
-                            moduleCount = diagram.VbaProject.Modules.Count;
-                        }
+                            int moduleCount = 0;
 
-                        // Dispose diagram to free resources.
-                        diagram.Dispose();
+                            // If a VBA project exists, count its modules.
+                            if (diagram.VbaProject != null)
+                            {
+                                foreach (VbaModule module in diagram.VbaProject.Modules)
+                                {
+                                    moduleCount++;
+                                }
+                            }
+
+                            // Write the result line to the CSV.
+                            csvWriter.WriteLine($"{filePath},{moduleCount}");
+                        }
                     }
                     catch (Exception ex)
                     {
-                        // Log loading/processing errors and continue with next file.
+                        // Report any errors that occur while processing an individual diagram.
                         Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
-                        continue;
                     }
-
-                    // Write CSV line for this diagram.
-                    writer.WriteLine($"{EscapeCsv(filePath)},{moduleCount}");
                 }
             }
-
-            Console.WriteLine($"CSV report generated at: {Path.GetFullPath(outputCsv)}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to write CSV report: {ex.Message}");
+            // Report errors related to CSV creation or writing.
+            Console.Error.WriteLine($"Failed to write CSV file '{outputCsvPath}': {ex.Message}");
         }
-    }
-
-    // Helper to escape CSV fields containing commas or quotes.
-    private static string EscapeCsv(string field)
-    {
-        if (field.Contains("\""))
-        {
-            field = field.Replace("\"", "\"\"");
-        }
-        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n") || field.Contains("\r"))
-        {
-            field = $"\"{field}\"";
-        }
-        return field;
     }
 }

@@ -1,11 +1,11 @@
 {
   "category": "diagram-vba",
   "display_name": "Diagram Vba",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -48,7 +48,9 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.IO"
+        "System.Collections.Generic",
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram"
@@ -60,6 +62,7 @@
       "task": "Batch sign vba projects in multiple diagrams using a common certificate for consistency",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -90,6 +93,7 @@
       "task": "Clone the vba project from one diagram and attach it to another diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -120,6 +124,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -167,6 +172,7 @@
       "task": "Delete a vba module identified by name from the diagram s vba project",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -197,7 +203,6 @@
       "task": "Execute a specific macro programmatically and capture its output for verification",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -214,7 +219,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram"
@@ -299,7 +305,6 @@
       "task": "Load a visio diagram from file and access its vba project for manipulation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -347,6 +352,7 @@
       "task": "Remove password protection from a vba project after verifying user credentials successfully",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -362,6 +368,7 @@
       "task": "Remove the existing digital signature from the vba project to allow unsigned deployment",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Vba",
         "System",
         "System.IO"
       ],
@@ -393,6 +400,7 @@
       "task": "Replace all instances of a deprecated function name with the updated version in vba modules",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -438,7 +446,6 @@
       "task": "Save the diagram preserving its vba project to a new visio file format",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"
@@ -501,7 +508,8 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Vba",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Security.Cryptography.X509Certificates"
       ],
       "key_apis": [
         "Diagram",
@@ -515,6 +523,7 @@
       "task": "Update an existing vba module by replacing its content with new macro statements",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Diagram.Vba",
         "System",
         "System.IO"

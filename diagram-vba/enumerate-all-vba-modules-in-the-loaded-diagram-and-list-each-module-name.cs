@@ -7,45 +7,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments
+        // Verify that an input file path was provided.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <path-to-visio-diagram>");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists before attempting to load.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Check if the diagram contains a VBA project
-            if (diagram.VbaProject == null)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.WriteLine("The diagram does not contain a VBA project.");
-                return;
-            }
+                // Check whether the diagram contains a VBA project.
+                if (diagram.VbaProject == null)
+                {
+                    Console.WriteLine("No VBA project found in the diagram.");
+                    return;
+                }
 
-            // Enumerate all VBA modules and output their names
-            Console.WriteLine("VBA Modules in the diagram:");
-            foreach (VbaModule module in diagram.VbaProject.Modules)
-            {
-                Console.WriteLine($"- {module.Name}");
+                // Access the collection of VBA modules.
+                VbaModuleCollection modules = diagram.VbaProject.Modules;
+
+                // If there are no modules, inform the user.
+                if (modules == null || modules.Count == 0)
+                {
+                    Console.WriteLine("No VBA modules found.");
+                }
+                else
+                {
+                    Console.WriteLine("VBA Modules:");
+                    // Enumerate each module and output its name.
+                    foreach (VbaModule module in modules)
+                    {
+                        Console.WriteLine($"- {module.Name}");
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

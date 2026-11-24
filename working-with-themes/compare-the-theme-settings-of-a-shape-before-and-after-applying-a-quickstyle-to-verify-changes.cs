@@ -6,20 +6,13 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
-            return;
-        }
+        // Input diagram path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args.Length > 1 ? args[1] : "output_modified.vsdx";
-
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -35,74 +28,62 @@ class Program
                 return;
             }
 
-            Page page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
+            if (diagram.Pages[0].Shapes.Count == 0)
             {
                 Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            // Retrieve the first shape
-            Shape shape = page.Shapes[0];
+            // Retrieve the first shape on the first page
+            Shape shape = diagram.Pages[0].Shapes[0];
 
             // Capture theme‑related visual properties before applying quickstyle
-            string fillForegndBefore = shape.Fill?.FillForegnd?.Value ?? string.Empty;
-            double fillForegndTransBefore = shape.Fill?.FillForegndTrans?.Value ?? double.NaN;
-            string lineColorBefore = shape.Line?.LineColor?.Value ?? string.Empty;
-            double lineWeightBefore = shape.Line?.LineWeight?.Value ?? double.NaN;
+            string beforeFill = shape.Fill?.FillForegnd?.Value?.ToString() ?? "null";
+            string beforeLine = shape.Line?.LineColor?.Value?.ToString() ?? "null";
 
-            // Apply a preset theme, variant, and quickstyle (write‑only properties)
+            Console.WriteLine("Before applying quickstyle:");
+            Console.WriteLine($"  FillForegnd: {beforeFill}");
+            Console.WriteLine($"  LineColor:   {beforeLine}");
+
+            // Apply a preset theme, variant, and quickstyle to the shape
+            // Note: These properties are write‑only; we cannot read them back.
             shape.PresetTheme = PresetThemeValue.Bubble;
             shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
             shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
 
             // Capture the same visual properties after applying quickstyle
-            string fillForegndAfter = shape.Fill?.FillForegnd?.Value ?? string.Empty;
-            double fillForegndTransAfter = shape.Fill?.FillForegndTrans?.Value ?? double.NaN;
-            string lineColorAfter = shape.Line?.LineColor?.Value ?? string.Empty;
-            double lineWeightAfter = shape.Line?.LineWeight?.Value ?? double.NaN;
+            string afterFill = shape.Fill?.FillForegnd?.Value?.ToString() ?? "null";
+            string afterLine = shape.Line?.LineColor?.Value?.ToString() ?? "null";
 
-            // Compare and report differences
-            bool anyChange = false;
+            Console.WriteLine("After applying quickstyle:");
+            Console.WriteLine($"  FillForegnd: {afterFill}");
+            Console.WriteLine($"  LineColor:   {afterLine}");
 
-            if (fillForegndBefore != fillForegndAfter)
+            // Verify that the visual properties have changed
+            bool fillChanged = !string.Equals(beforeFill, afterFill, StringComparison.Ordinal);
+            bool lineChanged = !string.Equals(beforeLine, afterLine, StringComparison.Ordinal);
+
+            if (fillChanged || lineChanged)
             {
-                anyChange = true;
-                Console.WriteLine($"FillForegnd changed from '{fillForegndBefore}' to '{fillForegndAfter}'.");
+                Console.WriteLine("Theme changes detected:");
+                if (fillChanged) Console.WriteLine("  Fill color changed.");
+                if (lineChanged) Console.WriteLine("  Line color changed.");
+            }
+            else
+            {
+                // If no change is detected, throw an exception to indicate failure
+                throw new Exception("No theme-related visual changes were detected after applying the quickstyle.");
             }
 
-            if (!double.IsNaN(fillForegndTransBefore) && !double.IsNaN(fillForegndTransAfter) &&
-                fillForegndTransBefore != fillForegndTransAfter)
-            {
-                anyChange = true;
-                Console.WriteLine($"FillForegndTrans changed from {fillForegndTransBefore} to {fillForegndTransAfter}.");
-            }
-
-            if (lineColorBefore != lineColorAfter)
-            {
-                anyChange = true;
-                Console.WriteLine($"LineColor changed from '{lineColorBefore}' to '{lineColorAfter}'.");
-            }
-
-            if (!double.IsNaN(lineWeightBefore) && !double.IsNaN(lineWeightAfter) &&
-                lineWeightBefore != lineWeightAfter)
-            {
-                anyChange = true;
-                Console.WriteLine($"LineWeight changed from {lineWeightBefore} to {lineWeightAfter}.");
-            }
-
-            if (!anyChange)
-            {
-                Console.WriteLine("No visual theme changes detected after applying the quickstyle.");
-            }
-
-            // Save the modified diagram
+            // Optional: save the modified diagram to verify the changes visually
+            string outputPath = "Themes1_Modified.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

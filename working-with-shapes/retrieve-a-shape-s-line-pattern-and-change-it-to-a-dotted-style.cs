@@ -6,71 +6,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        // Expect input Visio file path as first argument
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [shapeId]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
+        }
+
+        // Optional shape ID argument; default to 1 if not provided
+        int shapeId = 1;
+        if (args.Length >= 2 && int.TryParse(args[1], out int parsedId))
+        {
+            shapeId = parsedId;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page.
+                // Get the first page (index 0)
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
+                    Console.Error.WriteLine("Error: Diagram contains no pages.");
                     return;
                 }
 
-                // Get the first page (you can modify this to target a specific page).
                 Page page = diagram.Pages[0];
 
-                // Iterate all shapes on the page.
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    Shape shape = page.Shapes[i];
-
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve the current line pattern value.
-                    // LinePattern.Value returns a LinePatternValue enum; casting to int for display.
-                    int currentPattern = (int)shape.Line.LinePattern.Value;
-                    Console.WriteLine($"Shape ID {shape.ID} current line pattern index: {currentPattern}");
-
-                    // Change the line pattern to a dotted style.
-                    // In Visio, line pattern index 3 typically represents a dotted line.
-                    // Assign using the integer index as the enum underlying value.
-                    shape.Line.LinePattern.Value = (LinePatternValue)3;
-
-                    // Verify the change.
-                    int newPattern = (int)shape.Line.LinePattern.Value;
-                    Console.WriteLine($"Shape ID {shape.ID} new line pattern index: {newPattern}");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on the first page.");
+                    return;
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Skip logically deleted shapes
+                if (shape.Del == BOOL.True)
+                {
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} is marked as deleted.");
+                    return;
+                }
+
+                // Retrieve current line pattern
+                var currentPattern = shape.Line.LinePattern.Value;
+                Console.WriteLine($"Current line pattern for shape ID {shapeId}: {currentPattern}");
+
+                // Change line pattern to dotted style
+                // Assuming LinePatternValue.Dot exists; otherwise use the integer value 3
+                shape.Line.LinePattern.Value = LinePatternValue.Dot;
+
+                // Verify the change
+                var newPattern = shape.Line.LinePattern.Value;
+                Console.WriteLine($"New line pattern for shape ID {shapeId}: {newPattern}");
+
+                // Save the modified diagram to a new file
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(inputPath) ?? "",
+                    Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
+
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

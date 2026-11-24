@@ -1,113 +1,106 @@
 using System;
 using System.IO;
+using System.Xml;
 using System.Collections.Generic;
-using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect diagram file path and keyword.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <keyword>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <Keyword>");
             return;
         }
 
-        string diagramPath = args[0];
+        string visioPath = args[0];
         string keyword = args[1];
 
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(visioPath);
 
-            // HashSet to store unique shape IDs found.
-            HashSet<long> shapeIds = new HashSet<long>();
+            // List to collect shape IDs that match the keyword.
+            List<long> matchingShapeIds = new List<long>();
 
             // Iterate over all SolutionXML elements in the document.
-            foreach (SolutionXML solutionXml in diagram.SolutionXMLs)
+            foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                // The XML content is stored in the XmlValue property.
-                string xmlContent = solutionXml.XmlValue;
-                if (string.IsNullOrEmpty(xmlContent))
+                // Quick check: does the raw XML contain the keyword (case‑insensitive)?
+                if (solXml.XmlValue != null &&
+                    solXml.XmlValue.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    continue;
-                }
-
-                // Parse the XML content.
-                XDocument xDoc;
-                try
-                {
-                    xDoc = XDocument.Parse(xmlContent);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Warning: Failed to parse SolutionXML '{solutionXml.Name}': {ex.Message}");
-                    continue;
-                }
-
-                // Search for elements or attributes that contain the keyword.
-                // If an element named "ShapeID" (or attribute containing "ID") is found,
-                // attempt to parse its value as a long and add to the result set.
-                foreach (XElement element in xDoc.Descendants())
-                {
-                    // Check element value for keyword.
-                    if (element.Value != null && element.Value.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                    // Load the XML fragment into an XmlDocument for parsing.
+                    XmlDocument xmlDoc = new XmlDocument();
+                    try
                     {
-                        // If the element name suggests it holds an ID, try to parse.
-                        if (element.Name.LocalName.Equals("ShapeID", StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (long.TryParse(element.Value, out long id))
-                            {
-                                shapeIds.Add(id);
-                            }
-                        }
+                        xmlDoc.LoadXml(solXml.XmlValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        // If the XML is malformed, report and continue with next SolutionXML.
+                        Console.Error.WriteLine($"Warning: Unable to parse SolutionXML '{solXml.Name}'. {ex.Message}");
+                        continue;
                     }
 
-                    // Check each attribute of the element.
-                    foreach (XAttribute attr in element.Attributes())
+                    // Attempt to find shape identifiers.
+                    // Common patterns: <Shape ID="123"> or <Shape ShapeID="123">
+                    XmlNodeList shapeNodes = xmlDoc.SelectNodes("//Shape[@ID] | //Shape[@ShapeID]");
+                    foreach (XmlNode node in shapeNodes)
                     {
-                        if (attr.Value != null && attr.Value.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        string idStr = node.Attributes["ID"]?.Value ?? node.Attributes["ShapeID"]?.Value;
+                        if (long.TryParse(idStr, out long shapeId))
                         {
-                            // If attribute name suggests it holds an ID, try to parse.
-                            if (attr.Name.LocalName.IndexOf("ID", StringComparison.OrdinalIgnoreCase) >= 0)
+                            // Verify that the shape actually exists in the diagram before adding.
+                            // Shapes are stored per page; we need to search all pages.
+                            bool exists = false;
+                            foreach (Page page in diagram.Pages)
                             {
-                                if (long.TryParse(attr.Value, out long id))
+                                // Shapes.GetShape returns null if not found.
+                                Shape shape = page.Shapes.GetShape(shapeId);
+                                if (shape != null)
                                 {
-                                    shapeIds.Add(id);
+                                    exists = true;
+                                    break;
                                 }
+                            }
+
+                            if (exists && !matchingShapeIds.Contains(shapeId))
+                            {
+                                matchingShapeIds.Add(shapeId);
                             }
                         }
                     }
                 }
             }
 
-            // Output the collected shape IDs.
-            if (shapeIds.Count == 0)
+            // Output the results.
+            if (matchingShapeIds.Count == 0)
             {
-                Console.WriteLine($"No shape IDs containing the keyword \"{keyword}\" were found in SolutionXML.");
+                Console.WriteLine($"No shapes containing the keyword \"{keyword}\" were found in any SolutionXML.");
             }
             else
             {
-                Console.WriteLine($"Shape IDs containing the keyword \"{keyword}\":");
-                foreach (long id in shapeIds)
+                Console.WriteLine($"Shapes containing the keyword \"{keyword}\":");
+                foreach (long id in matchingShapeIds)
                 {
-                    Console.WriteLine(id);
+                    Console.WriteLine($"- Shape ID: {id}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Catch any Aspose.Diagram related or general exceptions.
+            // Catch any Aspose.Diagram related exceptions and report them.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

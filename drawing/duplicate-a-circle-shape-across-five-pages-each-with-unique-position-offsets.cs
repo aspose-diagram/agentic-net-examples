@@ -1,77 +1,62 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the output file path
-        string outputPath = "output.vsdx";
-
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
+        // Define output file path
+        string outputPath = "DuplicatedCircles.vsdx";
 
         try
         {
-            // Create a new empty diagram (contains a default page)
+            // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Add additional pages so we have a total of five pages
-            // The diagram already has page index 0, so add pages 1..4
-            for (int i = 1; i < 5; i++)
-            {
-                // Create a new blank page and add it to the diagram
-                Page newPage = new Page();
-                diagram.Pages.Add(newPage);
-            }
+            // Define base circle parameters
+            double basePinX = 5.0; // base X position
+            double basePinY = 5.0; // base Y position
+            double circleSize = 2.0; // width and height to make it a circle
+            string masterName = "Ellipse"; // Visio master for an ellipse (circle when width == height)
 
-            // Loop through each of the five pages and draw a circle with an offset
+            // Create five pages and place a circle on each with a unique offset
             for (int i = 0; i < 5; i++)
             {
-                // Retrieve the current page by index
-                Page page = diagram.Pages[i];
+                // Add a new page to the diagram
+                Page page = new Page();
+                diagram.Pages.Add(page);
 
-                // Calculate unique position offsets for this page
-                double offsetX = i * 2.0; // 2 inches offset per page on X axis
-                double offsetY = i * 1.0; // 1 inch offset per page on Y axis
+                // Calculate offset for this page
+                double offsetX = basePinX + i * 2.0; // shift 2 units right per page
+                double offsetY = basePinY + i * 1.0; // shift 1 unit up per page
 
-                // Define the center of the circle (PinX, PinY) with offsets
-                double centerX = 5.0 + offsetX;
-                double centerY = 5.0 + offsetY;
+                // Add the ellipse shape (returns the shape ID)
+                long shapeId = page.AddShape(offsetX, offsetY, masterName, false);
 
-                // Define the diameter of the circle (width = height)
-                double diameter = 1.0; // 1 inch diameter
-
-                // Draw the circle (ellipse with equal width and height) on the page
-                long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
-
-                // Retrieve the newly created shape object
+                // Retrieve the shape object using the ID
                 Shape shape = page.Shapes.GetShape((int)shapeId);
 
-                // Set a label for the shape to identify the page
-                shape.Text.Value.Clear();
-                shape.Text.Value.Add(new Txt($"Circle {i + 1}"));
+                // Ensure the shape is a circle by setting equal width and height
+                shape.XForm.Width.Value = circleSize;
+                shape.XForm.Height.Value = circleSize;
 
-                // Apply a simple fill color for visual distinction
-                shape.Fill.FillForegnd.Value = "#FFCCCC"; // light red fill
-                shape.Fill.FillPattern.Value = 1; // solid fill pattern
+                // Optional: set a fill color for visual distinction
+                shape.Fill.FillPattern.Value = 1; // solid fill
+                shape.Fill.FillForegnd.Value = "#FFCC00"; // orange fill
+
+                // Optional: set a line color
+                shape.Line.LineColor.Value = "#000000"; // black border
             }
 
-            // Save the diagram in VSDX format
+            // Save the diagram to a VSDX file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

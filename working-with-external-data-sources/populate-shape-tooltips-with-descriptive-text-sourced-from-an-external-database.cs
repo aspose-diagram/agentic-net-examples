@@ -7,11 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Input Visio file path (replace with actual path or pass as argument)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        // Output Visio file path
+        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input Visio file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -20,53 +26,64 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // ------------------------------------------------------------
-            // Simulated external database: a DataTable with shape IDs and tooltips
-            // In a real scenario this data would come from an actual database.
-            // ------------------------------------------------------------
-            DataTable tooltipTable = new DataTable();
-            tooltipTable.Columns.Add("ShapeId", typeof(long));
-            tooltipTable.Columns.Add("Tooltip", typeof(string));
+            // Simulate external database with an in‑memory DataTable
+            DataTable tooltipTable = CreateTooltipDataTable();
 
-            // Sample data rows (populate as needed)
-            tooltipTable.Rows.Add(1L, "Start of the process");
-            tooltipTable.Rows.Add(2L, "Decision point");
-            tooltipTable.Rows.Add(3L, "End of the process");
-            // Add more rows corresponding to actual shape IDs in the diagram
-
-            // ------------------------------------------------------------
-            // Iterate through all pages and shapes, assigning tooltips
-            // ------------------------------------------------------------
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Look up a tooltip for the current shape ID
-                    DataRow[] rows = tooltipTable.Select($"ShapeId = {shape.ID}");
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Use the shape's NameU as the lookup key
+                    string shapeName = shape.NameU ?? string.Empty;
+
+                    // Find matching tooltip text in the simulated table
+                    DataRow[] rows = tooltipTable.Select($"ShapeName = '{shapeName.Replace("'", "''")}'");
                     if (rows.Length > 0)
                     {
-                        string tooltip = rows[0]["Tooltip"]?.ToString() ?? string.Empty;
+                        string tooltip = rows[0]["Tooltip"] as string ?? string.Empty;
 
-                        // Ensure the Misc and Comment objects are available before setting
+                        // Ensure the Misc and Comment cells are available before assigning
                         if (shape.Misc != null && shape.Misc.Comment != null)
                         {
                             shape.Misc.Comment.Value = tooltip;
+                            // Refresh shape data so the tooltip becomes effective
+                            shape.RefreshData();
                         }
                     }
                 }
             }
 
-            // Save the modified diagram to the output path
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved with tooltips to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Creates a DataTable that mimics an external database containing shape tooltips
+    private static DataTable CreateTooltipDataTable()
+    {
+        DataTable table = new DataTable();
+        table.Columns.Add("ShapeName", typeof(string));
+        table.Columns.Add("Tooltip", typeof(string));
+
+        // Sample data – in a real scenario this would come from a database query
+        table.Rows.Add("Process", "This shape represents a business process.");
+        table.Rows.Add("Decision", "Decision point where a choice is made.");
+        table.Rows.Add("Start", "Entry point of the workflow.");
+        table.Rows.Add("End", "Termination point of the workflow.");
+
+        return table;
     }
 }

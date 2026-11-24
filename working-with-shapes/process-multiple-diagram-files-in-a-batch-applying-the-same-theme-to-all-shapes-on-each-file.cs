@@ -7,20 +7,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate that at least one file path is provided.
-        if (args.Length == 0)
+        // Determine the folder containing diagram files.
+        string folderPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagramFile1> [<diagramFile2> ...]");
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the folder path containing Visio files: ");
+            folderPath = Console.ReadLine();
+        }
+
+        // Validate folder existence.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
             return;
         }
 
-        // Process each diagram file supplied via command line arguments.
-        foreach (string inputPath in args)
+        // Get all Visio files (VSDX and VSD) in the folder.
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
+        string[] legacyFiles = Directory.GetFiles(folderPath, "*.vsd");
+        string[] allFiles = new string[diagramFiles.Length + legacyFiles.Length];
+        diagramFiles.CopyTo(allFiles, 0);
+        legacyFiles.CopyTo(allFiles, diagramFiles.Length);
+
+        if (allFiles.Length == 0)
         {
-            // Guard: ensure the file exists before attempting to load.
+            Console.WriteLine("No Visio files found in the specified folder.");
+            return;
+        }
+
+        // Process each diagram file.
+        foreach (string inputPath in allFiles)
+        {
+            // Guard: ensure the file exists.
             if (!File.Exists(inputPath))
             {
-                Console.Error.WriteLine($"File not found: {inputPath}");
+                Console.Error.WriteLine("File not found: " + inputPath);
                 continue;
             }
 
@@ -29,32 +54,27 @@ class Program
                 // Load the diagram inside a using block as required.
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate over all pages in the diagram.
+                    // Iterate through each page.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate over all shapes on the current page.
+                        // Iterate through each shape on the page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip shapes that are marked as deleted.
-                            if (shape.Del == BOOL.True)
-                                continue;
-
                             // Apply a preset theme to the shape.
-                            // PresetThemeValue and PresetThemeVariantValue are write‑only properties.
+                            // Example theme: Bubble. Adjust as needed.
                             shape.PresetTheme = PresetThemeValue.Bubble;
+
+                            // Optionally apply a variant (write‑only property).
                             shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                            // Optionally, a quick style can be set if desired:
-                            // shape.PresetThemeQuickStyle = PresetThemeQuickStyleValue.Style1;
                         }
                     }
 
-                    // Determine output file path (original name with "_themed" suffix).
+                    // Construct output file name (original name with "_themed" suffix).
                     string directory = Path.GetDirectoryName(inputPath);
-                    string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-                    string extension = Path.GetExtension(inputPath);
-                    string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_themed{extension}");
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                    string outputPath = Path.Combine(directory, fileNameWithoutExt + "_themed.vsdx");
 
-                    // Save the modified diagram in VSDX format.
+                    // Save the modified diagram using the required overload.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
                     Console.WriteLine($"Processed and saved: {outputPath}");
@@ -62,7 +82,7 @@ class Program
             }
             catch (Exception ex)
             {
-                // Write any errors to the error stream.
+                // Log any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }

@@ -1,16 +1,23 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard: verify input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -19,49 +26,46 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern)
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least three pages
+                // Ensure the diagram has at least three pages (page index is zero‑based).
                 if (diagram.Pages.Count < 3)
                 {
                     Console.Error.WriteLine("The diagram does not contain a third page.");
                     return;
                 }
 
-                // Access page three (zero‑based index 2)
-                Page page = diagram.Pages[2];
+                // Retrieve page three (index 2).
+                Page pageThree = diagram.Pages[2];
 
-                // Current system date string to replace the placeholder
-                string currentDate = DateTime.Now.ToString("yyyy-MM-dd");
-
-                // Iterate all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate all shapes on page three.
+                foreach (Shape shape in pageThree.Shapes)
                 {
-                    // Skip deleted shapes
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Iterate each text fragment within the shape
-                    foreach (FormatTxt fmt in shape.Text.Value)
+                    // Iterate all text fragments within the shape.
+                    foreach (var txt in shape.Text.Value)
                     {
-                        // We're interested only in plain text fragments (Txt)
-                        if (fmt is Txt txt && txt.Text != null && txt.Text.Contains("[Date]"))
+                        // Only process Txt objects (actual text runs).
+                        if (txt is Txt tx && tx.Text != null && tx.Text.Contains("[Date]"))
                         {
-                            // Replace the placeholder with the current date
-                            txt.Text = txt.Text.Replace("[Date]", currentDate);
+                            // Replace the placeholder with the current system date.
+                            string currentDate = DateTime.Now.ToString("d");
+                            tx.Text = tx.Text.Replace("[Date]", currentDate);
                         }
                     }
                 }
 
-                // Save the modified diagram to the output file
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

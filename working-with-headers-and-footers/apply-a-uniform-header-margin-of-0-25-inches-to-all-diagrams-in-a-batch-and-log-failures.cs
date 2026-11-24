@@ -6,29 +6,40 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Verify that a folder path argument was provided.
-        if (args.Length == 0)
+        // Determine the folder containing diagrams.
+        string folderPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Please provide the folder path containing Visio diagram files as the first argument.");
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the folder path containing Visio diagrams: ");
+            folderPath = Console.ReadLine();
+        }
+
+        // Guard: folder must exist.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        string folderPath = args[0];
+        // Define supported Visio file extensions.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".vss", ".vst", ".vssm", ".vstm", ".vsdm" };
 
-        // Guard: ensure the folder exists.
-        if (!Directory.Exists(folderPath))
+        // Collect all matching files.
+        var diagramFiles = Directory.GetFiles(folderPath);
+        int processedCount = 0;
+        int failedCount = 0;
+
+        foreach (var filePath in diagramFiles)
         {
-            Console.Error.WriteLine($"Folder not found: {folderPath}");
-            return;
-        }
+            // Process only supported extensions.
+            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
+                continue;
 
-        // Retrieve all Visio files with .vsdx extension in the folder.
-        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
-
-        // Process each diagram file.
-        foreach (string filePath in diagramFiles)
-        {
-            // Guard: ensure the file still exists before processing.
+            // Guard: file must exist (redundant but per rule).
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -37,24 +48,27 @@ class Program
 
             try
             {
-                // Load the diagram inside a using block as required by the API.
+                // Load diagram inside a using block.
                 using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Set a uniform header margin of 0.25 inches.
+                    // Set uniform header margin to 0.25 inches.
                     diagram.HeaderFooter.HeaderMargin.Value = 0.25;
 
-                    // Save the diagram back to the same file using VSDX format.
+                    // Save the diagram back to the same file (overwrites original).
                     diagram.Save(filePath, SaveFileFormat.Vsdx);
                 }
 
-                // Log successful processing.
-                Console.WriteLine($"Successfully updated header margin: {Path.GetFileName(filePath)}");
+                processedCount++;
             }
             catch (Exception ex)
             {
-                // Log any failures to the error stream.
+                // Log any failure for this file.
                 Console.Error.WriteLine($"Failed to process '{filePath}': {ex.Message}");
+                failedCount++;
             }
         }
+
+        // Summary output.
+        Console.WriteLine($"Processing completed. Successfully updated: {processedCount}, Failed: {failedCount}");
     }
 }

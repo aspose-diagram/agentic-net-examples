@@ -2,72 +2,105 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length == 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Error: No diagram file path provided.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputReportPath]");
             return;
         }
 
         string diagramPath = args[0];
+        string reportPath = args.Length >= 2 ? args[1] : null;
 
-        // Guard: ensure the file exists before proceeding.
+        // Guard against missing input file.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Dictionary to hold the total count of user-defined cells per shape category.
-            Dictionary<string, int> categoryUserCellCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Dictionary to aggregate user‑defined cell counts per shape category.
+                Dictionary<string, int> categoryCellCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Determine the shape category.
-                    // Use the master shape's NameU if available; otherwise, label as "NoMaster".
-                    string category = shape.Master != null ? shape.Master.NameU : "NoMaster";
-
-                    // Ensure the Users collection is not null before accessing Count.
-                    int userCellCount = shape.Users != null ? shape.Users.Count : 0;
-
-                    // Accumulate the count for this category.
-                    if (categoryUserCellCounts.ContainsKey(category))
+                    // Iterate through all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        categoryUserCellCounts[category] += userCellCount;
-                    }
-                    else
-                    {
-                        categoryUserCellCounts[category] = userCellCount;
+                        // Determine the shape's category.
+                        string category = "Unknown";
+
+                        // Prefer the master shape's universal name if available.
+                        if (shape.Master != null && !string.IsNullOrWhiteSpace(shape.Master.NameU))
+                        {
+                            category = shape.Master.NameU;
+                        }
+                        // Fallback to the shape's own universal name.
+                        else if (!string.IsNullOrWhiteSpace(shape.NameU))
+                        {
+                            category = shape.NameU;
+                        }
+
+                        // Count user‑defined cells for this shape.
+                        int userCellCount = shape.Users != null ? shape.Users.Count : 0;
+
+                        // Accumulate the count per category.
+                        if (categoryCellCounts.ContainsKey(category))
+                        {
+                            categoryCellCounts[category] += userCellCount;
+                        }
+                        else
+                        {
+                            categoryCellCounts[category] = userCellCount;
+                        }
                     }
                 }
-            }
 
-            // Output the report.
-            Console.WriteLine("User-Defined Cells Count per Shape Category:");
-            Console.WriteLine("------------------------------------------------");
-            foreach (var kvp in categoryUserCellCounts)
-            {
-                Console.WriteLine($"Category: {kvp.Key}, User-Defined Cells: {kvp.Value}");
+                // Build the report text.
+                List<string> reportLines = new List<string>();
+                reportLines.Add("User‑Defined Cells Count per Shape Category");
+                reportLines.Add("==========================================");
+                foreach (KeyValuePair<string, int> kvp in categoryCellCounts)
+                {
+                    reportLines.Add($"Category: {kvp.Key}, Total User‑Defined Cells: {kvp.Value}");
+                }
+
+                string reportContent = string.Join(Environment.NewLine, reportLines);
+
+                // Output the report to console.
+                Console.WriteLine(reportContent);
+
+                // Optionally write the report to a file.
+                if (!string.IsNullOrEmpty(reportPath))
+                {
+                    try
+                    {
+                        File.WriteAllText(reportPath, reportContent);
+                        Console.WriteLine($"Report written to: {reportPath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Failed to write report file: {ex.Message}");
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose or I/O errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

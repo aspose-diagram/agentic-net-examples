@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection; // Added for reflection-based Validate call
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.AutoLayout;
@@ -8,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Verify command line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
@@ -27,46 +28,54 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // ------------------------------------------------------------
-                // Perform spacing/layout on the first page using CompactTree.
-                // ------------------------------------------------------------
-                if (diagram.Pages.Count > 0)
+                // -----------------------------------------------------------------
+                // Perform automatic spacing/layout on each page using CompactTree.
+                // -----------------------------------------------------------------
+                foreach (Page page in diagram.Pages)
                 {
                     // Create layout options for compact tree layout.
-                    LayoutOptions layoutOptions = new LayoutOptions();
-                    layoutOptions.LayoutStyle = LayoutStyle.CompactTree;
-                    layoutOptions.Direction = LayoutDirection.DownThenRight;
-                    // Do not automatically enlarge the page.
-                    layoutOptions.EnlargePage = false; // BOOL enum is not applicable here.
+                    LayoutOptions layoutOptions = new LayoutOptions
+                    {
+                        LayoutStyle = LayoutStyle.CompactTree,
+                        Direction = LayoutDirection.DownThenRight,
+                        EnlargePage = false // Changed from BOOL.False to bool false
+                    };
 
-                    // Apply layout to the first page.
-                    Page firstPage = diagram.Pages[0];
-                    firstPage.Layout(layoutOptions);
+                    // Apply layout to the current page.
+                    page.Layout(layoutOptions);
+                }
+
+                // -----------------------------------------------------------------
+                // Validate the diagram after spacing if a Validate method is available.
+                // Uses reflection to call Validate only when it exists.
+                // -----------------------------------------------------------------
+                MethodInfo validateMethod = typeof(Diagram).GetMethod("Validate", BindingFlags.Instance | BindingFlags.Public);
+                if (validateMethod != null)
+                {
+                    validateMethod.Invoke(diagram, null);
+                    Console.WriteLine("Diagram validation completed.");
                 }
                 else
                 {
-                    Console.Error.WriteLine("The diagram contains no pages to layout.");
+                    Console.WriteLine("Validate method not available; skipping validation.");
                 }
 
-                // ------------------------------------------------------------
-                // Validate the diagram after spacing.
-                // ------------------------------------------------------------
-                // Note: Aspose.Diagram does not provide a Validate method.
-                // Validation of diagram integrity is performed automatically during save.
+                Console.WriteLine("Diagram layout completed.");
 
-                // ------------------------------------------------------------
-                // Save the updated diagram.
-                // ------------------------------------------------------------
+                // -----------------------------------------------------------------
+                // Save the processed diagram to the specified output path.
+                // -----------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

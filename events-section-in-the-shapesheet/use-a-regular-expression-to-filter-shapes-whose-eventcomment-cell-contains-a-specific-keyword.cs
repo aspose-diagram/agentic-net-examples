@@ -7,75 +7,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file, keyword, optional output file
+        // Validate command‑line arguments: input file path and regex pattern.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <keyword> [output.vsdx]");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <regexPattern>");
             return;
         }
 
         string inputPath = args[0];
-        string keyword = args[1];
-        string outputPath = args.Length >= 3 ? args[2] : null;
+        string pattern = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare the regular expression (case‑insensitive)
-            Regex regex = new Regex(keyword, RegexOptions.IgnoreCase);
+            // Compile the regular expression once for efficiency.
+            Regex regex = new Regex(pattern, RegexOptions.Compiled);
 
-            Console.WriteLine($"Shapes with EventComment containing \"{keyword}\":");
+            Console.WriteLine($"Shapes with EventComment matching pattern \"{pattern}\":");
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Access the closest available event cell (EventDrop) as a substitute for EventComment
-                    string eventFormula = shape.Event.EventDrop.Ufe.F;
+                    // Aspose.Diagram does not expose an EventComment cell directly.
+                    // Use the closest available event cell (EventDrop) as a substitute.
+                    // This retrieves the formula stored in the EventDrop cell.
+                    string eventCommentFormula = shape.Event.EventDrop.Ufe.F ?? string.Empty;
 
-                    // If the formula is null, skip this shape
-                    if (string.IsNullOrEmpty(eventFormula))
-                        continue;
-
-                    // Apply the regular expression
-                    if (regex.IsMatch(eventFormula))
+                    // Apply the regular expression to the formula text.
+                    if (regex.IsMatch(eventCommentFormula))
                     {
-                        // Output the shape ID and the matching formula
-                        Console.WriteLine($"Page {page.ID}, Shape ID {shape.ID}: {eventFormula}");
+                        // Output shape identification details.
+                        Console.WriteLine($"Page {page.ID}, Shape ID {shape.ID}, Name \"{shape.NameU}\"");
                     }
                 }
-            }
-
-            // If an output path is provided, save the (unchanged) diagram
-            if (!string.IsNullOrEmpty(outputPath))
-            {
-                // Guard: ensure the directory for the output file exists
-                string outputDir = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-                {
-                    Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-                    return;
-                }
-
-                // Save the diagram in VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

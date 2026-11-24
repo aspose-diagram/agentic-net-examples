@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file path, expected orientation, expected scale factor.
+        // Expect three arguments: diagramPath, expectedOrientation, expectedScale
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <orientation:Landscape|Portrait|SameAsPrinter> <scaleFactor>");
@@ -18,70 +18,83 @@ class Program
         string orientationArg = args[1];
         string scaleArg = args[2];
 
-        // Guard: ensure the diagram file exists.
+        // Guard: check file existence
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse expected orientation.
-        if (!Enum.TryParse(orientationArg, true, out PrintPageOrientationValue expectedOrientation) ||
-            (expectedOrientation != PrintPageOrientationValue.Landscape &&
-             expectedOrientation != PrintPageOrientationValue.Portrait &&
-             expectedOrientation != PrintPageOrientationValue.SameAsPrinter))
+        // Parse expected orientation
+        PrintPageOrientationValue expectedOrientation;
+        switch (orientationArg.Trim().ToLowerInvariant())
         {
-            Console.Error.WriteLine($"Invalid orientation value: {orientationArg}. Expected Landscape, Portrait, or SameAsPrinter.");
-            return;
+            case "landscape":
+                expectedOrientation = PrintPageOrientationValue.Landscape;
+                break;
+            case "portrait":
+                expectedOrientation = PrintPageOrientationValue.Portrait;
+                break;
+            case "sameasprinter":
+                expectedOrientation = PrintPageOrientationValue.SameAsPrinter;
+                break;
+            default:
+                Console.Error.WriteLine($"Error: Invalid orientation value '{orientationArg}'. Expected Landscape, Portrait, or SameAsPrinter.");
+                return;
         }
 
-        // Parse expected scaling factor.
-        if (!double.TryParse(scaleArg, out double expectedScale))
+        // Parse expected scaling factor
+        if (!double.TryParse(scaleArg, out double expectedScale) || expectedScale <= 0)
         {
-            Console.Error.WriteLine($"Invalid scale factor: {scaleArg}");
+            Console.Error.WriteLine($"Error: Invalid scale factor '{scaleArg}'. Must be a positive number.");
             return;
         }
-
-        // Tolerance for floating‑point comparison.
-        const double tolerance = 0.0001;
 
         try
         {
-            // Load the diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through each page and validate its PrintProps.
-            foreach (Page page in diagram.Pages)
+            bool allPagesValid = true;
+
+            // Iterate through each page and validate PrintProps
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
                 PrintProps printProps = page.PageSheet.PrintProps;
 
-                // Validate page orientation.
-                if (printProps.PrintPageOrientation.Value != expectedOrientation)
+                // Validate orientation
+                PrintPageOrientationValue actualOrientation = printProps.PrintPageOrientation.Value;
+                if (actualOrientation != expectedOrientation)
                 {
-                    Console.Error.WriteLine($"Page ID {page.ID} orientation mismatch. Expected: {expectedOrientation}, Actual: {printProps.PrintPageOrientation.Value}");
-                    throw new Exception("PrintProps validation failed.");
+                    Console.Error.WriteLine($"Page ID {page.ID}: Orientation mismatch. Expected {expectedOrientation}, found {actualOrientation}.");
+                    allPagesValid = false;
                 }
 
-                // Validate scaling factors (both X and Y should match the expected value).
+                // Validate scaling (both X and Y should match expectedScale)
                 double actualScaleX = printProps.ScaleX.Value;
                 double actualScaleY = printProps.ScaleY.Value;
 
-                if (Math.Abs(actualScaleX - expectedScale) > tolerance ||
-                    Math.Abs(actualScaleY - expectedScale) > tolerance)
+                // Allow a tiny tolerance for floating point comparison
+                const double tolerance = 0.0001;
+                if (Math.Abs(actualScaleX - expectedScale) > tolerance || Math.Abs(actualScaleY - expectedScale) > tolerance)
                 {
-                    Console.Error.WriteLine($"Page ID {page.ID} scaling mismatch. Expected: {expectedScale}, Actual X: {actualScaleX}, Y: {actualScaleY}");
-                    throw new Exception("PrintProps validation failed.");
+                    Console.Error.WriteLine($"Page ID {page.ID}: Scale mismatch. Expected {expectedScale}, found ScaleX={actualScaleX}, ScaleY={actualScaleY}.");
+                    allPagesValid = false;
                 }
-
-                // Indicate successful validation for the current page.
-                Console.WriteLine($"Page ID {page.ID} passed validation (Orientation: {printProps.PrintPageOrientation.Value}, ScaleX: {actualScaleX}, ScaleY: {actualScaleY}).");
             }
 
-            // All pages validated successfully.
-            Console.WriteLine("All pages have the expected PrintProps settings.");
+            if (allPagesValid)
+            {
+                Console.WriteLine("All pages have the expected PrintProps settings.");
+            }
+            else
+            {
+                Console.Error.WriteLine("One or more pages have mismatched PrintProps settings.");
+            }
         }
         catch (Exception ex)
         {
+            // Capture any Aspose or IO related errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -18,7 +18,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file existence
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -30,59 +30,65 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // ---------- Remove redundant SolutionXML elements ----------
-            // Keep the first occurrence of each unique XmlValue, remove duplicates
+            // ------------------------------------------------------------
+            // Remove redundant SolutionXML elements (identical XmlValue)
+            // ------------------------------------------------------------
             var seenXmlValues = new HashSet<string>();
             var solutionXmlsToRemove = new List<SolutionXML>();
 
             foreach (SolutionXML solXml in diagram.SolutionXMLs)
             {
-                // Use XmlValue as the uniqueness key
-                string xml = solXml.XmlValue ?? string.Empty;
-                if (seenXmlValues.Contains(xml))
+                // If the same XML content has been seen, mark for removal
+                if (seenXmlValues.Contains(solXml.XmlValue))
                 {
                     solutionXmlsToRemove.Add(solXml);
                 }
                 else
                 {
-                    seenXmlValues.Add(xml);
+                    seenXmlValues.Add(solXml.XmlValue);
                 }
             }
 
+            // Remove duplicates from the collection
             foreach (SolutionXML dup in solutionXmlsToRemove)
             {
                 diagram.SolutionXMLs.Remove(dup);
             }
 
-            // ---------- Remove redundant StyleSheet definitions ----------
-            // Keep the first StyleSheet with a given Name, remove subsequent duplicates
-            var seenStyleNames = new HashSet<string>();
+            // ------------------------------------------------------------
+            // Remove redundant StyleSheet definitions (identical Name)
+            // ------------------------------------------------------------
+            var seenStyleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var styleSheetsToRemove = new List<StyleSheet>();
 
-            foreach (StyleSheet style in diagram.StyleSheets)
+            foreach (StyleSheet styleSheet in diagram.StyleSheets)
             {
-                string name = style.Name ?? string.Empty;
-                if (seenStyleNames.Contains(name))
+                // If a style sheet with the same name already exists, mark for removal
+                if (seenStyleNames.Contains(styleSheet.Name))
                 {
-                    styleSheetsToRemove.Add(style);
+                    styleSheetsToRemove.Add(styleSheet);
                 }
                 else
                 {
-                    seenStyleNames.Add(name);
+                    seenStyleNames.Add(styleSheet.Name);
                 }
             }
 
+            // Remove duplicate style sheets
             foreach (StyleSheet dupStyle in styleSheetsToRemove)
             {
                 diagram.StyleSheets.Remove(dupStyle);
             }
 
+            // ------------------------------------------------------------
             // Save the optimized diagram
+            // ------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Optimized diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

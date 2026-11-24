@@ -6,72 +6,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Path to the Visio file – replace with your actual file path or pass as an argument.
+        string diagramPath = "input.vsdx";
+        if (!System.IO.File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeId>");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        string visioPath = args[0];
-        string shapeIdArg = args[1];
-
-        // Guard: ensure the Visio file exists.
-        if (!File.Exists(visioPath))
+        // Verify that the diagram file exists before attempting to load it.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found – '{visioPath}'.");
+            Console.Error.WriteLine($"Error: The file \"{diagramPath}\" does not exist.");
             return;
         }
 
-        // Guard: parse the shape ID (must be a long integer).
-        if (!long.TryParse(shapeIdArg, out long shapeId))
+        // Prompt the user to enter the shape ID they wish to select.
+        Console.Write("Enter the shape ID to retrieve (numeric): ");
+        string input = Console.ReadLine();
+
+        if (!long.TryParse(input, out long shapeId))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID – '{shapeIdArg}'.");
+            Console.Error.WriteLine("Error: Invalid shape ID. Please provide a numeric value.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Attempt to locate the shape by ID across all pages.
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                try
-                {
-                    // GetShape returns the shape with the specified ID on this page.
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-                catch
-                {
-                    // If the shape is not on this page, GetShape may throw; ignore and continue.
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} was not found in the diagram.");
+                Console.Error.WriteLine("Error: The diagram does not contain any pages.");
                 return;
             }
 
-            // Output some basic information about the found shape.
-            Console.WriteLine($"Shape ID   : {targetShape.ID}");
-            Console.WriteLine($"NameU      : {targetShape.NameU}");
-            Console.WriteLine($"Name       : {targetShape.Name}");
-            Console.WriteLine($"Master Name: {targetShape.Master?.NameU ?? "N/A"}");
-            Console.WriteLine($"Deleted    : {(targetShape.Del == BOOL.True ? "Yes" : "No")}");
+            // Access the first page (you can modify this to select a specific page if needed).
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape by its ID using the GetShape method.
+            Shape shape = page.Shapes.GetShape(shapeId);
+
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Error: No shape with ID {shapeId} was found on page \"{page.NameU}\".");
+                return;
+            }
+
+            // Output some basic information about the retrieved shape.
+            Console.WriteLine($"Shape ID: {shape.ID}");
+            // NameU holds the universal name of the shape.
+            Console.WriteLine($"Shape NameU: {shape.NameU}");
+            // Optionally, display whether the shape is logically deleted.
+            Console.WriteLine($"Shape Deleted Flag: {(shape.Del == BOOL.True ? "True" : "False")}");
         }
         catch (Exception ex)
         {
             // Capture any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

@@ -1,22 +1,23 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // If no file paths are provided, inform the user and exit.
+        // Ensure at least one file path is provided.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide one or more Visio file paths as command-line arguments.");
+            Console.WriteLine("Usage: Program <VisioFile1> <VisioFile2> ...");
             return;
         }
 
-        // Process each file path supplied via command line.
+        // Iterate over each supplied file path.
         foreach (string filePath in args)
         {
-            // Guard: ensure the file exists before attempting to load.
+            // Guard: verify the file exists before processing.
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -25,24 +26,22 @@ class Program
 
             try
             {
-                // Load the Visio diagram from the specified file.
+                // Load the Visio diagram from the file.
                 Diagram diagram = new Diagram(filePath);
 
-                // Retrieve the document title; if missing, use an empty string.
-                string title = diagram.DocumentProps.Title ?? string.Empty;
+                // Retrieve the document title from the built‑in properties.
+                string title = diagram.DocumentProps.Title;
 
                 // Set the left header text to the document title.
                 diagram.HeaderFooter.HeaderLeft = title;
 
-                // Save the diagram back to the same file in VSDX format.
+                // Save the updated diagram, overwriting the original file.
                 diagram.Save(filePath, SaveFileFormat.Vsdx);
-
-                Console.WriteLine($"Successfully updated header for: {filePath}");
             }
             catch (Exception ex)
             {
-                // Write any errors that occur during processing to the error stream.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                // Report any errors that occur during processing.
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
             }
         }
     }

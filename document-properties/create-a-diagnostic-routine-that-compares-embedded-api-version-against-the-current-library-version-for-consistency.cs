@@ -1,21 +1,22 @@
 using System;
 using System.IO;
+using System.Reflection;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect a single argument: path to the Visio diagram file.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: DiagnosticRoutine <diagram-file-path>");
+            Console.Error.WriteLine("Usage: DiagnosticRoutine <path-to-visio-file>");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the file exists before proceeding.
+        // Guard: ensure the file exists before proceeding
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -24,22 +25,21 @@ class Program
 
         try
         {
-            // Load the diagram using Aspose.Diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Retrieve the embedded API version from the document.
-            // This version indicates the Aspose.Diagram version that created the file.
+            // Retrieve the embedded API version from the document
             string embeddedVersion = diagram.Version;
 
-            // Retrieve the current library version from the assembly metadata.
-            // This reflects the version of Aspose.Diagram.dll that the application is using.
-            string libraryVersion = typeof(Diagram).Assembly.GetName().Version?.ToString() ?? "unknown";
+            // Retrieve the current Aspose.Diagram library version via assembly metadata
+            Version assemblyVersion = typeof(Diagram).Assembly.GetName().Version;
+            string libraryVersion = assemblyVersion != null ? assemblyVersion.ToString() : "Unknown";
 
-            // Output both versions for diagnostic purposes.
-            Console.WriteLine($"Embedded API version (from file): {embeddedVersion}");
-            Console.WriteLine($"Current library version (runtime): {libraryVersion}");
+            // Output both versions for diagnostic purposes
+            Console.WriteLine($"Embedded Diagram API Version : {embeddedVersion}");
+            Console.WriteLine($"Current Aspose.Diagram Library Version : {libraryVersion}");
 
-            // Compare the versions and report consistency.
+            // Compare versions and report consistency
             if (string.Equals(embeddedVersion, libraryVersion, StringComparison.Ordinal))
             {
                 Console.WriteLine("Diagnostic Result: Versions are consistent.");
@@ -47,27 +47,17 @@ class Program
             else
             {
                 Console.WriteLine("Diagnostic Result: Version mismatch detected.");
-                Console.WriteLine("The diagram was created with a different Aspose.Diagram version than the one currently loaded.");
+                Console.WriteLine("Recommendation: Consider updating the diagram or the library to ensure compatibility.");
             }
 
-            // Retrieve build numbers (they are strings) and display them.
-            try
-            {
-                string createdBuild = diagram.DocumentProps.BuildNumberCreated;
-                string editedBuild = diagram.DocumentProps.BuildNumberEdited;
-                Console.WriteLine($"Build number (created): {createdBuild}");
-                Console.WriteLine($"Build number (edited): {editedBuild}");
-            }
-            catch (Exception ex)
-            {
-                // Accessing build numbers may throw if the properties are unavailable.
-                Console.Error.WriteLine($"Warning: Unable to retrieve build numbers - {ex.Message}");
-            }
+            // Additional optional diagnostics: display build numbers from document properties
+            Console.WriteLine($"Document Build Number (Created) : {diagram.DocumentProps.BuildNumberCreated}");
+            Console.WriteLine($"Document Build Number (Edited)  : {diagram.DocumentProps.BuildNumberEdited}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any errors from Aspose.Diagram operations
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

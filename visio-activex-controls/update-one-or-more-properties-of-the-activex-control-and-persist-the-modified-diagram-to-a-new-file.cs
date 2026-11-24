@@ -7,11 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (use defaults if not supplied)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Verify that the input file exists before proceeding
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -20,55 +26,74 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through every page in the diagram
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
-                    for (int i = 0; i < page.Shapes.Count; i++)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[i];
-
-                        // Process only shapes that contain an ActiveX control
+                        // Check if the shape contains an ActiveX control.
                         if (shape.ActiveXControl != null)
                         {
-                            // Identify the type of ActiveX control
+                            // Determine the control type.
                             ControlType ctrlType = shape.ActiveXControl.Type;
 
-                            if (ctrlType == ControlType.TextBox)
+                            // Handle CommandButtonActiveXControl.
+                            if (ctrlType == ControlType.CommandButton)
                             {
-                                // Update the text of a TextBox control
-                                TextBoxActiveXControl txtCtrl = (TextBoxActiveXControl)shape.ActiveXControl;
-                                txtCtrl.Text = "Updated text via Aspose.Diagram";
+                                CommandButtonActiveXControl cmdBtn = shape.ActiveXControl as CommandButtonActiveXControl;
+                                if (cmdBtn != null)
+                                {
+                                    // Update the caption.
+                                    cmdBtn.Caption = "Updated Caption";
+
+                                    // Enable the control (property expects a plain bool).
+                                    cmdBtn.IsEnabled = true;
+                                }
                             }
-                            else if (ctrlType == ControlType.CommandButton)
+                            // Handle TextBoxActiveXControl.
+                            else if (ctrlType == ControlType.TextBox)
                             {
-                                // Update the caption of a CommandButton control
-                                CommandButtonActiveXControl btnCtrl = (CommandButtonActiveXControl)shape.ActiveXControl;
-                                btnCtrl.Caption = "New Caption";
+                                TextBoxActiveXControl txtBox = shape.ActiveXControl as TextBoxActiveXControl;
+                                if (txtBox != null)
+                                {
+                                    // Set the displayed text.
+                                    txtBox.Text = "New text content";
+
+                                    // Enable the control.
+                                    txtBox.IsEnabled = true;
+                                }
                             }
+                            // Handle CheckBoxActiveXControl.
                             else if (ctrlType == ControlType.CheckBox)
                             {
-                                // Set the CheckBox to the checked state
-                                CheckBoxActiveXControl chkCtrl = (CheckBoxActiveXControl)shape.ActiveXControl;
-                                chkCtrl.Value = CheckValueType.Checked;
+                                CheckBoxActiveXControl chkBox = shape.ActiveXControl as CheckBoxActiveXControl;
+                                if (chkBox != null)
+                                {
+                                    // Enable the checkbox.
+                                    chkBox.IsEnabled = true;
+
+                                    // Set the caption.
+                                    chkBox.Caption = "Accept Terms";
+                                }
                             }
-                            // Additional ActiveX control types can be handled here as needed
+                            // Additional control types can be handled similarly.
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output file in VSDX format
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

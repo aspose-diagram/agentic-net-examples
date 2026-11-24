@@ -7,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,78 +26,83 @@ class Program
 
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Ensure the diagram has at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Work with the first page.
+                Page page = diagram.Pages[0];
+
+                // Find the first non‑connector shape to duplicate.
+                Shape originalShape = null;
+                foreach (Shape shape in page.Shapes)
+                {
+                    // shape.OneD is true for connectors; we need a regular shape.
+                    if (!shape.OneD)
+                    {
+                        originalShape = shape;
+                        break;
+                    }
+                }
+
+                if (originalShape == null)
+                {
+                    Console.Error.WriteLine("No suitable shape found to duplicate.");
+                    return;
+                }
+
+                // Retrieve the master name of the original shape.
+                string masterName = originalShape.Master?.Name;
+                if (string.IsNullOrEmpty(masterName))
+                {
+                    Console.Error.WriteLine("The original shape does not have an associated master.");
+                    return;
+                }
+
+                // Calculate a new position for the duplicated shape (offset by 2 inches).
+                double offset = 2.0;
+                double newPinX = originalShape.XForm.PinX.Value + offset;
+                double newPinY = originalShape.XForm.PinY.Value + offset;
+
+                // Add the duplicated shape to the page.
+                // The last parameter (isCalculate) must be a bool, not BOOL.
+                long duplicateShapeId = page.AddShape(newPinX, newPinY, masterName, false);
+                Shape duplicateShape = page.Shapes.GetShape(duplicateShapeId);
+
+                // Copy size from the original shape.
+                duplicateShape.XForm.Width.Value = originalShape.XForm.Width.Value;
+                duplicateShape.XForm.Height.Value = originalShape.XForm.Height.Value;
+
+                // Add a dynamic connector shape (initially placed at (0,0); position will be handled by the connection).
+                long connectorShapeId = page.AddShape(0, 0, "Dynamic connector", false);
+                Shape connectorShape = page.Shapes.GetShape(connectorShapeId);
+
+                // Optional: set arrow styles on the connector.
+                connectorShape.Line.BeginArrow.Value = 4; // Arrow style code (e.g., 4 = Arrow)
+                connectorShape.Line.EndArrow.Value = 4;
+
+                // Connect the original shape (bottom) to the duplicated shape (top) using the connector.
+                page.ConnectShapesViaConnector(
+                    originalShape.ID,
+                    ConnectionPointPlace.Bottom,
+                    duplicateShapeId,
+                    ConnectionPointPlace.Top,
+                    connectorShapeId);
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Work with the first page
-            Page page = diagram.Pages[0];
-
-            // Ensure the page has at least one shape to duplicate
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The page contains no shapes to duplicate.");
-                return;
-            }
-
-            // Get the first shape as the source shape
-            Shape sourceShape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-            // Verify the source shape has a master (required for duplication)
-            if (sourceShape.Master == null)
-            {
-                Console.Error.WriteLine("The source shape does not have an associated master.");
-                return;
-            }
-
-            // Duplicate the shape by adding a new shape with the same master
-            // Use the source shape's current position as the initial location
-            double originalPinX = sourceShape.XForm.PinX.Value;
-            double originalPinY = sourceShape.XForm.PinY.Value;
-            string masterName = sourceShape.Master.Name;
-
-            // Add the duplicated shape (isCalculate = false)
-            long duplicateShapeId = page.AddShape(originalPinX, originalPinY, masterName, false);
-            Shape duplicateShape = page.Shapes.GetShape(duplicateShapeId);
-
-            // Change the position of the duplicated shape (e.g., offset by 2 inches)
-            double offsetX = 2.0; // inches
-            double offsetY = 2.0; // inches
-            duplicateShape.XForm.PinX.Value = originalPinX + offsetX;
-            duplicateShape.XForm.PinY.Value = originalPinY + offsetY;
-
-            // Add a dynamic connector shape (isCalculate = false)
-            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
-            Shape connectorShape = page.Shapes.GetShape(connectorId);
-
-            // Optionally configure the connector (e.g., set arrowheads)
-            connectorShape.Line.BeginArrow.Value = 4; // Arrow style
-            connectorShape.Line.EndArrow.Value = 4;   // Arrow style
-
-            // Connect the original shape to the duplicated shape using the connector
-            // Connect from the bottom of the source shape to the top of the duplicate shape
-            page.ConnectShapesViaConnector(
-                sourceShape.ID,
-                ConnectionPointPlace.Bottom,
-                duplicateShape.ID,
-                ConnectionPointPlace.Top,
-                connectorId);
-
-            // Save the modified diagram to the specified output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram processed successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

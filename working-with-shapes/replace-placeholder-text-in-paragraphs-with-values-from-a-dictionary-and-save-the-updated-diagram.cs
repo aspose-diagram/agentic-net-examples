@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,7 +11,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
@@ -25,35 +26,37 @@ class Program
         }
 
         // Define placeholder replacements.
-        var replacements = new Dictionary<string, string>
+        // Keys are placeholders to search for; values are the replacement text.
+        Dictionary<string, string> replacements = new Dictionary<string, string>()
         {
-            { "{Name}", "John Doe" },
-            { "{Date}", DateTime.Today.ToString("yyyy-MM-dd") },
-            // Add more placeholder‑value pairs as needed.
+            { "{CompanyName}", "Contoso Ltd." },
+            { "{Date}", DateTime.Today.ToShortDateString() },
+            { "{Author}", "John Doe" }
         };
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each page in the diagram.
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Iterate through each text fragment (FormatTxt) in the shape's text collection.
-                    foreach (FormatTxt fmt in shape.Text.Value)
+                    // Iterate over each shape on the current page.
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Cast the fragment to Txt to access the actual text.
-                        Txt txt = fmt as Txt;
-                        if (txt != null && txt.Text != null)
+                        // Iterate over each text fragment (FormatTxt) within the shape's text collection.
+                        foreach (Aspose.Diagram.FormatTxt fmt in shape.Text.Value)
                         {
-                            // Apply all replacements to the current text fragment.
+                            // Cast the fragment to Txt to access the actual text string.
+                            Aspose.Diagram.Txt txt = fmt as Aspose.Diagram.Txt;
+                            if (txt == null)
+                                continue; // Skip non‑text fragments.
+
+                            // Perform placeholder replacement for each dictionary entry.
                             foreach (KeyValuePair<string, string> kvp in replacements)
                             {
-                                if (txt.Text.Contains(kvp.Key))
+                                if (txt.Text != null && txt.Text.Contains(kvp.Key))
                                 {
                                     txt.Text = txt.Text.Replace(kvp.Key, kvp.Value);
                                 }
@@ -61,20 +64,16 @@ class Program
                         }
                     }
                 }
+
+                // Save the updated diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the updated diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to free resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,63 +1,57 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the stencil file that contains the master shapes.
+        // Path to the stencil file that contains the master shape.
         string stencilPath = "Basic_U.vssx";
-        if (!File.Exists(stencilPath))
+        if (!System.IO.File.Exists(stencilPath))
         {
             Console.Error.WriteLine($"File not found: {stencilPath}");
             return;
         }
+        if (!File.Exists(stencilPath))
+        {
+            Console.Error.WriteLine($"Stencil file not found: {stencilPath}");
+            return;
+        }
 
-        // Output Visio diagram path.
-        string outputPath = "DefaultMasterDiagram.vsdx";
+        // Name of the master to be used as the default for new shapes.
+        string defaultMasterName = "Rectangle";
 
         try
         {
             // Create a new empty diagram.
             Diagram diagram = new Diagram();
 
-            // Import a master (e.g., "Rectangle") from the stencil into the diagram.
-            // AddMaster returns the master ID (int); retrieve the Master object via the Masters collection.
-            diagram.AddMaster(stencilPath, "Rectangle");
-            Master rectangleMaster = diagram.Masters.GetMasterByName("Rectangle");
+            // Import the master from the stencil into the diagram.
+            // This makes the master available for shape creation.
+            diagram.AddMaster(stencilPath, defaultMasterName);
 
-            // Store the master name to use as the default for subsequent shape additions.
-            string defaultMasterName = rectangleMaster.Name;
+            // Add a new shape using the default master.
+            // The fourth parameter (isCalculate) must be a bool, not an int.
+            long shapeId = diagram.ActivePage.AddShape(5.0, 5.0, defaultMasterName, false);
 
-            // Add several shapes using the default master.
-            // Parameters: PinX, PinY, master name, page index (0 for the first page).
-            long shapeId1 = diagram.AddShape(2.0, 2.0, defaultMasterName, 0);
-            long shapeId2 = diagram.AddShape(5.0, 2.0, defaultMasterName, 0);
-            long shapeId3 = diagram.AddShape(8.0, 2.0, defaultMasterName, 0);
+            // Retrieve the newly added shape for further customization.
+            Shape shape = diagram.ActivePage.Shapes.GetShape(shapeId);
 
-            // Retrieve each newly added shape for optional customization.
-            Shape shape1 = diagram.Pages[0].Shapes.GetShape(shapeId1);
-            Shape shape2 = diagram.Pages[0].Shapes.GetShape(shapeId2);
-            Shape shape3 = diagram.Pages[0].Shapes.GetShape(shapeId3);
-
-            // Example: set simple text on each shape.
-            shape1.Text.Value.Clear();
-            shape1.Text.Value.Add(new Txt("Shape 1"));
-            shape2.Text.Value.Clear();
-            shape2.Text.Value.Add(new Txt("Shape 2"));
-            shape3.Text.Value.Clear();
-            shape3.Text.Value.Add(new Txt("Shape 3"));
-
-            Console.WriteLine($"Added shapes with IDs {shapeId1}, {shapeId2}, {shapeId3} using default master '{defaultMasterName}'.");
+            // Example customization: set the shape's fill foreground color.
+            shape.Fill.FillForegnd.Value = "#FFCC00"; // orange fill
 
             // Save the diagram to a VSDX file.
+            string outputPath = "output.vsdx";
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose.Diagram errors to the error console.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

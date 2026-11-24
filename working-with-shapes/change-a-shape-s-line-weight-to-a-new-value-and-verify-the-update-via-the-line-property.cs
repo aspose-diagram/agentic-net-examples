@@ -6,35 +6,26 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, shape ID, new line weight (in inches)
-        if (args.Length < 3)
+        // Input Visio file path (first argument)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeId> <newLineWeight>");
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
             return;
         }
 
         string inputPath = args[0];
-        string shapeIdArg = args[1];
-        string newWeightArg = args[2];
-
-        // Guard: verify input file exists
+        // Guard: ensure the file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Parse shape ID and new line weight
-        if (!int.TryParse(shapeIdArg, out int shapeId))
+        // Desired line weight (in inches). Use second argument if provided, otherwise default.
+        double newLineWeight = 0.05; // default value
+        if (args.Length > 1 && double.TryParse(args[1], out double parsedWeight))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
-            return;
-        }
-
-        if (!double.TryParse(newWeightArg, out double newLineWeight))
-        {
-            Console.Error.WriteLine($"Error: Invalid line weight '{newWeightArg}'.");
-            return;
+            newLineWeight = parsedWeight;
         }
 
         try
@@ -43,41 +34,44 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Get the first page (index 0)
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on page.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
+            Page page = diagram.Pages[0];
 
-            // Update the line weight (in inches)
+            // Get the first shape on the page (index 0)
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The page contains no shapes.");
+                return;
+            }
+            Shape shape = page.Shapes[0];
+
+            // Set the line weight to the new value (in inches)
             shape.Line.LineWeight.Value = newLineWeight;
 
-            // Verify the update
+            // Verify the update by reading back the LineWeight property
             double actualWeight = shape.Line.LineWeight.Value;
-            if (Math.Abs(actualWeight - newLineWeight) > 0.0001)
+            if (Math.Abs(actualWeight - newLineWeight) < 1e-6)
             {
-                throw new Exception($"Verification failed: Expected line weight {newLineWeight}, but got {actualWeight}.");
+                Console.WriteLine($"Line weight successfully updated to {actualWeight} inches.");
             }
             else
             {
-                Console.WriteLine($"Success: Shape ID {shapeId} line weight set to {actualWeight} inches.");
+                throw new Exception($"Line weight verification failed. Expected: {newLineWeight}, Actual: {actualWeight}");
             }
 
-            // Save the modified diagram to a new file
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(inputPath) ?? "",
-                Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
-
+            // Optional: save the modified diagram to a new file
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", 
+                                             Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

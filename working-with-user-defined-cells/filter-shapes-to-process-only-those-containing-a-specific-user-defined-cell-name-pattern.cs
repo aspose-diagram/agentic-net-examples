@@ -6,114 +6,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // ------------------------------------------------------------
-        // Get diagram file path from arguments or prompt the user.
-        // ------------------------------------------------------------
-        string diagramPath;
-        if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
-        {
-            diagramPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the full path to the Visio diagram file: ");
-            diagramPath = Console.ReadLine();
-        }
+        // Prompt for the Visio file path.
+        Console.Write("Enter the path to the Visio file: ");
+        string filePath = Console.ReadLine();
 
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists.
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine("Error: The specified file does not exist.");
             return;
         }
 
-        // ------------------------------------------------------------
-        // Get the user-defined cell name pattern to filter shapes.
-        // ------------------------------------------------------------
-        string pattern;
-        if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
-        {
-            pattern = args[1];
-        }
-        else
-        {
-            Console.Write("Enter the user-defined cell name pattern to filter (case-insensitive): ");
-            pattern = Console.ReadLine();
-        }
+        // Prompt for the user-defined cell name pattern to filter.
+        Console.Write("Enter the user-defined cell name pattern (case-insensitive substring): ");
+        string pattern = Console.ReadLine();
 
         if (string.IsNullOrWhiteSpace(pattern))
         {
-            Console.Error.WriteLine("Error: No pattern provided.");
+            Console.Error.WriteLine("Error: The pattern cannot be empty.");
             return;
         }
 
         try
         {
-            // ------------------------------------------------------------
             // Load the Visio diagram.
-            // ------------------------------------------------------------
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(filePath);
 
-            // ------------------------------------------------------------
-            // Iterate through all pages and shapes, processing only those
-            // that contain a user-defined cell whose Name or NameU matches
-            // the supplied pattern.
-            // ------------------------------------------------------------
+            Console.WriteLine($"Processing diagram: {Path.GetFileName(filePath)}");
+            Console.WriteLine($"Looking for user-defined cells containing pattern: \"{pattern}\"");
+            Console.WriteLine();
+
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    bool matchesPattern = false;
-
-                    // Iterate over all user-defined cells of the shape.
-                    foreach (User userCell in shape.Users)
+                    // Check each user-defined cell (User) for a matching name.
+                    bool hasMatchingUser = false;
+                    foreach (User user in shape.Users)
                     {
-                        // Check both Name and NameU for the pattern (case-insensitive).
-                        if (!string.IsNullOrEmpty(userCell.Name) &&
-                            userCell.Name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Compare both Name and NameU for robustness.
+                        if ((user.Name != null && user.Name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                            (user.NameU != null && user.NameU.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0))
                         {
-                            matchesPattern = true;
-                            break;
-                        }
-
-                        if (!string.IsNullOrEmpty(userCell.NameU) &&
-                            userCell.NameU.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            matchesPattern = true;
-                            break;
+                            hasMatchingUser = true;
+                            // Output details of the matching user-defined cell.
+                            Console.WriteLine($"Page {page.ID} - Shape ID {shape.ID}");
+                            Console.WriteLine($"  Shape Name : {shape.Name}");
+                            Console.WriteLine($"  Master Name: {shape.Master?.Name ?? "N/A"}");
+                            Console.WriteLine($"  Matching User Cell:");
+                            Console.WriteLine($"    Name  : {user.Name}");
+                            Console.WriteLine($"    NameU : {user.NameU}");
+                            Console.WriteLine($"    Value : {user.Value?.Val}");
+                            Console.WriteLine($"    Prompt: {user.Prompt?.Value}");
+                            Console.WriteLine();
                         }
                     }
 
-                    // If the shape contains a matching user-defined cell, process it.
-                    if (matchesPattern)
-                    {
-                        // Example processing: output shape details to console.
-                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, Shape Name: {shape.NameU}");
-
-                        // Additional custom processing can be placed here.
-                        // For demonstration, we will list all matching user-defined cells.
-                        foreach (User userCell in shape.Users)
-                        {
-                            bool nameMatches = (!string.IsNullOrEmpty(userCell.Name) &&
-                                                userCell.Name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0) ||
-                                               (!string.IsNullOrEmpty(userCell.NameU) &&
-                                                userCell.NameU.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
-
-                            if (nameMatches)
-                            {
-                                Console.WriteLine($"  User Cell - Name: {userCell.Name}, NameU: {userCell.NameU}, Value: {userCell.Value.Val}, Prompt: {userCell.Prompt.Value}");
-                            }
-                        }
-                    }
+                    // If needed, additional processing for shapes that matched can be placed here.
+                    // For this example, we simply report the matching shapes.
                 }
             }
+
+            Console.WriteLine("Processing completed.");
         }
         catch (Exception ex)
         {
-            // ------------------------------------------------------------
-            // Handle any exceptions thrown by Aspose.Diagram operations.
-            // ------------------------------------------------------------
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

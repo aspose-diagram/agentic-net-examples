@@ -37,39 +37,28 @@ class Program
                 // Load target diagram inside a using block.
                 using (Diagram targetDiagram = new Diagram(targetPath))
                 {
-                    // Iterate through pages by index (assumes matching page order).
-                    int pageCount = Math.Min(sourceDiagram.Pages.Count, targetDiagram.Pages.Count);
-                    for (int i = 0; i < pageCount; i++)
+                    // Iterate all pages in the source diagram.
+                    foreach (Page srcPage in sourceDiagram.Pages)
                     {
-                        Page srcPage = sourceDiagram.Pages[i];
-                        Page tgtPage = targetDiagram.Pages[i];
-
-                        // Iterate all shapes on the source page.
+                        // Iterate all shapes on the current source page.
                         foreach (Shape srcShape in srcPage.Shapes)
                         {
-                            // Attempt to find a shape on the target page with the same NameU.
-                            Shape tgtShape = null;
-                            foreach (Shape candidate in tgtPage.Shapes)
+                            // Attempt to find a matching shape in the target diagram by NameU.
+                            Shape targetShape = FindShapeByNameU(targetDiagram, srcShape.NameU);
+                            if (targetShape == null)
                             {
-                                if (candidate.NameU == srcShape.NameU)
-                                {
-                                    tgtShape = candidate;
-                                    break;
-                                }
-                            }
-
-                            // If no matching shape is found, skip synchronization for this shape.
-                            if (tgtShape == null)
+                                // No matching shape; skip synchronization for this shape.
                                 continue;
+                            }
 
                             // Synchronize each user‑defined cell from source shape to target shape.
                             foreach (User srcUser in srcShape.Users)
                             {
-                                // Look for an existing user‑defined cell with the same name.
+                                // Look for an existing user‑defined cell with the same NameU in the target shape.
                                 User matchingUser = null;
-                                foreach (User tgtUser in tgtShape.Users)
+                                foreach (User tgtUser in targetShape.Users)
                                 {
-                                    if (tgtUser.Name == srcUser.Name)
+                                    if (tgtUser.NameU == srcUser.NameU)
                                     {
                                         matchingUser = tgtUser;
                                         break;
@@ -78,7 +67,7 @@ class Program
 
                                 if (matchingUser != null)
                                 {
-                                    // Update the existing cell's value (and prompt, if needed).
+                                    // Update existing cell's value and prompt.
                                     matchingUser.Value.Val = srcUser.Value.Val;
                                     matchingUser.Prompt.Value = srcUser.Prompt.Value;
                                 }
@@ -90,24 +79,42 @@ class Program
                                     newUser.NameU = srcUser.NameU;
                                     newUser.Value.Val = srcUser.Value.Val;
                                     newUser.Prompt.Value = srcUser.Prompt.Value;
-                                    tgtShape.Users.Add(newUser);
+                                    targetShape.Users.Add(newUser);
                                 }
                             }
                         }
                     }
 
-                    // Refresh the target diagram to apply all changes.
+                    // Refresh the target diagram to apply changes.
                     targetDiagram.Refresh();
 
                     // Save the synchronized diagram to the specified output path.
                     targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
             }
+
+            Console.WriteLine("Synchronization completed successfully.");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    // Helper method to locate a shape in any page of a diagram by its NameU.
+    private static Shape FindShapeByNameU(Diagram diagram, string nameU)
+    {
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.NameU == nameU)
+                {
+                    return shape;
+                }
+            }
+        }
+        return null;
     }
 }

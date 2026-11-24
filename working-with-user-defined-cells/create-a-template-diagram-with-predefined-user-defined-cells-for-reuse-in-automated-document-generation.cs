@@ -2,15 +2,16 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define output path for the template diagram
-        string outputPath = "TemplateDiagram.vsdx";
+        // Define the output path for the template diagram.
+        string outputPath = "Template.vsdx";
 
-        // Guard: ensure we can write to the directory
+        // Ensure the output directory exists.
         string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
         if (!Directory.Exists(outputDir))
         {
@@ -20,57 +21,57 @@ class Program
 
         try
         {
-            // Create a new empty diagram
+            // Create a new empty diagram inside a using block as required.
             using (Diagram diagram = new Diagram())
             {
-                // Ensure the diagram has at least one window; add if missing
-                if (diagram.Windows.Count == 0)
+                // Add a window to the diagram (required for proper display).
+                Window window = new Window();
+                window.WindowState = WindowStateValue.Maximized;
+                window.WindowWidth = 1100;
+                window.WindowHeight = 700;
+                window.WindowType = WindowTypeValue.Drawing;
+                diagram.Windows.Add(window);
+
+                // Insert a new blank page.
+                Page newPage = new Page();
+                // Set a unique ID for the page (max existing ID + 1).
+                int maxPageId = 0;
+                foreach (Page existingPage in diagram.Pages)
                 {
-                    Window window = new Window();
-                    window.WindowState = WindowStateValue.Maximized;
-                    window.WindowWidth = 1100;
-                    window.WindowHeight = 700;
-                    window.WindowType = WindowTypeValue.Drawing;
-                    diagram.Windows.Add(window);
+                    if (existingPage.ID > maxPageId)
+                        maxPageId = existingPage.ID;
                 }
+                newPage.ID = maxPageId + 1;
+                newPage.Name = "TemplatePage";
+                diagram.Pages.Add(newPage);
 
-                // Create a new page for the template
-                Page templatePage = new Page();
-                templatePage.Name = "TemplatePage";
-                // Assign a unique ID (simple increment based on existing pages)
-                templatePage.ID = diagram.Pages.Count + 1;
-                diagram.Pages.Add(templatePage);
+                // Add a simple rectangle shape to the page using a built‑in master.
+                // The AddShape method returns the shape ID; retrieve the Shape object.
+                long shapeId = newPage.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle");
+                Shape shape = newPage.Shapes.GetShape((int)shapeId);
 
-                // Add a rectangle shape to the page (using a built‑in master)
-                double pinX = 2.0;
-                double pinY = 2.0;
-                string masterName = "Rectangle";
-                long shapeId = templatePage.AddShape(pinX, pinY, masterName);
-                Shape shape = templatePage.Shapes.GetShape(shapeId);
+                // Create user‑defined cells (custom fields) for the shape.
+                // Example: a cell for "DocumentTitle" and another for "Author".
+                User titleCell = new User();
+                titleCell.Name = "DocumentTitle";
+                titleCell.Value.Val = "Untitled Document";
+                shape.Users.Add(titleCell);
 
-                // ----- Define user‑defined cells for the shape -----
-                // First custom cell
-                User userCell1 = new User();
-                userCell1.Name = "UserField1";
-                userCell1.Value.Val = "SampleValue1";
-                userCell1.Prompt.Value = "Enter value for UserField1";
-                shape.Users.Add(userCell1);
+                User authorCell = new User();
+                authorCell.Name = "Author";
+                authorCell.Value.Val = "Unknown Author";
+                shape.Users.Add(authorCell);
 
-                // Second custom cell
-                User userCell2 = new User();
-                userCell2.Name = "UserField2";
-                userCell2.Value.Val = "SampleValue2";
-                userCell2.Prompt.Value = "Enter value for UserField2";
-                shape.Users.Add(userCell2);
-
-                // Save the diagram as a VSDX template
+                // Save the diagram as a VSDX template.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Template diagram saved successfully to '{outputPath}'.");
             }
+
+            Console.WriteLine($"Template diagram created successfully at: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred while creating the template diagram: {ex.Message}");
+            // Write any errors that occur during diagram creation or saving.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

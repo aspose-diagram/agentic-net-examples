@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,88 +7,103 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, output PDF path, required user-defined cell names (comma‑separated)
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputPdfPath> <requiredCellNamesCommaSeparated>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string requiredCellsArg = args[2];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Define the list of required user‑defined cell names.
-        List<string> requiredCellNames = new List<string>
+        // Parse required cell names into an array (trim whitespace)
+        string[] requiredCellNames = requiredCellsArg.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < requiredCellNames.Length; i++)
         {
-            "MyCell1",
-            "MyCell2"
-        };
+            requiredCellNames[i] = requiredCellNames[i].Trim();
+        }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required by the API
             using (Diagram diagram = new Diagram(inputPath))
             {
                 bool validationFailed = false;
 
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Check each required user‑defined cell.
+                        // Collect existing user‑defined cell names for the current shape
+                        // Use a simple array to store names (no LINQ per rules)
+                        string[] existingNames = new string[shape.Users.Count];
+                        int nameIndex = 0;
+                        foreach (User user in shape.Users)
+                        {
+                            existingNames[nameIndex++] = user.NameU;
+                        }
+
+                        // Verify each required cell name is present
                         foreach (string requiredName in requiredCellNames)
                         {
-                            bool cellFound = false;
-
-                            // Iterate over the Users collection of the shape.
-                            foreach (User userCell in shape.Users)
+                            bool found = false;
+                            for (int n = 0; n < existingNames.Length; n++)
                             {
-                                // Compare the unique name of the user‑defined cell.
-                                if (userCell.NameU == requiredName)
+                                if (existingNames[n] == requiredName)
                                 {
-                                    cellFound = true;
+                                    found = true;
                                     break;
                                 }
                             }
 
-                            // If a required cell is missing, report it.
-                            if (!cellFound)
+                            if (!found)
                             {
-                                Console.Error.WriteLine($"Error: Shape ID {shape.ID} on page \"{page.Name}\" is missing required user‑defined cell \"{requiredName}\".");
                                 validationFailed = true;
+                                Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.ID} is missing required user-defined cell \"{requiredName}\".");
                             }
                         }
                     }
                 }
 
-                // Abort export if any validation errors were found.
+                // If any shape failed validation, abort the export
                 if (validationFailed)
                 {
-                    Console.Error.WriteLine("Validation failed. Diagram will not be exported.");
+                    Console.Error.WriteLine("Validation failed. PDF export aborted.");
                     return;
                 }
 
-                // Export the validated diagram to PDF.
-                diagram.Save(outputPath, SaveFileFormat.Pdf);
-                Console.WriteLine($"Diagram successfully exported to \"{outputPath}\".");
+                // All shapes contain the required cells – proceed to export to PDF
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Example: export hidden pages as well (plain bool, not BOOL)
+                pdfOptions.ExportHiddenPage = true;
+                // Set high resolution for raster images inside the PDF
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+                pdfOptions.JpegQuality = 100;
+
+                // Save the diagram as PDF using the options
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any unexpected errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

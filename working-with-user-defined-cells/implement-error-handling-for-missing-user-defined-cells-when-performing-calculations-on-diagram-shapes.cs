@@ -1,15 +1,22 @@
 using System;
 using System.IO;
+using System.Globalization;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (can be passed as command‑line arguments)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate command‑line arguments: input file, output file, user‑defined cell name
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <UserCellName>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string targetCellName = args[2];
 
         // Guard against missing input file
         if (!File.Exists(inputPath))
@@ -18,68 +25,80 @@ class Program
             return;
         }
 
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the diagram inside a using block (ensures proper disposal)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                double totalCost = 0.0;
-                int shapesWithCost = 0;
-
                 // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
+                    Page page = diagram.Pages[pageIndex];
+
                     // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
+                        Shape shape = page.Shapes[shapeIndex];
+
                         // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Attempt to find a user‑defined cell named "Cost"
-                        User costCell = null;
-                        foreach (User userCell in shape.Users)
+                        bool cellFound = false;
+
+                        // Search for the user‑defined cell by NameU
+                        for (int userIndex = 0; userIndex < shape.Users.Count; userIndex++)
                         {
-                            if (string.Equals(userCell.NameU, "Cost", StringComparison.OrdinalIgnoreCase))
+                            User userCell = shape.Users[userIndex];
+
+                            if (string.Equals(userCell.NameU, targetCellName, StringComparison.OrdinalIgnoreCase))
                             {
-                                costCell = userCell;
+                                cellFound = true;
+
+                                // Attempt to parse the cell value as a double
+                                double currentValue;
+                                if (double.TryParse(userCell.Value.Val, NumberStyles.Any, CultureInfo.InvariantCulture, out currentValue))
+                                {
+                                    // Example calculation: double the value
+                                    double newValue = currentValue * 2;
+
+                                    // Write the new value back to the cell
+                                    userCell.Value.Val = newValue.ToString(CultureInfo.InvariantCulture);
+                                    Console.WriteLine($"Shape ID {shape.ID}: Updated \"{targetCellName}\" from {currentValue} to {newValue}.");
+                                }
+                                else
+                                {
+                                    Console.Error.WriteLine($"Shape ID {shape.ID}: Unable to parse value \"{userCell.Value.Val}\" of cell \"{targetCellName}\" as a number.");
+                                }
+
+                                // No need to continue searching this shape
                                 break;
                             }
                         }
 
-                        // If the cell is missing, report the issue and continue
-                        if (costCell == null)
+                        // If the cell was not found, report the missing cell for this shape
+                        if (!cellFound)
                         {
-                            Console.Error.WriteLine($"Warning: Shape ID {shape.ID} on page \"{page.Name}\" does not contain a \"Cost\" user‑defined cell.");
-                            continue;
-                        }
-
-                        // Try to parse the cell value as a double for calculation
-                        if (double.TryParse(costCell.Value.Val, out double costValue))
-                        {
-                            totalCost += costValue;
-                            shapesWithCost++;
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine($"Error: Invalid numeric value \"{costCell.Value.Val}\" in \"Cost\" cell of shape ID {shape.ID}.");
+                            Console.Error.WriteLine($"Shape ID {shape.ID}: User‑defined cell \"{targetCellName}\" not found.");
                         }
                     }
                 }
 
-                // Output the calculation result
-                Console.WriteLine($"Processed {shapesWithCost} shapes with a valid \"Cost\" cell.");
-                Console.WriteLine($"Total Cost: {totalCost}");
-
-                // Save the (unchanged) diagram to the output path
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to \"{outputPath}\".");
+                // Save the modified diagram to the output path
+                try
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+                }
+                catch (Exception saveEx)
+                {
+                    Console.Error.WriteLine($"Error saving diagram: {saveEx.Message}");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Catch any Aspose.Diagram or I/O exceptions and report them
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

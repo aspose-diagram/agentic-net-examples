@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Xml.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXmlPath>");
@@ -18,85 +17,45 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure input file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Define a temporary VDX file path.
-        string tempVdxPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vdx");
+        // Define the custom namespace prefix to apply to user‑defined cells.
+        const string prefix = "MyNS_";
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Save the diagram to VDX (XML) format.
-                diagram.Save(tempVdxPath, SaveFileFormat.Vdx);
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Iterate through all user‑defined cells of the shape.
+                        foreach (User user in shape.Users)
+                        {
+                            // Prepend the custom namespace prefix to the universal name of the cell.
+                            // The NameU property is writable in Aspose.Diagram.
+                            user.NameU = prefix + user.NameU;
+                        }
+                    }
+                }
+
+                // Export the modified diagram to Visio XML (VDX) format.
+                diagram.Save(outputPath, SaveFileFormat.Vdx);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during diagram loading or saving: {ex.Message}");
-            return;
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        try
-        {
-            // Load the generated VDX XML.
-            XDocument doc = XDocument.Load(tempVdxPath);
-
-            // Define custom namespace prefix and URI.
-            const string prefix = "custom";
-            const string nsUri = "http://example.com/custom";
-            XNamespace customNs = nsUri;
-
-            // Ensure the root element declares the custom namespace.
-            XElement root = doc.Root;
-            if (root != null)
-            {
-                XAttribute xmlnsAttr = root.Attribute(XNamespace.Xmlns + prefix);
-                if (xmlnsAttr == null)
-                {
-                    root.SetAttributeValue(XNamespace.Xmlns + prefix, nsUri);
-                }
-            }
-
-            // Apply the custom namespace to all User-defined cell elements.
-            foreach (XElement userElem in doc.Descendants())
-            {
-                if (userElem.Name.LocalName.Equals("User", StringComparison.OrdinalIgnoreCase))
-                {
-                    userElem.Name = customNs + "User";
-                }
-            }
-
-            // Save the modified XML to the desired output path.
-            doc.Save(outputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error during XML processing: {ex.Message}");
-            return;
-        }
-        finally
-        {
-            // Clean up the temporary VDX file.
-            try
-            {
-                if (File.Exists(tempVdxPath))
-                {
-                    File.Delete(tempVdxPath);
-                }
-            }
-            catch
-            {
-                // Suppress any cleanup errors.
-            }
-        }
-
-        Console.WriteLine($"Diagram exported with custom namespace to: {outputPath}");
     }
 }

@@ -7,65 +7,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
-        // Output PDF file path
-        string outputPath = "output.pdf";
+        // Define input and output file paths (could be passed via args)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        Diagram diagram = null;
+        // Outer try-finally to guarantee disposal (using block handles actual disposal)
         try
         {
-            // Load the diagram
-            diagram = new Diagram(inputPath);
+            // Use a using block to instantiate Diagram as required by the API guidelines
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                try
+                {
+                    // Configure PDF save options
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    // Export hidden pages if needed
+                    pdfOptions.ExportHiddenPage = true;
+                    // Set a default fallback font
+                    pdfOptions.DefaultFont = "Arial";
 
-            // Create PDF save options and assign a custom page-saving callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new CustomPdfCallback();
-
-            // Save the diagram as PDF using the options
-            diagram.Save(outputPath, pdfOptions);
-            Console.WriteLine($"Diagram successfully saved to {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+                    // Save the diagram as PDF using the configured options
+                    diagram.Save(outputPath, pdfOptions);
+                    Console.WriteLine($"Diagram successfully saved to {outputPath}");
+                }
+                catch (Exception ex)
+                {
+                    // Capture any Aspose.Diagram processing errors
+                    Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
+                }
+            }
         }
         finally
         {
-            // Diagram does not implement IDisposable; setting to null allows GC to reclaim it
-            diagram = null;
+            // No explicit disposal needed; the using statement ensures Diagram is disposed.
         }
-    }
-}
-
-// Custom callback to handle PDF page saving events
-class CustomPdfCallback : IPageSavingCallback
-{
-    // Called before a page starts saving
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
-        // Example: you could modify args here if needed
-    }
-
-    // Called after a page has been saved
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1}");
-        // If you need to stop further processing, set HasMorePages to FALSE
-        // args.HasMorePages = BOOL.False; // Uncomment to stop after the first page
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -32,20 +33,21 @@ class Program
                 // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Use LINQ to select connector (1‑D) shapes.
+                    // Use LINQ to select connector (1‑D) shapes on the current page.
                     var connectorShapes = page.Shapes
                         .Cast<Shape>()
-                        .Where(s => s.OneD) // OneD is a native bool, not BOOL.
+                        .Where(shape => shape.OneD) // OneD is a native bool.
                         .ToList();
 
                     // Set each connector's routing style to orthogonal (right‑angle).
                     foreach (Shape connector in connectorShapes)
                     {
+                        // Apply orthogonal routing to the connector.
                         connector.SetConnectorsType(ConnectorsTypeValue.RightAngle);
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output file.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }

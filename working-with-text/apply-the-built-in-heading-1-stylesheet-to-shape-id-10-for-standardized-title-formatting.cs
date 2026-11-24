@@ -6,34 +6,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
-            return;
-        }
+        // Input and output file paths (can be overridden via command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists
+        // Guard: ensure the source Visio file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
-
-        // Define output path (same directory, new file name)
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
 
         try
         {
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the built‑in "Heading 1" stylesheet
+            // Assume the shape is on the first page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
+            }
+            Page page = diagram.Pages[0];
+
+            // Retrieve the shape with ID 10
+            long targetShapeId = 10L;
+            Shape shape = page.Shapes.GetShape(targetShapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Error: No shape with ID {targetShapeId} was found on the page.");
+                return;
+            }
+
+            // Skip the shape if it is marked as deleted
+            if (shape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine($"Error: Shape ID {targetShapeId} is marked as deleted.");
+                return;
+            }
+
+            // Locate the built‑in 'Heading 1' stylesheet
             StyleSheet headingStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
-                if (ss.Name == "Heading 1")
+                if (ss.Name != null && ss.Name.Equals("Heading 1", StringComparison.OrdinalIgnoreCase))
                 {
                     headingStyle = ss;
                     break;
@@ -42,48 +59,22 @@ class Program
 
             if (headingStyle == null)
             {
-                Console.Error.WriteLine("The 'Heading 1' stylesheet was not found in the document.");
+                Console.Error.WriteLine("Error: 'Heading 1' stylesheet not found in the document.");
                 return;
             }
 
-            // Assume the shape is on the first page; retrieve the page
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            Page page = diagram.Pages[0];
-
-            // Retrieve shape with ID 10
-            long targetShapeId = 10;
-            Shape shape = page.Shapes.GetShape(targetShapeId);
-
-            if (shape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {targetShapeId} was not found on the first page.");
-                return;
-            }
-
-            // Ensure the shape is not deleted
-            if (shape.Del == BOOL.True)
-            {
-                Console.Error.WriteLine($"Shape with ID {targetShapeId} is marked as deleted.");
-                return;
-            }
-
-            // Apply the Heading 1 stylesheet to text, fill, and line styles
+            // Apply the stylesheet to the shape's text, fill, and line styles
             shape.TextStyle = headingStyle;
             shape.FillStyle = headingStyle;
             shape.LineStyle = headingStyle;
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Successfully applied 'Heading 1' style to shape ID {targetShapeId} and saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Report any exceptions that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

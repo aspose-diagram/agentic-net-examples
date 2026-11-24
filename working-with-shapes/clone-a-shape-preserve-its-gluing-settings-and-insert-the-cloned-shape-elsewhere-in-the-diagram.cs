@@ -8,118 +8,122 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments:
-        // 0 - input Visio file path
-        // 1 - output Visio file path
-        // 2 - ID of the shape to clone
-        // 3 - ID of a connector shape that is glued to the original shape (to preserve gluing)
-        // 4 - target PinX for the cloned shape
-        // 5 - target PinY for the cloned shape
-        if (args.Length < 6)
+        // Expect three arguments: input diagram path, shape ID to clone, output diagram path
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <inputVisio> <outputVisio> <originalShapeId> <connectorShapeId> <targetPinX> <targetPinY>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <shapeId> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string originalShapeIdStr = args[2];
-        string connectorShapeIdStr = args[3];
-        string targetPinXStr = args[4];
-        string targetPinYStr = args[5];
+        string shapeIdArg = args[1];
+        string outputPath = args[2];
 
-        // Guard: ensure input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse numeric arguments
-        if (!long.TryParse(originalShapeIdStr, out long originalShapeId))
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long originalShapeId))
         {
-            Console.Error.WriteLine("Invalid originalShapeId.");
-            return;
-        }
-        if (!long.TryParse(connectorShapeIdStr, out long connectorShapeId))
-        {
-            Console.Error.WriteLine("Invalid connectorShapeId.");
-            return;
-        }
-        if (!double.TryParse(targetPinXStr, out double targetPinX))
-        {
-            Console.Error.WriteLine("Invalid targetPinX.");
-            return;
-        }
-        if (!double.TryParse(targetPinYStr, out double targetPinY))
-        {
-            Console.Error.WriteLine("Invalid targetPinY.");
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
         }
 
         try
         {
-            // Load the source Visio diagram inside a using block
+            // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page (adjust if a specific page is required)
+                // Access the first page (modify if a different page is required)
                 Page page = diagram.Pages[0];
 
-                // Retrieve the original shape that will be cloned
-                Shape originalShape = page.Shapes.GetShape((int)originalShapeId);
+                // Retrieve the original shape by its ID
+                Shape originalShape = page.Shapes.GetShape(originalShapeId);
                 if (originalShape == null)
                 {
-                    Console.Error.WriteLine($"Shape with ID {originalShapeId} not found on the page.");
+                    Console.Error.WriteLine($"Shape with ID {originalShapeId} not found on the first page.");
                     return;
                 }
 
-                // Get the master name of the original shape (used for cloning)
-                string masterName = originalShape.Master?.Name;
-                if (string.IsNullOrEmpty(masterName))
+                // Ensure the shape has an associated master (required for cloning)
+                if (originalShape.Master == null)
                 {
-                    Console.Error.WriteLine("Original shape does not have an associated master.");
+                    Console.Error.WriteLine("The original shape does not have a master; cannot clone.");
                     return;
                 }
 
-                // Add a new shape on the same page using the same master at the target location
-                // The fourth parameter (isCalculate) is a boolean indicating whether to recalculate geometry
-                long clonedShapeId = page.AddShape(targetPinX, targetPinY, masterName, false);
-                Shape clonedShape = page.Shapes.GetShape((int)clonedShapeId);
+                // Store master name for reuse
+                string masterName = originalShape.Master.Name;
+
+                // Add a new shape on the same page using the same master and position
+                long clonedShapeId = page.AddShape(
+                    originalShape.XForm.PinX.Value,
+                    originalShape.XForm.PinY.Value,
+                    masterName,
+                    false); // isCalculate = false
+
+                // Retrieve the newly added shape instance
+                Shape clonedShape = page.Shapes.GetShape(clonedShapeId);
                 if (clonedShape == null)
                 {
                     Console.Error.WriteLine("Failed to retrieve the cloned shape.");
                     return;
                 }
 
-                // ----- Copy visual properties from the original shape to the cloned shape -----
+                // Copy geometry (size) from the original shape
+                clonedShape.XForm.Width.Value = originalShape.XForm.Width.Value;
+                clonedShape.XForm.Height.Value = originalShape.XForm.Height.Value;
 
-                // Copy text
+                // Copy text content
                 clonedShape.Text.Value.Clear();
-                string originalText = originalShape.Text.Value.Text;
-                if (!string.IsNullOrEmpty(originalText))
+                foreach (var item in originalShape.Text.Value)
                 {
-                    clonedShape.Text.Value.Add(new Txt(originalText));
+                    // Preserve only text runs (Txt); ignore formatting runs (Cp)
+                    if (item is Txt txt)
+                    {
+                        clonedShape.Text.Value.Add(new Txt(txt.Text));
+                    }
                 }
 
-                // Copy fill properties (foreground color and pattern)
+                // Copy fill properties (foreground color and transparency)
                 clonedShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
-                clonedShape.Fill.FillPattern.Value = originalShape.Fill.FillPattern.Value;
+                clonedShape.Fill.FillForegndTrans.Value = originalShape.Fill.FillForegndTrans.Value;
 
-                // Copy line properties (color, weight, pattern)
-                clonedShape.Line.LineColor.Value = originalShape.Line.LineColor.Value;
-                clonedShape.Line.LineWeight.Value = originalShape.Line.LineWeight.Value;
-                clonedShape.Line.LinePattern.Value = originalShape.Line.LinePattern.Value;
-
-                // Preserve gluing: glue the specified connector to the cloned shape
-                page.GlueShapes(clonedShapeId, ConnectionPointPlace.Center, connectorShapeId);
+                // Preserve gluing: rewire any connectors that were glued to the original shape
+                // Retrieve IDs of connectors glued to the original shape
+                long[] gluedConnectorIds = originalShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+                if (gluedConnectorIds != null)
+                {
+                    foreach (long connectorId in gluedConnectorIds)
+                    {
+                        // Update the connection definitions (Connect objects) that reference the original shape
+                        foreach (Connect conn in page.Connects)
+                        {
+                            if (conn.FromSheet == originalShapeId)
+                            {
+                                conn.FromSheet = clonedShapeId;
+                            }
+                            if (conn.ToSheet == originalShapeId)
+                            {
+                                conn.ToSheet = clonedShapeId;
+                            }
+                        }
+                    }
+                }
 
                 // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

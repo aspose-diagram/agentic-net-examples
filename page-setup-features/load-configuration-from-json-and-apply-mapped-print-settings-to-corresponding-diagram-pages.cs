@@ -1,73 +1,45 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
+using Aspose.Diagram.Saving;
 
 class Program
 {
-    // Classes that represent the JSON configuration structure
-    private class Config
-    {
-        public PageConfig[] Pages { get; set; }
-    }
-
-    private class PageConfig
-    {
-        public string Name { get; set; }               // Optional page name
-        public int? Index { get; set; }                // Optional zero‑based page index
-        public double? ScaleX { get; set; }            // Optional horizontal scale factor
-        public double? ScaleY { get; set; }            // Optional vertical scale factor
-        public bool? FitToSheetAcross { get; set; }    // Optional flag to enable fit‑to‑sheet
-        public MarginsConfig Margins { get; set; }    // Optional margin settings
-    }
-
-    private class MarginsConfig
-    {
-        public double? Left { get; set; }
-        public double? Right { get; set; }
-        public double? Top { get; set; }
-        public double? Bottom { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect exactly three arguments: input diagram, JSON config, output diagram
-        if (args.Length != 3)
+        // Expect two arguments: diagram file path and JSON configuration file path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <configJsonPath> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <configJsonPath>");
             return;
         }
 
         string diagramPath = args[0];
         string configPath = args[1];
-        string outputPath = args[2];
 
-        // Verify that the diagram file exists
+        // Guard: ensure diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        // Verify that the configuration file exists
+        // Guard: ensure configuration file exists
         if (!File.Exists(configPath))
         {
             Console.Error.WriteLine($"Configuration file not found: {configPath}");
             return;
         }
 
-        // Deserialize the JSON configuration into Config object
+        // Load and deserialize JSON configuration
         Config config;
         try
         {
             string json = File.ReadAllText(configPath);
             config = JsonSerializer.Deserialize<Config>(json);
-            if (config == null || config.Pages == null)
-            {
-                Console.Error.WriteLine("Invalid configuration: missing Pages array.");
-                return;
-            }
         }
         catch (Exception ex)
         {
@@ -75,79 +47,91 @@ class Program
             return;
         }
 
+        // Load diagram and apply print settings
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Process each page configuration entry
-            foreach (PageConfig pc in config.Pages)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Locate the target page by name or by index
-                Page page = null;
-                if (!string.IsNullOrEmpty(pc.Name))
+                // Iterate over each page configuration entry
+                foreach (PagePrintConfig pageConfig in config.Pages ?? new List<PagePrintConfig>())
                 {
-                    page = diagram.Pages.GetPage(pc.Name);
-                }
-                else if (pc.Index.HasValue)
-                {
-                    int idx = pc.Index.Value;
-                    if (idx >= 0 && idx < diagram.Pages.Count)
+                    // Retrieve the page by its name
+                    Page page = diagram.Pages.GetPage(pageConfig.PageName);
+                    if (page == null)
                     {
-                        page = diagram.Pages[idx];
+                        Console.Error.WriteLine($"Page not found: {pageConfig.PageName}");
+                        continue;
+                    }
+
+                    // Access the page's print properties
+                    PrintProps printProps = page.PageSheet.PrintProps;
+
+                    // Apply numeric settings if they are provided
+                    if (pageConfig.ScaleX.HasValue)
+                        printProps.ScaleX.Value = pageConfig.ScaleX.Value;
+                    if (pageConfig.ScaleY.HasValue)
+                        printProps.ScaleY.Value = pageConfig.ScaleY.Value;
+                    if (pageConfig.PageLeftMargin.HasValue)
+                        printProps.PageLeftMargin.Value = pageConfig.PageLeftMargin.Value;
+                    if (pageConfig.PageRightMargin.HasValue)
+                        printProps.PageRightMargin.Value = pageConfig.PageRightMargin.Value;
+                    if (pageConfig.PageTopMargin.HasValue)
+                        printProps.PageTopMargin.Value = pageConfig.PageTopMargin.Value;
+                    if (pageConfig.PageBottomMargin.HasValue)
+                        printProps.PageBottomMargin.Value = pageConfig.PageBottomMargin.Value;
+
+                    // Apply fit‑to‑sheet settings if they are provided
+                    // Visio uses OnPage together with PagesX and PagesY to control fit‑to‑sheet.
+                    if (pageConfig.FitToSheetAcross.HasValue || pageConfig.FitToSheetDown.HasValue)
+                    {
+                        // Enable fit‑to‑sheet
+                        printProps.OnPage.Value = BOOL.True;
+
+                        // Set number of pages across (X) if specified
+                        if (pageConfig.FitToSheetAcross.HasValue && pageConfig.FitToSheetAcross.Value)
+                            printProps.PagesX.Value = 1;
+                        else if (pageConfig.FitToSheetAcross.HasValue && !pageConfig.FitToSheetAcross.Value)
+                            printProps.PagesX.Value = 0; // 0 means no explicit fit across
+
+                        // Set number of pages down (Y) if specified
+                        if (pageConfig.FitToSheetDown.HasValue && pageConfig.FitToSheetDown.Value)
+                            printProps.PagesY.Value = 1;
+                        else if (pageConfig.FitToSheetDown.HasValue && !pageConfig.FitToSheetDown.Value)
+                            printProps.PagesY.Value = 0; // 0 means no explicit fit down
                     }
                 }
 
-                if (page == null)
-                {
-                    Console.Error.WriteLine($"Page not found (Name='{pc.Name}', Index={pc.Index}). Skipping.");
-                    continue;
-                }
+                // Save the modified diagram to a new file
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(diagramPath) + "_modified.vsdx");
 
-                // Access the print properties for the page
-                PrintProps printProps = page.PageSheet.PrintProps;
-
-                // Apply horizontal scaling if specified
-                if (pc.ScaleX.HasValue)
-                {
-                    printProps.ScaleX.Value = pc.ScaleX.Value;
-                }
-
-                // Apply vertical scaling if specified
-                if (pc.ScaleY.HasValue)
-                {
-                    printProps.ScaleY.Value = pc.ScaleY.Value;
-                }
-
-                // Apply FitToSheetAcross flag if specified.
-                // In Aspose.Diagram this is controlled via the OnPage property.
-                if (pc.FitToSheetAcross.HasValue)
-                {
-                    printProps.OnPage.Value = pc.FitToSheetAcross.Value ? BOOL.True : BOOL.False;
-                }
-
-                // Apply margin settings if provided
-                if (pc.Margins != null)
-                {
-                    if (pc.Margins.Left.HasValue)
-                        printProps.PageLeftMargin.Value = pc.Margins.Left.Value;
-                    if (pc.Margins.Right.HasValue)
-                        printProps.PageRightMargin.Value = pc.Margins.Right.Value;
-                    if (pc.Margins.Top.HasValue)
-                        printProps.PageTopMargin.Value = pc.Margins.Top.Value;
-                    if (pc.Margins.Bottom.HasValue)
-                        printProps.PageBottomMargin.Value = pc.Margins.Bottom.Value;
-                }
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any errors that occur during diagram processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Classes representing the JSON configuration structure
+    public class Config
+    {
+        public List<PagePrintConfig> Pages { get; set; } = new();
+    }
+
+    public class PagePrintConfig
+    {
+        public string PageName { get; set; } = string.Empty;
+        public double? ScaleX { get; set; }
+        public double? ScaleY { get; set; }
+        public double? PageLeftMargin { get; set; }
+        public double? PageRightMargin { get; set; }
+        public double? PageTopMargin { get; set; }
+        public double? PageBottomMargin { get; set; }
+        public bool? FitToSheetAcross { get; set; }
+        public bool? FitToSheetDown { get; set; }
     }
 }

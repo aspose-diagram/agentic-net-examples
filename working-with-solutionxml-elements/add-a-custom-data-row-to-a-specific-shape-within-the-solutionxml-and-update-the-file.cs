@@ -1,126 +1,113 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provided via command line or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Expected arguments: <inputDiagramPath> <outputDiagramPath> <shapeId> <customRowName> <customRowValue>
+        if (args.Length < 5)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <shapeId> <customRowName> <customRowValue>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+        string customRowName = args[3];
+        string customRowValue = args[4];
+
+        // Guard for input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            // Load the Visio diagram inside a using block as required by the API
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Retrieve the first shape on the first page as the target shape
+                // Locate the shape with the specified ID across all pages
                 Shape targetShape = null;
-                Page firstPage = diagram.Pages[0];
-                foreach (Shape s in firstPage.Shapes)
+                foreach (Page page in diagram.Pages)
                 {
-                    targetShape = s;
-                    break;
-                }
-
-                if (targetShape == null)
-                {
-                    Console.Error.WriteLine("No shapes found on the first page.");
-                    return;
-                }
-
-                // Store the shape's ID for later use in the XML
-                long shapeId = targetShape.ID;
-
-                // Define the name of the SolutionXML element that will hold our custom data
-                const string solutionXmlName = "CustomShapeData";
-
-                // Try to locate an existing SolutionXML element with the specified name
-                SolutionXML targetSolutionXml = null;
-                foreach (SolutionXML solXml in diagram.SolutionXMLs)
-                {
-                    if (solXml.Name == solutionXmlName)
+                    Shape shape = page.Shapes.GetShape(targetShapeId);
+                    if (shape != null && shape.Del == BOOL.False)
                     {
-                        targetSolutionXml = solXml;
+                        targetShape = shape;
                         break;
                     }
                 }
 
-                // If it does not exist, create a new one and add it to the collection
-                if (targetSolutionXml == null)
+                if (targetShape == null)
                 {
-                    targetSolutionXml = new SolutionXML();
-                    targetSolutionXml.Name = solutionXmlName;
-                    // Initialise with an empty root element
-                    targetSolutionXml.XmlValue = "<Root></Root>";
-                    diagram.SolutionXMLs.Add(targetSolutionXml);
+                    Console.Error.WriteLine($"Shape with ID {targetShapeId} not found in the diagram.");
+                    return;
                 }
 
-                // Load the XML content from the SolutionXML element
-                XmlDocument xmlDoc = new XmlDocument();
-                if (!string.IsNullOrEmpty(targetSolutionXml.XmlValue))
+                // Determine the SolutionXML element to modify (by name). Use "CustomData" as default.
+                const string solutionXmlName = "CustomData";
+                SolutionXML solutionXml = null;
+                foreach (SolutionXML sxml in diagram.SolutionXMLs)
                 {
-                    xmlDoc.LoadXml(targetSolutionXml.XmlValue);
+                    if (sxml.Name == solutionXmlName)
+                    {
+                        solutionXml = sxml;
+                        break;
+                    }
+                }
+
+                // If not found, create a new SolutionXML element and add it to the collection
+                if (solutionXml == null)
+                {
+                    solutionXml = new SolutionXML();
+                    solutionXml.Name = solutionXmlName;
+                    // Initialize with an empty root element
+                    solutionXml.XmlValue = new XDocument(new XElement("SolutionXML")).ToString();
+                    diagram.SolutionXMLs.Add(solutionXml);
+                }
+
+                // Load existing XML content
+                XDocument xmlDoc;
+                if (string.IsNullOrWhiteSpace(solutionXml.XmlValue))
+                {
+                    xmlDoc = new XDocument(new XElement("SolutionXML"));
                 }
                 else
                 {
-                    // Fallback to a basic root if the stored XML is empty
-                    xmlDoc.LoadXml("<Root></Root>");
+                    xmlDoc = XDocument.Parse(solutionXml.XmlValue);
                 }
 
-                // Ensure the root element exists
-                XmlElement root = xmlDoc.DocumentElement;
-                if (root == null)
-                {
-                    root = xmlDoc.CreateElement("Root");
-                    xmlDoc.AppendChild(root);
-                }
+                // Create a new custom data row element
+                XElement customRow = new XElement("CustomDataRow",
+                    new XAttribute("ShapeId", targetShapeId),
+                    new XAttribute("Name", customRowName),
+                    new XAttribute("Value", customRowValue));
 
-                // Locate (or create) the <Shape> node that corresponds to our target shape ID
-                string xpath = $"//Shape[@ID='{shapeId}']";
-                XmlNode shapeNode = xmlDoc.SelectSingleNode(xpath);
-                if (shapeNode == null)
-                {
-                    XmlElement newShapeElem = xmlDoc.CreateElement("Shape");
-                    newShapeElem.SetAttribute("ID", shapeId.ToString());
-                    root.AppendChild(newShapeElem);
-                    shapeNode = newShapeElem;
-                }
+                // Append the new row to the root element
+                xmlDoc.Root.Add(customRow);
 
-                // Create a custom data element and attach it to the shape node
-                XmlElement customData = xmlDoc.CreateElement("CustomData");
-                customData.SetAttribute("Name", "MyCustomRow");
-                customData.InnerText = "MyValue";
-                shapeNode.AppendChild(customData);
+                // Update the SolutionXML's XML value
+                solutionXml.XmlValue = xmlDoc.ToString();
 
-                // Write the modified XML back to the SolutionXML element
-                targetSolutionXml.XmlValue = xmlDoc.OuterXml;
-
-                // Save the updated diagram to the specified output path
+                // Save the updated diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

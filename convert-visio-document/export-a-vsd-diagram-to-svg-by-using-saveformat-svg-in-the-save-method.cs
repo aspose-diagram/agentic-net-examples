@@ -6,38 +6,31 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths.
-        string inputPath;
-        string outputPath;
-
-        if (args.Length >= 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            inputPath = args[0];
-            outputPath = args[1];
-        }
-        else
-        {
-            // Default file names (modify as needed).
-            inputPath = "input.vsdx";
-            outputPath = "output.svg";
+            Console.Error.WriteLine("Usage: Program <input‑vsd‑file>");
+            return;
         }
 
-        // Guard: ensure the input file exists before proceeding.
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output SVG path (same folder, same name with .svg extension).
+        string outputPath = Path.ChangeExtension(inputPath, ".svg");
+
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Use a using block to guarantee disposal of resources.
-            using (diagram)
+            // Load the Visio diagram inside a using block (ensures proper disposal).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Export the diagram to SVG format using the appropriate SaveFileFormat.
+                // Export the diagram to SVG using the SaveFileFormat.Svg enum.
                 diagram.Save(outputPath, SaveFileFormat.Svg);
             }
 
@@ -45,7 +38,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving to the error stream.
+            // Write any errors that occur during loading or saving.
             Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }

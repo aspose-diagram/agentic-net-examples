@@ -23,7 +23,7 @@ class Program
             return;
         }
 
-        // Parse the shape ID argument.
+        // Parse the shape ID (expected to be a long integer).
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
             Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
@@ -35,24 +35,19 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Assume the shape resides on the first page.
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("Error: The diagram contains no pages.");
-                return;
-            }
-
+            // Attempt to retrieve the shape from the first page.
+            // Adjust if your diagram uses multiple pages.
             Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID.
             Shape shape = page.Shapes.GetShape(shapeId);
+
             if (shape == null)
             {
-                Console.Error.WriteLine($"Error: No shape found with ID {shapeId} on page 0.");
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on page 0.");
                 return;
             }
 
-            // Retrieve IDs of all connected shapes (all nodes, no category filter).
+            // Retrieve IDs of all shapes connected to the specified shape.
+            // Using ConnectedShapesAllNodes flag to get all directly connected nodes.
             long[] connectedShapeIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
             // Output the results.
@@ -64,8 +59,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Exception: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

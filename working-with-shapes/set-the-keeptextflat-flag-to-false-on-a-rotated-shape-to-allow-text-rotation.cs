@@ -1,65 +1,63 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+        string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate through all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Determine if the shape has any rotation applied
-                    bool has2DRotation = shape.XForm.Angle.Value != 0.0;
-                    bool has3DRotation = shape.ThreeDFormat.RotationZAngle.Value != 0.0 ||
-                                         shape.ThreeDFormat.RotationXAngle.Value != 0.0 ||
-                                         shape.ThreeDFormat.RotationYAngle.Value != 0.0;
-
-                    if (has2DRotation || has3DRotation)
+                    // Check if the shape has a non‑zero rotation (2D rotation).
+                    // Shape.XForm.Angle is a DoubleValue; compare its numeric value.
+                    if (shape.XForm.Angle != null && shape.XForm.Angle.Value != 0)
                     {
-                        // Set KeepTextFlat to false to allow text rotation
+                        // The shape is rotated; set KeepTextFlat to FALSE
+                        // to allow the text inside the shape to rotate with it.
                         shape.ThreeDFormat.KeepTextFlat.Value = BOOL.False;
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

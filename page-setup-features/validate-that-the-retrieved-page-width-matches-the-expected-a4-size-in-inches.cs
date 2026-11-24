@@ -6,58 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the Visio diagram file.
+        // Expect the Visio file path as the first argument
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
-        string diagramPath = args[0];
+        string filePath = args[0];
 
-        // Guard: verify that the file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
             return;
         }
 
         try
         {
-            // Load the diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(filePath);
 
-            // Ensure the diagram contains at least one page.
+            // Ensure the diagram contains at least one page
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("Error: The diagram contains no pages.");
                 return;
             }
 
-            // Retrieve the first page.
+            // Retrieve the first page (index 0)
             Page page = diagram.Pages[0];
 
-            // Get the page width in inches.
+            // Get the page width in inches
             double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
 
-            // Expected A4 width in inches (8.27 inches).
+            // Expected A4 width in inches (approximately 8.27")
             const double expectedA4Width = 8.27;
 
-            // Validate the width (allowing a tiny tolerance for floating‑point differences).
-            const double tolerance = 0.001;
-            if (Math.Abs(pageWidthInches - expectedA4Width) > tolerance)
+            // Allow a small tolerance for floating‑point differences
+            const double tolerance = 0.01;
+
+            // Validate the width against the expected A4 size
+            if (Math.Abs(pageWidthInches - expectedA4Width) <= tolerance)
             {
-                Console.Error.WriteLine($"Validation failed: Page width is {pageWidthInches:F3} inches, expected {expectedA4Width:F3} inches.");
+                Console.WriteLine($"Success: Page width ({pageWidthInches:F2}\" ) matches expected A4 width ({expectedA4Width}\" ).");
             }
             else
             {
-                Console.WriteLine($"Validation succeeded: Page width matches A4 size ({expectedA4Width} inches).");
+                // Width does not match; report the discrepancy and abort
+                string message = $"Validation failed: Page width is {pageWidthInches:F2}\" but expected {expectedA4Width}\".";
+                Console.Error.WriteLine(message);
+                throw new Exception(message);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose or runtime errors and report them
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

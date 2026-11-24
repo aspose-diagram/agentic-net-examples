@@ -7,79 +7,91 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 3)
+        // Prompt for the Visio file path
+        Console.Write("Enter the path to the Visio diagram (e.g., diagram.vsdx): ");
+        string inputPath = Console.ReadLine();
+
+        // Guard: ensure the file exists
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <sourcePageIndex> <targetPageIndex>");
+            Console.Error.WriteLine("Error: The specified diagram file does not exist.");
             return;
         }
 
-        string diagramPath = args[0];
-        // Guard: ensure the diagram file exists
-        if (!File.Exists(diagramPath))
+        // Prompt for source page number (1‑based for user friendliness)
+        Console.Write("Enter the source page number (starting from 1): ");
+        if (!int.TryParse(Console.ReadLine(), out int sourcePageNumber) || sourcePageNumber < 1)
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine("Error: Invalid source page number.");
             return;
         }
 
-        // Parse page indices
-        if (!int.TryParse(args[1], out int sourcePageIndex) ||
-            !int.TryParse(args[2], out int targetPageIndex))
+        // Prompt for target page number
+        Console.Write("Enter the target page number (starting from 1): ");
+        if (!int.TryParse(Console.ReadLine(), out int targetPageNumber) || targetPageNumber < 1)
         {
-            Console.Error.WriteLine("Error: Page indices must be valid integers.");
+            Console.Error.WriteLine("Error: Invalid target page number.");
+            return;
+        }
+
+        // Prompt for output file path
+        Console.Write("Enter the output path for the modified diagram (e.g., output.vsdx): ");
+        string outputPath = Console.ReadLine();
+
+        // Guard: ensure output directory exists
+        if (string.IsNullOrWhiteSpace(outputPath))
+        {
+            Console.Error.WriteLine("Error: Output path is empty.");
+            return;
+        }
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine("Error: The directory for the output file does not exist.");
             return;
         }
 
         try
         {
             // Load the diagram inside a using block to ensure proper disposal
-            using (Diagram diagram = new Diagram(diagramPath))
+            using (Diagram diagram = new Diagram(inputPath))
             {
+                // Validate page indices against the diagram's page count
                 int pageCount = diagram.Pages.Count;
-
-                // Validate source page index
-                if (sourcePageIndex < 0 || sourcePageIndex >= pageCount)
+                if (sourcePageNumber > pageCount || targetPageNumber > pageCount)
                 {
-                    Console.Error.WriteLine($"Error: sourcePageIndex out of range. Diagram has {pageCount} pages.");
+                    Console.Error.WriteLine($"Error: Diagram contains {pageCount} pages. Specified page numbers are out of range.");
                     return;
                 }
 
-                // Validate target page index
-                if (targetPageIndex < 0 || targetPageIndex >= pageCount)
-                {
-                    Console.Error.WriteLine($"Error: targetPageIndex out of range. Diagram has {pageCount} pages.");
-                    return;
-                }
+                // Convert to zero‑based indices
+                int sourceIndex = sourcePageNumber - 1;
+                int targetIndex = targetPageNumber - 1;
 
-                // Retrieve the source and target pages
-                Page sourcePage = diagram.Pages[sourcePageIndex];
-                Page targetPage = diagram.Pages[targetPageIndex];
+                // Retrieve source and target pages
+                Page sourcePage = diagram.Pages[sourceIndex];
+                Page targetPage = diagram.Pages[targetIndex];
 
                 // -----------------------------------------------------------------
-                // NOTE:
-                // The PresetTheme and PresetThemeVariant properties on Page are
-                // write‑only (no getter). Because of this limitation the current
-                // Aspose.Diagram API does not allow reading the theme values from
-                // the source page to assign them to the target page.
+                // Clone theme settings from source to target.
+                // NOTE: Page.PresetTheme and Page.PresetThemeVariant are write‑only
+                // properties; the API does not provide getters to read the current
+                // values. Therefore, the exact theme cannot be retrieved directly.
                 // -----------------------------------------------------------------
-                // TODO: When a getter becomes available, clone the theme like:
-                // targetPage.PresetTheme = sourcePage.PresetTheme;
-                // targetPage.PresetThemeVariant = sourcePage.PresetThemeVariant;
-                // For now, this operation is omitted.
+                // TODO: Replace the placeholder values with the actual theme settings
+                // from the source page when a read accessor becomes available.
+                // For now we assign a default theme as an example.
+                targetPage.PresetTheme = PresetThemeValue.Bubble;
+                targetPage.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-                // Define the output path (same directory, with a suffix)
-                string outputPath = Path.Combine(
-                    Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                    Path.GetFileNameWithoutExtension(diagramPath) + "_ThemeCloned.vsdx");
-
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Theme (placeholder) applied to page {targetPageNumber} and saved to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors
+            // Log any Aspose or I/O errors
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

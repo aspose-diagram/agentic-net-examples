@@ -7,51 +7,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input file path (use first argument or a default placeholder)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsd";
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the path to the VSD file as a command-line argument.");
+            return;
+        }
+
+        string inputPath = args[0];
 
         // Guard: ensure the file exists before proceeding
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: The file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Create an InterruptMonitor instance that can be used to cancel the load operation
-        InterruptMonitor interruptMonitor = new InterruptMonitor();
+        // Create an InterruptMonitor to allow cancellation of the load operation
+        InterruptMonitor monitor = new InterruptMonitor();
 
-        // Optionally start a background thread that will interrupt after a timeout (e.g., 5 seconds)
-        Thread monitorThread = new Thread(() =>
+        // Optional: start a background thread that will interrupt the load after a timeout
+        Thread interruptThread = new Thread(() =>
         {
             // Wait for 5 seconds before triggering interruption
-            Thread.Sleep(5000);
-            // Request cancellation
-            interruptMonitor.Interrupt();
-            Console.WriteLine("Interrupt requested by monitor thread.");
+            Thread.Sleep(TimeSpan.FromSeconds(5));
+            Console.WriteLine("Interrupting the load operation...");
+            monitor.Interrupt();
         });
-        monitorThread.Start();
+
+        interruptThread.Start();
 
         try
         {
-            // Configure LoadOptions with the desired file format and attach the InterruptMonitor
+            // Configure LoadOptions with the desired file format and attach the monitor
             LoadOptions loadOptions = new LoadOptions(LoadFileFormat.Vsd);
-            loadOptions.InterruptMonitor = interruptMonitor;
+            loadOptions.InterruptMonitor = monitor;
 
-            // Load the Visio diagram using the custom LoadOptions
+            // Load the diagram using the custom LoadOptions
             Diagram diagram = new Diagram(inputPath, loadOptions);
 
-            // If loading succeeds, indicate success
+            // If loading succeeds, you can proceed with further processing
             Console.WriteLine("Diagram loaded successfully.");
         }
         catch (Exception ex)
         {
-            // Capture and display any errors, including those caused by interruption
+            // Capture any exceptions, including those thrown due to interruption
             Console.Error.WriteLine($"An error occurred while loading the diagram: {ex.Message}");
         }
         finally
         {
-            // Ensure the monitor thread finishes before exiting
-            monitorThread.Join();
+            // Ensure the interrupt thread has finished before exiting
+            interruptThread.Join();
         }
     }
 }

@@ -7,62 +7,48 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Determine input Visio file path (argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output directory for HTML pages
-        string outputDir = "HtmlPages";
-
-        // Ensure output directory exists
-        if (!Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Set footer to display the page number using Visio placeholder code
-            // The '&p' field inserts the current page number
-            diagram.HeaderFooter.FooterRight = "Page: &p";
-
-            // Iterate over each page and export it as a separate HTML file
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure HTML save options for a single page
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                // Set a global footer that includes the page number using Visio's &p field code
+                diagram.HeaderFooter.FooterRight = "Page: &p";
+
+                // Iterate over each page to export it as a separate HTML file
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    PageIndex = i,   // zero‑based index of the page to export
-                    PageCount = 1    // export only this page
-                };
+                    // Configure HTML save options to export only the current page
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        PageIndex = i,   // zero‑based index of the page to export
+                        PageCount = 1    // export a single page
+                    };
 
-                // Build output file name (e.g., page_1.html, page_2.html, ...)
-                string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
+                    // Build output file name (e.g., page_1.html, page_2.html, ...)
+                    string outputFile = $"page_{i + 1}.html";
 
-                // Save the current page to HTML
-                diagram.Save(outputPath, htmlOptions);
+                    // Save the current page as HTML using the configured options
+                    diagram.Save(outputFile, htmlOptions);
+
+                    Console.WriteLine($"Saved page {i + 1} to {outputFile}");
+                }
             }
-
-            Console.WriteLine("HTML export completed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

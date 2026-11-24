@@ -6,63 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Identify connector shapes (One‑dimensional shapes).
+                    if (shape.OneD)
                     {
-                        // Apply protection only to connector shapes.
-                        // Connectors are 1‑D shapes; the OneD property is a native bool.
-                        if (shape.OneD)
-                        {
-                            // Lock movement on X and Y axes.
-                            shape.Protection.LockMoveX.Value = BOOL.True;
-                            shape.Protection.LockMoveY.Value = BOOL.True;
-
-                            // Lock resizing (width and height).
-                            shape.Protection.LockWidth.Value = BOOL.True;
-                            shape.Protection.LockHeight.Value = BOOL.True;
-
-                            // Lock rotation.
-                            shape.Protection.LockRotate.Value = BOOL.True;
-
-                            // Lock vertex editing.
-                            shape.Protection.LockVtxEdit.Value = BOOL.True;
-                        }
+                        // Apply protection to the connector shape.
+                        shape.Protection.LockMoveX.Value = BOOL.True;
+                        shape.Protection.LockMoveY.Value = BOOL.True;
+                        shape.Protection.LockWidth.Value = BOOL.True;
+                        shape.Protection.LockHeight.Value = BOOL.True;
+                        shape.Protection.LockRotate.Value = BOOL.True;
+                        shape.Protection.LockVtxEdit.Value = BOOL.True;
                     }
                 }
-
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            // Save the modified diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

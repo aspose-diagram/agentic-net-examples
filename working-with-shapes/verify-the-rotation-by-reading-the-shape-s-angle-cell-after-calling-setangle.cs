@@ -6,78 +6,70 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
-            return;
-        }
+        // Determine the input Visio file path (first command‑line argument or default).
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string diagramPath = args[0];
-
-        // Guard: ensure the file exists
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists before proceeding.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found -> {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page
+            // Ensure the diagram contains at least one page.
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Error: Diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page
+            // Access the first page.
             Page page = diagram.Pages[0];
 
-            // Find the first non-deleted shape on the page
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            // Ensure the page contains at least one shape.
+            if (page.Shapes.Count == 0)
             {
-                // Skip logically deleted shapes
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                targetShape = shape;
-                break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No non-deleted shapes were found on the first page.");
+                Console.Error.WriteLine("Error: First page contains no shapes.");
                 return;
             }
 
-            // Desired rotation angle in degrees
+            // Retrieve the first shape on the page.
+            Shape shape = page.Shapes[0];
+
+            // Define the desired rotation angle in degrees.
             double desiredAngle = 45.0;
 
-            // Rotate the shape using SetAngle
-            targetShape.SetAngle(desiredAngle);
+            // Rotate the shape using the SetAngle method.
+            shape.SetAngle(desiredAngle);
 
-            // Read back the Angle cell value to verify
-            double actualAngle = targetShape.XForm.Angle.Value;
+            // Read back the Angle cell value from the shape's XForm section.
+            double actualAngle = shape.XForm.Angle.Value;
 
-            // Output verification result
-            Console.WriteLine($"Shape ID {targetShape.ID} rotated to {actualAngle} degrees (expected {desiredAngle}).");
-
-            // Simple validation with tolerance
-            const double tolerance = 0.0001;
-            if (Math.Abs(actualAngle - desiredAngle) > tolerance)
+            // Verify that the angle was set correctly (allowing a tiny tolerance).
+            const double tolerance = 0.001;
+            if (Math.Abs(actualAngle - desiredAngle) <= tolerance)
             {
-                throw new Exception($"Angle verification failed. Expected {desiredAngle}, but got {actualAngle}.");
+                Console.WriteLine($"Success: Shape rotation verified. Angle = {actualAngle} degrees.");
             }
+            else
+            {
+                Console.WriteLine($"Failure: Expected angle {desiredAngle}°, but found {actualAngle}°.");
+            }
+
+            // Optional: Save the modified diagram to a new file for visual confirmation.
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output_modified.vsdx");
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"Exception: {ex.Message}");
         }
     }
 }

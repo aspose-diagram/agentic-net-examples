@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -8,78 +7,82 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 3)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputCsvPath> <areaThreshold>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <areaThreshold> [outputCsvPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputCsvPath = args[1];
-        string thresholdArg = args[2];
+        string thresholdArg = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : "ShapeAreaReport.csv";
 
-        // Guard: ensure the input Visio file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Parse the area threshold (in square inches).
+        // Parse the area threshold.
         if (!double.TryParse(thresholdArg, out double areaThreshold))
         {
             Console.Error.WriteLine($"Error: Unable to parse area threshold \"{thresholdArg}\" as a number.");
             return;
         }
 
+        Diagram diagram = null;
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
 
-            // Prepare CSV lines.
-            var reportLines = new List<string>();
-            // CSV header.
-            reportLines.Add("ShapeID,ShapeName,MasterName,Area");
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+        try
+        {
+            using (var writer = new StreamWriter(outputPath))
             {
-                // Iterate through all shapes on the page.
-                foreach (Shape shape in page.Shapes)
+                // Write CSV header.
+                writer.WriteLine("ShapeId,ShapeName,Area");
+
+                // Iterate through all pages and shapes.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve width and height (in inches) from the shape's XForm.
-                    double width = shape.XForm.Width.Value;
-                    double height = shape.XForm.Height.Value;
-                    double area = width * height;
-
-                    // Check if the shape's area exceeds the threshold.
-                    if (area > areaThreshold)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Gather shape details.
-                        long shapeId = shape.ID;
-                        string shapeName = shape.Name ?? string.Empty;
-                        string masterName = shape.Master != null ? shape.Master.Name ?? string.Empty : string.Empty;
+                        // Retrieve width and height (in drawing units).
+                        double width = shape.XForm.Width.Value;
+                        double height = shape.XForm.Height.Value;
+                        double area = width * height;
 
-                        // Escape commas in text fields.
-                        shapeName = shapeName.Replace(",", ";");
-                        masterName = masterName.Replace(",", ";");
-
-                        // Build CSV line.
-                        string line = $"{shapeId},{shapeName},{masterName},{area}";
-                        reportLines.Add(line);
+                        // If the shape's area exceeds the threshold, write a CSV line.
+                        if (area > areaThreshold)
+                        {
+                            // Shape ID is a long, Shape Name is a string.
+                            string shapeId = shape.ID.ToString();
+                            string shapeName = shape.Name ?? string.Empty;
+                            writer.WriteLine($"{shapeId},{shapeName},{area}");
+                        }
                     }
                 }
             }
 
-            // Write the CSV report to the specified output file.
-            File.WriteAllLines(outputCsvPath, reportLines);
-            Console.WriteLine($"Report generated successfully at \"{outputCsvPath}\".");
+            Console.WriteLine($"Report generated successfully at \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error generating CSV report: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose the diagram if it implements IDisposable.
+            if (diagram is IDisposable disposableDiagram)
+                disposableDiagram.Dispose();
         }
     }
 }

@@ -7,88 +7,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
+        // Determine input and output file paths from command‑line arguments or use defaults.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (required by API guidelines).
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Dictionary to track how many times each original shape name has been seen.
-                Dictionary<string, int> nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
+            // Dictionary to keep track of how many times each shape name has been seen.
+            // Using case‑insensitive comparison to treat names like "Process" and "process" as duplicates.
+            Dictionary<string, int> nameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            // Iterate through every page and every shape on each page.
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all top‑level shapes on the page.
-                    foreach (Shape shape in page.Shapes)
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Retrieve the current universal name of the shape.
+                    string currentName = shape.NameU;
+
+                    // If this name hasn't been encountered yet, initialise its count.
+                    if (!nameCounts.ContainsKey(currentName))
                     {
-                        ProcessShape(shape, nameCounts);
+                        nameCounts[currentName] = 1; // First occurrence – keep original name.
+                    }
+                    else
+                    {
+                        // Duplicate found – increment the counter and rename the shape.
+                        nameCounts[currentName]++; // e.g., second occurrence becomes count = 2.
+                        int suffix = nameCounts[currentName];
+                        string newName = $"{currentName}_{suffix}";
+
+                        // Rename the shape by setting its NameU property.
+                        shape.NameU = newName;
+
+                        Console.WriteLine($"Renamed duplicate shape (ID={shape.ID}) from \"{currentName}\" to \"{newName}\".");
                     }
                 }
-
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
+
+            // Save the modified diagram to the specified output file.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Recursively processes a shape (and its children if it is a group) to ensure unique NameU values.
-    /// </summary>
-    /// <param name="shape">The shape to process.</param>
-    /// <param name="nameCounts">Dictionary tracking occurrence counts of each original name.</param>
-    private static void ProcessShape(Shape shape, Dictionary<string, int> nameCounts)
-    {
-        // Skip logically deleted shapes.
-        if (shape.Del == BOOL.True)
-            return;
-
-        // Retrieve the current universal name (use empty string if null).
-        string originalName = shape.NameU ?? string.Empty;
-
-        if (nameCounts.TryGetValue(originalName, out int count))
-        {
-            // Duplicate found – increment count and rename.
-            count++;
-            string newName = $"{originalName}_{count}";
-            shape.NameU = newName;
-            nameCounts[originalName] = count;
-        }
-        else
-        {
-            // First occurrence – record it.
-            nameCounts[originalName] = 1;
-        }
-
-        // If the shape is a group, process its child shapes recursively.
-        if (shape.Type == TypeValue.Group)
-        {
-            foreach (Shape child in shape.Shapes)
-            {
-                ProcessShape(child, nameCounts);
-            }
+            // Write any unexpected errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

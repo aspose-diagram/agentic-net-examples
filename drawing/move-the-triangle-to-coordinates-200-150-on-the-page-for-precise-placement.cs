@@ -7,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output image path
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputImagePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,46 +26,49 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to find a triangle shape
-            bool triangleMoved = false;
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Flag to indicate whether a triangle was found.
+                bool triangleMoved = false;
+
+                // Iterate over all pages explicitly typed.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify triangle by its master name (common master name is "Triangle")
-                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    // Iterate over all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set the new position (PinX, PinY) to (200, 150)
-                        shape.XForm.PinX.Value = 200.0;
-                        shape.XForm.PinY.Value = 150.0;
+                        // Identify a triangle by its master name.
+                        if (shape.Master != null && shape.Master.Name == "Triangle")
+                        {
+                            // Move the triangle to the desired coordinates (200,150).
+                            shape.XForm.PinX.Value = 200.0;
+                            shape.XForm.PinY.Value = 150.0;
 
-                        triangleMoved = true;
-                        // Assuming only one triangle needs to be moved; break out of loops
-                        break;
+                            triangleMoved = true;
+                            // Assuming only one triangle needs to be moved; break out of loops.
+                            break;
+                        }
                     }
+
+                    if (triangleMoved)
+                        break;
                 }
-                if (triangleMoved) break;
+
+                if (!triangleMoved)
+                {
+                    Console.Error.WriteLine("No triangle shape was found in the diagram.");
+                }
+
+                // Save the modified diagram as PNG.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(outputPath, pngOptions);
+                Console.WriteLine($"Diagram saved to {outputPath}");
             }
-
-            if (!triangleMoved)
-            {
-                Console.Error.WriteLine("Triangle shape not found in the diagram.");
-                return;
-            }
-
-            // Prepare PNG save options
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Save the modified diagram as a PNG image
-            diagram.Save(outputPath, pngOptions);
-
-            Console.WriteLine($"Triangle moved to (200,150) and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

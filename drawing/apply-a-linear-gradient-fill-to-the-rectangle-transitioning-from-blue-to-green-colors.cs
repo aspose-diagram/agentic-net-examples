@@ -6,67 +6,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path
-        if (args.Length < 2)
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: verify input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Get the first page (index 0)
             Page page = diagram.Pages[0];
 
             // Draw a rectangle shape on the page
-            // Parameters: pinX, pinY, width, height (in inches)
-            long rectShapeId = page.DrawRectangle(2.0, 2.0, 4.0, 2.0);
+            // Parameters: pinX, pinY, width, height (all in inches)
+            double pinX = 2.0;
+            double pinY = 2.0;
+            double width = 4.0;
+            double height = 2.0;
+            long shapeId = page.DrawRectangle(pinX, pinY, width, height);
 
-            // Retrieve the shape object using the returned ID
-            Shape rectShape = page.Shapes.GetShape((int)rectShapeId);
+            // Retrieve the created shape (GetShape expects an int)
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-            // Set the fill pattern to indicate a gradient (value 25 as per API)
-            rectShape.Fill.FillPattern.Value = 25;
+            // -----------------------------------------------------------------
+            // Apply a linear gradient fill: blue (#0000FF) to green (#00FF00)
+            // -----------------------------------------------------------------
+
+            // Set fill pattern to gradient (value 25 as per Aspose guidelines)
+            shape.Fill.FillPattern.Value = 25;
 
             // Enable gradient fill
-            rectShape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
+            shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set gradient direction (0 = horizontal, can be adjusted as needed)
-            rectShape.Fill.GradientFill.GradientDir.Value = 0;
+            // Set gradient direction (0 = left-to-right, adjust as needed)
+            shape.Fill.GradientFill.GradientDir.Value = 0;
 
             // Clear any existing gradient stops
-            rectShape.Fill.GradientFill.GradientStops.Clear();
+            shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Add gradient stop at position 0 (blue)
-            rectShape.Fill.GradientFill.GradientStops.Add(
+            // Add gradient stop at position 0 (start) with blue color
+            shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
                 new ColorValue("#0000FF", MeasureConst.Undefined));
 
-            // Add gradient stop at position 1 (green)
-            rectShape.Fill.GradientFill.GradientStops.Add(
+            // Add gradient stop at position 1 (end) with green color
+            shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(1, MeasureConst.NUM),
                 new ColorValue("#00FF00", MeasureConst.Undefined));
 
-            // Save the modified diagram to the specified output path in VSDX format
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -29,58 +29,63 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // StringBuilder to construct DOT graph content
+            // StringBuilder for DOT content
             StringBuilder dotBuilder = new StringBuilder();
             dotBuilder.AppendLine("digraph G {");
+
+            // Dictionaries to keep track of defined nodes
+            var definedLayerNodes = new System.Collections.Generic.HashSet<int>();
+            var definedShapeNodes = new System.Collections.Generic.HashSet<long>();
 
             // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Build a map of layer index to layer name for quick lookup
+                // Build a map of layer index to layer name for the current page
                 var layerIndexToName = new System.Collections.Generic.Dictionary<int, string>();
-
-                // Process layers on the current page
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Use layer index (IX) as unique identifier
-                    int layerIndex = layer.IX;
-                    string layerName = layer.Name.Value ?? $"Layer{layerIndex}";
-                    string layerNodeId = $"L{layerIndex}";
+                    int layerIx = layer.IX;
+                    string layerName = layer.Name?.Value ?? $"Layer_{layerIx}";
+                    layerIndexToName[layerIx] = layerName;
 
-                    // Store mapping for later edge creation
-                    layerIndexToName[layerIndex] = layerNodeId;
-
-                    // Add layer node to DOT graph
-                    dotBuilder.AppendLine($"    {layerNodeId} [label=\"{EscapeDotLabel(layerName)}\"];");
+                    // Define layer node if not already defined
+                    if (!definedLayerNodes.Contains(layerIx))
+                    {
+                        string safeLayerName = layerName.Replace("\"", "\\\"");
+                        dotBuilder.AppendLine($"    L{layerIx} [label=\"{safeLayerName}\"];");
+                        definedLayerNodes.Add(layerIx);
+                    }
                 }
 
-                // Process shapes on the current page
+                // Iterate through each shape on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve shape's layer membership string (semicolon-separated indexes)
-                    string layerMembership = shape.LayerMem?.LayerMember?.Value ?? string.Empty;
-                    if (string.IsNullOrWhiteSpace(layerMembership))
+                    long shapeId = shape.ID;
+                    // Define shape node if not already defined
+                    if (!definedShapeNodes.Contains(shapeId))
                     {
-                        // Shape does not belong to any layer; skip it for hierarchy visualization
-                        continue;
+                        // Use shape text as label if available, otherwise use ID
+                        string shapeLabel = shape.Text?.Value?.ToString() ?? $"Shape_{shapeId}";
+                        shapeLabel = shapeLabel.Replace("\"", "\\\"");
+                        dotBuilder.AppendLine($"    S{shapeId} [label=\"{shapeLabel}\"];");
+                        definedShapeNodes.Add(shapeId);
                     }
 
-                    // Create a unique node identifier for the shape
-                    string shapeNodeId = $"S{shape.ID}";
+                    // Retrieve layer membership string
+                    string layerMember = shape.LayerMem?.LayerMember?.Value;
+                    if (string.IsNullOrEmpty(layerMember))
+                    {
+                        continue; // Shape does not belong to any layer
+                    }
 
-                    // Determine shape label: use shape text if available, otherwise fallback to ID
-                    string shapeLabel = !string.IsNullOrWhiteSpace(shape.Text?.Value?.ToString())
-                        ? shape.Text.Value.ToString()
-                        : $"Shape{shape.ID}";
-                    dotBuilder.AppendLine($"    {shapeNodeId} [label=\"{EscapeDotLabel(shapeLabel)}\"];");
-
-                    // Split the membership string and create edges from each layer to this shape
-                    string[] parts = layerMembership.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    // Split semicolon-separated layer indices
+                    string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (string part in parts)
                     {
-                        if (int.TryParse(part, out int layerIdx) && layerIndexToName.TryGetValue(layerIdx, out string layerNodeId))
+                        if (int.TryParse(part.Trim(), out int layerIdx) && layerIndexToName.ContainsKey(layerIdx))
                         {
-                            dotBuilder.AppendLine($"    {layerNodeId} -> {shapeNodeId};");
+                            // Create an edge from layer to shape
+                            dotBuilder.AppendLine($"    L{layerIdx} -> S{shapeId};");
                         }
                     }
                 }
@@ -88,21 +93,14 @@ class Program
 
             dotBuilder.AppendLine("}");
 
-            // Write the DOT content to the output file
+            // Write DOT content to the output file
             File.WriteAllText(outputPath, dotBuilder.ToString());
-            Console.WriteLine($"DOT graph successfully generated at: {outputPath}");
+            Console.WriteLine($"DOT graph successfully written to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper method to escape double quotes and backslashes in DOT labels
-    private static string EscapeDotLabel(string label)
-    {
-        if (label == null) return string.Empty;
-        return label.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

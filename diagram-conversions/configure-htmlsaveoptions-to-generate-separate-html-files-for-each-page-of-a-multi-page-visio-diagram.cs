@@ -7,68 +7,70 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputDir = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        Diagram diagram = null;
+        // Guard: ensure the output directory exists or create it.
         try
         {
-            // Load the Visio diagram
-            diagram = new Diagram(inputPath);
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error creating output directory \"{outputDir}\": {ex.Message}");
             return;
         }
 
+        // Load the diagram and export each page as a separate HTML file.
         try
         {
-            // Verify the diagram contains at least one page
-            if (diagram.Pages.Count == 0)
+            // Use a using block to ensure proper disposal of the Diagram object.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages to export.");
-                return;
-            }
-
-            // Export each page as a separate HTML file
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                // Configure HTML save options for a single page
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                // Iterate over all pages in the diagram.
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    PageIndex = i,          // Zero‑based index of the page to export
-                    PageCount = 1,          // Export only one page
-                    ExportHiddenPage = false // Do not export hidden pages
-                };
+                    // Configure HTML save options for a single page.
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+                    {
+                        // Export only the current page.
+                        PageIndex = i,
+                        PageCount = 1,
+                        // Do not export hidden pages. (Use native bool, not BOOL enum)
+                        ExportHiddenPage = false,
+                        // Do not export comments. (Use native bool, not BOOL enum)
+                        IsExportComments = false
+                    };
 
-                // Build output file name (e.g., page_1.html, page_2.html, ...)
-                string outputPath = $"page_{i + 1}.html";
+                    // Build the output file name (e.g., page_1.html, page_2.html, ...).
+                    string outputPath = Path.Combine(outputDir, $"page_{i + 1}.html");
 
-                try
-                {
-                    // Save the current page to HTML
+                    // Save the current page as HTML.
                     diagram.Save(outputPath, htmlOptions);
-                    Console.WriteLine($"Page {i + 1} saved to '{outputPath}'.");
-                }
-                catch (Exception saveEx)
-                {
-                    Console.Error.WriteLine($"Error saving page {i + 1}: {saveEx.Message}");
+                    Console.WriteLine($"Saved page {i + 1} to \"{outputPath}\"");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-
-        // No explicit disposal needed; Diagram does not implement IDisposable
     }
 }

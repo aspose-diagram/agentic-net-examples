@@ -24,61 +24,57 @@ class Program
             return;
         }
 
+        // Load the diagram inside a try/catch to handle any loading errors.
+        Diagram diagram;
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            return;
+        }
 
-            // Define the name of the user‑defined cell to update.
-            const string targetCellName = "MyCell";
+        // Define the name of the user‑defined cell to update and the new value.
+        const string targetCellName = "MyCustomCell";
+        const string newCellValue = "UpdatedValue";
 
-            // Use Parallel.ForEach to process pages concurrently.
+        // Use Parallel.ForEach to update shapes concurrently for better performance.
+        try
+        {
             Parallel.ForEach(diagram.Pages, (Aspose.Diagram.Page page) =>
             {
-                // Lock the page object while modifying its shapes to avoid race conditions.
-                lock (page)
+                // Iterate over all shapes on the current page.
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    // Iterate over user‑defined cells of the shape.
+                    foreach (Aspose.Diagram.User userCell in shape.Users)
                     {
-                        // Lock the shape while updating its user‑defined cells.
-                        lock (shape)
+                        // Update only the targeted cell.
+                        if (userCell.Name == targetCellName)
                         {
-                            bool cellFound = false;
-
-                            // Search for an existing user‑defined cell with the target name.
-                            foreach (Aspose.Diagram.User userCell in shape.Users)
-                            {
-                                if (string.Equals(userCell.Name, targetCellName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    // Update the cell value.
-                                    userCell.Value.Val = "Updated";
-                                    cellFound = true;
-                                    break;
-                                }
-                            }
-
-                            // If the cell does not exist, create and add it.
-                            if (!cellFound)
-                            {
-                                Aspose.Diagram.User newUser = new Aspose.Diagram.User();
-                                newUser.Name = targetCellName;
-                                newUser.Value.Val = "Updated";
-                                shape.Users.Add(newUser);
-                            }
+                            userCell.Value.Val = newCellValue;
                         }
                     }
                 }
             });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during parallel update: {ex.Message}");
+            return;
+        }
 
-            // Save the updated diagram to the specified output path.
+        // Save the modified diagram to the specified output path.
+        try
+        {
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to save diagram: {ex.Message}");
         }
     }
 }

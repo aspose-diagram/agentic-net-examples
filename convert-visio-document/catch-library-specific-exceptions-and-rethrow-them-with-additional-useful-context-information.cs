@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -25,21 +25,24 @@ class Program
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Perform any desired operations on the diagram here.
-            // (For this example, we simply save it unchanged.)
-
-            // Save the diagram to the output path using VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Save the diagram to the specified output path using VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Catch any exception (including Aspose.Diagram specific ones) and rethrow with additional context.
-            string message = $"Failed to process Visio file '{inputPath}'. See inner exception for details.";
-            // Preserve the original exception as the inner exception.
-            throw new Exception(message, ex);
+            // Identify Aspose.Diagram specific exceptions and rethrow with additional context.
+            if (ex.GetType().Namespace != null && ex.GetType().Namespace.StartsWith("Aspose.Diagram"))
+            {
+                throw new Exception($"Aspose.Diagram error while processing '{inputPath}': {ex.Message}", ex);
+            }
+
+            // For all other exceptions, rethrow unchanged.
+            throw;
         }
     }
 }

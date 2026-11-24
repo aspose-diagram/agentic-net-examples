@@ -7,61 +7,61 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Error: File not found -> {inputPath}");
             return;
         }
 
+        // Prepare output path (same folder, suffix "_cleaned").
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_cleaned" + Path.GetExtension(inputPath));
+
+        long originalSize = 0; // will be set after loading diagram
+
         try
         {
-            // Record the original file size before any processing.
-            long originalSize = new FileInfo(inputPath).Length;
-
-            // Load the diagram inside a using block as required by the API guidelines.
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Remove hidden information (shapes and masters). Pages flag is omitted because it is not defined.
-                diagram.RemoveHiddenInformation((int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters));
+                // Record original file size.
+                originalSize = new FileInfo(inputPath).Length;
 
-                // Save the cleaned diagram to the specified output path in VSDX format.
+                // Remove hidden information: shapes and masters (Pages flag not available).
+                int flags = (int)(RemoveHiddenInfoItem.Shapes | RemoveHiddenInfoItem.Masters);
+                diagram.RemoveHiddenInformation(flags);
+
+                // Save the cleaned diagram in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Record the cleaned file size after removal.
+            // Record cleaned file size.
             long cleanedSize = new FileInfo(outputPath).Length;
 
-            // Output size comparison results.
-            Console.WriteLine($"Original file size: {originalSize} bytes");
-            Console.WriteLine($"Cleaned file size : {cleanedSize} bytes");
-
+            // Compare sizes and report the result.
             if (cleanedSize < originalSize)
             {
-                Console.WriteLine("Success: The file size was reduced after removing hidden data.");
-            }
-            else if (cleanedSize == originalSize)
-            {
-                Console.WriteLine("Notice: The file size is unchanged after removal.");
+                Console.WriteLine($"Success: File size reduced from {originalSize} bytes to {cleanedSize} bytes.");
             }
             else
             {
-                Console.WriteLine("Warning: The file size increased after removal (unexpected).");
+                Console.WriteLine($"No reduction: Original size {originalSize} bytes, cleaned size {cleanedSize} bytes.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,36 +6,40 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments count
-        if (args.Length != 4)
+        // Expected arguments:
+        // 0 - input Visio file path
+        // 1 - output Visio file path
+        // 2 - PDF file to embed
+        // 3 - page index (0‑based)
+        // 4 - shape index within the page (0‑based)
+        if (args.Length < 5)
         {
-            Console.Error.WriteLine("Usage: <inputVisio> <outputVisio> <pdfFile> <shapeId>");
+            Console.Error.WriteLine("Usage: <inputVisio> <outputVisio> <pdfFile> <pageIndex> <shapeIndex>");
             return;
         }
 
         string inputVisioPath = args[0];
         string outputVisioPath = args[1];
         string pdfFilePath = args[2];
-        string shapeIdArg = args[3];
-
-        // Guard: input Visio file must exist
         if (!File.Exists(inputVisioPath))
         {
             Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
             return;
         }
-
-        // Guard: PDF file must exist
         if (!File.Exists(pdfFilePath))
         {
             Console.Error.WriteLine($"PDF file not found: {pdfFilePath}");
             return;
         }
 
-        // Guard: shapeId must be a valid long integer
-        if (!long.TryParse(shapeIdArg, out long shapeId))
+        if (!int.TryParse(args[3], out int pageIndex))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            Console.Error.WriteLine("Invalid page index.");
+            return;
+        }
+        if (!int.TryParse(args[4], out int shapeIndex))
+        {
+            Console.Error.WriteLine("Invalid shape index.");
             return;
         }
 
@@ -44,53 +48,48 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputVisioPath);
 
-            // Locate the shape with the specified ID across all pages
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            // Validate page index
+            if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
             {
-                // GetShape throws if not found, so use try/catch per page
-                try
-                {
-                    targetShape = page.Shapes.GetShape(shapeId);
-                    if (targetShape != null)
-                    {
-                        break;
-                    }
-                }
-                catch
-                {
-                    // Shape not on this page, continue searching
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page.");
+                Console.Error.WriteLine($"Page index out of range. Diagram has {diagram.Pages.Count} pages.");
                 return;
             }
 
-            // Ensure the shape has ForeignData (OLE container)
-            if (targetShape.ForeignData == null)
+            // Get the target page
+            Page page = diagram.Pages[pageIndex];
+
+            // Validate shape index
+            if (shapeIndex < 0 || shapeIndex >= page.Shapes.Count)
             {
-                Console.Error.WriteLine($"Shape ID {shapeId} does not contain OLE (ForeignData) content.");
+                Console.Error.WriteLine($"Shape index out of range. Page has {page.Shapes.Count} shapes.");
                 return;
             }
 
-            // Read the new PDF file into a byte array
+            // Retrieve the shape that should contain the OLE object
+            Shape shape = page.Shapes[shapeIndex];
+
+            // Ensure the shape actually has foreign (OLE) data
+            if (shape.ForeignData == null)
+            {
+                Console.Error.WriteLine("The selected shape does not contain any OLE (foreign) data.");
+                return;
+            }
+
+            // Read the PDF file bytes
             byte[] pdfBytes = File.ReadAllBytes(pdfFilePath);
 
-            // Replace the OLE object's binary data with the new PDF bytes
-            targetShape.ForeignData.ObjectData = pdfBytes;
+            // Replace the embedded OLE object data with the new PDF bytes
+            shape.ForeignData.ObjectData = pdfBytes;
 
-            // Update the source file name (optional, for reference)
-            targetShape.ForeignData.ObjectSourceFullName = Path.GetFileName(pdfFilePath);
+            // Optionally update the source file name (helps Visio identify the object type)
+            shape.ForeignData.ObjectSourceFullName = Path.GetFileName(pdfFilePath);
 
-            // Optionally display the OLE object as an icon
-            targetShape.ForeignData.ShowAsIcon = BOOL.True;
+            // Optionally set the object to display as an icon
+            shape.ForeignData.ShowAsIcon = BOOL.True;
 
             // Save the modified diagram
             diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Successfully replaced OLE object in shape {shapeId} and saved to {outputVisioPath}");
+            Console.WriteLine($"Successfully replaced OLE object and saved to: {outputVisioPath}");
         }
         catch (Exception ex)
         {

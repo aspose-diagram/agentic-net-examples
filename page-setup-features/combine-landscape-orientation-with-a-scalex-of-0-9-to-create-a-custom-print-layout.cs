@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -24,35 +24,33 @@ class Program
             return;
         }
 
-        try
+        // Load the diagram inside a using block as required.
+        using (Diagram diagram = new Diagram(inputPath))
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply custom print layout to each page: Landscape orientation and ScaleX = 0.9.
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            try
             {
-                Page page = diagram.Pages[i];
+                // Iterate over all pages and configure print layout.
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Explicitly type the page variable.
+                    Page page = diagram.Pages[i];
 
-                // Set page orientation to Landscape.
-                page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Set page orientation to Landscape.
+                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                // Set horizontal scaling factor to 0.9 (90%).
-                page.PageSheet.PrintProps.ScaleX.Value = 0.9;
+                    // Set horizontal scaling factor to 0.9 (90%).
+                    page.PageSheet.PrintProps.ScaleX.Value = 0.9;
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Clean up resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Write any Aspose or runtime errors to the error stream.
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
         }
     }
 }

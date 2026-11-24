@@ -16,10 +16,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -28,9 +28,6 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Current date string to be placed in the header.
-                string dateText = DateTime.Now.ToString("d");
-
                 // Iterate over each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
@@ -38,25 +35,42 @@ class Program
                     double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                     double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Define header positioning constants.
-                    double margin = 0.2;               // 0.2 inch margin from the top edge.
-                    double headerHeight = 0.3;         // Height of the header text box.
-                    double headerWidth = pageWidth - 2 * margin; // Width with side margins.
-                    double pinX = margin;              // Left margin.
-                    double pinY = pageHeight - margin - headerHeight; // Position from top.
+                    // Define header position: centered horizontally, near the top edge.
+                    double headerPinX = pageWidth / 2.0;          // Center X
+                    double headerPinY = pageHeight - 0.5;        // 0.5 inches from top
 
-                    // Add a text shape containing the date.
-                    // The AddText method returns a long shape ID (not used further here).
-                    page.AddText(pinX, pinY, headerWidth, headerHeight, dateText, "Arial", "#000000", 0.2);
+                    // Add a rectangle shape to serve as the header.
+                    // The fourth argument (isCalculate) is a plain bool.
+                    long shapeId = page.AddShape(headerPinX, headerPinY, "Rectangle", false);
+
+                    // Retrieve the newly added shape by its ID.
+                    Shape headerShape = page.Shapes.GetShape(shapeId);
+
+                    // Set a reasonable size for the header shape.
+                    headerShape.XForm.Width.Value = 3.0;   // 3 inches wide
+                    headerShape.XForm.Height.Value = 0.5; // 0.5 inches tall
+
+                    // Clear any existing text and add the current date.
+                    headerShape.Text.Value.Clear();
+                    string currentDate = DateTime.Now.ToString("d"); // Short date pattern
+                    headerShape.Text.Value.Add(new Txt(currentDate));
+
+                    // Optional: ensure the shape is not hidden.
+                    // The Del property is of type BOOL; set to FALSE to keep the shape.
+                    if (headerShape.Del == BOOL.True)
+                    {
+                        // No direct setter; Del is read‑only BOOL cell.
+                        // If needed, you could delete the shape, but we keep it visible.
+                    }
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format.
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

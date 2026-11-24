@@ -7,58 +7,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (can be passed as first argument)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output SVG file path
-        string outputPath = "shape.svg";
+        // Validate command‑line arguments.
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeId> <outputSvgPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string shapeIdArg = args[1];
+        string outputPath = args[2];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Parse shape ID.
+        if (!int.TryParse(shapeIdArg, out int shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
         try
         {
-            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            // Load the Visio diagram inside a using block (required pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Get the first page of the diagram
+                // Retrieve the first page (index 0).
                 Page page = diagram.Pages[0];
 
-                // Retrieve a shape by its ID (example uses ID = 1)
-                Shape shape = page.Shapes.GetShape(1);
+                // Get the shape by its ID.
+                Shape shape = page.Shapes.GetShape(shapeId);
                 if (shape == null)
                 {
-                    Console.Error.WriteLine("Shape with ID 1 not found on the page.");
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page.");
                     return;
                 }
 
-                // Skip shapes that are logically deleted
+                // Ensure the shape is not marked for deletion.
                 if (shape.Del == BOOL.True)
                 {
-                    Console.Error.WriteLine("The specified shape is marked as deleted.");
+                    Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
                     return;
                 }
 
-                // Set the line dash pattern using the strongly‑typed enum
-                // This preserves the dash style when exporting to SVG
+                // Set the line dash pattern using the proper enum.
+                // This ensures the dash pattern is preserved when exporting to SVG.
                 shape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                // Prepare SVG save options (default configuration)
+                // Prepare SVG save options (default options are sufficient).
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Export the shape to an SVG file
+                // Export the specific shape to SVG.
                 shape.ToSvg(outputPath, svgOptions);
 
-                Console.WriteLine($"Shape successfully exported to SVG: {outputPath}");
+                Console.WriteLine($"Shape {shapeId} successfully exported to SVG: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

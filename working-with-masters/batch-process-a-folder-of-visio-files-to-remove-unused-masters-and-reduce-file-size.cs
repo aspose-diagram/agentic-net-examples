@@ -1,51 +1,40 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 1)
+        // Validate command line arguments.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputFolder> [outputFolder]");
+            Console.Error.WriteLine("Usage: Program <folderPath>");
             return;
         }
 
-        string inputFolder = args[0];
-        if (!Directory.Exists(inputFolder))
+        string folderPath = args[0];
+
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Determine output folder (optional second argument or default subfolder)
-        string outputFolder = args.Length >= 2 ? args[1] : Path.Combine(inputFolder, "Processed");
-        if (!Directory.Exists(outputFolder))
+        // Define Visio file extensions to process.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vssx", ".vss", ".vstx", ".vst", ".vtx" };
+
+        // Get all files with the supported extensions.
+        string[] files = Directory.GetFiles(folderPath);
+        foreach (string filePath in files)
         {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
-                return;
-            }
-        }
+            // Process only supported Visio files.
+            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
+                continue;
 
-        // Supported Visio extensions
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vtx" };
-
-        // Process each file in the input folder
-        foreach (string filePath in Directory.GetFiles(inputFolder))
-        {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(extensions, ext) < 0)
-                continue; // Skip non‑Visio files
-
+            // Guard: ensure the file exists (redundant but per rule).
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -54,37 +43,71 @@ class Program
 
             try
             {
-                // Load the diagram (Diagram does not implement IDisposable)
-                Diagram diagram = new Diagram(filePath);
+                // Load the diagram inside a using block (mandatory pattern).
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // Collect names of masters that are actually used by shapes.
+                    HashSet<string> usedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                // -----------------------------------------------------------------
-                // Remove hidden information to reduce file size.
-                // The RemoveHiddenInformation method requires an integer flag.
-                // Passing 0 removes all hidden information (default behavior).
-                // -----------------------------------------------------------------
-                diagram.RemoveHiddenInformation(0);
+                    // Iterate through all pages.
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Iterate through all shapes on the page.
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                // Prepare save options: auto‑fit page to drawing content
-                DiagramSaveOptions saveOptions = new DiagramSaveOptions(GetSaveFileFormat(ext));
-                saveOptions.AutoFitPageToDrawingContent = true; // property expects a bool
+                            // If the shape references a master, add its name to the set.
+                            if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
+                            {
+                                usedMasterNames.Add(shape.Master.Name);
+                            }
+                        }
+                    }
 
-                // Build the output file path
-                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+                    // Remove masters that are not referenced by any shape.
+                    // Copy masters to a temporary list to avoid modifying the collection while iterating.
+                    List<Master> mastersCopy = new List<Master>();
+                    foreach (Master master in diagram.Masters)
+                    {
+                        mastersCopy.Add(master);
+                    }
 
-                // Save the cleaned diagram
-                diagram.Save(outputPath, saveOptions);
+                    foreach (Master master in mastersCopy)
+                    {
+                        // If the master name is not in the used set, remove it.
+                        if (!usedMasterNames.Contains(master.Name))
+                        {
+                            diagram.Masters.Remove(master);
+                        }
+                    }
 
-                Console.WriteLine($"Processed: {filePath} -> {outputPath}");
+                    // Build the output file path with a "_cleaned" suffix.
+                    string directory = Path.GetDirectoryName(filePath);
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    string extension = Path.GetExtension(filePath);
+                    string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_cleaned{extension}");
+
+                    // Save the cleaned diagram in the same format as the original.
+                    // Use SaveFileFormat based on the original extension.
+                    SaveFileFormat format = GetSaveFormatFromExtension(extension);
+                    diagram.Save(outputPath, format);
+
+                    Console.WriteLine($"Processed: {Path.GetFileName(filePath)} -> {Path.GetFileName(outputPath)}");
+                }
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                // Write any errors to the error stream and continue with next file.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
     }
 
-    // Maps file extensions to the corresponding SaveFileFormat enum values
-    private static SaveFileFormat GetSaveFileFormat(string extension)
+    // Helper method to map file extensions to SaveFileFormat enum values.
+    private static SaveFileFormat GetSaveFormatFromExtension(string extension)
     {
         switch (extension.ToLowerInvariant())
         {
@@ -92,12 +115,18 @@ class Program
                 return SaveFileFormat.Vsdx;
             case ".vsd":
                 return SaveFileFormat.Vsd;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
+            case ".vssx":
+                return SaveFileFormat.Vssx;
+            case ".vss":
+                return SaveFileFormat.Vss;
+            case ".vstx":
+                return SaveFileFormat.Vstx;
+            case ".vst":
+                return SaveFileFormat.Vst;
             case ".vtx":
                 return SaveFileFormat.Vtx;
             default:
-                // Default to Vsdx (should not occur due to prior filtering)
+                // Default to Vsdx if unknown.
                 return SaveFileFormat.Vsdx;
         }
     }

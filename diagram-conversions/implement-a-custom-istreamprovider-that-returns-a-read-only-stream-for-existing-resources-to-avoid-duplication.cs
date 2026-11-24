@@ -3,28 +3,31 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyStreamProvider : IStreamProvider
+class ReadOnlyStreamProvider : IStreamProvider
 {
-    // Initializes a read‑only stream for the requested resource.
+    // Initializes a read‑only stream for the resource identified by options.DefaultPath.
     public void InitStream(StreamProviderOptions options)
     {
-        // The DefaultPath property points to the resource file that Aspose.Diagram wants to write.
-        // We open it as a read‑only stream to avoid creating duplicate files.
-        if (options == null)
+        // Ensure the default path is provided.
+        if (string.IsNullOrEmpty(options.DefaultPath))
         {
-            throw new ArgumentNullException(nameof(options));
+            // No path supplied; assign a null stream to avoid errors.
+            options.Stream = Stream.Null;
+            return;
         }
 
-        string path = options.DefaultPath;
-
-        if (File.Exists(path))
+        // If the resource file exists, open it as a read‑only stream.
+        if (File.Exists(options.DefaultPath))
         {
-            // Open the existing file in read‑only mode.
-            options.Stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            options.Stream = new FileStream(
+                options.DefaultPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read);
         }
         else
         {
-            // If the file does not exist, provide an empty stream to satisfy the contract.
+            // Resource does not exist; use an empty stream.
             options.Stream = Stream.Null;
         }
     }
@@ -32,10 +35,9 @@ class MyStreamProvider : IStreamProvider
     // Closes and disposes the stream created in InitStream.
     public void CloseStream(StreamProviderOptions options)
     {
-        if (options?.Stream != null)
+        if (options.Stream != null && options.Stream != Stream.Null)
         {
             options.Stream.Dispose();
-            options.Stream = null;
         }
     }
 }
@@ -44,17 +46,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output HTML file path.
-        if (args.Length < 2)
+        // Input Visio file path (change as needed).
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output HTML file path.
+        string outputPath = "output.html";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -63,26 +65,25 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the input file.
             Diagram diagram = new Diagram(inputPath);
 
             // Configure HTML save options with the custom stream provider.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new MyStreamProvider();
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions
+            {
+                // Assign the custom provider to avoid duplicating existing resources.
+                StreamProvider = new ReadOnlyStreamProvider()
+            };
 
-            // Optional: export only the first page (adjust as needed).
-            // htmlOptions.PageIndex = 0;
-            // htmlOptions.PageCount = 1;
-
-            // Save the diagram to HTML using the configured options.
+            // Save the diagram as HTML using the configured options.
             diagram.Save(outputPath, htmlOptions);
 
             Console.WriteLine($"Diagram successfully saved to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

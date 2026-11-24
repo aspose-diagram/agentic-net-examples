@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PDF file path.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -17,54 +17,57 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Adjust the Perspective angle of the first shape found (30 degrees)
+            bool perspectiveSet = false;
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Shape shape = page.Shapes[i];
+                    if (shape != null)
+                    {
+                        // Set Perspective angle to 30 degrees
+                        shape.ThreeDFormat.Perspective.Value = 30;
+                        perspectiveSet = true;
+                        break; // Adjust only the first shape
+                    }
+                }
+                if (perspectiveSet) break;
+            }
+
+            if (!perspectiveSet)
+            {
+                Console.Error.WriteLine("No shape found to adjust perspective.");
                 return;
             }
 
-            // Get the first page.
-            Page page = diagram.Pages[0];
-
-            // Ensure the page has at least one shape.
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("Error: First page contains no shapes.");
-                return;
-            }
-
-            // Retrieve the first shape on the page.
-            Shape shape = page.Shapes[0];
-
-            // Adjust the perspective angle to 30 degrees.
-            // Perspective is a double value representing the angle.
-            shape.ThreeDFormat.Perspective.Value = 30.0;
-
-            // Prepare PDF save options.
+            // Prepare PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            pdfOptions.ExportHiddenPage = false;          // Do not export hidden pages
+            pdfOptions.HorizontalResolution = 300;        // High resolution for raster images
+            pdfOptions.VerticalResolution = 300;
+            pdfOptions.JpegQuality = 100;                // Maximum JPEG quality
 
-            // Save the modified diagram as PDF.
+            // Save the diagram as PDF
             diagram.Save(outputPath, pdfOptions);
-
             Console.WriteLine($"Diagram saved to PDF successfully: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

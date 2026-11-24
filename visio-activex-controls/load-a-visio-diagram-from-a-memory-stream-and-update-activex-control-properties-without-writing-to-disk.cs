@@ -16,77 +16,87 @@ class Program
 
         string inputPath = args[0];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
+        // Load the Visio file into a memory stream.
+        byte[] fileBytes;
         try
         {
-            // Load the Visio file into a memory stream.
-            byte[] fileBytes = File.ReadAllBytes(inputPath);
-            using (MemoryStream inputStream = new MemoryStream(fileBytes))
+            fileBytes = File.ReadAllBytes(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading file into memory: {ex.Message}");
+            return;
+        }
+
+        using (MemoryStream inputStream = new MemoryStream(fileBytes))
+        {
+            // Load the diagram from the memory stream.
+            try
             {
-                // Load the diagram from the memory stream.
                 using (Diagram diagram = new Diagram(inputStream))
                 {
                     // Iterate through all pages in the diagram.
-                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    foreach (Page page in diagram.Pages)
                     {
-                        Page page = diagram.Pages[pageIndex];
-
                         // Iterate through all shapes on the current page.
-                        for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                        for (int i = 0; i < page.Shapes.Count; i++)
                         {
-                            Shape shape = page.Shapes[shapeIndex];
+                            Shape shape = page.Shapes[i];
 
-                            // Check whether the shape contains an ActiveX control.
+                            // Skip logically deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Check whether the shape hosts an ActiveX control.
                             if (shape.ActiveXControl != null)
                             {
-                                // Determine the type of the ActiveX control.
+                                // Determine the specific control type.
                                 ControlType ctrlType = shape.ActiveXControl.Type;
 
-                                // Update properties based on the specific control type.
-                                if (ctrlType == ControlType.CommandButton)
+                                if (ctrlType == ControlType.TextBox)
                                 {
-                                    // Cast to the concrete CommandButtonActiveXControl class.
-                                    CommandButtonActiveXControl button = (CommandButtonActiveXControl)shape.ActiveXControl;
-
-                                    // Set a new caption for the command button.
-                                    button.Caption = "Updated Caption";
-
-                                    Console.WriteLine($"CommandButton caption updated on shape ID {shape.ID}.");
+                                    // Cast to TextBoxActiveXControl and update its text.
+                                    TextBoxActiveXControl txtCtrl = (TextBoxActiveXControl)shape.ActiveXControl;
+                                    txtCtrl.Text = "Updated Text via Aspose.Diagram";
+                                    // No IsEnabled property (bool) is set here to avoid BOOL conversion errors.
                                 }
-                                else if (ctrlType == ControlType.TextBox)
+                                else if (ctrlType == ControlType.CheckBox)
                                 {
-                                    // Cast to the concrete TextBoxActiveXControl class.
-                                    TextBoxActiveXControl textBox = (TextBoxActiveXControl)shape.ActiveXControl;
-
-                                    // Set new text content for the text box.
-                                    textBox.Text = "New Text Content";
-
-                                    Console.WriteLine($"TextBox text updated on shape ID {shape.ID}.");
+                                    // Cast to CheckBoxActiveXControl and set its checked state.
+                                    CheckBoxActiveXControl chkCtrl = (CheckBoxActiveXControl)shape.ActiveXControl;
+                                    chkCtrl.Value = CheckValueType.Checked; // Mark as checked.
                                 }
-                                // Additional control types can be handled here as needed.
+                                else if (ctrlType == ControlType.Image)
+                                {
+                                    // Cast to ImageActiveXControl and assign a placeholder picture.
+                                    ImageActiveXControl imgCtrl = (ImageActiveXControl)shape.ActiveXControl;
+                                    imgCtrl.Picture = new byte[0]; // Empty byte array as placeholder.
+                                }
+                                // Additional control types can be handled similarly.
                             }
                         }
                     }
 
-                    // Optionally save the modified diagram back to a memory stream (no disk I/O).
+                    // Save the modified diagram to a memory stream (no disk I/O).
                     using (MemoryStream outputStream = new MemoryStream())
                     {
                         diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                        Console.WriteLine($"Diagram processed successfully. Output size: {outputStream.Length} bytes.");
+                        Console.WriteLine($"Diagram successfully updated and saved to memory. Output size: {outputStream.Length} bytes.");
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+                return;
+            }
         }
     }
 }

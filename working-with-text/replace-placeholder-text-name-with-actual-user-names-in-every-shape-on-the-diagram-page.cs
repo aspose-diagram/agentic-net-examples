@@ -1,44 +1,32 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: input diagram path and output diagram path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [UserName]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine the replacement name: from argument or console prompt.
-        string userName;
-        if (args.Length >= 3 && !string.IsNullOrWhiteSpace(args[2]))
-        {
-            userName = args[2];
-        }
-        else
-        {
-            Console.Write("Enter the name to replace \"[Name]\": ");
-            userName = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(userName))
-            {
-                Console.Error.WriteLine("Error: No name provided for replacement.");
-                return;
-            }
-        }
+        // Prompt the user for the name that will replace the placeholder "[Name]".
+        Console.Write("Enter the name to replace '[Name]' with: ");
+        string userName = Console.ReadLine() ?? string.Empty;
 
         try
         {
@@ -51,15 +39,17 @@ class Program
                 // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each text run (FormatTxt) within the shape.
+                    // Iterate through each text run (FormatTxt) within the shape's text collection.
                     foreach (FormatTxt fmt in shape.Text.Value)
                     {
-                        // Cast to Txt to access the actual text string.
-                        Txt txtRun = fmt as Txt;
-                        if (txtRun != null && txtRun.Text != null && txtRun.Text.Contains("[Name]"))
+                        // Cast the FormatTxt to Txt to access the actual text string.
+                        if (fmt is Txt txt && !string.IsNullOrEmpty(txt.Text))
                         {
-                            // Replace the placeholder with the actual user name.
-                            txtRun.Text = txtRun.Text.Replace("[Name]", userName);
+                            // Replace the placeholder "[Name]" with the user‑provided name.
+                            if (txt.Text.Contains("[Name]"))
+                            {
+                                txt.Text = txt.Text.Replace("[Name]", userName);
+                            }
                         }
                     }
                 }
@@ -67,12 +57,12 @@ class Program
 
             // Save the modified diagram to the specified output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

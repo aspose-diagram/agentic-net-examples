@@ -9,31 +9,32 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Expected arguments: <VisioFilePath> <JsonFilePath> <OutputPdfPath>
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <jsonPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <JsonFilePath> <OutputPdfPath>");
             return;
         }
 
-        string inputVisioPath = args[0];
+        string visioPath = args[0];
         string jsonPath = args[1];
         string outputPdfPath = args[2];
 
-        // Guard against missing input files.
-        if (!File.Exists(inputVisioPath))
+        // Guard: ensure input Visio file exists
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
+            Console.Error.WriteLine($"Visio file not found: {visioPath}");
             return;
         }
 
+        // Guard: ensure JSON file exists
         if (!File.Exists(jsonPath))
         {
             Console.Error.WriteLine($"JSON file not found: {jsonPath}");
             return;
         }
 
-        // Load replacement values from JSON.
+        // Load replacement dictionary from JSON
         Dictionary<string, string> replacements;
         try
         {
@@ -51,64 +52,50 @@ class Program
             return;
         }
 
-        // Load the Visio diagram and perform text replacements.
+        // Load the Visio diagram and perform text replacements
         try
         {
-            // Use a using block as required by the API.
-            using (Diagram diagram = new Diagram(inputVisioPath))
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Iterate through each text run within the shape.
-                        foreach (var fmt in shape.Text.Value)
+                        // Iterate through each text run (Txt) within the shape
+                        foreach (FormatTxt fmt in shape.Text.Value)
                         {
                             if (fmt is Txt txt)
                             {
-                                string text = txt.Text;
-
-                                // Apply each replacement.
-                                foreach (var kvp in replacements)
+                                // Perform placeholder replacements
+                                foreach (KeyValuePair<string, string> kvp in replacements)
                                 {
-                                    // Support placeholders like {{Key}} and plain Key.
-                                    string placeholder = $"{{{{{kvp.Key}}}}}";
-                                    if (text.Contains(placeholder))
+                                    if (!string.IsNullOrEmpty(txt.Text) && txt.Text.Contains(kvp.Key))
                                     {
-                                        text = text.Replace(placeholder, kvp.Value);
-                                    }
-                                    else if (text.Contains(kvp.Key))
-                                    {
-                                        text = text.Replace(kvp.Key, kvp.Value);
+                                        txt.Text = txt.Text.Replace(kvp.Key, kvp.Value);
                                     }
                                 }
-
-                                // Update the text run with the new content.
-                                txt.Text = text;
                             }
                         }
                     }
                 }
 
-                // Configure PDF save options.
+                // Prepare PDF save options (default options are sufficient)
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";
-                pdfOptions.ExportHiddenPage = false; // ExportHiddenPage expects a bool, not BOOL.
 
-                // Save the modified diagram as PDF.
+                // Export the modified diagram to PDF
                 diagram.Save(outputPdfPath, pdfOptions);
-                Console.WriteLine($"PDF successfully saved to: {outputPdfPath}");
+                Console.WriteLine($"PDF exported successfully to: {outputPdfPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

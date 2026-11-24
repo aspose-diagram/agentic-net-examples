@@ -7,39 +7,23 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputFolder] [iterations]");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
         string inputPath = args[0];
-        string outputFolder = args.Length >= 2 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "Output");
-        int iterations = args.Length >= 3 && int.TryParse(args[2], out int it) ? it : 10;
 
-        // Guard: input file must exist
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
-        // Ensure output folder exists
-        if (!Directory.Exists(outputFolder))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
-        }
-
-        // Load the diagram inside a try/catch block
+        // Load the diagram inside a try/catch to capture any Aspose errors.
         Diagram diagram;
         try
         {
@@ -47,11 +31,11 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
             return;
         }
 
-        // Ensure there is at least one window to manipulate
+        // Ensure there is at least one window; otherwise add a default window.
         if (diagram.Windows.Count == 0)
         {
             try
@@ -65,44 +49,55 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error adding default window: {ex.Message}");
+                Console.Error.WriteLine($"Failed to add default window: {ex.Message}");
                 return;
             }
         }
 
-        // Use the first window for flag manipulation
-        Window targetWindow = diagram.Windows[0];
-        Random rnd = new Random();
+        // Use the first window for the test.
+        Window testWindow = diagram.Windows[0];
 
-        // Stress‑test loop: randomly flip ShowGrid and ShowGuides
+        Random rnd = new Random();
+        int iterations = 10; // Number of random flips.
+
         for (int i = 0; i < iterations; i++)
         {
+            // Randomly decide the BOOL values for ShowGrid and ShowGuides.
+            BOOL gridValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
+            BOOL guidesValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
+
+            // Apply the random settings.
             try
             {
-                // Randomly decide the flag values
-                BOOL gridValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
-                BOOL guidesValue = rnd.Next(2) == 0 ? BOOL.True : BOOL.False;
-
-                // Apply the random values
-                targetWindow.ShowGrid = gridValue;
-                targetWindow.ShowGuides = guidesValue;
-
-                // Log current iteration state
-                Console.WriteLine($"Iteration {i + 1}/{iterations}: ShowGrid = {gridValue}, ShowGuides = {guidesValue}");
-
-                // Save the diagram to a new file for each iteration
-                string outputPath = Path.Combine(outputFolder, $"output_{i + 1}.vsdx");
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                testWindow.ShowGrid = gridValue;
+                testWindow.ShowGuides = guidesValue;
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error during iteration {i + 1}: {ex.Message}");
-                // Continue with next iteration instead of aborting
+                Console.Error.WriteLine($"Iteration {i + 1}: Failed to set window flags – {ex.Message}");
+                continue;
+            }
+
+            // Prepare an output file name for this iteration.
+            string outputDir = Path.GetDirectoryName(inputPath) ?? ".";
+            string outputPath = Path.Combine(outputDir, $"output_{i + 1}.vsdx");
+
+            // Save the diagram with the current settings.
+            try
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Iteration {i + 1}: Saved to '{outputPath}' with ShowGrid={gridValue}, ShowGuides={guidesValue}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Iteration {i + 1}: Save failed – {ex.Message}");
             }
         }
 
-        // Cleanup
-        diagram?.Dispose();
-        Console.WriteLine("Stress test completed.");
+        // Clean up the diagram object if it implements IDisposable.
+        if (diagram is IDisposable disposableDiagram)
+        {
+            disposableDiagram.Dispose();
+        }
     }
 }

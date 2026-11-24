@@ -1,15 +1,15 @@
 using System;
 using System.IO;
 using System.Xml.Linq;
+using System.Globalization;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file, XML config file, output diagram file
+        // Validate command‑line arguments.
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <configXmlPath> <outputPath>");
@@ -20,136 +20,137 @@ class Program
         string configPath = args[1];
         string outputPath = args[2];
 
-        // Guard against missing files
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
+        // Guard: ensure the XML configuration file exists.
         if (!File.Exists(configPath))
         {
-            Console.Error.WriteLine($"Config XML file not found: {configPath}");
+            Console.Error.WriteLine($"Configuration XML file not found: {configPath}");
             return;
         }
 
-        // Load XML configuration
-        XDocument configDoc;
         try
         {
-            configDoc = XDocument.Load(configPath);
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(diagramPath))
+            {
+                // Load and parse the XML configuration.
+                XDocument xmlDoc = XDocument.Load(configPath);
+                XElement root = xmlDoc.Element("HeaderFooterConfig");
+                if (root == null)
+                {
+                    Console.Error.WriteLine("Invalid XML format: missing <HeaderFooterConfig> root element.");
+                    return;
+                }
+
+                // ----- Header text -----
+                XElement headerLeftElem = root.Element("HeaderLeft");
+                if (headerLeftElem != null)
+                    diagram.HeaderFooter.HeaderLeft = headerLeftElem.Value;
+
+                XElement headerCenterElem = root.Element("HeaderCenter");
+                if (headerCenterElem != null)
+                    diagram.HeaderFooter.HeaderCenter = headerCenterElem.Value;
+
+                XElement headerRightElem = root.Element("HeaderRight");
+                if (headerRightElem != null)
+                    diagram.HeaderFooter.HeaderRight = headerRightElem.Value;
+
+                // ----- Footer text -----
+                XElement footerLeftElem = root.Element("FooterLeft");
+                if (footerLeftElem != null)
+                    diagram.HeaderFooter.FooterLeft = footerLeftElem.Value;
+
+                XElement footerCenterElem = root.Element("FooterCenter");
+                if (footerCenterElem != null)
+                    diagram.HeaderFooter.FooterCenter = footerCenterElem.Value;
+
+                XElement footerRightElem = root.Element("FooterRight");
+                if (footerRightElem != null)
+                    diagram.HeaderFooter.FooterRight = footerRightElem.Value;
+
+                // ----- Margins -----
+                XElement headerMarginElem = root.Element("HeaderMargin");
+                if (headerMarginElem != null && double.TryParse(headerMarginElem.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double headerMargin))
+                    diagram.HeaderFooter.HeaderMargin.Value = headerMargin;
+
+                XElement footerMarginElem = root.Element("FooterMargin");
+                if (footerMarginElem != null && double.TryParse(footerMarginElem.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double footerMargin))
+                    diagram.HeaderFooter.FooterMargin.Value = footerMargin;
+
+                // ----- Font settings -----
+                HeaderFooterFont font = diagram.HeaderFooter.HeaderFooterFont;
+
+                XElement fontFaceElem = root.Element("FontFace");
+                if (fontFaceElem != null)
+                    font.FaceName = fontFaceElem.Value;
+
+                // Font size is set via the Height property (negative value mapping).
+                XElement fontSizeElem = root.Element("FontSize");
+                if (fontSizeElem != null && double.TryParse(fontSizeElem.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double fontSize))
+                {
+                    // Apply the required negative mapping: Height = round(PointSize * -1.333)
+                    int height = (int)Math.Round(fontSize * -1.333);
+                    font.Height = height;
+                }
+
+                // Boldness is controlled via the Weight property (700 = bold, 400 = regular).
+                XElement boldElem = root.Element("Bold");
+                if (boldElem != null && bool.TryParse(boldElem.Value, out bool isBold))
+                    font.Weight = isBold ? 700 : 400;
+
+                // Italic flag uses BOOL enum.
+                XElement italicElem = root.Element("Italic");
+                if (italicElem != null && bool.TryParse(italicElem.Value, out bool isItalic))
+                    font.Italic = isItalic ? BOOL.True : BOOL.False;
+
+                // Underline flag uses BOOL enum.
+                XElement underlineElem = root.Element("Underline");
+                if (underlineElem != null && bool.TryParse(underlineElem.Value, out bool isUnderline))
+                    font.Underline = isUnderline ? BOOL.True : BOOL.False;
+
+                // ----- Header/Footer text color -----
+                XElement colorElem = root.Element("Color");
+                if (colorElem != null)
+                {
+                    string colorStr = colorElem.Value.Trim();
+                    // Expecting a hex string like "#RRGGBB" or a known color name.
+                    try
+                    {
+                        Color parsedColor;
+                        if (colorStr.StartsWith("#") && colorStr.Length == 7)
+                        {
+                            // Parse hex RGB.
+                            int rgb = int.Parse(colorStr.Substring(1), NumberStyles.HexNumber);
+                            // Aspose.Drawing.Color.FromArgb expects ARGB; set alpha to 255.
+                            parsedColor = Color.FromArgb(255, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+                        }
+                        else
+                        {
+                            // Fallback to known color names (e.g., "Black").
+                            parsedColor = Color.FromName(colorStr);
+                        }
+                        diagram.HeaderFooter.HeaderFooterColor = parsedColor;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Failed to parse color '{colorStr}': {ex.Message}");
+                    }
+                }
+
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to load XML configuration: {ex.Message}");
-            return;
-        }
-
-        // Helper to retrieve element value safely
-        string GetElementValue(string name)
-        {
-            XElement elem = configDoc.Root.Element(name);
-            return elem != null ? elem.Value.Trim() : null;
-        }
-
-        // Header and footer text
-        string headerLeft   = GetElementValue("HeaderLeft");
-        string headerCenter = GetElementValue("HeaderCenter");
-        string headerRight  = GetElementValue("HeaderRight");
-        string footerLeft   = GetElementValue("FooterLeft");
-        string footerCenter = GetElementValue("FooterCenter");
-        string footerRight  = GetElementValue("FooterRight");
-
-        // Margins (in inches)
-        double? headerMargin = null;
-        double? footerMargin = null;
-        string headerMarginStr = GetElementValue("HeaderMargin");
-        string footerMarginStr = GetElementValue("FooterMargin");
-        if (double.TryParse(headerMarginStr, out double hm)) headerMargin = hm;
-        if (double.TryParse(footerMarginStr, out double fm)) footerMargin = fm;
-
-        // Font settings
-        string fontFaceName = GetElementValue("FontFaceName");
-        int? fontSizePt = null;
-        string fontSizeStr = GetElementValue("FontSize");
-        if (int.TryParse(fontSizeStr, out int fs)) fontSizePt = fs;
-
-        bool? fontBold = null;
-        bool? fontItalic = null;
-        bool? fontUnderline = null;
-        string boldStr = GetElementValue("FontBold");
-        string italicStr = GetElementValue("FontItalic");
-        string underlineStr = GetElementValue("FontUnderline");
-        if (bool.TryParse(boldStr, out bool parsedBold)) fontBold = parsedBold;
-        if (bool.TryParse(italicStr, out bool parsedItalic)) fontItalic = parsedItalic;
-        if (bool.TryParse(underlineStr, out bool parsedUnderline)) fontUnderline = parsedUnderline;
-
-        // Font color (hex format #RRGGBB)
-        Color fontColor = Color.Black; // default color
-        string colorHex = GetElementValue("FontColor");
-        if (!string.IsNullOrEmpty(colorHex) && colorHex.StartsWith("#") && colorHex.Length == 7)
-        {
-            try
-            {
-                int r = Convert.ToInt32(colorHex.Substring(1, 2), 16);
-                int g = Convert.ToInt32(colorHex.Substring(3, 2), 16);
-                int b = Convert.ToInt32(colorHex.Substring(5, 2), 16);
-                fontColor = Color.FromArgb(r, g, b);
-            }
-            catch
-            {
-                // Keep default color if parsing fails
-            }
-        }
-
-        // Load diagram and apply settings
-        try
-        {
-            // NOTE: Diagram does NOT implement IDisposable; instantiate directly
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Apply header/footer text
-            if (headerLeft != null)   diagram.HeaderFooter.HeaderLeft   = headerLeft;
-            if (headerCenter != null) diagram.HeaderFooter.HeaderCenter = headerCenter;
-            if (headerRight != null)  diagram.HeaderFooter.HeaderRight  = headerRight;
-            if (footerLeft != null)   diagram.HeaderFooter.FooterLeft   = footerLeft;
-            if (footerCenter != null) diagram.HeaderFooter.FooterCenter = footerCenter;
-            if (footerRight != null)  diagram.HeaderFooter.FooterRight  = footerRight;
-
-            // Apply margins
-            if (headerMargin.HasValue) diagram.HeaderFooter.HeaderMargin.Value = headerMargin.Value;
-            if (footerMargin.HasValue) diagram.HeaderFooter.FooterMargin.Value = footerMargin.Value;
-
-            // Configure font properties
-            HeaderFooterFont hfFont = diagram.HeaderFooter.HeaderFooterFont;
-
-            if (!string.IsNullOrEmpty(fontFaceName))
-                hfFont.FaceName = fontFaceName;
-
-            if (fontBold.HasValue)
-                hfFont.Weight = fontBold.Value ? 700 : 400; // 700 = Bold, 400 = Regular
-
-            if (fontSizePt.HasValue)
-            {
-                // Convert point size to negative height (Visio expects negative value)
-                int height = (int)Math.Round(fontSizePt.Value * -1.333);
-                hfFont.Height = height;
-            }
-
-            if (fontItalic.HasValue)
-                hfFont.Italic = fontItalic.Value ? BOOL.True : BOOL.False;
-
-            if (fontUnderline.HasValue)
-                hfFont.Underline = fontUnderline.Value ? BOOL.True : BOOL.False;
-
-            // Apply font color
-            diagram.HeaderFooter.HeaderFooterColor = fontColor;
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-        }
-        catch (Exception ex)
-        {
+            // Capture any Aspose or I/O errors.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

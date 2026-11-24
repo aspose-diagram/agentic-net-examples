@@ -1,120 +1,137 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing;
+using Aspose.Diagram.Saving;
 
-class HeaderSettings
+namespace DiagramHeaderUtility
 {
-    // Header text segments
-    public string HeaderLeft { get; set; }
-    public string HeaderCenter { get; set; }
-    public string HeaderRight { get; set; }
-
-    // Footer text segments
-    public string FooterLeft { get; set; }
-    public string FooterCenter { get; set; }
-    public string FooterRight { get; set; }
-
-    // Margins (in inches)
-    public double HeaderMargin { get; set; }
-    public double FooterMargin { get; set; }
-
-    // Font properties for header/footer
-    public string FontFace { get; set; }
-    public int FontWeight { get; set; } // 700 = bold, 400 = regular
-    public int FontHeight { get; set; } // in points
-    public BOOL Italic { get; set; }
-    public BOOL Underline { get; set; }
-    public Color FontColor { get; set; }
-}
-
-class Program
-{
-    static void Main(string[] args)
+    // Class representing header and footer configuration
+    public class HeaderFooterSettings
     {
-        // Validate input arguments
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <diagramPath>");
-            return;
-        }
+        // Header text segments
+        public string HeaderLeft { get; set; } = string.Empty;
+        public string HeaderCenter { get; set; } = string.Empty;
+        public string HeaderRight { get; set; } = string.Empty;
 
-        string diagramPath = args[0];
+        // Footer text segments
+        public string FooterLeft { get; set; } = string.Empty;
+        public string FooterCenter { get; set; } = string.Empty;
+        public string FooterRight { get; set; } = string.Empty;
 
-        // Guard: ensure the diagram file exists
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
-            return;
-        }
+        // Margins (in inches)
+        public double HeaderMargin { get; set; } = 0.0;
+        public double FooterMargin { get; set; } = 0.0;
 
-        // Prepare sample header/footer settings
-        HeaderSettings settings = new HeaderSettings
-        {
-            HeaderLeft = "Company",
-            HeaderCenter = "Quarterly Report",
-            HeaderRight = "Date: &d",
-            FooterLeft = "Confidential",
-            FooterCenter = "",
-            FooterRight = "Page &p of &P",
-            HeaderMargin = 0.5,
-            FooterMargin = 0.5,
-            FontFace = "Arial",
-            FontWeight = 700,
-            FontHeight = 12,
-            Italic = BOOL.False,
-            Underline = BOOL.False,
-            FontColor = Color.Black
-        };
-
-        // Apply settings and save the diagram
-        ApplyHeaderSettings(diagramPath, settings);
+        // Font settings for header/footer
+        public string FontFaceName { get; set; } = "Arial";
+        public int FontHeight { get; set; } = 12; // Height property (int)
+        public int FontWeight { get; set; } = 400; // 400 = normal, 700 = bold
+        public BOOL Italic { get; set; } = BOOL.False;
+        public BOOL Underline { get; set; } = BOOL.False;
     }
 
-    /// <summary>
-    /// Loads a Visio diagram, updates its header/footer settings, and saves it.
-    /// </summary>
-    /// <param name="diagramPath">Path to the Visio file.</param>
-    /// <param name="settings">Header and footer configuration.</param>
-    static void ApplyHeaderSettings(string diagramPath, HeaderSettings settings)
+    class Program
     {
-        try
+        static void Main(string[] args)
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
+            // Expect two arguments: input diagram path and output diagram path
+            if (args.Length < 2)
+            {
+                Console.Error.WriteLine("Usage: DiagramHeaderUtility <inputDiagramPath> <outputDiagramPath>");
+                return;
+            }
 
-            // Update header text
-            diagram.HeaderFooter.HeaderLeft = settings.HeaderLeft;
-            diagram.HeaderFooter.HeaderCenter = settings.HeaderCenter;
-            diagram.HeaderFooter.HeaderRight = settings.HeaderRight;
+            string inputPath = args[0];
+            string outputPath = args[1];
 
-            // Update footer text
-            diagram.HeaderFooter.FooterLeft = settings.FooterLeft;
-            diagram.HeaderFooter.FooterCenter = settings.FooterCenter;
-            diagram.HeaderFooter.FooterRight = settings.FooterRight;
+            // Guard against missing input file
+            if (!File.Exists(inputPath))
+            {
+                Console.Error.WriteLine($"Input file not found: {inputPath}");
+                return;
+            }
 
-            // Update margins (use .Value to set the double)
-            diagram.HeaderFooter.HeaderMargin.Value = settings.HeaderMargin;
-            diagram.HeaderFooter.FooterMargin.Value = settings.FooterMargin;
+            // Example header/footer settings – in real usage these could be built from user input or config
+            var settings = new HeaderFooterSettings
+            {
+                HeaderLeft = "Company Confidential",
+                HeaderCenter = "Report Title",
+                HeaderRight = "Date: &d",
+                FooterLeft = "Prepared by: John Doe",
+                FooterCenter = "",
+                FooterRight = "Page &p of &P",
+                HeaderMargin = 0.25,
+                FooterMargin = 0.25,
+                FontFaceName = "Calibri",
+                FontHeight = 10,
+                FontWeight = 700, // Bold
+                Italic = BOOL.False,
+                Underline = BOOL.False
+            };
 
-            // Configure font properties for both header and footer
-            HeaderFooterFont font = diagram.HeaderFooter.HeaderFooterFont;
-            font.FaceName = settings.FontFace;
-            font.Weight = settings.FontWeight;
-            font.Height = settings.FontHeight;
-            font.Italic = settings.Italic;
-            font.Underline = settings.Underline;
-
-            // Set the font color
-            diagram.HeaderFooter.HeaderFooterColor = settings.FontColor;
-
-            // Save the updated diagram (overwrites the original file)
-            diagram.Save(diagramPath, SaveFileFormat.Vsdx);
+            // Apply settings and save the diagram
+            ApplyHeaderFooterAndSave(inputPath, outputPath, settings);
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Loads a Visio diagram, applies header/footer settings, and saves it to the specified output path.
+        /// </summary>
+        /// <param name="inputPath">Path to the source diagram file.</param>
+        /// <param name="outputPath">Path where the modified diagram will be saved.</param>
+        /// <param name="settings">Header and footer configuration.</param>
+        static void ApplyHeaderFooterAndSave(string inputPath, string outputPath, HeaderFooterSettings settings)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            try
+            {
+                // Load diagram inside a using block as required
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Apply header text
+                    diagram.HeaderFooter.HeaderLeft = settings.HeaderLeft;
+                    diagram.HeaderFooter.HeaderCenter = settings.HeaderCenter;
+                    diagram.HeaderFooter.HeaderRight = settings.HeaderRight;
+
+                    // Apply footer text
+                    diagram.HeaderFooter.FooterLeft = settings.FooterLeft;
+                    diagram.HeaderFooter.FooterCenter = settings.FooterCenter;
+                    diagram.HeaderFooter.FooterRight = settings.FooterRight;
+
+                    // Apply margins (Margin.Value holds the double value)
+                    diagram.HeaderFooter.HeaderMargin.Value = settings.HeaderMargin;
+                    diagram.HeaderFooter.FooterMargin.Value = settings.FooterMargin;
+
+                    // Configure the shared header/footer font
+                    HeaderFooterFont font = diagram.HeaderFooter.HeaderFooterFont;
+                    font.FaceName = settings.FontFaceName;
+                    font.Height = settings.FontHeight;
+                    font.Weight = settings.FontWeight;
+                    font.Italic = settings.Italic;
+                    font.Underline = settings.Underline;
+
+                    // Determine save format based on output file extension (default to Vsdx)
+                    SaveFileFormat format = SaveFileFormat.Vsdx;
+                    string ext = Path.GetExtension(outputPath).ToLowerInvariant();
+                    if (ext == ".pdf")
+                        format = SaveFileFormat.Pdf;
+                    else if (ext == ".png")
+                        format = SaveFileFormat.Png;
+                    else if (ext == ".html")
+                        format = SaveFileFormat.Html;
+                    else if (ext == ".svg")
+                        format = SaveFileFormat.Svg;
+                    // Add more mappings as needed
+
+                    // Save the modified diagram
+                    diagram.Save(outputPath, format);
+                }
+
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                // Write any errors to the error stream
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
         }
     }
 }

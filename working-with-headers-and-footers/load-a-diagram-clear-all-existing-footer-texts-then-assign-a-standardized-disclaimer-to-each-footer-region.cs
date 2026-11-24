@@ -6,17 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate input arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        // If output path not provided, create one by appending "_updated" before the extension.
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_updated" + Path.GetExtension(inputPath));
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -25,24 +28,26 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required by the API.
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Define the standardized disclaimer text.
-                string disclaimer = "Confidential – Do not distribute.";
+                const string disclaimer = "Confidential – For internal use only";
 
                 // Clear existing footer texts and assign the disclaimer to each region.
                 diagram.HeaderFooter.FooterLeft = disclaimer;
                 diagram.HeaderFooter.FooterCenter = disclaimer;
                 diagram.HeaderFooter.FooterRight = disclaimer;
 
-                // Save the modified diagram in VSDX format.
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram processed successfully. Saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

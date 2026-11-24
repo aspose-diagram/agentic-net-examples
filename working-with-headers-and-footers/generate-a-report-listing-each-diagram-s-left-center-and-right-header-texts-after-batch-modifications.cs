@@ -6,36 +6,43 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate that a folder path argument is provided
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the folder path containing diagram files as the first argument.");
+            Console.Error.WriteLine("Usage: Program <folderPath>");
             return;
         }
 
         string folderPath = args[0];
 
-        // Guard: ensure the folder exists
+        // Guard: ensure the folder exists.
         if (!Directory.Exists(folderPath))
         {
             Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Retrieve all Visio diagram files (VSDX) in the specified folder
-        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
-
-        // If no files are found, inform the user and exit
+        // Get all Visio files in the folder (VSDX and VSD formats).
+        string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
         if (diagramFiles.Length == 0)
         {
-            Console.WriteLine("No Visio diagram files (*.vsdx) were found in the specified folder.");
+            Console.WriteLine("No diagram files found in the specified folder.");
             return;
         }
 
-        // Process each diagram file individually
+        Console.WriteLine("Header/Footer Report");
+        Console.WriteLine("--------------------");
+
         foreach (string filePath in diagramFiles)
         {
-            // Guard: ensure the file still exists before processing
+            // Process only supported Visio extensions.
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vsdm" && ext != ".vsdm")
+            {
+                continue;
+            }
+
+            // Guard: ensure the file exists.
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -44,30 +51,47 @@ class Program
 
             try
             {
-                // Load the diagram from the file
+                // Load the diagram.
                 Diagram diagram = new Diagram(filePath);
 
-                // ----- Batch modification of header texts -----
-                // Example modifications: set left, center, and right header strings
-                diagram.HeaderFooter.HeaderLeft = $"Left Header - {Path.GetFileNameWithoutExtension(filePath)}";
-                diagram.HeaderFooter.HeaderCenter = $"Center Header - {DateTime.Now:yyyy-MM-dd}";
-                diagram.HeaderFooter.HeaderRight = $"Right Header - Page &p of &P";
+                // ----- Batch modification of headers -----
+                // Example modifications – adjust as needed.
+                diagram.HeaderFooter.HeaderLeft = "Left Header";
+                diagram.HeaderFooter.HeaderCenter = "Center Header";
+                diagram.HeaderFooter.HeaderRight = "Right Header";
 
-                // Save the modified diagram back to the same file (overwrite)
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                // Optionally modify header/footer font (demonstrates BOOL usage).
+                var headerFont = diagram.HeaderFooter.HeaderFooterFont;
+                headerFont.FaceName = "Arial";
+                headerFont.Height = 12;               // Font size in points.
+                headerFont.Weight = 700;              // 700 = Bold.
+                headerFont.Underline = BOOL.False;    // No underline.
 
-                // ----- Report generation -----
-                // Output the header texts after modification
-                Console.WriteLine($"Diagram: {Path.GetFileName(filePath)}");
-                Console.WriteLine($"  Header Left:   {diagram.HeaderFooter.HeaderLeft}");
-                Console.WriteLine($"  Header Center: {diagram.HeaderFooter.HeaderCenter}");
-                Console.WriteLine($"  Header Right:  {diagram.HeaderFooter.HeaderRight}");
+                // Save the modified diagram with a new name to avoid overwriting the original.
+                string directory = Path.GetDirectoryName(filePath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                string modifiedPath = Path.Combine(directory, $"{fileNameWithoutExt}_modified.vsdx");
+                diagram.Save(modifiedPath, SaveFileFormat.Vsdx);
+
+                // Retrieve header texts after modification.
+                string left = diagram.HeaderFooter.HeaderLeft ?? string.Empty;
+                string center = diagram.HeaderFooter.HeaderCenter ?? string.Empty;
+                string right = diagram.HeaderFooter.HeaderRight ?? string.Empty;
+
+                // Output the report line for this diagram.
+                Console.WriteLine($"File: {Path.GetFileName(filePath)}");
+                Console.WriteLine($"  Header Left   : {left}");
+                Console.WriteLine($"  Header Center : {center}");
+                Console.WriteLine($"  Header Right  : {right}");
+                Console.WriteLine();
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing of the current file
+                // Write any Aspose or I/O errors to the error stream.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
+
+        Console.WriteLine("Processing completed.");
     }
 }

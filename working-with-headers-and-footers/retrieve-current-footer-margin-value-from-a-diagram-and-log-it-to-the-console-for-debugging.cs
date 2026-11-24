@@ -6,36 +6,37 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Verify that a file path argument was provided.
         if (args == null || args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
+            Console.Error.WriteLine("Error: No input file path specified.");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load
-        if (!File.Exists(diagramPath))
+        // Guard against missing file.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found at path '{inputPath}'.");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Retrieve the footer margin value (in inches) from the diagram's HeaderFooter.
+                double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
 
-            // Retrieve the current footer margin (in inches) from the diagram's HeaderFooter
-            double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
-
-            // Log the retrieved footer margin value for debugging
-            Console.WriteLine($"Footer margin: {footerMargin} inches");
+                // Log the retrieved margin to the console for debugging.
+                Console.WriteLine($"Footer margin: {footerMargin}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or processing to the error stream
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

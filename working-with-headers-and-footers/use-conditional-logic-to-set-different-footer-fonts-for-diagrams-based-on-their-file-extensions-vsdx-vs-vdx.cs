@@ -6,77 +6,91 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <path-to-diagram>");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path> [output-diagram-path]");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Determine file extension (lowercase) to apply conditional logic.
-        string extension = Path.GetExtension(inputPath).ToLowerInvariant();
-
-        // Prepare output path by appending "_modified" before the extension.
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_modified" + extension);
+        // Determine output path
+        string outputPath;
+        if (args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]))
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            // Insert "_modified" before the extension
+            string dir = Path.GetDirectoryName(inputPath);
+            string name = Path.GetFileNameWithoutExtension(inputPath);
+            string ext = Path.GetExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{name}_modified{ext}");
+        }
 
         try
         {
-            // Load the diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access the HeaderFooter object.
-            HeaderFooter headerFooter = diagram.HeaderFooter;
+            // Determine file extension (case-insensitive)
+            string extension = Path.GetExtension(inputPath).ToLowerInvariant();
 
-            // Configure footer font based on file extension.
+            // Access the HeaderFooterFont object
+            HeaderFooterFont footerFont = diagram.HeaderFooter.HeaderFooterFont;
+
+            // Apply different font settings based on extension
             if (extension == ".vsdx")
             {
-                // For VSDX files: use Arial, size 12, bold.
-                headerFooter.HeaderFooterFont.FaceName = "Arial";
-                headerFooter.HeaderFooterFont.Height = 12;          // Font size in points.
-                headerFooter.HeaderFooterFont.Weight = 700;        // 700 = bold.
-                headerFooter.HeaderFooterFont.Underline = BOOL.False;
+                // Settings for VSDX files
+                footerFont.FaceName = "Arial";
+                footerFont.Height = 12;          // Font size in points
+                footerFont.Weight = 700;         // Bold weight
+                footerFont.Underline = BOOL.True;
             }
             else if (extension == ".vdx")
             {
-                // For VDX files: use Times New Roman, size 10, regular.
-                headerFooter.HeaderFooterFont.FaceName = "Times New Roman";
-                headerFooter.HeaderFooterFont.Height = 10;
-                headerFooter.HeaderFooterFont.Weight = 400;        // 400 = regular.
-                headerFooter.HeaderFooterFont.Underline = BOOL.False;
+                // Settings for VDX files
+                footerFont.FaceName = "Times New Roman";
+                footerFont.Height = 10;          // Font size in points
+                footerFont.Weight = 400;         // Regular weight
+                footerFont.Underline = BOOL.False;
             }
             else
             {
-                Console.Error.WriteLine($"Error: Unsupported file extension '{extension}'. Only .vsdx and .vdx are supported.");
-                return;
+                Console.Error.WriteLine($"Warning: Unhandled file extension '{extension}'. No footer font changes applied.");
             }
 
-            // Save the modified diagram using the appropriate format.
+            // Save the diagram using the same format as the input
             if (extension == ".vsdx")
             {
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            else // .vdx
+            else if (extension == ".vdx")
             {
                 diagram.Save(outputPath, SaveFileFormat.Vdx);
+            }
+            else
+            {
+                // Default to Vsdx if unknown extension
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <outputHtmlPath> <includeComments:true|false>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath> <includeComments:true|false>");
             return;
         }
 
@@ -18,40 +18,43 @@ class Program
         string outputPath = args[1];
         string includeCommentsArg = args[2];
 
-        // Guard: check input file exists.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Parse the includeComments flag.
+        // Parse the include‑comments flag.
         bool includeComments;
         if (!bool.TryParse(includeCommentsArg, out includeComments))
         {
-            Console.Error.WriteLine($"Invalid value for includeComments: {includeCommentsArg}. Expected true or false.");
+            Console.Error.WriteLine("Error: The includeComments argument must be 'true' or 'false'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure HTML save options.
+                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
 
-            // Configure HTML save options.
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                // Control whether comments (annotations) are exported.
+                // HTMLSaveOptions.IsExportComments is a native bool, so assign the parsed value directly.
+                htmlOptions.IsExportComments = includeComments;
 
-            // Enable or disable comment export based on the flag.
-            // The IsExportComments property expects a bool.
-            htmlOptions.IsExportComments = includeComments;
+                // Save the diagram to HTML using the configured options.
+                diagram.Save(outputPath, htmlOptions);
+            }
 
-            // Save the diagram to HTML using the configured options.
-            diagram.Save(outputPath, htmlOptions);
+            Console.WriteLine($"HTML export completed successfully. Output: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

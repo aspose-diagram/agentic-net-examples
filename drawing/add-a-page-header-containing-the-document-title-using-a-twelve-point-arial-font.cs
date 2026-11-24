@@ -6,48 +6,61 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path (same folder, suffix "_Header.vsdx").
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_Header.vsdx");
+
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Retrieve the document title; fall back to a default if empty.
+                string title = diagram.DocumentProps.Title;
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    title = "Untitled Document";
+                }
 
-            // Retrieve the document title from built‑in properties.
-            string title = diagram.DocumentProps.Title;
+                // Set the header text (centered) to the document title.
+                diagram.HeaderFooter.HeaderCenter = title;
 
-            // Set the header text (centered) to the document title.
-            diagram.HeaderFooter.HeaderCenter = title;
+                // Configure the header/footer font: Arial, 12 pt.
+                // Height uses a negative scaling factor: -16 approximates 12 pt.
+                HeaderFooterFont headerFont = diagram.HeaderFooter.HeaderFooterFont;
+                headerFont.FaceName = "Arial";
+                headerFont.Height = -16;               // Approx. 12 pt.
+                headerFont.Weight = 400;               // Normal weight.
+                headerFont.Italic = BOOL.False;
+                headerFont.Underline = BOOL.False;
 
-            // Configure the header font: Arial, 12 pt.
-            // 12 pt translates to a Height value of -16 (12 * -1.333 ≈ -16).
-            var headerFont = diagram.HeaderFooter.HeaderFooterFont;
-            headerFont.FaceName = "Arial";
-            headerFont.Height = -16;          // 12 pt size.
-            headerFont.Weight = 700;          // Bold weight (optional).
+                // Save the modified diagram to a new file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
 
-            // Save the modified diagram to the specified output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Header added successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

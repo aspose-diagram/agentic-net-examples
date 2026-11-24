@@ -2,23 +2,22 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -30,44 +29,36 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram contains at least one page.
+            // Ensure there is at least one page to work with.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page.
+            // Get the first page.
             Page page = diagram.Pages[0];
 
-            // Attempt to assign an undefined orientation value.
             try
             {
-                // Cast an invalid integer to the enum to provoke ArgumentException.
+                // Attempt to assign an undefined orientation value.
+                // This should throw an ArgumentException according to the API contract.
                 page.PageSheet.PrintProps.PrintPageOrientation.Value = (PrintPageOrientationValue)999;
-                Console.WriteLine("Undefined orientation assigned successfully (unexpected).");
+                Console.WriteLine("Orientation assigned successfully (unexpected).");
             }
             catch (ArgumentException ex)
             {
-                // Log the caught exception as required.
-                Console.Error.WriteLine($"Caught ArgumentException while setting PrintPageOrientation: {ex.Message}");
+                // Log the expected error.
+                Console.Error.WriteLine($"ArgumentException caught while setting PrintPageOrientation: {ex.Message}");
             }
 
-            // Save the modified diagram to the specified output path.
-            try
-            {
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
-            }
+            // Save the diagram (optional, demonstrates a valid save operation).
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any unexpected errors from Aspose operations.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

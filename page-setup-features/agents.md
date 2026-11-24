@@ -4,10 +4,10 @@ display_name: Page Setup Features
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 82
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 82 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -64,14 +64,16 @@ You always use explicit types (never `var`), include all required `using` direct
 | `System` | 82 | Console, Math, DateTime, Exception |
 | `System.IO` | 82 | File, Stream, Path, Directory operations |
 | `Aspose.Diagram.Printing` | 28 | Supporting utilities |
-| `Aspose.Diagram.Saving` | 14 | Save options (PDF, PNG, HTML, SVG, XPS) |
-| `System.Collections.Generic` | 10 | List, Dictionary, HashSet |
-| `System.Text.Json` | 3 | JSON serialization |
-| `Aspose.Diagram.Properties` | 2 | Supporting utilities |
+| `Aspose.Diagram.Saving` | 19 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 11 | List, Dictionary, HashSet |
+| `System.Text.Json` | 4 | JSON serialization |
 | `Aspose.Diagram.AutoLayout` | 1 | Supporting utilities |
+| `Aspose.Diagram.Properties` | 1 | Supporting utilities |
+| `System.Text.Json.Serialization` | 1 | Supporting utilities |
+| `Aspose.Drawing` | 1 | Supporting utilities |
+| `System.Globalization` | 1 | Supporting utilities |
 | `System.Data` | 1 | Supporting utilities |
 | `System.Linq` | 1 | LINQ queries on collections |
-| `System.Reflection` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -123,7 +125,7 @@ class Program
 | [convert-retrieved-page-dimensions-from-inches-to-millimeters-before-storing-them-in-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/convert-retrieved-page-dimensions-from-inches-to-millimeters-before-storing-them-in-metadata.cs) | `Diagram`, `Pages`, `Save` | Convert retrieved page dimensions from inches to millimeters before storing them in metadata |
 | [create-a-batch-job-that-processes-visio-files-nightly-applying-standardized-print-settings-for-corporate-reports.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-batch-job-that-processes-visio-files-nightly-applying-standardized-print-settings-for-corporate-reports.cs) | `Diagram`, `Pages`, `Save` | Create a batch job that processes visio files nightly applying standardized print settings for corporate reports |
 | [create-a-configuration-file-that-maps-page-indices-to-specific-orientation-and-scaling-values.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-configuration-file-that-maps-page-indices-to-specific-orientation-and-scaling-values.cs) | `Diagram`, `Pages`, `Save` | Create a configuration file that maps page indices to specific orientation and scaling values |
-| [create-a-custom-export-function-that-embeds-page-dimension-metadata-into-the-output-file-header.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-custom-export-function-that-embeds-page-dimension-metadata-into-the-output-file-header.cs) | `Diagram`, `Pages`, `Save` | Create a custom export function that embeds page dimension metadata into the output file header |
+| [create-a-custom-export-function-that-embeds-page-dimension-metadata-into-the-output-file-header.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-custom-export-function-that-embeds-page-dimension-metadata-into-the-output-file-header.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Create a custom export function that embeds page dimension metadata into the output file header |
 | [create-a-diagnostic-routine-that-checks-whether-printprops-printpageorientation-matches-the-expected-enumeration-value.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-diagnostic-routine-that-checks-whether-printprops-printpageorientation-matches-the-expected-enumeration-value.cs) | `Diagram`, `Pages`, `diagram` | Create a diagnostic routine that checks whether printprops printpageorientation matches the expected enumeration value |
 | [create-a-dictionary-mapping-page-names-to-their-corresponding-dimensions-for-quick-lookup.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-dictionary-mapping-page-names-to-their-corresponding-dimensions-for-quick-lookup.cs) | `Diagram`, `Pages`, `diagram` | Create a dictionary mapping page names to their corresponding dimensions for quick lookup |
 | [create-a-macro-that-automatically-updates-page-margins-based-on-retrieved-page-dimensions.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/create-a-macro-that-automatically-updates-page-margins-based-on-retrieved-page-dimensions.cs) | `Diagram`, `Pages`, `Save` | Create a macro that automatically updates page margins based on retrieved page dimensions |
@@ -137,7 +139,7 @@ class Program
 | [generate-a-report-listing-each-page-s-current-printprops-orientation-and-scalex-values-after-modification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/generate-a-report-listing-each-page-s-current-printprops-orientation-and-scalex-values-after-modification.cs) | `Diagram`, `Pages`, `Save` | Generate a report listing each page s current printprops orientation and scalex values after modification |
 | [generate-a-report-summarizing-page-dimensions-and-total-diagram-area-in-square-centimeters.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/generate-a-report-summarizing-page-dimensions-and-total-diagram-area-in-square-centimeters.cs) | `Diagram`, `Pages`, `diagram` | Generate a report summarizing page dimensions and total diagram area in square centimeters |
 | [generate-a-thumbnail-image-for-each-page-using-its-width-and-height-to-define-canvas-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/generate-a-thumbnail-image-for-each-page-using-its-width-and-height-to-define-canvas-size.cs) | `Diagram`, `ImageSaveOptions`, `Pages` | Generate a thumbnail image for each page using its width and height to define canvas size |
-| [implement-a-caching-mechanism-that-stores-page-size-values-to-avoid-repeated-property-accesses.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/implement-a-caching-mechanism-that-stores-page-size-values-to-avoid-repeated-property-accesses.cs) | `Diagram`, `Pages`, `Save` | Implement a caching mechanism that stores page size values to avoid repeated property accesses |
+| [implement-a-caching-mechanism-that-stores-page-size-values-to-avoid-repeated-property-accesses.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/implement-a-caching-mechanism-that-stores-page-size-values-to-avoid-repeated-property-accesses.cs) | `Diagram`, `Pages`, `diagram` | Implement a caching mechanism that stores page size values to avoid repeated property accesses |
 | [implement-a-fallback-to-portrait-orientation-if-landscape-assignment-fails-due-to-file-corruption.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/implement-a-fallback-to-portrait-orientation-if-landscape-assignment-fails-due-to-file-corruption.cs) | `Diagram`, `Pages`, `Save` | Implement a fallback to portrait orientation if landscape assignment fails due to file corruption |
 | [implement-a-feature-that-logs-the-previous-orientation-before-changing-it-enabling-audit-trails.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/implement-a-feature-that-logs-the-previous-orientation-before-changing-it-enabling-audit-trails.cs) | `Diagram`, `Pages`, `Save` | Implement a feature that logs the previous orientation before changing it enabling audit trails |
 | [implement-a-feature-that-resets-all-pages-to-default-portrait-orientation-and-scalex-of-1-0.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/implement-a-feature-that-resets-all-pages-to-default-portrait-orientation-and-scalex-of-1-0.cs) | `Diagram`, `Pages`, `Save` | Implement a feature that resets all pages to default portrait orientation and scalex of 1 0 |
@@ -149,7 +151,7 @@ class Program
 | [instantiate-the-diagram-object-with-a-visio-file-and-select-the-first-page.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/instantiate-the-diagram-object-with-a-visio-file-and-select-the-first-page.cs) | `Diagram`, `Pages`, `diagram` | Instantiate the diagram object with a visio file and select the first page |
 | [integrate-page-size-data-into-a-printing-routine-that-sets-printer-margins-dynamically.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/integrate-page-size-data-into-a-printing-routine-that-sets-printer-margins-dynamically.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Integrate page size data into a printing routine that sets printer margins dynamically |
 | [iterate-through-diagram-pages-and-log-each-page-s-width-and-height-to-a-csv-file.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/iterate-through-diagram-pages-and-log-each-page-s-width-and-height-to-a-csv-file.cs) | `Diagram`, `Pages`, `diagram` | Iterate through diagram pages and log each page s width and height to a csv file |
-| [iterate-through-each-page-in-the-diagram-and-retrieve-its-associated-pagesheet-for-configuration.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/iterate-through-each-page-in-the-diagram-and-retrieve-its-associated-pagesheet-for-configuration.cs) | `Diagram`, `Pages`, `Save` | Iterate through each page in the diagram and retrieve its associated pagesheet for configuration |
+| [iterate-through-each-page-in-the-diagram-and-retrieve-its-associated-pagesheet-for-configuration.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/iterate-through-each-page-in-the-diagram-and-retrieve-its-associated-pagesheet-for-configuration.cs) | `Diagram`, `Pages`, `diagram` | Iterate through each page in the diagram and retrieve its associated pagesheet for configuration |
 | [load-a-visio-file-into-a-diagram-object-and-access-its-pages-collection.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/load-a-visio-file-into-a-diagram-object-and-access-its-pages-collection.cs) | `Diagram`, `Pages`, `diagram` | Load a visio file into a diagram object and access its pages collection |
 | [load-configuration-from-json-and-apply-mapped-print-settings-to-corresponding-diagram-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/load-configuration-from-json-and-apply-mapped-print-settings-to-corresponding-diagram-pages.cs) | `Diagram`, `Pages`, `Save` | Load configuration from json and apply mapped print settings to corresponding diagram pages |
 | [log-the-original-and-updated-printprops-values-for-each-page-during-batch-modification.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/log-the-original-and-updated-printprops-values-for-each-page-during-batch-modification.cs) | `Diagram`, `Pages`, `Save` | Log the original and updated printprops values for each page during batch modification |
@@ -164,7 +166,7 @@ class Program
 | [use-a-try-catch-block-to-handle-unsupported-orientation-values-while-processing-multiple-pages.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-a-try-catch-block-to-handle-unsupported-orientation-values-while-processing-multiple-pages.cs) | `Diagram`, `Pages`, `Save` | Use a try catch block to handle unsupported orientation values while processing multiple pages |
 | [use-diagram-clone-to-create-a-backup-before-applying-bulk-orientation-updates.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-diagram-clone-to-create-a-backup-before-applying-bulk-orientation-updates.cs) | `Diagram`, `Pages`, `Save` | Use diagram clone to create a backup before applying bulk orientation updates |
 | [use-diagram-dispose-after-saving-to-release-resources-and-avoid-memory-leaks.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-diagram-dispose-after-saving-to-release-resources-and-avoid-memory-leaks.cs) | `Diagram`, `Save`, `diagram` | Use diagram dispose after saving to release resources and avoid memory leaks |
-| [use-linq-to-filter-pages-where-scalex-exceeds-1-0-before-applying-additional-transformations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-linq-to-filter-pages-where-scalex-exceeds-1-0-before-applying-additional-transformations.cs) | `AddShape`, `Diagram`, `Pages` | Use linq to filter pages where scalex exceeds 1 0 before applying additional transformations |
+| [use-linq-to-filter-pages-where-scalex-exceeds-1-0-before-applying-additional-transformations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-linq-to-filter-pages-where-scalex-exceeds-1-0-before-applying-additional-transformations.cs) | `Diagram`, `Pages`, `Save` | Use linq to filter pages where scalex exceeds 1 0 before applying additional transformations |
 | [use-page-height-to-set-vertical-spacing-between-automatically-generated-legend-sections.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-page-height-to-set-vertical-spacing-between-automatically-generated-legend-sections.cs) | `AutoSpaceOptions`, `AutoSpaceShapes`, `Diagram` | Use page height to set vertical spacing between automatically generated legend sections |
 | [use-page-width-to-calculate-appropriate-font-size-for-page-level-titles-in-generated-pdfs.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-page-width-to-calculate-appropriate-font-size-for-page-level-titles-in-generated-pdfs.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Use page width to calculate appropriate font size for page level titles in generated pdfs |
 | [use-page-width-to-compute-column-count-for-a-grid-layout-applied-to-diagram-shapes.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/use-page-width-to-compute-column-count-for-a-grid-layout-applied-to-diagram-shapes.cs) | `Diagram`, `Pages`, `Save` | Use page width to compute column count for a grid layout applied to diagram shapes |
@@ -174,7 +176,7 @@ class Program
 | [validate-each-page-s-printprops-settings-match-expected-orientation-and-scaling-before-printing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/validate-each-page-s-printprops-settings-match-expected-orientation-and-scaling-before-printing.cs) | `Diagram`, `Pages`, `diagram` | Validate each page s printprops settings match expected orientation and scaling before printing |
 | [validate-that-after-saving-the-visio-file-retains-the-modified-printprops-when-reopened.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/validate-that-after-saving-the-visio-file-retains-the-modified-printprops-when-reopened.cs) | `Diagram`, `Pages`, `Save` | Validate that after saving the visio file retains the modified printprops when reopened |
 | [validate-that-page-dimensions-conform-to-iso-216-standards-before-proceeding-with-batch-export.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/validate-that-page-dimensions-conform-to-iso-216-standards-before-proceeding-with-batch-export.cs) | `Diagram`, `Pages`, `PdfSaveOptions` | Validate that page dimensions conform to iso 216 standards before proceeding with batch export |
-| [validate-that-setting-scalex-to-1-0-after-previous-scaling-resets-the-page-to-its-original-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/validate-that-setting-scalex-to-1-0-after-previous-scaling-resets-the-page-to-its-original-size.cs) | `Diagram`, `Pages`, `Save` | Validate that setting scalex to 1 0 after previous scaling resets the page to its original size |
+| [validate-that-setting-scalex-to-1-0-after-previous-scaling-resets-the-page-to-its-original-size.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/validate-that-setting-scalex-to-1-0-after-previous-scaling-resets-the-page-to-its-original-size.cs) | `Diagram`, `Pages`, `diagram` | Validate that setting scalex to 1 0 after previous scaling resets the page to its original size |
 | [validate-that-the-retrieved-page-width-matches-the-expected-a4-size-in-inches.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/validate-that-the-retrieved-page-width-matches-the-expected-a4-size-in-inches.cs) | `Diagram`, `Pages`, `diagram` | Validate that the retrieved page width matches the expected a4 size in inches |
 | [verify-that-saving-the-diagram-after-print-option-changes-does-not-alter-other-page-content.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/verify-that-saving-the-diagram-after-print-option-changes-does-not-alter-other-page-content.cs) | `Diagram`, `Pages`, `Save` | Verify that saving the diagram after print option changes does not alter other page content |
 | [write-a-console-output-that-lists-pages-where-scalex-is-not-equal-to-1-0-after-processing.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/page-setup-features/write-a-console-output-that-lists-pages-where-scalex-is-not-equal-to-1-0-after-processing.cs) | `Diagram`, `Pages`, `diagram` | Write a console output that lists pages where scalex is not equal to 1 0 after processing |
@@ -269,7 +271,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 
 ## Key API Surface
 
-- `AddShape`
 - `AutoSpaceOptions`
 - `AutoSpaceShapes`
 - `Diagram`
@@ -279,7 +280,10 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Pages`
 - `PdfSaveOptions`
 - `Save`
+- `Shape`
 - `Shapes`
+- `Window`
+- `Windows`
 - `diagram`
 - `page`
 
@@ -297,7 +301,7 @@ Frequently asked questions about **Page Setup Features** in **Aspose.Diagram for
 
 **Q: How do I get started with Page Setup Features in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -329,4 +333,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 82 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 82 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

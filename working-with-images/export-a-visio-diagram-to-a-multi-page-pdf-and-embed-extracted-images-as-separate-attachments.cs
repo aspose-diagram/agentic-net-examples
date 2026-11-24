@@ -24,90 +24,87 @@ class Program
             return;
         }
 
-        // Create a temporary directory for extracted images.
-        string tempImageDir = Path.Combine(Path.GetTempPath(), "VisioImageExtract_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempImageDir);
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPdfPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
+        // -----------------------------------------------------------------
+        // Step 1: Convert Visio diagram to a multi‑page PDF.
+        // -----------------------------------------------------------------
         try
         {
-            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // -----------------------------------------------------------------
-                // Extract foreign (image) shapes from each page and save them as PNG.
-                // -----------------------------------------------------------------
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Identify image shapes by TypeValue.Foreign.
-                        if (shape.Type == TypeValue.Foreign)
-                        {
-                            // Build a unique file name for the extracted image.
-                            string imageFileName = $"Page{page.ID}_Shape{shape.ID}.png";
-                            string imagePath = Path.Combine(tempImageDir, imageFileName);
-
-                            // Configure image save options for PNG format.
-                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-
-                            // Export the shape to an image file.
-                            shape.ToImage(imagePath, imgOptions);
-                        }
-                    }
-                }
-
-                // -----------------------------------------------------------------
-                // Export the entire diagram to a multi‑page PDF.
-                // -----------------------------------------------------------------
+                // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;   // Explicitly set format tracker.
-                pdfOptions.ExportHiddenPage = false;          // Do not export hidden pages.
+                pdfOptions.ExportHiddenPage = false;               // Do not include hidden pages.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;        // Explicitly set the format.
 
-                // Save the PDF to the requested output path.
+                // Save the diagram as PDF.
                 diagram.Save(outputPdfPath, pdfOptions);
-            }
-
-            // -----------------------------------------------------------------
-            // Embed the extracted images as attachments into the PDF.
-            // -----------------------------------------------------------------
-            // Load the generated PDF using Aspose.Pdf (fully qualified to avoid ambiguity).
-            using (Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(outputPdfPath))
-            {
-                // Iterate over each extracted image file and add it as an embedded file.
-                foreach (string imgFile in Directory.GetFiles(tempImageDir))
-                {
-                    using (FileStream imgStream = new FileStream(imgFile, FileMode.Open, FileAccess.Read))
-                    {
-                        // Create a file specification for the attachment.
-                        Aspose.Pdf.FileSpecification fileSpec = new Aspose.Pdf.FileSpecification(imgStream, Path.GetFileName(imgFile));
-                        // Add the attachment to the PDF's EmbeddedFiles collection.
-                        pdfDoc.EmbeddedFiles.Add(fileSpec);
-                    }
-                }
-
-                // Save the PDF with the new attachments (overwrite the original file).
-                pdfDoc.Save(outputPdfPath);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error during Visio‑to‑PDF conversion: {ex.Message}");
+            return;
         }
-        finally
+
+        // -----------------------------------------------------------------
+        // Step 2: Load the generated PDF and embed extracted images as attachments.
+        // -----------------------------------------------------------------
+        try
         {
-            // Clean up temporary images.
-            try
+            // Load the PDF using Aspose.Pdf (fully qualified to avoid ambiguity).
+            Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document(outputPdfPath);
+
+            // Re‑open the Visio diagram to extract foreign (image) shapes.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (Directory.Exists(tempImageDir))
+                int pageIndex = 0;
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    Directory.Delete(tempImageDir, true);
+                    pageIndex++;
+
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Identify foreign image shapes.
+                        if (shape.Type == TypeValue.Foreign)
+                        {
+                            // Ensure the shape contains image data.
+                            if (shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
+                            {
+                                // Create a unique attachment name.
+                                string attachmentName = $"Image_Page{pageIndex}_Shape{shape.ID}.bin";
+
+                                // Create a memory stream from the image bytes.
+                                using (MemoryStream imageStream = new MemoryStream(shape.ForeignData.Value))
+                                {
+                                    // Create a file specification for the attachment.
+                                    Aspose.Pdf.FileSpecification fileSpec = new Aspose.Pdf.FileSpecification(imageStream, attachmentName);
+
+                                    // Add the attachment to the PDF.
+                                    pdfDocument.EmbeddedFiles.Add(fileSpec);
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            catch
-            {
-                // Suppress any cleanup errors.
-            }
+
+            // Save the PDF with the embedded images (overwrite the original file).
+            pdfDocument.Save(outputPdfPath);
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error embedding images into PDF: {ex.Message}");
+            return;
+        }
+
+        Console.WriteLine($"PDF successfully created at: {outputPdfPath}");
     }
 }

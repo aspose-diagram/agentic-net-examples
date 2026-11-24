@@ -6,70 +6,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the Visio file.
+        // Validate input arguments
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        string inputPath = args[0];
+        string diagramPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load.
-        if (!File.Exists(inputPath))
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through each page in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each layer on the current page.
+                    // Output basic page information
+                    Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+
+                    // Iterate through each layer on the current page
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
                         int connectorCount = 0;
 
-                        // Iterate through all shapes on the page.
+                        // Iterate through each shape on the page
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Skip non‑connector shapes.
-                            if (!shape.OneD)
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
                                 continue;
 
-                            // Ensure the shape has layer membership information.
-                            if (shape.LayerMem == null || string.IsNullOrEmpty(shape.LayerMem.LayerMember.Value))
-                                continue;
-
-                            // The LayerMember string contains a semicolon‑separated list of layer indexes.
-                            string[] memberIndexes = shape.LayerMem.LayerMember.Value.Split(';');
-
-                            // If the current layer's index appears in the list, count this connector.
-                            foreach (string idxStr in memberIndexes)
+                            // Check if the shape is a connector (1‑D shape)
+                            if (shape.OneD)
                             {
-                                if (idxStr == layer.IX.ToString())
+                                // Retrieve the layer membership string (semicolon‑separated list of layer indexes)
+                                string layerMembership = shape.LayerMem?.LayerMember?.Value ?? string.Empty;
+
+                                if (!string.IsNullOrEmpty(layerMembership))
                                 {
-                                    connectorCount++;
-                                    break;
+                                    // Split the membership string into individual indexes
+                                    string[] memberIndexes = layerMembership.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+                                    // Compare each index with the current layer's IX (index)
+                                    foreach (string idx in memberIndexes)
+                                    {
+                                        if (idx == layer.IX.ToString())
+                                        {
+                                            connectorCount++;
+                                            break; // No need to check other indexes for this shape
+                                        }
+                                    }
                                 }
                             }
                         }
 
-                        // Output the count for the current layer.
-                        Console.WriteLine($"Page '{page.Name}', Layer '{layer.Name.Value}': {connectorCount} connector shape(s)");
+                        // Output the count for the current layer
+                        Console.WriteLine($"Layer '{layer.Name.Value}' (IX {layer.IX}) contains {connectorCount} connector shape(s).");
                     }
+
+                    Console.WriteLine(); // Blank line between pages
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

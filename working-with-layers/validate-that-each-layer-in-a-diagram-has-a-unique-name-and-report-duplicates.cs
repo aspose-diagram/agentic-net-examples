@@ -1,53 +1,56 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the diagram file path as the first argument.
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No diagram file path provided.");
+            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard against missing file.
+        // Guard against missing input file.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found – {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(diagramPath))
             {
                 // Dictionary to track layer names and the pages they appear on.
-                Dictionary<string, List<string>> layerOccurrences = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                var layerMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate over each page in the diagram.
+                // Iterate over each page explicitly typed.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over each layer in the current page's PageSheet.
+                    // Iterate over each layer in the page's PageSheet.
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Retrieve the layer name via the .Value property.
+                        // Retrieve the layer name via the Str2Value wrapper.
                         string layerName = layer.Name.Value ?? string.Empty;
 
-                        // Initialize the list for this name if it hasn't been seen before.
-                        if (!layerOccurrences.ContainsKey(layerName))
-                        {
-                            layerOccurrences[layerName] = new List<string>();
-                        }
+                        // Use the page name (or index if name is empty) for reporting.
+                        string pageIdentifier = !string.IsNullOrEmpty(page.Name) ? page.Name : $"Page_{page.ID}";
 
-                        // Record the page name where this layer appears.
-                        layerOccurrences[layerName].Add(page.Name);
+                        // Record the occurrence.
+                        if (!layerMap.TryGetValue(layerName, out List<string> pages))
+                        {
+                            pages = new List<string>();
+                            layerMap[layerName] = pages;
+                        }
+                        pages.Add(pageIdentifier);
                     }
                 }
 
@@ -55,24 +58,24 @@ class Program
                 bool duplicatesFound = false;
 
                 // Examine the collected data for duplicate layer names.
-                foreach (KeyValuePair<string, List<string>> entry in layerOccurrences)
+                foreach (var kvp in layerMap)
                 {
-                    if (entry.Value.Count > 1)
+                    if (kvp.Value.Count > 1)
                     {
                         duplicatesFound = true;
-                        Console.WriteLine($"Duplicate layer name: \"{entry.Key}\" found on pages: {string.Join(", ", entry.Value)}");
+                        Console.WriteLine($"Duplicate layer name: \"{kvp.Key}\" found on pages: {string.Join(", ", kvp.Value.Distinct())}");
                     }
                 }
 
                 if (!duplicatesFound)
                 {
-                    Console.WriteLine("All layer names are unique.");
+                    Console.WriteLine("No duplicate layer names found.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Report any unexpected errors during processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

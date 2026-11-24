@@ -9,7 +9,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
@@ -19,7 +19,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -28,29 +28,36 @@ class Program
             // Load the diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Assume the first page contains the layers we need to modify.
-                Page page = diagram.Pages[0];
-
-                // Iterate over all layers on the page and disable the one named "Grid".
-                foreach (Layer layer in page.PageSheet.Layers)
+                // Iterate over all pages because layers are page‑specific.
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Compare the layer name; if it matches "Grid", set its visibility to false.
-                    if (layer.Name.Value == "Grid")
+                    // Explicitly type the iterator as Page.
+                    Page page = diagram.Pages[i];
+
+                    // Iterate through the layer collection of the current page.
+                    for (int j = 0; j < page.PageSheet.Layers.Count; j++)
                     {
-                        layer.Visible.Value = BOOL.False;
-                        // Optionally also hide it from printing.
-                        layer.Print.Value = BOOL.False;
+                        Layer layer = page.PageSheet.Layers[j];
+
+                        // Check if the layer name matches "Grid".
+                        if (layer.Name != null && layer.Name.Value == "Grid")
+                        {
+                            // Disable the layer by setting its Visible cell to FALSE.
+                            layer.Visible.Value = BOOL.False;
+                            // Optionally also hide it from printing.
+                            layer.Print.Value = BOOL.False;
+                        }
                     }
                 }
 
-                // Save the modified diagram as VSDX.
+                // Save the modified diagram as VSDX using the correct SaveFileFormat enum.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
             // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

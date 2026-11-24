@@ -7,16 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths.
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
-        string outputPath = "output.pdf";
 
-        // Guard: verify that the input file exists.
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,13 +26,13 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each page to locate the 'Details' layer.
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the layer collection of the current page.
+                    // Iterate through the layers collection of the current page.
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
                         // Compare the layer name using the .Value property.
@@ -39,27 +40,27 @@ class Program
                         {
                             // Hide the layer by setting its Visible property to FALSE.
                             layer.Visible.Value = BOOL.False;
-                            // Optionally hide the layer from printing as well.
-                            layer.Print.Value = BOOL.False;
                         }
                     }
                 }
 
-                // Prepare PDF save options.
+                // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the format to PDF (required by the API).
+                // Ensure hidden pages are not exported.
+                pdfOptions.ExportHiddenPage = false;
+                // Explicitly set the format for the options object.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
                 // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram exported successfully to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,92 +6,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate arguments: expect input and output file paths.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+        string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Assume layers are stored in the first page's PageSheet
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                Page firstPage = diagram.Pages[0];
-                Layer designLayer = null;
-
-                // Locate the 'Design' layer
-                foreach (Layer layer in firstPage.PageSheet.Layers)
-                {
-                    if (layer.Name.Value == "Design")
-                    {
-                        designLayer = layer;
-                        break;
-                    }
-                }
-
-                if (designLayer == null)
-                {
-                    Console.Error.WriteLine("Layer named 'Design' was not found.");
-                    return;
-                }
-
-                // Create the new 'Prototype' layer
-                Layer prototypeLayer = new Layer();
-                prototypeLayer.Name.Value = "Prototype";
-                prototypeLayer.Visible.Value = BOOL.True;
-                prototypeLayer.Print.Value = BOOL.True;
-                prototypeLayer.Lock.Value = BOOL.False;
-                prototypeLayer.IsColorChecked = BOOL.False;
-                // Default color (black) – format "R,G,B"
-                prototypeLayer.Color.Value = "0,0,0";
-
-                // Add the new layer to the page's layer collection
-                firstPage.PageSheet.Layers.Add(prototypeLayer);
-
-                // Retrieve the index strings for both layers
-                string designLayerIndex = designLayer.IX.ToString();
-                string prototypeLayerIndex = prototypeLayer.IX.ToString();
-
-                // Iterate through all pages and their shapes
+                // Iterate through each page because layers are stored per page.
                 foreach (Page page in diagram.Pages)
                 {
+                    // Locate the 'Design' layer in the current page's layer collection.
+                    Layer designLayer = null;
+                    foreach (Layer layer in page.PageSheet.Layers)
+                    {
+                        if (layer.Name.Value == "Design")
+                        {
+                            designLayer = layer;
+                            break;
+                        }
+                    }
+
+                    if (designLayer == null)
+                    {
+                        Console.Error.WriteLine("Design layer not found on a page. Skipping this page.");
+                        continue;
+                    }
+
+                    // Create a new layer named 'Prototype' and add it to the page.
+                    Layer prototypeLayer = new Layer();
+                    prototypeLayer.Name.Value = "Prototype";
+                    // Set default visibility and print settings.
+                    prototypeLayer.Visible.Value = BOOL.True;
+                    prototypeLayer.Print.Value = BOOL.True;
+                    prototypeLayer.Lock.Value = BOOL.False;
+                    prototypeLayer.IsColorChecked = BOOL.False;
+                    // Add the new layer to the page's layer collection.
+                    page.PageSheet.Layers.Add(prototypeLayer);
+
+                    // Retrieve the index (IX) of the newly added prototype layer as string.
+                    string prototypeLayerIndex = prototypeLayer.IX.ToString();
+
+                    // Iterate over all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Get current layer membership string (semicolon‑separated indices)
-                        string currentMembers = shape.LayerMem.LayerMember.Value ?? string.Empty;
+                        // Retrieve current layer membership string.
+                        string currentMembership = shape.LayerMem.LayerMember.Value ?? string.Empty;
 
-                        // Determine if the shape belongs to the Design layer
+                        // Determine if the shape belongs to the Design layer.
+                        // LayerMember stores semicolon‑separated layer indexes.
                         bool belongsToDesign = false;
-                        if (!string.IsNullOrEmpty(currentMembers))
+                        if (!string.IsNullOrEmpty(currentMembership))
                         {
-                            // Split the membership string and check for design layer index
-                            string[] parts = currentMembers.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                            foreach (string part in parts)
+                            string[] members = currentMembership.Split(';');
+                            foreach (string member in members)
                             {
-                                if (part == designLayerIndex)
+                                if (member == designLayer.IX.ToString())
                                 {
                                     belongsToDesign = true;
                                     break;
@@ -99,28 +88,44 @@ class Program
                             }
                         }
 
+                        // If the shape is on the Design layer, add it to the Prototype layer.
                         if (belongsToDesign)
                         {
-                            // Add the Prototype layer index if not already present
-                            if (!currentMembers.Contains(prototypeLayerIndex))
+                            // Avoid duplicate addition of the prototype layer index.
+                            bool alreadyInPrototype = false;
+                            if (!string.IsNullOrEmpty(currentMembership))
                             {
-                                string newMembers = string.IsNullOrEmpty(currentMembers)
-                                    ? prototypeLayerIndex
-                                    : currentMembers + ";" + prototypeLayerIndex;
+                                string[] members = currentMembership.Split(';');
+                                foreach (string member in members)
+                                {
+                                    if (member == prototypeLayerIndex)
+                                    {
+                                        alreadyInPrototype = true;
+                                        break;
+                                    }
+                                }
+                            }
 
-                                shape.LayerMem.LayerMember.Value = newMembers;
+                            // Append the prototype layer index if not already present.
+                            if (!alreadyInPrototype)
+                            {
+                                string newMembership = string.IsNullOrEmpty(currentMembership)
+                                    ? prototypeLayerIndex
+                                    : currentMembership + ";" + prototypeLayerIndex;
+                                shape.LayerMem.LayerMember.Value = newMembership;
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
+            // Write any Aspose or IO errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

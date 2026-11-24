@@ -7,98 +7,91 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Expect input file path as first argument
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        Diagram diagram = null;
+        // Determine output path (same folder, with suffix "_clean.vsdx")
+        string directory = Path.GetDirectoryName(inputPath);
+        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+        string outputPath = Path.Combine(directory, fileNameWithoutExt + "_clean.vsdx");
+
         try
         {
-            // Load the diagram from the specified file
-            diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Find the layer named 'Obsolete' in the current page's layer collection
-                Layer targetLayer = null;
-                foreach (Layer layer in page.PageSheet.Layers)
+                // Iterate through each page in the diagram
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    if (layer.Name.Value == "Obsolete")
+                    // Find the layer named "Obsolete" in the current page's layer collection
+                    Aspose.Diagram.Layer targetLayer = null;
+                    foreach (Aspose.Diagram.Layer layer in page.PageSheet.Layers)
                     {
-                        targetLayer = layer;
-                        break;
-                    }
-                }
-
-                // If the layer was not found on this page, continue to next page
-                if (targetLayer == null)
-                    continue;
-
-                // Determine the string representation of the layer index
-                string layerIndexStr = targetLayer.IX.ToString();
-
-                // Collect shapes that belong to the 'Obsolete' layer
-                List<Shape> shapesToRemove = new List<Shape>();
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has layer membership information
-                    if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
-                    {
-                        string memberValue = shape.LayerMem.LayerMember.Value;
-                        if (!string.IsNullOrEmpty(memberValue))
+                        if (layer.Name.Value == "Obsolete")
                         {
-                            // Split the semicolon‑separated list of layer indexes
-                            string[] indexes = memberValue.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                            foreach (string idx in indexes)
+                            targetLayer = layer;
+                            break;
+                        }
+                    }
+
+                    // If the layer does not exist on this page, continue to next page
+                    if (targetLayer == null)
+                        continue;
+
+                    // Store the layer index (IX) as string for comparison with shape layer memberships
+                    string layerIndexString = targetLayer.IX.ToString();
+
+                    // Collect shapes that belong to the target layer
+                    List<Aspose.Diagram.Shape> shapesToRemove = new List<Aspose.Diagram.Shape>();
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    {
+                        // Retrieve the layer membership string (semicolon‑separated indexes)
+                        string layerMember = shape.LayerMem.LayerMember.Value;
+                        if (string.IsNullOrEmpty(layerMember))
+                            continue;
+
+                        // Split the membership string and check for the target layer index
+                        string[] members = layerMember.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string member in members)
+                        {
+                            if (member == layerIndexString)
                             {
-                                if (idx == layerIndexStr)
-                                {
-                                    shapesToRemove.Add(shape);
-                                    break;
-                                }
+                                shapesToRemove.Add(shape);
+                                break;
                             }
                         }
                     }
+
+                    // Remove the collected shapes from the page
+                    foreach (Aspose.Diagram.Shape shape in shapesToRemove)
+                    {
+                        page.Shapes.Remove(shape);
+                    }
+
+                    // Hide the layer (cannot physically remove from collection)
+                    targetLayer.Visible.Value = BOOL.False;
+                    targetLayer.Print.Value = BOOL.False;
                 }
 
-                // Remove the collected shapes from the page
-                foreach (Shape shape in shapesToRemove)
-                {
-                    page.Shapes.Remove(shape);
-                }
-
-                // Hide the layer by setting its visibility and print properties to FALSE
-                targetLayer.Visible.Value = BOOL.False;
-                targetLayer.Print.Value = BOOL.False;
+                // Save the modified diagram to the output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram processed successfully. Output saved to: {outputPath}");
             }
-
-            // Save the modified diagram to the output path in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-        finally
-        {
-            // Ensure resources are released
-            if (diagram != null)
-                diagram.Dispose();
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

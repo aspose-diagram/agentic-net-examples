@@ -1,121 +1,138 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input folder argument
-        if (args.Length == 0)
+        // Validate input arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Please provide the folder path containing Visio files as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputFolderPath> <outputFilePath>");
             return;
         }
 
-        string folderPath = args[0];
-        if (!Directory.Exists(folderPath))
+        string inputFolder = args[0];
+        string outputPath = args[1];
+
+        // Guard: input folder must exist.
+        if (!Directory.Exists(inputFolder))
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Gather Visio files (common extensions)
-        string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        visioFiles = Array.FindAll(visioFiles, f =>
-        {
-            string ext = Path.GetExtension(f).ToLowerInvariant();
-            return ext == ".vsdx" || ext == ".vsd" || ext == ".vsx" || ext == ".vdx";
-        });
-
+        // Get all Visio files in the folder (supported extensions).
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
         if (visioFiles.Length == 0)
         {
-            Console.Error.WriteLine("No Visio files found in the specified folder.");
+            Console.Error.WriteLine("No files found in the specified folder.");
             return;
         }
 
-        Diagram mergedDiagram = null;
+        Diagram targetDiagram = null;
 
         try
         {
-            // Load the first diagram as the base
-            string firstFile = visioFiles[0];
+            // Load the first diagram as the base target diagram.
+            string firstFile = null;
+            foreach (var file in visioFiles)
+            {
+                // Consider only Visio extensions.
+                string ext = Path.GetExtension(file).ToLowerInvariant();
+                if (ext == ".vsdx" || ext == ".vsd" || ext == ".vsx" || ext == ".vtx" || ext == ".vdx")
+                {
+                    firstFile = file;
+                    break;
+                }
+            }
+
+            if (firstFile == null)
+            {
+                Console.Error.WriteLine("No Visio files found in the folder.");
+                return;
+            }
+
             if (!File.Exists(firstFile))
             {
                 Console.Error.WriteLine($"File not found: {firstFile}");
                 return;
             }
 
-            mergedDiagram = new Diagram(firstFile);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading the first diagram: {ex.Message}");
-            return;
-        }
-
-        // Combine remaining diagrams
-        for (int i = 1; i < visioFiles.Length; i++)
-        {
-            string filePath = visioFiles[i];
-            if (!File.Exists(filePath))
+            // Load the first diagram.
+            using (Diagram firstDiagram = new Diagram(firstFile))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
+                // Clone the first diagram into targetDiagram (create a new instance).
+                // Since Diagram does not provide a direct clone, we use Combine with an empty diagram.
+                targetDiagram = new Diagram();
+                targetDiagram.Combine(firstDiagram);
             }
 
-            try
+            // Process remaining files.
+            foreach (var filePath in visioFiles)
             {
-                Diagram sourceDiagram = new Diagram(filePath);
-                // Combine source into the merged diagram
-                mergedDiagram.Combine(sourceDiagram);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error combining file '{filePath}': {ex.Message}");
-            }
-        }
+                if (filePath.Equals(firstFile, StringComparison.OrdinalIgnoreCase))
+                    continue; // Skip the first file already loaded.
 
-        // Hide all layers except those named "Overview"
-        try
-        {
-            foreach (Page page in mergedDiagram.Pages)
+                string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                if (ext != ".vsdx" && ext != ".vsd" && ext != ".vsx" && ext != ".vtx" && ext != ".vdx")
+                    continue; // Skip non-Visio files.
+
+                if (!File.Exists(filePath))
+                {
+                    Console.Error.WriteLine($"File not found: {filePath}");
+                    continue;
+                }
+
+                try
+                {
+                    // Load source diagram.
+                    using (Diagram srcDiagram = new Diagram(filePath))
+                    {
+                        // Combine source diagram into the target diagram.
+                        targetDiagram.Combine(srcDiagram);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
+            }
+
+            // After combining all diagrams, set visibility: only layers named "Overview" stay visible.
+            foreach (Page page in targetDiagram.Pages)
             {
-                // Iterate through layers on the page sheet
+                // Iterate through layers on the page's PageSheet.
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Compare layer name (case-insensitive)
-                    if (!string.Equals(layer.Name.Value, "Overview", StringComparison.OrdinalIgnoreCase))
+                    if (layer.Name.Value.Equals("Overview", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Hide non-Overview layers
-                        layer.Visible.Value = BOOL.False;
+                        // Ensure the Overview layer is visible.
+                        layer.Visible.Value = BOOL.True;
                     }
                     else
                     {
-                        // Ensure Overview layers are visible
-                        layer.Visible.Value = BOOL.True;
+                        // Hide all other layers.
+                        layer.Visible.Value = BOOL.False;
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing layers: {ex.Message}");
-            return;
-        }
 
-        // Define output path
-        string outputPath = Path.Combine(folderPath, "MergedOverview.vsdx");
-
-        // Save the merged diagram
-        try
-        {
-            mergedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Save the merged diagram.
+            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Merged diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving merged diagram: {ex.Message}");
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose the target diagram if it was created.
+            if (targetDiagram != null)
+                targetDiagram.Dispose();
         }
     }
 }

@@ -1,19 +1,26 @@
 using System;
 using System.IO;
+using System.Linq; // Required for Contains on string[]
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (can be overridden via command line arguments)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard: ensure the source Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -22,116 +29,89 @@ class Program
             // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                bool draftLayerFoundInAnyPage = false;
-
-                // Iterate through each page because layers are stored per page sheet
+                // Iterate through each page because layers are stored per page
                 foreach (Page page in diagram.Pages)
                 {
-                    // Locate the original "Draft" layer on this page
-                    Layer originalLayer = null;
+                    // Locate the source layer named "Draft"
+                    Layer sourceLayer = null;
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        if (layer.Name.Value == "Draft")
+                        if (layer.Name != null && layer.Name.Value == "Draft")
                         {
-                            originalLayer = layer;
+                            sourceLayer = layer;
                             break;
                         }
                     }
 
-                    // If the page does not contain the "Draft" layer, skip it
-                    if (originalLayer == null)
+                    if (sourceLayer == null)
                     {
+                        // If the Draft layer does not exist on this page, skip to next page
                         continue;
                     }
 
-                    draftLayerFoundInAnyPage = true;
-
-                    // Clone the original layer's properties into a new layer named "Final"
+                    // Create a new layer and copy properties from the source layer
                     Layer clonedLayer = new Layer();
-                    clonedLayer.Name.Value = "Final";                                 // New name
-                    clonedLayer.Visible.Value = originalLayer.Visible.Value;          // Preserve visibility
-                    clonedLayer.Print.Value = originalLayer.Print.Value;              // Preserve print flag
-                    clonedLayer.Lock.Value = originalLayer.Lock.Value;                // Preserve lock flag
-                    clonedLayer.IsColorChecked = originalLayer.IsColorChecked;       // Preserve color check (BOOL, no .Value)
-                    clonedLayer.Color.Value = originalLayer.Color.Value;              // Preserve color
+                    clonedLayer.Name.Value = "Final";                         // Rename the cloned layer
+                    clonedLayer.Visible.Value = sourceLayer.Visible.Value;   // Preserve visibility
+                    clonedLayer.Print.Value = sourceLayer.Print.Value;       // Preserve print flag
+                    clonedLayer.Lock.Value = sourceLayer.Lock.Value;         // Preserve lock flag
+                    clonedLayer.IsColorChecked = sourceLayer.IsColorChecked; // Preserve color‑check flag
+                    // clonedLayer.Color = sourceLayer.Color; // Removed: Color is read‑only
 
                     // Add the cloned layer to the page's layer collection
                     page.PageSheet.Layers.Add(clonedLayer);
 
-                    // Retrieve the index (IX) of the original and cloned layers as strings
-                    string originalLayerIndex = originalLayer.IX.ToString();
-                    string clonedLayerIndex = clonedLayer.IX.ToString();
+                    // The new layer receives an index (IX) automatically
+                    int newLayerIndex = clonedLayer.IX;
 
-                    // Iterate through all shapes on the page to copy layer membership
+                    // Update shapes that belong to the source layer so they also belong to the cloned layer
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a LayerMem object (should always be present)
+                        // Ensure the shape has a layer membership object
                         if (shape.LayerMem == null || shape.LayerMem.LayerMember == null)
-                        {
                             continue;
-                        }
 
-                        // Get current layer membership string (semicolon‑separated indexes)
                         string membership = shape.LayerMem.LayerMember.Value ?? string.Empty;
 
-                        // Determine if the shape belongs to the original "Draft" layer
-                        bool belongsToDraft = false;
+                        // Determine if the shape is currently assigned to the source layer
+                        bool belongsToSource = false;
                         if (!string.IsNullOrEmpty(membership))
                         {
                             string[] parts = membership.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                             foreach (string part in parts)
                             {
-                                if (part == originalLayerIndex)
+                                if (int.TryParse(part, out int ix) && ix == sourceLayer.IX)
                                 {
-                                    belongsToDraft = true;
+                                    belongsToSource = true;
                                     break;
                                 }
                             }
                         }
 
-                        // If the shape is part of the Draft layer, add the Final layer index
-                        if (belongsToDraft)
+                        // If the shape is on the Draft layer, add the Final layer index
+                        if (belongsToSource)
                         {
-                            // Avoid duplicate addition of the cloned layer index
-                            bool alreadyHasCloned = false;
-                            if (!string.IsNullOrEmpty(membership))
-                            {
-                                string[] parts = membership.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                                foreach (string part in parts)
-                                {
-                                    if (part == clonedLayerIndex)
-                                    {
-                                        alreadyHasCloned = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (!alreadyHasCloned)
+                            // Append the new layer index if it's not already present
+                            if (!membership.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Contains(newLayerIndex.ToString()))
                             {
                                 string newMembership = string.IsNullOrEmpty(membership)
-                                    ? clonedLayerIndex
-                                    : membership + ";" + clonedLayerIndex;
+                                    ? newLayerIndex.ToString()
+                                    : membership + ";" + newLayerIndex.ToString();
+
                                 shape.LayerMem.LayerMember.Value = newMembership;
                             }
                         }
                     }
                 }
 
-                if (!draftLayerFoundInAnyPage)
-                {
-                    Console.Error.WriteLine("Error: Layer named \"Draft\" was not found in any page of the diagram.");
-                    return;
-                }
-
-                // Save the modified diagram to the output file
+                // Save the modified diagram in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

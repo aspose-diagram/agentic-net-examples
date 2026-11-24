@@ -7,12 +7,11 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
+        // Determine input and output file paths (use defaults if not provided)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output SVG file path (second argument or default)
         string outputPath = args.Length > 1 ? args[1] : "output.svg";
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,48 +23,28 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram
+                // Iterate over all pages and shapes to update fill inheritance
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Shapes collection may contain many shapes; iterate safely
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape has a FillForegnd cell before accessing it
-                        if (shape?.Fill?.FillForegnd != null)
-                        {
-                            // Disable fill inheritance by setting the formula to the explicit color value
-                            // This makes the custom fill color independent of any inherited value
-                            shape.Fill.FillForegnd.Ufe.F = shape.Fill.FillForegnd.Value;
-                        }
+                        // Disable fill inheritance so that custom fill colors are retained.
+                        // Assign the current fill foreground value back to itself.
+                        // This breaks inheritance according to Aspose.Diagram guidelines.
+                        shape.Fill.FillForegnd.Value = shape.Fill.FillForegnd.Value;
                     }
                 }
 
-                // Configure SVG save options (only properties that actually exist)
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    // Fit the SVG to the viewport (bool property)
-                    SVGFitToViewPort = true,
-                    // Do not export guide shapes (bool property)
-                    ExportGuideShapes = false,
-                    // Do not export comments (bool property)
-                    IsExportComments = false,
-                    // Export starting from the first page
-                    PageIndex = 0
-                    // PageCount property omitted because it is not available in this version
-                };
-
-                // Save the modified diagram as SVG using the configured options
-                diagram.Save(outputPath, svgOptions);
+                // Export the updated diagram to SVG format
+                diagram.Save(outputPath, SaveFileFormat.Svg);
+                Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

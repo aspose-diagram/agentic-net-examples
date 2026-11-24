@@ -14,62 +14,59 @@ class Program
         }
 
         string diagramPath = args[0];
-        string targetShapeName = args[1];
+        string shapeName = args[1];
 
-        // Guard against missing diagram file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern).
+            // Load the diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Locate the shape by name, searching across all pages and including nested group children.
                 Shape targetShape = null;
+
+                // Search each page for the shape (including nested group children) by name.
                 foreach (Page page in diagram.Pages)
                 {
-                    // GetShapeIncludingChild searches within the page's shape collection and its groups.
-                    targetShape = page.Shapes.GetShapeIncludingChild(targetShapeName);
-                    if (targetShape != null)
+                    // GetShapeIncludingChild searches within the page's shape collection,
+                    // returning the shape itself or a group child that matches the name.
+                    Shape found = page.Shapes.GetShapeIncludingChild(shapeName);
+                    if (found != null)
                     {
+                        targetShape = found;
                         break;
                     }
                 }
 
                 if (targetShape == null)
                 {
-                    Console.Error.WriteLine($"Error: Shape with name '{targetShapeName}' not found.");
+                    Console.Error.WriteLine($"Shape with name '{shapeName}' not found.");
                     return;
                 }
 
                 // Output basic information about the found shape.
-                Console.WriteLine($"Found shape: ID = {targetShape.ID}, Name = {targetShape.NameU}, Type = {targetShape.Type}");
+                Console.WriteLine($"Target Shape ID: {targetShape.ID}, NameU: {targetShape.NameU}");
 
-                // List child shapes if the shape is a group (has a Shapes collection).
-                // The Shapes collection is null for non‑group shapes.
-                if (targetShape.Shapes != null && targetShape.Shapes.Count > 0)
-                {
-                    Console.WriteLine("Child shapes:");
-                    foreach (Shape child in targetShape.Shapes)
-                    {
-                        // Output each child's ID and Type.
-                        Console.WriteLine($"  Child ID: {child.ID}, Type: {child.Type}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("The specified shape has no child shapes.");
-                }
+                // -----------------------------------------------------------------
+                // TODO: Enumerate child shapes of the target shape.
+                // The Aspose.Diagram API provides methods to access child shapes
+                // of a group shape (e.g., via a ChildShapes collection or similar).
+                // Insert the appropriate code here to iterate over each child,
+                // writing its ID and type to the console, e.g.:
+                //   foreach (Shape child in targetShape.ChildShapes) { ... }
+                // -----------------------------------------------------------------
+                Console.WriteLine("Child shape enumeration not implemented – add appropriate API calls here.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any exception details to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

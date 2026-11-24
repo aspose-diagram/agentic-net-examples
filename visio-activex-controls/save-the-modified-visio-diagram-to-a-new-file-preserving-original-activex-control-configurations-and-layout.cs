@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
+        // Expect two arguments: input Visio file path and output file path.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -17,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Verify that the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -26,18 +25,25 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Save the diagram to the new file preserving all content, including ActiveX controls and layout.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                try
+                {
+                    // Save the diagram to the specified output path preserving all
+                    // ActiveX controls, layout, and other configurations.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                }
+                catch (Exception saveEx)
+                {
+                    Console.Error.WriteLine($"Error saving diagram: {saveEx.Message}");
+                }
             }
         }
-        catch (Exception ex)
+        catch (Exception loadEx)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {loadEx.Message}");
         }
     }
 }

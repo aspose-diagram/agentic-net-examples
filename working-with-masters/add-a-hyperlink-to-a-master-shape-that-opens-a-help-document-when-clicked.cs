@@ -6,97 +6,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, help document URL or file path.
-        if (args.Length < 3)
+        // Expect four arguments: input diagram path, output diagram path, master name, help document path
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <helpDocumentPathOrUrl>");
+            Console.Error.WriteLine("Usage: <input.vsdx> <output.vsdx> <masterName> <helpDocumentPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string helpPath = args[2];
+        string masterName = args[2];
+        string helpDocPath = args[3];
 
-        // Guard against missing input diagram file.
+        // Guard input diagram file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input diagram file not found: {inputPath}");
             return;
         }
 
-        // If the help document is a local file, ensure it exists.
-        if (!helpPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !helpPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
-            !File.Exists(helpPath))
+        // Guard help document file existence (optional, but ensures the link points to an existing file)
+        if (!File.Exists(helpDocPath))
         {
-            Console.Error.WriteLine($"Help document file not found: {helpPath}");
+            Console.Error.WriteLine($"Help document file not found: {helpDocPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page.
-            if (diagram.Pages.Count == 0)
+            // Get the active page where the shape will be placed
+            Page page = diagram.ActivePage;
+
+            // Add a new shape based on the specified master.
+            // Parameters: pinX, pinY, master name, isCalculate (set to false)
+            long shapeId = page.AddShape(1.0, 1.0, masterName, false);
+
+            // Retrieve the newly added shape instance
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Failed to retrieve the newly added shape.");
                 return;
             }
 
-            // Use the first page as the target.
-            Page page = diagram.Pages[0];
-
-            // Find the first non-deleted shape that has an associated master.
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip logically deleted shapes.
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                if (shape.Master != null)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No suitable shape with a master was found on the first page.");
-                return;
-            }
-
-            // Ensure the Hyperlinks collection is initialized.
-            if (targetShape.Hyperlinks == null)
-            {
-                // The Hyperlinks collection should be non-null by default, but guard just in case.
-                Console.Error.WriteLine("The target shape's Hyperlinks collection is null.");
-                return;
-            }
-
-            // Create a new hyperlink instance.
+            // Create a new hyperlink that points to the help document
             Hyperlink link = new Hyperlink();
             link.Name = "HelpLink";
-            // Set the address to the provided help document path or URL.
-            link.Address.Value = helpPath;
-            // Optionally, set a description that appears as tooltip.
-            link.Description.Value = "Open help documentation";
+            // Set the address to the help document path
+            link.Address.Value = helpDocPath;
+            // Optional description shown on hover
+            link.Description.Value = "Open Help Document";
+            // Open in the same window (set to FALSE)
+            link.NewWindow.Value = BOOL.False;
 
-            // Add the hyperlink to the shape.
-            targetShape.Hyperlinks.Add(link);
+            // Ensure the Hyperlinks collection exists and add the new hyperlink
+            if (shape.Hyperlinks != null)
+            {
+                shape.Hyperlinks.Add(link);
+            }
+            else
+            {
+                Console.Error.WriteLine("The shape does not support hyperlinks.");
+                return;
+            }
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Hyperlink added successfully. Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose.Diagram errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

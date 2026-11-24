@@ -6,32 +6,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 1)
+        // Define input and output file paths.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        // Guard: ensure input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output path
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? "",
-            Path.GetFileNameWithoutExtension(inputPath) + "_rotated.vsdx");
-
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Assume we work with the first page
+            // Assume we work with the first page.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
@@ -40,7 +36,7 @@ class Program
 
             Page page = diagram.Pages[0];
 
-            // Retrieve shape with ID 3
+            // Retrieve the shape with ID 3.
             long shapeId = 3;
             Shape shape = page.Shapes.GetShape(shapeId);
             if (shape == null)
@@ -49,25 +45,18 @@ class Program
                 return;
             }
 
-            // Skip if the shape is marked as deleted
-            if (shape.Del == BOOL.True)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} is deleted.");
-                return;
-            }
-
-            // Rotate the text by 45 degrees (TextXForm expects radians)
+            // Rotate the text within the shape by 45 degrees.
+            // Text rotation expects radians.
             double angleDegrees = 45.0;
             double angleRadians = (Math.PI / 180.0) * angleDegrees;
             shape.TextXForm.TxtAngle.Value = angleRadians;
 
-            // Save the modified diagram
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

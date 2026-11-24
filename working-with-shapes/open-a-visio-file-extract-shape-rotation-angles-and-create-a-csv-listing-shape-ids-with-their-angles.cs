@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure the required arguments are provided: input Visio file and output CSV file.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
@@ -16,46 +16,50 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify that the input Visio file exists.
+        // Guard: ensure the Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Open a StreamWriter to create the CSV file.
+            // Prepare to write the CSV file.
             using (StreamWriter writer = new StreamWriter(outputPath))
             {
                 // Write CSV header.
-                writer.WriteLine("ShapeID,Angle");
+                writer.WriteLine("ShapeId,Angle");
 
-                // Iterate over each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through all pages.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
-                    // Iterate over each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Retrieve the shape's unique ID (long) and its 2D rotation angle (degrees).
-                        long shapeId = shape.ID;
-                        double angle = shape.XForm.Angle.Value;
+                    Page page = diagram.Pages[pageIndex];
 
-                        // Write a CSV line with the shape ID and angle.
+                    // Iterate through all shapes on the current page.
+                    for (int i = 0; i < page.Shapes.Count; i++)
+                    {
+                        Shape shape = page.Shapes[i];
+
+                        // Retrieve the shape's unique ID (long) and rotation angle (degrees).
+                        long shapeId = shape.ID;
+                        double angle = shape.XForm.Angle.Value; // Angle is stored in degrees.
+
+                        // Write a CSV line for this shape.
                         writer.WriteLine($"{shapeId},{angle}");
                     }
                 }
             }
 
-            Console.WriteLine($"CSV file created successfully at: {outputPath}");
+            Console.WriteLine($"CSV file successfully created at \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

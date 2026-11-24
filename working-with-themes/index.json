@@ -1,11 +1,11 @@
 {
   "category": "working-with-themes",
   "display_name": "Working With Themes",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 40,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -34,6 +34,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -85,7 +86,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO",
         "System.Linq"
       ],
@@ -111,8 +111,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Save",
-        "diagram"
+        "PresetThemeVariant",
+        "Save"
       ]
     },
     {
@@ -128,8 +128,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Prop",
-        "Save"
+        "PresetThemeVariant",
+        "Prop"
       ]
     },
     {
@@ -173,7 +173,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -232,9 +231,10 @@
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "diagram"
+        "PresetTheme",
+        "PresetThemeVariant"
       ]
     },
     {
@@ -260,10 +260,10 @@
       "task": "Create a configuration file that maps page names to preset themes and apply them programmatically",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text.Json"
       ],
       "key_apis": [
         "Diagram",
@@ -279,7 +279,6 @@
       "task": "Create a script that reads theme preferences from a database and applies them to corresponding diagram pages",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Data",
         "System.IO"
@@ -306,8 +305,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Save",
-        "diagram"
+        "PresetThemeVariant",
+        "Save"
       ]
     },
     {
@@ -316,16 +315,18 @@
       "task": "Export a themed diagram to pdf and inspect the visual consistency across all pages",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.AutoLayout",
+        "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AutoSpaceOptions",
+        "AutoSpaceShapes",
         "Diagram",
         "Pages",
-        "PdfSaveOptions",
-        "PresetTheme",
-        "PresetThemeVariant"
+        "PdfSaveOptions"
       ]
     },
     {
@@ -358,10 +359,9 @@
       ],
       "key_apis": [
         "Diagram",
-        "Pages",
-        "PresetTheme",
-        "PresetThemeVariant",
-        "SVGSaveOptions"
+        "SVGSaveOptions",
+        "Save",
+        "diagram"
       ]
     },
     {
@@ -372,15 +372,15 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -389,9 +389,9 @@
       "task": "Implement a retry mechanism when setting a preset theme on a shape that may be locked",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Threading"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -441,6 +441,7 @@
       "task": "Iterate through all pages in a diagram and assign the same preset theme variant to each page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -492,6 +493,7 @@
       "task": "Load a vsdx diagram from disk and apply a preset theme to its first page",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -525,7 +527,6 @@
       "task": "Measure the execution time of applying a preset theme to a large diagram with thousands of shapes",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.Diagnostics",
         "System.IO"
@@ -619,9 +620,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "PresetTheme",
-        "PresetThemeVariant",
-        "Save"
+        "Save",
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -630,7 +631,6 @@
       "task": "Use a loop to apply different preset themes to each page based on its index position",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -651,6 +651,7 @@
         "System",
         "System.Collections.Generic",
         "System.IO",
+        "System.Threading",
         "System.Threading.Tasks"
       ],
       "key_apis": [
@@ -685,7 +686,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -693,7 +693,7 @@
         "Pages",
         "PresetTheme",
         "PresetThemeVariant",
-        "Save"
+        "Shapes"
       ]
     },
     {
@@ -702,7 +702,6 @@
       "task": "Validate that the applied preset theme matches the expected theme by comparing theme identifiers after saving",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -710,8 +709,8 @@
         "Diagram",
         "Pages",
         "PresetTheme",
-        "Save",
-        "diagram"
+        "PresetThemeVariant",
+        "Save"
       ]
     }
   ]

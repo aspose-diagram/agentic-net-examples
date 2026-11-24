@@ -6,20 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output Visio file path.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -35,38 +35,50 @@ class Program
                 return;
             }
 
-            // Process shapes on the first page.
+            // Get the first page.
             Page page = diagram.Pages[0];
 
-            foreach (Shape shape in page.Shapes)
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
             {
-                // Skip deleted shapes.
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Apply a 90‑degree rotation to the shape's text.
-                // TxtAngle expects radians.
-                shape.TextXForm.TxtAngle.Value = Math.PI / 2.0;
-
-                // Reposition text to the left side of the shape.
-                // According to Aspose.Diagram guidelines:
-                //   TxtLocPinX = TxtWidth (align left)
-                //   TxtPinX   = 0 (origin at left edge)
-                shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value;
-                shape.TextXForm.TxtPinX.Value = 0;
-
-                // Refresh shape data to apply changes.
-                shape.RefreshData();
+                Console.Error.WriteLine("The first page contains no shapes.");
+                return;
             }
 
+            // Get the first shape on the page.
+            Shape shape = page.Shapes[0];
+
+            // Skip the shape if it is marked as deleted.
+            if (shape.Del == BOOL.True)
+            {
+                Console.Error.WriteLine("The target shape is deleted; cannot modify.");
+                return;
+            }
+
+            // ------------------------------------------------------------
+            // Apply a 90‑degree orientation angle to the shape's text.
+            // TextXForm.TxtAngle expects radians.
+            // ------------------------------------------------------------
+            double angleRadians = Math.PI / 2.0; // 90 degrees in radians
+            shape.TextXForm.TxtAngle.Value = angleRadians;
+
+            // ------------------------------------------------------------
+            // Reposition the text to the left side of the shape.
+            // TxtLocPinX is set to the text block width, and TxtPinX to 0.
+            // ------------------------------------------------------------
+            shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value;
+            shape.TextXForm.TxtPinX.Value = 0;
+
+            // ------------------------------------------------------------
             // Save the modified diagram to the specified output path.
+            // ------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

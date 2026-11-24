@@ -6,64 +6,69 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input-visio-file>");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
             return;
         }
 
-        string inputPath = args[0];
+        string diagramPath = args[0];
 
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through each page in the diagram.
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page.
+                // Iterate through each shape on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes.
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Identify OLE objects via the presence of ForeignData.
-                    if (shape.ForeignData != null)
+                    // Identify OLE (foreign) objects via ForeignData
+                    if (shape.ForeignData != null &&
+                        shape.ForeignData.Value != null &&
+                        shape.ForeignData.Value.Length > 0)
                     {
-                        // Retrieve bounding box values.
-                        double pinX = shape.XForm.PinX.Value;
-                        double pinY = shape.XForm.PinY.Value;
-                        double locPinX = shape.XForm.LocPinX.Value;
-                        double locPinY = shape.XForm.LocPinY.Value;
-                        double width = shape.XForm.Width.Value;
-                        double height = shape.XForm.Height.Value;
+                        // Ensure XForm is available
+                        if (shape.XForm != null)
+                        {
+                            // Retrieve bounding box values (in inches)
+                            double pinX = shape.XForm.PinX.Value;
+                            double pinY = shape.XForm.PinY.Value;
+                            double width = shape.XForm.Width.Value;
+                            double height = shape.XForm.Height.Value;
 
-                        // Calculate absolute coordinates.
-                        double left = pinX - locPinX;
-                        double top = pinY - locPinY;
-                        double right = left + width;
-                        double bottom = top + height;
-
-                        // Log the bounding box information.
-                        Console.WriteLine($"Page ID {page.ID}, Shape ID {shape.ID}:");
-                        Console.WriteLine($"  Bounding Box -> Left: {left}, Top: {top}, Right: {right}, Bottom: {bottom}");
+                            // Log the bounding box information
+                            Console.WriteLine($"Page {page.NameU} - Shape ID {shape.ID}:");
+                            Console.WriteLine($"  PinX = {pinX}");
+                            Console.WriteLine($"  PinY = {pinY}");
+                            Console.WriteLine($"  Width = {width}");
+                            Console.WriteLine($"  Height = {height}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Page {page.NameU} - Shape ID {shape.ID} has no XForm data.");
+                        }
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

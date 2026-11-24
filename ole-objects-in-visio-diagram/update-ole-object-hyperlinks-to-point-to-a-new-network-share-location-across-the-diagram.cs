@@ -7,15 +7,14 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 3)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <newNetworkSharePath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <newNetworkSharePath>");
             return;
         }
 
         string inputPath = args[0];
         string newSharePath = args[1];
-        string outputPath = args[2];
 
         // Guard against missing input file.
         if (!File.Exists(inputPath))
@@ -24,42 +23,52 @@ class Program
             return;
         }
 
+        // Prepare output file path (same folder, with suffix "_updated.vsdx").
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
+
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page.
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Iterate over all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify OLE objects via ForeignData and its ObjectData.
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null)
+                    // Iterate over all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a Hyperlinks collection.
-                        if (shape.Hyperlinks != null)
+                        // Detect OLE (foreign) objects by checking ForeignData and its binary content.
+                        if (shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
                         {
-                            // Update each hyperlink's address to the new network share location.
-                            foreach (Aspose.Diagram.Hyperlink link in shape.Hyperlinks)
+                            // Ensure the shape actually has a hyperlink collection.
+                            if (shape.Hyperlinks != null)
                             {
-                                // Replace the hyperlink address.
-                                link.Address.Value = newSharePath;
+                                // Update each hyperlink to point to the new network share location.
+                                foreach (Hyperlink hyperlink in shape.Hyperlinks)
+                                {
+                                    // Replace the address value with the new share path.
+                                    // If needed, you could preserve the original file name by appending it.
+                                    hyperlink.Address.Value = newSharePath;
+                                }
                             }
                         }
                     }
                 }
+
+                // Save the modified diagram to the output file in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram to the specified output path.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram updated successfully. Saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

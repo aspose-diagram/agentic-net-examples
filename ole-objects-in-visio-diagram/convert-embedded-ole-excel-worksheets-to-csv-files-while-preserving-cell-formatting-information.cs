@@ -2,25 +2,26 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Cells;
+using Aspose.Cells.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> [OutputDirectory]");
+            Console.WriteLine("Usage: Program <VisioFilePath> <OutputDirectory>");
             return;
         }
 
         string visioPath = args[0];
-        string outputDir = args.Length >= 2 ? args[1] : Path.GetDirectoryName(visioPath);
+        string outputDir = args[1];
 
         // Guard against missing Visio file.
         if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Visio file not found: {visioPath}");
+            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
             return;
         }
 
@@ -33,7 +34,7 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+                Console.Error.WriteLine($"Error creating output directory: {ex.Message}");
                 return;
             }
         }
@@ -43,59 +44,58 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(visioPath);
 
-            // Iterate through all pages in the diagram.
+            int pageNumber = 0;
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                pageNumber++;
+
                 // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Verify the shape is a foreign (OLE) shape.
-                    if (shape.Type != TypeValue.Foreign)
-                        continue;
-
-                    // Verify the shape contains foreign data with an embedded object.
-                    if (shape.ForeignData == null || shape.ForeignData.ObjectData == null)
-                        continue;
-
-                    // Identify Excel OLE objects by checking the source file extension.
-                    string sourceName = shape.ForeignData.ObjectSourceFullName?.ToLowerInvariant() ?? string.Empty;
-                    bool isExcel = sourceName.EndsWith(".xls") ||
-                                   sourceName.EndsWith(".xlsx") ||
-                                   sourceName.EndsWith(".xlsm");
-
-                    if (!isExcel)
-                        continue; // Skip non‑Excel OLE objects.
-
-                    // Extract the OLE binary data.
-                    byte[] oleData = shape.ForeignData.ObjectData;
-
-                    // Load the Excel workbook from the OLE stream.
-                    using (MemoryStream oleStream = new MemoryStream(oleData))
+                    // Check if the shape contains foreign (OLE) data.
+                    if (shape.ForeignData != null &&
+                        shape.ForeignData.Value != null &&
+                        shape.ForeignData.Value.Length > 0)
                     {
-                        Workbook workbook = new Workbook(oleStream);
-
-                        // Export each worksheet to a separate CSV file.
-                        for (int i = 0; i < workbook.Worksheets.Count; i++)
+                        // Identify Excel OLE objects by their source file name extension.
+                        string sourceName = shape.ForeignData.ObjectSourceFullName ?? string.Empty;
+                        if (sourceName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
+                            sourceName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                            sourceName.EndsWith(".xlsm", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Activate the worksheet to be saved.
-                            workbook.Worksheets.ActiveSheetIndex = i;
-                            string sheetName = workbook.Worksheets[i].Name;
+                            // Extract the OLE binary data.
+                            byte[] oleData = shape.ForeignData.Value;
 
-                            // Build a safe file name for the CSV output.
-                            string safeShapeName = string.IsNullOrEmpty(shape.NameU) ? "Shape" : shape.NameU;
-                            string csvFileName = Path.Combine(
-                                outputDir,
-                                $"{safeShapeName}_Sheet{i + 1}_{sheetName}.csv");
-
-                            // Configure CSV (text) save options – use Aspose.Cells.TxtSaveOptions to avoid ambiguity.
-                            Aspose.Cells.TxtSaveOptions txtOptions = new Aspose.Cells.TxtSaveOptions
+                            using (MemoryStream oleStream = new MemoryStream(oleData))
                             {
-                                Separator = ','
-                            };
+                                // Load the Excel workbook from the OLE stream.
+                                Workbook workbook = new Workbook(oleStream);
 
-                            // Save the worksheet as CSV.
-                            workbook.Save(csvFileName, txtOptions);
-                            Console.WriteLine($"Exported: {csvFileName}");
+                                // Export each worksheet to a separate CSV file.
+                                for (int wsIndex = 0; wsIndex < workbook.Worksheets.Count; wsIndex++)
+                                {
+                                    Worksheet sheet = workbook.Worksheets[wsIndex];
+
+                                    // Build a safe file name for the CSV output.
+                                    string safeSheetName = MakeSafeFileName(sheet.Name);
+                                    string csvFileName = $"Page{pageNumber}_Shape{shape.ID}_Sheet_{safeSheetName}.csv";
+                                    string csvPath = Path.Combine(outputDir, csvFileName);
+
+                                    // Configure CSV (Txt) save options.
+                                    TxtSaveOptions csvOptions = new TxtSaveOptions(SaveFormat.Csv);
+                                    csvOptions.Separator = ',';
+                                    // Preserve cell formatting if the option exists.
+                                    // (If the property is not available in the referenced version, this line can be omitted.)
+                                    // csvOptions.IncludeCellFormatting = true;
+
+                                    // Set the active sheet and save to CSV.
+                                    workbook.Worksheets.ActiveSheetIndex = wsIndex;
+                                    workbook.Save(csvPath, csvOptions);
+
+                                    Console.WriteLine($"Exported worksheet '{sheet.Name}' to '{csvPath}'.");
+                                }
+                            }
                         }
                     }
                 }
@@ -103,8 +103,17 @@ class Program
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
+    }
+
+    // Helper method to replace invalid filename characters.
+    private static string MakeSafeFileName(string name)
+    {
+        foreach (char c in Path.GetInvalidFileNameChars())
+        {
+            name = name.Replace(c, '_');
+        }
+        return name;
     }
 }

@@ -1,14 +1,12 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: first argument is output path, remaining are input diagram paths
+        // Expect at least two arguments: output file path and at least one input diagram.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <output.vsdx> <input1.vsdx> [<input2.vsdx> ...]");
@@ -16,47 +14,38 @@ class Program
         }
 
         string outputPath = args[0];
-        List<string> inputPaths = args.Skip(1).ToList();
 
-        // Verify that each input file exists
-        foreach (string path in inputPaths)
+        // Validate that each input file exists.
+        for (int i = 1; i < args.Length; i++)
         {
-            if (!File.Exists(path))
+            if (!File.Exists(args[i]))
             {
-                Console.Error.WriteLine($"Input file not found: {path}");
+                Console.Error.WriteLine($"Input file not found: {args[i]}");
                 return;
             }
         }
 
         try
         {
-            // Load the first diagram which will become the master diagram
-            Diagram masterDiagram = new Diagram(inputPaths[0]);
+            // Load the first diagram which will serve as the master diagram.
+            Diagram masterDiagram = new Diagram(args[1]);
 
-            // Iterate over remaining diagrams and combine them into the master diagram
-            for (int i = 1; i < inputPaths.Count; i++)
+            // Iterate over remaining diagrams and combine them into the master diagram.
+            for (int i = 2; i < args.Length; i++)
             {
-                string srcPath = inputPaths[i];
-                try
-                {
-                    Diagram srcDiagram = new Diagram(srcPath);
-                    // Combine merges pages, masters, and all shapes (including OLE objects)
-                    masterDiagram.Combine(srcDiagram);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Error processing source diagram '{srcPath}': {ex.Message}");
-                    return;
-                }
+                Diagram sourceDiagram = new Diagram(args[i]);
+
+                // Combine merges pages, masters, and shapes (including OLE objects) preserving positions.
+                masterDiagram.Combine(sourceDiagram);
             }
 
-            // Save the merged diagram to the specified output path in VSDX format
+            // Save the merged diagram to the specified output path in VSDX format.
             masterDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Merged diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Merged diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

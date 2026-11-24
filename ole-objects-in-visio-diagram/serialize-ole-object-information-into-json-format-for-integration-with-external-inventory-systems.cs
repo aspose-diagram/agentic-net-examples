@@ -6,92 +6,86 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Model class representing OLE object information for JSON serialization
-    public class OleObjectInfo
-    {
-        public int PageIndex { get; set; }
-        public long ShapeId { get; set; }
-        public string ShapeName { get; set; }
-        public string ObjectSourceFullName { get; set; }
-        public string ObjectDataBase64 { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output JSON file path
+        // Validate arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
             return;
         }
 
-        string visioPath = args[0];
-        string jsonPath = args[1];
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard: verify input Visio file exists
-        if (!File.Exists(visioPath))
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
-            return;
-        }
-
-        // Guard: ensure the directory for the JSON output exists
-        string jsonDir = Path.GetDirectoryName(jsonPath);
-        if (!string.IsNullOrEmpty(jsonDir) && !Directory.Exists(jsonDir))
-        {
-            Console.Error.WriteLine($"Error: Output directory does not exist: '{jsonDir}'.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // List to hold extracted OLE object information
-            List<OleObjectInfo> oleObjects = new List<OleObjectInfo>();
+            // Prepare a list to hold OLE object information.
+            List<OleInfo> oleInfos = new List<OleInfo>();
 
-            // Iterate over pages with explicit index
-            for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+            // Iterate through each page in the diagram.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                Aspose.Diagram.Page page = diagram.Pages[pageIdx];
+                Aspose.Diagram.Page page = diagram.Pages[pageIndex];
 
-                // Iterate over shapes on the page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Iterate through each shape on the page.
+                for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
                 {
-                    // Check if the shape contains ForeignData (potential OLE object)
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
-                    {
-                        // Verify the object type is an embedded OLE object
-                        if (shape.ForeignData.ObjectType == ObjectType.EmbeddedObject)
-                        {
-                            OleObjectInfo info = new OleObjectInfo
-                            {
-                                PageIndex = pageIdx,
-                                ShapeId = shape.ID,
-                                ShapeName = shape.NameU,
-                                ObjectSourceFullName = shape.ForeignData.ObjectSourceFullName,
-                                ObjectDataBase64 = Convert.ToBase64String(shape.ForeignData.ObjectData)
-                            };
+                    Aspose.Diagram.Shape shape = page.Shapes[shapeIdx];
 
-                            oleObjects.Add(info);
-                        }
+                    // Detect OLE (foreign) objects via ForeignData.
+                    if (shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
+                    {
+                        // Gather relevant OLE details.
+                        OleInfo info = new OleInfo
+                        {
+                            PageIndex = pageIndex,
+                            ShapeId = shape.ID,
+                            ObjectType = shape.ForeignData.ObjectType.ToString(),
+                            SourceFullName = shape.ForeignData.ObjectSourceFullName ?? string.Empty,
+                            DataSize = shape.ForeignData.Value.Length
+                        };
+
+                        oleInfos.Add(info);
                     }
                 }
             }
 
-            // Serialize the list to JSON with indentation
-            string json = JsonSerializer.Serialize(oleObjects, new JsonSerializerOptions { WriteIndented = true });
+            // Serialize the collected OLE information to JSON.
+            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            string json = JsonSerializer.Serialize(oleInfos, jsonOptions);
 
-            // Write JSON to the specified output file
-            File.WriteAllText(jsonPath, json);
-
-            Console.WriteLine($"Successfully extracted {oleObjects.Count} OLE object(s) to '{jsonPath}'.");
+            // Write JSON to the output file.
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"OLE object information serialized to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    // Simple DTO for JSON serialization of OLE object details.
+    private class OleInfo
+    {
+        public int PageIndex { get; set; }
+        public long ShapeId { get; set; }
+        public string ObjectType { get; set; }
+        public string SourceFullName { get; set; }
+        public int DataSize { get; set; }
     }
 }

@@ -1,70 +1,68 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: check if input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Determine output path
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Create a timestamp prefix (e.g., 20231127_154530).
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            // Generate timestamp prefix
+            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Identify OLE objects via the presence of ForeignData with embedded ObjectData.
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                    // Identify OLE (foreign) shapes by checking ForeignData
+                    if (shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
                     {
-                        // Retrieve existing display text if any.
-                        string existingText = string.Empty;
-                        if (shape.Text != null && shape.Text.Value != null && shape.Text.Value.Count > 0)
-                        {
-                            // Use the first Txt element as the current caption.
-                            existingText = shape.Text.Value[0].Value;
-                        }
+                        // Retrieve existing display text (if any)
+                        string existingText = string.Concat(shape.Text.Value.Select(t => t.Value));
 
-                        // Build the new caption with the timestamp prefix.
-                        string newCaption = string.IsNullOrEmpty(existingText)
-                            ? $"{timestamp}_{shape.NameU}"
-                            : $"{timestamp}_{existingText}";
+                        // Build new text with timestamp prefix
+                        string newText = $"{timestamp} {existingText}".Trim();
 
-                        // Clear existing text and set the new caption.
+                        // Clear existing text and set new text
                         shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt(newCaption));
+                        shape.Text.Value.Add(new Txt(newText));
                     }
                 }
             }
 
-            // Save the modified diagram in VSDX format.
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

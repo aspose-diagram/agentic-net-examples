@@ -8,17 +8,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
+        // Input and output file paths
         string inputPath = "input.vsdx";
         if (!System.IO.File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-        // Output Visio file path
         string outputPath = "output_compressed.vsdx";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,45 +26,56 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over all pages
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all shapes on the page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Iterate over all pages
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Check if the shape contains foreign (OLE) data
-                    if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
+                    // Iterate over all shapes on the page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        byte[] originalData = shape.ForeignData.ObjectData;
-
-                        // Compress the OLE data using GZip (ZIP compression)
-                        using (MemoryStream compressedStream = new MemoryStream())
+                        // Check if the shape contains an OLE object (ForeignData)
+                        if (shape.ForeignData != null && shape.ForeignData.ObjectData != null && shape.ForeignData.ObjectData.Length > 0)
                         {
-                            using (GZipStream gzip = new GZipStream(compressedStream, CompressionLevel.Optimal, leaveOpen: true))
-                            {
-                                gzip.Write(originalData, 0, originalData.Length);
-                            }
-
-                            // Get the compressed byte array
-                            byte[] compressedData = compressedStream.ToArray();
+                            // Compress the OLE binary data using GZip
+                            byte[] originalData = shape.ForeignData.ObjectData;
+                            byte[] compressedData = CompressData(originalData);
 
                             // Replace the original OLE data with the compressed version
                             shape.ForeignData.ObjectData = compressedData;
                         }
                     }
                 }
+
+                // Save the modified diagram with the default VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram with compression applied to OLE objects
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Compresses a byte array using GZip compression.
+    /// </summary>
+    /// <param name="data">The original uncompressed data.</param>
+    /// <returns>The compressed byte array.</returns>
+    private static byte[] CompressData(byte[] data)
+    {
+        using (MemoryStream output = new MemoryStream())
+        {
+            // GZipStream with leaveOpen = true to ensure the MemoryStream remains open after disposing the GZipStream
+            using (GZipStream gzip = new GZipStream(output, CompressionMode.Compress, true))
+            {
+                gzip.Write(data, 0, data.Length);
+            }
+            return output.ToArray();
         }
     }
 }

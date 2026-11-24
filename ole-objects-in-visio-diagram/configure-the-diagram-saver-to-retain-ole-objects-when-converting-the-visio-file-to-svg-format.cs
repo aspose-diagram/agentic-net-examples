@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output SVG file path
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
@@ -17,34 +17,37 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure SVG save options
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
+            // Configure SVG save options.
+            SVGSaveOptions svgOptions = new SVGSaveOptions
+            {
+                // Explicitly set the target format (required for SaveOptions).
+                SaveFormat = SaveFileFormat.Svg,
 
-            // NOTE: Aspose.Diagram retains OLE objects in SVG export by default.
-            // If a specific property existed to control this behavior, it would be set here.
-            // Example (hypothetical): svgOptions.PreserveOleObjects = BOOL.True;
+                // Retain OLE objects – default behavior; no specific flag exists.
+                // Additional options can be set here if needed, e.g., export guide shapes.
+                ExportGuideShapes = true,
+                IsExportComments = true
+            };
 
-            // Save the diagram as SVG using the configured options
+            // Save the diagram as SVG while preserving OLE objects.
             diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Diagram successfully saved to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

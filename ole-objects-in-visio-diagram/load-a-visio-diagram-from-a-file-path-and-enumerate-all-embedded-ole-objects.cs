@@ -6,55 +6,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as a command-line argument.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
-        string diagramPath = args[0];
+        string visioPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input file exists.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                Console.WriteLine($"Loaded diagram: {visioPath}");
+                Console.WriteLine("Enumerating embedded OLE objects...");
+
+                // Iterate through all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Check if the shape contains embedded OLE data via ForeignData
-                    if (shape.ForeignData != null)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the source information of the OLE object
-                        string oleSource = shape.ForeignData.ObjectSourceFullName ?? "Unknown";
-
-                        // Retrieve the raw OLE binary data (may be null)
-                        byte[] oleData = shape.ForeignData.ObjectData;
-
-                        // Output details about the OLE object
-                        Console.WriteLine(
-                            $"Page: {page.NameU} (ID: {page.ID}) | " +
-                            $"Shape ID: {shape.ID} | " +
-                            $"OLE Source: {oleSource} | " +
-                            $"Data Size: {(oleData != null ? oleData.Length : 0)} bytes");
+                        // An OLE object is represented by non‑null ForeignData with binary content.
+                        if (shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
+                        {
+                            // Output basic information about the OLE object.
+                            Console.WriteLine("--------------------------------------------------");
+                            Console.WriteLine($"Page ID   : {page.ID}");
+                            Console.WriteLine($"Shape ID  : {shape.ID}");
+                            Console.WriteLine($"Shape Name: {shape.NameU}");
+                            Console.WriteLine($"OLE Source: {shape.ForeignData.ObjectSourceFullName}");
+                            Console.WriteLine($"OLE Size  : {shape.ForeignData.ObjectData.Length} bytes");
+                        }
                     }
                 }
+
+                Console.WriteLine("Enumeration completed.");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or enumeration to the error stream
+            // Report any errors that occur during loading or processing.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

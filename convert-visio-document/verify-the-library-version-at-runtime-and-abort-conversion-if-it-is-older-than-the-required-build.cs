@@ -2,64 +2,82 @@ using System;
 using System.IO;
 using System.Reflection;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Expect two arguments: input Visio file path and output PDF file path.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputVisioPath> <requiredLibraryVersion>");
-            Console.Error.WriteLine("Example: DiagramConverter.exe diagram.vsdx output.vsdx 23.10.0.0");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.pdf>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string requiredVersionString = args[2];
 
-        // Guard: ensure input file exists.
+        // Guard: verify input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Parse the required version string.
-        if (!Version.TryParse(requiredVersionString, out Version requiredVersion))
+        // --------------------------------------------------------------------
+        // Verify Aspose.Diagram library version at runtime.
+        // Abort conversion if the library version is older than the required build.
+        // --------------------------------------------------------------------
+        try
         {
-            Console.Error.WriteLine($"Invalid required version format: {requiredVersionString}");
-            return;
+            // Define the minimum required version (major, minor, build, revision).
+            Version requiredVersion = new Version(23, 10, 0, 0); // Adjust as needed.
+
+            // Retrieve the version of the Aspose.Diagram assembly.
+            Assembly diagramAssembly = typeof(Diagram).Assembly;
+            Version currentVersion = diagramAssembly.GetName().Version;
+
+            if (currentVersion == null)
+            {
+                Console.Error.WriteLine("Error: Unable to determine Aspose.Diagram library version.");
+                return;
+            }
+
+            // Compare versions.
+            if (currentVersion < requiredVersion)
+            {
+                Console.Error.WriteLine($"Error: Aspose.Diagram version {currentVersion} is older than the required version {requiredVersion}. Conversion aborted.");
+                return;
+            }
+
+            Console.WriteLine($"Aspose.Diagram version {currentVersion} meets the required version {requiredVersion}.");
         }
-
-        // Retrieve the Aspose.Diagram assembly version at runtime.
-        Version libraryVersion = typeof(Diagram).Assembly.GetName().Version;
-
-        // Compare library version with the required minimum version.
-        if (libraryVersion == null || libraryVersion < requiredVersion)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"Aspose.Diagram library version {libraryVersion?.ToString() ?? "unknown"} is older than the required version {requiredVersion}.");
-            Console.Error.WriteLine("Aborting conversion.");
+            Console.Error.WriteLine($"Error during version check: {ex.Message}");
             return;
         }
 
+        // --------------------------------------------------------------------
+        // Perform a simple conversion: load the Visio diagram and save as PDF.
+        // --------------------------------------------------------------------
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Perform conversion – here we simply save to the requested output format (VSDX).
-            // Ensure the Save method includes a valid SaveFileFormat argument.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            // Configure PDF save options (optional).
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            Console.WriteLine($"Conversion succeeded. Output saved to: {outputPath}");
+            // Save the diagram as PDF.
+            diagram.Save(outputPath, pdfOptions);
+
+            Console.WriteLine($"Conversion succeeded. PDF saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
-            Console.Error.WriteLine("An error occurred during conversion:");
-            Console.Error.WriteLine(ex.Message);
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

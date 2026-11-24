@@ -9,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path and output PDF file path as arguments
+        // Expect two arguments: input Visio file path and output PDF file path.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -19,72 +19,72 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Validate that all fonts used in the diagram are installed on the system
-                ValidateFonts(diagram);
+                // ------------------------------------------------------------
+                // Validate that all fonts used in the diagram are installed on the system.
+                // This helps ensure the PDF renders with the correct glyphs.
+                // ------------------------------------------------------------
+                InstalledFontCollection systemFonts = new InstalledFontCollection();
+                var installedFamilyNames = systemFonts.Families
+                    .Select(f => f.Name)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                // Configure PDF save options for high‑resolution, print‑ready output
+                foreach (Font font in diagram.Fonts)
+                {
+                    // Font name is stored in the Name property.
+                    string fontName = font.Name;
+                    if (!string.IsNullOrEmpty(fontName) && !installedFamilyNames.Contains(fontName))
+                    {
+                        Console.Error.WriteLine($"Warning: Font \"{fontName}\" used in diagram is not installed on this system.");
+                    }
+                }
+
+                // ------------------------------------------------------------
+                // Configure PDF save options for high‑resolution, print‑ready output.
+                // ------------------------------------------------------------
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.DefaultFont = "Arial";                     // Fallback font if a font is missing
-                pdfOptions.ExportHiddenPage = false;                 // Do not export hidden pages (bool, not BOOL)
-                pdfOptions.Compliance = PdfCompliance.PdfA1b;        // PDF/A‑1b compliance for print readiness
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;          // Explicitly set format
-                pdfOptions.PageSavingCallback = new PdfPageSavingCallback(); // Log page‑saving events
 
-                // Save the diagram to PDF using the configured options
+                // Set DPI for rasterized content (images, effects).
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+
+                // Set JPEG quality for any raster images embedded in the PDF.
+                pdfOptions.JpegQuality = 100;
+
+                // Enable text compression to reduce file size.
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Specify the default font to use when a required font is missing.
+                pdfOptions.DefaultFont = "Arial";
+
+                // Explicitly set the save format (required by the API).
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Note: Aspose.Diagram does not provide a direct option to embed all fonts.
+                // The DefaultFont property is the closest alternative.
+
+                // ------------------------------------------------------------
+                // Save the entire diagram (all pages) to a high‑resolution PDF.
+                // ------------------------------------------------------------
                 diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"PDF saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
-    }
-
-    // Checks each font used in the diagram against installed system fonts
-    static void ValidateFonts(Diagram diagram)
-    {
-        // Retrieve installed font family names
-        InstalledFontCollection installedFonts = new InstalledFontCollection();
-        var installedNames = installedFonts.Families
-                                            .Select(f => f.Name)
-                                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        // Iterate over fonts referenced in the diagram
-        foreach (Font font in diagram.Fonts)
-        {
-            string fontName = font.Name;
-            if (!string.IsNullOrEmpty(fontName) && !installedNames.Contains(fontName))
-            {
-                Console.WriteLine($"Warning: Font '{fontName}' used in diagram is not installed on the system.");
-            }
-        }
-    }
-}
-
-// Custom callback to log page‑saving events during PDF export
-class PdfPageSavingCallback : Aspose.Diagram.Saving.IPageSavingCallback
-{
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
-    }
-
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1}");
     }
 }

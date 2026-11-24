@@ -7,72 +7,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input diagram path and output folder
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputFolder>");
-            return;
-        }
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputFolder = args[1];
-
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
-        }
-
-        // Guard against missing output folder; create if necessary
-        if (!Directory.Exists(outputFolder))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
-                return;
-            }
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
+                int pageIndex = 0;
+
                 // Iterate through each page in the diagram
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[i];
-
                     // Retrieve page dimensions (in inches)
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    double pageWidthInches = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeightInches = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Prepare image save options with canvas size matching the page dimensions
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    // Set the page size for rendering (cast to float as required by PageSize constructor)
-                    saveOptions.PageSize = new PageSize((float)pageWidth, (float)pageHeight);
-                    // Export only the current page
-                    saveOptions.PageIndex = i;
-                    saveOptions.PageCount = 1;
+                    // Configure image save options for PNG thumbnail
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        // Export only the current page
+                        PageIndex = pageIndex,
+                        PageCount = 1,
+                        // Define canvas size using the page dimensions
+                        PageSize = new PageSize((float)pageWidthInches, (float)pageHeightInches)
+                    };
 
-                    // Define output thumbnail file name
-                    string outputPath = Path.Combine(outputFolder, $"Page_{i + 1}_thumb.png");
+                    // Build output file name for the thumbnail
+                    string outputPath = $"thumbnail_page_{pageIndex + 1}.png";
 
-                    // Save the thumbnail image
+                    // Save the thumbnail image for the current page
                     diagram.Save(outputPath, saveOptions);
 
-                    Console.WriteLine($"Thumbnail generated for page {i + 1}: {outputPath}");
+                    Console.WriteLine($"Generated thumbnail: {outputPath}");
+
+                    pageIndex++;
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

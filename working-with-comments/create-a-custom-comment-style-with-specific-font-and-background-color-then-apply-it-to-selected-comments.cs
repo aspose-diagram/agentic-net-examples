@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,126 +28,68 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there is at least one page
-                if (diagram.Pages.Count == 0)
+                // ------------------------------------------------------------
+                // Create a custom StyleSheet that defines the desired font and background color
+                // ------------------------------------------------------------
+                StyleSheet customStyle = new StyleSheet();
+
+                // Assign a unique ID and a name for the style sheet
+                customStyle.ID = diagram.StyleSheets.Count + 1;
+                customStyle.Name = "CustomCommentStyle";
+
+                // Define character (font) formatting
+                Aspose.Diagram.Char charFormat = new Aspose.Diagram.Char();
+                charFormat.FontName.Value = "Calibri";               // Desired font
+                charFormat.Style.Value = StyleValue.Bold;            // Example: bold text
+                customStyle.Chars.Add(charFormat);
+
+                // Define fill (background) formatting
+                customStyle.Fill.FillForegnd.Value = "#FFCC00";       // Desired background color (orange)
+                customStyle.Fill.FillPattern.Value = 1;              // Solid fill pattern
+
+                // Add the custom style sheet to the diagram
+                diagram.StyleSheets.Add(customStyle);
+
+                // ------------------------------------------------------------
+                // Apply the custom style to selected comments (annotations)
+                // For demonstration, apply to all comments on the first page
+                // ------------------------------------------------------------
+                if (diagram.Pages.Count > 0)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
+                    Page firstPage = diagram.Pages[0];
 
-                // Work with the first page
-                Page page = diagram.Pages[0];
-
-                // Define custom style parameters
-                string customFontName = "Arial";
-                string backgroundColor = "#FFFF00"; // Yellow background
-
-                // Sample comments to add and style
-                string[] commentsToAdd = new[] { "Important Note 1", "Important Note 2" };
-
-                // Starting coordinates for placing comment shapes
-                double startX = 1.0;
-                double startY = 1.0;
-                double shapeWidth = 2.0;
-                double shapeHeight = 1.0;
-                double verticalSpacing = 1.5;
-
-                for (int i = 0; i < commentsToAdd.Length; i++)
-                {
-                    double pinX = startX;
-                    double pinY = startY + i * verticalSpacing;
-
-                    // Add a rectangle shape that will act as the visual comment
-                    long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
-
-                    // Retrieve the created shape
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape == null)
+                    // Iterate through all annotations (comments) on the page
+                    foreach (Annotation annotation in firstPage.PageSheet.Annotations)
                     {
-                        Console.Error.WriteLine($"Failed to retrieve shape with ID {shapeId}.");
-                        continue;
-                    }
-
-                    // Clear any existing text and add the comment text
-                    shape.Text.Value.Clear();
-                    shape.Text.Value.Add(new Txt(commentsToAdd[i]));
-
-                    // Ensure there is at least one character formatting entry
-                    if (shape.Chars.Count == 0)
-                    {
-                        Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                        ch.IX = 0; // Apply to all characters
-                        ch.FontName.Value = customFontName;
-                        shape.Chars.Add(ch);
-                    }
-                    else
-                    {
-                        // Apply the custom font to all existing character entries
-                        for (int c = 0; c < shape.Chars.Count; c++)
+                        // Only process annotations that are linked to a shape
+                        if (annotation.ShapeID > 0)
                         {
-                            shape.Chars[c].FontName.Value = customFontName;
-                        }
-                    }
-
-                    // Apply background fill (solid color)
-                    shape.Fill.FillPattern.Value = 1; // Solid fill
-                    shape.Fill.FillForegnd.Value = backgroundColor;
-
-                    // Link a shape-level comment to this shape
-                    page.AddComment(shape, commentsToAdd[i]);
-                }
-
-                // Update existing comments that contain the word "Important"
-                foreach (Annotation ann in page.PageSheet.Annotations)
-                {
-                    if (ann.Comment?.Value != null && ann.Comment.Value.Contains("Important"))
-                    {
-                        // Retrieve the associated shape if any
-                        if (ann.ShapeID > 0)
-                        {
-                            Shape linkedShape = page.Shapes.GetShape(ann.ShapeID);
-                            if (linkedShape != null)
+                            // Retrieve the associated shape by its ID
+                            Shape shape = firstPage.Shapes.GetShape(annotation.ShapeID);
+                            if (shape != null)
                             {
-                                // Update shape text to match the comment (optional)
-                                linkedShape.Text.Value.Clear();
-                                linkedShape.Text.Value.Add(new Txt(ann.Comment.Value));
+                                // Apply the custom style to the shape's text and fill
+                                shape.TextStyle = customStyle;
+                                shape.FillStyle = customStyle;
 
-                                // Apply font
-                                if (linkedShape.Chars.Count == 0)
-                                {
-                                    Aspose.Diagram.Char ch = new Aspose.Diagram.Char();
-                                    ch.IX = 0;
-                                    ch.FontName.Value = customFontName;
-                                    linkedShape.Chars.Add(ch);
-                                }
-                                else
-                                {
-                                    for (int c = 0; c < linkedShape.Chars.Count; c++)
-                                    {
-                                        linkedShape.Chars[c].FontName.Value = customFontName;
-                                    }
-                                }
-
-                                // Apply background fill
-                                linkedShape.Fill.FillPattern.Value = 1;
-                                linkedShape.Fill.FillForegnd.Value = backgroundColor;
+                                // Optionally, update the comment text to indicate styling was applied
+                                annotation.Comment.Value = "[Styled] " + annotation.Comment.Value;
                             }
                         }
-
-                        // Optionally modify the comment text itself
-                        ann.Comment.Value = "[Styled] " + ann.Comment.Value;
                     }
                 }
 
-                // Save the modified diagram
+                // ------------------------------------------------------------
+                // Save the modified diagram to the specified output path
+                // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

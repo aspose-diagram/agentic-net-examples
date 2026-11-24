@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
@@ -7,16 +8,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: source diagram path, target diagram path, output diagram path
-        if (args.Length != 3)
+        // Validate arguments: source diagram, target diagram, optional output path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: CopyCustomProps <source.vsdx> <target.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <sourceDiagramPath> <targetDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string sourcePath = args[0];
         string targetPath = args[1];
-        string outputPath = args[2];
+        string outputPath = args.Length >= 3 ? args[2] : targetPath;
 
         // Guard against missing files
         if (!File.Exists(sourcePath))
@@ -24,7 +25,6 @@ class Program
             Console.Error.WriteLine($"Source file not found: {sourcePath}");
             return;
         }
-
         if (!File.Exists(targetPath))
         {
             Console.Error.WriteLine($"Target file not found: {targetPath}");
@@ -33,47 +33,50 @@ class Program
 
         try
         {
-            // Load source and target diagrams
-            Diagram sourceDiagram = new Diagram(sourcePath);
-            Diagram targetDiagram = new Diagram(targetPath);
-
-            // Iterate over each custom property in the source diagram
-            foreach (CustomProp srcProp in sourceDiagram.DocumentProps.CustomProps)
+            // Load source diagram
+            using (Diagram sourceDiagram = new Diagram(sourcePath))
             {
-                // Search for a property with the same name in the target diagram
-                CustomProp targetProp = null;
-                foreach (CustomProp tp in targetDiagram.DocumentProps.CustomProps)
+                // Load target diagram
+                using (Diagram targetDiagram = new Diagram(targetPath))
                 {
-                    if (tp.Name == srcProp.Name)
+                    // ----- Remove existing custom properties from target -----
+                    List<CustomProp> toRemove = new List<CustomProp>();
+                    foreach (CustomProp prop in targetDiagram.DocumentProps.CustomProps)
                     {
-                        targetProp = tp;
-                        break;
+                        toRemove.Add(prop);
                     }
-                }
+                    foreach (CustomProp prop in toRemove)
+                    {
+                        targetDiagram.DocumentProps.CustomProps.Remove(prop);
+                    }
 
-                if (targetProp != null)
-                {
-                    // Property exists – update its type and value
-                    targetProp.PropType = srcProp.PropType;
-                    targetProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
-                }
-                else
-                {
-                    // Property does not exist – create a new one preserving name, type, and value
-                    CustomProp newProp = new CustomProp();
-                    newProp.Name = srcProp.Name;
-                    newProp.PropType = srcProp.PropType;
-                    newProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
+                    // ----- Copy custom properties from source to target -----
+                    foreach (CustomProp srcProp in sourceDiagram.DocumentProps.CustomProps)
+                    {
+                        // Create a new custom property
+                        CustomProp destProp = new CustomProp();
 
-                    // Add the new custom property to the target diagram
-                    targetDiagram.DocumentProps.CustomProps.Add(newProp);
+                        // Preserve the original name
+                        destProp.Name = srcProp.Name;
+
+                        // Preserve the property type
+                        destProp.PropType = srcProp.PropType;
+
+                        // Preserve the property value (string representation)
+                        if (srcProp.CustomValue != null && srcProp.CustomValue.ValueString != null)
+                        {
+                            destProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
+                        }
+
+                        // Add the new property to the target diagram
+                        targetDiagram.DocumentProps.CustomProps.Add(destProp);
+                    }
+
+                    // ----- Save the modified target diagram -----
+                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Custom properties copied successfully. Output saved to: {outputPath}");
                 }
             }
-
-            // Save the modified target diagram to the specified output path
-            targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Custom properties copied successfully to {outputPath}");
         }
         catch (Exception ex)
         {

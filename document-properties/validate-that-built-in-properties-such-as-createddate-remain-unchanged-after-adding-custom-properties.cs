@@ -7,63 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
-            return;
-        }
+        // Determine input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Capture the original built‑in CreatedDate (TimeCreated) property.
-            DateTime originalCreated = diagram.DocumentProps.TimeCreated;
+            // Capture the built‑in CreatedDate (TimeCreated) before modification
+            DateTime createdBefore = diagram.DocumentProps.TimeCreated;
 
-            // ------------------------------------------------------------
-            // Add a custom document property.
-            // ------------------------------------------------------------
+            // -------------------- Add a custom document property --------------------
+            // Create a new CustomProp instance
             CustomProp customProp = new CustomProp();
-            customProp.Name = "MyCustomProp";
-            customProp.PropType = PropType.String;               // Set the data type of the custom property.
-            customProp.CustomValue.ValueString = "TestValue";    // Assign a value to the custom property.
 
-            // Add the custom property to the document's custom properties collection.
+            // Set the name of the custom property
+            customProp.Name = "MyCustomProperty";
+
+            // Define the property type as string using PropType enum
+            customProp.PropType = PropType.String;
+
+            // Set the value of the custom property
+            // Use CustomValue.ValueString as per API guidance
+            customProp.CustomValue.ValueString = "SampleValue";
+
+            // Add the custom property to the document's custom properties collection
             diagram.DocumentProps.CustomProps.Add(customProp);
+            // ---------------------------------------------------------------------
 
-            // ------------------------------------------------------------
-            // Verify that the built‑in CreatedDate has not changed.
-            // ------------------------------------------------------------
-            DateTime afterCreated = diagram.DocumentProps.TimeCreated;
+            // Capture the built‑in CreatedDate after adding the custom property
+            DateTime createdAfter = diagram.DocumentProps.TimeCreated;
 
-            if (originalCreated != afterCreated)
+            // Validate that the built‑in property has not changed
+            if (createdBefore != createdAfter)
             {
                 throw new Exception("Built‑in CreatedDate changed after adding a custom property.");
             }
+            else
+            {
+                Console.WriteLine("Validation succeeded: CreatedDate unchanged after adding custom property.");
+            }
 
-            // ------------------------------------------------------------
-            // Save the modified diagram to the specified output path.
-            // ------------------------------------------------------------
+            // Optional: save the modified diagram to a new file
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output_modified.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine("Validation succeeded. Diagram saved to: " + outputPath);
+            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine("Error: " + ex.Message);
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

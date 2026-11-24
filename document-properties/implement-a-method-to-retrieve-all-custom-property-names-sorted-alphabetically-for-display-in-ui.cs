@@ -1,23 +1,26 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Determine the diagram file path either from command line arguments or user input.
+        string diagramPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
-            return;
+            diagramPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the full path to the Visio diagram file: ");
+            diagramPath = Console.ReadLine() ?? string.Empty;
         }
 
-        string diagramPath = args[0];
-
-        // Guard: ensure the file exists before proceeding
+        // Guard: ensure the file exists before proceeding.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -26,12 +29,14 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram using Aspose.Diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Retrieve and display sorted custom property names
+            // Retrieve sorted custom property names.
             List<string> sortedNames = GetSortedCustomPropertyNames(diagram);
-            Console.WriteLine("Custom Property Names (alphabetical order):");
+
+            // Display the sorted names in the console (UI placeholder).
+            Console.WriteLine("Custom Property Names (sorted alphabetically):");
             foreach (string name in sortedNames)
             {
                 Console.WriteLine(name);
@@ -39,37 +44,33 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Write any errors that occur during Aspose operations to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Retrieves all custom property names from the diagram's document properties,
-    /// sorts them alphabetically, and returns the sorted list.
+    /// Retrieves all custom property names from the diagram's DocumentProps and returns them sorted alphabetically.
     /// </summary>
     /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
-    /// <returns>Alphabetically sorted list of custom property names.</returns>
+    /// <returns>A list of custom property names sorted in ascending order.</returns>
     private static List<string> GetSortedCustomPropertyNames(Diagram diagram)
     {
-        // Initialize a list to hold property names
+        // Access the collection of custom properties.
+        var customProps = diagram.DocumentProps.CustomProps;
+
+        // Extract the Name of each CustomProp into a list.
         List<string> names = new List<string>();
-
-        // Access the custom properties collection from the document properties
-        CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
-
-        // Iterate through each custom property and collect its name
         foreach (CustomProp prop in customProps)
         {
-            // The Name property holds the custom property's name
+            // Ensure the Name is not null before adding.
             if (!string.IsNullOrEmpty(prop.Name))
             {
                 names.Add(prop.Name);
             }
         }
 
-        // Sort the names alphabetically (case-insensitive)
-        names.Sort(StringComparer.OrdinalIgnoreCase);
-        return names;
+        // Sort the names alphabetically (case-insensitive) and return.
+        return names.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
     }
 }

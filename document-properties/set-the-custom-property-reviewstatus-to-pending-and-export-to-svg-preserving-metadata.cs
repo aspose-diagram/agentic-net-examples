@@ -1,14 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
@@ -18,61 +17,57 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the custom properties collection
-            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
-
-            // Try to find an existing custom property named "ReviewStatus"
-            CustomProp reviewProp = null;
-            foreach (CustomProp cp in customProps)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (cp.Name == "ReviewStatus")
-                {
-                    reviewProp = cp;
-                    break;
-                }
-            }
-
-            if (reviewProp != null)
-            {
-                // Update the existing property's value to "Pending"
+                // ------------------------------------------------------------
+                // Add or update the custom document property "ReviewStatus".
+                // ------------------------------------------------------------
+                CustomProp reviewProp = new CustomProp();
+                reviewProp.Name = "ReviewStatus";
+                reviewProp.PropType = PropType.String;
+                // Set the value to "Pending".
                 reviewProp.CustomValue.ValueString = "Pending";
+
+                // Add the custom property to the document's custom properties collection.
+                diagram.DocumentProps.CustomProps.Add(reviewProp);
+
+                // ------------------------------------------------------------
+                // Configure SVG export options to preserve metadata.
+                // ------------------------------------------------------------
+                SVGSaveOptions svgOptions = new SVGSaveOptions
+                {
+                    // Preserve comments (metadata) in the SVG.
+                    IsExportComments = true,
+                    // Export guide shapes if present.
+                    ExportGuideShapes = true,
+                    // Fit the drawing to the SVG viewport.
+                    SVGFitToViewPort = true,
+                    // Export all pages starting from the first page.
+                    PageIndex = 0
+                    // PageCount property is optional; default behavior exports all pages.
+                };
+
+                // ------------------------------------------------------------
+                // Save the diagram as SVG using the configured options.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, svgOptions);
             }
-            else
-            {
-                // Create a new custom property with the required settings
-                CustomProp newProp = new CustomProp();
-                newProp.Name = "ReviewStatus";
-                newProp.PropType = PropType.String;
-                newProp.CustomValue.ValueString = "Pending";
 
-                // Add the new property to the document's custom properties collection
-                customProps.Add(newProp);
-            }
-
-            // Prepare SVG save options (default options preserve metadata where possible)
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-            // No additional option is required for metadata preservation; defaults are used.
-
-            // Save the diagram as SVG
-            diagram.Save(outputPath, svgOptions);
-
-            Console.WriteLine($"Diagram saved to SVG with ReviewStatus set to Pending: {outputPath}");
+            Console.WriteLine($"Diagram exported successfully to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

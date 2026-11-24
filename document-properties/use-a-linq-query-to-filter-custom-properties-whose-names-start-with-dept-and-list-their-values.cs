@@ -2,47 +2,50 @@ using System;
 using System.IO;
 using System.Linq;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
-            return;
-        }
-
-        string filePath = args[0];
-
-        // Guard against missing input file.
-        if (!File.Exists(filePath))
+        // Path to the Visio file (adjust as needed)
+        string filePath = "Drawing1.vsdx";
+        if (!System.IO.File.Exists(filePath))
         {
             Console.Error.WriteLine($"File not found: {filePath}");
             return;
         }
 
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(filePath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            return;
+        }
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(filePath);
 
-            // Use LINQ to filter custom document properties whose names start with "Dept".
-            var deptProperties = diagram.DocumentProps.CustomProps
+            // Access the collection of custom document properties
+            var customProps = diagram.DocumentProps.CustomProps;
+
+            // LINQ query: filter properties whose names start with "Dept"
+            var deptProperties = customProps
                 .Where(p => !string.IsNullOrEmpty(p.Name) && p.Name.StartsWith("Dept", StringComparison.OrdinalIgnoreCase));
 
-            // List the filtered property names and their values.
+            // List the filtered property names and their values
             foreach (var prop in deptProperties)
             {
-                // Custom property value is accessed via CustomValue.ValueString.
+                // Use CustomValue.ValueString to retrieve the property's value
                 Console.WriteLine($"{prop.Name}: {prop.CustomValue.ValueString}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

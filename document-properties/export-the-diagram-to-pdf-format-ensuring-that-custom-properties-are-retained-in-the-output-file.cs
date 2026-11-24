@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
@@ -20,38 +20,45 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Report the number of custom document properties (they are retained automatically on save).
+                int customPropCount = diagram.DocumentProps.CustomProps.Count;
+                Console.WriteLine($"Diagram contains {customPropCount} custom property(ies).");
 
-            // OPTIONAL: Display custom document properties count (they will be retained on export).
-            int customPropCount = diagram.DocumentProps.CustomProps.Count;
-            Console.WriteLine($"Diagram loaded. Custom properties count: {customPropCount}");
+                // List each custom property: Name, Type, and Value.
+                for (int i = 0; i < customPropCount; i++)
+                {
+                    CustomProp prop = diagram.DocumentProps.CustomProps[i];
+                    string name = prop.Name;
+                    string type = prop.PropType.ToString();
+                    string value = prop.CustomValue?.ValueString ?? string.Empty;
+                    Console.WriteLine($"Custom Property - Name: {name}, Type: {type}, Value: {value}");
+                }
 
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Explicitly set the format tracker.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Example setting – do not export hidden pages.
-            pdfOptions.ExportHiddenPage = false;
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Set the target format explicitly.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optionally set a default font to avoid missing‑font warnings.
+                pdfOptions.DefaultFont = "Arial";
 
-            // Export the diagram to PDF. Custom properties are preserved automatically.
-            diagram.Save(outputPath, pdfOptions);
-
-            // Clean up resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
+                // Save the diagram as PDF. Custom properties are preserved by default.
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

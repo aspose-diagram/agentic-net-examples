@@ -7,51 +7,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists.
+
+        // Guard: verify the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output path (optional second argument).
-        string outputPath = args.Length > 1
-            ? args[1]
-            : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output_with_customprop.vsdx");
+        // Optional: define an output path (same folder, new file name).
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty,
+                                         Path.GetFileNameWithoutExtension(inputPath) + "_WithProjectId.vsdx");
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Create a new custom property.
+                CustomProp customProp = new CustomProp();
 
-            // Create a new custom document property.
-            CustomProp customProp = new CustomProp();
-            customProp.Name = "ProjectId";
-            // Set the property type to Number (numeric).
-            customProp.PropType = PropType.Number;
-            // Assign the numeric value as a string representation.
-            customProp.CustomValue.ValueString = "12345";
+                // Set the property name.
+                customProp.Name = "ProjectId";
 
-            // Add the custom property to the document's custom properties collection.
-            diagram.DocumentProps.CustomProps.Add(customProp);
+                // Define the property type as numeric.
+                customProp.PropType = PropType.Number;
 
-            // Save the modified diagram to the specified output file.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Assign the numeric value (as string) to the custom property.
+                customProp.CustomValue.ValueString = "12345";
 
-            Console.WriteLine($"Custom property 'ProjectId' added and diagram saved to: {outputPath}");
+                // Add the custom property to the document's custom properties collection.
+                diagram.DocumentProps.CustomProps.Add(customProp);
+
+                // Save the modified diagram to a new file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine($"Diagram saved with custom property to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

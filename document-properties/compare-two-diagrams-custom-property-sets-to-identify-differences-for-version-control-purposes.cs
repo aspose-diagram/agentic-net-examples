@@ -11,121 +11,85 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <DiagramPath1> <DiagramPath2>");
+            Console.Error.WriteLine("Usage: Program <firstDiagramPath> <secondDiagramPath>");
             return;
         }
 
-        string path1 = args[0];
-        string path2 = args[1];
+        string firstPath = args[0];
+        string secondPath = args[1];
 
         // Guard against missing files.
-        if (!File.Exists(path1))
+        if (!File.Exists(firstPath))
         {
-            Console.Error.WriteLine($"File not found: {path1}");
+            Console.Error.WriteLine($"File not found: {firstPath}");
             return;
         }
-        if (!File.Exists(path2))
+        if (!File.Exists(secondPath))
         {
-            Console.Error.WriteLine($"File not found: {path2}");
-            return;
-        }
-
-        Diagram diagram1 = null;
-        Diagram diagram2 = null;
-
-        try
-        {
-            // Load the first diagram.
-            diagram1 = new Diagram(path1);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram '{path1}': {ex.Message}");
+            Console.Error.WriteLine($"File not found: {secondPath}");
             return;
         }
 
         try
         {
-            // Load the second diagram.
-            diagram2 = new Diagram(path2);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram '{path2}': {ex.Message}");
-            return;
-        }
-
-        // Extract custom properties from both diagrams.
-        var props1 = ExtractCustomProperties(diagram1);
-        var props2 = ExtractCustomProperties(diagram2);
-
-        // Identify removed properties (present in diagram1 but not in diagram2).
-        foreach (var kvp in props1)
-        {
-            if (!props2.ContainsKey(kvp.Key))
+            // Load both diagrams inside using blocks as required by the API.
+            using (Diagram firstDiagram = new Diagram(firstPath))
+            using (Diagram secondDiagram = new Diagram(secondPath))
             {
-                Console.WriteLine($"Removed: {kvp.Key} = \"{kvp.Value}\"");
-            }
-        }
+                // Extract custom properties from each diagram into dictionaries.
+                Dictionary<string, string> firstProps = GetCustomProperties(firstDiagram);
+                Dictionary<string, string> secondProps = GetCustomProperties(secondDiagram);
 
-        // Identify added properties (present in diagram2 but not in diagram1).
-        foreach (var kvp in props2)
-        {
-            if (!props1.ContainsKey(kvp.Key))
-            {
-                Console.WriteLine($"Added: {kvp.Key} = \"{kvp.Value}\"");
-            }
-        }
-
-        // Identify changed properties (same name, different value).
-        foreach (var kvp in props1)
-        {
-            if (props2.TryGetValue(kvp.Key, out string value2))
-            {
-                string value1 = kvp.Value;
-                if (!string.Equals(value1, value2, StringComparison.Ordinal))
+                // Compare properties that exist in the first diagram.
+                foreach (var kvp in firstProps)
                 {
-                    Console.WriteLine($"Changed: {kvp.Key} from \"{value1}\" to \"{value2}\"");
+                    if (!secondProps.ContainsKey(kvp.Key))
+                    {
+                        Console.WriteLine($"Property '{kvp.Key}' exists in first diagram but is missing in second diagram.");
+                    }
+                    else if (kvp.Value != secondProps[kvp.Key])
+                    {
+                        Console.WriteLine($"Property '{kvp.Key}' differs:");
+                        Console.WriteLine($"  First diagram value : '{kvp.Value}'");
+                        Console.WriteLine($"  Second diagram value: '{secondProps[kvp.Key]}'");
+                    }
+                }
+
+                // Identify properties that exist only in the second diagram.
+                foreach (var kvp in secondProps)
+                {
+                    if (!firstProps.ContainsKey(kvp.Key))
+                    {
+                        Console.WriteLine($"Property '{kvp.Key}' exists in second diagram but is missing in first diagram.");
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            // Report any unexpected errors.
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Builds a dictionary of custom property name/value pairs from a diagram.
+    /// Retrieves the document‑level custom properties from a diagram.
     /// </summary>
-    /// <param name="diagram">The diagram to process.</param>
-    /// <returns>Dictionary where key = property name, value = property value.</returns>
-    private static Dictionary<string, string> ExtractCustomProperties(Diagram diagram)
+    /// <param name="diagram">The loaded Diagram instance.</param>
+    /// <returns>A dictionary mapping property names to their string values.</returns>
+    private static Dictionary<string, string> GetCustomProperties(Diagram diagram)
     {
-        var dict = new Dictionary<string, string>(StringComparer.Ordinal);
-        try
+        var props = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // Iterate over the CustomProps collection.
+        foreach (CustomProp prop in diagram.DocumentProps.CustomProps)
         {
-            // Access the collection of custom document properties.
-            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
-
-            // Iterate through each custom property.
-            foreach (CustomProp prop in customProps)
-            {
-                // Property name (fallback to empty string if null).
-                string name = prop.Name ?? string.Empty;
-
-                // Property value (fallback to empty string if null).
-                string value = string.Empty;
-                if (prop.CustomValue != null && prop.CustomValue.ValueString != null)
-                {
-                    value = prop.CustomValue.ValueString;
-                }
-
-                // Store in dictionary; later entries overwrite earlier ones with the same name.
-                dict[name] = value;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error extracting custom properties: {ex.Message}");
+            string name = prop.Name ?? string.Empty;
+            // The value is stored in CustomValue.ValueString.
+            string value = prop.CustomValue?.ValueString ?? string.Empty;
+            props[name] = value;
         }
 
-        return dict;
+        return props;
     }
 }

@@ -1,45 +1,55 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Properties;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Ensure a file path argument is provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load.
-        if (!File.Exists(diagramPath))
+        // Guard: verify the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from the specified file.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Retrieve the automatically embedded API version information
+                string version = diagram.Version;
 
-            // Retrieve and display the automatically embedded API version information.
-            Console.WriteLine($"Diagram API Version: {diagram.Version}");
+                // Retrieve additional audit-related metadata from document properties
+                string buildCreated = diagram.DocumentProps.BuildNumberCreated.ToString();
+                string buildEdited = diagram.DocumentProps.BuildNumberEdited.ToString();
 
-            // Additional document properties that may be useful for audit purposes.
-            Console.WriteLine($"Build Number Created: {diagram.DocumentProps.BuildNumberCreated}");
-            Console.WriteLine($"Build Number Edited: {diagram.DocumentProps.BuildNumberEdited}");
-            Console.WriteLine($"Time Created: {diagram.DocumentProps.TimeCreated}");
-            Console.WriteLine($"Time Edited: {diagram.DocumentProps.TimeEdited}");
+                // TimeCreated is a DateTime; convert to string explicitly
+                DateTime timeCreatedDt = diagram.DocumentProps.TimeCreated;
+                string timeCreated = timeCreatedDt.ToString();
+
+                // Output the retrieved information to the console
+                Console.WriteLine($"Diagram Version: {version}");
+                Console.WriteLine($"Build Number Created: {buildCreated}");
+                Console.WriteLine($"Build Number Edited: {buildEdited}");
+                Console.WriteLine($"Time Created: {timeCreated}");
+            }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during loading or property access.
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            // Write any errors encountered during processing to standard error
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

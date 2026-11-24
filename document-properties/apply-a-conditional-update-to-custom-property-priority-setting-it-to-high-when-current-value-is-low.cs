@@ -1,23 +1,23 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Properties;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command line arguments.
-        if (args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty,
+                                                                   Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
 
-        // Guard: verify input file exists.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -26,50 +26,40 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Access document custom properties.
-            CustomPropCollection customProps = diagram.DocumentProps.CustomProps;
-
-            // Flag to indicate whether an update was performed.
-            bool updated = false;
-
-            // Iterate through custom properties to find "Priority".
-            foreach (CustomProp prop in customProps)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                // Check property name.
-                if (prop.Name == "Priority")
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Compare current value; use CustomValue.ValueString as per API.
-                    if (prop.CustomValue != null && prop.CustomValue.ValueString == "Low")
+                    // Ensure the shape has custom properties
+                    if (shape.Props == null)
+                        continue;
+
+                    // Iterate through each custom property
+                    foreach (Prop prop in shape.Props)
                     {
-                        // Update the value to "High".
-                        prop.CustomValue.ValueString = "High";
-                        updated = true;
-                        Console.WriteLine("Custom property 'Priority' updated from 'Low' to 'High'.");
+                        // Check for the "Priority" property with value "Low"
+                        if (prop.Name == "Priority" && prop.Value != null && prop.Value.Val == "Low")
+                        {
+                            // Update the value to "High"
+                            prop.Value.Val = "High";
+                            Console.WriteLine($"Updated shape ID {shape.ID} on page {page.ID} - Priority set to High.");
+                        }
                     }
-                    else
-                    {
-                        Console.WriteLine("Custom property 'Priority' does not have the value 'Low'; no change applied.");
-                    }
-                    // Since property names are unique, break after handling.
-                    break;
                 }
             }
 
-            if (!updated)
-            {
-                Console.WriteLine("No matching custom property 'Priority' with value 'Low' was found.");
-            }
-
-            // Save the modified diagram to the specified output path.
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

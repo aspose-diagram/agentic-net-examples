@@ -7,62 +7,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the path to the source Visio file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputVisioPath]");
             return;
         }
 
-        string sourcePath = args[0];
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : "cloned.vsdx";
 
         // Guard: ensure the source file exists
-        if (!File.Exists(sourcePath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Source file not found: {sourcePath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
-
-        // Determine output path (same directory with suffix "_clone.vsdx")
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(sourcePath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(sourcePath) + "_clone.vsdx");
 
         try
         {
-            // Load the original diagram
-            Diagram sourceDiagram = new Diagram(sourcePath);
-
-            // Create a new empty diagram
-            Diagram clonedDiagram = new Diagram();
-
-            // Combine all pages, masters, and other content from the source diagram
-            clonedDiagram.Combine(sourceDiagram);
-
-            // Preserve custom document properties
-            foreach (CustomProp srcProp in sourceDiagram.DocumentProps.CustomProps)
+            // Load the original diagram inside a using block
+            using (Diagram sourceDiagram = new Diagram(inputPath))
             {
-                // Create a new custom property and copy its details
-                CustomProp newProp = new CustomProp
+                // Create a new empty diagram inside a using block
+                using (Diagram clonedDiagram = new Diagram())
                 {
-                    Name = srcProp.Name,
-                    PropType = srcProp.PropType
-                };
+                    // ------------------------------------------------------------
+                    // Copy custom document properties from source to clone
+                    // ------------------------------------------------------------
+                    foreach (CustomProp srcProp in sourceDiagram.DocumentProps.CustomProps)
+                    {
+                        // Create a new custom property and copy its fields
+                        CustomProp newProp = new CustomProp();
+                        newProp.Name = srcProp.Name;
+                        newProp.PropType = srcProp.PropType;
 
-                // Copy the custom value if present
-                if (srcProp.CustomValue != null)
-                {
-                    newProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
+                        // Copy the custom value (string representation)
+                        if (srcProp.CustomValue != null && srcProp.CustomValue.ValueString != null)
+                        {
+                            newProp.CustomValue.ValueString = srcProp.CustomValue.ValueString;
+                        }
+
+                        // Add the new property to the cloned diagram
+                        clonedDiagram.DocumentProps.CustomProps.Add(newProp);
+                    }
+
+                    // ------------------------------------------------------------
+                    // Merge all pages, masters, and other content from the source diagram
+                    // ------------------------------------------------------------
+                    clonedDiagram.Combine(sourceDiagram);
+
+                    // ------------------------------------------------------------
+                    // Save the cloned diagram to the specified output path
+                    // ------------------------------------------------------------
+                    clonedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Cloned diagram saved to: {outputPath}");
                 }
-
-                // Add the custom property to the cloned diagram
-                clonedDiagram.DocumentProps.CustomProps.Add(newProp);
             }
-
-            // Save the cloned diagram with all content and custom properties
-            clonedDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram cloned successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

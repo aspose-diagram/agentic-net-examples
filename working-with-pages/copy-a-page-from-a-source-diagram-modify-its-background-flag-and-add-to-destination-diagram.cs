@@ -1,30 +1,29 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input file paths (modify as needed)
-        string sourcePath = "source.vsdx";
-        if (!System.IO.File.Exists(sourcePath))
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
+            Console.Error.WriteLine("Usage: Program <sourceDiagramPath> <destinationDiagramPath> <outputDiagramPath>");
             return;
         }
-        string destinationPath = "destination.vsdx";
-        string outputPath = "merged_output.vsdx";
 
-        // Guard: ensure source file exists
+        string sourcePath = args[0];
+        string destinationPath = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing files.
         if (!File.Exists(sourcePath))
         {
             Console.Error.WriteLine($"Source file not found: {sourcePath}");
             return;
         }
 
-        // Guard: ensure destination file exists
         if (!File.Exists(destinationPath))
         {
             Console.Error.WriteLine($"Destination file not found: {destinationPath}");
@@ -33,55 +32,51 @@ class Program
 
         try
         {
-            // Load source diagram inside a using block
-            using (Diagram srcDiagram = new Diagram(sourcePath))
+            // Load the source diagram inside a using block.
+            using (Diagram sourceDiagram = new Diagram(sourcePath))
             {
-                // Load destination diagram inside a using block
+                // Load the destination diagram inside a using block.
                 using (Diagram destDiagram = new Diagram(destinationPath))
                 {
                     // ------------------------------------------------------------
-                    // Copy masters from source to destination (if not already present)
+                    // Copy masters from source to destination (required for page copy).
                     // ------------------------------------------------------------
-                    foreach (Master srcMaster in srcDiagram.Masters)
+                    foreach (Master srcMaster in sourceDiagram.Masters)
                     {
-                        // Simple add; duplicate IDs are handled internally by Aspose.Diagram
+                        // Add the master to the destination diagram.
+                        // If a master with the same name already exists, Aspose.Diagram will handle duplication internally.
                         destDiagram.Masters.Add(srcMaster);
                     }
 
                     // ------------------------------------------------------------
-                    // Copy theme from source to destination
+                    // Retrieve the first page from the source diagram.
                     // ------------------------------------------------------------
-                    destDiagram.CopyTheme(srcDiagram);
-
-                    // ------------------------------------------------------------
-                    // Retrieve the first page from the source diagram
-                    // ------------------------------------------------------------
-                    if (srcDiagram.Pages.Count == 0)
+                    if (sourceDiagram.Pages.Count == 0)
                     {
                         Console.Error.WriteLine("Source diagram contains no pages to copy.");
                         return;
                     }
 
-                    Page srcPage = srcDiagram.Pages[0];
+                    Page srcPage = sourceDiagram.Pages[0];
 
                     // ------------------------------------------------------------
-                    // Create a new page in the destination diagram and copy contents
+                    // Create a new page instance and copy the source page content.
                     // ------------------------------------------------------------
                     Page newPage = new Page();
-                    newPage.Copy(srcPage); // Clone the source page's content
+                    newPage.Copy(srcPage); // Copies PageSheet, shapes, and other page data.
 
                     // ------------------------------------------------------------
-                    // Modify the background flag of the copied page
+                    // Modify the background flag of the copied page.
                     // ------------------------------------------------------------
-                    newPage.Background = BOOL.True; // Mark as a background page
+                    newPage.Background = BOOL.True; // Mark the page as a background page.
 
                     // ------------------------------------------------------------
-                    // Add the new page to the destination diagram
+                    // Add the modified page to the destination diagram.
                     // ------------------------------------------------------------
                     destDiagram.Pages.Add(newPage);
 
                     // ------------------------------------------------------------
-                    // Save the updated destination diagram to the output file
+                    // Save the updated destination diagram to the specified output path.
                     // ------------------------------------------------------------
                     destDiagram.Save(outputPath, SaveFileFormat.Vsdx);
                     Console.WriteLine($"Page copied and background flag set. Output saved to: {outputPath}");
@@ -90,7 +85,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -2,15 +2,16 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Printing;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Validate input arguments
-        if (args.Length == 0)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <folderPath>");
+            Console.Error.WriteLine("Usage: Program <DiagramsFolderPath>");
             return;
         }
 
@@ -19,25 +20,26 @@ class Program
         // Guard: ensure the folder exists
         if (!Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
         // Supported Visio file extensions
         string[] extensions = new[]
         {
-            ".vsdx", ".vsd", ".vdx", ".vsx", ".vssx",
-            ".vss", ".vstx", ".vst", ".vtx"
+            ".vsdx", ".vsd", ".vdx", ".vssx", ".vss",
+            ".vstx", ".vst", ".vtx"
         };
 
-        // Iterate over files in the folder
-        foreach (string filePath in Directory.GetFiles(folderPath))
+        // Retrieve all files (non‑recursive) and process supported diagrams
+        string[] files = Directory.GetFiles(folderPath);
+        foreach (string filePath in files)
         {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(extensions, ext) < 0)
-                continue; // Skip unsupported files
+            // Process only supported extensions
+            if (Array.IndexOf(extensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
+                continue;
 
-            // Guard: ensure the file exists (redundant but per rules)
+            // Guard: ensure the file exists
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -46,77 +48,56 @@ class Program
 
             try
             {
-                // Load the diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Update print settings for each page to meet corporate standards
-                foreach (Page page in diagram.Pages)
+                // Load the diagram inside a using block (required for proper disposal)
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Access the PrintProps collection
-                    PrintProps printProps = page.PageSheet.PrintProps;
+                    // Ensure at least one window exists (required for some operations)
+                    if (diagram.Windows.Count == 0)
+                    {
+                        Window w = new Window
+                        {
+                            WindowType = WindowTypeValue.Drawing,
+                            WindowState = WindowStateValue.Maximized,
+                            WindowWidth = 1100,
+                            WindowHeight = 700
+                        };
+                        diagram.Windows.Add(w);
+                    }
 
-                    // Set orientation to Landscape
-                    printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Iterate through each page and apply corporate print settings
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Access the page's print properties
+                        PrintProps printProps = page.PageSheet.PrintProps;
 
-                    // Set scaling to 75% (direct double assignment)
-                    printProps.ScaleX.Value = 0.75;
-                    printProps.ScaleY.Value = 0.75;
+                        // Set orientation to Landscape
+                        printProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
 
-                    // Enable fit-to-sheet (OnPage) and set pages per sheet to 1x1
-                    printProps.OnPage.Value = BOOL.True;
-                    printProps.PagesX.Value = 1;
-                    printProps.PagesY.Value = 1;
+                        // Set scaling to 75 % (both X and Y)
+                        printProps.ScaleX.Value = 0.75;
+                        printProps.ScaleY.Value = 0.75;
 
-                    // Set uniform margins of 0.5 inches (36 points) using double values
-                    double margin = 36; // points
-                    printProps.PageTopMargin.Value = margin;
-                    printProps.PageBottomMargin.Value = margin;
-                    printProps.PageLeftMargin.Value = margin;
-                    printProps.PageRightMargin.Value = margin;
+                        // Enable "Fit to sheet" (OnPage) and use a single page layout
+                        printProps.OnPage.Value = BOOL.True;
+
+                        // Set standard margins (0.5 inch = 36 points)
+                        double halfInch = 36.0; // points
+                        printProps.PageTopMargin.Value = halfInch;
+                        printProps.PageBottomMargin.Value = halfInch;
+                        printProps.PageLeftMargin.Value = halfInch;
+                        printProps.PageRightMargin.Value = halfInch;
+                    }
+
+                    // Save the updated diagram back to the original file (VSDX format)
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Processed and saved: {filePath}");
                 }
-
-                // Determine appropriate save format based on original extension
-                SaveFileFormat format = GetSaveFormat(ext);
-
-                // Overwrite the original file with updated settings
-                diagram.Save(filePath, format);
-
-                Console.WriteLine($"Processed and saved: {filePath}");
             }
             catch (Exception ex)
             {
-                // Log any errors encountered during processing
+                // Log any errors that occur during processing
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
-        }
-    }
-
-    // Helper method to map file extensions to SaveFileFormat enum values
-    private static SaveFileFormat GetSaveFormat(string extension)
-    {
-        switch (extension)
-        {
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vsd":
-                return SaveFileFormat.Vsd;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
-            case ".vsx":
-                return SaveFileFormat.Vsx;
-            case ".vssx":
-                return SaveFileFormat.Vssx;
-            case ".vss":
-                return SaveFileFormat.Vss;
-            case ".vstx":
-                return SaveFileFormat.Vstx;
-            case ".vst":
-                return SaveFileFormat.Vst;
-            case ".vtx":
-                return SaveFileFormat.Vtx;
-            default:
-                // Default to Vsdx if unknown; callers should ensure extension is supported
-                return SaveFileFormat.Vsdx;
         }
     }
 }

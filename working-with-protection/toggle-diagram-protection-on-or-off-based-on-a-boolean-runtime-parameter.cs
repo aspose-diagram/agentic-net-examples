@@ -1,22 +1,21 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input file path, output file path, enableProtection (true/false)
-        if (args.Length != 3)
+        // Expect three arguments: input file, output file, protection flag (true/false)
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <enableProtection>");
+            Console.Error.WriteLine("Usage: <program> <input.vsdx> <output.vsdx> <protect:true|false>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string enableProtectionArg = args[2];
+        string protectArg = args[2];
 
         // Validate input file existence
         if (!File.Exists(inputPath))
@@ -25,23 +24,22 @@ class Program
             return;
         }
 
-        // Parse the boolean parameter
-        bool enableProtection;
-        if (!bool.TryParse(enableProtectionArg, out enableProtection))
+        // Parse protection flag
+        if (!bool.TryParse(protectArg, out bool protect))
         {
-            Console.Error.WriteLine($"Invalid boolean value for enableProtection: {enableProtectionArg}");
+            Console.Error.WriteLine($"Invalid protection flag value: {protectArg}. Expected true or false.");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Toggle global document protection based on the runtime flag
-                if (enableProtection)
+                // Toggle global document protection settings
+                if (protect)
                 {
-                    // Enable protection for backgrounds, masters, shapes, and styles
+                    // Enable protection
                     diagram.DocumentSettings.ProtectBkgnds = BOOL.True;
                     diagram.DocumentSettings.ProtectMasters = BOOL.True;
                     diagram.DocumentSettings.ProtectShapes = BOOL.True;
@@ -49,18 +47,18 @@ class Program
                 }
                 else
                 {
-                    // Disable protection for all mentioned aspects
+                    // Disable protection
                     diagram.DocumentSettings.ProtectBkgnds = BOOL.False;
                     diagram.DocumentSettings.ProtectMasters = BOOL.False;
                     diagram.DocumentSettings.ProtectShapes = BOOL.False;
                     diagram.DocumentSettings.ProtectStyles = BOOL.False;
                 }
 
-                // Save the modified diagram preserving the original format (VSDX assumed)
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Diagram protection toggled successfully.");
+            Console.WriteLine($"Diagram protection {(protect ? "enabled" : "disabled")} and saved to: {outputPath}");
         }
         catch (Exception ex)
         {

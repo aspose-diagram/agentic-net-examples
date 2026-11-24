@@ -1,77 +1,84 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output_modified.vsdx";
 
-        // Guard: ensure input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at path '{inputPath}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Check if the shape's width or height is locked
-                        bool widthLocked = shape.Protection?.LockWidth?.Value == BOOL.True;
-                        bool heightLocked = shape.Protection?.LockHeight?.Value == BOOL.True;
-
-                        if (widthLocked || heightLocked)
+                        // ----- Attempt to modify Height -----
+                        // Check if the shape's height is locked.
+                        if (shape.Protection.LockHeight.Value == BOOL.True)
                         {
-                            // Log attempt to modify a locked shape
-                            Console.Error.WriteLine($"Attempt to modify locked shape (ID: {shape.ID}) on page '{page.Name}'. WidthLocked={widthLocked}, HeightLocked={heightLocked}");
-                            // Skip modification for this shape
-                            continue;
+                            // Log the attempt to modify a locked height.
+                            Console.WriteLine($"[Locked] Attempted to modify Height of shape ID {shape.ID} on page '{page.Name}' but it is locked.");
+                        }
+                        else
+                        {
+                            // Perform the height modification.
+                            double currentHeight = shape.XForm.Height.Value;
+                            shape.XForm.Height.Value = currentHeight + 1.0;
+                            Console.WriteLine($"[Modified] Height of shape ID {shape.ID} increased to {shape.XForm.Height.Value}.");
                         }
 
-                        try
+                        // ----- Attempt to modify Rotation -----
+                        // Check if the shape's rotation is locked.
+                        if (shape.Protection.LockRotate.Value == BOOL.True)
                         {
-                            // Example modification: set new width and height
-                            shape.XForm.Width.Value = 2.0;
-                            shape.XForm.Height.Value = 1.0;
+                            // Log the attempt to modify a locked rotation.
+                            Console.WriteLine($"[Locked] Attempted to modify Rotation of shape ID {shape.ID} on page '{page.Name}' but it is locked.");
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            // Log any errors that occur during modification
-                            Console.Error.WriteLine($"Error modifying shape (ID: {shape.ID}) on page '{page.Name}': {ex.Message}");
+                            // Perform the rotation modification (set to 10 degrees for demonstration).
+                            shape.SetAngle(10.0);
+                            Console.WriteLine($"[Modified] Rotation of shape ID {shape.ID} set to 10 degrees.");
                         }
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur while loading or saving the diagram
-            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
+            // Log any unexpected errors.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -6,32 +6,41 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
+        // Input and output file paths (provide via command line or use defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output_protected.vsdx";
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        string outputPath = "protected_output.vsdx";
 
         try
         {
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Diagram-level protection for page orientation is not directly supported
-                // via a LockPageOrientation property. If needed, other protection flags can be set here.
-                // Example: diagram.DocumentSettings.ProtectBkgnds.Value = BOOL.True;
+                // TODO: Apply diagram‑level protection to block page orientation changes.
+                // The Aspose.Diagram API does not expose a direct property for locking page orientation.
+                // When such a property becomes available (e.g., a LockPageSetup cell on the page sheet),
+                // set its value to BOOL.True here.
 
-                // Save the (potentially protected) diagram to the specified output path
+                // Example placeholder (uncomment and adjust when the correct API is known):
+                // foreach (Page page in diagram.Pages)
+                // {
+                //     page.PageSheet.LockPageSetup.Value = BOOL.True;
+                // }
+
+                // Save the diagram with (potential) protection applied
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

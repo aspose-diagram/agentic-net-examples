@@ -1,79 +1,78 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, shape ID, output file
-        if (args.Length < 3)
+        // Validate arguments: input file, shape ID, optional output file
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeId> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string shapeIdArg = args[1];
-        string outputPath = args[2];
+        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         // Parse the shape ID (expected to be a long integer)
-        if (!long.TryParse(shapeIdArg, out long shapeId))
+        if (!long.TryParse(args[1], out long shapeId))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            Console.Error.WriteLine("Error: Shape ID must be a valid integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern)
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                // Locate the shape with the specified ID across all pages
-                Shape targetShape = null;
-                foreach (Page page in diagram.Pages)
+                try
                 {
-                    try
+                    // GetShape returns the shape with the given structural ID
+                    Shape shape = page.Shapes.GetShape(shapeId);
+                    if (shape != null)
                     {
-                        // GetShape accepts a long ID; returns the shape if it exists on this page
-                        targetShape = page.Shapes.GetShape(shapeId);
-                        if (targetShape != null)
-                            break; // Shape found, exit the loop
-                    }
-                    catch
-                    {
-                        // GetShape throws when the ID is not present on this page; ignore and continue
-                        targetShape = null;
+                        targetShape = shape;
+                        break;
                     }
                 }
-
-                if (targetShape == null)
+                catch
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
-                    return;
+                    // If GetShape throws (e.g., shape not on this page), continue searching
                 }
-
-                // Unlock the rotation attribute by setting the LockRotate protection flag to FALSE
-                // Protection properties must be accessed via the .Value field and use BOOL enum
-                targetShape.Protection.LockRotate.Value = BOOL.False;
-
-                // Save the modified diagram to the specified output path (VSDX format)
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Shape rotation unlocked and diagram saved to: {outputPath}");
             }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found in the diagram.");
+                return;
+            }
+
+            // Unlock the rotation protection attribute
+            // The rotation lock is controlled by the LockRotate cell in the Protection section
+            targetShape.Protection.LockRotate.Value = BOOL.False;
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Shape rotation unlocked and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any Aspose.Diagram or I/O errors
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

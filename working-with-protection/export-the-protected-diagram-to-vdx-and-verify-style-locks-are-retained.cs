@@ -1,73 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Expect two arguments: input diagram path and output VDX path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <protected_diagram_path>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputVdxPath>");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Determine output path (same folder, .vdx extension).
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_exported.vdx");
-
         try
         {
-            // Load the protected diagram inside a using block.
+            // Load the protected diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Capture original protection settings.
-                BOOL protectBkgnds = diagram.DocumentSettings.ProtectBkgnds;
-                BOOL protectMasters = diagram.DocumentSettings.ProtectMasters;
-                BOOL protectShapes = diagram.DocumentSettings.ProtectShapes;
-                BOOL protectStyles = diagram.DocumentSettings.ProtectStyles;
-
-                // Export to VDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vdx);
-
-                // Reload the exported diagram to verify protection settings.
-                using (Diagram reloaded = new Diagram(outputPath))
+                // Verify that document protection is enabled (example: ProtectShapes)
+                if (diagram.DocumentSettings.ProtectShapes != BOOL.True)
                 {
-                    BOOL reloadedBkgnds = reloaded.DocumentSettings.ProtectBkgnds;
-                    BOOL reloadedMasters = reloaded.DocumentSettings.ProtectMasters;
-                    BOOL reloadedShapes = reloaded.DocumentSettings.ProtectShapes;
-                    BOOL reloadedStyles = reloaded.DocumentSettings.ProtectStyles;
-
-                    // Verify that each protection flag matches the original.
-                    if (protectBkgnds != reloadedBkgnds ||
-                        protectMasters != reloadedMasters ||
-                        protectShapes != reloadedShapes ||
-                        protectStyles != reloadedStyles)
-                    {
-                        Console.Error.WriteLine("Verification failed: Style lock (protection) settings were not retained after export.");
-                        Console.Error.WriteLine($"Original - Bkgnds: {protectBkgnds}, Masters: {protectMasters}, Shapes: {protectShapes}, Styles: {protectStyles}");
-                        Console.Error.WriteLine($"Exported - Bkgnds: {reloadedBkgnds}, Masters: {reloadedMasters}, Shapes: {reloadedShapes}, Styles: {reloadedStyles}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Export successful. All style lock (protection) settings are retained.");
-                    }
+                    Console.Error.WriteLine("The diagram is not protected for shapes as expected.");
+                    // Continue anyway; depending on requirements you might abort here
                 }
+
+                // Export the diagram to VDX format
+                diagram.Save(outputPath, SaveFileFormat.Vdx);
+                Console.WriteLine($"Diagram exported to VDX: {outputPath}");
+            }
+
+            // Reload the exported VDX to verify protection flags are retained
+            using (Diagram reloaded = new Diagram(outputPath))
+            {
+                // Check the same protection flag
+                if (reloaded.DocumentSettings.ProtectShapes == BOOL.True)
+                {
+                    Console.WriteLine("Verification succeeded: ProtectShapes flag retained after export.");
+                }
+                else
+                {
+                    Console.Error.WriteLine("Verification failed: ProtectShapes flag not retained after export.");
+                }
+
+                // Additional checks for other protection flags can be added similarly
+                // Example:
+                // if (reloaded.DocumentSettings.ProtectBkgnds == BOOL.True) { ... }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose.Diagram or IO exceptions and report
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

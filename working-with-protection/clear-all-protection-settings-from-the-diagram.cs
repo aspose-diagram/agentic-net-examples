@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Expect two arguments: input diagram path and output diagram path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Verify that the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -25,16 +25,20 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // ----- Clear global document protection settings -----
+                // -----------------------------------------------------------------
+                // Clear global document protection settings.
+                // -----------------------------------------------------------------
                 diagram.DocumentSettings.ProtectBkgnds = BOOL.False;
                 diagram.DocumentSettings.ProtectMasters = BOOL.False;
                 diagram.DocumentSettings.ProtectShapes = BOOL.False;
                 diagram.DocumentSettings.ProtectStyles = BOOL.False;
 
-                // ----- Iterate through all pages and shapes to clear shape protection -----
+                // -----------------------------------------------------------------
+                // Iterate through all pages and shapes to clear shape-level protection.
+                // -----------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
@@ -43,7 +47,7 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Clear each protection flag on the shape.
+                        // Clear each protection flag using BOOL.False.
                         shape.Protection.LockAspect.Value = BOOL.False;
                         shape.Protection.LockBegin.Value = BOOL.False;
                         shape.Protection.LockCalcWH.Value = BOOL.False;
@@ -67,8 +71,11 @@ class Program
                     }
                 }
 
+                // -----------------------------------------------------------------
                 // Save the modified diagram to the specified output path.
+                // -----------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram protection cleared and saved to: {outputPath}");
             }
         }
         catch (Exception ex)

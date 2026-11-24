@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting four arguments: inputVisioPath sourceShapeId targetShapeId outputVisioPath
+        // Expecting arguments: inputVisioPath sourceShapeId targetShapeId outputVisioPath
         if (args.Length < 4)
         {
             Console.Error.WriteLine("Usage: <inputVisioPath> <sourceShapeId> <targetShapeId> <outputVisioPath>");
@@ -18,14 +18,14 @@ class Program
         string targetIdStr = args[2];
         string outputPath = args[3];
 
-        // Guard: verify input file exists
+        // Guard for input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Guard: parse shape IDs
+        // Parse shape IDs
         if (!long.TryParse(sourceIdStr, out long sourceShapeId))
         {
             Console.Error.WriteLine($"Invalid source shape ID: {sourceIdStr}");
@@ -40,19 +40,19 @@ class Program
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve source shape
-            Shape sourceShape = GetShapeById(diagram, sourceShapeId);
+            // Retrieve source and target shapes
+            Shape sourceShape = FindShapeById(diagram, sourceShapeId);
+            Shape targetShape = FindShapeById(diagram, targetShapeId);
+
             if (sourceShape == null)
             {
                 Console.Error.WriteLine($"Source shape with ID {sourceShapeId} not found.");
                 return;
             }
 
-            // Retrieve target shape
-            Shape targetShape = GetShapeById(diagram, targetShapeId);
             if (targetShape == null)
             {
                 Console.Error.WriteLine($"Target shape with ID {targetShapeId} not found.");
@@ -60,7 +60,7 @@ class Program
             }
 
             // Clone protection settings from source to target
-            // Each protection property is a BoolValue; copy its .Value (BOOL enum)
+            // Each property is a BoolValue; copy the underlying BOOL value
             targetShape.Protection.LockAspect.Value = sourceShape.Protection.LockAspect.Value;
             targetShape.Protection.LockBegin.Value = sourceShape.Protection.LockBegin.Value;
             targetShape.Protection.LockCalcWH.Value = sourceShape.Protection.LockCalcWH.Value;
@@ -96,20 +96,20 @@ class Program
     /// Searches all pages in the diagram for a shape with the specified ID.
     /// Returns null if not found.
     /// </summary>
-    private static Shape GetShapeById(Diagram diagram, long shapeId)
+    static Shape FindShapeById(Diagram diagram, long shapeId)
     {
         foreach (Page page in diagram.Pages)
         {
             try
             {
-                // Attempt to retrieve the shape; if not present, an exception may be thrown.
+                // GetShape throws if the shape does not exist on this page; catch and continue
                 Shape shape = page.Shapes.GetShape(shapeId);
                 if (shape != null)
                     return shape;
             }
             catch
             {
-                // Ignore and continue searching other pages.
+                // Ignore and continue searching other pages
             }
         }
         return null;

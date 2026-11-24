@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate that a diagram file path was provided
+        // Validate input arguments
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Error: No diagram file path provided.");
@@ -15,63 +15,57 @@ class Program
 
         string diagramPath = args[0];
 
-        // Guard against missing file
+        // Guard: ensure the file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
+        // Counters for locked properties
+        int lockedWidthCount = 0;
+        int lockedHeightCount = 0;
+        int lockedRotateCount = 0;
+
         try
         {
-            // Load the Visio diagram inside a using block as required by the API
+            // Load the Visio diagram inside a using block for proper disposal
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Counters for locked properties
-                int lockedWidthCount = 0;
-                int lockedHeightCount = 0;
-                int lockedRotationCount = 0;
-
-                // Iterate through all pages in the diagram
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the Protection object exists before accessing its members
-                        if (shape.Protection != null)
-                        {
-                            // Check if the shape's width is locked
-                            if (shape.Protection.LockWidth != null && shape.Protection.LockWidth.Value == BOOL.True)
-                            {
-                                lockedWidthCount++;
-                            }
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                            // Check if the shape's height is locked
-                            if (shape.Protection.LockHeight != null && shape.Protection.LockHeight.Value == BOOL.True)
-                            {
-                                lockedHeightCount++;
-                            }
+                        // Check if the shape's width is locked
+                        if (shape.Protection.LockWidth.Value == BOOL.True)
+                            lockedWidthCount++;
 
-                            // Check if the shape's rotation is locked
-                            if (shape.Protection.LockRotate != null && shape.Protection.LockRotate.Value == BOOL.True)
-                            {
-                                lockedRotationCount++;
-                            }
-                        }
+                        // Check if the shape's height is locked
+                        if (shape.Protection.LockHeight.Value == BOOL.True)
+                            lockedHeightCount++;
+
+                        // Check if the shape's rotation is locked
+                        if (shape.Protection.LockRotate.Value == BOOL.True)
+                            lockedRotateCount++;
                     }
                 }
-
-                // Build JSON summary
-                string json = $"{{\"LockedWidthCount\":{lockedWidthCount},\"LockedHeightCount\":{lockedHeightCount},\"LockedRotationCount\":{lockedRotationCount}}}";
-
-                // Output the JSON to console
-                Console.WriteLine(json);
             }
+
+            // Build JSON summary
+            string json = $"{{\"lockedWidth\":{lockedWidthCount},\"lockedHeight\":{lockedHeightCount},\"lockedRotate\":{lockedRotateCount}}}";
+
+            // Output the JSON to the console
+            Console.WriteLine(json);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any errors that occur during processing to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

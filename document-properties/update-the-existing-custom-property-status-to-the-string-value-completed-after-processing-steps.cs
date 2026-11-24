@@ -7,18 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 1)
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty,
-                                                                     Path.GetFileNameWithoutExtension(inputPath) + "_updated" + Path.GetExtension(inputPath));
+        string outputPath = args[1];
 
-        // Guard: ensure input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -30,60 +29,32 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            bool statusUpdated = false;
-
-            // ----- Update document-level custom property "Status" -----
-            foreach (CustomProp docProp in diagram.DocumentProps.CustomProps)
+            // Iterate through all pages and shapes to find the custom property named "Status"
+            foreach (Page page in diagram.Pages)
             {
-                if (string.Equals(docProp.Name, "Status", StringComparison.OrdinalIgnoreCase))
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the property type is string
-                    docProp.PropType = PropType.String;
-                    // Set the new value
-                    docProp.CustomValue.ValueString = "Completed";
-                    statusUpdated = true;
-                    Console.WriteLine("Updated document custom property 'Status' to 'Completed'.");
-                    break;
-                }
-            }
-
-            // ----- If not found at document level, search shape-level custom properties -----
-            if (!statusUpdated)
-            {
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate over shape's custom properties collection
+                    foreach (Prop prop in shape.Props)
                     {
-                        foreach (Prop shapeProp in shape.Props)
+                        if (prop.Name == "Status")
                         {
-                            if (string.Equals(shapeProp.Name, "Status", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Set the property type to string
-                                shapeProp.Type.Value = TypePropValue.String;
-                                // Assign the new string value
-                                shapeProp.Value.Val = "Completed";
-                                statusUpdated = true;
-                                Console.WriteLine($"Updated shape (ID={shape.ID}) custom property 'Status' to 'Completed'.");
-                                // Continue searching in case multiple shapes have the property
-                            }
+                            // Update the property value to "Completed"
+                            prop.Value.Val = "Completed";
+
+                            // Ensure the property type is set to String
+                            prop.Type.Value = TypePropValue.String;
                         }
                     }
                 }
             }
 
-            if (!statusUpdated)
-            {
-                Console.Error.WriteLine("Custom property 'Status' was not found in the document or any shape.");
-                // Optionally, you could choose to add the property here instead of exiting.
-                return;
-            }
-
-            // Save the updated diagram
+            // Save the updated diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

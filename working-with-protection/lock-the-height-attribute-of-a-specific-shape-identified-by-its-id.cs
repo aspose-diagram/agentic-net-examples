@@ -9,7 +9,7 @@ class Program
         // Validate arguments: input file, shape ID, output file
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeId> <outputDiagramPath>");
             return;
         }
 
@@ -17,17 +17,17 @@ class Program
         string shapeIdArg = args[1];
         string outputPath = args[2];
 
-        // Guard: check input file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Parse shape ID
+        // Parse shape ID (expected to be a numeric value)
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
@@ -36,39 +36,39 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified ID across all pages
-            Shape targetShape = null;
+            // Flag to indicate whether the shape was found
+            bool shapeFound = false;
+
+            // Iterate through all pages to locate the shape by its ID
             foreach (Page page in diagram.Pages)
             {
-                foreach (Shape shape in page.Shapes)
+                // The GetShape method expects an int identifier
+                Shape shape = page.Shapes.GetShape((int)shapeId);
+                if (shape != null && shape.Del == BOOL.False)
                 {
-                    if (shape.ID == shapeId)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-                if (targetShape != null)
+                    // Lock the Height attribute of the shape
+                    shape.Protection.LockHeight.Value = BOOL.True;
+
+                    shapeFound = true;
+                    // No need to continue searching once the shape is found
                     break;
+                }
             }
 
-            if (targetShape == null)
+            if (!shapeFound)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found or is deleted.");
                 return;
             }
 
-            // Lock the height attribute of the shape
-            targetShape.Protection.LockHeight.Value = BOOL.True;
-
-            // Save the modified diagram to the output path
+            // Save the modified diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Shape height locked and diagram saved to: {outputPath}");
+            Console.WriteLine($"Shape height locked successfully. Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O exceptions and report them
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

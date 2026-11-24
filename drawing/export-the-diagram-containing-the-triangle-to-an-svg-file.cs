@@ -6,41 +6,37 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path as first argument and optional output SVG path as second argument.
-        if (args.Length < 1)
+        // Expect two arguments: input Visio file path and output SVG file path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputSvgFilePath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists.
+        string outputPath = args[1];
+
+        // Guard: verify the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Determine output path. If not provided, replace input extension with .svg in the same folder.
-        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".svg");
-
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Export the diagram to SVG format.
-            diagram.Save(outputPath, SaveFileFormat.Svg);
-
-            // Clean up resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Export the entire diagram to SVG format
+                diagram.Save(outputPath, SaveFileFormat.Svg);
+                Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving.
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"Error during SVG export: {ex.Message}");
         }
     }
 }

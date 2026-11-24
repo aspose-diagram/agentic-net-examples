@@ -6,16 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,21 +25,20 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the first non-deleted shape on the first page
+            // Locate the first non‑deleted shape in the document.
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    targetShape = shape;
-                    break;
+                    if (shape.Del == BOOL.False)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
                 if (targetShape != null)
                     break;
@@ -46,31 +46,32 @@ class Program
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine("No suitable shape found in the diagram.");
+                Console.Error.WriteLine("No non‑deleted shape found in the diagram.");
                 return;
             }
 
-            // Create a new field that displays the current date/time using the NOW() formula
-            Field dateTimeField = new Field();
+            // Create a new field that displays the current date.
+            Field dateField = new Field();
 
-            // Set the field's formula to NOW() so it updates automatically
-            dateTimeField.Value.Ufev.F = "NOW()";
-            dateTimeField.Value.Ufev.Unit = MeasureConst.Undefined;
+            // Set the field formula to the Visio DATE() function.
+            dateField.Value.Ufev.F = "DATE()";
+            dateField.Value.Ufev.Unit = MeasureConst.Undefined;
 
-            // Optionally, set the field format (e.g., date/time format string)
-            // Here we leave the default format; you can customize by setting dateTimeField.Format.Val, etc.
+            // Optional: set a display format for the date.
+            dateField.Format.Val = "General Date";
 
-            // Add the field to the shape's Fields collection
-            targetShape.Fields.Add(dateTimeField);
+            // Insert the field into the shape's Fields collection.
+            targetShape.Fields.Add(dateField);
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

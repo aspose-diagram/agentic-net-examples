@@ -7,43 +7,39 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PNG file path.
-        if (args.Length < 2)
+        // Define input Visio file path (triangle diagram) and output PNG path.
+        string inputPath = "triangle.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "triangle.png";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: verify the input file exists.
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Create image save options for PNG format. Default resolution will be used.
+                ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-            // Configure image save options for PNG with default resolution.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Default resolution is used; no additional configuration required.
+                // Export the entire diagram to a PNG image.
+                diagram.Save(outputPath, pngOptions);
 
-            // Export the diagram to PNG.
-            diagram.Save(outputPath, saveOptions);
-
-            // Clean up resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
+                Console.WriteLine($"Diagram successfully exported to PNG: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

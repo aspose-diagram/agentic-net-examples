@@ -9,17 +9,17 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -28,26 +28,15 @@ class Program
             // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page in the diagram (index 0).
-            // If the diagram has no pages, report an error.
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
+            // Get the first page in the diagram.
+            // (Assumes the diagram contains at least one page.)
             Page page = diagram.Pages[0];
 
-            // Get a shape to modify. Here we use shape with ID 1.
-            // Adjust the ID as needed for your specific diagram.
-            Shape shape = page.Shapes.GetShape(1);
-            if (shape == null)
-            {
-                Console.Error.WriteLine("Shape with ID 1 not found on the first page.");
-                return;
-            }
+            // Get the first shape on the page.
+            // (Assumes the page contains at least one shape.)
+            Shape shape = page.Shapes[0];
 
-            // Set the line color to blue using a hex color string.
+            // Set the shape's line color to blue (hex format).
             shape.Line.LineColor.Value = "#0000FF";
 
             // Set the line weight to two points.
@@ -56,12 +45,11 @@ class Program
 
             // Save the modified diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

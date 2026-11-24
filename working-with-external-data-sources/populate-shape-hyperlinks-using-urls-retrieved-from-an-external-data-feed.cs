@@ -7,51 +7,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, data feed file, output Visio file
-        if (args.Length != 3)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <dataFeedPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <dataFeedCsvPath> <outputVisioPath>");
             return;
         }
 
-        string inputVisioPath = args[0];
+        string inputPath = args[0];
         string dataFeedPath = args[1];
-        string outputVisioPath = args[2];
+        string outputPath = args[2];
 
-        // Guard: verify input Visio file exists
-        if (!File.Exists(inputVisioPath))
+        // Guard against missing input Visio file.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
+            Console.Error.WriteLine($"Input Visio file not found: {inputPath}");
             return;
         }
 
-        // Guard: verify data feed file exists
+        // Guard against missing data‑feed file.
         if (!File.Exists(dataFeedPath))
         {
             Console.Error.WriteLine($"Data feed file not found: {dataFeedPath}");
             return;
         }
 
-        // Load external data feed (CSV format: ShapeName,Url)
+        // Load the external data feed (CSV with two columns: ShapeNameU,Url).
+        // Example line: Rectangle1,https://example.com
         Dictionary<string, string> urlMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            foreach (string line in File.ReadAllLines(dataFeedPath))
+            string[] lines = File.ReadAllLines(dataFeedPath);
+            foreach (string line in lines)
             {
-                // Skip empty lines
                 if (string.IsNullOrWhiteSpace(line))
                     continue;
 
                 string[] parts = line.Split(new char[] { ',' }, 2);
-                if (parts.Length == 2)
+                if (parts.Length != 2)
                 {
-                    string shapeName = parts[0].Trim();
-                    string url = parts[1].Trim();
-                    if (!string.IsNullOrEmpty(shapeName) && !string.IsNullOrEmpty(url))
-                    {
-                        // Store mapping; later shapes with matching NameU will receive this URL
-                        urlMap[shapeName] = url;
-                    }
+                    Console.Error.WriteLine($"Invalid CSV line (expected 2 columns): {line}");
+                    continue;
+                }
+
+                string shapeName = parts[0].Trim();
+                string url = parts[1].Trim();
+
+                if (!string.IsNullOrEmpty(shapeName) && !string.IsNullOrEmpty(url))
+                {
+                    // Store the mapping; later shapes with the same name will use the last URL read.
+                    urlMap[shapeName] = url;
                 }
             }
         }
@@ -61,46 +66,50 @@ class Program
             return;
         }
 
-        // Process the Visio diagram and populate hyperlinks
+        // Load the Visio diagram, modify shapes, and save.
         try
         {
-            // Load diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputVisioPath))
+            // Mandatory using pattern for Diagram.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a NameU and that a URL exists for this name
-                        if (!string.IsNullOrEmpty(shape.NameU) && urlMap.TryGetValue(shape.NameU, out string url))
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check if the shape's NameU matches a key in the URL map.
+                        if (shape.NameU != null && urlMap.TryGetValue(shape.NameU, out string hyperlinkUrl))
                         {
-                            // Create a new Hyperlink instance
-                            Hyperlink link = new Hyperlink();
+                            // Create a new Hyperlink instance.
+                            Hyperlink link = new Hyperlink()
+                            {
+                                // Assign a friendly name; can be the same as the shape name.
+                                Name = shape.NameU
+                            };
+                            // Set the target address.
+                            link.Address.Value = hyperlinkUrl;
 
-                            // Set the address of the hyperlink to the external URL
-                            link.Address.Value = url;
-
-                            // Optionally, set a description (visible on hover in Visio)
-                            link.Description.Value = "External link";
-
-                            // Add the hyperlink to the shape's collection
+                            // Add the hyperlink to the shape's collection.
                             shape.Hyperlinks.Add(link);
                         }
                     }
                 }
 
-                // Refresh the diagram to apply changes
-                diagram.Refresh();
-
-                // Save the modified diagram to the specified output path in VSDX format
-                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            return;
         }
+
+        Console.WriteLine("Hyperlinks have been populated successfully.");
     }
 }

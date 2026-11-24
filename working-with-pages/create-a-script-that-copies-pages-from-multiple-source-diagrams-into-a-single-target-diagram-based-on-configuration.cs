@@ -1,15 +1,13 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: first argument is the path to a text file containing source diagram paths (one per line)
-        // second argument is the output combined diagram path (optional)
-        if (args.Length == 0)
+        // Validate arguments: first argument is the configuration file, second optional is output file.
+        if (args.Length < 1)
         {
             Console.Error.WriteLine("Usage: Program <configFilePath> [outputFilePath]");
             return;
@@ -22,79 +20,59 @@ class Program
             return;
         }
 
-        // Determine output path
-        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(configPath) ?? "", "Combined.vsdx");
+        // Determine output path; default to "merged.vsdx" in the current directory.
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Directory.GetCurrentDirectory(), "merged.vsdx");
 
-        // Read source diagram file paths from configuration file
-        List<string> sourcePaths = new List<string>();
+        // Read all non-empty lines from the configuration file – each line should contain a source diagram path.
+        string[] sourcePaths = File.ReadAllLines(configPath);
+        var validSourcePaths = new System.Collections.Generic.List<string>();
+        foreach (var line in sourcePaths)
+        {
+            string trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+                continue;
+
+            if (!File.Exists(trimmed))
+            {
+                Console.Error.WriteLine($"Source file not found and will be skipped: {trimmed}");
+                continue;
+            }
+
+            validSourcePaths.Add(trimmed);
+        }
+
+        if (validSourcePaths.Count == 0)
+        {
+            Console.Error.WriteLine("No valid source diagram files were found in the configuration.");
+            return;
+        }
+
         try
         {
-            foreach (var line in File.ReadAllLines(configPath))
+            // Use the first diagram as the initial target diagram.
+            string firstPath = validSourcePaths[0];
+            using (Diagram targetDiagram = new Diagram(firstPath))
             {
-                string trimmed = line.Trim();
-                if (string.IsNullOrEmpty(trimmed))
-                    continue;
-
-                if (!File.Exists(trimmed))
+                // Iterate over remaining source diagrams and merge them into the target.
+                for (int i = 1; i < validSourcePaths.Count; i++)
                 {
-                    Console.Error.WriteLine($"Source diagram file not found: {trimmed}");
-                    return;
+                    string srcPath = validSourcePaths[i];
+                    using (Diagram sourceDiagram = new Diagram(srcPath))
+                    {
+                        // Combine merges pages, masters, and other resources from source into target.
+                        targetDiagram.Combine(sourceDiagram);
+                    }
                 }
-                sourcePaths.Add(trimmed);
+
+                // Save the merged diagram to the specified output path in VSDX format.
+                targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Merged diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading configuration file: {ex.Message}");
-            return;
-        }
-
-        if (sourcePaths.Count == 0)
-        {
-            Console.Error.WriteLine("No valid source diagram paths found in configuration.");
-            return;
-        }
-
-        // Use the first diagram as the initial target diagram
-        string firstDiagramPath = sourcePaths[0];
-        try
-        {
-            using (Diagram targetDiagram = new Diagram(firstDiagramPath))
-            {
-                // Iterate over remaining source diagrams and combine them into the target
-                for (int i = 1; i < sourcePaths.Count; i++)
-                {
-                    string srcPath = sourcePaths[i];
-                    try
-                    {
-                        using (Diagram srcDiagram = new Diagram(srcPath))
-                        {
-                            // Combine pages, masters, and other resources from srcDiagram into targetDiagram
-                            targetDiagram.Combine(srcDiagram);
-                        }
-                    }
-                    catch (Exception exCombine)
-                    {
-                        Console.Error.WriteLine($"Error processing source diagram '{srcPath}': {exCombine.Message}");
-                        // Continue with next source diagram
-                    }
-                }
-
-                // Save the combined diagram to the specified output path
-                try
-                {
-                    targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Combined diagram saved to: {outputPath}");
-                }
-                catch (Exception exSave)
-                {
-                    Console.Error.WriteLine($"Error saving combined diagram: {exSave.Message}");
-                }
-            }
-        }
-        catch (Exception exTarget)
-        {
-            Console.Error.WriteLine($"Error loading initial target diagram '{firstDiagramPath}': {exTarget.Message}");
+            // Capture any Aspose.Diagram related exceptions and report them.
+            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
         }
     }
 }

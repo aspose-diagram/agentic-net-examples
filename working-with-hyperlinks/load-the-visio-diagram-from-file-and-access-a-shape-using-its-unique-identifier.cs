@@ -6,76 +6,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Determine the input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+
+        // Guard: ensure the file exists before attempting to load
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeId>");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        string diagramPath = args[0];
-        string shapeIdArg = args[1];
-
-        // Guard: ensure the Visio file exists.
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
-            return;
-        }
-
-        // Parse the shape identifier.
-        if (!long.TryParse(shapeIdArg, out long shapeId))
-        {
-            Console.Error.WriteLine($"Error: Invalid shape identifier '{shapeIdArg}'.");
-            return;
-        }
-
-        // Load the diagram inside a using block as required.
         try
         {
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                bool shapeFound = false;
-                int pageIndex = 0; // Manual page counter because Page.Index does not exist.
-
-                // Iterate through all pages to locate the shape with the given ID.
-                foreach (Page page in diagram.Pages)
+                // Verify that the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    try
-                    {
-                        // Retrieve the shape by its unique identifier.
-                        Shape shape = page.Shapes.GetShape(shapeId);
-
-                        // If the shape is found, output its basic information.
-                        if (shape != null)
-                        {
-                            string masterName = shape.Master != null ? shape.Master.Name : "None";
-                            Console.WriteLine($"Shape found on page index {pageIndex}:");
-                            Console.WriteLine($"  ID          : {shape.ID}");
-                            Console.WriteLine($"  Name        : {shape.Name}");
-                            Console.WriteLine($"  Master Name : {masterName}");
-                            shapeFound = true;
-                            break; // Shape IDs are unique across the diagram, so we can stop searching.
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // GetShape throws if the ID does not exist on this page; continue searching.
-                    }
-
-                    pageIndex++;
+                    Console.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                if (!shapeFound)
-                {
-                    Console.WriteLine($"Shape with ID {shapeId} was not found in the diagram.");
-                }
+                // Access the first page (index 0)
+                Page page = diagram.Pages[0];
+
+                // Define the unique shape identifier to retrieve
+                // Adjust this ID to match an existing shape in your diagram
+                long shapeId = 1;
+
+                // Retrieve the shape by its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+
+                // Output basic shape information
+                Console.WriteLine($"Shape ID   : {shape.ID}");
+                Console.WriteLine($"Shape Name : {shape.Name}");
+
+                // Safely access the master name if the shape has a master
+                string masterName = shape.Master != null ? shape.Master.Name : "No master associated";
+                Console.WriteLine($"Master Name: {masterName}");
             }
         }
         catch (Exception ex)
         {
-            // Handle any errors that occur during diagram loading or processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose.Diagram related errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

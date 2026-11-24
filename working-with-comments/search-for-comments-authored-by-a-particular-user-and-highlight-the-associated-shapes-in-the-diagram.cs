@@ -7,82 +7,76 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, author name to search for.
+        // Expect three arguments: input diagram path, output diagram path, reviewer ID to search for
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <authorName>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <reviewerId>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string targetAuthor = args[2];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Parse reviewer ID
+        if (!int.TryParse(args[2], out int targetReviewerId))
+        {
+            Console.Error.WriteLine("Invalid reviewer ID. It must be an integer.");
+            return;
+        }
+
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Build a list of reviewer names indexed by ReviewerID.
-                var reviewerNames = new System.Collections.Generic.List<string>();
-                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
-                {
-                    // Reviewer.Name is a Str2Value; retrieve the string via .Value.
-                    reviewerNames.Add(reviewer.Name?.Value ?? string.Empty);
-                }
-
-                // Iterate through all pages in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access page‑level annotations (comments).
+                    // Iterate through all annotations (comments) on the page
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Resolve the author name using the ReviewerID.
-                        int reviewerId = annotation.ReviewerID?.Value ?? -1;
-                        string author = (reviewerId >= 0 && reviewerId < reviewerNames.Count)
-                            ? reviewerNames[reviewerId]
-                            : string.Empty;
+                        // Retrieve the reviewer ID of the comment (if any)
+                        int reviewerId = annotation.ReviewerID?.Value ?? 0;
 
-                        // Compare with the target author (case‑insensitive).
-                        if (!author.Equals(targetAuthor, StringComparison.OrdinalIgnoreCase))
-                            continue; // Not the author we are looking for.
-
-                        // Get the shape ID that the comment is attached to.
-                        int shapeId = annotation.ShapeID; // Primitive int, no .Value.
-                        if (shapeId == 0)
-                            continue; // No shape associated.
-
-                        // Retrieve the shape from the page's shape collection.
-                        Shape shape = page.Shapes.GetShape(shapeId);
-                        if (shape == null)
-                            continue; // Shape not found.
-
-                        // Skip deleted shapes.
-                        if (shape.Del == BOOL.True)
+                        // Skip comments not authored by the target reviewer
+                        if (reviewerId != targetReviewerId)
                             continue;
 
-                        // Highlight the shape:
-                        // - Set a bright fill color (yellow).
-                        // - Set a thick red outline.
-                        shape.Fill.FillForegnd.Value = "#FFFF00"; // Yellow
-                        shape.Line.LineColor.Value = "#FF0000";   // Red
-                        shape.Line.LineWeight.Value = 0.03;      // Thicker line (in inches)
+                        // Get the shape ID associated with the comment (0 if none)
+                        int shapeId = annotation.ShapeID;
+
+                        // If the comment is not linked to a shape, skip it
+                        if (shapeId <= 0)
+                            continue;
+
+                        // Retrieve the shape by its ID
+                        Shape shape = page.Shapes.GetShape((long)shapeId);
+
+                        // Ensure the shape exists and is not deleted
+                        if (shape == null || shape.Del == BOOL.True)
+                            continue;
+
+                        // Highlight the shape by setting a bright yellow fill color
+                        // FillForegnd is a ColorValue; assign using its .Value property with a hex string
+                        shape.Fill.FillForegnd.Value = "#FFFF00";
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

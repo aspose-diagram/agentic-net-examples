@@ -1,17 +1,22 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output_flattened.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -20,57 +25,47 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect IDs of group shapes to be flattened
-                List<long> groupShapeIds = new List<long>();
-
-                // Scan all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                // Iterate over each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify group shapes that are not already marked as deleted
-                    if (shape.Type == TypeValue.Group && shape.Del == BOOL.False)
+                    // Collect group shapes on the current page.
+                    System.Collections.Generic.List<Shape> groupShapes = new System.Collections.Generic.List<Shape>();
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Add the group's ID to the list for later processing
-                        groupShapeIds.Add(shape.ID);
-                    }
-                }
-
-                // Flatten each identified group
-                foreach (long groupId in groupShapeIds)
-                {
-                    // Retrieve the group shape
-                    Shape groupShape = page.Shapes.GetShape(groupId);
-
-                    // Iterate over child shapes within the group
-                    foreach (Shape child in groupShape.Shapes)
-                    {
-                        // Ensure child shape is not marked as deleted
-                        if (child.Del == BOOL.False)
+                        // Identify a group shape by its TypeValue.
+                        if (shape.Type == TypeValue.Group && shape.Del == BOOL.False)
                         {
-                            // Optionally, you could adjust child properties here
-                            // For this example we simply ensure the child remains visible
-                            child.Del = BOOL.False;
+                            groupShapes.Add(shape);
                         }
                     }
 
-                    // Mark the group shape itself as deleted to flatten it
-                    groupShape.Del = BOOL.True;
-                }
-            }
+                    // Flatten each identified group.
+                    foreach (Shape groupShape in groupShapes)
+                    {
+                        // Move each child shape out of the group onto the page.
+                        foreach (Shape child in groupShape.Shapes)
+                        {
+                            // Add the child shape directly to the page's shape collection.
+                            page.Shapes.Add(child);
+                        }
 
-            // Save the optimized diagram to the output file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram optimized and saved to: {outputPath}");
+                        // Mark the original group shape as deleted so it will not be saved.
+                        groupShape.Del = BOOL.True;
+                    }
+                }
+
+                // Save the optimized diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram optimized and saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

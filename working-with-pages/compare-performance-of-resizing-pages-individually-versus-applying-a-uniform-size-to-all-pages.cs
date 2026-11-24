@@ -7,83 +7,94 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate input arguments.
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDirectory]");
             return;
         }
 
         string inputPath = args[0];
+        string outputDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Ensure output directory exists.
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        // Desired page size (in inches).
+        double newWidth = 8.5;
+        double newHeight = 11.0;
+
+        // -----------------------------------------------------------------
+        // Approach 1: Resize each page individually and save after each change.
+        // -----------------------------------------------------------------
         try
         {
-            // Load the diagram for the first test (individual resizing)
-            using (Diagram diagramIndividual = new Diagram(inputPath))
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define the target page size (in inches)
-                double targetWidth = 8.5;
-                double targetHeight = 11.0;
+                Stopwatch sw = Stopwatch.StartNew();
 
-                // Measure time for resizing each page individually
-                Stopwatch swIndividual = Stopwatch.StartNew();
-
-                // Iterate over all pages and set size directly
-                foreach (Page page in diagramIndividual.Pages)
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
                 {
-                    // Set width and height via PageProps
-                    page.PageSheet.PageProps.PageWidth.Value = targetWidth;
-                    page.PageSheet.PageProps.PageHeight.Value = targetHeight;
+                    // Set new dimensions for the current page.
+                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
+                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
+
+                    // Save the diagram after modifying each page to simulate per‑page processing.
+                    string perPageOutput = Path.Combine(outputDir, $"Resized_Individual_Page_{pageIndex + 1}.vsdx");
+                    diagram.Save(perPageOutput, SaveFileFormat.Vsdx);
+                    pageIndex++;
                 }
 
-                swIndividual.Stop();
-                Console.WriteLine($"Individual page resizing time: {swIndividual.ElapsedMilliseconds} ms");
-            }
-
-            // Load the diagram again for the second test (uniform resizing)
-            using (Diagram diagramUniform = new Diagram(inputPath))
-            {
-                // Define the target page size (same as above)
-                double uniformWidth = 8.5;
-                double uniformHeight = 11.0;
-
-                // Measure time for applying a uniform size to all pages
-                Stopwatch swUniform = Stopwatch.StartNew();
-
-                // Apply the same size to each page using a helper method
-                ApplyUniformPageSize(diagramUniform, uniformWidth, uniformHeight);
-
-                swUniform.Stop();
-                Console.WriteLine($"Uniform page resizing time: {swUniform.ElapsedMilliseconds} ms");
+                sw.Stop();
+                Console.WriteLine($"Individual page resizing and saving took: {sw.ElapsedMilliseconds} ms");
             }
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error during individual page resizing: {ex.Message}");
+            return;
         }
-    }
 
-    /// <summary>
-    /// Sets the same width and height for every page in the diagram.
-    /// </summary>
-    /// <param name="diagram">The diagram whose pages will be resized.</param>
-    /// <param name="width">Target page width in inches.</param>
-    /// <param name="height">Target page height in inches.</param>
-    private static void ApplyUniformPageSize(Diagram diagram, double width, double height)
-    {
-        // Iterate over pages and assign the uniform dimensions
-        foreach (Page page in diagram.Pages)
+        // -----------------------------------------------------------------
+        // Approach 2: Resize all pages first, then save once.
+        // -----------------------------------------------------------------
+        try
         {
-            page.PageSheet.PageProps.PageWidth.Value = width;
-            page.PageSheet.PageProps.PageHeight.Value = height;
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                Stopwatch sw = Stopwatch.StartNew();
+
+                foreach (Page page in diagram.Pages)
+                {
+                    // Apply the same new dimensions to each page.
+                    page.PageSheet.PageProps.PageWidth.Value = newWidth;
+                    page.PageSheet.PageProps.PageHeight.Value = newHeight;
+                }
+
+                // Save the diagram after all pages have been resized.
+                string uniformOutput = Path.Combine(outputDir, "Resized_Uniform.vsdx");
+                diagram.Save(uniformOutput, SaveFileFormat.Vsdx);
+
+                sw.Stop();
+                Console.WriteLine($"Uniform resizing and single save took: {sw.ElapsedMilliseconds} ms");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error during uniform page resizing: {ex.Message}");
+            return;
         }
     }
 }

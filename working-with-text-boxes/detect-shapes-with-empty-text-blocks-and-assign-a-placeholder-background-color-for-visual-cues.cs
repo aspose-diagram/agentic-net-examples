@@ -7,25 +7,21 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length == 0)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        // Determine output path (append "_modified" before the extension).
-        string outputPath = Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? string.Empty,
-            Path.GetFileNameWithoutExtension(inputPath) + "_modified" + Path.GetExtension(inputPath));
 
         try
         {
@@ -37,7 +33,7 @@ class Program
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve plain text of the shape.
+                    // Retrieve the plain text of the shape.
                     string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
                     // Detect empty or whitespace‑only text blocks.
@@ -47,20 +43,20 @@ class Program
                         // Using RGB() string format as required by Aspose.Diagram.
                         shape.TextBlock.TextBkgnd.Ufe.F = "RGB(255,255,0)"; // Yellow highlight
 
-                        // Optionally make the background fully opaque.
-                        shape.TextBlock.TextBkgndTrans.Value = 0;
+                        // Optionally ensure the background is visible (solid fill).
+                        shape.TextBlock.TextBkgndTrans.Value = 0; // Opaque
                     }
                 }
             }
 
             // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

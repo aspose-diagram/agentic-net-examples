@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> [scaleFactor]");
@@ -15,9 +16,9 @@ class Program
 
         string inputPath = args[0];
         string outputPath = args[1];
-        double scaleFactor = 2.0; // Default scaling factor
+        double scaleFactor = 2.0; // default scaling factor
 
-        // Parse optional scale factor
+        // Optional scaling factor argument
         if (args.Length >= 3 && !double.TryParse(args[2], out scaleFactor))
         {
             Console.Error.WriteLine("Invalid scale factor. Using default value 2.0.");
@@ -37,53 +38,65 @@ class Program
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages
-                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                for (int p = 0; p < diagram.Pages.Count; p++)
                 {
-                    Page page = diagram.Pages[pageIdx];
+                    Page page = diagram.Pages[p];
 
                     // Iterate through all shapes on the page
-                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
+                    for (int s = 0; s < page.Shapes.Count; s++)
                     {
-                        Shape shape = page.Shapes[shapeIdx];
+                        Shape shape = page.Shapes[s];
 
-                        // Skip logically deleted shapes
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Iterate through each geometry of the shape
-                        for (int geomIdx = 0; geomIdx < shape.Geoms.Count; geomIdx++)
+                        // Iterate through all geometries of the shape
+                        for (int g = 0; g < shape.Geoms.Count; g++)
                         {
-                            Geom geom = shape.Geoms[geomIdx];
+                            Geom geom = shape.Geoms[g];
 
-                            // Iterate through each coordinate object in the geometry
-                            for (int coordIdx = 0; coordIdx < geom.CoordinateCol.Count; coordIdx++)
+                            // Scale each coordinate in the geometry
+                            for (int i = 0; i < geom.CoordinateCol.Count; i++)
                             {
-                                // Use dynamic to access X and Y properties if they exist
-                                dynamic vertex = geom.CoordinateCol[coordIdx];
-                                try
+                                // The collection holds various coordinate types (MoveTo, LineTo, ArcTo, etc.)
+                                // All of them expose X and Y DoubleValue properties.
+                                object coord = geom.CoordinateCol[i];
+
+                                if (coord is MoveTo move)
                                 {
-                                    // Multiply X and Y values by the scaling factor
-                                    vertex.X.Value *= scaleFactor;
-                                    vertex.Y.Value *= scaleFactor;
+                                    move.X.Value *= scaleFactor;
+                                    move.Y.Value *= scaleFactor;
                                 }
-                                catch
+                                else if (coord is LineTo line)
                                 {
-                                    // If the object does not have X/Y (e.g., a control point), ignore it
+                                    line.X.Value *= scaleFactor;
+                                    line.Y.Value *= scaleFactor;
                                 }
+                                else if (coord is ArcTo arc)
+                                {
+                                    arc.X.Value *= scaleFactor;
+                                    arc.Y.Value *= scaleFactor;
+                                    // Additional arc parameters (A, B, C) are radii/angles; they are not vertex positions
+                                    // and are left unchanged to preserve the arc shape.
+                                }
+                                // Add other coordinate types here if needed (e.g., EllipticalArcTo, SplineKnot, etc.)
                             }
                         }
+
+                        // Refresh shape data to apply geometry changes
+                        shape.RefreshData();
                     }
                 }
 
-                // Save the modified diagram
+                // Save the modified diagram using a valid overload
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

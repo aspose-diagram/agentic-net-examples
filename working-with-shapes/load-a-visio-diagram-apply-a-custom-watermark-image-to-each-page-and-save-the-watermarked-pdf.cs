@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
@@ -33,46 +34,59 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (required by the API).
             using (Diagram diagram = new Diagram(inputVisioPath))
             {
-                // Apply the watermark image to each page.
-                foreach (Page page in diagram.Pages)
+                // Load the watermark image once to obtain its dimensions.
+                using (FileStream watermarkStream = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
+                using (Aspose.Drawing.Image watermarkImg = Aspose.Drawing.Image.FromStream(watermarkStream))
                 {
-                    // Retrieve page dimensions (in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                    double imgWidth = watermarkImg.Width;
+                    double imgHeight = watermarkImg.Height;
 
-                    // Center coordinates for the shape.
-                    double pinX = pageWidth / 2.0;
-                    double pinY = pageHeight / 2.0;
-
-                    // Insert the image as a shape that covers the whole page.
-                    using (FileStream fs = new FileStream(watermarkImagePath, FileMode.Open, FileAccess.Read))
+                    // Iterate over each page and insert the watermark shape.
+                    foreach (Page page in diagram.Pages)
                     {
-                        long shapeId = page.AddShape(pinX, pinY, pageWidth, pageHeight, fs);
+                        // Retrieve page dimensions (in inches).
+                        double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                        double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+
+                        // Calculate top‑left position to centre the image.
+                        double pinX = (pageWidth - imgWidth) / 2.0;
+                        double pinY = (pageHeight - imgHeight) / 2.0;
+
+                        // Reset stream position before each insertion.
+                        watermarkStream.Position = 0;
+
+                        // Add the image as a shape on the page. Returns a shape ID (long).
+                        long shapeId = page.AddShape(pinX, pinY, imgWidth, imgHeight, watermarkStream);
+
+                        // Retrieve the newly added shape via GetShape (expects a long ID).
                         Shape watermarkShape = page.Shapes.GetShape(shapeId);
 
-                        // Send the watermark shape to the back so it appears behind other content.
+                        // Send the shape to back so it appears as a watermark.
                         watermarkShape.SendToBack();
 
-                        // Make the watermark non‑selectable.
+                        // Optional: make the watermark non‑selectable.
                         watermarkShape.Protection.LockSelect.Value = BOOL.True;
                     }
                 }
 
                 // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                pdfOptions.DefaultFont = "Arial";
+                pdfOptions.DefaultFont = "Arial";               // Fallback font.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;    // Explicitly set format.
 
                 // Save the watermarked diagram as PDF.
                 diagram.Save(outputPdfPath, pdfOptions);
             }
+
+            Console.WriteLine($"Watermarked PDF saved to: {outputPdfPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

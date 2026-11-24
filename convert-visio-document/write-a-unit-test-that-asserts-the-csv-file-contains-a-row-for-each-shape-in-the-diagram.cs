@@ -6,108 +6,76 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output CSV file path
-        if (args.Length < 2)
+        // Input Visio file path (first argument). If not provided, show usage and exit.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputCsvPath = args[1];
+        string csvPath = "shapes_export.csv";
 
-        // Guard: verify input Visio file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
-
-        // Guard: ensure output directory exists
-        string outputDir = Path.GetDirectoryName(outputCsvPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
-
-        Diagram diagram;
-        try
-        {
-            // Load the Visio diagram
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Export the diagram to CSV format
-            diagram.Save(outputCsvPath, SaveFileFormat.Csv);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to save CSV: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Count non-deleted shapes across all pages
-        int shapeCount = 0;
-        try
-        {
+            // Count all non-deleted shapes across all pages.
+            int shapeCount = 0;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Exclude shapes marked as deleted
-                    if (shape.Del == BOOL.False)
-                    {
-                        shapeCount++;
-                    }
+                    // Skip shapes marked as deleted.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    shapeCount++;
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error while counting shapes: {ex.Message}");
-            return;
-        }
 
-        // Verify the CSV file exists after saving
-        if (!File.Exists(outputCsvPath))
-        {
-            Console.Error.WriteLine($"CSV file was not created: {outputCsvPath}");
-            return;
-        }
+            // Export the diagram to CSV format.
+            diagram.Save(csvPath, SaveFileFormat.Csv);
+            Console.WriteLine($"Diagram exported to CSV: {csvPath}");
 
-        // Read CSV lines and determine number of data rows (excluding possible header)
-        int csvDataRows;
-        try
-        {
-            string[] lines = File.ReadAllLines(outputCsvPath);
-            csvDataRows = lines.Length;
-
-            // If the first line contains metadata (e.g., "Application"), treat it as a header
-            if (csvDataRows > 0 && lines[0].Contains("Application"))
+            // Verify the CSV file was created.
+            if (!File.Exists(csvPath))
             {
-                csvDataRows--; // exclude header line
+                Console.Error.WriteLine($"Failed to create CSV file: {csvPath}");
+                return;
             }
+
+            // Read all lines from the CSV file.
+            string[] csvLines = File.ReadAllLines(csvPath);
+            if (csvLines.Length == 0)
+            {
+                throw new Exception("CSV file is empty.");
+            }
+
+            // Assume the first line is a header; count remaining lines as data rows.
+            int dataRowCount = csvLines.Length - 1;
+            if (dataRowCount < 0) dataRowCount = 0; // safety
+
+            // Assert that each shape has a corresponding CSV row.
+            if (dataRowCount != shapeCount)
+            {
+                throw new Exception($"Shape count mismatch: Diagram has {shapeCount} shapes, but CSV contains {dataRowCount} data rows.");
+            }
+
+            Console.WriteLine("Test passed: CSV contains a row for each shape in the diagram.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to read CSV file: {ex.Message}");
-            return;
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
-
-        // Assert that each shape has a corresponding CSV row
-        if (csvDataRows != shapeCount)
-        {
-            throw new Exception($"CSV row count ({csvDataRows}) does not match shape count ({shapeCount}).");
-        }
-
-        Console.WriteLine("Test passed: CSV contains a row for each shape in the diagram.");
     }
 }

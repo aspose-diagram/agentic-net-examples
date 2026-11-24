@@ -1,24 +1,21 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 2)
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: check if input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -30,87 +27,35 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // First pass: save to a memory stream to collect warnings
-            var warningCollector = new WarningCollector();
-
-            // Use PdfSaveOptions (any SaveOptions works for warning collection)
-            PdfSaveOptions warningOptions = new PdfSaveOptions();
-            warningOptions.WarningCallback = warningCollector;
-
-            using (var ms = new MemoryStream())
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                diagram.Save(ms, warningOptions);
-            }
-
-            // Apply transparent background to shapes that generated warnings
-            foreach (int shapeId in warningCollector.ShapeIds)
-            {
-                // Iterate through all pages to find the shape by ID
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // GetShape expects an int ID
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null)
+                    // Retrieve the plain text of the shape
+                    string shapeText = shape.Text?.Value?.Text ?? string.Empty;
+
+                    // Check if the shape's text contains the word "warning" (case‑insensitive)
+                    if (shapeText.IndexOf("warning", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Ensure the shape has a Fill object before setting transparency
-                        if (shape.Fill != null)
-                        {
-                            // Set foreground fill transparency to fully transparent (1.0)
-                            shape.Fill.FillForegndTrans.Value = 1.0;
-                            // Optionally set a solid fill pattern to make the change effective
-                            shape.Fill.FillPattern.Value = 1; // Solid fill
-                        }
+                        // Ensure the shape has a solid fill pattern
+                        shape.Fill.FillPattern.Value = 1; // 1 = solid fill
+
+                        // Apply full transparency to the foreground fill (100% transparent)
+                        shape.Fill.FillForegndTrans.Value = 1.0; // 0.0 = opaque, 1.0 = fully transparent
                     }
                 }
             }
 
-            // Save the modified diagram to the desired output format (VSDX)
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-        }
-    }
-}
-
-/// <summary>
-/// Implements IWarningCallback to collect shape IDs that generated warnings during save.
-/// </summary>
-class WarningCollector : IWarningCallback
-{
-    // List to store shape IDs extracted from warning descriptions
-    public List<int> ShapeIds { get; } = new List<int>();
-
-    public void Warning(WarningInfo warning)
-    {
-        // Attempt to extract a shape ID from the warning description.
-        // Expected format example: "Shape ID: 5 - Font not found..."
-        if (warning != null && !string.IsNullOrEmpty(warning.Description))
-        {
-            string desc = warning.Description;
-            const string marker = "Shape ID:";
-            int idx = desc.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-            if (idx >= 0)
-            {
-                int start = idx + marker.Length;
-                // Find the next non-digit character
-                int end = start;
-                while (end < desc.Length && char.IsDigit(desc[end]))
-                {
-                    end++;
-                }
-
-                string idStr = desc.Substring(start, end - start).Trim();
-                if (int.TryParse(idStr, out int shapeId))
-                {
-                    // Avoid duplicates
-                    if (!ShapeIds.Contains(shapeId))
-                    {
-                        ShapeIds.Add(shapeId);
-                    }
-                }
-            }
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

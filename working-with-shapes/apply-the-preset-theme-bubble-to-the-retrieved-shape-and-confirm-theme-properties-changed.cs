@@ -1,20 +1,15 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
+        // Define input and output file paths.
+        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "Themes1_Updated.vsdx";
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
@@ -28,37 +23,40 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page.
+            // Guard: ensure there is at least one page and one shape.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
-            Page page = diagram.Pages[0];
 
-            // Retrieve the first shape on the page.
+            Page page = diagram.Pages[0];
             if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine("The page contains no shapes.");
+                Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
+
+            // Retrieve the first shape on the first page.
             Shape shape = page.Shapes[0];
 
             // Apply the preset theme "Bubble" to the shape.
+            // These properties are write‑only; they cannot be read back.
             shape.PresetTheme = PresetThemeValue.Bubble;
-
-            // Optionally set a theme variant (write‑only as well).
             shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-            // Save the modified diagram to the output path.
+            // Since the theme properties are write‑only, we confirm the operation
+            // succeeded by checking that no exception was thrown and by saving the diagram.
+            Console.WriteLine("Preset theme 'Bubble' applied to the shape successfully.");
+
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Confirmation message.
-            Console.WriteLine($"Preset theme 'Bubble' applied to shape ID {shape.ID} and diagram saved to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

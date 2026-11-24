@@ -1,23 +1,23 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input file paths
-        string sourcePath = "source.vsdx";
-        if (!System.IO.File.Exists(sourcePath))
+        // Validate command‑line arguments.
+        if (args.Length < 5)
         {
-            Console.Error.WriteLine($"File not found: {sourcePath}");
+            Console.Error.WriteLine("Usage: <sourceDiagramPath> <targetDiagramPath> <outputDiagramPath> <sourcePageIndex> <insertIndex>");
             return;
         }
-        string targetPath = "target.vsdx";
-        string outputPath = "merged.vsdx";
 
-        // Guard clauses for input files
+        string sourcePath = args[0];
+        string targetPath = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing files.
         if (!File.Exists(sourcePath))
         {
             Console.Error.WriteLine($"Source file not found: {sourcePath}");
@@ -29,98 +29,63 @@ class Program
             return;
         }
 
-        // Index of the page to copy from source diagram (0‑based)
-        int sourcePageIndex = 0; // adjust as needed
-
-        // Desired insertion index in the target diagram (0‑based)
-        int insertIndex = 1; // adjust as needed
+        // Parse page indices.
+        if (!int.TryParse(args[3], out int sourcePageIndex))
+        {
+            Console.Error.WriteLine("Invalid source page index.");
+            return;
+        }
+        if (!int.TryParse(args[4], out int insertIndex))
+        {
+            Console.Error.WriteLine("Invalid insert index.");
+            return;
+        }
 
         try
         {
-            // Load source diagram
+            // Load the source diagram.
             using (Diagram sourceDiagram = new Diagram(sourcePath))
             {
-                // Load target diagram
+                // Validate source page index.
+                if (sourcePageIndex < 0 || sourcePageIndex >= sourceDiagram.Pages.Count)
+                {
+                    Console.Error.WriteLine("Source page index is out of range.");
+                    return;
+                }
+
+                // Retrieve the page to be copied.
+                Page sourcePage = sourceDiagram.Pages[sourcePageIndex];
+
+                // Load the target diagram.
                 using (Diagram targetDiagram = new Diagram(targetPath))
                 {
-                    // Validate source page index
-                    if (sourcePageIndex < 0 || sourcePageIndex >= sourceDiagram.Pages.Count)
-                    {
-                        Console.Error.WriteLine("Invalid source page index.");
-                        return;
-                    }
-
-                    // Validate insertion index (must be within current page count)
-                    if (insertIndex < 0 || insertIndex > targetDiagram.Pages.Count)
-                    {
-                        Console.Error.WriteLine("Invalid insertion index for target diagram.");
-                        return;
-                    }
-
-                    // ------------------------------------------------------------
-                    // Copy masters from source to target (avoid duplicates)
-                    // ------------------------------------------------------------
-                    foreach (Master srcMaster in sourceDiagram.Masters)
-                    {
-                        bool exists = false;
-                        foreach (Master tgtMaster in targetDiagram.Masters)
-                        {
-                            if (tgtMaster.NameU == srcMaster.NameU)
-                            {
-                                exists = true;
-                                break;
-                            }
-                        }
-                        if (!exists)
-                        {
-                            targetDiagram.Masters.Add(srcMaster);
-                        }
-                    }
-
-                    // ------------------------------------------------------------
-                    // Retrieve the page to copy from the source diagram
-                    // ------------------------------------------------------------
-                    Page srcPage = sourceDiagram.Pages[sourcePageIndex];
-
-                    // ------------------------------------------------------------
-                    // Create a new page and copy contents from the source page
-                    // ------------------------------------------------------------
+                    // Create a new page and copy contents from the source page.
                     Page newPage = new Page();
-                    newPage.Copy(srcPage);
+                    newPage.Copy(sourcePage);
 
-                    // ------------------------------------------------------------
-                    // Assign a new unique ID to the copied page
-                    // ------------------------------------------------------------
-                    int maxId = 0; // ID is an int, so use int for maxId
+                    // Ensure the new page has a unique ID within the target diagram.
+                    int maxId = 0; // Changed to int to match Page.ID type.
                     foreach (Page p in targetDiagram.Pages)
                     {
                         if (p.ID > maxId)
-                        {
                             maxId = p.ID;
-                        }
                     }
-                    newPage.ID = maxId + 1; // assign new unique int ID
+                    newPage.ID = maxId + 1;
 
-                    // ------------------------------------------------------------
-                    // Optionally rename the copied page
-                    // ------------------------------------------------------------
-                    newPage.Name = srcPage.Name + "_Copy";
-
-                    // ------------------------------------------------------------
-                    // Add the new page to the target diagram
-                    // ------------------------------------------------------------
+                    // Add the new page to the target diagram (appended at the end).
                     targetDiagram.Pages.Add(newPage);
 
-                    // ------------------------------------------------------------
-                    // Move the newly added page to the desired insertion index
-                    // ------------------------------------------------------------
-                    newPage.MoveTo(insertIndex);
+                    // If the requested insert index is within the valid range, move the page.
+                    if (insertIndex >= 0 && insertIndex < targetDiagram.Pages.Count)
+                    {
+                        // MoveTo repositions the page within the collection.
+                        newPage.MoveTo(insertIndex);
+                    }
 
-                    // ------------------------------------------------------------
-                    // Save the modified target diagram
-                    // ------------------------------------------------------------
+                    // Save the modified diagram to the output path.
                     targetDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Page copied successfully. Output saved to: {outputPath}");
+                    Console.WriteLine($"Page copied from '{sourcePath}' (index {sourcePageIndex}) and inserted into '{targetPath}' at index {insertIndex}.");
+                    Console.WriteLine($"Result saved to: {outputPath}");
                 }
             }
         }

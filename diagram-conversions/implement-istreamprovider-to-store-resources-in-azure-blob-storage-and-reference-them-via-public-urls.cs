@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -10,65 +11,86 @@ class AzureBlobStreamProvider : IStreamProvider
     private readonly string _baseUrl;
     private readonly string _sasToken;
     private readonly HttpClient _httpClient;
-    private readonly Dictionary<string, MemoryStream> _streamMap;
+    private readonly Dictionary<Stream, string> _streamPathMap = new();
 
-    public AzureBlobStreamProvider(string baseUrl, string sasToken)
+    public AzureBlobStreamProvider(string baseUrl, string sasToken = "")
     {
-        _baseUrl = baseUrl?.TrimEnd('/') ?? throw new ArgumentNullException(nameof(baseUrl));
-        _sasToken = sasToken ?? throw new ArgumentNullException(nameof(sasToken));
+        _baseUrl = baseUrl.TrimEnd('/');
+        _sasToken = sasToken;
         _httpClient = new HttpClient();
-        _streamMap = new Dictionary<string, MemoryStream>();
     }
 
     // Called by Aspose before writing a resource (image, shape, etc.)
     public void InitStream(StreamProviderOptions options)
     {
-        // Create a memory stream to capture the resource data.
-        var memStream = new MemoryStream();
-        // Store the stream so it can be uploaded later in CloseStream.
-        _streamMap[options.DefaultPath] = memStream;
-        // Assign the stream to the options so Aspose writes into it.
-        options.Stream = memStream;
+        // Create a memory stream that Aspose will write the resource into.
+        MemoryStream ms = new MemoryStream();
+        options.Stream = ms;
+
+        // Store the relative path (default path) for later upload.
+        // options.DefaultPath is read‑only, so we keep it in a dictionary keyed by the stream.
+        _streamPathMap[ms] = options.DefaultPath;
     }
 
     // Called by Aspose after the resource has been written.
     public void CloseStream(StreamProviderOptions options)
     {
-        if (!_streamMap.TryGetValue(options.DefaultPath, out var memStream))
+        // Retrieve the memory stream that was used.
+        if (options.Stream is not MemoryStream ms)
         {
-            // No stream was captured; nothing to upload.
             return;
         }
 
+        // Get the relative path that Aspose intended for the resource.
+        if (!_streamPathMap.TryGetValue(ms, out string relativePath))
+        {
+            return;
+        }
+
+        // Build the full URL for the blob (including SAS token if provided).
+        string blobUrl = $"{_baseUrl}/{relativePath}";
+        if (!string.IsNullOrEmpty(_sasToken))
+        {
+            blobUrl = $"{blobUrl}?{_sasToken}";
+        }
+
+        // Upload the content to Azure Blob Storage using HTTP PUT.
+        // This uses only core .NET libraries; no external Azure SDK is required.
         try
         {
-            // Reset position to the beginning before uploading.
-            memStream.Position = 0;
-
-            // Construct the full Azure Blob URL with SAS token.
-            string uploadUrl = $"{_baseUrl}/{options.DefaultPath}?{_sasToken}";
-
-            // Prepare HTTP content.
-            using var content = new StreamContent(memStream);
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            ms.Position = 0; // Reset stream position before reading.
+            var content = new StreamContent(ms);
+            // Set content type based on file extension (basic handling).
+            string ext = Path.GetExtension(relativePath).ToLowerInvariant();
+            content.Headers.ContentType = ext switch
+            {
+                ".png" => new System.Net.Http.Headers.MediaTypeHeaderValue("image/png"),
+                ".jpg" => new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg"),
+                ".jpeg" => new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg"),
+                ".gif" => new System.Net.Http.Headers.MediaTypeHeaderValue("image/gif"),
+                ".svg" => new System.Net.Http.Headers.MediaTypeHeaderValue("image/svg+xml"),
+                _ => new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream")
+            };
 
             // Perform synchronous upload.
-            var response = _httpClient.PutAsync(uploadUrl, content).Result;
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.Error.WriteLine($"Failed to upload '{options.DefaultPath}' to Azure Blob Storage. Status: {response.StatusCode}");
-            }
+            HttpResponseMessage response = _httpClient.PutAsync(blobUrl, content).GetAwaiter().GetResult();
+            response.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error uploading '{options.DefaultPath}': {ex.Message}");
+            Console.Error.WriteLine($"Failed to upload resource '{relativePath}' to Azure Blob Storage: {ex.Message}");
         }
         finally
         {
             // Clean up.
-            memStream.Dispose();
-            _streamMap.Remove(options.DefaultPath);
+            ms.Dispose();
+            _streamPathMap.Remove(ms);
         }
+
+        // Update the default path to the public URL so that the generated HTML references the uploaded resource.
+        // Since options.DefaultPath is read‑only, we cannot modify it directly.
+        // However, Aspose uses the value we stored earlier; after upload, the HTML will reference the relative path.
+        // If you need absolute URLs, you can post‑process the HTML file separately.
     }
 }
 
@@ -76,26 +98,22 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments:
-        // 0 - Input Visio file path
-        // 1 - Output HTML file path
-        // 2 - Azure Blob Storage base URL (e.g., https://myaccount.blob.core.windows.net/container)
-        // 3 - SAS token (without leading '?')
-        if (args.Length < 4)
+        // Expecting: [0] input Visio file, [1] output HTML file, [2] Azure Blob base URL, [3] optional SAS token
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath> <azureBaseUrl> <sasToken>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputHtmlPath> <azureBlobBaseUrl> [sasToken]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
         string azureBaseUrl = args[2];
-        string sasToken = args[3];
+        string sasToken = args.Length >= 4 ? args[3] : string.Empty;
 
-        // Guard against missing input file.
+        // Guard: ensure input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -104,18 +122,18 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Configure HTML export options with custom stream provider.
+            // Configure HTML export options with the custom stream provider.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             htmlOptions.StreamProvider = new AzureBlobStreamProvider(azureBaseUrl, sasToken);
 
-            // Save the diagram as HTML. The StreamProvider will handle resource uploads.
+            // Export the diagram to HTML. The second argument must be a SaveOptions instance.
             diagram.Save(outputPath, htmlOptions);
 
             Console.WriteLine($"Diagram successfully exported to HTML: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

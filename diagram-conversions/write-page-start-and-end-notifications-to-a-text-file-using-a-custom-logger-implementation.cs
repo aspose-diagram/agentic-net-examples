@@ -3,23 +3,31 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class FileLogger : IDisposable
+class Logger : IDisposable
 {
     private readonly StreamWriter _writer;
 
-    public FileLogger(string logFilePath)
+    // Initialize the logger with the path to the log file.
+    public Logger(string logFilePath)
     {
-        // Open the log file for appending text.
+        // Ensure the directory for the log file exists.
+        string directory = Path.GetDirectoryName(logFilePath);
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
         _writer = new StreamWriter(logFilePath, append: true);
     }
 
-    // Write a single line to the log file.
+    // Write a single line to the log file with a timestamp.
     public void Log(string message)
     {
-        _writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}");
+        _writer.WriteLine($"{DateTime.Now:O} {message}");
         _writer.Flush();
     }
 
+    // Dispose the underlying StreamWriter.
     public void Dispose()
     {
         _writer?.Dispose();
@@ -27,11 +35,11 @@ class FileLogger : IDisposable
 }
 
 // Custom callback that logs page start and end events.
-class CustomPageSavingCallback : IPageSavingCallback
+class PageSavingLogger : IPageSavingCallback
 {
-    private readonly FileLogger _logger;
+    private readonly Logger _logger;
 
-    public CustomPageSavingCallback(FileLogger logger)
+    public PageSavingLogger(Logger logger)
     {
         _logger = logger;
     }
@@ -39,14 +47,12 @@ class CustomPageSavingCallback : IPageSavingCallback
     // Called before a page starts saving.
     public void PageStartSaving(PageStartSavingArgs args)
     {
-        // Log start of page saving with index and total count.
         _logger.Log($"Start saving page index {args.PageIndex} of pages {args.PageCount}");
     }
 
     // Called after a page has finished saving.
     public void PageEndSaving(PageEndSavingArgs args)
     {
-        // Log end of page saving with index and total count.
         _logger.Log($"End saving page index {args.PageIndex} of pages {args.PageCount}");
     }
 }
@@ -55,59 +61,42 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, output PDF file, log text file.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <outputPdfPath> <logFilePath>");
-            return;
-        }
+        // Define default input, output, and log file paths.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = "output.pdf";
+        string logPath = "conversion_log.txt";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        string logPath = args[2];
-
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
-            return;
-        }
-
-        // Ensure the directory for the output PDF exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
-        }
-
-        // Ensure the directory for the log file exists.
-        string logDir = Path.GetDirectoryName(logPath);
-        if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
-        {
-            Console.Error.WriteLine($"Log directory does not exist: {logDir}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         // Initialize the logger.
-        using (var logger = new FileLogger(logPath))
+        using (Logger logger = new Logger(logPath))
         {
             try
             {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(inputPath);
+                // Load the Visio diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(inputPath))
+                {
+                    // Configure PDF save options and assign the custom page-saving callback.
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.PageSavingCallback = new PageSavingLogger(logger);
 
-                // Configure PDF save options and assign the custom callback.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                pdfOptions.PageSavingCallback = new CustomPageSavingCallback(logger);
+                    // Save the diagram to PDF using the configured options.
+                    diagram.Save(outputPath, pdfOptions);
+                }
 
-                // Save the diagram as PDF while logging page events.
-                diagram.Save(outputPath, pdfOptions);
+                // Log successful completion.
+                logger.Log("Diagram conversion completed successfully.");
             }
             catch (Exception ex)
             {
-                // Write any errors to the error console.
-                Console.Error.WriteLine($"An error occurred: {ex.Message}");
+                // Write any errors to the error console and also log them.
+                Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+                logger.Log($"Error during conversion: {ex}");
             }
         }
     }

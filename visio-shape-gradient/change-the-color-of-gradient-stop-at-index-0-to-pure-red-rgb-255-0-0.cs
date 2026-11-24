@@ -6,29 +6,23 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
+        // Input Visio file path (first argument) and output path (second argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (index 0). Adjust as needed for specific pages.
+            // Get the first page (index 0)
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
@@ -36,60 +30,37 @@ class Program
             }
             Page page = diagram.Pages[0];
 
-            // Get a shape by its ID. Here we use shape ID 1 as an example.
-            // Ensure the shape exists on the page.
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
+            // Get the first shape on the page (index 0)
+            if (page.Shapes.Count == 0)
             {
-                if (s.ID == 1)
-                {
-                    shape = s;
-                    break;
-                }
-            }
-
-            if (shape == null)
-            {
-                Console.Error.WriteLine("Shape with ID 1 was not found on the first page.");
+                Console.Error.WriteLine("The page contains no shapes.");
                 return;
             }
+            Shape shape = page.Shapes[0];
 
-            // Ensure the shape has a gradient fill enabled.
-            // If the shape already has a gradient, this will keep the existing settings.
-            shape.Fill.FillPattern.Value = 25; // Gradient fill pattern.
+            // Ensure the shape uses a gradient fill
+            shape.Fill.FillPattern.Value = 25; // 25 corresponds to gradient fill
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Access the gradient fill object.
-            var gradientFill = shape.Fill.GradientFill;
+            // Clear existing gradient stops
+            shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Verify that at least one gradient stop exists.
-            if (gradientFill.GradientStops.Count == 0)
-            {
-                Console.Error.WriteLine("The shape does not contain any gradient stops to modify.");
-                return;
-            }
+            // Add a new gradient stop at position 0 with pure red color (#FF0000)
+            shape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(0, MeasureConst.NUM),
+                new ColorValue("#FF0000", MeasureConst.Undefined));
 
-            // Change the color of the gradient stop at index 0 to pure red (#FF0000).
-            // Iterate to the first stop and modify its color.
-            int currentIndex = 0;
-            foreach (GradientStop stop in gradientFill.GradientStops)
-            {
-                if (currentIndex == 0)
-                {
-                    // Assign the hex color string directly to the Color cell's Value.
-                    stop.Color.Value = "#FF0000";
-                    break;
-                }
-                currentIndex++;
-            }
+            // (Optional) Add a second stop to keep the gradient visible; using white as example
+            shape.Fill.GradientFill.GradientStops.Add(
+                new DoubleValue(1, MeasureConst.NUM),
+                new ColorValue("#FFFFFF", MeasureConst.Undefined));
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -11,21 +10,22 @@ class Program
         // Expect three arguments: input diagram path, placeholder image path, output diagram path
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagram.vsdx> <placeholderImage.png> <outputDiagram.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <placeholderImagePath> <outputDiagramPath>");
             return;
         }
 
-        string inputPath = args[0];
+        string inputDiagramPath = args[0];
         string placeholderImagePath = args[1];
-        string outputPath = args[2];
+        string outputDiagramPath = args[2];
 
-        // Guard against missing files
-        if (!File.Exists(inputPath))
+        // Guard: verify input diagram file exists
+        if (!File.Exists(inputDiagramPath))
         {
-            Console.Error.WriteLine($"Input diagram file not found: {inputPath}");
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
             return;
         }
 
+        // Guard: verify placeholder image file exists
         if (!File.Exists(placeholderImagePath))
         {
             Console.Error.WriteLine($"Placeholder image file not found: {placeholderImagePath}");
@@ -34,56 +34,46 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputDiagramPath))
             {
-                // Collect shapes that need replacement to avoid modifying the collection while iterating
-                List<Aspose.Diagram.Shape> shapesToReplace = new List<Aspose.Diagram.Shape>();
+                // Read placeholder image bytes once
+                byte[] placeholderBytes = File.ReadAllBytes(placeholderImagePath);
+                string placeholderFileName = Path.GetFileName(placeholderImagePath);
 
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Identify foreign (OLE) shapes
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && !string.IsNullOrEmpty(shape.ForeignData.ObjectSourceFullName))
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        string sourceName = shape.ForeignData.ObjectSourceFullName.ToLowerInvariant();
-
-                        // Check if the OLE object is a PowerPoint file
-                        if (sourceName.EndsWith(".ppt") || sourceName.EndsWith(".pptx"))
+                        // Identify foreign (OLE) shapes
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.ObjectSourceFullName != null)
                         {
-                            shapesToReplace.Add(shape);
+                            // Check if the OLE object is a PowerPoint object
+                            if (shape.ForeignData.ObjectSourceFullName.IndexOf("PowerPoint", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                shape.ForeignData.ObjectSourceFullName.EndsWith(".ppt", StringComparison.OrdinalIgnoreCase) ||
+                                shape.ForeignData.ObjectSourceFullName.EndsWith(".pptx", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Replace the OLE data with the placeholder image bytes
+                                shape.ForeignData.ObjectData = placeholderBytes;
+                                shape.ForeignData.ObjectSourceFullName = placeholderFileName;
+
+                                // Optionally ensure the object is not shown as an icon
+                                shape.ForeignData.ShowAsIcon = BOOL.False;
+                            }
                         }
                     }
                 }
 
-                // Replace each identified OLE shape with the placeholder image
-                foreach (Aspose.Diagram.Shape oleShape in shapesToReplace)
-                {
-                    // Preserve position and size using XForm properties
-                    double pinX = oleShape.XForm.PinX.Value;
-                    double pinY = oleShape.XForm.PinY.Value;
-                    double width = oleShape.XForm.Width.Value;
-                    double height = oleShape.XForm.Height.Value;
-
-                    // Remove the original OLE shape
-                    page.Shapes.Remove(oleShape);
-
-                    // Add a picture shape using the placeholder image
-                    using (FileStream imgStream = new FileStream(placeholderImagePath, FileMode.Open, FileAccess.Read))
-                    {
-                        // The AddShape method with a FileStream inserts an image at the specified location and size
-                        page.AddShape(pinX, pinY, width, height, imgStream);
-                    }
-                }
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputDiagramPath}");
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

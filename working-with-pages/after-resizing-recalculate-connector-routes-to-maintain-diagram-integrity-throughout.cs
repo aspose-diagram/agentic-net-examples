@@ -7,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
+        // Validate arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -29,57 +29,41 @@ class Program
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define new dimensions for non‑connector shapes (in inches).
-                double newWidth = 2.0;
-                double newHeight = 1.0;
-
                 // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Resize all shapes that are not connectors.
+                    // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Non‑connector shape (OneD == false).
-                        if (!shape.OneD)
+                        if (shape.OneD)
                         {
-                            // Set width and height via the XForm section.
-                            shape.XForm.Width.Value = newWidth;
-                            shape.XForm.Height.Value = newHeight;
+                            // For connectors, force a route recalculation by setting a routing style.
+                            shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
                         }
-                    }
-
-                    // Recalculate routing for connector shapes.
-                    foreach (Shape connector in page.Shapes)
-                    {
-                        // Skip deleted shapes.
-                        if (connector.Del == BOOL.True)
-                            continue;
-
-                        // Connector shape (OneD == true).
-                        if (connector.OneD)
+                        else
                         {
-                            // Set routing style to right‑angle.
-                            connector.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
-                            // Ensure the connector appearance matches the routing style.
-                            connector.SetConnectorsType(ConnectorsTypeValue.RightAngle);
-                            // Force reroute if needed.
-                            connector.Layout.ConFixedCode.Value = ConFixedCodeValue.Undefined;
+                            // Resize non‑connector shapes by increasing width and height by 10%.
+                            double newWidth = shape.XForm.Width.Value * 1.1;
+                            double newHeight = shape.XForm.Height.Value * 1.1;
+
+                            shape.SetWidth(newWidth);
+                            shape.SetHeight(newHeight);
                         }
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the updated diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors that occur during processing to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

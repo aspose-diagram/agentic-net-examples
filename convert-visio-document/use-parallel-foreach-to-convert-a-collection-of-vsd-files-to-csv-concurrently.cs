@@ -8,81 +8,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input directory and output directory
-        if (args.Length < 2)
+        // Determine input and output directories from arguments or use defaults.
+        string inputDir = args.Length > 0 ? args[0] : "InputVsdFiles";
+        string outputDir = args.Length > 1 ? args[1] : "OutputCsvFiles";
+
+        // Guard: input directory must exist.
+        if (!Directory.Exists(inputDir))
         {
-            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
+            Console.Error.WriteLine($"Input directory does not exist: {inputDir}");
             return;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args[1];
-
-        // Guard: input folder must exist
-        if (!Directory.Exists(inputFolder))
-        {
-            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
-            return;
-        }
-
-        // Ensure output folder exists (create if necessary)
-        if (!Directory.Exists(outputFolder))
+        // Ensure output directory exists.
+        if (!Directory.Exists(outputDir))
         {
             try
             {
-                Directory.CreateDirectory(outputFolder);
+                Directory.CreateDirectory(outputDir);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
                 return;
             }
         }
 
-        // Collect all VSD/VSDX/VDX files from the input folder (non-recursive)
-        List<string> visioFiles = new List<string>();
-        foreach (string file in Directory.GetFiles(inputFolder))
+        // Collect all VSD and VSDX files from the input directory.
+        List<string> files = new List<string>();
+        try
         {
-            string ext = Path.GetExtension(file).ToLowerInvariant();
-            if (ext == ".vsd" || ext == ".vsdx" || ext == ".vdx")
-            {
-                visioFiles.Add(file);
-            }
+            files.AddRange(Directory.GetFiles(inputDir, "*.vsd", SearchOption.AllDirectories));
+            files.AddRange(Directory.GetFiles(inputDir, "*.vsdx", SearchOption.AllDirectories));
         }
-
-        if (visioFiles.Count == 0)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine("No Visio files found in the input folder.");
+            Console.Error.WriteLine($"Error while enumerating files: {ex.Message}");
             return;
         }
 
-        // Convert each Visio file to CSV concurrently
-        Parallel.ForEach(visioFiles, visioPath =>
+        if (files.Count == 0)
         {
-            // Guard: ensure the file still exists
-            if (!File.Exists(visioPath))
+            Console.WriteLine("No VSD/VSDX files found to convert.");
+            return;
+        }
+
+        // Perform conversion in parallel.
+        Parallel.ForEach(files, filePath =>
+        {
+            // Guard: ensure the file still exists.
+            if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found (skipped): {visioPath}");
+                Console.Error.WriteLine($"File not found (skipped): {filePath}");
                 return;
             }
 
             try
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(visioPath);
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(filePath);
 
-                // Build output CSV file path
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(visioPath);
-                string csvPath = Path.Combine(outputFolder, fileNameWithoutExt + ".csv");
+                // Build output CSV file path (same name, .csv extension, placed in output directory).
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(outputDir, fileNameWithoutExt + ".csv");
 
-                // Save diagram as CSV
-                diagram.Save(csvPath, SaveFileFormat.Csv);
+                // Save diagram as CSV.
+                diagram.Save(outputPath, SaveFileFormat.Csv);
 
-                Console.WriteLine($"Converted: {visioPath} -> {csvPath}");
+                Console.WriteLine($"Converted '{filePath}' to '{outputPath}'.");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error processing '{visioPath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
             }
         });
     }

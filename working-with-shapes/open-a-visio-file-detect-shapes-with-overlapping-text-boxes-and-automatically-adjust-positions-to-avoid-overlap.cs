@@ -1,121 +1,105 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (command‑line arguments or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // Guard against missing input file
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
+
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
+
+        // Define output path (original name with suffix)
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_adjusted.vsdx");
 
         try
         {
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Process each page in the diagram
+            // Simple offset to apply when moving overlapping shapes (in inches)
+            const double offsetX = 0.5;
+            const double offsetY = 0.0; // only horizontal shift for this example
+
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Collect shapes that have a text block (i.e., contain visible text)
-                List<Shape> textShapes = new List<Shape>();
-                foreach (Shape shape in page.Shapes)
+                // Collect shapes into a list to allow index-based comparison
+                var shapes = new System.Collections.Generic.List<Shape>();
+                foreach (Shape s in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Determine if the shape contains any text
-                    string plainText = shape.Text.Value.ToString();
-                    if (!string.IsNullOrWhiteSpace(plainText))
-                    {
-                        textShapes.Add(shape);
-                    }
+                    shapes.Add(s);
                 }
 
-                // Simple O(N^2) overlap detection and resolution
-                for (int i = 0; i < textShapes.Count; i++)
+                // Compare each pair of shapes for overlap
+                for (int i = 0; i < shapes.Count; i++)
                 {
-                    Shape shapeA = textShapes[i];
-                    Rect rectA = GetTextRect(shapeA);
+                    Shape shapeA = shapes[i];
+                    // Skip shapes without geometry (e.g., connectors) by checking Width/Height
+                    if (shapeA.XForm.Width == null || shapeA.XForm.Height == null)
+                        continue;
 
-                    for (int j = i + 1; j < textShapes.Count; j++)
+                    // Compute bounding rectangle for shape A
+                    double aLeft = shapeA.XForm.PinX.Value - shapeA.XForm.Width.Value / 2.0;
+                    double aRight = shapeA.XForm.PinX.Value + shapeA.XForm.Width.Value / 2.0;
+                    double aTop = shapeA.XForm.PinY.Value + shapeA.XForm.Height.Value / 2.0;
+                    double aBottom = shapeA.XForm.PinY.Value - shapeA.XForm.Height.Value / 2.0;
+
+                    for (int j = i + 1; j < shapes.Count; j++)
                     {
-                        Shape shapeB = textShapes[j];
-                        Rect rectB = GetTextRect(shapeB);
+                        Shape shapeB = shapes[j];
+                        if (shapeB.XForm.Width == null || shapeB.XForm.Height == null)
+                            continue;
 
-                        // Check for overlap
-                        if (IsOverlapping(rectA, rectB))
+                        // Compute bounding rectangle for shape B
+                        double bLeft = shapeB.XForm.PinX.Value - shapeB.XForm.Width.Value / 2.0;
+                        double bRight = shapeB.XForm.PinX.Value + shapeB.XForm.Width.Value / 2.0;
+                        double bTop = shapeB.XForm.PinY.Value + shapeB.XForm.Height.Value / 2.0;
+                        double bBottom = shapeB.XForm.PinY.Value - shapeB.XForm.Height.Value / 2.0;
+
+                        // Check for overlap (simple AABB intersection)
+                        bool overlap = aLeft < bRight && aRight > bLeft && aBottom < bTop && aTop > bBottom;
+
+                        if (overlap)
                         {
-                            // Calculate a horizontal offset to separate the shapes
-                            double overlapWidth = rectA.Right - rectB.Left;
-                            double offset = overlapWidth + 0.1; // small margin
+                            // Adjust shape B position to the right by offsetX
+                            double newPinX = shapeB.XForm.PinX.Value + offsetX;
+                            shapeB.XForm.PinX.Value = newPinX;
 
-                            // Move shapeB to the right
-                            shapeB.XForm.PinX.Value += offset;
+                            // Optionally, also adjust shape A to the left to spread them
+                            // double newPinX_A = shapeA.XForm.PinX.Value - offsetX;
+                            // shapeA.XForm.PinX.Value = newPinX_A;
 
-                            // Also move the text block to stay aligned with the shape
-                            shapeB.TextXForm.TxtPinX.Value += offset;
-
-                            // Update rectB for subsequent checks
-                            rectB = GetTextRect(shapeB);
+                            // Recalculate rectangle for shape B after move (optional for further checks)
+                            bLeft = shapeB.XForm.PinX.Value - shapeB.XForm.Width.Value / 2.0;
+                            bRight = shapeB.XForm.PinX.Value + shapeB.XForm.Width.Value / 2.0;
                         }
                     }
                 }
             }
 
-            // Save the modified diagram
+            // Save the adjusted diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Adjusted diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper struct to represent a rectangle
-    struct Rect
-    {
-        public double Left;
-        public double Right;
-        public double Bottom;
-        public double Top;
-    }
-
-    // Compute the bounding rectangle of a shape's text block
-    static Rect GetTextRect(Shape shape)
-    {
-        Rect rect = new Rect();
-
-        // Use TextXForm for text block geometry
-        double pinX = shape.TextXForm.TxtPinX.Value;
-        double pinY = shape.TextXForm.TxtPinY.Value;
-        double width = shape.TextXForm.TxtWidth.Value;
-        double height = shape.TextXForm.TxtHeight.Value;
-
-        rect.Left = pinX - width / 2.0;
-        rect.Right = pinX + width / 2.0;
-        rect.Bottom = pinY - height / 2.0;
-        rect.Top = pinY + height / 2.0;
-
-        return rect;
-    }
-
-    // Determine whether two rectangles intersect
-    static bool IsOverlapping(Rect a, Rect b)
-    {
-        return a.Left < b.Right && a.Right > b.Left &&
-               a.Bottom < b.Top && a.Top > b.Bottom;
     }
 }

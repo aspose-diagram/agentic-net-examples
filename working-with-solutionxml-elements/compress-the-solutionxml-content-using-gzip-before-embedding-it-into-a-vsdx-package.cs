@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -9,78 +8,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Validate input arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <xmlFilePath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
-        string inputVisioPath = args[0];
-        string xmlFilePath = args[1];
-        string outputVisioPath = args[2];
+        string inputPath = args[0];
 
-        // Guard against missing files.
-        if (!File.Exists(inputVisioPath))
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        if (!File.Exists(xmlFilePath))
-        {
-            Console.Error.WriteLine($"XML file not found: {xmlFilePath}");
-            return;
-        }
+        // Determine output path (same folder with suffix "_compressed.vsdx").
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_compressed.vsdx");
 
         try
         {
-            // Read the XML content.
-            string xmlContent = File.ReadAllText(xmlFilePath, Encoding.UTF8);
-
-            // Compress the XML using GZip and encode as Base64 string.
-            string compressedBase64 = CompressAndEncode(xmlContent);
-
-            // Load the Visio diagram inside a using block (mandatory pattern).
-            using (Diagram diagram = new Diagram(inputVisioPath))
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a new SolutionXML element.
-                SolutionXML solutionXml = new SolutionXML();
-                solutionXml.Name = Path.GetFileNameWithoutExtension(xmlFilePath);
-                solutionXml.XmlValue = compressedBase64;
+                // Iterate over all SolutionXML elements.
+                foreach (SolutionXML solXml in diagram.SolutionXMLs)
+                {
+                    if (string.IsNullOrEmpty(solXml.XmlValue))
+                        continue; // Skip empty entries.
 
-                // Add the compressed SolutionXML to the diagram.
-                diagram.SolutionXMLs.Add(solutionXml);
+                    // Convert the XML string to UTF-8 bytes.
+                    byte[] originalBytes = System.Text.Encoding.UTF8.GetBytes(solXml.XmlValue);
 
-                // Save the modified diagram as VSDX.
-                diagram.Save(outputVisioPath, SaveFileFormat.Vsdx);
+                    // Compress the bytes using GZip.
+                    using (MemoryStream compressedStream = new MemoryStream())
+                    {
+                        using (GZipStream gzip = new GZipStream(compressedStream, CompressionMode.Compress, leaveOpen: true))
+                        {
+                            gzip.Write(originalBytes, 0, originalBytes.Length);
+                        }
+
+                        // Get the compressed byte array.
+                        byte[] compressedBytes = compressedStream.ToArray();
+
+                        // Store the compressed data as a Base64 string in XmlValue.
+                        solXml.XmlValue = Convert.ToBase64String(compressedBytes);
+                    }
+                }
+
+                // Save the modified diagram to a new VSDX file.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine("Diagram saved successfully with compressed SolutionXML.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Compresses the input string with GZip and returns a Base64‑encoded representation.
-    /// </summary>
-    private static string CompressAndEncode(string input)
-    {
-        byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-        using (MemoryStream compressedStream = new MemoryStream())
-        {
-            // GZipStream with leaveOpen = true to access the underlying buffer after closing.
-            using (GZipStream gzip = new GZipStream(compressedStream, CompressionMode.Compress, true))
-            {
-                gzip.Write(inputBytes, 0, inputBytes.Length);
-            }
-
-            // Convert compressed bytes to Base64 string for storage in SolutionXML.
-            return Convert.ToBase64String(compressedStream.ToArray());
+            // Write any Aspose or IO errors to the error console.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

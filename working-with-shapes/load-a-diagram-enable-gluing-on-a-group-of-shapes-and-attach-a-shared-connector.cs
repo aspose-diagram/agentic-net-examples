@@ -8,19 +8,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2
-            ? args[1]
-            : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "Output_Glued.vsdx");
+        string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -29,79 +27,63 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the existing Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page
+                // Ensure there is at least one page; create one if necessary.
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
+                    diagram.Pages.Add(new Page());
                 }
 
-                // Work with the first page
+                // Access the first page.
                 Page page = diagram.Pages[0];
 
-                // Locate a group shape on the page
-                Shape groupShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.Type == TypeValue.Group)
-                    {
-                        groupShape = shape;
-                        break;
-                    }
-                }
+                // -----------------------------------------------------------------
+                // Add two rectangle shapes that will be grouped.
+                // -----------------------------------------------------------------
+                long rect1Id = page.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle", false);
+                long rect2Id = page.AddShape(4.0, 1.0, 2.0, 1.0, "Rectangle", false);
 
-                if (groupShape == null)
-                {
-                    Console.Error.WriteLine("No group shape found on the first page.");
-                    return;
-                }
+                // Retrieve the Shape objects for grouping.
+                Shape rect1 = page.Shapes.GetShape(rect1Id);
+                Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-                // Enable dynamic gluing for the group shape
-                // (Allow the group to accept glued connectors)
+                // -----------------------------------------------------------------
+                // Group the two rectangles into a single group shape.
+                // -----------------------------------------------------------------
+                Shape groupShape = page.Shapes.Group(new Shape[] { rect1, rect2 });
+
+                // -----------------------------------------------------------------
+                // Enable dynamic gluing on the group shape.
+                // -----------------------------------------------------------------
+                // Allow connectors to glue to this group.
                 groupShape.Misc.GlueType.Value = GlueTypeValue.AllowDynamicGlue;
 
-                // Locate another non‑group shape to connect with the group
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
-                {
-                    if (shape.ID != groupShape.ID && shape.Type != TypeValue.Group)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
+                // -----------------------------------------------------------------
+                // Add a dynamic connector shape.
+                // -----------------------------------------------------------------
+                long connectorId = page.AddShape(0.0, 0.0, 0.0, 0.0, "Dynamic connector", false);
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-                if (targetShape == null)
-                {
-                    Console.Error.WriteLine("No suitable target shape found to connect with the group.");
-                    return;
-                }
-
-                // Add a dynamic connector shape to the page
-                // Position (0,0) with a small size; isCalculate = false
-                long connectorId = page.AddShape(0.0, 0.0, 0.5, 0.5, "Dynamic connector", false);
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
-
-                // Connect the group shape and the target shape using the shared connector
-                // Glue both ends of the connector to the center of each shape
+                // -----------------------------------------------------------------
+                // Connect the connector: start glued to the group, end glued to the first rectangle.
+                // -----------------------------------------------------------------
                 page.ConnectShapesViaConnector(
-                    groupShape.ID,
-                    ConnectionPointPlace.Center,
-                    targetShape.ID,
-                    ConnectionPointPlace.Center,
-                    connectorShape.ID);
+                    groupShape.ID, ConnectionPointPlace.Bottom,
+                    rect1Id, ConnectionPointPlace.Top,
+                    connectorId);
 
-                // Save the modified diagram in VSDX format
+                // -----------------------------------------------------------------
+                // Save the modified diagram to the specified output path.
+                // -----------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

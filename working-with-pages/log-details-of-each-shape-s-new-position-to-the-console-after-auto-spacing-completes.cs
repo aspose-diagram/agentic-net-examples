@@ -7,64 +7,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
-            return;
-        }
+        // Determine the input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Optional output path – if not supplied we will overwrite the input.
-        string outputPath = args.Length > 1 ? args[1] : inputPath;
-
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through each page in the diagram
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Create default auto‑spacing options.
+                    // Create AutoSpaceOptions and set horizontal/vertical distances
                     AutoSpaceOptions options = new AutoSpaceOptions();
+                    // Example distances (in inches); adjust as needed
+                    options.DistanceInHorizontal = 0.5;
+                    options.DistanceInVertical = 0.5;
 
-                    // Perform auto‑spacing on all shapes of the current page.
-                    // The method expects a ShapeCollection and AutoSpaceOptions.
+                    // Auto-space all shapes on the current page using the options
                     page.AutoSpaceShapes(page.Shapes, options);
 
-                    // After auto‑spacing, log each shape's new position.
-                    foreach (Shape shape in page.Shapes)
+                    // After auto-spacing, log each non-deleted shape's new position
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the X and Y coordinates (PinX and PinY) of the shape.
+                        // Retrieve shape ID and its PinX/PinY coordinates
+                        long shapeId = shape.ID;
                         double pinX = shape.XForm.PinX.Value;
                         double pinY = shape.XForm.PinY.Value;
 
-                        // Output shape identifier and its new position.
-                        Console.WriteLine($"Page {page.ID}, Shape ID {shape.ID}: PinX = {pinX}, PinY = {pinY}");
+                        Console.WriteLine($"Page {page.ID}, Shape ID {shapeId}: PinX={pinX}, PinY={pinY}");
                     }
                 }
-
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

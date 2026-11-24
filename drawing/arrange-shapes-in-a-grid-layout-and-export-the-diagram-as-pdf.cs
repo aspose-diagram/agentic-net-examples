@@ -8,10 +8,10 @@ class Program
     static void Main(string[] args)
     {
         // Define the output PDF file path
-        string outputPdfPath = "GridDiagram.pdf";
+        string outputPath = "grid_diagram.pdf";
 
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPdfPath));
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
         if (!Directory.Exists(outputDir))
         {
             Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
@@ -21,79 +21,64 @@ class Program
         try
         {
             // Create a new empty diagram
-            Diagram diagram = new Diagram();
-
-            // Ensure there is at least one page to work with
-            if (diagram.Pages.Count == 0)
+            using (Diagram diagram = new Diagram())
             {
-                diagram.Pages.Add(new Page());
-            }
+                // Access the first page (do not use ActivePage)
+                Page page = diagram.Pages[0];
 
-            // Use the first page for shape placement
-            Page page = diagram.Pages[0];
+                // Grid configuration
+                int rows = 3;
+                int columns = 4;
+                double shapeWidth = 2.0;   // inches
+                double shapeHeight = 1.0;  // inches
+                double horizontalSpacing = 3.0; // inches between shape centers
+                double verticalSpacing = 2.5;   // inches between shape centers
+                double startX = shapeWidth; // initial X position (center of first shape)
+                double startY = shapeHeight; // initial Y position (center of first shape)
 
-            // Grid layout parameters
-            int rows = 3;
-            int columns = 3;
-            double startX = 2.0;      // Starting X coordinate (in inches)
-            double startY = 2.0;      // Starting Y coordinate (in inches)
-            double spacingX = 2.5;    // Horizontal spacing between shapes (in inches)
-            double spacingY = 2.5;    // Vertical spacing between shapes (in inches)
-            double shapeWidth = 1.5;  // Width of each rectangle (in inches)
-            double shapeHeight = 1.0; // Height of each rectangle (in inches)
-
-            // Add rectangle shapes in a grid pattern
-            for (int row = 0; row < rows; row++)
-            {
-                for (int col = 0; col < columns; col++)
+                // Add rectangle shapes in a grid layout
+                for (int row = 0; row < rows; row++)
                 {
-                    double pinX = startX + col * spacingX;
-                    double pinY = startY + row * spacingY;
-
-                    // Draw a rectangle; returns the shape ID
-                    long shapeId = page.DrawRectangle(pinX, pinY, shapeWidth, shapeHeight);
-
-                    // Retrieve the shape object to set its text
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null)
+                    for (int col = 0; col < columns; col++)
                     {
-                        // Clear any existing text and add new text run
-                        shape.Text.Value.Clear();
-                        shape.Text.Value.Add(new Txt($"R{row + 1}C{col + 1}"));
+                        // Calculate the center position for the current shape
+                        double pinX = startX + col * horizontalSpacing;
+                        double pinY = startY + row * verticalSpacing;
+
+                        // Add a rectangle shape using the built‑in master name "Rectangle"
+                        // The fourth parameter (isCalculate) is a plain bool; we set it to false
+                        long shapeId = page.AddShape(pinX, pinY, "Rectangle", false);
+
+                        // Retrieve the shape object to modify its properties
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        if (shape != null)
+                        {
+                            // Set explicit width and height for the shape
+                            shape.XForm.Width.Value = shapeWidth;
+                            shape.XForm.Height.Value = shapeHeight;
+
+                            // Clear any existing text and add a label indicating grid position
+                            shape.Text.Value.Clear();
+                            shape.Text.Value.Add(new Txt($"R{row + 1}C{col + 1}"));
+                        }
                     }
                 }
+
+                // Prepare PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Set a default font to avoid missing‑font warnings
+                pdfOptions.DefaultFont = "Arial";
+
+                // Save the diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
             }
-
-            // Configure PDF save options with a page‑saving callback
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            pdfOptions.PageSavingCallback = new PdfPageCallback();
-
-            // Save the diagram as a PDF file
-            diagram.Save(outputPdfPath, pdfOptions);
-
-            Console.WriteLine($"Diagram successfully saved to PDF: {outputPdfPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
         }
-    }
-}
-
-// Custom callback to log page‑saving events
-class PdfPageCallback : IPageSavingCallback
-{
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}");
-    }
-
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}");
-        // Example: stop after the first page (not required here)
-        // args.HasMorePages = false;
     }
 }

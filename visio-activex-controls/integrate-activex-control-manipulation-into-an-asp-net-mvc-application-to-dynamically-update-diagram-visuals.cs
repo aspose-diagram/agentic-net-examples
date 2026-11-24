@@ -2,85 +2,80 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.ActiveXControls;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Prompt user for the input Visio diagram path (VSDX)
-        Console.Write("Enter the full path to the input Visio diagram (VSDX): ");
-        string inputPath = Console.ReadLine() ?? "";
-
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
-        // Prompt user for the output Visio diagram path (VSDX)
-        Console.Write("Enter the full path for the output Visio diagram (VSDX): ");
-        string outputPath = Console.ReadLine() ?? "";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Prompt user for the caption to set on the CommandButton ActiveX control
-        Console.Write("Enter the caption text for the CommandButton ActiveX control: ");
-        string buttonCaption = Console.ReadLine() ?? "";
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains at least one page
-                if (diagram.Pages.Count == 0)
+                // Ensure there is at least one page to work with.
+                Page page;
+                if (diagram.Pages.Count > 0)
                 {
-                    Console.Error.WriteLine("Error: The diagram contains no pages.");
-                    return;
+                    page = diagram.Pages[0];
                 }
-
-                // Access the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Define position and size for the new CommandButton ActiveX control (in inches)
-                double posX = 2.0;   // X coordinate
-                double posY = 2.0;   // Y coordinate
-                double width = 1.5;  // Width
-                double height = 0.5; // Height
+                else
+                {
+                    page = new Page();
+                    diagram.Pages.Add(page);
+                }
 
                 // Insert a CommandButton ActiveX control onto the page.
-                // AddActiveXControl returns the shape ID (long), so retrieve the Shape object.
-                long controlShapeId = page.AddActiveXControl(ControlType.CommandButton, posX, posY, width, height);
-                Shape controlShape = page.Shapes.GetShape(controlShapeId);
+                // AddActiveXControl returns the shape ID (long), not a Shape object.
+                long controlId = page.AddActiveXControl(ControlType.CommandButton, 2.0, 2.0, 1.5, 0.5);
 
-                // Retrieve the ActiveX control from the shape and cast to the specific type
-                CommandButtonActiveXControl commandButton = (CommandButtonActiveXControl)controlShape.ActiveXControl;
+                // Retrieve the Shape instance using the returned ID.
+                Shape controlShape = page.Shapes.GetShape(controlId);
 
-                // Set properties of the CommandButton ActiveX control
-                commandButton.Caption = buttonCaption;   // Set displayed caption
-                commandButton.Width = width;             // Set control width
-                commandButton.Height = height;           // Set control height
-
-                // Enable the control if the IsEnabled property is available
-                // (If the property does not exist, this line will be ignored at runtime)
-                try
+                // Verify that the shape and its ActiveX control were created successfully.
+                if (controlShape != null && controlShape.ActiveXControl != null &&
+                    controlShape.ActiveXControl.Type == ControlType.CommandButton)
                 {
-                    commandButton.IsEnabled = true; // BOOL not required for this property
+                    // Cast to the specific control class to access its properties.
+                    CommandButtonActiveXControl button = (CommandButtonActiveXControl)controlShape.ActiveXControl;
+
+                    // Set the caption that will appear on the button.
+                    button.Caption = "Click Me";
+
+                    // Width and Height are already defined by AddActiveXControl; they can be adjusted if needed.
+                    // Example (optional):
+                    // button.Width = 2.0;
+                    // button.Height = 0.6;
                 }
-                catch (Exception)
+                else
                 {
-                    // Property not supported in this version; continue without setting it.
+                    Console.Error.WriteLine("Failed to create or retrieve the CommandButton ActiveX control.");
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during Aspose operations to the error stream
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

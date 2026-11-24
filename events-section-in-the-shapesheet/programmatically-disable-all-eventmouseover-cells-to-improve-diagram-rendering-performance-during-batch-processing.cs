@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
@@ -16,49 +17,57 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
+                try
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Ensure the Event object exists
-                    if (shape.Event != null && shape.Event.EventDrop != null && shape.Event.EventDrop.Ufe != null)
+                    // Iterate through all pages.
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Disable the EventMouseOver cell (using EventDrop as the closest substitute)
-                        shape.Event.EventDrop.Ufe.F = "";
+                        // Iterate through all shapes on the current page.
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip deleted shapes.
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // The EventMouseOver cell does not have a direct API.
+                            // Use the closest substitute (EventDrop) and set its formula to an empty string
+                            // to effectively disable any mouse‑over behavior.
+                            shape.Event.EventDrop.Ufe.F = "";
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error while processing shapes: {ex.Message}");
+                    return;
+                }
+
+                try
+                {
+                    // Save the modified diagram in VSDX format.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error while saving diagram: {ex.Message}");
+                }
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // Dispose the diagram to free resources
-            diagram.Dispose();
-
-            Console.WriteLine("EventMouseOver cells disabled and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
         }
     }
 }

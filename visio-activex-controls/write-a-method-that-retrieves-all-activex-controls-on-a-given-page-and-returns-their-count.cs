@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <pageIndex>");
@@ -17,69 +17,69 @@ class Program
         string diagramPath = args[0];
         string pageIndexArg = args[1];
 
-        // Guard: ensure the diagram file exists
+        // Guard: check if the diagram file exists.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse page index
-        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
+        // Parse page index.
+        if (!int.TryParse(pageIndexArg, out int pageIndex))
         {
-            Console.Error.WriteLine("Error: Invalid page index.");
+            Console.Error.WriteLine("Error: Page index must be an integer.");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Guard: ensure the requested page exists
-                if (pageIndex >= diagram.Pages.Count)
-                {
-                    Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
-                    return;
-                }
-
-                // Retrieve the page
-                Page page = diagram.Pages[pageIndex];
-
-                // Get the count of ActiveX controls on the page
-                int activeXCount = GetActiveXControlCount(page);
-
-                Console.WriteLine($"ActiveX controls on page {pageIndex}: {activeXCount}");
+                // Retrieve the count of ActiveX controls on the specified page.
+                int count = GetActiveXControlCount(diagram, pageIndex);
+                Console.WriteLine($"ActiveX control count on page {pageIndex}: {count}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Counts all ActiveX controls present on the specified page.
+    /// Retrieves all ActiveX controls on the given page and returns their count.
     /// </summary>
-    /// <param name="page">The page to inspect.</param>
-    /// <returns>The number of shapes that contain an ActiveX control.</returns>
-    static int GetActiveXControlCount(Page page)
+    /// <param name="diagram">The loaded Diagram instance.</param>
+    /// <param name="pageIndex">Zero‑based index of the page to inspect.</param>
+    /// <returns>Number of shapes that contain an ActiveX control.</returns>
+    static int GetActiveXControlCount(Diagram diagram, int pageIndex)
     {
-        int count = 0;
+        // Validate page index range.
+        if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+        {
+            Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range.");
+            return 0;
+        }
 
-        // Iterate through all shapes on the page
+        // Access the requested page.
+        Page page = diagram.Pages[pageIndex];
+
+        int activeXCount = 0;
+
+        // Iterate through all shapes on the page.
         foreach (Shape shape in page.Shapes)
         {
-            // Skip logically deleted shapes
+            // Skip logically deleted shapes.
             if (shape.Del == BOOL.True)
                 continue;
 
-            // If the shape hosts an ActiveX control, increment the counter
+            // If the shape hosts an ActiveX control, increment the counter.
             if (shape.ActiveXControl != null)
-                count++;
+                activeXCount++;
         }
 
-        return count;
+        return activeXCount;
     }
 }

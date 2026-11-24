@@ -2,13 +2,14 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <folderPath>");
             return;
@@ -16,58 +17,83 @@ class Program
 
         string folderPath = args[0];
 
-        // Verify that the specified folder exists.
+        // Guard: ensure the folder exists.
         if (!Directory.Exists(folderPath))
         {
             Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Set a global fallback font name before loading any diagrams.
+        // Set a global fallback font (used when a required font is missing).
         FontConfigs.DefaultFontName = "Arial";
 
-        // Get all files in the folder (filter common Visio extensions).
-        string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in diagramFiles)
-        {
-            // Simple extension filter – process only Visio files.
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsx" && ext != ".vtx")
-            {
-                continue;
-            }
+        // Define the desired header/footer font settings.
+        const string desiredFaceName = "Arial";
+        const int desiredWeight = 400;          // 400 = regular, 700 = bold
+        const int desiredHeight = -16;          // Approx. 12pt (12 * -1.333 ≈ -16)
+        const BOOL desiredItalic = BOOL.False;
+        const BOOL desiredUnderline = BOOL.False;
 
-            // Guard against missing file (should not happen after GetFiles, but added per rules).
-            if (!File.Exists(filePath))
+        // Process each Visio file in the folder.
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vsx", ".vtx", ".vssx", ".vss", ".vstx", ".vst" };
+        foreach (string filePath in Directory.GetFiles(folderPath))
+        {
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (Array.IndexOf(supportedExtensions, extension) < 0)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                // Skip non‑Visio files.
                 continue;
             }
 
             try
             {
-                // Load the diagram.
-                Diagram diagram = new Diagram(filePath);
+                // Load the diagram inside a using block (mandatory pattern).
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // Access the global HeaderFooterFont object.
+                    HeaderFooterFont headerFooterFont = diagram.HeaderFooter.HeaderFooterFont;
 
-                // Access the global header/footer font object.
-                HeaderFooterFont hfFont = diagram.HeaderFooter.HeaderFooterFont;
+                    // Apply the desired typography settings.
+                    headerFooterFont.FaceName = desiredFaceName;
+                    headerFooterFont.Weight = desiredWeight;
+                    headerFooterFont.Height = desiredHeight;
+                    headerFooterFont.Italic = desiredItalic;
+                    headerFooterFont.Underline = desiredUnderline;
 
-                // Apply identical font settings.
-                hfFont.FaceName = "Arial";          // Font family name.
-                hfFont.Height = -16;                // Height calculated for ~12pt (negative mapping as required).
-                hfFont.Weight = 700;                // 700 = Bold weight.
-                hfFont.Italic = BOOL.False;         // No italic.
-                hfFont.Underline = BOOL.False;      // No underline.
+                    // Optionally set the header/footer text color.
+                    diagram.HeaderFooter.HeaderFooterColor = Color.Black;
 
-                // Save the diagram back in its original format (using VSDX as a safe default).
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                    // Determine the appropriate SaveFileFormat based on the original extension.
+                    SaveFileFormat format = GetSaveFormatFromExtension(extension);
+
+                    // Save the modified diagram, overwriting the original file.
+                    diagram.Save(filePath, format);
+                }
 
                 Console.WriteLine($"Processed: {Path.GetFileName(filePath)}");
             }
             catch (Exception ex)
             {
+                // Log any errors that occur during processing of a single file.
                 Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
             }
+        }
+    }
+
+    // Helper method to map file extensions to SaveFileFormat enum values.
+    private static SaveFileFormat GetSaveFormatFromExtension(string extension)
+    {
+        switch (extension)
+        {
+            case ".vsdx": return SaveFileFormat.Vsdx;
+            case ".vsd":  return SaveFileFormat.Vsd;
+            case ".vsx":  return SaveFileFormat.Vsx;
+            case ".vtx":  return SaveFileFormat.Vtx;
+            case ".vssx": return SaveFileFormat.Vssx;
+            case ".vss":  return SaveFileFormat.Vss;
+            case ".vstx": return SaveFileFormat.Vstx;
+            case ".vst":  return SaveFileFormat.Vst;
+            default:      return SaveFileFormat.Vsdx; // Fallback (should not reach here).
         }
     }
 }

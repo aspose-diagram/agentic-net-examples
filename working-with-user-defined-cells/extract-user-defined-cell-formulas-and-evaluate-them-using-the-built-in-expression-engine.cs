@@ -2,76 +2,92 @@ using System;
 using System.IO;
 using System.Data;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length == 0)
+        // Determine the input Visio file path.
+        string inputPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
-            return;
+            inputPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the Visio file: ");
+            inputPath = Console.ReadLine();
         }
 
-        string visioPath = args[0];
-
-        // Guard against missing input file.
-        if (!File.Exists(visioPath))
+        // Guard against missing file.
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            Console.Error.WriteLine($"Error: File not found - '{inputPath}'.");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            Diagram diagram = new Diagram(inputPath);
 
             // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
+                Console.WriteLine($"Page: {page.NameU}");
+
                 // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all user‑defined cells (User collection) of the shape.
+                    Console.WriteLine($"  Shape ID: {shape.ID}, Name: {shape.NameU}");
+
+                    // Iterate through all user-defined cells (Users collection).
                     foreach (User userCell in shape.Users)
                     {
-                        // Extract the cell name and the raw formula/value string.
-                        string cellName = userCell.NameU ?? userCell.Name;
-                        string formula = userCell.Value?.Val ?? string.Empty;
+                        string cellName = userCell.NameU;
+                        string cellValue = userCell.Value?.Val ?? string.Empty;
+                        string cellPrompt = userCell.Prompt?.Value ?? string.Empty;
 
-                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}, User Cell: {cellName}");
-                        Console.WriteLine($"  Formula/Value: {formula}");
+                        Console.WriteLine($"    User Cell: {cellName}");
+                        Console.WriteLine($"      Prompt : {cellPrompt}");
+                        Console.WriteLine($"      Formula: {cellValue}");
 
-                        // Attempt to evaluate simple numeric expressions using DataTable.Compute.
-                        // This is a fallback because Aspose.Diagram does not provide a formula engine.
-                        if (!string.IsNullOrWhiteSpace(formula))
+                        // Attempt to evaluate the formula using .NET's DataTable.Compute.
+                        // This serves as a fallback since Aspose.Diagram does not provide a built‑in evaluator.
+                        string expression = cellValue.Trim();
+
+                        // If the value starts with '=', treat the rest as an expression.
+                        if (expression.StartsWith("="))
+                        {
+                            expression = expression.Substring(1);
+                        }
+
+                        // Only attempt evaluation for non‑empty expressions.
+                        if (!string.IsNullOrWhiteSpace(expression))
                         {
                             try
                             {
-                                // DataTable.Compute can evaluate basic arithmetic expressions.
-                                // It will throw if the expression contains unsupported tokens.
-                                object result = new DataTable().Compute(formula, null);
-                                Console.WriteLine($"  Evaluated Result: {result}");
+                                // DataTable.Compute can evaluate simple arithmetic expressions.
+                                var result = new DataTable().Compute(expression, null);
+                                Console.WriteLine($"      Evaluated Result: {result}");
                             }
                             catch (Exception evalEx)
                             {
-                                // If evaluation fails, report the issue but continue processing.
-                                Console.WriteLine($"  Evaluation failed: {evalEx.Message}");
+                                Console.WriteLine($"      Evaluation failed: {evalEx.Message}");
                             }
                         }
-
-                        Console.WriteLine(); // Blank line for readability.
+                        else
+                        {
+                            Console.WriteLine("      No formula to evaluate.");
+                        }
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during Aspose.Diagram processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

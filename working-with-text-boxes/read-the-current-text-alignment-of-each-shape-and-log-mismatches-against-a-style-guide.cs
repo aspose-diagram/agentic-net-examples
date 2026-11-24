@@ -6,77 +6,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first argument.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No input file path provided.");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
             return;
         }
 
-        string inputPath = args[0];
+        string diagramPath = args[0];
 
-        // Guard: verify the file exists.
-        if (!File.Exists(inputPath))
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block (required pattern).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Define the style guide expectations.
-                // Example guide: Horizontal alignment should be Center, vertical alignment should be Middle.
+                // Define the expected alignment values according to the style guide
+                // Horizontal alignment: Center
+                // Vertical alignment: Middle
                 HorzAlignValue expectedHorz = HorzAlignValue.Center;
                 VerticalAlignValue expectedVert = VerticalAlignValue.Middle;
 
-                // Iterate through all pages.
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve shape identifier and name for logging.
-                        string shapeId = shape.ID.ToString();
-                        string shapeName = shape.NameU ?? "(no name)";
-
-                        bool horzMismatch = false;
-                        bool vertMismatch = false;
-
-                        // ----- Horizontal Alignment Check -----
-                        HorzAlignValue actualHorz = expectedHorz; // default to expected to avoid uninitialized warning
+                        // Determine actual horizontal alignment (use first paragraph if available)
+                        HorzAlignValue actualHorz = HorzAlignValue.LeftAlign; // fallback default
                         if (shape.Paras != null && shape.Paras.Count > 0)
                         {
-                            // Use the first paragraph's alignment as representative.
+                            // Access the first paragraph's horizontal alignment
                             actualHorz = shape.Paras[0].HorzAlign.Value;
-                            if (actualHorz != expectedHorz)
-                                horzMismatch = true;
-                        }
-                        else
-                        {
-                            // No paragraph defined; treat as mismatch.
-                            horzMismatch = true;
                         }
 
-                        // ----- Vertical Alignment Check -----
+                        // Determine actual vertical alignment from the text block
                         VerticalAlignValue actualVert = shape.TextBlock.VerticalAlign.Value;
-                        if (actualVert != expectedVert)
-                            vertMismatch = true;
 
-                        // Log mismatches.
+                        // Check for mismatches against the style guide
+                        bool horzMismatch = actualHorz != expectedHorz;
+                        bool vertMismatch = actualVert != expectedVert;
+
                         if (horzMismatch || vertMismatch)
                         {
-                            Console.WriteLine($"Shape ID: {shapeId}, Name: {shapeName}");
+                            // Log detailed information about the mismatch
+                            string shapeName = shape.NameU ?? "(no name)";
+                            Console.WriteLine($"Mismatch in Shape ID {shape.ID}, Name \"{shapeName}\":");
+
                             if (horzMismatch)
-                                Console.WriteLine($"  Horizontal alignment mismatch. Actual: {actualHorz}, Expected: {expectedHorz}");
+                            {
+                                Console.WriteLine($"  Horizontal Alignment - Expected: {expectedHorz}, Actual: {actualHorz}");
+                            }
+
                             if (vertMismatch)
-                                Console.WriteLine($"  Vertical alignment mismatch. Actual: {actualVert}, Expected: {expectedVert}");
+                            {
+                                Console.WriteLine($"  Vertical Alignment   - Expected: {expectedVert}, Actual: {actualVert}");
+                            }
                         }
                     }
                 }
@@ -84,7 +80,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing.
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

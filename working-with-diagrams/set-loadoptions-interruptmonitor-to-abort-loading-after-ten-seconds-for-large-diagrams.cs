@@ -7,70 +7,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length == 0)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Error: No input file path provided.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Create LoadOptions and assign an InterruptMonitor.
-        LoadOptions loadOptions = new LoadOptions();
+        // Create an InterruptMonitor to allow aborting the load operation
         InterruptMonitor monitor = new InterruptMonitor();
+
+        // Configure LoadOptions with the monitor
+        LoadOptions loadOptions = new LoadOptions();
         loadOptions.InterruptMonitor = monitor;
 
-        // Start a background thread that will interrupt loading after 10 seconds.
+        // Start a background thread that will interrupt after 10 seconds
         Thread interruptThread = new Thread(() =>
         {
-            // Wait for 10,000 milliseconds (10 seconds).
+            // Wait for 10,000 milliseconds (10 seconds)
             Thread.Sleep(10000);
-            // Trigger the interrupt.
+            // Signal the monitor to abort the loading process
             monitor.Interrupt();
         });
-        interruptThread.IsBackground = true;
         interruptThread.Start();
 
         try
         {
-            // Load the diagram with the configured LoadOptions.
+            // Load the diagram using the configured LoadOptions inside a using block
             using (Diagram diagram = new Diagram(inputPath, loadOptions))
             {
-                // If loading succeeds, optionally perform further processing.
-                Console.WriteLine("Diagram loaded successfully.");
-                // Example: save the diagram to verify it was loaded.
-                string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+                // Save the diagram to verify successful load (if not interrupted)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to: {outputPath}");
+                Console.WriteLine($"Diagram loaded and saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Capture and report any errors, including those caused by interruption.
-            Console.Error.WriteLine($"Error during diagram loading or processing: {ex.Message}");
+            // Capture and report any errors, including interruption
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
         }
         finally
         {
-            // Ensure the interrupt thread is terminated if still running.
-            if (interruptThread.IsAlive)
-            {
-                try
-                {
-                    interruptThread.Abort();
-                }
-                catch
-                {
-                    // Ignored: thread abort may not be supported; rely on process exit.
-                }
-            }
+            // Ensure the interrupt thread finishes before exiting
+            interruptThread.Join();
         }
     }
 }

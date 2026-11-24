@@ -7,89 +7,90 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Input Visio file path (modify as needed)
+        string visioPath = "input.vsdx";
+        if (!System.IO.File.Exists(visioPath))
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
 
-        string diagramPath = args[0];
-
-        // Guard: ensure the file exists
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
             return;
         }
+
+        // Prepare an in‑memory DataTable to simulate a relational database table
+        DataTable commentTable = new DataTable("Comments");
+        commentTable.Columns.Add("CommentText", typeof(string));
+        commentTable.Columns.Add("ShapeID", typeof(int));
+        commentTable.Columns.Add("ReviewerID", typeof(int));
+        commentTable.Columns.Add("PageIndex", typeof(int));
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(visioPath);
 
-            // Prepare an in‑memory DataTable to simulate relational database storage
-            DataTable commentTable = new DataTable("Comments");
-            commentTable.Columns.Add("CommentId", typeof(int));
-            commentTable.Columns.Add("ShapeId", typeof(int));
-            commentTable.Columns.Add("CommentText", typeof(string));
-            commentTable.Columns.Add("ReviewerId", typeof(int));
-
-            // Iterate through all pages and extract comment metadata
+            // Iterate through each page in the diagram
+            int pageIndex = 0;
             foreach (Page page in diagram.Pages)
             {
-                // Annotations (comments) are stored at the page level
-                foreach (Annotation ann in page.PageSheet.Annotations)
+                // Access page‑level annotations (comments)
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Extract required fields
-                    int commentId = ann.MarkerIndex.Value;   // Unique identifier for the comment
-                    int shapeId = ann.ShapeID;               // Associated shape ID (0 if not linked)
-                    string commentText = ann.Comment.Value ?? string.Empty;
-                    int reviewerId = ann.ReviewerID.Value;   // Author identifier
+                    // Extract comment metadata
+                    string commentText = annotation.Comment?.Value ?? string.Empty;
+                    int shapeId = annotation.ShapeID;
+                    int reviewerId = annotation.ReviewerID?.Value ?? 0;
 
-                    // Add a row to the DataTable
+                    // Add a row to the simulated database table
                     DataRow row = commentTable.NewRow();
-                    row["CommentId"] = commentId;
-                    row["ShapeId"] = shapeId;
                     row["CommentText"] = commentText;
-                    row["ReviewerId"] = reviewerId;
+                    row["ShapeID"] = shapeId;
+                    row["ReviewerID"] = reviewerId;
+                    row["PageIndex"] = pageIndex;
                     commentTable.Rows.Add(row);
                 }
+
+                pageIndex++;
             }
 
-            // Simulate inserting rows into a relational database.
-            // In a real scenario you would use ADO.NET (e.g., SqlConnection, SqlCommand) here.
-            // Example (commented out because external DB drivers are not available):
-            /*
-            using (var connection = new System.Data.SqlClient.SqlConnection("your-connection-string"))
-            {
-                connection.Open();
-                foreach (DataRow row in commentTable.Rows)
-                {
-                    using (var command = new System.Data.SqlClient.SqlCommand(
-                        "INSERT INTO Comments (CommentId, ShapeId, CommentText, ReviewerId) VALUES (@CommentId, @ShapeId, @CommentText, @ReviewerId)", connection))
-                    {
-                        command.Parameters.AddWithValue("@CommentId", (int)row["CommentId"]);
-                        command.Parameters.AddWithValue("@ShapeId", (int)row["ShapeId"]);
-                        command.Parameters.AddWithValue("@CommentText", (string)row["CommentText"]);
-                        command.Parameters.AddWithValue("@ReviewerId", (int)row["ReviewerId"]);
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
-            */
-
-            // For demonstration, output the extracted comment metadata to the console
-            Console.WriteLine("Extracted comment metadata:");
+            // Output the collected comment data to the console
+            Console.WriteLine("Exported comment metadata:");
             foreach (DataRow row in commentTable.Rows)
             {
-                Console.WriteLine($"CommentId: {row["CommentId"]}, ShapeId: {row["ShapeId"]}, ReviewerId: {row["ReviewerId"]}, Text: {row["CommentText"]}");
+                Console.WriteLine($"Page {row["PageIndex"]}, ShapeID {row["ShapeID"]}, ReviewerID {row["ReviewerID"]}, Comment: {row["CommentText"]}");
             }
+
+            // -----------------------------------------------------------------
+            // Real database insertion example (commented out because external
+            // database drivers are not available in this environment):
+            //
+            // using (var connection = new System.Data.SqlClient.SqlConnection("your-connection-string"))
+            // {
+            //     connection.Open();
+            //     foreach (DataRow row in commentTable.Rows)
+            //     {
+            //         using (var command = new System.Data.SqlClient.SqlCommand(
+            //             "INSERT INTO Comments (CommentText, ShapeID, ReviewerID, PageIndex) VALUES (@text, @shape, @reviewer, @page)", connection))
+            //         {
+            //             command.Parameters.AddWithValue("@text", row["CommentText"]);
+            //             command.Parameters.AddWithValue("@shape", row["ShapeID"]);
+            //             command.Parameters.AddWithValue("@reviewer", row["ReviewerID"]);
+            //             command.Parameters.AddWithValue("@page", row["PageIndex"]);
+            //             command.ExecuteNonQuery();
+            //         }
+            //     }
+            // }
+            // -----------------------------------------------------------------
         }
         catch (Exception ex)
         {
             // Log any errors that occur during processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

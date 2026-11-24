@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,78 +25,53 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
+                // Find the first connector (1-D shape) in the diagram
                 Shape connectorShape = null;
-                Page targetPage = null;
+                Page connectorPage = null;
 
-                // Find the first connector (1‑D shape) in the document
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        if (shape.OneD) // 1‑D shapes are connectors
+                        // Connector shapes are 1-D (OneD == true)
+                        if (shape.OneD)
                         {
                             connectorShape = shape;
-                            targetPage = page;
+                            connectorPage = page;
                             break;
                         }
                     }
-
                     if (connectorShape != null)
                         break;
                 }
 
-                if (connectorShape == null || targetPage == null)
+                if (connectorShape == null || connectorPage == null)
                 {
                     Console.Error.WriteLine("No connector shape found in the diagram.");
                     return;
                 }
 
-                // Determine a point on the connector where the comment should appear.
-                // For demonstration we use the connector's central PinX/PinY.
+                // Determine a point on the connector segment.
+                // For a 1-D connector, the PinX/PinY represent the midpoint of the line.
                 double commentX = connectorShape.XForm.PinX.Value;
                 double commentY = connectorShape.XForm.PinY.Value;
 
-                // Add a page‑level comment at the calculated coordinates.
-                targetPage.AddComment(commentX, commentY, "Connector segment comment");
+                // Add a page-level comment at the calculated coordinates.
+                // This comment will appear on the specific segment of the connector.
+                string commentText = "Comment attached to connector segment";
+                connectorPage.AddComment(commentX, commentY, commentText);
 
-                // Retrieve the newly added annotation (assumed to be the last one).
-                Annotation newAnnotation = null;
-                int count = targetPage.PageSheet.Annotations.Count;
-                if (count > 0)
-                {
-                    int index = 0;
-                    foreach (Annotation ann in targetPage.PageSheet.Annotations)
-                    {
-                        if (index == count - 1)
-                        {
-                            newAnnotation = ann;
-                            break;
-                        }
-                        index++;
-                    }
-                }
-
-                if (newAnnotation == null)
-                {
-                    Console.Error.WriteLine("Failed to retrieve the newly added annotation.");
-                    return;
-                }
-
-                // Associate the annotation with the connector shape.
-                // ShapeID is an int, so cast the long shape ID explicitly.
-                newAnnotation.ShapeID = (int)connectorShape.ID;
-
-                // Save the modified diagram.
+                // Save the modified diagram to the output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
+            // Write any Aspose or I/O errors to the error console.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

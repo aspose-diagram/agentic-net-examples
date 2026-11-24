@@ -6,81 +6,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least one argument: input Visio file path.
+        // Validate input arguments
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> [scaleFactor]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
-        }
-
-        // Optional scaling factor (default = 1.0).
-        double scaleFactor = 1.0;
-        if (args.Length >= 2 && double.TryParse(args[1], out double parsedScale) && parsedScale > 0)
-        {
-            scaleFactor = parsedScale;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                // Example scaling factors (can be adjusted as needed)
+                double scaleX = 1.5;
+                double scaleY = 1.5;
+
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Apply the scaling factor to the page's print properties.
-                    page.PageSheet.PrintProps.ScaleX.Value = scaleFactor; // Fixed: assign to .Value
-                    page.PageSheet.PrintProps.ScaleY.Value = scaleFactor; // Fixed: assign to .Value
+                    // Apply scaling to the page
+                    page.PageSheet.PrintProps.ScaleX.Value = scaleX;
+                    page.PageSheet.PrintProps.ScaleY.Value = scaleY;
 
-                    // Retrieve page dimensions (in inches).
-                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;   // Fixed: use .Value
-                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value; // Fixed: use .Value
+                    // Retrieve page dimensions
+                    double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                    double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                    // Iterate through all annotations (comments) on the page.
-                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    // Iterate through all annotations (comments) on the page
+                    foreach (Annotation ann in page.PageSheet.Annotations)
                     {
-                        // Retrieve the original comment coordinates.
-                        double originalX = annotation.X.Value; // Fixed: use .Value
-                        double originalY = annotation.Y.Value; // Fixed: use .Value
+                        // Retrieve comment coordinates
+                        double x = ann.X.Value;
+                        double y = ann.Y.Value;
 
-                        // Apply scaling to the coordinates.
-                        double scaledX = originalX * scaleFactor;
-                        double scaledY = originalY * scaleFactor;
+                        // Validate that the comment lies within page boundaries
+                        bool isWithinBounds = x >= 0 && x <= pageWidth && y >= 0 && y <= pageHeight;
 
-                        // Validate that the scaled coordinates are within page bounds.
-                        bool withinWidth = scaledX >= 0 && scaledX <= pageWidth;
-                        bool withinHeight = scaledY >= 0 && scaledY <= pageHeight;
-
-                        // Use page name if available; otherwise fallback to page ID.
-                        string pageIdentifier = page.Name != null ? page.Name.ToString() : $"ID_{page.ID}";
-
-                        // Use marker index if available; otherwise fallback to 0.
-                        int markerId = annotation.MarkerIndex.Value; // Fixed: use .Value
-
-                        if (withinWidth && withinHeight)
+                        if (!isWithinBounds)
                         {
-                            Console.WriteLine($"Page '{pageIdentifier}': Comment #{markerId} is within bounds (X={scaledX}, Y={scaledY}).");
+                            Console.WriteLine($"Comment ID {ann.MarkerIndex.Value} on page '{page.Name ?? "Unnamed"}' is out of bounds: X={x}, Y={y}, PageSize=({pageWidth}, {pageHeight})");
                         }
                         else
                         {
-                            Console.WriteLine($"Page '{pageIdentifier}': Comment #{markerId} OUT OF BOUNDS (X={scaledX}, Y={scaledY}).");
+                            Console.WriteLine($"Comment ID {ann.MarkerIndex.Value} on page '{page.Name ?? "Unnamed"}' is within bounds.");
                         }
                     }
                 }
+
+                // Optional: Save the scaled diagram (commented out as not required for validation)
+                // string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "scaled_output.vsdx");
+                // diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

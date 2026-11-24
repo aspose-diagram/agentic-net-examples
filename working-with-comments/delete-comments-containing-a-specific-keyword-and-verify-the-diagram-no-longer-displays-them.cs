@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least two arguments: input diagram path and keyword to delete.
+        // Validate arguments: input file path, keyword, optional output path
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath> <keyword> [outputDiagramPath]");
@@ -16,9 +16,9 @@ class Program
 
         string inputPath = args[0];
         string keyword = args[1];
-        string outputPath = args.Length > 2 ? args[2] : "output.vsdx";
+        string outputPath = args.Length >= 3 ? args[2] : "output.vsdx";
 
-        // Guard against missing input file.
+        // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -27,49 +27,65 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect annotations that contain the keyword.
-                    List<Annotation> annotationsToRemove = new List<Annotation>();
+                    // Collect annotations that contain the keyword
+                    List<Annotation> toRemove = new List<Annotation>();
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
                         string commentText = annotation.Comment?.Value ?? string.Empty;
                         if (commentText.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            annotationsToRemove.Add(annotation);
+                            toRemove.Add(annotation);
                         }
                     }
 
-                    // Remove the collected annotations from the page.
-                    foreach (Annotation annotation in annotationsToRemove)
+                    // Remove the collected annotations from the page
+                    foreach (Annotation annotation in toRemove)
                     {
                         page.PageSheet.Annotations.Remove(annotation);
                     }
+                }
 
-                    // Verify that no remaining annotation contains the keyword.
+                // Verify that no remaining annotations contain the keyword
+                bool keywordFound = false;
+                foreach (Page page in diagram.Pages)
+                {
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
                         string commentText = annotation.Comment?.Value ?? string.Empty;
                         if (commentText.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            throw new Exception($"Comment containing keyword '{keyword}' still present after deletion.");
+                            keywordFound = true;
+                            break;
                         }
                     }
+                    if (keywordFound) break;
                 }
 
-                // Save the modified diagram to the specified output path.
+                if (keywordFound)
+                {
+                    Console.Error.WriteLine($"Error: Some comments containing the keyword \"{keyword}\" still exist after deletion.");
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine($"All comments containing the keyword \"{keyword}\" have been successfully removed.");
+                }
+
+                // Save the modified diagram to the output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Comments containing '{keyword}' have been removed. Saved to: {outputPath}");
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

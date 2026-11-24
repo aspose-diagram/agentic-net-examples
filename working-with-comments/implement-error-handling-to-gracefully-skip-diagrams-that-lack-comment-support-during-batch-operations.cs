@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input folder argument
+        // Expect two arguments: input folder and output folder
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
@@ -17,7 +16,7 @@ class Program
         string inputFolder = args[0];
         string outputFolder = args[1];
 
-        // Guard input folder existence
+        // Validate input folder
         if (!Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
@@ -33,24 +32,23 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
                 return;
             }
         }
 
-        // Get all diagram files in the input folder (common Visio extensions)
+        // Get all Visio files in the input folder (common extensions)
         string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
         foreach (string filePath in diagramFiles)
         {
-            // Filter by supported extensions
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vssx" && extension != ".vss")
+            // Filter supported Visio extensions
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx")
             {
-                // Skip non‑Visio files
-                continue;
+                continue; // Skip non‑Visio files
             }
 
-            // Guard file existence (redundant but per requirements)
+            // Guard against missing file (should not happen with GetFiles)
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -62,39 +60,44 @@ class Program
                 // Load diagram inside a using block as required
                 using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Ensure the diagram has at least one page
-                    if (diagram.Pages.Count == 0)
+                    bool hasAnyComments = false;
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        Console.Error.WriteLine($"Diagram has no pages, skipping: {filePath}");
-                        continue;
+                        // Ensure the page sheet and annotations collection are available
+                        if (page.PageSheet?.Annotations != null && page.PageSheet.Annotations.Count > 0)
+                        {
+                            hasAnyComments = true;
+                            // Prepare output file for this diagram
+                            string outputFile = Path.Combine(outputFolder,
+                                $"{Path.GetFileNameWithoutExtension(filePath)}_comments.txt");
+
+                            // Append comments to the output file
+                            using (StreamWriter writer = new StreamWriter(outputFile, true))
+                            {
+                                foreach (Annotation ann in page.PageSheet.Annotations)
+                                {
+                                    string commentText = ann.Comment?.Value ?? string.Empty;
+                                    long markerId = ann.MarkerIndex?.Value ?? 0;
+                                    long reviewerId = ann.ReviewerID?.Value ?? 0;
+                                    writer.WriteLine($"Page: {page.Name}, CommentID: {markerId}, ReviewerID: {reviewerId}, Text: {commentText}");
+                                }
+                            }
+                        }
                     }
 
-                    // Attempt to add a comment to the first page.
-                    // If the format does not support comments, this may throw.
-                    Page firstPage = diagram.Pages[0];
-                    try
+                    // If no comments were found, optionally inform the user
+                    if (!hasAnyComments)
                     {
-                        // Add a simple comment at coordinates (1,1)
-                        firstPage.AddComment(1.0, 1.0, "Processed by batch operation");
+                        Console.WriteLine($"No comments found in diagram: {Path.GetFileName(filePath)}");
                     }
-                    catch (Exception commentEx)
-                    {
-                        // Comment support missing – skip this diagram gracefully
-                        Console.Error.WriteLine($"Comments not supported in diagram '{Path.GetFileName(filePath)}': {commentEx.Message}");
-                        continue;
-                    }
-
-                    // Save the modified diagram to the output folder preserving the original name
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Successfully processed and saved: {outputPath}");
                 }
             }
             catch (Exception ex)
             {
-                // General error handling for loading or saving
-                Console.Error.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
-                // Continue with next file
+                // Gracefully skip diagrams that cannot be processed (e.g., lack comment support)
+                Console.Error.WriteLine($"Skipping file '{filePath}': {ex.Message}");
+                continue;
             }
         }
     }

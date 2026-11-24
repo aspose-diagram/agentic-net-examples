@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -17,14 +17,14 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Pre‑populate the author name mapping dictionary.
+        // Prepare author name mapping (sample entries as required)
         var authorMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "Alice", "Alice Smith" },
@@ -33,35 +33,29 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Build a lookup of reviewer IDs to new author names.
-                // Iterate over the reviewers collection and update names where a mapping exists.
+                // Iterate over reviewers to update author names based on the mapping
                 foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
                 {
-                    // Retrieve the current author name.
-                    string currentName = reviewer.Name?.Value ?? string.Empty;
-
-                    // If the current name exists in the mapping, update it.
-                    if (authorMapping.TryGetValue(currentName, out string newName))
+                    // Retrieve current author name safely
+                    string currentName = reviewer.Name?.Value;
+                    if (!string.IsNullOrEmpty(currentName) && authorMapping.TryGetValue(currentName, out string newName))
                     {
-                        // Update the reviewer name in the diagram.
+                        // Update the reviewer name
                         reviewer.Name.Value = newName;
                     }
                 }
 
-                // No further changes to annotations are required because they reference reviewers by ID.
-                // Save the modified diagram to the specified output path.
+                // Save the updated diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

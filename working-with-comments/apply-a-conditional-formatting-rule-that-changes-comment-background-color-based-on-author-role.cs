@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -29,29 +29,22 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Sample author‑to‑role mapping (must be pre‑populated)
-                var authorRoles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                // Sample mapping of reviewer IDs to roles
+                var reviewerRoles = new Dictionary<int, string>
                 {
-                    { "Alice", "Manager" },
-                    { "Bob", "Developer" }
+                    { 1, "Manager" },
+                    { 2, "Developer" },
+                    { 3, "Tester" }
                 };
 
-                // Role‑to‑background‑color mapping (hex color strings)
+                // Define background colors for each role (hex color strings)
                 var roleColors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     { "Manager", "#FFCCCC" },   // Light red
                     { "Developer", "#CCFFCC" }, // Light green
-                    { "Default", "#FFFFFF" }    // White
+                    { "Tester", "#CCCCFF" },    // Light blue
+                    { "Other", "#FFFFFF" }      // White (default)
                 };
-
-                // Build a list of reviewer names indexed by their position in the collection
-                var reviewerNames = new List<string>();
-                foreach (Reviewer reviewer in diagram.DocumentSheet.Reviewers)
-                {
-                    // Reviewer.Name is Str2Value – use .Value to obtain the string
-                    string name = reviewer.Name != null ? reviewer.Name.Value : string.Empty;
-                    reviewerNames.Add(name);
-                }
 
                 // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
@@ -59,55 +52,59 @@ class Program
                     // Iterate through all annotations (comments) on the page
                     foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Retrieve the reviewer ID and resolve the reviewer name
+                        // Retrieve the reviewer (author) ID for the comment
                         int reviewerId = annotation.ReviewerID.Value;
-                        string reviewerName = (reviewerId >= 0 && reviewerId < reviewerNames.Count)
-                            ? reviewerNames[reviewerId]
-                            : string.Empty;
 
-                        // Determine the role for this reviewer (fallback to "Default")
-                        if (!authorRoles.TryGetValue(reviewerName, out string role))
+                        // Determine the role based on the reviewer ID
+                        string role;
+                        if (!reviewerRoles.TryGetValue(reviewerId, out role))
                         {
-                            role = "Default";
+                            role = "Other";
                         }
 
-                        // Determine the background color for the role (fallback to white)
-                        if (!roleColors.TryGetValue(role, out string colorHex))
+                        // Determine the background color for the role
+                        string colorHex;
+                        if (!roleColors.TryGetValue(role, out colorHex))
                         {
-                            colorHex = "#FFFFFF";
+                            colorHex = "#FFFFFF"; // Fallback to white
                         }
 
-                        // Locate the shape that represents the comment visual (if any)
-                        long commentShapeId = annotation.ShapeID; // ShapeID is an int, cast to long
+                        // Find the shape that represents the comment bubble (if any)
                         Shape commentShape = null;
-                        try
+                        int targetShapeId = annotation.ShapeID; // ShapeID is an int, not nullable
+
+                        if (targetShapeId != 0)
                         {
-                            commentShape = page.Shapes.GetShape(commentShapeId);
-                        }
-                        catch
-                        {
-                            // Shape not found – continue without applying formatting
+                            // Retrieve the shape by its ID from the current page
+                            // Shapes.GetShape expects a long ID
+                            commentShape = page.Shapes.GetShape((long)targetShapeId);
                         }
 
-                        // If the shape is found, apply the background fill
+                        // If the shape is found, apply the background fill color
                         if (commentShape != null)
                         {
-                            // Ensure solid fill pattern
-                            commentShape.Fill.FillPattern.Value = 1; // 1 = solid
-                            // Apply the color (hex string)
+                            // Ensure the fill pattern is solid
+                            commentShape.Fill.FillPattern.Value = 1; // Solid fill
+
+                            // Set the foreground fill color to the role‑specific color
                             commentShape.Fill.FillForegnd.Value = colorHex;
+                        }
+                        else
+                        {
+                            // Log a warning if no associated shape is found
+                            Console.Error.WriteLine($"Warning: No shape found for comment ID {annotation.MarkerIndex.Value}");
                         }
                     }
                 }
 
                 // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

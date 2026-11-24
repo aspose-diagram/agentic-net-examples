@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments: diagramPath, xmlPath, outputPath
+        // Validate command‑line arguments.
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <xmlPath> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <commentsXmlPath> <outputPath>");
             return;
         }
 
@@ -18,7 +18,7 @@ class Program
         string xmlPath = args[1];
         string outputPath = args[2];
 
-        // Guard for input files
+        // Guard against missing input files.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
@@ -31,7 +31,7 @@ class Program
             return;
         }
 
-        // Load XML document containing comments
+        // Load the XML document containing comments.
         XDocument xDoc;
         try
         {
@@ -43,74 +43,76 @@ class Program
             return;
         }
 
-        // Load Visio diagram inside a using block as required
+        // Load the Visio diagram inside a using block as required.
         try
         {
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate over each <Comment> element in the XML
-                foreach (XElement commentElement in xDoc.Root.Elements("Comment"))
+                // Iterate over each <Comment> element in the XML.
+                foreach (XElement commentElem in xDoc.Root.Elements("Comment"))
                 {
-                    // Expected attributes: ShapeID (numeric) and Text (string)
-                    XAttribute shapeIdAttr = commentElement.Attribute("ShapeID");
-                    XAttribute textAttr = commentElement.Attribute("Text");
-
-                    if (shapeIdAttr == null || textAttr == null)
+                    // Extract required fields from XML.
+                    XElement shapeIdElem = commentElem.Element("ShapeID");
+                    XElement textElem = commentElem.Element("Text");
+                    if (shapeIdElem == null || textElem == null)
                     {
-                        Console.Error.WriteLine("Comment element missing ShapeID or Text attribute; skipping.");
+                        Console.Error.WriteLine("Comment element missing ShapeID or Text.");
                         continue;
                     }
 
-                    if (!long.TryParse(shapeIdAttr.Value, out long shapeId))
+                    long shapeId;
+                    if (!long.TryParse(shapeIdElem.Value, out shapeId))
                     {
-                        Console.Error.WriteLine($"Invalid ShapeID value: {shapeIdAttr.Value}; skipping.");
+                        Console.Error.WriteLine($"Invalid ShapeID value: {shapeIdElem.Value}");
                         continue;
                     }
 
-                    string commentText = textAttr.Value;
+                    string commentText = textElem.Value ?? string.Empty;
 
-                    // Search for the shape with the given ID across all pages
-                    bool shapeFound = false;
+                    bool commentAdded = false;
+
+                    // Search all pages for the shape with the matching ID.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Attempt to retrieve the shape by ID
-                        Shape shape = page.Shapes.GetShape(shapeId);
+                        // Attempt to retrieve the shape by ID.
+                        Shape shape = null;
+                        try
+                        {
+                            shape = page.Shapes.GetShape(shapeId);
+                        }
+                        catch
+                        {
+                            // GetShape throws if the ID does not exist on this page; ignore and continue.
+                        }
+
                         if (shape != null)
                         {
-                            shapeFound = true;
-
-                            // Use shape's PinX and PinY as comment location
-                            double pinX = shape.XForm.PinX.Value;
-                            double pinY = shape.XForm.PinY.Value;
-
-                            // Add comment to the page at the shape's location
-                            page.AddComment(pinX, pinY, commentText);
-
-                            // Retrieve the newly added annotation (last in the collection)
-                            int annCount = page.PageSheet.Annotations.Count;
-                            if (annCount > 0)
+                            // Add the comment to the page, associating it with the found shape.
+                            try
                             {
-                                Annotation ann = page.PageSheet.Annotations[annCount - 1];
-                                // Link the annotation to the shape
-                                ann.ShapeID = (int)shapeId;
+                                page.AddComment(shape, commentText);
+                                commentAdded = true;
+                                Console.WriteLine($"Added comment to shape ID {shapeId} on page {page.Name ?? "Unnamed"}.");
                             }
-
-                            // No need to continue searching other pages for this shape
-                            break;
+                            catch (Exception ex)
+                            {
+                                Console.Error.WriteLine($"Failed to add comment to shape ID {shapeId}: {ex.Message}");
+                            }
+                            break; // Shape IDs are unique; stop searching pages.
                         }
                     }
 
-                    if (!shapeFound)
+                    if (!commentAdded)
                     {
-                        Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page; comment skipped.");
+                        Console.Error.WriteLine($"Shape with ID {shapeId} not found in any page.");
                     }
                 }
 
-                // Save the modified diagram to the output path
+                // Save the modified diagram to the specified output path.
                 try
                 {
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                    Console.WriteLine($"Diagram saved successfully to {outputPath}.");
                 }
                 catch (Exception ex)
                 {

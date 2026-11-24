@@ -1,91 +1,63 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Net.Http;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
+        // Input and output file paths (provide via command line or use defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure the output directory exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
-
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram.
+                // Iterate through all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the page-level annotations (comments).
-                    var annotations = page.PageSheet?.Annotations;
-                    if (annotations == null) continue;
+                    // Ensure the page has a PageSheet and Annotations collection
+                    if (page.PageSheet?.Annotations == null)
+                        continue;
 
-                    // Process each annotation.
-                    foreach (Annotation annotation in annotations)
+                    // Iterate over each annotation (comment) on the page
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
                     {
-                        // Retrieve the existing comment text.
+                        // Retrieve the original comment text safely
                         string originalText = annotation.Comment?.Value ?? string.Empty;
 
-                        // Skip empty comments.
-                        if (string.IsNullOrWhiteSpace(originalText))
-                            continue;
+                        // Translate the text using the external service (mocked here)
+                        string translatedText = Translate(originalText);
 
-                        // Translate the comment text using an external service (simulated here).
-                        string translatedText = TranslateText(originalText);
-
-                        // Update the annotation with the translated text.
+                        // Update the comment with the translated text
                         annotation.Comment.Value = translatedText;
                     }
                 }
 
-                // Save the updated diagram to the specified output path.
+                // Save the updated diagram to the output file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Diagram comments translated and saved successfully.");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing.
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Simulates translation of text via an external service.
-    /// Replace this stub with actual HTTP calls to a translation API if needed.
-    /// </summary>
-    /// <param name="text">The original text to translate.</param>
-    /// <returns>The translated text.</returns>
-    private static string TranslateText(string text)
+    // Mock translation method – replace with real external service call as needed
+    static string Translate(string text)
     {
-        // Placeholder translation logic.
-        // In a real scenario, you might use HttpClient to call a translation API.
-        return $"{text} (translated)";
+        // Example placeholder: convert text to upper case
+        return text?.ToUpperInvariant() ?? string.Empty;
     }
 }

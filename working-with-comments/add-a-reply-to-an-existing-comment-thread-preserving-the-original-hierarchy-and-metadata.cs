@@ -6,17 +6,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, output diagram path, and reply text.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <replyText>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string replyText = args[2];
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,52 +26,52 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram
+            // Load the existing Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page
+            // Ensure the diagram has at least one page.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page (adjust as needed)
+            // Use the first page for this example.
             Page page = diagram.Pages[0];
 
-            // Locate the first existing comment (annotation) on the page
-            Annotation originalAnnotation = null;
+            // Locate an existing comment to which we will add a reply.
+            // Here we simply take the first comment found.
+            Annotation targetComment = null;
             foreach (Annotation ann in page.PageSheet.Annotations)
             {
-                originalAnnotation = ann;
-                break; // take the first comment found
+                targetComment = ann;
+                break;
             }
 
-            if (originalAnnotation == null)
+            if (targetComment == null)
             {
-                Console.Error.WriteLine("No existing comments found on the page to reply to.");
+                Console.Error.WriteLine("No existing comments found to reply to.");
                 return;
             }
 
-            // Determine reply position – offset slightly from the original comment
-            // Since Annotation does not expose X/Y directly, we use a fixed offset.
-            double replyX = 1.0; // arbitrary X coordinate
-            double replyY = 1.0; // arbitrary Y coordinate
+            // Retrieve the original comment's coordinates.
+            double baseX = targetComment.X?.Value ?? 0.0;
+            double baseY = targetComment.Y?.Value ?? 0.0;
 
-            // Construct reply text, preserving original comment's metadata (e.g., marker ID)
-            string replyText = $"Reply to comment #{originalAnnotation.MarkerIndex.Value}: Review needed.";
+            // Offset the reply slightly so it appears near the original comment.
+            double replyX = baseX + 0.5;
+            double replyY = baseY + 0.5;
 
-            // Add the reply comment to the page at the calculated position
+            // Add the reply comment at the calculated position.
             page.AddComment(replyX, replyY, replyText);
 
-            // Save the updated diagram to the specified output path
+            // Save the modified diagram. Using Vsdx as the output format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
 
             Console.WriteLine($"Reply added successfully. Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any Aspose.Diagram related errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

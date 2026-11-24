@@ -6,62 +6,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length < 1)
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputVisioFilePath]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            int modifiedCount = 0;
-
-            // Iterate through all pages in the diagram.
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Access annotations (comments) via the page's PageSheet.
+                // Access the annotations (comments) collection via PageSheet
                 foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Retrieve the current comment text.
-                    string commentText = annotation.Comment.Value ?? string.Empty;
+                    // Ensure the comment text is not null
+                    string commentText = annotation.Comment?.Value ?? string.Empty;
 
-                    // Define the criteria: comment contains the word "review" (case‑insensitive).
-                    if (commentText.IndexOf("review", StringComparison.OrdinalIgnoreCase) >= 0)
+                    // Criteria: comment contains the word "TODO"
+                    if (commentText.Contains("TODO", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Apply a custom tag if it is not already present.
-                        const string tagPrefix = "[CustomTag] ";
-                        if (!commentText.StartsWith(tagPrefix, StringComparison.Ordinal))
-                        {
-                            annotation.Comment.Value = tagPrefix + commentText;
-                            modifiedCount++;
-                        }
+                        // Apply a custom tag by prefixing the comment text
+                        // (Tag class does not exist, so we embed the tag in the text)
+                        annotation.Comment.Value = "[Review] " + commentText;
                     }
                 }
             }
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Processing completed. Modified {modifiedCount} comment(s). Saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

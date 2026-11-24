@@ -6,33 +6,39 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, output file, deltaX, deltaY
+        // Validate arguments: inputPath, outputPath, deltaX, deltaY
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <deltaX> <deltaY>");
+            Console.Error.WriteLine("Usage: <program> <inputVisio> <outputVisio> <deltaX> <deltaY>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard for input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse offset values
-        if (!double.TryParse(args[2], out double deltaX) || !double.TryParse(args[3], out double deltaY))
+        // Parse delta values
+        if (!double.TryParse(args[2], out double deltaX))
         {
-            Console.Error.WriteLine("Invalid delta values. Provide numeric values for deltaX and deltaY.");
+            Console.Error.WriteLine($"Invalid deltaX value: {args[2]}");
+            return;
+        }
+
+        if (!double.TryParse(args[3], out double deltaY))
+        {
+            Console.Error.WriteLine($"Invalid deltaY value: {args[3]}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages
@@ -45,20 +51,24 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Offset the shape's position by adjusting its PinX and PinY.
-                        // This moves the shape without altering its size.
-                        shape.XForm.PinX.Value += deltaX;
-                        shape.XForm.PinY.Value += deltaY;
+                        // Offset shape position using PinX and PinY (preserves size)
+                        shape.XForm.PinX.Value += deltaX; // changed: use XForm for position
+                        shape.XForm.PinY.Value += deltaY; // changed: use XForm for position
+
+                        // Refresh shape data to apply changes
+                        shape.RefreshData();
                     }
                 }
 
-                // Save the modified diagram to the specified output path
+                // Save the modified diagram to the output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("Geometry offset applied successfully.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

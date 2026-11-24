@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
@@ -26,39 +26,26 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page.
-                Page page = diagram.Pages[0];
-
-                // Find the first non‑deleted shape on the page.
-                Shape targetShape = null;
-                foreach (Shape shape in page.Shapes)
+                // Iterate over all pages and shapes.
+                foreach (Page page in diagram.Pages)
                 {
-                    if (shape.Del == BOOL.False)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        targetShape = shape;
-                        break;
+                        // Skip logically deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Set the rotation type.
+                        // The API does not expose a 'Fixed' enum value; the closest equivalent is Parallel.
+                        shape.ThreeDFormat.RotationType.Value = RotationTypeValue.Parallel;
+
+                        // Apply a 90‑degree rotation around the Y‑axis.
+                        shape.ThreeDFormat.RotationYAngle.Value = 90;
                     }
                 }
-
-                if (targetShape == null)
-                {
-                    Console.Error.WriteLine("No visible shape found on the first page.");
-                    return;
-                }
-
-                // -----------------------------------------------------------------
-                // Set 3D rotation properties.
-                // The API does not expose a 'Fixed' RotationType; the closest
-                // available option is 'Parallel'. This substitution is documented
-                // here as per the guidelines.
-                // -----------------------------------------------------------------
-                targetShape.ThreeDFormat.RotationType.Value = RotationTypeValue.Parallel; // Fixed not available
-
-                // Apply a 90‑degree rotation around the Y‑axis.
-                targetShape.ThreeDFormat.RotationYAngle.Value = 90;
 
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);

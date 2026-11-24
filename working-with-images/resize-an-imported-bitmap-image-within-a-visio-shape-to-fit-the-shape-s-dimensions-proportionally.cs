@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 using Aspose.Drawing;
 using Aspose.Drawing.Imaging;
 using Aspose.Drawing.Drawing2D;
@@ -9,7 +10,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -19,7 +20,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -28,87 +29,85 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Visio uses 96 DPI by default – used for inch‑to‑pixel conversion.
-            const double dpi = 96.0;
-
-            // Iterate over all pages in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                const double dpi = 96.0; // DPI for conversion from inches to pixels
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Process only imported bitmap images (Foreign type).
-                    if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null && shape.ForeignData.Value.Length > 0)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        byte[] originalBytes = shape.ForeignData.Value;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Load the original image using Aspose.Drawing.
-                        using (MemoryStream originalStream = new MemoryStream(originalBytes))
-                        using (Aspose.Drawing.Image originalImage = Aspose.Drawing.Image.FromStream(originalStream))
+                        // Process only foreign (bitmap) shapes
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                         {
-                            // Original pixel dimensions.
-                            int origPixelWidth = originalImage.Width;
-                            int origPixelHeight = originalImage.Height;
-
-                            // Shape dimensions in inches.
+                            // Retrieve shape dimensions in inches
                             double shapeWidthInches = shape.XForm.Width.Value;
                             double shapeHeightInches = shape.XForm.Height.Value;
 
-                            // Target pixel dimensions based on shape size.
-                            int targetPixelWidth = (int)Math.Round(shapeWidthInches * dpi);
-                            int targetPixelHeight = (int)Math.Round(shapeHeightInches * dpi);
+                            // Convert shape dimensions to target pixel size
+                            int targetWidthPx = (int)Math.Round(shapeWidthInches * dpi);
+                            int targetHeightPx = (int)Math.Round(shapeHeightInches * dpi);
 
-                            // Compute scaling factor while preserving aspect ratio.
-                            double scaleX = (double)targetPixelWidth / origPixelWidth;
-                            double scaleY = (double)targetPixelHeight / origPixelHeight;
-                            double scale = Math.Min(scaleX, scaleY);
-
-                            // New pixel dimensions after scaling.
-                            int newPixelWidth = (int)Math.Round(origPixelWidth * scale);
-                            int newPixelHeight = (int)Math.Round(origPixelHeight * scale);
-
-                            // Resize the image.
-                            using (Bitmap resizedBitmap = new Bitmap(newPixelWidth, newPixelHeight))
-                            using (Graphics graphics = Graphics.FromImage(resizedBitmap))
+                            // Load the embedded bitmap image from the foreign data byte array
+                            using (MemoryStream srcStream = new MemoryStream(shape.ForeignData.Value))
                             {
-                                // High‑quality resizing settings.
-                                graphics.InterpolationMode = Aspose.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                graphics.DrawImage(originalImage, 0, 0, newPixelWidth, newPixelHeight);
-
-                                // Save the resized image to a memory stream using the original format.
-                                using (MemoryStream resizedStream = new MemoryStream())
+                                // Fully qualify Aspose.Drawing.Image to avoid ambiguity
+                                using (Aspose.Drawing.Image srcImage = Aspose.Drawing.Image.FromStream(srcStream))
                                 {
-                                    ImageFormat format = originalImage.RawFormat;
-                                    resizedBitmap.Save(resizedStream, format);
-                                    byte[] resizedBytes = resizedStream.ToArray();
+                                    int originalWidth = srcImage.Width;
+                                    int originalHeight = srcImage.Height;
 
-                                    // Replace the shape's foreign data with the resized image bytes.
-                                    shape.ForeignData.Value = resizedBytes;
+                                    // Calculate scaling factor to fit proportionally
+                                    double scale = Math.Min((double)targetWidthPx / originalWidth,
+                                                            (double)targetHeightPx / originalHeight);
 
-                                    // Adjust the shape's size to match the resized image (optional).
-                                    shape.XForm.Width.Value = newPixelWidth / dpi;
-                                    shape.XForm.Height.Value = newPixelHeight / dpi;
+                                    // Optional: prevent upscaling (comment out if upscaling is desired)
+                                    // if (scale > 1) scale = 1;
+
+                                    int newWidth = (int)Math.Round(originalWidth * scale);
+                                    int newHeight = (int)Math.Round(originalHeight * scale);
+
+                                    // Create a resized bitmap
+                                    using (Bitmap resizedBitmap = new Bitmap(newWidth, newHeight))
+                                    {
+                                        using (Graphics graphics = Graphics.FromImage(resizedBitmap))
+                                        {
+                                            // Use high quality interpolation for better results
+                                            graphics.InterpolationMode = Aspose.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic; // Fixed ambiguous reference
+                                            graphics.DrawImage(srcImage, 0, 0, newWidth, newHeight);
+                                        }
+
+                                        // Preserve original image format
+                                        ImageFormat format = srcImage.RawFormat;
+
+                                        // Save resized image to a memory stream
+                                        using (MemoryStream dstStream = new MemoryStream())
+                                        {
+                                            resizedBitmap.Save(dstStream, format);
+                                            shape.ForeignData.Value = dstStream.ToArray();
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                // Save the modified diagram to the output path with explicit format argument
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

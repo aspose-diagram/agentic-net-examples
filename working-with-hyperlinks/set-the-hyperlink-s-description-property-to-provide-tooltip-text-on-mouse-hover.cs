@@ -6,17 +6,19 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expecting arguments: <inputVisioPath> <shapeNameU> <hyperlinkAddress> <tooltipText>
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <shapeNameU> <hyperlinkAddress> <tooltipText>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string targetShapeNameU = args[1];
+        string hyperlinkAddress = args[2];
+        string tooltipText = args[3];
 
-        // Guard against missing input file.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,48 +27,56 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Locate the shape by its universal name (NameU)
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (string.Equals(shape.NameU, targetShapeNameU, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null) break;
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with NameU '{targetShapeNameU}' not found.");
                 return;
             }
 
-            // Get the first page.
-            Page page = diagram.Pages[0];
-
-            // Ensure the page has at least one shape.
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The first page contains no shapes.");
-                return;
-            }
-
-            // Retrieve the first shape on the page.
-            Shape shape = page.Shapes[0];
-
-            // Create a new hyperlink.
+            // Create a new hyperlink instance
             Hyperlink link = new Hyperlink();
 
-            // Set the hyperlink address (URL) – adjust as needed.
-            link.Address.Value = "https://www.example.com";
+            // Set the hyperlink address (e.g., URL or page reference)
+            link.Address.Value = hyperlinkAddress;
 
-            // Set the description which appears as a tooltip on mouse hover.
-            link.Description.Value = "Visit Example.com";
+            // Set the description property which appears as tooltip on mouse hover
+            link.Description.Value = tooltipText;
 
-            // Add the hyperlink to the shape's Hyperlinks collection.
-            shape.Hyperlinks.Add(link);
+            // Add the hyperlink to the shape's Hyperlinks collection
+            targetShape.Hyperlinks.Add(link);
 
-            // Save the modified diagram to the specified output path.
+            // Prepare output path (append "_modified" before extension)
+            string directory = Path.GetDirectoryName(inputPath) ?? "";
+            string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_modified.vsdx");
+
+            // Save the modified diagram in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Hyperlink added with tooltip. Saved modified diagram to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

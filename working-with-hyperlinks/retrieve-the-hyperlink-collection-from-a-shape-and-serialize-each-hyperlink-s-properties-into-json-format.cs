@@ -8,88 +8,59 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first command‑line argument.
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the path to the Visio file as a command-line argument.");
-            return;
-        }
+        // Path to the Visio file (modify as needed or pass as argument)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Verify that the diagram contains at least one page.
-            if (diagram.Pages.Count == 0)
+            // Iterate through all pages and shapes to find hyperlinks
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Retrieve the first page.
-            Page page = diagram.Pages[0];
-
-            // Find the first shape on the page.
-            Shape shape = null;
-            foreach (Shape s in page.Shapes)
-            {
-                shape = s;
-                break;
-            }
-
-            if (shape == null)
-            {
-                Console.Error.WriteLine("The first page contains no shapes.");
-                return;
-            }
-
-            // Prepare a list to hold hyperlink information.
-            List<object> hyperlinkData = new List<object>();
-
-            // Check whether the shape has any hyperlinks.
-            if (shape.Hyperlinks != null)
-            {
-                // Iterate through each hyperlink in the collection.
-                foreach (Hyperlink link in shape.Hyperlinks)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Build an anonymous object with the desired hyperlink properties.
-                    var linkInfo = new
+                    // Ensure the Hyperlinks collection is not null and contains items
+                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
                     {
-                        Name = link.Name,
-                        Description = link.Description != null ? link.Description.Value : null,
-                        Address = link.Address != null ? link.Address.Value : null,
-                        SubAddress = link.SubAddress != null ? link.SubAddress.Value : null,
-                        NewWindow = link.NewWindow != null ? (link.NewWindow.Value == BOOL.True) : (bool?)null
-                    };
+                        // Enumerate each hyperlink in the shape
+                        foreach (Hyperlink link in shape.Hyperlinks)
+                        {
+                            // Build an anonymous object with the desired hyperlink properties
+                            var hyperlinkInfo = new
+                            {
+                                ShapeId = shape.ID,
+                                ShapeName = shape.Name,
+                                HyperlinkName = link.Name,
+                                Description = link.Description?.Value,
+                                Address = link.Address?.Value,
+                                SubAddress = link.SubAddress?.Value,
+                                NewWindow = link.NewWindow?.Value == BOOL.True
+                            };
 
-                    // Add the object to the result list.
-                    hyperlinkData.Add(linkInfo);
+                            // Serialize the object to formatted JSON
+                            string json = JsonSerializer.Serialize(
+                                hyperlinkInfo,
+                                new JsonSerializerOptions { WriteIndented = true });
+
+                            // Output the JSON to the console
+                            Console.WriteLine(json);
+                        }
+                    }
                 }
             }
-
-            // Serialize the list to formatted JSON.
-            JsonSerializerOptions jsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-            string jsonOutput = JsonSerializer.Serialize(hyperlinkData, jsonOptions);
-
-            // Output the JSON to the console.
-            Console.WriteLine(jsonOutput);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors that occur during processing to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

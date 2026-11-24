@@ -6,19 +6,19 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect four arguments: input diagram path, shape name, hyperlink name, output diagram path
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeName> <hyperlinkName> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: <program> <inputPath> <shapeName> <hyperlinkName> <outputPath>");
             return;
         }
 
         string inputPath = args[0];
-        string targetShapeName = args[1];
-        string targetHyperlinkName = args[2];
+        string shapeName = args[1];
+        string hyperlinkName = args[2];
         string outputPath = args[3];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -27,80 +27,66 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Flag to indicate whether the shape was found.
-            bool shapeFound = false;
-            // Flag to indicate whether a matching hyperlink was removed.
-            bool hyperlinkRemoved = false;
-
-            // Iterate through all pages and shapes to locate the shape by its NameU.
+            // Locate the shape with the specified name (NameU)
+            Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    if (shape.NameU == targetShapeName)
+                    if (shape.NameU == shapeName)
                     {
-                        shapeFound = true;
-
-                        // Ensure the shape has a Hyperlinks collection.
-                        if (shape.Hyperlinks != null)
-                        {
-                            // Collect hyperlinks that match the target name.
-                            // We cannot modify the collection while iterating, so store matches first.
-                            var toRemove = new System.Collections.Generic.List<Hyperlink>();
-
-                            foreach (Hyperlink hl in shape.Hyperlinks)
-                            {
-                                if (hl.Name == targetHyperlinkName)
-                                {
-                                    toRemove.Add(hl);
-                                }
-                            }
-
-                            // Remove the matching hyperlinks.
-                            foreach (Hyperlink hl in toRemove)
-                            {
-                                shape.Hyperlinks.Remove(hl);
-                                hyperlinkRemoved = true;
-                            }
-                        }
-
-                        // Shape found; no need to continue searching further.
+                        targetShape = shape;
                         break;
                     }
                 }
-
-                if (shapeFound)
+                if (targetShape != null)
                     break;
             }
 
-            if (!shapeFound)
+            if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with name '{targetShapeName}' was not found.");
+                Console.Error.WriteLine($"Shape with name '{shapeName}' not found.");
                 return;
             }
 
-            if (!hyperlinkRemoved)
+            // Ensure the shape has hyperlinks collection
+            if (targetShape.Hyperlinks == null || targetShape.Hyperlinks.Count == 0)
             {
-                Console.Error.WriteLine($"No hyperlink named '{targetHyperlinkName}' was found on shape '{targetShapeName}'.");
-                // Still proceed to save the diagram (unchanged) if desired, or exit.
-                // Here we choose to continue saving the diagram.
+                Console.Error.WriteLine($"Shape '{shapeName}' does not contain any hyperlinks.");
+                return;
             }
 
-            // Save the updated diagram in VSDX format.
+            // Find and remove the hyperlink matching the specified name
+            bool removed = false;
+            for (int i = 0; i < targetShape.Hyperlinks.Count; i++)
+            {
+                Hyperlink hl = targetShape.Hyperlinks[i];
+                if (hl.Name == hyperlinkName)
+                {
+                    // Remove the hyperlink at the found index
+                    targetShape.Hyperlinks.RemoveAt(i);
+                    removed = true;
+                    break;
+                }
+            }
+
+            if (!removed)
+            {
+                Console.Error.WriteLine($"Hyperlink with name '{hyperlinkName}' not found on shape '{shapeName}'.");
+                return;
+            }
+
+            // Save the updated diagram to the specified output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Hyperlink removed and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O exceptions.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

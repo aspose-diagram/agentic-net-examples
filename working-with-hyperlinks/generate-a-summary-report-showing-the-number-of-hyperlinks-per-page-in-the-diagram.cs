@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
@@ -18,28 +18,31 @@ class Program
         // Guard against missing file.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(diagramPath))
             {
                 // Iterate through each page in the diagram.
-                int pageCount = diagram.Pages.Count;
-                for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    pageIndex++;
+
+                    // Counter for hyperlinks on the current page.
                     int hyperlinkCount = 0;
 
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the Hyperlinks collection is not null before iterating.
+                        // Ensure the Hyperlinks collection exists before enumerating.
                         if (shape.Hyperlinks != null)
                         {
+                            // Count each hyperlink attached to the shape.
                             foreach (Hyperlink link in shape.Hyperlinks)
                             {
                                 hyperlinkCount++;
@@ -47,15 +50,15 @@ class Program
                         }
                     }
 
-                    // Output the hyperlink count for the current page.
-                    Console.WriteLine($"Page {pageIndex + 1}: {hyperlinkCount} hyperlink(s)");
+                    // Output the result for the current page.
+                    Console.WriteLine($"Page {pageIndex}: {hyperlinkCount} hyperlink(s)");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            // Write any errors that occur during loading or processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

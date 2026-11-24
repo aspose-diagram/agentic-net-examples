@@ -6,97 +6,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the Visio diagram file (first argument or default)
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Verify that the diagram file exists
-        if (!File.Exists(diagramPath))
+        // Validate command‑line arguments: expect diagram file path and shape ID.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
-        // Optional shape ID (second argument). If not provided, the first non-deleted shape will be used.
-        long targetShapeId = 0;
-        bool shapeIdProvided = false;
-        if (args.Length > 1 && long.TryParse(args[1], out long parsedId))
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
         {
-            targetShapeId = parsedId;
-            shapeIdProvided = true;
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
         }
 
+        // Parse the shape ID (Visio shape IDs are long values).
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
+            return;
+        }
+
+        Diagram diagram;
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Locate the target shape
-            Shape targetShape = null;
-
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    if (shapeIdProvided)
-                    {
-                        if (shape.ID == targetShapeId)
-                        {
-                            targetShape = shape;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        // Use the first non-deleted shape as default
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape != null)
-                    break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine(shapeIdProvided
-                    ? $"Error: No shape with ID {targetShapeId} found."
-                    : "Error: No suitable shape found in the diagram.");
-                return;
-            }
-
-            // Enumerate hyperlinks associated with the target shape
-            if (targetShape.Hyperlinks != null && targetShape.Hyperlinks.Count > 0)
-            {
-                Console.WriteLine($"Hyperlinks for shape ID {targetShape.ID}:");
-                foreach (Hyperlink link in targetShape.Hyperlinks)
-                {
-                    // Retrieve hyperlink properties safely
-                    string name = link.Name ?? string.Empty;
-                    string address = link.Address?.Value ?? string.Empty;
-                    string subAddress = link.SubAddress?.Value ?? string.Empty;
-                    string description = link.Description?.Value ?? string.Empty;
-
-                    Console.WriteLine("--------------------------------------------------");
-                    Console.WriteLine($"Name       : {name}");
-                    Console.WriteLine($"Address    : {address}");
-                    Console.WriteLine($"SubAddress : {subAddress}");
-                    Console.WriteLine($"Description: {description}");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"Shape ID {targetShape.ID} has no hyperlinks.");
-            }
+            // Load the Visio diagram.
+            diagram = new Diagram(diagramPath);
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
+            return;
+        }
+
+        // Locate the shape with the specified ID across all pages.
+        Shape targetShape = null;
+        foreach (Page page in diagram.Pages)
+        {
+            foreach (Shape shape in page.Shapes)
+            {
+                if (shape.ID == shapeId)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+            if (targetShape != null)
+                break;
+        }
+
+        if (targetShape == null)
+        {
+            Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+            return;
+        }
+
+        // Enumerate hyperlinks attached to the found shape.
+        if (targetShape.Hyperlinks != null && targetShape.Hyperlinks.Count > 0)
+        {
+            Console.WriteLine($"Hyperlinks for shape ID {shapeId}:");
+            foreach (Hyperlink link in targetShape.Hyperlinks)
+            {
+                // Output hyperlink details. Use null‑conditional operator for optional values.
+                Console.WriteLine($"Name        : {link.Name}");
+                Console.WriteLine($"Address     : {link.Address?.Value}");
+                Console.WriteLine($"SubAddress  : {link.SubAddress?.Value}");
+                Console.WriteLine($"Description : {link.Description?.Value}");
+                Console.WriteLine($"NewWindow   : {link.NewWindow}");
+                Console.WriteLine(new string('-', 40));
+            }
+        }
+        else
+        {
+            Console.WriteLine($"No hyperlinks found for shape ID {shapeId}.");
         }
     }
 }

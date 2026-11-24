@@ -6,90 +6,114 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args == null || args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagram1.vsdx> <diagram2.vsdx>");
+            Console.Error.WriteLine("Usage: Program <DiagramPath1> <DiagramPath2>");
             return;
         }
 
-        string path1 = args[0];
-        string path2 = args[1];
+        string diagramPath1 = args[0];
+        string diagramPath2 = args[1];
 
-        // Guard against missing files.
-        if (!File.Exists(path1))
+        // Guard against missing files
+        if (!File.Exists(diagramPath1))
         {
-            Console.Error.WriteLine($"File not found: {path1}");
+            Console.Error.WriteLine($"File not found: {diagramPath1}");
             return;
         }
-        if (!File.Exists(path2))
+
+        if (!File.Exists(diagramPath2))
         {
-            Console.Error.WriteLine($"File not found: {path2}");
+            Console.Error.WriteLine($"File not found: {diagramPath2}");
             return;
         }
 
         try
         {
-            // Load both diagrams.
-            Diagram diagram1 = new Diagram(path1);
-            Diagram diagram2 = new Diagram(path2);
-
-            // Ensure both diagrams have the same number of pages for a fair comparison.
-            int pageCount = Math.Min(diagram1.Pages.Count, diagram2.Pages.Count);
-
-            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            // Load both diagrams inside using blocks
+            using (Diagram diagram1 = new Diagram(diagramPath1))
+            using (Diagram diagram2 = new Diagram(diagramPath2))
             {
-                Aspose.Diagram.Page page1 = diagram1.Pages[pageIndex];
-                Aspose.Diagram.Page page2 = diagram2.Pages[pageIndex];
-
-                // Iterate all shapes on the current page of the first diagram.
-                foreach (Aspose.Diagram.Shape shape1 in page1.Shapes)
+                // Warn if page counts differ
+                if (diagram1.Pages.Count != diagram2.Pages.Count)
                 {
-                    // Retrieve the matching shape from the second diagram by ID.
-                    Aspose.Diagram.Shape shape2 = page2.Shapes.GetShape(shape1.ID);
-                    if (shape2 == null)
+                    Console.WriteLine($"Warning: Diagram page counts differ ({diagram1.Pages.Count} vs {diagram2.Pages.Count}). Comparison will use the minimum count.");
+                }
+
+                int pageCount = Math.Min(diagram1.Pages.Count, diagram2.Pages.Count);
+
+                // Iterate through pages
+                for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+                {
+                    // Retrieve corresponding pages
+                    Aspose.Diagram.Page page1 = diagram1.Pages[pageIndex];
+                    Aspose.Diagram.Page page2 = diagram2.Pages[pageIndex];
+
+                    // Iterate through shapes on the first diagram's page
+                    foreach (Aspose.Diagram.Shape shape1 in page1.Shapes)
                     {
-                        Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape1.ID}: missing in second diagram.");
-                        continue;
-                    }
+                        // Skip deleted shapes
+                        if (shape1.Del == BOOL.True)
+                            continue;
 
-                    // Prepare hyperlink collections (treat null as empty).
-                    Aspose.Diagram.HyperlinkCollection links1 = shape1.Hyperlinks;
-                    Aspose.Diagram.HyperlinkCollection links2 = shape2.Hyperlinks;
+                        // Retrieve the matching shape from the second diagram by ID
+                        long shapeId = shape1.ID;
+                        Aspose.Diagram.Shape shape2 = page2.Shapes.GetShape(shapeId);
 
-                    int count1 = links1 != null ? links1.Count : 0;
-                    int count2 = links2 != null ? links2.Count : 0;
-
-                    // If the number of hyperlinks differs, report it.
-                    if (count1 != count2)
-                    {
-                        Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape1.ID}: hyperlink count differs (first={count1}, second={count2}).");
-                        continue;
-                    }
-
-                    // Compare each hyperlink pair by index.
-                    for (int i = 0; i < count1; i++)
-                    {
-                        Aspose.Diagram.Hyperlink link1 = links1[i];
-                        Aspose.Diagram.Hyperlink link2 = links2[i];
-
-                        // Compare Address, SubAddress, and Description values.
-                        string addr1 = link1.Address != null ? link1.Address.Value : string.Empty;
-                        string addr2 = link2.Address != null ? link2.Address.Value : string.Empty;
-
-                        string sub1 = link1.SubAddress != null ? link1.SubAddress.Value : string.Empty;
-                        string sub2 = link2.SubAddress != null ? link2.SubAddress.Value : string.Empty;
-
-                        string desc1 = link1.Description != null ? link1.Description.Value : string.Empty;
-                        string desc2 = link2.Description != null ? link2.Description.Value : string.Empty;
-
-                        if (!addr1.Equals(addr2, StringComparison.Ordinal) ||
-                            !sub1.Equals(sub2, StringComparison.Ordinal) ||
-                            !desc1.Equals(desc2, StringComparison.Ordinal))
+                        if (shape2 == null)
                         {
-                            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape1.ID}, Hyperlink #{i + 1}: targets differ.");
-                            Console.WriteLine($"  First  -> Address: '{addr1}', SubAddress: '{sub1}', Description: '{desc1}'");
-                            Console.WriteLine($"  Second -> Address: '{addr2}', SubAddress: '{sub2}', Description: '{desc2}'");
+                            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shapeId}: Missing in second diagram.");
+                            continue;
+                        }
+
+                        // Skip deleted shapes in the second diagram
+                        if (shape2.Del == BOOL.True)
+                            continue;
+
+                        // Get hyperlink collections (handle possible null)
+                        Aspose.Diagram.HyperlinkCollection links1 = shape1.Hyperlinks;
+                        Aspose.Diagram.HyperlinkCollection links2 = shape2.Hyperlinks;
+
+                        int count1 = (links1 != null) ? links1.Count : 0;
+                        int count2 = (links2 != null) ? links2.Count : 0;
+
+                        // Report if hyperlink counts differ
+                        if (count1 != count2)
+                        {
+                            Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shapeId}: Hyperlink count differs ({count1} vs {count2}).");
+                            continue;
+                        }
+
+                        // Compare each hyperlink pair
+                        for (int h = 0; h < count1; h++)
+                        {
+                            Aspose.Diagram.Hyperlink link1 = links1[h];
+                            Aspose.Diagram.Hyperlink link2 = links2[h];
+
+                            string addr1 = link1.Address?.Value ?? string.Empty;
+                            string addr2 = link2.Address?.Value ?? string.Empty;
+
+                            string sub1 = link1.SubAddress?.Value ?? string.Empty;
+                            string sub2 = link2.SubAddress?.Value ?? string.Empty;
+
+                            string desc1 = link1.Description?.Value ?? string.Empty;
+                            string desc2 = link2.Description?.Value ?? string.Empty;
+
+                            bool addressDiff = !string.Equals(addr1, addr2, StringComparison.Ordinal);
+                            bool subAddressDiff = !string.Equals(sub1, sub2, StringComparison.Ordinal);
+                            bool descriptionDiff = !string.Equals(desc1, desc2, StringComparison.Ordinal);
+
+                            if (addressDiff || subAddressDiff || descriptionDiff)
+                            {
+                                Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shapeId}, Hyperlink {h + 1} differs:");
+                                if (addressDiff)
+                                    Console.WriteLine($"  Address: '{addr1}' vs '{addr2}'");
+                                if (subAddressDiff)
+                                    Console.WriteLine($"  SubAddress: '{sub1}' vs '{sub2}'");
+                                if (descriptionDiff)
+                                    Console.WriteLine($"  Description: '{desc1}' vs '{desc2}'");
+                            }
                         }
                     }
                 }
@@ -97,7 +121,8 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

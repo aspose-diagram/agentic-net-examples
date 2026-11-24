@@ -6,16 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio diagram file as a command-line argument.");
+            Console.Error.WriteLine("Usage: Program <VisioDiagramPath>");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load
+        // Guard against missing file.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"File not found: {diagramPath}");
@@ -24,26 +24,37 @@ class Program
 
         try
         {
-            // Load the Visio diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through each page in the diagram
-            foreach (Aspose.Diagram.Page page in diagram.Pages)
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a Hyperlinks collection
-                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
-                    {
-                        // Iterate through each hyperlink associated with the shape
-                        foreach (Aspose.Diagram.Hyperlink hyperlink in shape.Hyperlinks)
-                        {
-                            // Retrieve the hyperlink address (URL or target)
-                            string address = hyperlink.Address != null ? hyperlink.Address.Value : string.Empty;
+                    // Retrieve the shape's name (use NameU; fallback if null).
+                    string shapeName = shape.NameU ?? "(no name)";
 
-                            // Output the shape name and its hyperlink URL
-                            Console.WriteLine($"Shape: {shape.NameU} - Hyperlink: {address}");
+                    // Ensure the Hyperlinks collection exists.
+                    if (shape.Hyperlinks != null)
+                    {
+                        bool hasAny = false;
+
+                        // Iterate through each hyperlink attached to the shape.
+                        foreach (Hyperlink link in shape.Hyperlinks)
+                        {
+                            // Retrieve the hyperlink address (URL). Guard against null.
+                            string url = link.Address?.Value ?? "(no address)";
+
+                            // Print shape name once, then each hyperlink.
+                            if (!hasAny)
+                            {
+                                Console.WriteLine($"Shape: {shapeName}");
+                                hasAny = true;
+                            }
+
+                            Console.WriteLine($"  Hyperlink: {url}");
                         }
                     }
                 }
@@ -51,8 +62,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

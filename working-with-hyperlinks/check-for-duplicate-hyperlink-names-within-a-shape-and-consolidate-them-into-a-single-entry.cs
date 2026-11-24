@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
@@ -17,11 +18,11 @@ class Program
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Determine output path (optional second argument or auto-generated)
+        // Determine output path
         string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
             Path.GetDirectoryName(inputPath) ?? "",
             Path.GetFileNameWithoutExtension(inputPath) + "_dedup.vsdx");
@@ -41,28 +42,30 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the shape has a Hyperlinks collection
-                    if (shape.Hyperlinks == null || shape.Hyperlinks.Count <= 1)
+                    // Ensure the Hyperlinks collection is not null
+                    if (shape.Hyperlinks == null || shape.Hyperlinks.Count == 0)
                         continue;
 
-                    // Dictionary to track first occurrence of each hyperlink name
-                    var seenNames = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    // Dictionary to track unique hyperlink names (case‑insensitive)
+                    Dictionary<string, Hyperlink> uniqueLinks = new Dictionary<string, Hyperlink>(StringComparer.OrdinalIgnoreCase);
 
-                    // Iterate backwards to safely remove duplicates
+                    // Iterate backwards so we can safely remove items
                     for (int i = shape.Hyperlinks.Count - 1; i >= 0; i--)
                     {
                         Hyperlink link = shape.Hyperlinks[i];
-                        string name = link.Name ?? string.Empty;
 
-                        if (seenNames.ContainsKey(name))
+                        // If the hyperlink has no name, treat it as unique
+                        string linkName = link.Name ?? string.Empty;
+
+                        if (uniqueLinks.ContainsKey(linkName))
                         {
                             // Duplicate found – remove this hyperlink
                             shape.Hyperlinks.RemoveAt(i);
                         }
                         else
                         {
-                            // First occurrence – remember its index
-                            seenNames[name] = i;
+                            // First occurrence – keep it
+                            uniqueLinks[linkName] = link;
                         }
                     }
                 }
@@ -70,12 +73,12 @@ class Program
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Duplicate hyperlinks consolidated. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

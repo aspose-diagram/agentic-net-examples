@@ -1,11 +1,11 @@
 {
   "category": "working-with-hyperlinks",
   "display_name": "Working With Hyperlinks",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 35,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -83,6 +83,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -134,11 +135,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
+        "Page",
         "Pages",
-        "Save",
-        "Shapes",
-        "diagram"
+        "Save"
       ]
     },
     {
@@ -165,13 +166,13 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -187,9 +188,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -204,9 +205,9 @@
       "key_apis": [
         "AddShape",
         "Diagram",
-        "Page",
         "Pages",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -269,6 +270,7 @@
         "Aspose.Diagram.Manipulation",
         "Aspose.Diagram.Saving",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -286,6 +288,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -302,9 +305,26 @@
       "task": "Implement a routine to remove all hyperlinks from shapes on a specified page before exporting",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
+      ],
+      "key_apis": [
+        "Diagram",
+        "Pages",
+        "Save",
+        "diagram"
+      ]
+    },
+    {
+      "slug": "implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition",
+      "file": "implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs",
+      "task": "Implement error handling for malformed or unreachable hyperlink addresses during addition",
+      "namespaces": [
+        "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "System",
+        "System.IO",
+        "System.Net.Http"
       ],
       "key_apis": [
         "Diagram",
@@ -315,36 +335,21 @@
       ]
     },
     {
-      "slug": "implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition",
-      "file": "implement-error-handling-for-malformed-or-unreachable-hyperlink-addresses-during-addition.cs",
-      "task": "Implement error handling for malformed or unreachable hyperlink addresses during addition",
-      "namespaces": [
-        "Aspose.Diagram",
-        "System",
-        "System.IO",
-        "System.Net.Http"
-      ],
-      "key_apis": [
-        "Diagram",
-        "Pages",
-        "Save",
-        "diagram"
-      ]
-    },
-    {
       "slug": "implement-pagination-logic-that-adds-page-specific-hyperlinks-to-navigate-sequentially-through-diagram-pages",
       "file": "implement-pagination-logic-that-adds-page-specific-hyperlinks-to-navigate-sequentially-through-diagram-pages.cs",
       "task": "Implement pagination logic that adds page specific hyperlinks to navigate sequentially through diagram pages",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -406,7 +411,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -457,7 +461,6 @@
       "task": "Replace an existing hyperlink s target url with a new address while preserving its description",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -568,11 +571,11 @@
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {

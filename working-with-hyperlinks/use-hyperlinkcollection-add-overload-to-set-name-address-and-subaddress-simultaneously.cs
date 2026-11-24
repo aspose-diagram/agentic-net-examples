@@ -6,76 +6,49 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
+        // Define the output file path
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
             return;
         }
 
         try
         {
-            // Load the source Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Create a new empty diagram
+            Diagram diagram = new Diagram();
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Work with the first page.
+            // Use the first page (created by default)
             Page page = diagram.Pages[0];
 
-            // Find the first non‑deleted shape on the page.
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
-            }
+            // Add a rectangle shape to the page
+            // Parameters: pinX, pinY, width, height, masterName, pageIndex
+            long shapeId = diagram.AddShape(2.0, 2.0, 2.0, 1.0, "Rectangle", 0);
 
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No visible shape found on the first page.");
-                return;
-            }
+            // Retrieve the shape instance using the returned ID (cast to int if required)
+            Shape shape = page.Shapes.GetShape((int)shapeId);
 
-            // Create a new Hyperlink instance and set its properties.
+            // Create a new hyperlink instance and set its properties
             Hyperlink hyperlink = new Hyperlink();
-            // Set the display name (identifier) of the hyperlink.
-            hyperlink.Name = "Visit Aspose";
-            // Set the external address (URL).
-            hyperlink.Address.Value = "https://www.aspose.com";
-            // Set the sub‑address (e.g., bookmark or page reference).
-            hyperlink.SubAddress.Value = "section1";
-            // Optionally set a description (tooltip) for the hyperlink.
-            hyperlink.Description.Value = "Open Aspose website";
+            hyperlink.Name = "MyLink";                         // Visible label for the hyperlink
+            hyperlink.Address.Value = "https://example.com";   // External URL
+            hyperlink.SubAddress.Value = "Page-1";             // Target within the document
+            hyperlink.Description.Value = "Open example website"; // Tooltip description
 
-            // Add the configured hyperlink to the shape's Hyperlinks collection.
-            targetShape.Hyperlinks.Add(hyperlink);
+            // Add the hyperlink to the shape's Hyperlinks collection
+            shape.Hyperlinks.Add(hyperlink);
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the diagram to a VSDX file using the correct SaveFileFormat enum
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

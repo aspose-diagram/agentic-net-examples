@@ -1,81 +1,55 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: inputPath, outputPath, optional list of shape IDs
+        // Expect two arguments: input diagram path and output diagram path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [shapeId1 shapeId2 ...]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse shape IDs if provided
-        HashSet<long> targetShapeIds = new HashSet<long>();
-        for (int i = 2; i < args.Length; i++)
-        {
-            if (long.TryParse(args[i], out long id))
-            {
-                targetShapeIds.Add(id);
-            }
-            else
-            {
-                Console.Error.WriteLine($"Invalid shape ID ignored: {args[i]}");
-            }
-        }
-
         try
         {
-            // Load diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to enable fill inheritance
+            foreach (Page page in diagram.Pages)
             {
-                // If no specific IDs were supplied, enable inheritance for all shapes
-                bool applyToAll = targetShapeIds.Count == 0;
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Iterate over each shape on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        long shapeId = shape.ID;
+                    // Enable fill inheritance by setting the FillForegnd UFE function to INHERITED()
+                    // This is the correct way to enable inheritance; the InheritFill property is read‑only.
+                    shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
 
-                        if (applyToAll || targetShapeIds.Contains(shapeId))
-                        {
-                            // Enable fill inheritance by setting the user function to INHERITED()
-                            // This follows the documented approach for enabling inheritance.
-                            shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
-
-                            // Optionally, also inherit background fill if needed:
-                            // shape.Fill.FillBkgnd.Ufe.F = "INHERITED()";
-
-                            Console.WriteLine($"Enabled fill inheritance for shape ID {shapeId} on page \"{page.NameU}\".");
-                        }
-                    }
+                    // Optionally, also inherit background fill if needed:
+                    // shape.Fill.FillBkgnd.Ufe.F = "INHERITED()";
                 }
-
-                // Save the modified diagram to the specified output path in VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
+
+            // Save the modified diagram to the specified output path in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

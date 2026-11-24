@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -17,50 +16,42 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the first page where the diamond will be added.
-            Page page = diagram.Pages[0];
-
-            // Define the points of a diamond shape.
-            // The array is a flat list of X,Y coordinates.
-            double[] diamondPoints = new double[]
+            // Load the diagram inside a using block as required by the API.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                1, 2,   // left middle
-                2, 0,   // top middle
-                3, 2,   // right middle
-                2, 4,   // bottom middle
-                1, 2    // close the polygon
-            };
+                // Define the master name for a diamond shape (standard Visio master).
+                const string diamondMasterName = "Diamond";
 
-            // Draw the diamond polyline on the page.
-            // The method returns the shape ID of the newly created shape.
-            long shapeId = page.DrawPolyline(diamondPoints);
+                // Add the diamond shape to the first page (page index 0).
+                // PinX and PinY are the center coordinates; using (2,2) inches as an example.
+                long shapeId = diagram.AddShape(2.0, 2.0, diamondMasterName, 0);
 
-            // Retrieve the shape object using the returned ID.
-            Shape diamondShape = page.Shapes.GetShape(shapeId);
+                // Retrieve the newly added shape from the page's shape collection.
+                Shape diamondShape = diagram.Pages[0].Shapes.GetShape(shapeId);
 
-            // Set the desired size: 2 inches width and 2 inches height.
-            diamondShape.XForm.Width.Value = 2.0;
-            diamondShape.XForm.Height.Value = 2.0;
+                // Set the shape size to 2 inches width and 2 inches height.
+                diamondShape.XForm.Width.Value = 2.0;
+                diamondShape.XForm.Height.Value = 2.0;
 
-            // Save the modified diagram to the specified output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            }
+
+            Console.WriteLine("Diamond shape added and diagram saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

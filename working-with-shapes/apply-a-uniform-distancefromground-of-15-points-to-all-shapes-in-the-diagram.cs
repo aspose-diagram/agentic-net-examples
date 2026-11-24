@@ -26,32 +26,30 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages in the diagram.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate through each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Iterate over all shapes on the current page.
-                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                    // Iterate through each shape on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[shapeIndex];
-
-                        // Skip deleted shapes.
+                        // Skip shapes that are marked as deleted.
                         if (shape.Del == BOOL.True)
                             continue;
 
                         // Apply a uniform DistanceFromGround of 15 points.
-                        // The DistanceFromGround cell is part of the ThreeDFormat section.
-                        shape.ThreeDFormat.DistanceFromGround.Value = 15;
+                        // The property is part of the ThreeDFormat section.
+                        shape.ThreeDFormat.DistanceFromGround.Value = 15.0;
                     }
                 }
 
                 // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine("DistanceFromGround applied successfully.");
         }
         catch (Exception ex)
         {

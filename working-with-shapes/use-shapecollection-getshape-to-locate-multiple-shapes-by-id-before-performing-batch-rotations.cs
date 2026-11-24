@@ -25,47 +25,51 @@ class Program
 
         try
         {
-            // Load the diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Define the IDs of the shapes we want to rotate
-            long[] shapeIds = new long[] { 1, 2, 3 }; // Example IDs; replace with actual IDs
+            // Define the shape IDs that need to be rotated
+            // These IDs should correspond to existing shapes in the diagram
+            int[] shapeIdsToRotate = new int[] { 1, 2, 3 };
 
-            // Desired rotation angle in degrees
+            // Define the rotation angle (in degrees) to apply to each shape
             double rotationAngle = 45.0;
 
-            // Iterate over each page in the diagram
+            // Iterate over each page in the diagram (commonly there is only one page)
             foreach (Page page in diagram.Pages)
             {
                 // Process each target shape ID
-                foreach (long id in shapeIds)
+                foreach (int shapeId in shapeIdsToRotate)
                 {
-                    // Retrieve the shape by ID using GetShape
-                    Shape shape = page.Shapes.GetShape(id);
+                    // Retrieve the shape by its ID using GetShape
+                    Shape shape = page.Shapes.GetShape(shapeId);
+
+                    // Validate that the shape exists and is not logically deleted
                     if (shape == null)
                     {
-                        Console.Error.WriteLine($"Warning: Shape with ID {id} not found on page {page.Name}.");
+                        Console.Error.WriteLine($"Warning: Shape with ID {shapeId} not found on page {page.Name}.");
                         continue;
                     }
 
-                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                     {
+                        // Skip shapes that are marked as deleted
                         continue;
                     }
 
-                    // Apply rotation by setting the Angle cell value (degrees)
+                    // Apply the rotation angle to the shape
+                    // The Angle cell expects the value in degrees
                     shape.XForm.Angle.Value = rotationAngle;
                 }
             }
 
-            // Save the modified diagram to the output path
+            // Save the modified diagram to the output file in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Capture any Aspose.Diagram related errors
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

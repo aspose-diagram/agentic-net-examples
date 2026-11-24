@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting four arguments: inputVisioPath, shapeId, fieldValueToRemove, outputVisioPath
+        // Validate arguments: inputPath, outputPath, shapeId, fieldValueToRemove
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <fieldValueToRemove> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: <inputDiagramPath> <outputDiagramPath> <shapeId> <fieldValueToRemove>");
             return;
         }
 
         string inputPath = args[0];
-        string shapeIdArg = args[1];
-        string targetFieldValue = args[2];
-        string outputPath = args[3];
+        string outputPath = args[1];
+        string shapeIdArg = args[2];
+        string targetFieldValue = args[3];
 
         // Guard: check input file exists
         if (!File.Exists(inputPath))
@@ -25,7 +25,7 @@ class Program
             return;
         }
 
-        // Guard: validate shape ID is an integer
+        // Parse shape ID
         if (!int.TryParse(shapeIdArg, out int shapeId))
         {
             Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
@@ -34,68 +34,65 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified ID across all pages
+            // Locate the shape by ID on the first page (or iterate pages if needed)
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // Shape IDs are stored as long; cast to int for comparison
-                foreach (Shape shape in page.Shapes)
+                // GetShape expects an int ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null && shape.Del == BOOL.False)
                 {
-                    if ((int)shape.ID == shapeId)
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-                if (targetShape != null)
+                    targetShape = shape;
                     break;
+                }
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found or is deleted.");
                 return;
             }
 
-            // Ensure the shape is not logically deleted
-            if (targetShape.Del == BOOL.True)
+            // Ensure the shape has fields
+            if (targetShape.Fields == null || targetShape.Fields.Count == 0)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
+                Console.Error.WriteLine($"Shape ID {shapeId} contains no fields.");
                 return;
             }
 
-            // Iterate over the shape's fields to find the one with the matching value
-            bool fieldRemoved = false;
-            for (int i = 0; i < targetShape.Fields.Count; i++)
+            // Find the field(s) matching the specified value
+            var fieldsToRemove = new System.Collections.Generic.List<Field>();
+            foreach (Field field in targetShape.Fields)
             {
-                Field field = targetShape.Fields[i];
-                // Guard against null Value
+                // Compare the displayed value of the field
                 if (field.Value != null && field.Value.Val == targetFieldValue)
                 {
-                    // Remove the matching field
-                    targetShape.Fields.Remove(field);
-                    fieldRemoved = true;
-                    break; // Assuming only one field with this value needs removal
+                    fieldsToRemove.Add(field);
                 }
             }
 
-            if (!fieldRemoved)
+            if (fieldsToRemove.Count == 0)
             {
                 Console.Error.WriteLine($"No field with value \"{targetFieldValue}\" found in shape ID {shapeId}.");
-                // Continue to save the diagram unchanged if desired, or exit
+                return;
             }
 
-            // Save the modified diagram to the output path
+            // Remove the identified field(s)
+            foreach (Field field in fieldsToRemove)
+            {
+                targetShape.Fields.Remove(field);
+            }
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"Field(s) removed and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

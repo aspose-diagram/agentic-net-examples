@@ -6,11 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provided via command line or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "ThemesApplied.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -19,38 +25,47 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages in the diagram
+            // Define the target preset theme.
+            PresetThemeValue targetTheme = PresetThemeValue.Bubble;
+            PresetThemeVariantValue targetVariant = PresetThemeVariantValue.Variant1;
+            // PresetQuickStyleValue targetQuickStyle = PresetQuickStyleValue.VariantStyle1; // optional
+
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // NOTE: Aspose.Diagram does not provide a getter for the current theme matrix,
-                    // so we cannot directly compare the existing theme with the target matrix.
-                    // As a practical alternative, we apply the preset theme unconditionally.
-                    // In a real scenario, additional logic would be required if the API exposed
-                    // the current theme matrix for comparison.
+                    // TODO: Determine the current theme matrix of the shape.
+                    // The Aspose.Diagram API provides write‑only properties for PresetTheme,
+                    // PresetThemeVariant and PresetThemeQuickStyle, so the current theme
+                    // cannot be read directly. Implement custom logic here if a reliable
+                    // method becomes available in a future API version.
 
-                    // Apply the desired preset theme and variant to the shape
-                    shape.PresetTheme = PresetThemeValue.Bubble;
-                    shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                    bool needsThemeChange = true; // Placeholder: assume change is needed.
+
+                    if (needsThemeChange)
+                    {
+                        // Apply the preset theme to the shape.
+                        shape.PresetTheme = targetTheme;
+                        shape.PresetThemeVariant = targetVariant;
+                        // shape.PresetThemeQuickStyle = targetQuickStyle; // optional
+                    }
                 }
             }
 
-            // Save the modified diagram to the output path in VSDX format
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

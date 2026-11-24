@@ -7,59 +7,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
+        // Input and output file paths (can be passed as command‑line arguments)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+
+        // Guard: ensure the source Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Output Visio file path
-        string outputPath = "output.vsdx";
-
         try
         {
             // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Dictionary mapping shape IDs (long) to desired preset themes
-            // Example entries – replace with actual IDs and themes as needed
-            var shapeThemeMap = new Dictionary<long, PresetThemeValue>
+            // -----------------------------------------------------------------
+            // Define a mapping from shape IDs to the desired preset theme settings.
+            // The tuple contains: PresetTheme, PresetThemeVariant, PresetQuickStyle.
+            // -----------------------------------------------------------------
+            var themeMap = new Dictionary<long, (PresetThemeValue theme,
+                                                 PresetThemeVariantValue variant,
+                                                 PresetQuickStyleValue quickStyle)>
             {
-                { 1, PresetThemeValue.Bubble },
-                { 2, PresetThemeValue.Bubble } // using the same theme for demo; adjust as required
+                // Example mappings – adjust IDs and theme values as needed
+                { 1, (PresetThemeValue.Bubble, PresetThemeVariantValue.Variant1, PresetQuickStyleValue.VariantStyle1) },
+                { 2, (PresetThemeValue.Bubble, PresetThemeVariantValue.Variant2, PresetQuickStyleValue.VariantStyle2) }
             };
 
-            // Iterate over the mapping and apply themes to corresponding shapes
-            foreach (var kvp in shapeThemeMap)
+            // -----------------------------------------------------------------
+            // Apply the mapped themes to the corresponding shapes.
+            // -----------------------------------------------------------------
+            foreach (var kvp in themeMap)
             {
                 long shapeId = kvp.Key;
-                PresetThemeValue theme = kvp.Value;
+                var (theme, variant, quickStyle) = kvp.Value;
 
-                // Retrieve the shape by ID from the first page
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                if (shape == null)
+                Shape targetShape = null;
+
+                // Search all pages for the shape with the given ID
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    // GetShape returns null if the ID is not present on this page
+                    targetShape = page.Shapes.GetShape(shapeId);
+                    if (targetShape != null)
+                        break;
+                }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape ID {shapeId} not found in any page.");
                     continue;
                 }
 
-                // Apply the preset theme to the shape
-                shape.PresetTheme = theme;
+                // Apply the preset theme, variant, and quick style (write‑only properties)
+                targetShape.PresetTheme = theme;
+                targetShape.PresetThemeVariant = variant;
+                targetShape.PresetThemeQuickStyle = quickStyle;
 
-                // Optionally set a variant (using Variant1 as default)
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                // Optionally set additional style matrices for richer appearance
+                // (Style2 and Color7 are example values; adjust as required)
+                targetShape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2,
+                                                      PresetColorMatricsValue.Color7);
             }
 
-            // Save the modified diagram to the output file
+            // -----------------------------------------------------------------
+            // Save the modified diagram to the output path.
+            // -----------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,8 +6,15 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
+        // Validate input arguments
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -16,58 +23,54 @@ class Program
             return;
         }
 
-        // Output Visio file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "ThemesApplied.vsdx";
-
         try
         {
-            // Load the diagram from the specified file
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Verify that the diagram contains at least one page
+            // Ensure the diagram has at least one page and one shape
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram does not contain any pages.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Get the first page
-            Page page = diagram.Pages[0];
-
-            // Verify that the page contains at least one shape
-            if (page.Shapes.Count == 0)
+            Page firstPage = diagram.Pages[0];
+            if (firstPage.Shapes.Count == 0)
             {
-                Console.Error.WriteLine("The first page does not contain any shapes.");
+                Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
             // Retrieve the first shape on the page
-            Shape shape = page.Shapes[0];
+            Shape shape = firstPage.Shapes[0];
 
-            // Attempt to apply a preset theme to the shape
+            // Attempt to apply a preset theme to the shape.
+            // This operation may throw if the shape lacks style data.
             try
             {
-                // Apply theme, variant, and quick style
+                // Apply theme properties (write‑only)
                 shape.PresetTheme = PresetThemeValue.Bubble;
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
 
                 Console.WriteLine("Theme applied successfully to the shape.");
             }
             catch (Exception ex)
             {
-                // Handle exceptions that occur when the shape lacks style data
-                Console.Error.WriteLine($"Failed to apply theme to shape ID {shape.ID}: {ex.Message}");
-                // Optionally, continue without aborting the whole process
+                // Handle errors that occur during theme application
+                Console.Error.WriteLine($"Error applying theme to shape ID {shape.ID}: {ex.Message}");
+                // Optionally, you could decide to continue or abort; here we abort.
+                return;
             }
 
-            // Save the modified diagram to the output file
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // General exception handling for diagram loading/saving
+            // General error handling for Aspose operations
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

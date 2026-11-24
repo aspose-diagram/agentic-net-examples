@@ -6,62 +6,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
-            return;
-        }
+        // Determine input diagram path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Define output path
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "Themes1_Styled.vsdx");
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page and one shape.
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
+            // Get the first page
+            Page page = diagram.Pages[0];
 
-            Page firstPage = diagram.Pages[0];
-            if (firstPage.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The first page contains no shapes.");
-                return;
-            }
+            // Get the first shape on the page
+            Shape shape = page.Shapes[0];
 
-            // Retrieve the first shape on the first page.
-            Shape shape = firstPage.Shapes[0];
+            // Apply a preset theme to the shape
+            shape.PresetTheme = PresetThemeValue.Clouds;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
 
-            // Apply a preset theme style matrix to the shape.
-            // PresetStyleMatricsValue and PresetColorMatricsValue are enums defined in Aspose.Diagram.
+            // Apply a preset style matrix (advanced formatting) to the shape
             shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color7);
 
-            // Optionally, set a preset theme and variant (not required for SetPresetThemeStyleMatrics).
-            // shape.PresetTheme = PresetThemeValue.Clouds;
-            // shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console.
-            Console.Error.WriteLine("An error occurred while processing the diagram:");
-            Console.Error.WriteLine(ex.Message);
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

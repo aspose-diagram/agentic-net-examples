@@ -6,81 +6,87 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file path, output file path, optional theme variant index
+        // Expect two arguments: input file path and output file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath> [variantIndex]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        int variantIndex = 1; // Default to Variant1
 
-        if (args.Length >= 3 && !int.TryParse(args[2], out variantIndex))
-        {
-            Console.Error.WriteLine("Invalid variant index. It must be an integer.");
-            return;
-        }
-
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram from a byte array
+            // Read the input Visio file into a byte array
             byte[] inputBytes = File.ReadAllBytes(inputPath);
-            using (MemoryStream inputStream = new MemoryStream(inputBytes))
+
+            // Process the diagram: load, apply theme variant, and get modified bytes
+            byte[] outputBytes = ApplyThemeVariant(inputBytes);
+
+            // Write the modified diagram to the output file
+            File.WriteAllBytes(outputPath, outputBytes);
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected errors
+            Console.Error.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Loads a Visio diagram from a byte array, applies a preset theme variant to the first page,
+    /// and returns the modified diagram as a byte array.
+    /// </summary>
+    /// <param name="diagramBytes">The original diagram bytes.</param>
+    /// <returns>Modified diagram bytes.</returns>
+    private static byte[] ApplyThemeVariant(byte[] diagramBytes)
+    {
+        // Validate input
+        if (diagramBytes == null || diagramBytes.Length == 0)
+        {
+            Console.Error.WriteLine("Input byte array is null or empty.");
+            return Array.Empty<byte>();
+        }
+
+        try
+        {
+            // Load the diagram from the provided byte array using a memory stream
+            using (MemoryStream inputStream = new MemoryStream(diagramBytes))
             using (Diagram diagram = new Diagram(inputStream))
             {
-                // Apply a preset theme and variant to the first page, if any pages exist
-                if (diagram.Pages.Count > 0)
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    // Set a known preset theme (Bubble) to ensure the variant takes effect
-                    diagram.Pages[0].PresetTheme = PresetThemeValue.Bubble;
-
-                    // Map the integer index to a supported PresetThemeVariantValue (only Variant1‑Variant4 exist)
-                    PresetThemeVariantValue variantValue = PresetThemeVariantValue.Variant1;
-                    switch (variantIndex)
-                    {
-                        case 1: variantValue = PresetThemeVariantValue.Variant1; break;
-                        case 2: variantValue = PresetThemeVariantValue.Variant2; break;
-                        case 3: variantValue = PresetThemeVariantValue.Variant3; break;
-                        case 4: variantValue = PresetThemeVariantValue.Variant4; break;
-                        default:
-                            Console.Error.WriteLine($"Unsupported variant index {variantIndex}. Using Variant1.");
-                            break;
-                    }
-
-                    diagram.Pages[0].PresetThemeVariant = variantValue;
-                }
-                else
-                {
-                    Console.Error.WriteLine("Diagram contains no pages. No theme applied.");
+                    Console.Error.WriteLine("Diagram contains no pages.");
+                    return Array.Empty<byte>();
                 }
 
-                // Save the modified diagram to a memory stream
+                // Apply a preset theme variant to the first page
+                // Choose Variant1 as an example; other variants are available in PresetThemeVariantValue enum
+                diagram.Pages[0].PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                // Save the modified diagram to a memory stream in VSDX format
                 using (MemoryStream outputStream = new MemoryStream())
                 {
                     diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                    byte[] outputBytes = outputStream.ToArray();
-
-                    // Write the modified byte array to the output file
-                    File.WriteAllBytes(outputPath, outputBytes);
-
-                    // Output the size of the resulting byte array
-                    Console.WriteLine($"Modified diagram saved. Byte array length: {outputBytes.Length}");
+                    // Return the resulting byte array
+                    return outputStream.ToArray();
                 }
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or IO exceptions and report them
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"Failed to apply theme variant: {ex.Message}");
+            return Array.Empty<byte>();
         }
     }
 }

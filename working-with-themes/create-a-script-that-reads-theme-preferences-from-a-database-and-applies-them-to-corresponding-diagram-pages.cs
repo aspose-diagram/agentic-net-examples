@@ -2,39 +2,76 @@ using System;
 using System.IO;
 using System.Data;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (can be passed as command‑line arguments)
-        string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "Themes1_Updated.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Simulate reading theme preferences from a database
-        DataTable themePreferences = GetThemePreferences();
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
+                return;
+            }
+        }
 
+        // -----------------------------------------------------------------
+        // Simulate reading theme preferences from a database.
+        // In a real scenario you would use ADO.NET with a proper provider,
+        // e.g. SqlConnection, OleDbConnection, etc.
+        // -----------------------------------------------------------------
+        DataTable themePreferences = new DataTable();
+        themePreferences.Columns.Add("PageName", typeof(string));
+        themePreferences.Columns.Add("Theme", typeof(string));
+
+        // Sample data – replace with actual DB query results.
+        themePreferences.Rows.Add("Page-1", "Bubble");
+        themePreferences.Rows.Add("Page-2", "Clouds");
+        // Add more rows as needed.
+
+        // -----------------------------------------------------------------
+        // Load the diagram, apply themes, and save the result.
+        // -----------------------------------------------------------------
         try
         {
-            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each preference row and apply the theme to the matching page
                 foreach (DataRow row in themePreferences.Rows)
                 {
                     string pageName = row["PageName"] as string;
-                    string themeName = row["PresetTheme"] as string;
-                    string variantName = row["PresetThemeVariant"] as string;
+                    string themeName = row["Theme"] as string;
 
-                    // Retrieve the page by name; GetPage returns null if not found
+                    if (string.IsNullOrEmpty(pageName) || string.IsNullOrEmpty(themeName))
+                    {
+                        Console.Error.WriteLine("Invalid preference row – missing PageName or Theme.");
+                        continue;
+                    }
+
+                    // Retrieve the page by name.
                     Page page = diagram.Pages.GetPage(pageName);
                     if (page == null)
                     {
@@ -42,47 +79,28 @@ class Program
                         continue;
                     }
 
-                    // Parse the PresetTheme enum value
-                    if (!Enum.TryParse<PresetThemeValue>(themeName, true, out PresetThemeValue themeEnum))
+                    // Map the theme name to the PresetThemeValue enum.
+                    if (!Enum.TryParse<PresetThemeValue>(themeName, ignoreCase: true, out PresetThemeValue presetTheme))
                     {
-                        Console.Error.WriteLine($"Invalid PresetTheme value: {themeName}");
+                        Console.Error.WriteLine($"Unsupported theme '{themeName}' for page '{pageName}'.");
                         continue;
                     }
 
-                    // Parse the PresetThemeVariant enum value
-                    if (!Enum.TryParse<PresetThemeVariantValue>(variantName, true, out PresetThemeVariantValue variantEnum))
-                    {
-                        Console.Error.WriteLine($"Invalid PresetThemeVariant value: {variantName}");
-                        continue;
-                    }
+                    // Apply the preset theme to the page.
+                    page.PresetTheme = presetTheme;
 
-                    // Apply the theme and variant to the page (write‑only properties)
-                    page.PresetTheme = themeEnum;
-                    page.PresetThemeVariant = variantEnum;
+                    // Optionally, you could also set a variant if required:
+                    // page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                 }
 
-                // Save the modified diagram to the output path
+                // Save the modified diagram.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Simulated method that would normally retrieve data from a database
-    static DataTable GetThemePreferences()
-    {
-        DataTable dt = new DataTable();
-        dt.Columns.Add("PageName", typeof(string));
-        dt.Columns.Add("PresetTheme", typeof(string));
-        dt.Columns.Add("PresetThemeVariant", typeof(string));
-
-        // Example rows – replace with real data retrieval logic
-        dt.Rows.Add("Page-1", "Bubble", "Variant1");
-        dt.Rows.Add("Page-2", "Bubble", "Variant2");
-
-        return dt;
     }
 }

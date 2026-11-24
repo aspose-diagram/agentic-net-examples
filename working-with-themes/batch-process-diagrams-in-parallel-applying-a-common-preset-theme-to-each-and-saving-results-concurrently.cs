@@ -8,24 +8,24 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: BatchThemeProcessor <inputFolder> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
             return;
         }
 
         string inputFolder = args[0];
         string outputFolder = args[1];
 
-        // Verify input folder exists.
+        // Guard input folder existence
         if (!Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Ensure output folder exists (create if necessary).
+        // Ensure output folder exists
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -39,53 +39,63 @@ class Program
             }
         }
 
-        // Gather all Visio files (VSDX) from the input folder.
-        List<string> diagramFiles = new List<string>(Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly));
-
-        if (diagramFiles.Count == 0)
+        // Collect all Visio files (VSDX and VSD) from the input folder
+        List<string> diagramFiles = new List<string>();
+        try
         {
-            Console.Error.WriteLine("No .vsdx files found in the input folder.");
+            diagramFiles.AddRange(Directory.GetFiles(inputFolder, "*.vsdx"));
+            diagramFiles.AddRange(Directory.GetFiles(inputFolder, "*.vsd"));
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error enumerating files: {ex.Message}");
             return;
         }
 
-        // Process each diagram in parallel.
-        Parallel.ForEach(diagramFiles, diagramPath =>
+        if (diagramFiles.Count == 0)
         {
-            // Guard: ensure the file still exists before processing.
-            if (!File.Exists(diagramPath))
+            Console.Error.WriteLine("No Visio files found in the input folder.");
+            return;
+        }
+
+        // Process each diagram in parallel
+        Parallel.ForEach(diagramFiles, filePath =>
+        {
+            // Guard each file existence (redundant but required)
+            if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found (skipped): {diagramPath}");
+                Console.Error.WriteLine($"File not found: {filePath}");
                 return;
             }
 
             try
             {
-                // Load the diagram inside a using block as required.
-                using (Diagram diagram = new Diagram(diagramPath))
+                // Load diagram inside a using block as required
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Apply the preset theme to every page in the diagram.
+                    // Apply the preset theme to every page
                     foreach (Page page in diagram.Pages)
                     {
-                        // Set the preset theme (write‑only property).
+                        // Set the preset theme (write‑only property)
                         page.PresetTheme = PresetThemeValue.Bubble;
-                        // Optionally, set a variant if desired.
-                        // page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                        // Set a variant for the theme
+                        page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                     }
 
-                    // Construct the output file path.
-                    string outputFileName = Path.GetFileNameWithoutExtension(diagramPath) + "_themed.vsdx";
-                    string outputPath = Path.Combine(outputFolder, outputFileName);
+                    // Build output file path (same name, placed in output folder)
+                    string fileName = Path.GetFileName(filePath);
+                    string outputPath = Path.Combine(outputFolder, fileName);
 
-                    // Save the modified diagram using the required overload.
+                    // Save the modified diagram preserving the original format
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine($"Processed and saved: {diagramPath}");
+                Console.WriteLine($"Processed: {filePath}");
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during processing.
-                Console.Error.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
+                // Log any Aspose or IO errors
+                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
             }
         });
     }

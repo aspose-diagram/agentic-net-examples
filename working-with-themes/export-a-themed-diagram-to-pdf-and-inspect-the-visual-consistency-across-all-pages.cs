@@ -2,98 +2,108 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file and output PDF file paths.
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"File not found: {inputPath}");
-            return;
-        }
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output PDF file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        string outputPath = "output.pdf";
-
-        // Guard: ensure the input file exists before proceeding.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Load the diagram inside a using block as required
         try
         {
-            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Apply a preset theme to each page for visual consistency.
+                // ------------------------------------------------------------
+                // Apply a preset theme to each page for visual consistency
+                // ------------------------------------------------------------
                 foreach (Page page in diagram.Pages)
                 {
-                    // Set the page theme and variant.
+                    // Set a known theme (Bubble) and a variant
                     page.PresetTheme = PresetThemeValue.Bubble;
                     page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                 }
 
-                // Create PDF save options and configure required properties.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the format tracker.
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-                // Set a fallback font for any missing fonts.
-                pdfOptions.DefaultFont = "Arial";
-                // Do not export hidden pages (property expects a bool, not BOOL).
-                pdfOptions.ExportHiddenPage = false;
-                // Apply text compression to reduce PDF size.
-                pdfOptions.TextCompression = PdfTextCompression.Flate;
-                // Assign a custom callback to monitor page saving events.
-                pdfOptions.PageSavingCallback = new PdfPageCallback();
-
-                // Export the entire diagram to a PDF file.
-                diagram.Save(outputPath, pdfOptions);
-                Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
-
-                // Inspect visual consistency across all pages.
-                int pageCount = diagram.Pages.Count;
-                Console.WriteLine($"Diagram contains {pageCount} page(s).");
+                // ------------------------------------------------------------
+                // Perform auto‑spacing on each page to ensure layout uniformity
+                // ------------------------------------------------------------
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+                autoSpaceOptions.DistanceInHorizontal = 0.5;
+                autoSpaceOptions.DistanceInVertical = 0.5;
 
                 foreach (Page page in diagram.Pages)
                 {
-                    // Count non-deleted shapes on the page.
-                    int shapeCount = 0;
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        if (shape.Del == BOOL.False)
-                        {
-                            shapeCount++;
-                        }
-                    }
-
-                    // Log page-level information for consistency verification.
-                    Console.WriteLine($"Page ID {page.ID}: Shape count = {shapeCount}");
+                    // Auto‑space shapes on the current page
+                    page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
                 }
+
+                // ------------------------------------------------------------
+                // Inspect visual consistency: log page count, shape count, size
+                // ------------------------------------------------------------
+                int pageCount = diagram.Pages.Count;
+                Console.WriteLine($"Diagram contains {pageCount} page(s).");
+
+                for (int i = 0; i < pageCount; i++)
+                {
+                    Page page = diagram.Pages[i];
+                    int shapeCount = page.Shapes.Count;
+
+                    // Retrieve page dimensions (in inches)
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
+
+                    Console.WriteLine($"Page {i + 1}: Shapes = {shapeCount}, Size = {width} x {height} inches");
+                }
+
+                // ------------------------------------------------------------
+                // Configure PDF save options with a page‑saving callback
+                // ------------------------------------------------------------
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;               // Explicit format tracking
+                pdfOptions.ExportHiddenPage = false;                     // Do not export hidden pages
+                pdfOptions.TextCompression = PdfTextCompression.Flate;   // Reduce PDF size
+                pdfOptions.PageSavingCallback = new PdfPageCallback();   // Attach callback
+
+                // ------------------------------------------------------------
+                // Save the diagram as PDF
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"PDF successfully saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
+}
 
-    // Custom implementation of IPageSavingCallback to log page save progress.
-    private class PdfPageCallback : IPageSavingCallback
+// ------------------------------------------------------------------------
+// Implementation of IPageSavingCallback to log page start/end events
+// ------------------------------------------------------------------------
+class PdfPageCallback : IPageSavingCallback
+{
+    public void PageStartSaving(PageStartSavingArgs args)
     {
-        public void PageStartSaving(PageStartSavingArgs args)
-        {
-            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-        }
+        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
+    }
 
-        public void PageEndSaving(PageEndSavingArgs args)
-        {
-            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-            // Continue processing remaining pages.
-        }
+    public void PageEndSaving(PageEndSavingArgs args)
+    {
+        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+        // Example: stop after first page (uncomment to use)
+        // if (args.PageIndex == 0) args.HasMorePages = false;
     }
 }

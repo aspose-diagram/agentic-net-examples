@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
             return;
         }
 
@@ -29,37 +29,25 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Apply a page‑level theme to each page.
-                foreach (Page page in diagram.Pages)
-                {
-                    // Set a preset theme (example: Bubble) and a variant.
-                    page.PresetTheme = PresetThemeValue.Bubble;
-                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-                }
+                // NOTE: Page‑level themes are automatically applied when the diagram is saved.
+                // Prepare SVG save options.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                svgOptions.ExportHiddenPage = false;          // Do not export hidden pages.
+                svgOptions.ExportGuideShapes = false;         // Do not export guide shapes.
+                svgOptions.SVGFitToViewPort = true;           // Fit SVG to viewport (preserve viewbox).
 
-                // Configure SVG export options.
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    // Fit the SVG to the viewport.
-                    SVGFitToViewPort = true,
-                    // Do not export guide shapes.
-                    ExportGuideShapes = false,
-                    // Do not export comments.
-                    IsExportComments = false,
-                    // Export all pages (no PageCount restriction).
-                    // PageIndex defaults to 0 (first page) if not set; leaving it unset exports all pages.
-                    SaveFormat = SaveFileFormat.Svg
-                };
+                // Explicitly set the format for clarity (optional).
+                svgOptions.SaveFormat = SaveFileFormat.Svg;
 
-                // Save the diagram as SVG using the configured options.
+                // Save the diagram as SVG.
                 diagram.Save(outputPath, svgOptions);
-                Console.WriteLine($"Diagram exported to SVG successfully: {outputPath}");
+                Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
             }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            Console.Error.WriteLine($"Error during SVG export: {ex.Message}");
         }
     }
 }

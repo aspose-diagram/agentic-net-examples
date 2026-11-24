@@ -6,8 +6,9 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path (first argument or default)
+        // Determine input and output file paths
         string inputPath = args.Length > 0 ? args[0] : "Themes1.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "Themes1_Themed.vsdx";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -16,47 +17,42 @@ class Program
             return;
         }
 
-        // Define output path
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "ThemesApplied.vsdx");
-
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Define the preset theme to apply
-            PresetThemeValue presetTheme = PresetThemeValue.Bubble;
+            PresetThemeValue preset = PresetThemeValue.Bubble;
 
             // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                // Apply preset theme to the page
-                page.PresetTheme = presetTheme;
+                // Log the theme application for the page
+                Console.WriteLine($"Applying preset '{preset}' to page '{page.NameU}'.");
 
-                // Log the page theme application
-                // Page name is accessed via NameU (user-friendly name)
-                string pageName = page.NameU ?? $"Page_{page.ID}";
-                Console.WriteLine($"Applied preset theme '{presetTheme}' to page '{pageName}' (ID: {page.ID})");
+                // Apply the preset theme to the page
+                page.PresetTheme = preset;
 
                 // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    // Apply the same preset theme to the shape
-                    shape.PresetTheme = presetTheme;
+                    // Log the theme application for the shape
+                    Console.WriteLine($"Applying preset '{preset}' to shape ID {shape.ID} on page '{page.NameU}'.");
 
-                    // Log the shape theme application
-                    Console.WriteLine($"Applied preset theme '{presetTheme}' to shape ID {shape.ID} on page '{pageName}'");
+                    // Apply the preset theme to the shape
+                    shape.PresetTheme = preset;
                 }
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

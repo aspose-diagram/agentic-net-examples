@@ -7,59 +7,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPreviewPng> [UserCellName] [NewValue]");
             return;
         }
-        // Output preview image path
-        string outputPath = "preview.png";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string userCellName = args.Length >= 3 ? args[2] : "MyUserCell";
+        string newValue = args.Length >= 4 ? args[3] : "Modified";
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes to modify the specified user-defined cell.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has user-defined cells
-                    if (shape.Users != null && shape.Users.Count > 0)
+                    // Ensure the shape has a Users collection.
+                    if (shape.Users == null)
+                        continue;
+
+                    bool cellFound = false;
+
+                    // Search for an existing user-defined cell with the given name.
+                    foreach (User user in shape.Users)
                     {
-                        // Modify each user-defined cell's value
-                        foreach (User userCell in shape.Users)
+                        if (string.Equals(user.Name, userCellName, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(user.NameU, userCellName, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Example modification: prepend "Modified_" to the existing value
-                            string originalValue = userCell.Value?.Val ?? string.Empty;
-                            userCell.Value.Val = "Modified_" + originalValue;
+                            // Update the cell's value.
+                            user.Value.Val = newValue;
+                            cellFound = true;
+                            break;
                         }
+                    }
+
+                    // If the cell does not exist, create and add it.
+                    if (!cellFound)
+                    {
+                        User newUser = new User();
+                        newUser.Name = userCellName;
+                        newUser.Value.Val = newValue;
+                        // Prompt is optional; leave empty.
+                        newUser.Prompt.Value = string.Empty;
+                        shape.Users.Add(newUser);
                     }
                 }
             }
 
-            // Prepare image save options for PNG preview
-            ImageSaveOptions imageOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            // Save a visual preview of the modified diagram as a PNG image.
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            diagram.Save(outputPath, pngOptions);
 
-            // Save the modified diagram as a PNG preview
-            diagram.Save(outputPath, imageOptions);
-
-            Console.WriteLine($"Preview image saved to '{outputPath}'.");
+            Console.WriteLine($"Preview image saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

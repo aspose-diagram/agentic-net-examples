@@ -6,36 +6,40 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt user for the Visio file path
-        Console.Write("Enter the path to the Visio file: ");
-        string filePath = Console.ReadLine();
-
-        // Guard: ensure the file exists
-        if (!File.Exists(filePath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
-        // Prompt user for the shape ID to inspect
-        Console.Write("Enter the shape ID to enumerate glued shapes: ");
-        string idInput = Console.ReadLine();
-        if (!long.TryParse(idInput, out long targetShapeId))
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Error: Invalid shape ID.");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse the shape ID argument.
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
             return;
         }
 
         try
         {
-            // Load the diagram
-            Diagram diagram = new Diagram(filePath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Locate the shape with the specified ID across all pages
+            // Locate the shape with the specified ID across all pages.
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // Attempt to retrieve the shape; GetShape returns null if not found
+                // GetShape returns null if the ID is not present on this page.
                 Shape shape = page.Shapes.GetShape(targetShapeId);
                 if (shape != null)
                 {
@@ -50,20 +54,22 @@ class Program
                 return;
             }
 
-            // Retrieve IDs of all 1D connector shapes glued to the target shape
-            // GluedShapesFlags.GluedShapesAll1D gets all 1D (connector) shapes
+            // Retrieve IDs of all 1‑D connector shapes glued to the target shape.
             long[] gluedIds = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
 
-            // Output the results
-            Console.WriteLine($"Shape ID {targetShapeId} has {gluedIds.Length} glued connector(s):");
-            foreach (long gluedId in gluedIds)
+            // Output the results.
+            Console.WriteLine($"Shape ID {targetShapeId} has {gluedIds?.Length ?? 0} glued shape(s):");
+            if (gluedIds != null && gluedIds.Length > 0)
             {
-                Console.WriteLine($"- Glued Shape ID: {gluedId}");
+                foreach (long id in gluedIds)
+                {
+                    Console.WriteLine($"- Glued Shape ID: {id}");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
+            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

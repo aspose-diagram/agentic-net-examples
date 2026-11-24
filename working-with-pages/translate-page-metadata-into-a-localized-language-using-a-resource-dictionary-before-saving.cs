@@ -25,48 +25,39 @@ class Program
             return;
         }
 
-        // Prepare a simple resource dictionary for translation.
-        // Keys are original metadata strings; values are localized equivalents.
-        Dictionary<string, string> resourceDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        // Resource dictionary that maps original page names to localized equivalents.
+        var translationDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            { "Home", "Accueil" },
-            { "Report", "Rapport" },
-            { "Summary", "Résumé" }
-            // Add more translations as needed.
+            { "Sheet1", "Página1" },
+            { "Sheet2", "Página2" },
+            // Add additional translations as required.
         };
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each page and translate its metadata if a translation exists.
+                // Iterate over each page and translate its metadata.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Translate the page's Name property.
-                    if (!string.IsNullOrEmpty(page.Name) && resourceDictionary.TryGetValue(page.Name, out string localizedName))
+                    // Translate the page name if a matching entry exists in the dictionary.
+                    if (!string.IsNullOrEmpty(page.Name) && translationDictionary.TryGetValue(page.Name, out string localizedName))
                     {
                         page.Name = localizedName;
                     }
 
-                    // Translate the page's universal NameU property.
-                    if (!string.IsNullOrEmpty(page.NameU) && resourceDictionary.TryGetValue(page.NameU, out string localizedNameU))
-                    {
-                        page.NameU = localizedNameU;
-                    }
-
-                    // Additional page metadata can be translated here if needed,
-                    // using other accessible properties such as page.BackPage, etc.
+                    // Additional metadata translation can be added here following the same pattern.
                 }
 
-                // Save the modified diagram to the specified output path using VSDX format.
+                // Save the modified diagram to the output path using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

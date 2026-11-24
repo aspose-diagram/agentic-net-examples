@@ -7,76 +7,59 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
-        Diagram diagram = null;
+        // Define the output path (original name with "_updated" suffix).
+        string directory = Path.GetDirectoryName(inputPath) ?? "";
+        string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+        string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_updated.vsdx");
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-        // Define the placeholder text to insert into empty shapes.
-        const string placeholder = "Placeholder Text";
-
-        try
-        {
-            // Iterate through all pages in the diagram.
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the plain text of the shape.
+                    // Retrieve plain text of the shape.
                     string shapeText = shape.Text?.Value?.Text ?? string.Empty;
 
-                    // Check if the shape's text is empty or whitespace.
+                    // Check for empty or whitespace‑only text.
                     if (string.IsNullOrWhiteSpace(shapeText))
                     {
                         // Clear any existing text fragments.
                         shape.Text.Value.Clear();
 
-                        // Add the placeholder text as a new Txt object.
-                        shape.Text.Value.Add(new Txt(placeholder));
+                        // Add default placeholder text.
+                        shape.Text.Value.Add(new Txt("Placeholder"));
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing shapes: {ex.Message}");
-            return;
-        }
 
-        try
-        {
-            // Save the modified diagram to the output path in VSDX format.
+            // Save the modified diagram to a new file.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, master shape name, output CSV file
-        if (args.Length != 3)
+        // Expect three arguments: input Visio file, master name, output CSV file
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <masterName> <outputCsvPath>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <masterName> <outputCsvPath>");
             return;
         }
 
@@ -17,7 +17,7 @@ class Program
         string masterName = args[1];
         string outputCsvPath = args[2];
 
-        // Guard: ensure the input file exists
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -29,47 +29,51 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare to write CSV
+            // Find the first shape that uses the specified master and is not deleted
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.Del == BOOL.True)
+                        continue; // Skip deleted shapes
+
+                    if (shape.Master != null && shape.Master.Name == masterName)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null)
+                    break;
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"No shape found with master name '{masterName}'.");
+                return;
+            }
+
+            // Retrieve IDs of all shapes glued to the target shape
+            // Using GluedShapesFlags.GluedShapesAll1D to get all 1‑D connector shapes
+            long[] gluedShapeIds = targetShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+            // Write the identifiers to a CSV file (one ID per line)
             using (StreamWriter writer = new StreamWriter(outputCsvPath, false))
             {
-                // Write CSV header
-                writer.WriteLine("MasterShapeID,GluedShapeID");
-
-                // Iterate through all pages
-                foreach (Page page in diagram.Pages)
+                // Optional header
+                writer.WriteLine("ShapeID");
+                foreach (long id in gluedShapeIds)
                 {
-                    // Iterate through all shapes on the page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Ensure the shape has a master and matches the requested master name
-                        if (shape.Master != null && string.Equals(shape.Master.Name, masterName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Retrieve IDs of all 1D connector shapes glued to this shape
-                            long[] gluedIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
-
-                            if (gluedIds != null)
-                            {
-                                foreach (long gluedId in gluedIds)
-                                {
-                                    // Write each pair to the CSV file
-                                    writer.WriteLine($"{shape.ID},{gluedId}");
-                                }
-                            }
-                        }
-                    }
+                    writer.WriteLine(id);
                 }
             }
 
-            Console.WriteLine($"Glued shape identifiers have been written to: {outputCsvPath}");
+            Console.WriteLine($"Successfully wrote {gluedShapeIds.Length} glued shape IDs to '{outputCsvPath}'.");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

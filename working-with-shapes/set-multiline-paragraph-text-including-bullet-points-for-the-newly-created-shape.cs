@@ -1,77 +1,97 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define the output file path
+        // Input diagram path (must exist). Adjust as needed.
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"File not found: {inputPath}");
+            return;
+        }
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Output diagram path.
         string outputPath = "output.vsdx";
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the existing diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page
+            // Ensure there is at least one page.
             if (diagram.Pages.Count == 0)
             {
-                // Add a default page if none exist
-                diagram.Pages.Add(new Page());
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
 
-            // Get the first page
-            Page page = diagram.Pages[0];
+            // Draw a simple rectangle shape on the first page.
+            // Parameters: pinX, pinY, width, height (in inches).
+            // Adjust coordinates as needed.
+            double pinX = 5.0;
+            double pinY = 5.0;
+            double width = 2.0;
+            double height = 1.0;
 
-            // -----------------------------------------------------------------
-            // Create a new rectangle shape on the page
-            // DrawRectangle signature: (pinX, pinY, width, height)
-            // -----------------------------------------------------------------
-            long shapeId = page.DrawRectangle(2.0, 2.0, 2.0, 2.0);
-            Shape shape = page.Shapes.GetShape(shapeId);
+            // The DrawRectangle method returns the shape ID.
+            long shapeId = diagram.Pages[0].DrawRectangle(pinX, pinY, width, height);
 
-            // -----------------------------------------------------------------
-            // Set multiline paragraph text with bullet points
-            // -----------------------------------------------------------------
-            // Clear any existing paragraphs
-            shape.Paras.Clear();
+            // Retrieve the newly created shape.
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine("Failed to retrieve the newly created shape.");
+                return;
+            }
 
-            // Paragraph 1 – bullet
-            Para para1 = new Para();
-            para1.Bullet.Value = BulletValue.Style1; // standard bullet
-            shape.Paras.Add(para1);
+            // ------------------------------------------------------------
+            // Set multiline paragraph text with bullet points.
+            // ------------------------------------------------------------
 
-            // Paragraph 2 – bullet
-            Para para2 = new Para();
-            para2.Bullet.Value = BulletValue.Style1;
-            shape.Paras.Add(para2);
+            // Ensure the shape has at least one paragraph.
+            if (shape.Paras.Count == 0)
+            {
+                // Add a default paragraph if none exist.
+                shape.Paras.Add(new Para());
+            }
 
-            // Paragraph 3 – normal (no bullet)
-            Para para3 = new Para();
-            shape.Paras.Add(para3);
+            // Configure the first paragraph to use bullet style.
+            Para para = shape.Paras[0];
+            para.Bullet.Value = BulletValue.Style1; // Use a standard bullet.
+            para.BulletStr.Value = ""; // Empty string uses default bullet character.
 
-            // Clear existing text runs
+            // Clear any existing text.
             shape.Text.Value.Clear();
 
-            // Add text runs corresponding to the paragraphs
-            shape.Text.Value.Add(new Txt("First bullet item"));
-            shape.Text.Value.Add(new Txt("\n"));
-            shape.Text.Value.Add(new Txt("Second bullet item"));
-            shape.Text.Value.Add(new Txt("\n"));
-            shape.Text.Value.Add(new Txt("A normal line without bullet"));
+            // Add multiline text. Each line will be a separate Txt object.
+            // The bullet formatting applies to the whole paragraph.
+            shape.Text.Value.Add(new Txt("First bullet point"));
+            shape.Text.Value.Add(new Txt("\r\nSecond bullet point"));
+            shape.Text.Value.Add(new Txt("\r\nThird bullet point"));
 
-            // -----------------------------------------------------------------
-            // Save the diagram to VSDX format
-            // -----------------------------------------------------------------
+            // Optionally adjust paragraph spacing (example: 0.1 inches before and after).
+            para.SpBefore.Value = 0.1;
+            para.SpAfter.Value = 0.1;
+            para.SpLine.Value = 1.0; // Single line spacing.
+
+            // ------------------------------------------------------------
+            // Save the modified diagram.
+            // ------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

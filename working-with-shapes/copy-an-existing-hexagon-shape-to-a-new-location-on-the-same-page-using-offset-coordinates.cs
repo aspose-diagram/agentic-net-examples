@@ -1,113 +1,105 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate command‑line arguments: inputPath, outputPath, offsetX, offsetY
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> [offsetX] [offsetY]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <offsetX> <offsetY>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string offsetXStr = args[2];
+        string offsetYStr = args[3];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse optional offset values; default to 2.0 inches for both axes.
-        double offsetX = 2.0;
-        double offsetY = 2.0;
-        if (args.Length >= 3 && !double.TryParse(args[2], out offsetX))
+        // Parse offset values
+        if (!double.TryParse(offsetXStr, out double offsetX) ||
+            !double.TryParse(offsetYStr, out double offsetY))
         {
-            Console.Error.WriteLine("Invalid offsetX value. It must be a number.");
-            return;
-        }
-        if (args.Length >= 4 && !double.TryParse(args[3], out offsetY))
-        {
-            Console.Error.WriteLine("Invalid offsetY value. It must be a number.");
+            Console.Error.WriteLine("Offset values must be valid numbers.");
             return;
         }
 
         try
         {
-            // Load the source Visio diagram inside a using block.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains at least one page.
+                // Assume the shape is on the first page
                 if (diagram.Pages.Count == 0)
                 {
                     Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Work with the first page.
                 Page page = diagram.Pages[0];
 
-                // Locate the first hexagon shape on the page.
+                // Locate the first hexagon shape (master name "Hexagon")
                 Shape hexagonShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Ensure the shape has an associated master.
-                    if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
+                    // Ensure the shape has an associated master before checking its name
+                    if (shape.Master != null && shape.Master.Name == "Hexagon")
                     {
-                        // Compare master name to "Hexagon" (case‑insensitive).
-                        if (string.Equals(shape.Master.Name, "Hexagon", StringComparison.OrdinalIgnoreCase))
-                        {
-                            hexagonShape = shape;
-                            break;
-                        }
+                        hexagonShape = shape;
+                        break;
                     }
                 }
 
                 if (hexagonShape == null)
                 {
-                    Console.Error.WriteLine("No hexagon shape was found on the first page.");
+                    Console.Error.WriteLine("No hexagon shape found on the first page.");
                     return;
                 }
 
-                // Retrieve the original position of the hexagon.
-                double originalPinX = hexagonShape.XForm.PinX.Value;
-                double originalPinY = hexagonShape.XForm.PinY.Value;
+                // Calculate new position using the provided offsets
+                double newPinX = hexagonShape.XForm.PinX.Value + offsetX;
+                double newPinY = hexagonShape.XForm.PinY.Value + offsetY;
 
-                // Compute the new position using the provided offsets.
-                double newPinX = originalPinX + offsetX;
-                double newPinY = originalPinY + offsetY;
+                // Add a new shape based on the same master at the new location
+                // page.AddShape returns the ID of the newly added shape
+                long newShapeId = page.AddShape(newPinX, newPinY, hexagonShape.Master.Name);
 
-                // Add a new shape using the same master as the original hexagon.
-                // The fourth parameter (isCalculate) must be a bool; false disables automatic geometry calculation.
-                long newShapeId = page.AddShape(newPinX, newPinY, hexagonShape.Master.Name, false);
-
-                // Retrieve the newly added shape instance (optional, for further tweaks).
+                // Retrieve the newly added shape object to copy size and other properties
                 Shape newShape = page.Shapes.GetShape(newShapeId);
+                if (newShape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                    return;
+                }
 
-                // Example tweak: ensure the new shape has non‑zero size (in case the master defines zero size).
-                if (newShape.XForm.Width.Value == 0)
-                    newShape.XForm.Width.Value = 1.0;
-                if (newShape.XForm.Height.Value == 0)
-                    newShape.XForm.Height.Value = 1.0;
+                // Copy width and height from the original hexagon
+                newShape.XForm.Width.Value = hexagonShape.XForm.Width.Value;
+                newShape.XForm.Height.Value = hexagonShape.XForm.Height.Value;
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Optionally, copy other visual properties (fill, line, etc.) if needed
+                // Example: copy fill foreground color
+                newShape.InheritFill.FillForegnd.Value = hexagonShape.InheritFill.FillForegnd.Value;
+                // Example: copy line pattern
+                newShape.InheritLine.LinePattern.Value = hexagonShape.InheritLine.LinePattern.Value;
+
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Hexagon shape copied successfully. Output saved to: {outputPath}");
             }
-
-            Console.WriteLine($"Hexagon shape copied successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -7,56 +7,76 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Initialize a stopwatch to measure the duration of adding shapes.
-        Stopwatch stopwatch = new Stopwatch();
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure output directory exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram inside a using block as required.
-            using (Diagram diagram = new Diagram())
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page.
+                // Ensure there is at least one page
                 if (diagram.Pages.Count == 0)
                 {
-                    // Add a blank page if none exist.
-                    diagram.Pages.Add(new Page());
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
 
-                // Reference the first page where shapes will be added.
-                Page page = diagram.Pages[0];
+                // Use the first page (index 0) for adding shapes
+                int pageIndex = 0;
 
-                // Start timing before adding shapes.
-                stopwatch.Start();
+                // Start timing
+                Stopwatch sw = Stopwatch.StartNew();
 
-                // Add 100 rectangle shapes to the page.
+                // Add 100 rectangle shapes
                 for (int i = 0; i < 100; i++)
                 {
-                    // Add a rectangle shape at arbitrary coordinates (e.g., i*1.0, i*1.0).
-                    // The AddShape method returns the shape ID (long).
-                    long shapeId = diagram.AddShape(i * 1.0, i * 1.0, "Rectangle", 0);
+                    // Simple layout: arrange shapes in a grid
+                    double pinX = (i % 10) * 2.0 + 1.0; // X coordinate
+                    double pinY = (i / 10) * 2.0 + 1.0; // Y coordinate
 
-                    // Retrieve the shape object using the returned ID.
-                    Shape shape = page.Shapes.GetShape(shapeId);
+                    // Add shape; returns the shape ID as a long
+                    long shapeId = diagram.AddShape(pinX, pinY, "Rectangle", pageIndex);
 
-                    // Optional: set shape properties here if needed.
-                    // Example: shape.Text.Value.Clear();
-                    // shape.Text.Value.Add(new Txt($"Rect {i + 1}"));
+                    // Retrieve the shape if further customization is needed (not required here)
+                    // Shape shape = diagram.Pages[pageIndex].Shapes.GetShape(shapeId);
                 }
 
-                // Stop timing after all shapes have been added.
-                stopwatch.Stop();
+                // Stop timing
+                sw.Stop();
 
-                // Log the elapsed time in milliseconds.
-                Console.WriteLine($"Time taken to add 100 rectangle shapes: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                // Log the duration in milliseconds
+                Console.WriteLine($"Added 100 rectangle shapes in {sw.ElapsedMilliseconds} ms.");
 
-                // (Optional) Save the diagram to verify the shapes were added.
-                // string outputPath = "output.vsdx";
-                // diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Log any errors that occur during Aspose operations
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

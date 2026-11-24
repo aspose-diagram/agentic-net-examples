@@ -3,95 +3,102 @@ using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class Program
+class NetworkStreamProvider : IStreamProvider
 {
-    static void Main(string[] args)
+    private readonly string _uncPath;
+
+    public NetworkStreamProvider(string uncPath)
     {
-        // Input Visio file path (required)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        if (!File.Exists(inputPath))
-        {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
+        _uncPath = uncPath;
+    }
 
-        // Output HTML file path (required)
-        string outputHtmlPath = args.Length > 1 ? args[1] : "output.html";
-
-        // UNC folder where HTML resources (images, etc.) will be written (required)
-        string uncResourceFolder = args.Length > 2 ? args[2] : @"\\server\share\visio_resources";
-
-        // Ensure the UNC directory exists
+    // Called by Aspose.Diagram when it needs a stream to write HTML resources.
+    public void InitStream(StreamProviderOptions options)
+    {
         try
         {
-            Directory.CreateDirectory(uncResourceFolder);
+            // Ensure the target directory exists.
+            string directory = Path.GetDirectoryName(_uncPath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Create a file stream that writes directly to the UNC path.
+            options.Stream = new FileStream(_uncPath, FileMode.Create, FileAccess.Write);
+
+            // Set a custom base URL/path if required by the HTML export.
+            options.CustomPath = _uncPath;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to create UNC directory '{uncResourceFolder}': {ex.Message}");
-            return;
+            Console.Error.WriteLine($"Failed to initialize stream for '{_uncPath}': {ex.Message}");
+            throw;
         }
+    }
 
+    // Called by Aspose.Diagram after writing is complete.
+    public void CloseStream(StreamProviderOptions options)
+    {
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure HTML save options with a custom stream provider
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            htmlOptions.StreamProvider = new NetworkShareStreamProvider(uncResourceFolder);
-
-            // Save the diagram as HTML; resources will be written to the UNC share via the stream provider
-            diagram.Save(outputHtmlPath, htmlOptions);
+            options.Stream?.Close();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            Console.Error.WriteLine($"Failed to close stream for '{_uncPath}': {ex.Message}");
         }
     }
 }
 
-/// <summary>
-/// Implements IStreamProvider to write HTML resources (images, CSS, etc.) to a network share (UNC path).
-/// </summary>
-class NetworkShareStreamProvider : IStreamProvider
+class Program
 {
-    private readonly string _baseFolder;
-
-    public NetworkShareStreamProvider(string baseFolder)
+    static void Main(string[] args)
     {
-        _baseFolder = baseFolder;
-    }
-
-    // Called by Aspose.Diagram when a resource stream is required.
-    public void InitStream(StreamProviderOptions options)
-    {
-        // Combine the base UNC folder with the default relative path provided by Aspose.
-        string resourcePath = Path.Combine(_baseFolder, options.DefaultPath);
-
-        // Ensure the directory for the resource exists.
-        string directory = Path.GetDirectoryName(resourcePath);
-        if (!string.IsNullOrEmpty(directory))
+        // Expect two arguments: input Visio file path and UNC output path for HTML.
+        if (args.Length < 2)
         {
-            Directory.CreateDirectory(directory);
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <uncOutputPath>");
+            return;
         }
 
-        // Create a file stream for writing the resource.
-        options.Stream = new FileStream(resourcePath, FileMode.Create, FileAccess.Write);
+        string inputPath = args[0];
+        string uncOutputPath = args[1];
 
-        // Set the custom base URL/path that will be used inside the generated HTML.
-        // This tells the HTML where to locate the resources.
-        options.CustomPath = _baseFolder;
-    }
-
-    // Called by Aspose.Diagram after the resource has been written.
-    public void CloseStream(StreamProviderOptions options)
-    {
-        // Safely close the stream if it was created.
-        if (options.Stream != null)
+        // Guard: verify input file exists.
+        if (!File.Exists(inputPath))
         {
-            options.Stream.Dispose();
-            options.Stream = null;
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the UNC path is not empty.
+        if (string.IsNullOrWhiteSpace(uncOutputPath))
+        {
+            Console.Error.WriteLine("UNC output path is empty or invalid.");
+            return;
+        }
+
+        try
+        {
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Configure HTML export options.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+
+            // Assign a custom stream provider that writes to the network share.
+            htmlOptions.StreamProvider = new NetworkStreamProvider(uncOutputPath);
+
+            // Perform the export. The dummy file name is required by the API but
+            // the actual data will be written via the stream provider.
+            diagram.Save("dummy.html", htmlOptions);
+
+            Console.WriteLine($"HTML export completed successfully to UNC path: {uncOutputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
 }

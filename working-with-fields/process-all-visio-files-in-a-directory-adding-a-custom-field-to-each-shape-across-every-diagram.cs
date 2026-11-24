@@ -1,50 +1,49 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the directory to process
-        string directoryPath;
-        if (args.Length > 0)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            directoryPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the path to the directory containing Visio files: ");
-            directoryPath = Console.ReadLine();
-        }
-
-        // Guard: directory must exist
-        if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
-        {
-            Console.Error.WriteLine("The specified directory does not exist.");
+            Console.Error.WriteLine("Usage: Program <directoryPath>");
             return;
         }
 
-        // Define supported Visio extensions
-        string[] supportedExtensions = new string[]
+        string directoryPath = args[0];
+
+        // Verify the directory exists
+        if (!Directory.Exists(directoryPath))
+        {
+            Console.Error.WriteLine($"Directory does not exist: {directoryPath}");
+            return;
+        }
+
+        // Define Visio file extensions to process
+        string[] visioExtensions = new string[]
         {
             ".vsdx", ".vsd", ".vsx", ".vtx",
             ".vsdm", ".vssx", ".vss", ".vstx",
             ".vst", ".vssm", ".vstm"
         };
 
-        // Get all files with supported extensions
+        // Get all files in the directory
         string[] allFiles = Directory.GetFiles(directoryPath);
+
         foreach (string filePath in allFiles)
         {
+            // Process only supported Visio files
             string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(supportedExtensions, ext) < 0)
+            if (Array.IndexOf(visioExtensions, ext) < 0)
             {
-                // Skip non-Visio files
                 continue;
             }
 
-            // Guard: file must exist (redundant but per rules)
+            // Guard against missing file (should not happen after GetFiles, but per rules)
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -53,86 +52,92 @@ class Program
 
             try
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate through each page
-                foreach (Page page in diagram.Pages)
+                // Load the Visio diagram inside a using block for proper disposal
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through each page in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        // Iterate through each shape on the page
+                        foreach (Shape shape in page.Shapes)
+                        {
+                            // Skip logically deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
 
-                        // Create a new custom property (Prop)
-                        Prop customProp = new Prop();
-                        customProp.Name = "MyCustomField";
-                        customProp.Label.Value = "My Custom Field";
-                        customProp.Value.Val = "DefaultValue";
-                        customProp.Type.Value = TypePropValue.String;
+                            // Check if the custom property already exists
+                            bool propertyExists = false;
+                            foreach (Prop existingProp in shape.Props)
+                            {
+                                if (existingProp.Name == "MyCustomField")
+                                {
+                                    propertyExists = true;
+                                    break;
+                                }
+                            }
 
-                        // Add the custom property to the shape
-                        shape.Props.Add(customProp);
+                            // Add the custom property if it does not exist
+                            if (!propertyExists)
+                            {
+                                Prop customProp = new Prop();
+                                customProp.Name = "MyCustomField";
+                                customProp.Label.Value = "My Custom Field";
+                                customProp.Value.Val = "DefaultValue";
+                                customProp.Type.Value = TypePropValue.String;
+                                shape.Props.Add(customProp);
+                            }
+                        }
                     }
+
+                    // Determine the appropriate save format based on file extension
+                    SaveFileFormat saveFormat = SaveFileFormat.Vsdx; // default fallback
+                    switch (ext)
+                    {
+                        case ".vsdx":
+                            saveFormat = SaveFileFormat.Vsdx;
+                            break;
+                        case ".vsd":
+                            saveFormat = SaveFileFormat.Vsd;
+                            break;
+                        case ".vsx":
+                            saveFormat = SaveFileFormat.Vsx;
+                            break;
+                        case ".vtx":
+                            saveFormat = SaveFileFormat.Vtx;
+                            break;
+                        case ".vsdm":
+                            saveFormat = SaveFileFormat.Vsdm;
+                            break;
+                        case ".vssx":
+                            saveFormat = SaveFileFormat.Vssx;
+                            break;
+                        case ".vss":
+                            saveFormat = SaveFileFormat.Vss;
+                            break;
+                        case ".vstx":
+                            saveFormat = SaveFileFormat.Vstx;
+                            break;
+                        case ".vst":
+                            saveFormat = SaveFileFormat.Vst;
+                            break;
+                        case ".vssm":
+                            saveFormat = SaveFileFormat.Vssm;
+                            break;
+                        case ".vstm":
+                            saveFormat = SaveFileFormat.Vstm;
+                            break;
+                        default:
+                            Console.Error.WriteLine($"Unsupported Visio format for file: {filePath}");
+                            continue;
+                    }
+
+                    // Save the modified diagram, overwriting the original file
+                    diagram.Save(filePath, saveFormat);
                 }
-
-                // Determine the appropriate SaveFileFormat based on extension
-                SaveFileFormat format;
-                switch (ext)
-                {
-                    case ".vsdx":
-                        format = SaveFileFormat.Vsdx;
-                        break;
-                    case ".vsd":
-                        format = SaveFileFormat.Vsd;
-                        break;
-                    case ".vsx":
-                        format = SaveFileFormat.Vsx;
-                        break;
-                    case ".vtx":
-                        format = SaveFileFormat.Vtx;
-                        break;
-                    case ".vsdm":
-                        format = SaveFileFormat.Vsdm;
-                        break;
-                    case ".vssx":
-                        format = SaveFileFormat.Vssx;
-                        break;
-                    case ".vss":
-                        format = SaveFileFormat.Vss;
-                        break;
-                    case ".vstx":
-                        format = SaveFileFormat.Vstx;
-                        break;
-                    case ".vst":
-                        format = SaveFileFormat.Vst;
-                        break;
-                    case ".vssm":
-                        format = SaveFileFormat.Vssm;
-                        break;
-                    case ".vstm":
-                        format = SaveFileFormat.Vstm;
-                        break;
-                    default:
-                        // Unsupported extension; skip saving
-                        Console.Error.WriteLine($"Unsupported file format for: {filePath}");
-                        diagram.Dispose();
-                        continue;
-                }
-
-                // Save the modified diagram (overwrites original file)
-                diagram.Save(filePath, format);
-
-                // Release resources
-                diagram.Dispose();
-
-                Console.WriteLine($"Processed and saved: {filePath}");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing of this file
+                // Report any errors that occur during processing
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }

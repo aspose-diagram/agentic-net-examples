@@ -7,72 +7,90 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define output file path
-        string outputPath = "output.vsdx";
-
-        // Guard: ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Create a new empty diagram (contains a default page)
-            Diagram diagram = new Diagram();
+            // Load the diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure there is at least one page
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
 
-            // Get the first (default) page
-            Page page = diagram.Pages[0];
+                // Work with the first page
+                Page page = diagram.Pages[0];
 
-            // Add the first rectangle shape using the built‑in master "Rectangle"
-            long rect1Id = page.AddShape(
-                pinX: 2.0,
-                pinY: 5.0,
-                width: 2.0,
-                height: 1.0,
-                masterName: "Rectangle",
-                isCalculate: false);
+                // Find the first two non‑connector shapes (OneD == false)
+                long firstShapeId = -1;
+                long secondShapeId = -1;
 
-            // Add the second rectangle shape
-            long rect2Id = page.AddShape(
-                pinX: 8.0,
-                pinY: 5.0,
-                width: 2.0,
-                height: 1.0,
-                masterName: "Rectangle",
-                isCalculate: false);
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (!shape.OneD) // Non‑connector shape
+                    {
+                        if (firstShapeId == -1)
+                            firstShapeId = shape.ID;
+                        else if (secondShapeId == -1)
+                        {
+                            secondShapeId = shape.ID;
+                            break;
+                        }
+                    }
+                }
 
-            // Add a dynamic connector shape (initially zero size)
-            long connectorId = page.AddShape(
-                pinX: 0.0,
-                pinY: 0.0,
-                width: 0.0,
-                height: 0.0,
-                masterName: "Dynamic connector",
-                isCalculate: false);
+                // Validate that we have two shapes to connect
+                if (firstShapeId == -1 || secondShapeId == -1)
+                {
+                    Console.Error.WriteLine("The diagram must contain at least two non‑connector shapes.");
+                    return;
+                }
 
-            // Retrieve the connector shape to configure its routing
-            Shape connector = page.Shapes.GetShape(connectorId);
-            // Set the connector to use a smooth spline (curved) line
-            connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
+                // Add a dynamic connector shape to the page
+                // Parameters: pinX, pinY, width, height, masterName, isCalculate (bool)
+                long connectorId = page.AddShape(0, 0, 0, 0, "Dynamic connector", false);
 
-            // Connect the two rectangles via the connector
-            page.ConnectShapesViaConnector(
-                shapeFromId: rect1Id,
-                placeFrom: ConnectionPointPlace.Right,
-                shapeToId: rect2Id,
-                placeTo: ConnectionPointPlace.Left,
-                connectorId: connectorId);
+                // Retrieve the connector shape object
+                Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Save the diagram as VSDX
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                // Set the connector to use a curved routing style (smooth spline)
+                connector.SetConnectorsType(ConnectorsTypeValue.CurvedLines);
+
+                // Connect the two shapes using the connector
+                // Using bottom of first shape and top of second shape as example connection points
+                page.ConnectShapesViaConnector(
+                    firstShapeId,
+                    ConnectionPointPlace.Bottom,
+                    secondShapeId,
+                    ConnectionPointPlace.Top,
+                    connectorId);
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

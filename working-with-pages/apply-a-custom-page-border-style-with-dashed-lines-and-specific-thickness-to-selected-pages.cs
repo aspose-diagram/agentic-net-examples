@@ -1,105 +1,118 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input file, output file, comma‑separated page indices
-        if (args.Length < 3)
+        // Expect at least input and output file paths.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <pageIndices>");
-            Console.Error.WriteLine("Example: Program diagram.vsdx diagram_modified.vsdx 0,2,3");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> [pageIndices(comma separated)]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string pageIndicesArg = args[2];
 
-        // Guard: verify input file exists
+        // Guard: verify input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Parse page indices
-        List<int> pageIndices = new List<int>();
-        try
+        // Parse optional page indices.
+        int[] selectedPageIndices = null;
+        if (args.Length >= 3)
         {
-            foreach (var part in pageIndicesArg.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            try
             {
-                pageIndices.Add(int.Parse(part.Trim()));
+                string[] parts = args[2].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                selectedPageIndices = new int[parts.Length];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    selectedPageIndices[i] = int.Parse(parts[i].Trim());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to parse page indices: {ex.Message}");
+                return;
             }
         }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to parse page indices: {ex.Message}");
-            return;
-        }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over each requested page
-            foreach (int pageIndex in pageIndices)
+            // Determine which pages to process.
+            int pageCount = diagram.Pages.Count;
+            var pagesToProcess = new System.Collections.Generic.List<Page>();
+
+            if (selectedPageIndices == null || selectedPageIndices.Length == 0)
             {
-                // Validate page index range
-                if (pageIndex < 0 || pageIndex >= diagram.Pages.Count)
+                // No specific indices provided – process all pages.
+                for (int i = 0; i < pageCount; i++)
                 {
-                    Console.Error.WriteLine($"Page index out of range: {pageIndex}");
-                    continue; // skip invalid index
+                    pagesToProcess.Add(diagram.Pages[i]);
                 }
+            }
+            else
+            {
+                // Process only the specified pages.
+                foreach (int idx in selectedPageIndices)
+                {
+                    if (idx < 0 || idx >= pageCount)
+                    {
+                        Console.Error.WriteLine($"Page index out of range: {idx}");
+                        continue;
+                    }
+                    pagesToProcess.Add(diagram.Pages[idx]);
+                }
+            }
 
-                // Retrieve the page
-                Page page = diagram.Pages[pageIndex];
-
-                // Get page dimensions (in inches)
+            // Apply custom border to each selected page.
+            foreach (Page page in pagesToProcess)
+            {
+                // Retrieve page dimensions (in inches).
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Define rectangle points for the border (closed polyline)
+                // Define rectangle points for the border (starting at 0,0).
                 double[] borderPoints = new double[]
                 {
-                    0, 0,                     // Bottom‑left
-                    pageWidth, 0,             // Bottom‑right
-                    pageWidth, pageHeight,    // Top‑right
-                    0, pageHeight,            // Top‑left
-                    0, 0                      // Close the shape
+                    0, 0,
+                    pageWidth, 0,
+                    pageWidth, pageHeight,
+                    0, pageHeight,
+                    0, 0 // close the rectangle
                 };
 
-                // Draw the polyline on the page; returns the shape ID
+                // Draw the polyline representing the border.
                 long shapeId = page.DrawPolyline(borderPoints);
 
-                // Retrieve the created shape object
+                // Retrieve the created shape.
                 Shape borderShape = page.Shapes.GetShape(shapeId);
 
-                // Apply dashed line pattern
+                // Set line pattern to dashed.
                 borderShape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-                // Set line thickness (weight) – value is in inches
-                borderShape.Line.LineWeight.Value = 0.02; // example thickness
+                // Set line thickness (weight) – example: 0.02 inches.
+                borderShape.Line.LineWeight.Value = 0.02;
 
-                // Optional: set line color (black)
-                borderShape.Line.LineColor.Value = "#000000";
-
-                // Ensure the shape has no fill
-                borderShape.Fill.FillPattern.Value = 0; // 0 = No fill
+                // Ensure no fill (transparent) – set fill pattern to 0 (none).
+                borderShape.Fill.FillPattern.Value = 0;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or runtime errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

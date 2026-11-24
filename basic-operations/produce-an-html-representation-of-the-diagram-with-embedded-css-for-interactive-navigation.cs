@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,112 +8,120 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
-            return;
-        }
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputDir = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: create the output directory if it does not exist.
-        if (!Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error: Could not create output directory \"{outputDir}\": {ex.Message}");
-                return;
-            }
-        }
+        // Output directory for HTML files (second argument or default)
+        string outputDir = args.Length > 1 ? args[1] : "output_html";
 
+        // Ensure the output directory exists
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // CSS that will be embedded into each generated HTML page.
-            string embeddedCss = @"
-<style>
-/* Embedded CSS for interactive navigation */
-.nav { margin: 10px; }
-.nav a { margin-right: 5px; text-decoration: none; color: #0066cc; }
-.nav a:hover { text-decoration: underline; }
-</style>
-";
-
-            // Export each page as a separate HTML file and inject the CSS.
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                // Configure HTML save options for a single page.
-                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                htmlOptions.PageIndex = i;   // zero‑based page index
-                htmlOptions.PageCount = 1;   // export only this page
-
-                // Build the output file name for the current page.
-                string pageFileName = Path.Combine(outputDir, $"page_{i + 1}.html");
-
-                // Save the page as HTML.
-                diagram.Save(pageFileName, htmlOptions);
-
-                // Read the generated HTML, inject the CSS after the <head> tag, and overwrite the file.
-                string htmlContent = File.ReadAllText(pageFileName);
-                int headCloseIndex = htmlContent.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-                if (headCloseIndex >= 0)
-                {
-                    htmlContent = htmlContent.Insert(headCloseIndex, embeddedCss);
-                    File.WriteAllText(pageFileName, htmlContent);
-                }
-                else
-                {
-                    // If </head> is not found, prepend the CSS at the beginning.
-                    htmlContent = embeddedCss + htmlContent;
-                    File.WriteAllText(pageFileName, htmlContent);
-                }
-            }
-
-            // Create a simple index HTML that provides navigation between pages.
-            string indexPath = Path.Combine(outputDir, "index.html");
-            using (StreamWriter writer = new StreamWriter(indexPath))
-            {
-                writer.WriteLine("<!DOCTYPE html>");
-                writer.WriteLine("<html>");
-                writer.WriteLine("<head>");
-                writer.WriteLine("<meta charset=\"UTF-8\">");
-                writer.WriteLine("<title>Diagram HTML Navigation</title>");
-                writer.WriteLine(embeddedCss); // reuse the same CSS
-                writer.WriteLine("</head>");
-                writer.WriteLine("<body>");
-                writer.WriteLine("<h1>Diagram Pages</h1>");
-                writer.WriteLine("<div class=\"nav\">");
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    string pageLink = $"page_{i + 1}.html";
-                    writer.WriteLine($"<a href=\"{pageLink}\">Page {i + 1}</a>");
-                }
-                writer.WriteLine("</div>");
-                writer.WriteLine("</body>");
-                writer.WriteLine("</html>");
-            }
-
-            Console.WriteLine("HTML export completed successfully.");
+            Directory.CreateDirectory(outputDir);
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
-            Console.Error.WriteLine($"Error during processing: {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+            return;
+        }
+
+        // Load the diagram inside a using block as required
+        try
+        {
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Check if the diagram contains any pages
+                if (diagram.Pages == null || diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram contains no pages to export.");
+                    return;
+                }
+
+                // Export each page as a separate HTML file
+                for (int i = 0; i < diagram.Pages.Count; i++)
+                {
+                    // Configure HTML save options for a single page
+                    HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                    htmlOptions.PageIndex = i;
+                    htmlOptions.PageCount = 1;
+
+                    // Build the output file name for the current page
+                    string pageFileName = $"page_{i + 1}.html";
+                    string pageFilePath = Path.Combine(outputDir, pageFileName);
+
+                    // Save the page to HTML
+                    try
+                    {
+                        diagram.Save(pageFilePath, htmlOptions);
+                        Console.WriteLine($"Exported page {i + 1} to {pageFilePath}");
+                    }
+                    catch (Exception saveEx)
+                    {
+                        Console.Error.WriteLine($"Failed to export page {i + 1}: {saveEx.Message}");
+                    }
+                }
+
+                // Generate an index HTML file with embedded CSS for navigation
+                try
+                {
+                    StringBuilder indexBuilder = new StringBuilder();
+
+                    // Basic HTML structure with embedded CSS
+                    indexBuilder.AppendLine("<!DOCTYPE html>");
+                    indexBuilder.AppendLine("<html lang=\"en\">");
+                    indexBuilder.AppendLine("<head>");
+                    indexBuilder.AppendLine("    <meta charset=\"UTF-8\">");
+                    indexBuilder.AppendLine("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+                    indexBuilder.AppendLine("    <title>Diagram HTML Navigation</title>");
+                    indexBuilder.AppendLine("    <style>");
+                    indexBuilder.AppendLine("        body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }");
+                    indexBuilder.AppendLine("        .navbar { background-color: #333; overflow: hidden; }");
+                    indexBuilder.AppendLine("        .navbar a { float: left; display: block; color: #f2f2f2;");
+                    indexBuilder.AppendLine("                     text-align: center; padding: 14px 16px;");
+                    indexBuilder.AppendLine("                     text-decoration: none; }");
+                    indexBuilder.AppendLine("        .navbar a:hover { background-color: #ddd; color: black; }");
+                    indexBuilder.AppendLine("        .content { padding: 20px; }");
+                    indexBuilder.AppendLine("    </style>");
+                    indexBuilder.AppendLine("</head>");
+                    indexBuilder.AppendLine("<body>");
+                    indexBuilder.AppendLine("    <div class=\"navbar\">");
+
+                    // Add navigation links for each page
+                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    {
+                        string pageFileName = $"page_{i + 1}.html";
+                        indexBuilder.AppendLine($"        <a href=\"{pageFileName}\">Page {i + 1}</a>");
+                    }
+
+                    indexBuilder.AppendLine("    </div>");
+                    indexBuilder.AppendLine("    <div class=\"content\">");
+                    indexBuilder.AppendLine("        <h1>Diagram HTML Export</h1>");
+                    indexBuilder.AppendLine("        <p>Select a page from the navigation bar to view the diagram.</p>");
+                    indexBuilder.AppendLine("    </div>");
+                    indexBuilder.AppendLine("</body>");
+                    indexBuilder.AppendLine("</html>");
+
+                    // Write the index.html file
+                    string indexPath = Path.Combine(outputDir, "index.html");
+                    File.WriteAllText(indexPath, indexBuilder.ToString(), Encoding.UTF8);
+                    Console.WriteLine($"Generated navigation index at {indexPath}");
+                }
+                catch (Exception indexEx)
+                {
+                    Console.Error.WriteLine($"Failed to generate index.html: {indexEx.Message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

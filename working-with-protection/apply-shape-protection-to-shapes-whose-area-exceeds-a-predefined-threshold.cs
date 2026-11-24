@@ -6,86 +6,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and area threshold (in square inches)
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <areaThreshold>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <areaThreshold>");
             return;
         }
 
         string inputPath = args[0];
-        string thresholdArg = args[1];
+        string outputPath = args[1];
+        string thresholdArg = args[2];
 
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Parse the area threshold
-        if (!double.TryParse(thresholdArg, out double areaThreshold) || areaThreshold <= 0)
+        // Parse the area threshold.
+        if (!double.TryParse(thresholdArg, out double areaThreshold))
         {
-            Console.Error.WriteLine("Error: Invalid area threshold. Provide a positive numeric value.");
+            Console.Error.WriteLine($"Invalid area threshold: {thresholdArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes
+            // Iterate through all pages and shapes.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure width and height cells are present
-                    if (shape.XForm?.Width == null || shape.XForm?.Height == null)
-                        continue;
-
+                    // Retrieve shape dimensions (in inches).
                     double width = shape.XForm.Width.Value;
                     double height = shape.XForm.Height.Value;
 
-                    // Calculate shape area (square inches)
+                    // Compute the shape's area.
                     double area = width * height;
 
-                    // Apply protection if area exceeds the threshold
+                    // Apply protection if the area exceeds the threshold.
                     if (area > areaThreshold)
                     {
-                        // Lock movement on X and Y axes
+                        // Lock various aspects of the shape using BOOL enum values.
+                        shape.Protection.LockAspect.Value = BOOL.True;
                         shape.Protection.LockMoveX.Value = BOOL.True;
                         shape.Protection.LockMoveY.Value = BOOL.True;
-
-                        // Lock resizing (width and height)
                         shape.Protection.LockWidth.Value = BOOL.True;
                         shape.Protection.LockHeight.Value = BOOL.True;
-
-                        // Lock rotation
                         shape.Protection.LockRotate.Value = BOOL.True;
-
-                        // Optionally lock vertex editing
                         shape.Protection.LockVtxEdit.Value = BOOL.True;
                     }
                 }
             }
 
-            // Prepare output path (append "_protected" before extension)
-            string directory = Path.GetDirectoryName(inputPath) ?? "";
-            string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-            string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_protected.vsdx");
-
-            // Save the modified diagram in VSDX format
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved with protections applied to shapes exceeding area {areaThreshold} sq.in.:");
-            Console.WriteLine(outputPath);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine("An error occurred while processing the diagram:");
-            Console.Error.WriteLine(ex.Message);
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

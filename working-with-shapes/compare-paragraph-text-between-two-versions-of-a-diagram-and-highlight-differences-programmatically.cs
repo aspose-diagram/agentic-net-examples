@@ -14,80 +14,85 @@ class Program
             return;
         }
 
-        string oldDiagramPath = args[0];
-        string newDiagramPath = args[1];
-        string outputDiagramPath = args[2];
+        string oldPath = args[0];
+        string newPath = args[1];
+        string outputPath = args[2];
 
         // Guard against missing input files
-        if (!File.Exists(oldDiagramPath))
+        if (!File.Exists(oldPath))
         {
-            Console.Error.WriteLine($"File not found: {oldDiagramPath}");
+            Console.Error.WriteLine($"File not found: {oldPath}");
             return;
         }
-        if (!File.Exists(newDiagramPath))
+        if (!File.Exists(newPath))
         {
-            Console.Error.WriteLine($"File not found: {newDiagramPath}");
+            Console.Error.WriteLine($"File not found: {newPath}");
             return;
         }
 
         try
         {
-            // Load the old (baseline) diagram
-            Diagram oldDiagram = new Diagram(oldDiagramPath);
-            // Load the new diagram that will be highlighted
-            Diagram newDiagram = new Diagram(newDiagramPath);
-
-            // Determine the number of pages to compare (use the smaller count for safety)
-            int pageCount = Math.Min(oldDiagram.Pages.Count, newDiagram.Pages.Count);
-
-            for (int pageIndex = 0; pageIndex < pageCount; pageIndex++)
+            // Load both diagrams inside using blocks (mandatory pattern)
+            using (Diagram oldDiagram = new Diagram(oldPath))
+            using (Diagram newDiagram = new Diagram(newPath))
             {
-                // Access corresponding pages
-                Page oldPage = oldDiagram.Pages[pageIndex];
-                Page newPage = newDiagram.Pages[pageIndex];
+                // Build a lookup of shapes from the old diagram by their unique ID
+                var oldShapeLookup = new System.Collections.Generic.Dictionary<long, Shape>();
 
-                // Determine the number of shapes to compare on this page
-                int shapeCount = Math.Min(oldPage.Shapes.Count, newPage.Shapes.Count);
-
-                for (int shapeIdx = 0; shapeIdx < shapeCount; shapeIdx++)
+                for (int p = 0; p < oldDiagram.Pages.Count; p++)
                 {
-                    // Retrieve shapes by index
-                    Shape oldShape = oldPage.Shapes[shapeIdx];
-                    Shape newShape = newPage.Shapes[shapeIdx];
-
-                    // Skip shapes that are marked as deleted
-                    if (oldShape.Del == BOOL.True || newShape.Del == BOOL.True)
-                        continue;
-
-                    // Extract plain text from each shape
-                    string oldText = oldShape.Text?.Value?.Text ?? string.Empty;
-                    string newText = newShape.Text?.Value?.Text ?? string.Empty;
-
-                    // Compare the text content
-                    if (!string.Equals(oldText, newText, StringComparison.Ordinal))
+                    Page oldPage = oldDiagram.Pages[p];
+                    for (int s = 0; s < oldPage.Shapes.Count; s++)
                     {
-                        // Highlight the shape in the new diagram to indicate a difference.
-                        // Set line color to red.
-                        newShape.Line.LineColor.Value = "#FF0000";
-
-                        // Set fill foreground color to a light red.
-                        newShape.Fill.FillForegnd.Value = "#FFCCCC";
-
-                        // Log the difference.
-                        Console.WriteLine($"Difference found on Page {pageIndex + 1}, Shape {shapeIdx + 1}.");
-                        Console.WriteLine($"Old Text: \"{oldText}\"");
-                        Console.WriteLine($"New Text: \"{newText}\"");
+                        Shape oldShape = oldPage.Shapes[s];
+                        // Shape.ID is a unique identifier for the shape
+                        oldShapeLookup[oldShape.ID] = oldShape;
                     }
                 }
-            }
 
-            // Save the highlighted new diagram.
-            newDiagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Highlighted diagram saved to: {outputDiagramPath}");
+                // Iterate through shapes in the new diagram and compare paragraph text
+                for (int p = 0; p < newDiagram.Pages.Count; p++)
+                {
+                    Page newPage = newDiagram.Pages[p];
+                    for (int s = 0; s < newPage.Shapes.Count; s++)
+                    {
+                        Shape newShape = newPage.Shapes[s];
+
+                        // Skip deleted shapes
+                        if (newShape.Del == BOOL.True)
+                            continue;
+
+                        if (oldShapeLookup.TryGetValue(newShape.ID, out Shape oldShape))
+                        {
+                            // Retrieve plain text from the shape (concatenated paragraphs)
+                            string oldText = oldShape.Text?.Value?.Text ?? string.Empty;
+                            string newText = newShape.Text?.Value?.Text ?? string.Empty;
+
+                            // Compare texts; if different, highlight the shape in the new diagram
+                            if (!string.Equals(oldText, newText, StringComparison.Ordinal))
+                            {
+                                Console.WriteLine($"Difference found in shape ID {newShape.ID} on page {p + 1}");
+                                // Highlight by setting the line color to red
+                                newShape.Line.LineColor.Value = "#FF0000";
+                            }
+                        }
+                        else
+                        {
+                            // Shape does not exist in the old diagram; treat as added shape
+                            Console.WriteLine($"New shape added with ID {newShape.ID} on page {p + 1}");
+                            // Highlight added shapes with green line color
+                            newShape.Line.LineColor.Value = "#00FF00";
+                        }
+                    }
+                }
+
+                // Save the modified new diagram with highlights
+                newDiagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Comparison completed. Output saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

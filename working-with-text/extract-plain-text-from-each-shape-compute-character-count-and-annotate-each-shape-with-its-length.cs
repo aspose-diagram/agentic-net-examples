@@ -6,61 +6,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths from command‑line arguments.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            return;
+        }
 
-        // Guard: ensure the input file exists before proceeding.
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Prepare output file path (append "_annotated" before extension)
+        string outputDirectory = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
+        string outputFileName = Path.GetFileNameWithoutExtension(inputPath) + "_annotated.vsdx";
+        string outputPath = Path.Combine(outputDirectory, outputFileName);
+
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram.
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes.
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve the plain text of the shape.
-                    // shape.Text may be null for non‑text shapes; handle gracefully.
-                    string plainText = string.Empty;
-                    if (shape.Text != null && shape.Text.Value != null)
-                    {
-                        // shape.Text.Value.ToString() concatenates all Txt runs.
-                        plainText = shape.Text.Value.ToString();
-                    }
+                    // Retrieve the plain text of the shape
+                    string plainText = shape.Text.Value.ToString();
 
-                    // Compute character count.
+                    // Compute character count
                     int charCount = plainText.Length;
 
-                    // Annotate the shape with its character count.
-                    // Use the shape's comment field (shape.Misc.Comment) for annotation.
-                    if (shape.Misc != null && shape.Misc.Comment != null)
-                    {
-                        shape.Misc.Comment.Value = charCount.ToString();
-                    }
+                    // Create annotated text (original text followed by length)
+                    string annotatedText = $"{plainText} ({charCount})";
+
+                    // Replace the shape's text with the annotated version
+                    shape.Text.Value.Clear();
+                    shape.Text.Value.Add(new Txt(annotatedText));
                 }
             }
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
+
+            Console.WriteLine($"Annotated diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

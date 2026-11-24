@@ -7,93 +7,83 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
-            return;
-        }
+        // Determine the diagram file path (first argument or default)
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram from the specified file
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through each page in the diagram
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Output page name (or placeholder if null)
+                Console.WriteLine($"Page: {page.Name ?? "Unnamed"}");
+
+                // First pass: collect all comment (annotation) IDs on this page
+                List<int> commentIds = new List<int>();
+                foreach (Annotation annotation in page.PageSheet.Annotations)
                 {
-                    // Access the collection of annotations (comments) on the current page.
-                    AnnotationCollection annotations = page.PageSheet.Annotations;
-
-                    if (annotations == null || annotations.Count == 0)
+                    // MarkerIndex uniquely identifies a comment
+                    int? id = annotation.MarkerIndex?.Value;
+                    if (id.HasValue)
                     {
-                        // No comments on this page; continue to the next page.
-                        continue;
-                    }
-
-                    // First pass: collect all comment (annotation) IDs.
-                    List<int> commentIds = new List<int>();
-                    foreach (Annotation ann in annotations)
-                    {
-                        // MarkerIndex uniquely identifies a comment.
-                        if (ann.MarkerIndex != null)
-                        {
-                            commentIds.Add(ann.MarkerIndex.Value);
-                        }
-                    }
-
-                    // Second pass: retrieve each comment by its ID and display details.
-                    foreach (int commentId in commentIds)
-                    {
-                        Annotation found = null;
-
-                        // Search the annotations collection for the matching ID.
-                        foreach (Annotation ann in annotations)
-                        {
-                            if (ann.MarkerIndex != null && ann.MarkerIndex.Value == commentId)
-                            {
-                                found = ann;
-                                break;
-                            }
-                        }
-
-                        if (found != null)
-                        {
-                            // Extract comment details, handling possible null values.
-                            string commentText = (found.Comment != null) ? found.Comment.Value : string.Empty;
-                            int reviewerId = (found.ReviewerID != null) ? found.ReviewerID.Value : 0;
-                            int shapeId = found.ShapeID; // ShapeID is a primitive int.
-                            DateTime commentDate = DateTime.MinValue;
-                            if (found.Date != null)
-                            {
-                                commentDate = found.Date.Value;
-                            }
-
-                            // Output the comment information to the console.
-                            Console.WriteLine($"Page {page.ID}, Comment ID: {commentId}");
-                            Console.WriteLine($"  Text      : {commentText}");
-                            Console.WriteLine($"  ReviewerID: {reviewerId}");
-                            Console.WriteLine($"  ShapeID   : {shapeId}");
-                            Console.WriteLine($"  Date      : {commentDate}");
-                            Console.WriteLine();
-                        }
+                        commentIds.Add(id.Value);
                     }
                 }
+
+                Console.WriteLine($"Found {commentIds.Count} comment(s) on this page.");
+
+                // Second pass: retrieve detailed comment objects using the collected IDs
+                foreach (int commentId in commentIds)
+                {
+                    Annotation foundAnnotation = null;
+
+                    // Search for the annotation with the matching MarkerIndex
+                    foreach (Annotation annotation in page.PageSheet.Annotations)
+                    {
+                        if (annotation.MarkerIndex?.Value == commentId)
+                        {
+                            foundAnnotation = annotation;
+                            break;
+                        }
+                    }
+
+                    if (foundAnnotation != null)
+                    {
+                        // Extract detailed information from the annotation
+                        string commentText = foundAnnotation.Comment?.Value ?? string.Empty;
+                        int reviewerId = foundAnnotation.ReviewerID?.Value ?? 0;
+                        DateTime commentDate = foundAnnotation.Date?.Value ?? DateTime.MinValue;
+
+                        // Output the detailed comment information
+                        Console.WriteLine($"Comment ID: {commentId}");
+                        Console.WriteLine($"  Reviewer ID: {reviewerId}");
+                        Console.WriteLine($"  Date: {commentDate}");
+                        Console.WriteLine($"  Text: {commentText}");
+                    }
+                    else
+                    {
+                        // This should not happen, but handle gracefully
+                        Console.WriteLine($"Comment ID {commentId} could not be retrieved.");
+                    }
+                }
+
+                Console.WriteLine(); // Blank line between pages
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during loading or processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

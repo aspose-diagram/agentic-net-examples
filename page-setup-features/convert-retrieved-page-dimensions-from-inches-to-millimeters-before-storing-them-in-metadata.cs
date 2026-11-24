@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Properties;
 
@@ -8,19 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length > 1
-            ? args[1]
-            : Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output_with_mm.vsdx");
+        string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -29,70 +26,68 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram contains at least one page
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
-
-            // Access the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve page dimensions (values are in inches)
-            double widthInches = page.PageSheet.PageProps.PageWidth.Value;
-            double heightInches = page.PageSheet.PageProps.PageHeight.Value;
-
-            // Convert inches to millimeters (1 inch = 25.4 mm)
-            const double mmPerInch = 25.4;
-            double widthMillimeters = widthInches * mmPerInch;
-            double heightMillimeters = heightInches * mmPerInch;
-
-            // -----------------------------------------------------------------
-            // Store the converted dimensions in custom document properties
-            // -----------------------------------------------------------------
-
-            // Remove any existing custom properties with the same names
-            var propsToRemove = new List<CustomProp>();
-            foreach (CustomProp existingProp in diagram.DocumentProps.CustomProps)
-            {
-                if (existingProp.Name == "PageWidthMm" || existingProp.Name == "PageHeightMm")
+                // Ensure the diagram contains at least one page.
+                if (diagram.Pages.Count == 0)
                 {
-                    propsToRemove.Add(existingProp);
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
                 }
+
+                // Retrieve the first page.
+                Page page = diagram.Pages[0];
+
+                // Get page dimensions in inches.
+                double widthInches = page.PageSheet.PageProps.PageWidth.Value;
+                double heightInches = page.PageSheet.PageProps.PageHeight.Value;
+
+                // Convert inches to millimeters (1 inch = 25.4 mm).
+                double widthMillimeters = widthInches * 25.4;
+                double heightMillimeters = heightInches * 25.4;
+
+                // Create a custom property for page width in millimeters.
+                CustomProp widthProp = new CustomProp
+                {
+                    Name = "PageWidthMm",
+                    PropType = PropType.Number,
+                    CustomValue = { ValueString = widthMillimeters.ToString() }
+                };
+
+                // Create a custom property for page height in millimeters.
+                CustomProp heightProp = new CustomProp
+                {
+                    Name = "PageHeightMm",
+                    PropType = PropType.Number,
+                    CustomValue = { ValueString = heightMillimeters.ToString() }
+                };
+
+                // Access the custom property collection.
+                var customProps = diagram.DocumentProps.CustomProps;
+
+                // Remove existing properties with the same names, if any.
+                for (int i = customProps.Count - 1; i >= 0; i--)
+                {
+                    if (customProps[i].Name == widthProp.Name || customProps[i].Name == heightProp.Name)
+                    {
+                        customProps.Remove(customProps[i]);
+                    }
+                }
+
+                // Add the new custom properties to the diagram.
+                customProps.Add(widthProp);
+                customProps.Add(heightProp);
+
+                // Save the updated diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            foreach (CustomProp prop in propsToRemove)
-            {
-                diagram.DocumentProps.CustomProps.Remove(prop);
-            }
-
-            // Create and add a custom property for page width in millimeters
-            CustomProp widthProp = new CustomProp();
-            widthProp.Name = "PageWidthMm";
-            widthProp.PropType = PropType.String;
-            widthProp.CustomValue = new CustomValue(); // Initialize CustomValue object
-            widthProp.CustomValue.ValueString = widthMillimeters.ToString("F2");
-            diagram.DocumentProps.CustomProps.Add(widthProp);
-
-            // Create and add a custom property for page height in millimeters
-            CustomProp heightProp = new CustomProp();
-            heightProp.Name = "PageHeightMm";
-            heightProp.PropType = PropType.String;
-            heightProp.CustomValue = new CustomValue(); // Initialize CustomValue object
-            heightProp.CustomValue.ValueString = heightMillimeters.ToString("F2");
-            diagram.DocumentProps.CustomProps.Add(heightProp);
-
-            // Save the updated diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with millimeter dimensions metadata to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            return;
         }
     }
 }

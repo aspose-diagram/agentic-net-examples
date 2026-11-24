@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -28,36 +28,43 @@ class Program
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Remove hidden information: shapes, masters, and styles.
-                int removeFlags = (int)(RemoveHiddenInfoItem.Shapes |
-                                         RemoveHiddenInfoItem.Masters |
-                                         RemoveHiddenInfoItem.Styles);
+                // Combine flags to remove hidden information (shapes, masters, styles, data connections if supported).
+                int removeFlags = (int)(
+                    RemoveHiddenInfoItem.Shapes |
+                    RemoveHiddenInfoItem.Masters |
+                    RemoveHiddenInfoItem.Styles
+                    // Uncomment the following line if the DataConnections flag is available in the referenced version:
+                    // | RemoveHiddenInfoItem.DataConnections
+                );
+
+                // Remove hidden information from the diagram.
                 diagram.RemoveHiddenInformation(removeFlags);
 
-                // Verify that no hidden layers remain in any page.
+                // Verify that no hidden layers remain (layer.Visible == BOOL.False).
                 bool hiddenLayerFound = false;
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through layers via the page's PageSheet.
+                    // Access layers via the page's PageSheet.
                     foreach (Layer layer in page.PageSheet.Layers)
                     {
-                        // Layer visibility is stored as Aspose.Diagram.BOOL.
+                        // If a layer is not visible, it is considered hidden.
                         if (layer.Visible.Value == BOOL.False)
                         {
                             hiddenLayerFound = true;
-                            Console.WriteLine($"Hidden layer detected: \"{layer.Name.Value}\" on page \"{page.Name}\"");
+                            // Use the layer index (IX) as an identifier to avoid potential .Name issues.
+                            Console.WriteLine($"Hidden layer detected: Index {layer.IX} on page \"{page.Name}\"");
                         }
                     }
                 }
 
                 if (hiddenLayerFound)
                 {
-                    // If hidden layers are still present, raise an error.
-                    throw new Exception("Hidden layers were found after removal of hidden information.");
+                    Console.Error.WriteLine("Verification failed: hidden layers are still present after removal.");
+                    return;
                 }
                 else
                 {
-                    Console.WriteLine("Verification passed: No hidden layers present.");
+                    Console.WriteLine("Verification succeeded: no hidden layers found.");
                 }
 
                 // Save the cleaned diagram to the specified output path.
@@ -67,8 +74,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -17,10 +17,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -29,36 +29,30 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page.
-                if (diagram.Pages.Count == 0)
+                // Create AutoSpaceOptions with zero horizontal distance.
+                AutoSpaceOptions options = new AutoSpaceOptions();
+                // Horizontal distance set to zero to align shapes vertically without gaps.
+                options.DistanceInHorizontal = 0;
+                // Keep the default vertical distance (or you can set it explicitly if needed).
+                // options.DistanceInVertical = 2; // example default value
+
+                // Apply the auto‑spacing to each page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
+                    // Auto‑space the shapes on the current page using the configured options.
+                    page.AutoSpaceShapes(page.Shapes, options);
                 }
 
-                // Work with the first page (or modify as needed).
-                Page page = diagram.Pages[0];
-
-                // Create AutoSpaceOptions and set horizontal distance to zero.
-                AutoSpaceOptions options = new AutoSpaceOptions();
-                // Horizontal distance of zero removes gaps between shapes horizontally.
-                options.DistanceInHorizontal = 0;
-                // Keep the default vertical distance (can be left unchanged or set explicitly).
-                // options.DistanceInVertical = 2; // Uncomment to set a specific vertical gap.
-
-                // Apply auto‑spacing to all shapes on the page.
-                page.AutoSpaceShapes(page.Shapes, options);
-
-                // Save the modified diagram. Preserve the original format (VSDX used here).
+                // Save the modified diagram to the specified output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Diagram processed and saved to: {outputPath}");
+            Console.WriteLine("Auto‑spacing applied successfully.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

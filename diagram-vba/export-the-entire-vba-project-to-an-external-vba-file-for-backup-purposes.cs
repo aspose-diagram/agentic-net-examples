@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
 
@@ -7,7 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Expect two arguments: input Visio file path and output VBA backup file path
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVbaPath>");
@@ -17,7 +18,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,39 +27,37 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Access the VBA project; it may be null if no macros are present.
-            var vbaProject = diagram.VbaProject;
-            if (vbaProject == null)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("No VBA project found in the diagram.");
-                return;
-            }
+                // Access the VBA project (read‑only)
+                VbaProject vbaProject = diagram.VbaProject;
 
-            // Open a StreamWriter to create the backup .vba file.
-            using (StreamWriter writer = new StreamWriter(outputPath, false))
-            {
-                // Write a header for the exported VBA project.
-                writer.WriteLine("' Exported VBA Project");
-                writer.WriteLine($"' Source Diagram: {Path.GetFileName(inputPath)}");
-                writer.WriteLine();
+                // Prepare a StringBuilder to collect all VBA modules
+                StringBuilder sb = new StringBuilder();
 
-                // Iterate through each VBA module and write its code.
+                // Write project metadata
+                sb.AppendLine($"' VBA Project Name: {vbaProject.Name}");
+                sb.AppendLine($"' Is Signed: {vbaProject.IsSigned}");
+                sb.AppendLine();
+
+                // Iterate through each VBA module and append its code
                 foreach (VbaModule module in vbaProject.Modules)
                 {
-                    writer.WriteLine($"' Module: {module.Name}");
-                    writer.WriteLine(module.Codes);
-                    writer.WriteLine(); // Separate modules with an empty line.
+                    sb.AppendLine($"' Module: {module.Name}");
+                    sb.AppendLine(module.Codes ?? string.Empty);
+                    sb.AppendLine();
                 }
-            }
 
-            Console.WriteLine($"VBA project exported successfully to {outputPath}");
+                // Write the collected VBA code to the specified .vba file
+                File.WriteAllText(outputPath, sb.ToString());
+
+                Console.WriteLine($"VBA project exported successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

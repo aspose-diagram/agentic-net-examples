@@ -8,49 +8,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard against missing input file.
+        // Guard against missing file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // Dictionary to hold shape ID -> Cost value.
-        var costDictionary = new Dictionary<long, string>();
+        // Dictionary to hold Shape ID -> Cost value
+        Dictionary<long, string> shapeCostMap = new Dictionary<long, string>();
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Iterate through user‑defined cells (Users collection).
+                        // Look for a user-defined cell named "Cost"
                         foreach (User userCell in shape.Users)
                         {
-                            // Check for the custom cell named "Cost".
+                            // Compare the universal name (NameU) of the user cell
                             if (string.Equals(userCell.NameU, "Cost", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Store the value in the dictionary using the shape's ID as the key.
-                                costDictionary[shape.ID] = userCell.Value.Val;
-                                // No need to continue scanning other user cells for this shape.
+                                // Ensure the shape ID is valid before adding to the dictionary
+                                long shapeId = shape.ID;
+                                string costValue = userCell.Value.Val ?? string.Empty;
+
+                                // Add or update the entry in the dictionary
+                                if (!shapeCostMap.ContainsKey(shapeId))
+                                    shapeCostMap.Add(shapeId, costValue);
+                                else
+                                    shapeCostMap[shapeId] = costValue;
+
+                                // Once found, no need to check other user cells for this shape
                                 break;
                             }
                         }
@@ -58,16 +66,16 @@ class Program
                 }
             }
 
-            // Output the collected Cost values.
+            // Output the collected Cost values
             Console.WriteLine("Shape ID -> Cost values:");
-            foreach (var kvp in costDictionary)
+            foreach (KeyValuePair<long, string> entry in shapeCostMap)
             {
-                Console.WriteLine($"{kvp.Key} -> {kvp.Value}");
+                Console.WriteLine($"{entry.Key} -> {entry.Value}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

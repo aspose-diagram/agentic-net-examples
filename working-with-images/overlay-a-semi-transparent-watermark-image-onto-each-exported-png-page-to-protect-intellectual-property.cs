@@ -9,103 +9,110 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expected arguments: <diagramPath> <outputFolder> <watermarkImagePath>
-        if (args.Length != 3)
+        // Validate command‑line arguments.
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <outputFolder> <watermarkImagePath>");
+            Console.Error.WriteLine("Usage: <inputVisioPath> <watermarkImagePath> <outputFolder>");
             return;
         }
 
-        string diagramPath = args[0];
-        string outputFolder = args[1];
-        string watermarkPath = args[2];
+        string inputVisioPath = args[0];
+        string watermarkImagePath = args[1];
+        string outputFolder = args[2];
 
-        // Guard: check diagram file exists
-        if (!File.Exists(diagramPath))
+        // Guard: input Visio file must exist.
+        if (!File.Exists(inputVisioPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input Visio file not found: {inputVisioPath}");
             return;
         }
 
-        // Guard: check watermark image exists
-        if (!File.Exists(watermarkPath))
+        // Guard: watermark image file must exist.
+        if (!File.Exists(watermarkImagePath))
         {
-            Console.Error.WriteLine($"Watermark image file not found: {watermarkPath}");
+            Console.Error.WriteLine($"Watermark image file not found: {watermarkImagePath}");
             return;
         }
 
-        // Ensure output folder exists
+        // Ensure output folder exists.
         if (!Directory.Exists(outputFolder))
+        {
+            Directory.CreateDirectory(outputFolder);
+        }
+
+        // Load the watermark image once (will be reused for each page).
+        using (Aspose.Drawing.Image watermarkImage = Aspose.Drawing.Image.FromFile(watermarkImagePath))
         {
             try
             {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
-        }
+                // Load the Visio diagram.
+                Diagram diagram = new Diagram(inputVisioPath);
 
-        try
-        {
-            // Load the Visio diagram inside a using block
-            using (Diagram diagram = new Diagram(diagramPath))
-            {
-                // Load the watermark image once (assumed to have desired transparency)
-                using (Aspose.Drawing.Image watermarkImage = Aspose.Drawing.Image.FromFile(watermarkPath))
+                int pageCount = diagram.Pages.Count;
+
+                // Iterate through each page and export with watermark.
+                for (int i = 0; i < pageCount; i++)
                 {
-                    // Iterate through each page in the diagram
-                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    // Export the current page to a PNG image in memory.
+                    using (MemoryStream pageStream = new MemoryStream())
                     {
-                        // Prepare PNG export options for the current page
-                        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        pngOptions.PageIndex = i;   // zero‑based page index
-                        pngOptions.PageCount = 1;   // export only this page
-
-                        // Define temporary and final PNG file paths
-                        string tempPngPath = Path.Combine(outputFolder, $"page_{i + 1}_temp.png");
-                        string finalPngPath = Path.Combine(outputFolder, $"page_{i + 1}.png");
-
-                        // Export the page to a temporary PNG file
-                        diagram.Save(tempPngPath, pngOptions);
-
-                        // Load the exported PNG and overlay the watermark
-                        using (Aspose.Drawing.Image baseImage = Aspose.Drawing.Image.FromFile(tempPngPath))
+                        ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
                         {
-                            // Create graphics object to draw the watermark
+                            PageIndex = i,
+                            PageCount = 1
+                        };
+
+                        diagram.Save(pageStream, pngOptions);
+                        pageStream.Position = 0;
+
+                        // Load the exported PNG into Aspose.Drawing.
+                        using (Aspose.Drawing.Image baseImage = Aspose.Drawing.Image.FromStream(pageStream))
+                        {
+                            // Prepare graphics object for drawing.
                             using (Aspose.Drawing.Graphics graphics = Aspose.Drawing.Graphics.FromImage(baseImage))
                             {
-                                // Draw the watermark over the entire page.
-                                // The watermark image should already contain semi‑transparent pixels.
+                                // Configure semi‑transparent rendering via ColorMatrix.
+                                Aspose.Drawing.Imaging.ImageAttributes imgAttr = new Aspose.Drawing.Imaging.ImageAttributes();
+                                Aspose.Drawing.Imaging.ColorMatrix colorMatrix = new Aspose.Drawing.Imaging.ColorMatrix();
+
+                                // Set alpha (opacity) to 30 % (0.3f).
+                                colorMatrix.Matrix33 = 0.3f;
+
+                                imgAttr.SetColorMatrix(
+                                    colorMatrix,
+                                    Aspose.Drawing.Imaging.ColorMatrixFlag.Default,
+                                    Aspose.Drawing.Imaging.ColorAdjustType.Bitmap);
+
+                                // Calculate centered position for the watermark.
+                                int wmWidth = watermarkImage.Width;
+                                int wmHeight = watermarkImage.Height;
+                                int posX = (baseImage.Width - wmWidth) / 2;
+                                int posY = (baseImage.Height - wmHeight) / 2;
+
+                                // Draw the watermark onto the base image.
                                 graphics.DrawImage(
                                     watermarkImage,
-                                    new RectangleF(0, 0, baseImage.Width, baseImage.Height));
+                                    new Aspose.Drawing.Rectangle(posX, posY, wmWidth, wmHeight),
+                                    0,
+                                    0,
+                                    wmWidth,
+                                    wmHeight,
+                                    Aspose.Drawing.GraphicsUnit.Pixel,
+                                    imgAttr);
                             }
 
-                            // Save the final image with the watermark
-                            baseImage.Save(finalPngPath, Aspose.Drawing.Imaging.ImageFormat.Png);
+                            // Save the watermarked PNG to the output folder.
+                            string outputPath = Path.Combine(outputFolder, $"page_{i + 1}.png");
+                            baseImage.Save(outputPath, Aspose.Drawing.Imaging.ImageFormat.Png);
                         }
-
-                        // Delete the temporary PNG file
-                        try
-                        {
-                            File.Delete(tempPngPath);
-                        }
-                        catch
-                        {
-                            // If deletion fails, ignore – the temp file will be left on disk.
-                        }
-
-                        Console.WriteLine($"Exported page {i + 1} with watermark to: {finalPngPath}");
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            catch (Exception ex)
+            {
+                // Report any errors that occur during processing.
+                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            }
         }
     }
 }

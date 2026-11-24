@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,96 +9,44 @@ class Program
         // Validate that at least one file path is provided.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide one or more Visio file paths as command-line arguments.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath1> [<VisioFilePath2> ...]");
             return;
         }
 
-        // Process each file path supplied via command line.
-        foreach (string inputPath in args)
+        // Process each file path supplied via command line arguments.
+        foreach (string filePath in args)
         {
             // Guard: ensure the file exists before attempting to load.
-            if (!File.Exists(inputPath))
+            if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine($"File not found: {inputPath}");
+                Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
             try
             {
-                // Load the Visio diagram from the file.
-                Diagram diagram = new Diagram(inputPath);
-
-                // Iterate through all pages and set the print orientation to Landscape.
-                foreach (Page page in diagram.Pages)
+                // Load the Visio diagram inside a using block for proper disposal.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    // Iterate over all pages in the diagram.
+                    foreach (Page page in diagram.Pages)
+                    {
+                        // Set the page orientation to Landscape.
+                        page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                    }
+
+                    // Save the modified diagram, overwriting the original file.
+                    // Using VSDX format for consistency.
+                    diagram.Save(filePath, SaveFileFormat.Vsdx);
                 }
 
-                // Determine the appropriate SaveFileFormat based on the original file extension.
-                string extension = Path.GetExtension(inputPath).ToLowerInvariant();
-                SaveFileFormat format = GetSaveFileFormat(extension);
-
-                // Construct the output path (overwrite the original file).
-                string outputPath = inputPath;
-
-                // Save the modified diagram using the determined format.
-                diagram.Save(outputPath, format);
-
-                // Dispose the diagram to release resources.
-                diagram.Dispose();
-
-                Console.WriteLine($"Successfully updated orientation for: {inputPath}");
+                Console.WriteLine($"Successfully updated orientation to Landscape for: {filePath}");
             }
             catch (Exception ex)
             {
                 // Log any errors that occur during processing.
-                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
-        }
-    }
-
-    /// <summary>
-    /// Maps a file extension to the corresponding SaveFileFormat enum value.
-    /// </summary>
-    /// <param name="extension">File extension including the leading dot (e.g., ".vsdx").</param>
-    /// <returns>SaveFileFormat value; defaults to Vsdx if unknown.</returns>
-    private static SaveFileFormat GetSaveFileFormat(string extension)
-    {
-        // Note: The SaveFileFormat enum uses PascalCase member names.
-        switch (extension)
-        {
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vsd":
-                return SaveFileFormat.Vsd;
-            case ".vsx":
-                return SaveFileFormat.Vsx;
-            case ".vtx":
-                return SaveFileFormat.Vtx;
-            case ".vssx":
-                return SaveFileFormat.Vssx;
-            case ".vstx":
-                return SaveFileFormat.Vstx;
-            case ".vsdm":
-                return SaveFileFormat.Vsdm;
-            case ".vssm":
-                return SaveFileFormat.Vssm;
-            case ".vstm":
-                return SaveFileFormat.Vstm;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
-            case ".vss":
-                return SaveFileFormat.Vss;
-            case ".vst":
-                return SaveFileFormat.Vst;
-            case ".html":
-                return SaveFileFormat.Html;
-            case ".mmd":
-                // MMD files can be saved as Vsdx after processing.
-                return SaveFileFormat.Vsdx;
-            default:
-                // Fallback to Vsdx for unrecognized extensions.
-                return SaveFileFormat.Vsdx;
         }
     }
 }

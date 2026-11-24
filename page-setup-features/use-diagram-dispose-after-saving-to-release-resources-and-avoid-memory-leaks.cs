@@ -6,16 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,22 +25,17 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block (ensures Dispose is called)
+            // Load the diagram inside a using block to ensure resources are released.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Save the diagram to the desired format
+                // Save the diagram to the desired format (VSDX in this example).
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-                // Explicitly call Dispose after saving (additional safety)
-                diagram.Dispose();
-            }
-
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            } // Diagram.Dispose() is called automatically here.
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -4,10 +4,10 @@ display_name: Working With Fields
 language: csharp
 framework: net8.0
 package: Aspose.Diagram
-version: 26.10.0
+version: 26.11.0
 examples: 33
 pass_rate: 100.0
-generated: 2026-10-26
+generated: 2026-11-24
 parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md
 ---
 
@@ -21,9 +21,9 @@ parent: https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.
 |--------|-------|
 | Examples | 33 |
 | Pass Rate | 100.0% |
-| Aspose.Diagram Version | 26.10.0 |
+| Aspose.Diagram Version | 26.11.0 |
 | Target Framework | net8.0 |
-| Last Updated | 2026-10-26 |
+| Last Updated | 2026-11-24 |
 
 ## Persona
 
@@ -63,13 +63,13 @@ You always use explicit types (never `var`), include all required `using` direct
 | `Aspose.Diagram` | 33 | Core diagram API |
 | `System` | 33 | Console, Math, DateTime, Exception |
 | `System.IO` | 33 | File, Stream, Path, Directory operations |
-| `System.Collections.Generic` | 5 | List, Dictionary, HashSet |
-| `Aspose.Diagram.Saving` | 5 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `Aspose.Diagram.Saving` | 8 | Save options (PDF, PNG, HTML, SVG, XPS) |
+| `System.Collections.Generic` | 4 | List, Dictionary, HashSet |
 | `System.Text.Json` | 1 | JSON serialization |
 | `Aspose.Diagram.Manipulation` | 1 | Supporting utilities |
 | `System.Diagnostics` | 1 | Supporting utilities |
+| `System.Globalization` | 1 | Supporting utilities |
 | `System.Threading.Tasks` | 1 | Supporting utilities |
-| `System.Text.RegularExpressions` | 1 | Supporting utilities |
 
 ## Common Code Pattern
 
@@ -105,12 +105,12 @@ class Program
 | [batch-remove-a-specific-field-from-every-shape-in-multiple-diagrams-located-in-a-shared-folder.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/batch-remove-a-specific-field-from-every-shape-in-multiple-diagrams-located-in-a-shared-folder.cs) | `Diagram`, `Pages`, `Save` | Batch remove a specific field from every shape in multiple diagrams located in a shared folder |
 | [catch-exceptions-when-a-specified-field-does-not-exist-and-log-detailed-error-information.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/catch-exceptions-when-a-specified-field-does-not-exist-and-log-detailed-error-information.cs) | `Diagram`, `Pages`, `Save` | Catch exceptions when a specified field does not exist and log detailed error information |
 | [check-whether-a-field-already-exists-on-a-shape-before-attempting-to-create-a-duplicate-entry.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/check-whether-a-field-already-exists-on-a-shape-before-attempting-to-create-a-duplicate-entry.cs) | `Diagram`, `Pages`, `Save` | Check whether a field already exists on a shape before attempting to create a duplicate entry |
-| [clone-an-existing-shape-and-copy-its-fields-to-the-new-shape-to-preserve-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/clone-an-existing-shape-and-copy-its-fields-to-the-new-shape-to-preserve-metadata.cs) | `Diagram`, `Pages`, `Save` | Clone an existing shape and copy its fields to the new shape to preserve metadata |
+| [clone-an-existing-shape-and-copy-its-fields-to-the-new-shape-to-preserve-metadata.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/clone-an-existing-shape-and-copy-its-fields-to-the-new-shape-to-preserve-metadata.cs) | `AddShape`, `Diagram`, `Pages` | Clone an existing shape and copy its fields to the new shape to preserve metadata |
 | [create-a-field-whose-formula-references-another-shape-s-height-to-calculate-proportional-scaling.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/create-a-field-whose-formula-references-another-shape-s-height-to-calculate-proportional-scaling.cs) | `Diagram`, `Pages`, `Save` | Create a field whose formula references another shape s height to calculate proportional scaling |
 | [delete-a-field-from-a-shape-using-its-index-position-within-the-fields-collection-for-precise-removal.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/delete-a-field-from-a-shape-using-its-index-position-within-the-fields-collection-for-precise-removal.cs) | `Diagram`, `Pages`, `Save` | Delete a field from a shape using its index position within the fields collection for precise removal |
 | [export-the-extracted-field-information-of-a-shape-to-a-json-file-for-external-analysis.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/export-the-extracted-field-information-of-a-shape-to-a-json-file-for-external-analysis.cs) | `Diagram`, `Pages`, `Shapes` | Export the extracted field information of a shape to a json file for external analysis |
 | [export-the-updated-diagram-to-a-new-file-name-to-preserve-the-original-version-unchanged.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/export-the-updated-diagram-to-a-new-file-name-to-preserve-the-original-version-unchanged.cs) | `Diagram`, `Save`, `diagram` | Export the updated diagram to a new file name to preserve the original version unchanged |
-| [implement-try-catch-blocks-around-field-insertion-code-to-capture-and-log-any-runtime-errors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/implement-try-catch-blocks-around-field-insertion-code-to-capture-and-log-any-runtime-errors.cs) | `Diagram`, `Pages`, `Save` | Implement try catch blocks around field insertion code to capture and log any runtime errors |
+| [implement-try-catch-blocks-around-field-insertion-code-to-capture-and-log-any-runtime-errors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/implement-try-catch-blocks-around-field-insertion-code-to-capture-and-log-any-runtime-errors.cs) | `AddShape`, `Diagram`, `Pages` | Implement try catch blocks around field insertion code to capture and log any runtime errors |
 | [insert-a-date-time-field-that-automatically-displays-the-current-system-timestamp-on-the-shape.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/insert-a-date-time-field-that-automatically-displays-the-current-system-timestamp-on-the-shape.cs) | `Diagram`, `Pages`, `Save` | Insert a date time field that automatically displays the current system timestamp on the shape |
 | [insert-a-field-into-a-shape-and-connect-it-to-another-shape-using-a-dynamic-connector.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/insert-a-field-into-a-shape-and-connect-it-to-another-shape-using-a-dynamic-connector.cs) | `AddShape`, `ConnectShapesViaConnector`, `Diagram` | Insert a field into a shape and connect it to another shape using a dynamic connector |
 | [insert-a-field-into-a-shape-s-geometry-at-a-defined-coordinate-to-display-dynamic-text.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/insert-a-field-into-a-shape-s-geometry-at-a-defined-coordinate-to-display-dynamic-text.cs) | `Diagram`, `Pages`, `Save` | Insert a field into a shape s geometry at a defined coordinate to display dynamic text |
@@ -132,7 +132,7 @@ class Program
 | [update-a-field-s-formula-to-reference-another-shape-s-data-for-dynamic-calculations.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/update-a-field-s-formula-to-reference-another-shape-s-data-for-dynamic-calculations.cs) | `Diagram`, `Pages`, `Save` | Update a field s formula to reference another shape s data for dynamic calculations |
 | [use-asynchronous-methods-to-load-a-visio-file-and-modify-fields-without-blocking-the-ui-thread.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/use-asynchronous-methods-to-load-a-visio-file-and-modify-fields-without-blocking-the-ui-thread.cs) | `Diagram`, `Pages`, `Save` | Use asynchronous methods to load a visio file and modify fields without blocking the ui thread |
 | [validate-field-results-after-modification-by-comparing-calculated-values-against-expected-thresholds.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/validate-field-results-after-modification-by-comparing-calculated-values-against-expected-thresholds.cs) | `Diagram`, `Pages`, `Save` | Validate field results after modification by comparing calculated values against expected thresholds |
-| [validate-that-a-field-s-formula-syntax-is-correct-before-applying-it-to-avoid-runtime-errors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/validate-that-a-field-s-formula-syntax-is-correct-before-applying-it-to-avoid-runtime-errors.cs) | `Diagram`, `Pages`, `Save` | Validate that a field s formula syntax is correct before applying it to avoid runtime errors |
+| [validate-that-a-field-s-formula-syntax-is-correct-before-applying-it-to-avoid-runtime-errors.cs](https://github.com/aspose-diagram/agentic-net-examples/tree/main/working-with-fields/validate-that-a-field-s-formula-syntax-is-correct-before-applying-it-to-avoid-runtime-errors.cs) | `AddShape`, `Diagram`, `Pages` | Validate that a field s formula syntax is correct before applying it to avoid runtime errors |
 
 ## Command Reference
 
@@ -224,7 +224,6 @@ Only examples that pass both `dotnet build` and `dotnet run` are committed.
 - `Pages`
 - `Prop`
 - `Save`
-- `Shape`
 - `Shapes`
 - `diagram`
 - `page`
@@ -243,7 +242,7 @@ Frequently asked questions about **Working With Fields** in **Aspose.Diagram for
 
 **Q: How do I get started with Working With Fields in Aspose.Diagram for .NET?**
 
-A: Add a reference to `Aspose.Diagram.dll` (v26.10.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
+A: Add a reference to `Aspose.Diagram.dll` (v26.11.0), include `using Aspose.Diagram;` and `using Aspose.Diagram.Saving;`, then use `Diagram diagram = new Diagram("input.vsdx");` to load a file. All examples in this category target `net8.0`.
 
 **Q: Can I use `using (Diagram diagram = ...)` to ensure the diagram is disposed?**
 
@@ -274,4 +273,4 @@ All tasks passed ✅
 
 ---
 
-Updated: 2026-10-26 | Examples: 33 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)
+Updated: 2026-11-24 | Examples: 33 | Pass Rate: 100.0% | [↑ Root agents.md](https://github.com/aspose-diagram/agentic-net-examples/blob/main/agents.md) | [Aspose.Diagram for .NET](https://products.aspose.com/diagram/net/)

@@ -1,32 +1,33 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
     // Cached AutoSpaceOptions instance reused for all diagrams
-    private static readonly AutoSpaceOptions CachedAutoSpaceOptions = CreateAutoSpaceOptions();
+    private static readonly AutoSpaceOptions CachedOptions = CreateAutoSpaceOptions();
 
-    // Helper method to configure the AutoSpaceOptions
+    // Configure the AutoSpaceOptions once
     private static AutoSpaceOptions CreateAutoSpaceOptions()
     {
-        AutoSpaceOptions options = new AutoSpaceOptions();
-        // Set horizontal and vertical spacing (in inches)
-        options.DistanceInHorizontal = 2;
-        options.DistanceInVertical = 2;
+        var options = new AutoSpaceOptions();
+        // Set desired horizontal and vertical distances (in inches)
+        options.DistanceInHorizontal = 2.0;
+        options.DistanceInVertical = 2.0;
         return options;
     }
 
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate arguments
         if (args == null || args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <inputDiagramPath1> [<inputDiagramPath2> ...]");
             return;
         }
 
-        // Process each diagram file provided in the arguments
+        // Process each diagram file supplied via command‑line arguments
         foreach (string inputPath in args)
         {
             // Guard: ensure the file exists before attempting to load
@@ -38,32 +39,31 @@ class Program
 
             try
             {
-                // Load the diagram inside a using block to ensure proper disposal
+                // Load the diagram inside a using block as required
                 using (Diagram diagram = new Diagram(inputPath))
                 {
-                    // Iterate over each page in the diagram
-                    for (int i = 0; i < diagram.Pages.Count; i++)
+                    // Iterate over all pages explicitly typed as Page
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Retrieve the page by index
-                        Page page = diagram.Pages[i];
-
-                        // Auto-space all shapes on the current page using the cached options
-                        page.AutoSpaceShapes(page.Shapes, CachedAutoSpaceOptions);
+                        // Auto‑space all shapes on the current page using the cached options
+                        page.AutoSpaceShapes(page.Shapes, CachedOptions);
                     }
 
-                    // Construct output file path (append "_spaced" before the extension)
-                    string directory = Path.GetDirectoryName(inputPath) ?? "";
-                    string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-                    string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_spaced.vsdx");
+                    // Build output file name (original name with "_spaced" suffix)
+                    string directory = Path.GetDirectoryName(inputPath) ?? string.Empty;
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                    string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_spaced.vsdx");
 
-                    // Save the modified diagram in VSDX format
+                    // Save the modified diagram using the required overload
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                    Console.WriteLine($"Processed and saved: {outputPath}");
+
+                    Console.WriteLine($"Successfully processed: {inputPath}");
+                    Console.WriteLine($"Saved spaced diagram to: {outputPath}");
                 }
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing
+                // Report any errors that occur during processing
                 Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }

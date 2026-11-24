@@ -1,59 +1,52 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, output file, optional character limit.
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, output diagram path, max characters per paragraph
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [maxParagraphLength]");
+            Console.Error.WriteLine("Usage: Program <inputPath> <outputPath> <maxChars>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        int maxLength = 200; // Default character limit per paragraph.
+        string maxCharsArg = args[2];
 
-        if (args.Length >= 3 && !int.TryParse(args[2], out maxLength))
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Invalid maxParagraphLength argument. It must be an integer.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        // Guard: parse max characters limit
+        if (!int.TryParse(maxCharsArg, out int maxChars) || maxChars < 0)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Invalid maximum characters value: {maxCharsArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Flag to indicate whether validation passed.
-            bool validationPassed = true;
-
-            // Iterate through all pages.
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through all shapes on the page.
-                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes[shapeIndex];
-
-                    // Skip deleted shapes.
+                    // Skip deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Build the full text of the shape by concatenating Txt objects.
+                    // Accumulate the full text of the shape by iterating its FormatTxtCollection
                     string shapeText = string.Empty;
                     foreach (object item in shape.Text.Value)
                     {
@@ -63,35 +56,33 @@ class Program
                         }
                     }
 
-                    // Split the text into paragraphs using line‑feed as the delimiter.
-                    string[] paragraphs = shapeText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    // If the shape has no text, continue to next shape
+                    if (string.IsNullOrEmpty(shapeText))
+                        continue;
 
-                    // Validate each paragraph's length.
-                    for (int p = 0; p < paragraphs.Length; p++)
+                    // Validate each paragraph's text length against the limit
+                    // Paragraphs themselves do not store text directly; we use the accumulated shape text
+                    // Split the text by line breaks to approximate paragraph boundaries
+                    string[] paragraphs = shapeText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                    for (int i = 0; i < paragraphs.Length; i++)
                     {
-                        string paragraph = paragraphs[p];
-                        if (paragraph.Length > maxLength)
+                        string paraText = paragraphs[i];
+                        if (paraText.Length > maxChars)
                         {
-                            validationPassed = false;
-                            Console.Error.WriteLine($"Paragraph length exceeds limit (>{maxLength}) in shape ID {shape.ID} on page '{page.Name}', paragraph {p + 1} (length {paragraph.Length}).");
+                            Console.Error.WriteLine($"Paragraph {i + 1} in shape ID {shape.ID} exceeds the limit of {maxChars} characters (actual: {paraText.Length}).");
+                            return; // Abort saving due to validation failure
                         }
                     }
                 }
             }
 
-            if (!validationPassed)
-            {
-                Console.Error.WriteLine("Validation failed. Diagram will not be saved.");
-                return;
-            }
-
-            // Save the diagram after successful validation.
+            // All paragraphs are within the limit; proceed to save the diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
+            // Capture any Aspose.Diagram or I/O errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Xml.Linq;
 using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
@@ -9,137 +9,120 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, input XML file, output Visio file
-        if (args.Length < 3)
+        // Input Visio diagram path
+        string diagramPath = "input.vsdx";
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <inputXmlPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        string visioPath = args[0];
-        string xmlPath = args[1];
-        string outputPath = args[2];
-
-        // Guard against missing files
-        if (!File.Exists(visioPath))
-        {
-            Console.Error.WriteLine($"Visio file not found: {visioPath}");
-            return;
-        }
+        // Input hierarchical XML data path
+        string xmlPath = "data.xml";
         if (!File.Exists(xmlPath))
         {
-            Console.Error.WriteLine($"XML file not found: {xmlPath}");
+            Console.Error.WriteLine($"File not found: {xmlPath}");
             return;
         }
+
+        // Output Visio diagram path
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Load the hierarchical XML data
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(xmlPath);
-            XmlNode rootNode = xmlDoc.DocumentElement;
-
-            // Ensure there is at least one page to work with
-            Page page;
-            if (diagram.Pages.Count > 0)
-                page = diagram.Pages[0];
-            else
+            // Load the Visio diagram inside a using block for proper disposal
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                page = new Page();
-                diagram.Pages.Add(page);
+                // Load hierarchical XML data
+                XDocument xDoc = XDocument.Load(xmlPath);
+                if (xDoc.Root == null)
+                {
+                    Console.Error.WriteLine("XML does not contain a root element.");
+                    return;
+                }
+
+                // Use the first page for shape creation
+                Page page = diagram.Pages[0];
+
+                // Positioning offsets for groups and shapes
+                double groupOffsetX = 2.0;
+                double groupOffsetY = 2.0;
+                double shapeSpacing = 2.0;
+
+                // Iterate over top‑level XML elements
+                foreach (XElement topElement in xDoc.Root.Elements())
+                {
+                    List<Shape> childShapes = new List<Shape>();
+                    double currentX = groupOffsetX;
+                    double currentY = groupOffsetY;
+
+                    // Process child elements of the current top element
+                    foreach (XElement childElement in topElement.Elements())
+                    {
+                        // Add a rectangle shape using the master name "Rectangle"
+                        long shapeId = page.AddShape(currentX, currentY, "Rectangle", false);
+                        Shape shape = page.Shapes.GetShape(shapeId);
+
+                        // Store XML element name and value in custom data fields
+                        shape.Data1 = childElement.Name.LocalName;
+                        shape.Data2 = childElement.Value;
+
+                        // Set the shape's displayed text
+                        shape.Text.Value.Clear();
+                        shape.Text.Value.Add(new Txt(childElement.Name.LocalName));
+
+                        // Add shape to the collection for later grouping
+                        childShapes.Add(shape);
+
+                        // Update position for the next shape to avoid overlap
+                        currentX += shapeSpacing;
+                        currentY += shapeSpacing;
+                    }
+
+                    // If child shapes were created, group them together
+                    if (childShapes.Count > 0)
+                    {
+                        Shape groupShape = page.Shapes.Group(childShapes.ToArray());
+
+                        // Store the top‑level element name in the group's custom data field
+                        groupShape.Data1 = topElement.Name.LocalName;
+
+                        // Set a label for the group
+                        groupShape.Text.Value.Clear();
+                        groupShape.Text.Value.Add(new Txt(topElement.Name.LocalName));
+
+                        // Move the next group offset further away
+                        groupOffsetX += shapeSpacing * 5;
+                        groupOffsetY += shapeSpacing * 5;
+                    }
+                    else
+                    {
+                        // No child elements – create a single shape for the top element
+                        long shapeId = page.AddShape(groupOffsetX, groupOffsetY, "Rectangle", false);
+                        Shape shape = page.Shapes.GetShape(shapeId);
+                        shape.Data1 = topElement.Name.LocalName;
+                        shape.Data2 = topElement.Value;
+                        shape.Text.Value.Clear();
+                        shape.Text.Value.Add(new Txt(topElement.Name.LocalName));
+
+                        // Advance offset for the next top‑level element
+                        groupOffsetX += shapeSpacing * 5;
+                        groupOffsetY += shapeSpacing * 5;
+                    }
+                }
+
+                // Refresh the diagram to apply all changes
+                diagram.Refresh();
+
+                // Save the modified diagram
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Starting coordinates for shape placement
-            double startX = 1.0;
-            double startY = 1.0;
-            double offsetX = 2.0; // horizontal spacing between shapes
-
-            // Process the XML hierarchy and create grouped shapes
-            ProcessXmlNode(rootNode, page, ref startX, startY, offsetX);
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Recursively processes an XML node, creates shapes for leaf items,
-    /// groups them according to the XML hierarchy, and returns the resulting shape.
-    /// </summary>
-    /// <param name="xmlNode">Current XML node.</param>
-    /// <param name="page">Page where shapes are added.</param>
-    /// <param name="currentX">Reference to the current X coordinate.</param>
-    /// <param name="currentY">Current Y coordinate (constant in this example).</param>
-    /// <param name="offsetX">Horizontal offset for next shape.</param>
-    /// <returns>The shape representing this node (either a leaf shape or a group).</returns>
-    static Shape ProcessXmlNode(XmlNode xmlNode, Page page,
-        ref double currentX, double currentY, double offsetX)
-    {
-        List<Shape> childShapes = new List<Shape>();
-
-        // Iterate through child elements
-        foreach (XmlNode child in xmlNode.ChildNodes)
-        {
-            if (child.NodeType != XmlNodeType.Element)
-                continue;
-
-            // Handle leaf items
-            if (child.Name.Equals("Item", StringComparison.OrdinalIgnoreCase))
-            {
-                // Add a rectangle shape for the item
-                long shapeId = page.AddShape(currentX, currentY, "Rectangle", false);
-                Shape shape = page.Shapes.GetShape(shapeId);
-
-                // Assign a name if the XML provides one
-                if (child.Attributes["name"] != null)
-                {
-                    shape.Name = child.Attributes["name"].Value;
-                }
-
-                childShapes.Add(shape);
-
-                // Move X coordinate for the next shape
-                currentX += offsetX;
-            }
-            // Handle nested groups
-            else if (child.Name.Equals("Group", StringComparison.OrdinalIgnoreCase))
-            {
-                // Recursively process the subgroup
-                Shape groupShape = ProcessXmlNode(child, page,
-                    ref currentX, currentY, offsetX);
-
-                if (groupShape != null)
-                {
-                    childShapes.Add(groupShape);
-                }
-            }
-        }
-
-        // If no shapes were created for this node, return null
-        if (childShapes.Count == 0)
-            return null;
-
-        // If only one shape exists, no grouping is necessary
-        if (childShapes.Count == 1)
-            return childShapes[0];
-
-        // Group multiple shapes together
-        Shape[] shapeArray = childShapes.ToArray();
-        Shape group = page.Shapes.Group(shapeArray);
-
-        // Assign group name from XML attribute if present
-        if (xmlNode.Attributes != null && xmlNode.Attributes["name"] != null)
-        {
-            group.Name = xmlNode.Attributes["name"].Value;
-        }
-
-        return group;
     }
 }

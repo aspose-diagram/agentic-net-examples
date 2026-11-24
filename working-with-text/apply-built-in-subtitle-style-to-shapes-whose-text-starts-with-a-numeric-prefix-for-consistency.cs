@@ -6,28 +6,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the built‑in 'Subtitle' style sheet
+            // Locate the built‑in "Subtitle" style sheet.
             StyleSheet subtitleStyle = null;
             foreach (StyleSheet ss in diagram.StyleSheets)
             {
@@ -40,43 +41,33 @@ class Program
 
             if (subtitleStyle == null)
             {
-                Console.Error.WriteLine("Warning: 'Subtitle' style sheet not found in the diagram. No styles will be applied.");
+                Console.Error.WriteLine("Error: \"Subtitle\" style sheet not found in the diagram.");
+                return;
             }
-            else
+
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    // Retrieve plain text of the shape.
+                    string shapeText = shape.Text?.Value?.ToString() ?? string.Empty;
+
+                    // Check if the text starts with a numeric prefix.
+                    if (!string.IsNullOrWhiteSpace(shapeText) && char.IsDigit(shapeText.TrimStart()[0]))
                     {
-                        // Retrieve plain text of the shape
-                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
-
-                        // Trim leading whitespace for accurate prefix check
-                        string trimmedText = shapeText.TrimStart();
-
-                        // Check if the text starts with a numeric character
-                        if (!string.IsNullOrEmpty(trimmedText) && char.IsDigit(trimmedText[0]))
-                        {
-                            // Apply the 'Subtitle' style to the shape's text
-                            shape.TextStyle = subtitleStyle;
-                        }
+                        // Apply the "Subtitle" style to the shape's text.
+                        shape.TextStyle = subtitleStyle;
                     }
                 }
             }
 
-            // Prepare output path (same directory with a suffix)
-            string outputDir = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
-            string outputPath = Path.Combine(outputDir, "output_subtitle.vsdx");
-
-            // Save the modified diagram
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

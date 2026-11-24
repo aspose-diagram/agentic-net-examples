@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
@@ -20,38 +20,58 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Load the Visio diagram and save it as PDF with the required options.
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
-            using (Diagram diagram = new Diagram(inputPath))
-            {
-                // Set a custom document title (will be stored in PDF metadata).
-                diagram.DocumentProps.Title = "My Custom PDF Title";
+            // Load the diagram from the specified file.
+            Diagram diagram = new Diagram(inputPath);
 
-                // Configure PDF save options.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Configure PDF save options.
+            PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Explicitly set the format tracker.
-                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+            // Enable export of hidden pages.
+            pdfOptions.ExportHiddenPage = true;
 
-                // Enable export of hidden pages.
-                pdfOptions.ExportHiddenPage = true; // BOOL enum not required; property expects bool.
+            // Set the format tracker explicitly (required by Aspose.Diagram).
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // NOTE: Aspose.Diagram does not provide a direct property to embed all fonts.
-                // Font embedding is handled internally by the library and cannot be forced via PdfSaveOptions.
+            // Apply text compression to reduce file size (optional but useful).
+            pdfOptions.TextCompression = PdfTextCompression.Flate;
 
-                // Save the diagram as PDF with the configured options.
-                diagram.Save(outputPath, pdfOptions);
-            }
+            // NOTE: Aspose.Diagram's PdfSaveOptions does not provide a property to embed all fonts.
+            // Font embedding is handled automatically by the library where possible.
+
+            // Save the diagram as PDF using the configured options.
+            diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error during diagram loading or PDF export: {ex.Message}");
+            return;
         }
+
+        // After the PDF is created, set a custom document title using Aspose.Pdf.
+        try
+        {
+            // Load the generated PDF (fully qualified type to avoid namespace ambiguity).
+            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(outputPath);
+
+            // Set the custom title in the PDF metadata.
+            pdfDoc.Info.Title = "Custom Document Title";
+
+            // Overwrite the existing PDF with the updated metadata.
+            pdfDoc.Save(outputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error setting PDF title: {ex.Message}");
+            return;
+        }
+
+        Console.WriteLine("PDF saved successfully with hidden pages exported and custom title applied.");
     }
 }

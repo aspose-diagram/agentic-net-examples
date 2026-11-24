@@ -29,26 +29,28 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages in the diagram.
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over all shapes on the current page.
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify image shapes (foreign data).
-                        if (shape.Type == TypeValue.Foreign && shape.ForeignData?.Value != null)
+                        // Process only image (foreign) shapes.
+                        if (shape.Type == TypeValue.Foreign)
                         {
-                            // Extract the raw image bytes.
-                            byte[] imageBytes = shape.ForeignData.Value;
+                            // Retrieve the raw image bytes.
+                            byte[] imageBytes = shape.ForeignData?.Value;
+                            if (imageBytes == null || imageBytes.Length == 0)
+                                continue; // No image data to process.
 
                             // Convert the image bytes to a Base64 string.
                             string base64 = Convert.ToBase64String(imageBytes);
 
-                            // Build a data URI (assuming PNG format; adjust if needed).
+                            // Build a data‑URI (assuming PNG format).
                             string dataUri = $"data:image/png;base64,{base64}";
 
-                            // Embed the data URI back into the shape as a comment/alt‑text.
-                            // The Misc.Comment cell holds the comment string.
+                            // Embed the data‑URI back into the shape's comment field, if available.
+                            // shape.Misc is read‑only but provides access to its members.
                             if (shape.Misc != null && shape.Misc.Comment != null)
                             {
                                 shape.Misc.Comment.Value = dataUri;
@@ -63,7 +65,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

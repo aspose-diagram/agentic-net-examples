@@ -7,17 +7,11 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
-            return;
-        }
+        // Input and output file paths (can be passed as command‑line arguments)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,37 +20,39 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages to locate the 'Confidential' layer.
+            // Iterate through all pages and their layers
             foreach (Page page in diagram.Pages)
             {
-                // Layers are stored inside the page's PageSheet.
                 foreach (Layer layer in page.PageSheet.Layers)
                 {
-                    // Compare layer name using the .Value property.
+                    // Identify the layer named "Confidential"
                     if (layer.Name.Value == "Confidential")
                     {
-                        // Set the layer's print visibility to false.
+                        // Set the print visibility of the layer to false
                         layer.Print.Value = BOOL.False;
                     }
                 }
             }
 
-            // Configure PDF save options.
+            // Configure PDF save options for a print‑ready PDF
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format.
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set the format
+            // Optional: high‑resolution raster images inside the PDF
+            pdfOptions.HorizontalResolution = 300;
+            pdfOptions.VerticalResolution = 300;
+            pdfOptions.JpegQuality = 100;
 
-            // Save the diagram as a print‑ready PDF.
+            // Save the diagram as PDF
             diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"PDF successfully saved to: {outputPath}");
+            Console.WriteLine($"PDF saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

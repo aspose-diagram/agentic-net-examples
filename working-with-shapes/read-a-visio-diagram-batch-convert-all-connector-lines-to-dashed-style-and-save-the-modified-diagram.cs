@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -19,41 +20,46 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Identify connector shapes (1‑D shapes).
-                    if (shape.OneD)
+                    // Iterate through all shapes on the current page.
+                    for (int i = 0; i < page.Shapes.Count; i++)
                     {
-                        // Set the line pattern to dashed.
-                        shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        Shape shape = page.Shapes[i];
+
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify connector shapes (1‑D shapes).
+                        if (shape.OneD)
+                        {
+                            // Set the line pattern to dashed using the correct enum.
+                            shape.Line.LinePattern.Value = LinePatternValue.Dash;
+                        }
                     }
                 }
+
+                // Save the modified diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Save the modified diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

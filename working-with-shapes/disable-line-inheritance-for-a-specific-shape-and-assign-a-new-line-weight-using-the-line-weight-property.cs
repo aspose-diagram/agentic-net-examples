@@ -6,20 +6,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate arguments: input file, output file, shape ID
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <shapeId>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string shapeIdArg = args[2];
 
-        // Guard: ensure input file exists
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
         }
 
@@ -28,7 +36,7 @@ class Program
             // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Get the first page (adjust as needed)
+                // Get the first page (or you could select by name if needed)
                 if (diagram.Pages.Count == 0)
                 {
                     Console.Error.WriteLine("The diagram contains no pages.");
@@ -37,10 +45,7 @@ class Program
 
                 Page page = diagram.Pages[0];
 
-                // Specify the shape ID to modify (example uses ID = 1)
-                long shapeId = 1;
-
-                // Retrieve the shape; guard against missing shape
+                // Retrieve the shape by its ID
                 Shape shape = page.Shapes.GetShape(shapeId);
                 if (shape == null)
                 {
@@ -49,23 +54,26 @@ class Program
                 }
 
                 // ------------------------------------------------------------
-                // Disable line inheritance by assigning current values to themselves
-                // This breaks the inheritance chain for line properties.
+                // Disable line inheritance by assigning current inherited values
+                // to the shape's own cells. This breaks the inheritance link.
                 // ------------------------------------------------------------
                 shape.Line.LineColor.Value = shape.Line.LineColor.Value;
+                shape.Line.LineWeight.Value = shape.Line.LineWeight.Value;
                 shape.Line.LinePattern.Value = shape.Line.LinePattern.Value;
                 shape.Line.BeginArrow.Value = shape.Line.BeginArrow.Value;
                 shape.Line.EndArrow.Value = shape.Line.EndArrow.Value;
-                shape.Line.LineWeight.Value = shape.Line.LineWeight.Value;
+                // Add other line properties here if needed.
 
                 // ------------------------------------------------------------
-                // Assign a new line weight (thickness) in inches.
+                // Assign a new line weight (thickness) to the shape.
+                // Value is in inches; adjust as required.
                 // ------------------------------------------------------------
-                shape.Line.LineWeight.Value = 0.05; // Example: 0.05 inches
+                double newLineWeight = 0.05; // Example: 0.05 inches
+                shape.Line.LineWeight.Value = newLineWeight;
 
                 // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)

@@ -2,74 +2,83 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Vba;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, VBA module name, output diagram path
-        if (args.Length != 3)
+        // Expect three arguments: inputVisioPath, moduleName, outputVisioPath
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <vbaModuleName> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <moduleName> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
-        string moduleName = args[1];
+        string targetModuleName = args[1];
         string outputPath = args[2];
 
-        // Guard: verify input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // New VBA macro statements to replace the existing module content
-        // In a real scenario, you might read this from a file or another source.
-        string newVbaCode = @"
-Attribute VB_Name = ""{0}""
-Sub NewMacro()
-    MsgBox ""This is the updated macro.""
-End Sub
-".Replace("{0}", moduleName);
-
         try
         {
-            // Load the existing Visio diagram (supports macro-enabled formats)
+            // Load the existing Visio diagram (macro-enabled formats such as .vsdm are supported)
             Diagram diagram = new Diagram(inputPath);
 
             // Access the VBA project
             VbaProject vbaProject = diagram.VbaProject;
-
-            // Find the module by name
-            VbaModule targetModule = null;
-            foreach (VbaModule module in vbaProject.Modules)
+            if (vbaProject == null)
             {
-                if (string.Equals(module.Name, moduleName, StringComparison.OrdinalIgnoreCase))
+                Console.Error.WriteLine("The diagram does not contain a VBA project.");
+                return;
+            }
+
+            // Locate the target module by name
+            int moduleIndex = -1;
+            for (int i = 0; i < vbaProject.Modules.Count; i++)
+            {
+                VbaModule module = vbaProject.Modules[i];
+                if (string.Equals(module.Name, targetModuleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    targetModule = module;
+                    moduleIndex = i;
                     break;
                 }
             }
 
-            if (targetModule == null)
+            if (moduleIndex == -1)
             {
-                Console.Error.WriteLine($"Error: VBA module \"{moduleName}\" not found in the diagram.");
+                Console.Error.WriteLine($"VBA module '{targetModuleName}' not found in the diagram.");
                 return;
             }
 
-            // Replace the module's code with the new macro statements
-            targetModule.Codes = newVbaCode;
+            // Replace the module's code with new macro statements
+            VbaModule targetModule = vbaProject.Modules[moduleIndex];
+            string newMacroCode = @"
+Attribute VB_Name = ""{0}""
+Option Explicit
 
-            // Save the diagram in a macro-enabled format to preserve VBA code
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
+Sub NewMacro()
+    MsgBox ""This is the new macro code.""
+End Sub
+".Trim();
 
-            Console.WriteLine($"Successfully updated VBA module \"{moduleName}\" and saved to \"{outputPath}\".");
+            // Insert the actual module name into the attribute line
+            targetModule.Codes = string.Format(newMacroCode, targetModule.Name);
+
+            // Save the updated diagram using a macro-enabled format to preserve VBA
+            DiagramSaveOptions saveOptions = new DiagramSaveOptions(SaveFileFormat.Vsdm);
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Successfully updated VBA module '{targetModuleName}' and saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
